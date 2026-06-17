@@ -19,3 +19,12 @@
 [submodule "Hexalith.PolymorphicSerializations"]
 	path = Hexalith.PolymorphicSerializations
 	url = https://github.com/Hexalith/Hexalith.PolymorphicSerializations.git
+[submodule "Hexalith.Projects"]
+	path = Hexalith.Projects
+	url = https://github.com/Hexalith/Hexalith.Projects.git
+[submodule "Hexalith.Conversations"]
+	path = Hexalith.Conversations
+	url = https://github.com/Hexalith/Hexalith.Conversations.git
+[submodule "Hexalith.Works"]
+	path = Hexalith.Works
+	url = https://github.com/Hexalith/Hexalith.Works.git
