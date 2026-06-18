@@ -28,3 +28,6 @@
 [submodule "Hexalith.Works"]
 	path = Hexalith.Works
 	url = https://github.com/Hexalith/Hexalith.Works.git
+[submodule "Hexalith.Parties"]
+	path = Hexalith.Parties
+	url = https://github.com/Hexalith/Hexalith.Parties.git
