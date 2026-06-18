@@ -5,6 +5,8 @@ public enum TimesheetsOperation
     Unknown = 0,
     Command = 1,
     Query = 2,
-    Projection = 3,
-    Export = 4
+    ProjectionRead = 3,
+    Export = 4,
+    Confirmation = 5,
+    UiActionVisibility = 6
 }

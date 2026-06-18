@@ -9,6 +9,12 @@ public sealed class AuthorityBoundaryTests
         "TimesheetsRequestContext",
         "ClaimsPrincipal",
         "AuthorizationHandlerContext",
+        "authorizationContext",
+        "tenantMembership",
+        "TenantMembership",
+        "PartyDisplayName",
+        "ProjectDisplayName",
+        "WorkDisplayName",
         "accessToken",
         "bearerToken",
         "jwt",
@@ -21,8 +27,8 @@ public sealed class AuthorityBoundaryTests
     {
         string[] publicSourceFiles =
         [
-            .. Directory.GetFiles(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts"), "*.cs", SearchOption.AllDirectories),
-            .. Directory.GetFiles(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets.Client"), "*.cs", SearchOption.AllDirectories)
+            .. SourceFiles(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts")),
+            .. SourceFiles(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets.Client"))
         ];
 
         publicSourceFiles.ShouldNotBeEmpty();
@@ -43,6 +49,8 @@ public sealed class AuthorityBoundaryTests
     {
         string[] matchingFiles = Directory
             .GetFiles(TestRepositoryRoot.PathTo("src"), "*.cs", SearchOption.AllDirectories)
+            .Where(static file => !file.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                && !file.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
             .Where(static file => File.ReadAllText(file).Contains("TimesheetsRequestContext", StringComparison.Ordinal))
             .ToArray();
 
@@ -50,5 +58,14 @@ public sealed class AuthorityBoundaryTests
         matchingFiles.ShouldAllBe(file => file.Contains(
             Path.Combine("src", "Hexalith.Timesheets.Server"),
             StringComparison.Ordinal));
+    }
+
+    private static string[] SourceFiles(string root)
+    {
+        return Directory
+            .GetFiles(root, "*.cs", SearchOption.AllDirectories)
+            .Where(static file => !file.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                && !file.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            .ToArray();
     }
 }

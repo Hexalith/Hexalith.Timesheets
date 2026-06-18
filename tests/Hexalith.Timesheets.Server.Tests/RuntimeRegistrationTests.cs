@@ -1,3 +1,4 @@
+using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.Runtime;
@@ -21,11 +22,47 @@ public sealed class RuntimeRegistrationTests
 
         provider.GetRequiredService<ITimesheetsAuthorizationGate>()
             .ShouldBeOfType<DenyAllTimesheetsAuthorizationGate>();
+        provider.GetRequiredService<ITimesheetsAccessGuard>()
+            .ShouldBeOfType<TimesheetsAccessGuard>();
+        provider.GetRequiredService<ITimesheetsTenantAccessValidator>()
+            .ShouldBeOfType<DenyAllTimesheetsTenantAccessValidator>();
+        provider.GetRequiredService<ITimesheetsPolicyEvaluator>()
+            .ShouldBeOfType<DenyAllTimesheetsPolicyEvaluator>();
         provider.GetRequiredService<IProjectReferenceValidator>()
             .ShouldBeOfType<DenyAllProjectReferenceValidator>();
         provider.GetRequiredService<IWorkReferenceValidator>()
             .ShouldBeOfType<DenyAllWorkReferenceValidator>();
         provider.GetRequiredService<IContributorPartyValidator>()
             .ShouldBeOfType<DenyAllContributorPartyValidator>();
+    }
+
+    [Fact]
+    public async Task Composed_access_guard_fails_closed_with_unconfigured_defaults()
+    {
+        IServiceCollection services = new ServiceCollection();
+
+        services.AddTimesheetsServerKernel();
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        ITimesheetsAccessGuard guard = provider.GetRequiredService<ITimesheetsAccessGuard>();
+
+        TimesheetsAuthorizationRequest request = new(
+            new TimesheetsRequestContext(
+                new TenantReference("tenant_01"),
+                new PartyReference("party_01"),
+                "correlation_01"),
+            TimesheetsOperation.Command)
+        {
+            Project = new ProjectReference("project_01")
+        };
+
+        TimesheetsAuthorizationDecision decision = await guard.AuthorizeAsync(
+            request,
+            TestContext.Current.CancellationToken);
+
+        decision.IsAuthorized.ShouldBeFalse();
+        decision.DenialCategory.ShouldBe(TimesheetsDenialCategory.UnconfiguredPolicy);
+        decision.Reason.ShouldBe("Authority cannot be resolved.");
     }
 }

@@ -33,6 +33,24 @@ public sealed class FailClosedDefaultsTests
         }
     }
 
+    [Fact]
+    public void Default_tenant_and_policy_adapters_reject_unconfigured_authority()
+    {
+        string[] adapterFiles =
+        [
+            ServerSourcePath("Authorization", "DenyAllTimesheetsTenantAccessValidator.cs"),
+            ServerSourcePath("Authorization", "DenyAllTimesheetsPolicyEvaluator.cs")
+        ];
+
+        foreach (string adapterFile in adapterFiles)
+        {
+            string source = File.ReadAllText(adapterFile);
+            source.ShouldContain("Denied");
+            source.ShouldNotContain("Allowed()");
+            source.ShouldNotContain("Authorized()");
+        }
+    }
+
     private static string ServerSourcePath(params string[] segments)
     {
         DirectoryInfo? directory = new(AppContext.BaseDirectory);

@@ -12,7 +12,10 @@ public static class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
 
+        services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
+        services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();
+        services.TryAddSingleton<ITimesheetsPolicyEvaluator, DenyAllTimesheetsPolicyEvaluator>();
         services.TryAddSingleton<IProjectReferenceValidator, DenyAllProjectReferenceValidator>();
         services.TryAddSingleton<IWorkReferenceValidator, DenyAllWorkReferenceValidator>();
         services.TryAddSingleton<IContributorPartyValidator, DenyAllContributorPartyValidator>();
