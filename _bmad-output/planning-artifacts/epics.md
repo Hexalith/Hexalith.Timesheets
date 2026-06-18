@@ -250,6 +250,72 @@ FR21: Epic 1 - Trusted Time Capture & Activity Governance
 FR22: Epic 1 - Trusted Time Capture & Activity Governance
 FR23: Epic 1 - Trusted Time Capture & Activity Governance
 
+### NFR Coverage Map
+
+_Added 2026-06-19. All 15 NFRs trace to ≥1 story by acceptance-criteria substance. "Primary" = the story that most directly establishes the NFR._
+
+| NFR | Theme | Primary | Also covered in |
+|-----|-------|---------|-----------------|
+| NFR1 | Tenant isolation (adversarial fail-closed) | 1.2 | 1.1, 1.7, 1.8, 2.2, 2.3, 2.6, 2.8, 3.1, 3.5, 4.1, 4.2, 4.4 |
+| NFR2 | Append-only, no silent overwrite | 2.5 | 1.3, 2.4, 2.6, 4.2 |
+| NFR3 | Store references only, no personal/sibling data | 1.7 | 1.2, 1.6, 1.8, 1.9, 3.1, 4.3 |
+| NFR4 | Correction provenance | 2.6 | 2.4, 4.2 |
+| NFR5 | Export auditability | 4.6 | 4.5 |
+| NFR6 | Magic-link no-disclosure | 3.5 | 3.2, 3.3 |
+| NFR7 | Retention policy (launch gate) | 1.4 | — |
+| NFR8 | Tenant+resource gates on all paths | 1.2 | 1.5, 1.7, 2.3, 3.1, 4.1, 4.2, 4.5 |
+| NFR9 | Projection at-least-once / replay / freshness | 1.8 | 2.6, 2.8, 4.1, 4.2, 4.3 |
+| NFR10 | Command ack ≤500 ms p95 | 1.1 | (evidence harness; later stories add data) |
+| NFR11 | Report query ≤2 s p95 | 4.3 | 1.1 |
+| NFR12 | Privacy-safe logging | 1.4 | 1.1, 1.7, 1.9, 3.1, 3.4, 3.5 |
+| NFR13 | WCAG 2.2 AA / FrontComposer+Fluent UI | 4.7 | 1.5, 1.6, 1.7, 1.8, 2.1, 2.3, 2.4, 3.3, 3.4, 4.1–4.5 |
+| NFR14 | Additive, serialization-tolerant evolution | 1.3 | 1.9, 4.6 |
+| NFR15 | Time-zone / period policy (launch gate) | 2.7 | 4.6 |
+
+### UX-DR Coverage Map
+
+_Added 2026-06-19. All 37 UX-DRs trace to ≥1 story._
+
+| UX-DR | Theme | Primary | Also in |
+|-------|-------|---------|---------|
+| UX-DR1 | FrontComposerShell, no parallel shell | 4.7 | 1.1 |
+| UX-DR2 | External magic-link minimal page | 3.3 | 3.4, 3.5 |
+| UX-DR3 | FrontComposer-first, Fluent UI V5 | 1.3 | 1.1, all UI stories |
+| UX-DR4 | Inherit Hexalith themes, no bespoke brand | 1.3 | 4.7 |
+| UX-DR5 | Spacing scale | 1.3 | UI stories |
+| UX-DR6 | Restrained radii | 1.3 | UI stories |
+| UX-DR7 | ProjectionView default + freshness | 4.1 | 1.5, 1.8, 4.2, 4.3 |
+| UX-DR8 | GeneratedForm for commands | 1.7 | 2.1, 2.3, 2.4, 4.5 |
+| UX-DR9 | FluentDataGrid for queues/reports/ledgers | 4.1 | 1.5, 2.3, 4.3 |
+| UX-DR10 | Accordion for 2+ titled sections | 1.8 | 2.6 |
+| UX-DR11 | Primary content not hidden in accordion | 1.8 | 4.7 |
+| UX-DR12 | Accordion sections (Evidence/Approval/…) | 1.8 | 2.6, 4.5 |
+| UX-DR13 | FluentTabs for related subviews only | 4.3 | 4.1, 4.4 |
+| UX-DR14 | FluentDialog for focused decisions | 2.3 | 2.6, 2.7, 3.4, 4.5 |
+| UX-DR15 | FluentButton verb phrase + confirm | 2.3 | 2.5, 4.5 |
+| UX-DR16 | MessageBar for persistent state/policy | 1.4 | 2.1, 2.2, 4.5 |
+| UX-DR17 | Toast transient only | 2.1 | 2.3 |
+| UX-DR18 | Dense FilterBar, preserved on drill-in | 4.1 | 1.6, 4.3 |
+| UX-DR19 | StatusBadge text not color | 1.8 | 1.5, 2.3, 2.7, 3.2, 4.x |
+| UX-DR20 | Operational dashboard, not marketing | 4.7 | — |
+| UX-DR21 | Record Time Entry reachable + fields | 1.7 | — |
+| UX-DR22 | My Timesheet Period states | 2.7 | — |
+| UX-DR23 | Time Entry Detail, not mutable row | 1.8 | 2.6 |
+| UX-DR24 | Correction flow additive | 2.4 | 2.6 |
+| UX-DR25 | Approvals Queue / Period Detail | 2.8 | 2.3 |
+| UX-DR26 | Activity Type Catalog | 1.5 | 1.6 |
+| UX-DR27 | Operational Reports dimensions | 4.3 | — |
+| UX-DR28 | AI Effort Report separation | 4.4 | 1.9 |
+| UX-DR29 | Approved-Time Ledger + disable empty export | 4.2 | 4.5 |
+| UX-DR30 | Export Review Dialog, no finance language | 4.5 | 4.6 |
+| UX-DR31 | Magic-link validate-before-detail | 3.3 | 3.4 |
+| UX-DR32 | Magic-link no-disclosure failure | 3.5 | 3.2 |
+| UX-DR33 | Factual, non-celebratory copy | 4.5 | 1.4, 4.7 |
+| UX-DR34 | Freshness visible + accessible status region | 4.1 | 4.2, 4.3, 4.7 |
+| UX-DR35 | Keyboard-reachable, no hover-only | 1.7 | 2.3, 3.3, 4.1 (all UI) |
+| UX-DR36 | Duration/AI units; missing tokens "Unavailable" | 1.9 | 1.7, 4.4 |
+| UX-DR37 | Responsive desktop/tablet/phone | 3.3 | 1.7, 3.4 |
+
 ## Epic List
 
 ### Epic 1: Trusted Time Capture & Activity Governance
@@ -412,6 +478,8 @@ So that integrations can record and manage time evidence without learning EventS
 
 **Requirements:** FR3, FR21, FR23
 
+> **Policy (ratified 2026-06-19):** v1 default — Time Entry/approval/correction events retained as indefinite audit evidence; export records and magic-link audit metadata per documented tenant default; **legal-hold override is an explicit launch-readiness gate** requiring tenant/legal sign-off (PRD §9, NFR7/GOV-7).
+
 As a compliance-minded tenant operator,
 I want explicit retention and comment sensitivity policy for time evidence,
 So that Time Entries, comments, exports, and confirmation metadata are handled consistently before trusted capture expands.
@@ -524,6 +592,8 @@ So that project-specific work can be categorized without copying Project state i
 ### Story 1.7: Record Draft Time Entry Against Project or Work
 
 **Requirements:** FR1, FR2, FR12, FR21
+
+> **Dependency (2026-06-19):** the Work-reference path requires a `Hexalith.Works` consumer read/validate query (see architecture "Reference-validation adapter maturity"). The Project path via `GetProjectAsync` is unblocked; the Work path is gated on the Works `GetWorkItem`-query vs. adapter-bridge decision.
 
 As a contributor,
 I want to record draft time against exactly one Project or Work reference,
@@ -855,6 +925,8 @@ So that mistakes can be fixed without editing approved evidence in place.
 
 **Requirements:** FR4, FR7, FR8
 
+> **Policy (ratified 2026-06-19):** canonical period policy = **tenant time zone** (UTC audit instants + tenant-local period keys); DST/period-boundary cases are launch gates proven by golden files (PRD §10 / §14 Q1, NFR15).
+
 As a contributor,
 I want to submit a weekly or monthly Timesheet Period containing my entries,
 So that my work can be reviewed as a coherent period without losing entry-level evidence.
@@ -968,6 +1040,8 @@ So that external effort can enter the same approval workflow without granting fu
 ### Story 3.2: Issue Scoped Magic-Link Confirmation Capabilities
 
 **Requirements:** FR14
+
+> **Policy (ratified 2026-06-19):** v1 magic-link baseline = single-use scoped expiring links (FR-14); **secondary identity verification for high-value/billable entries is deferred to post-v1** (explicit assumption — PRD §14 Q4).
 
 As an authorized internal user,
 I want to issue a scoped Magic-Link Confirmation capability for one external contribution,
@@ -1185,6 +1259,8 @@ So that approved effort can be used as trusted downstream evidence without becom
 
 **Requirements:** FR16, FR17
 
+> **Dependency (2026-06-19):** planned-vs-actual consumes `WorkItemEffort` from `Hexalith.Works`; actual read access depends on the Works consumer-query decision (see architecture "Reference-validation adapter maturity").
+
 As a project or work reviewer,
 I want actual-time reports by Project and Work item,
 So that I can compare effort against operational expectations without Timesheets owning Project or Work state.
@@ -1307,6 +1383,8 @@ So that downstream billing workflows receive trustworthy evidence without Timesh
 ### Story 4.6: Verify Finance Export Evidence and Audit Trail
 
 **Requirements:** FR18, FR19
+
+> **Policy (ratified 2026-06-19):** export time-zone handling follows the tenant-time-zone period policy (Story 2.7); boundary cases covered by golden files (NFR15).
 
 As a finance or audit reviewer,
 I want export evidence and audit records to be deterministic and verifiable,

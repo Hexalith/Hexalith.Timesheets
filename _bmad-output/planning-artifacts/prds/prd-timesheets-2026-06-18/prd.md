@@ -2,7 +2,7 @@
 title: "Hexalith.Timesheets — Product Requirements Document"
 status: draft
 created: 2026-06-18
-updated: 2026-06-18
+updated: 2026-06-19
 ---
 
 # PRD: Hexalith.Timesheets
@@ -366,7 +366,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Correction provenance.** Corrections preserve original values, corrected values, actor, timestamp, reason where required, and lineage to the affected entry.
 - **Export accountability.** Approved-time exports are auditable actions with requester, filters, timestamp, and output scope recorded where required by policy.
 - **Magic-link secrecy.** Invalid or expired magic links reveal no tenant, Project, Work, Party, or Time Entry details.
-- **Retention policy.** `[NOTE FOR PM]` Launch readiness needs a tenant/legal retention decision for Time Entry events, export records, and Magic-Link Confirmation audit metadata.
+- **Retention policy.** **[RESOLVED 2026-06-19]** v1 default: Time Entry and approval/correction events are retained as indefinite audit evidence; export records and Magic-Link Confirmation audit metadata follow a documented tenant default. A **legal-hold override remains an explicit launch-readiness gate** requiring tenant/legal sign-off (owned by Story 1.4).
 
 ## 10. Cross-Cutting NFRs
 
@@ -376,7 +376,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Observability.** Logs and traces use structured metadata and correlation IDs without logging event payloads, comments, personal data, tokens, secrets, or full command bodies.
 - **Accessibility.** Any internal UI surface follows the Hexalith/FrontComposer/Fluent UI rules and targets WCAG 2.2 AA where applicable.
 - **Compatibility.** Event and contract evolution is additive and serialization-tolerant. Do not remove or rename previously emitted event fields.
-- **Localization and time zones.** Dates, periods, and approval cutoffs must be tenant-policy aware. `[NOTE FOR PM]` Launch readiness needs an explicit period/time-zone policy.
+- **Localization and time zones.** Dates, periods, and approval cutoffs must be tenant-policy aware. **[RESOLVED 2026-06-19]** Canonical v1 policy: **tenant time zone** — store UTC audit instants and tenant-local period keys; DST/period-boundary cases proven by golden-file tests (owned by Stories 2.7/4.6).
 
 ## 11. Risks and Mitigations
 
@@ -418,11 +418,11 @@ Launch readiness requires: passing tenant-isolation tests, approval/correction e
 
 ## 14. Open Questions
 
-1. **Time-zone and period policy** — Are weekly/monthly periods based on tenant time zone, contributor location, project locale, or a configurable policy?
+1. **Time-zone and period policy** — **[RESOLVED 2026-06-19]** v1 uses **tenant time zone** as the canonical policy (UTC audit instants + tenant-local period keys). Owned by Stories 2.7/4.6.
 2. **Approver precedence** — If tenant admin, project manager, work owner, and finance reviewer disagree, which approval authority wins?
 3. **Correction model detail** — Should corrections supersede an entry, offset with a new entry, or support both patterns?
-4. **Magic-Link Confirmation issuance** — Who can issue a magic link, and should links require secondary identity verification for high-value/billable entries?
-5. **Retention and legal hold** — What retention period applies to Time Entry events, comments, export records, and Magic-Link Confirmation metadata?
+4. **Magic-Link Confirmation issuance** — Story 3.2 owns issuance authority. **[RESOLVED 2026-06-19]** v1 baseline = single-use scoped expiring links (FR-14); **secondary identity verification for high-value/billable entries is deferred to post-v1** (explicit assumption, not silently closed).
+5. **Retention and legal hold** — **[RESOLVED 2026-06-19]** v1 default retention per §9; **legal-hold override is a launch-readiness gate** pending tenant/legal sign-off (owned by Story 1.4).
 6. **Activity Type governance** — Who can define project-level Activity Types, and can a project restrict tenant-level defaults?
 7. **Export format** — Is CSV sufficient for v1, or does downstream billing need a structured API/webhook contract at launch?
 8. **Comment sensitivity** — Are comments allowed to contain customer/private data, and do they need classification/redaction rules?
