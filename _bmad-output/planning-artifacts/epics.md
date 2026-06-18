@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2]
+stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
   - _bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/prd.md
   - _bmad-output/planning-artifacts/architecture.md
@@ -19,6 +19,16 @@ requirementsExtraction:
 ## Overview
 
 This document provides the complete epic and story breakdown for timesheets, decomposing the requirements from the PRD, UX Design if it exists, and Architecture requirements into implementable stories.
+
+## Glossary
+
+- **EventStore authority** - Hexalith.EventStore is the authoritative persistence path for Timesheets domain state changes. Stories must not introduce direct authoritative SQL, Redis, Dapr state, broker-backed CRUD, or projection mutation.
+- **Projection freshness** - Read models must expose whether data is fresh, stale, rebuilding, degraded, or unavailable. Trust-bearing actions must not treat stale or unavailable projections as fresh authority.
+- **Approved ledger** - The rebuildable read model of approved time evidence. It is produced from domain events and is not a separate source of truth.
+- **Correction** - An additive domain event or compensating command that preserves original values, corrected values, actor, timestamp, reason where required, and lineage. It is not an in-place edit.
+- **Confirmation** - An external contributor action that confirms or adjusts scoped proposed time. It is not approval and does not grant internal tenant access.
+- **Finance export evidence** - Approved billable evidence exported for downstream consumers. It excludes rates, invoices, payroll, taxes, and revenue-recognition decisions.
+- **No-disclosure response** - A neutral response for invalid, expired, used, revoked, unauthorized, malformed, or unknown magic links that does not reveal whether a tenant, contributor, target, period, or entry exists.
 
 ## Requirements Inventory
 
@@ -216,33 +226,33 @@ UX-DR37: Responsive behavior must support full desktop/laptop internal workflows
 
 ### FR Coverage Map
 
-FR1: Epic 1 - Actor-neutral Time Capture & Activity Governance
-FR2: Epic 1 - Actor-neutral Time Capture & Activity Governance
-FR3: Epic 1 - Actor-neutral Time Capture & Activity Governance
+FR1: Epic 1 - Trusted Time Capture & Activity Governance
+FR2: Epic 1 - Trusted Time Capture & Activity Governance
+FR3: Epic 1 - Trusted Time Capture & Activity Governance
 FR4: Epic 2 - Submission, Approval, Period Review & Corrections
 FR5: Epic 2 - Submission, Approval, Period Review & Corrections
 FR6: Epic 2 - Submission, Approval, Period Review & Corrections
 FR7: Epic 2 - Submission, Approval, Period Review & Corrections
 FR8: Epic 2 - Submission, Approval, Period Review & Corrections
 FR9: Epic 2 - Submission, Approval, Period Review & Corrections
-FR10: Epic 1 - Actor-neutral Time Capture & Activity Governance
-FR11: Epic 1 - Actor-neutral Time Capture & Activity Governance
-FR12: Epic 1 - Actor-neutral Time Capture & Activity Governance
+FR10: Epic 1 - Trusted Time Capture & Activity Governance
+FR11: Epic 1 - Trusted Time Capture & Activity Governance
+FR12: Epic 1 - Trusted Time Capture & Activity Governance
 FR13: Epic 3 - External Contributor Confirmation
 FR14: Epic 3 - External Contributor Confirmation
-FR15: Epic 1 - Actor-neutral Time Capture & Activity Governance
-FR16: Epic 4 - Operational Reporting, AI Effort Insight, Approved Ledger & Finance Export
-FR17: Epic 4 - Operational Reporting, AI Effort Insight, Approved Ledger & Finance Export
-FR18: Epic 4 - Operational Reporting, AI Effort Insight, Approved Ledger & Finance Export
-FR19: Epic 4 - Operational Reporting, AI Effort Insight, Approved Ledger & Finance Export
-FR20: Epic 4 - Operational Reporting, AI Effort Insight, Approved Ledger & Finance Export
-FR21: Epic 1 - Actor-neutral Time Capture & Activity Governance
-FR22: Epic 1 - Actor-neutral Time Capture & Activity Governance
-FR23: Epic 1 - Actor-neutral Time Capture & Activity Governance
+FR15: Epic 1 - Trusted Time Capture & Activity Governance
+FR16: Epic 4 - Approved Time Ledger, Reporting & Finance Export
+FR17: Epic 4 - Approved Time Ledger, Reporting & Finance Export
+FR18: Epic 4 - Approved Time Ledger, Reporting & Finance Export
+FR19: Epic 4 - Approved Time Ledger, Reporting & Finance Export
+FR20: Epic 4 - Approved Time Ledger, Reporting & Finance Export
+FR21: Epic 1 - Trusted Time Capture & Activity Governance
+FR22: Epic 1 - Trusted Time Capture & Activity Governance
+FR23: Epic 1 - Trusted Time Capture & Activity Governance
 
 ## Epic List
 
-### Epic 1: Trusted Actor-Neutral Time Capture & Activity Governance
+### Epic 1: Trusted Time Capture & Activity Governance
 
 Users can record auditable time against Project or Work references for internal, external, and AI contributors, with Activity Type catalogs, Party attribution, reference validation, EventStore persistence, and module boundary enforcement in place.
 
@@ -260,17 +270,19 @@ External contributors can submit or confirm scoped time without becoming full in
 
 **FRs covered:** FR13, FR14
 
-### Epic 4: Operational Reporting, AI Effort Insight, Approved Ledger & Finance Export
+### Epic 4: Approved Time Ledger, Reporting & Finance Export
 
 Authorized users can query time entries, report actual time by Project and Work, inspect AI effort separately from human/external effort, use a rebuildable Approved-Time Ledger, and export approved billable evidence with stable IDs and correction lineage.
 
 **FRs covered:** FR16, FR17, FR18, FR19, FR20
 
-## Epic 1: Trusted Actor-Neutral Time Capture & Activity Governance
+## Epic 1: Trusted Time Capture & Activity Governance
 
 Users can record auditable time against Project or Work references for internal, external, and AI contributors, with Activity Type catalogs, Party attribution, reference validation, EventStore persistence, and module boundary enforcement in place.
 
-### Story 1.1: Scaffold Trusted Timesheets Module Shell
+### Story 1.1: Set Up Initial Timesheets Project from Hexalith Module Scaffold
+
+**Requirements:** FR21, FR22, FR23
 
 As a Hexalith builder,
 I want a Timesheets module shell that follows Hexalith architecture, build, package, and test conventions,
@@ -313,12 +325,127 @@ So that all future time-capture stories can be implemented on a stable EventStor
 **Then** structured logs include correlation-safe metadata only
 **And** comments, command bodies, event payloads, personal data, secrets, and magic-link tokens are not logged.
 
+**Given** command and query performance targets are launch-relevant
+**When** the initial test infrastructure is scaffolded
+**Then** it includes a place for performance evidence covering `500 ms p95` common command acknowledgements and `2s p95` common report queries
+**And** the harness is isolated so later stories can add realistic tenant/project/period data without slowing the fast unit baseline.
+
 **Given** the scaffold is complete
 **When** restore, build, and the initial architecture/unit test lane are run
 **Then** the solution builds with warnings as errors
 **And** the test baseline passes or any infrastructure-dependent tests are clearly isolated from the fast baseline.
 
-### Story 1.2: Manage Tenant Activity Types
+### Story 1.2: Enforce Tenant and Resource Authorization Gates
+
+**Requirements:** FR2, FR12, FR21, FR22, FR23
+
+As a Hexalith security implementer,
+I want tenant and resource authorization gates in place before feature commands and queries expand,
+So that every future Timesheets action fails closed from the first executable slice.
+
+**Acceptance Criteria:**
+
+**Given** a Timesheets command, query, projection read, export request, or confirmation request enters the host
+**When** tenant, user, Project, Work, or Party authority cannot be resolved
+**Then** the request fails closed before aggregate load, command dispatch, projection disclosure, export, or magic-link disclosure
+**And** the denial does not reveal protected tenant, contributor, target, period, or entry details.
+
+**Given** a caller supplies tenant, user, or authorization context in a request body
+**When** authorization is evaluated
+**Then** caller-supplied server-controlled fields are treated as untrusted input
+**And** authority comes from host/server policy, Tenants, Projects, Works, Parties, and Timesheets policy sources.
+
+**Given** tenant/resource authorization tests run
+**When** they cover missing tenant, disabled tenant, unknown user, non-member, insufficient role, cross-tenant target IDs, stale projections, and unavailable sibling authority
+**Then** all unauthorized, stale, ambiguous, or unavailable cases fail closed.
+
+**Given** a write command is authorized
+**When** the command reaches domain handling
+**Then** EventStore remains the only persistence authority
+**And** the command does not copy Party personal data, Project state, Work lifecycle state, or Tenant membership state into Timesheets.
+
+**Given** UI actions are rendered for a user
+**When** the user lacks authority for capture, catalog changes, approval, correction, confirmation, report, ledger, or export actions
+**Then** FrontComposer/Fluent UI V5 surfaces hide or disable the action according to policy
+**And** copy remains specific enough to guide action without protected detail disclosure.
+
+### Story 1.3: Publish Time Capture API Contracts and FrontComposer Metadata
+
+**Requirements:** FR1, FR10, FR11, FR15, FR21, FR22, FR23
+
+As an API, SDK, or UI consumer,
+I want stable Timesheets capture and catalog contracts with generated UI metadata,
+So that integrations can record and manage time evidence without learning EventStore internals.
+
+**Acceptance Criteria:**
+
+**Given** capture and catalog commands, events, queries, value objects, and read models are published
+**When** consumers reference `Hexalith.Timesheets.Contracts`
+**Then** contracts expose Timesheets concepts only
+**And** EventStore envelope mechanics, aggregate internals, projection rebuild mechanics, and infrastructure types are hidden.
+
+**Given** a command or query accepts tenant, user, correlation, or authorization context
+**When** the public contract is reviewed
+**Then** server-controlled context is not accepted as caller authority
+**And** tenant/resource authority is resolved by host/server policy instead.
+
+**Given** API or SDK consumers use Timesheets capture contracts
+**When** they submit commands or queries
+**Then** stable DTOs support Time Entry capture, Activity Type catalog management, AI metrics, and Time Entry evidence reads
+**And** feature-specific metadata can be extended by later stories without breaking additive contract evolution.
+
+**Given** FrontComposer metadata foundations are generated or registered for capture and catalog workflows
+**When** internal UI surfaces are composed
+**Then** they use FrontComposer command/projection patterns and Fluent UI V5-compatible metadata
+**And** feature stories remain responsible for their own detailed UI fields, validation states, and workflow-specific metadata.
+
+**Given** contract and metadata tests run
+**When** package boundary, consumer-driven contract, and UI conformance checks execute
+**Then** they prove Contracts remains infrastructure-free, no inline package versions are added, Fluent UI V4 components are not introduced, and public metadata smoke tests pass.
+
+**Given** API documentation or OpenAPI artifacts are produced
+**When** consumers inspect the public surface
+**Then** docs describe Timesheets commands, queries, states, and validation outcomes
+**And** they do not expose EventStore internals or imply Timesheets owns Party, Project, Work, Tenant, invoice, payroll, rate, or revenue state.
+
+### Story 1.4: Establish Evidence Retention and Comment Sensitivity Policy
+
+**Requirements:** FR3, FR21, FR23
+
+As a compliance-minded tenant operator,
+I want explicit retention and comment sensitivity policy for time evidence,
+So that Time Entries, comments, exports, and confirmation metadata are handled consistently before trusted capture expands.
+
+**Acceptance Criteria:**
+
+**Given** Timesheets stores Time Entry evidence, comments, export records, and magic-link confirmation metadata
+**When** policy defaults are configured
+**Then** retention categories and default retention behavior are documented in configuration and public guidance
+**And** unresolved legal-hold or tenant-specific overrides are visible as launch-readiness gaps rather than hidden assumptions.
+
+**Given** comments may contain customer/private data
+**When** a Time Entry, correction, rejection, or export includes comments
+**Then** comment sensitivity rules define where comments may be displayed, exported, retained, redacted, or excluded
+**And** the rules do not copy Party personal data or sibling-owned Project/Work state into Timesheets.
+
+**Given** logs, traces, support diagnostics, projections, and exports are produced
+**When** they include operational metadata
+**Then** comments, event payloads, command bodies, personal data, token values, and secrets remain excluded unless an explicitly authorized export policy allows comment fields
+**And** redaction/logging tests prove the exclusion.
+
+**Given** retention or comment policy is missing for a trust-bearing action
+**When** approval, correction, magic-link confirmation, or export would depend on that policy
+**Then** the action is blocked or marked not launch-ready according to configured policy
+**And** users receive consequence-aware copy without protected detail leakage.
+
+**Given** policy information appears in UI
+**When** contributors, approvers, or finance users encounter comments or exports
+**Then** FrontComposer/Fluent UI V5 surfaces use message bars, field help, or export review text to explain the relevant policy
+**And** the copy avoids invoice, payroll, rate, tax, and revenue-recognition ownership language.
+
+### Story 1.5: Configure Tenant Activity Types
+
+**Requirements:** FR10
 
 As an authorized tenant operator,
 I want to define and maintain tenant-level Activity Types,
@@ -355,7 +482,9 @@ So that contributors can classify time consistently without rewriting historical
 **When** the catalog is displayed
 **Then** it uses FrontComposer/Fluent UI V5 surfaces with a dense grid or projection view, visible status badges, keyboard reachable commands, and no color-only state.
 
-### Story 1.3: Manage Project Activity Types
+### Story 1.6: Configure Project Activity Types
+
+**Requirements:** FR2, FR11
 
 As an authorized project operator,
 I want to define project-scoped Activity Types,
@@ -392,7 +521,9 @@ So that project-specific work can be categorized without copying Project state i
 **When** users filter or inspect project-scoped entries
 **Then** the surface uses FrontComposer/Fluent UI V5 patterns, shows scope and active state text, preserves filters during drill-in/back navigation, and remains keyboard accessible.
 
-### Story 1.4: Record Draft Time Entry Against Project or Work
+### Story 1.7: Record Draft Time Entry Against Project or Work
+
+**Requirements:** FR1, FR2, FR12, FR21
 
 As a contributor,
 I want to record draft time against exactly one Project or Work reference,
@@ -434,7 +565,9 @@ So that my work evidence is captured early with the right contributor, activity,
 **Then** logs include correlation-safe metadata only
 **And** comments, command bodies, event payloads, personal data, target names, and secrets are not logged.
 
-### Story 1.5: Preserve and Display Time Entry Evidence
+### Story 1.8: Display Time Entry Evidence from Read Models
+
+**Requirements:** FR3, FR12, FR21, FR23
 
 As a contributor or reviewer,
 I want to view recorded Time Entry evidence and how it was produced,
@@ -471,7 +604,9 @@ So that I can trust the entry without assuming Timesheets owns sibling module da
 **Then** the request fails closed with no protected identifiers or sibling-owned data disclosed
 **And** the denial is covered by adversarial tenant-isolation tests.
 
-### Story 1.6: Capture AI Effort Metrics
+### Story 1.9: Project AI-Assisted Time Capture Metrics
+
+**Requirements:** FR12, FR15
 
 As an AI agent operator,
 I want AI-agent Time Entries to capture wall-clock, runtime, billable effort, and token metrics separately,
@@ -509,48 +644,13 @@ So that automation effort is visible without converting tokens or runtime into h
 **Then** logs do not include token values, prompts, responses, command bodies, comments, secrets, or personal data
 **And** only correlation-safe operational metadata is recorded.
 
-### Story 1.7: Publish Capture Contracts and FrontComposer Metadata
-
-As an API, SDK, or UI consumer,
-I want stable Timesheets capture and catalog contracts with generated UI metadata,
-So that integrations can record and manage time evidence without learning EventStore internals.
-
-**Acceptance Criteria:**
-
-**Given** capture and catalog commands, events, queries, value objects, and read models are published
-**When** consumers reference `Hexalith.Timesheets.Contracts`
-**Then** contracts expose Timesheets concepts only
-**And** EventStore envelope mechanics, aggregate internals, projection rebuild mechanics, and infrastructure types are hidden.
-
-**Given** a command or query accepts tenant, user, correlation, or authorization context
-**When** the public contract is reviewed
-**Then** server-controlled context is not accepted as caller authority
-**And** tenant/resource authority is resolved by host/server policy instead.
-
-**Given** API or SDK consumers use Timesheets capture contracts
-**When** they submit commands or queries
-**Then** stable DTOs support Time Entry capture, Activity Type catalog management, AI metrics, and Time Entry evidence reads
-**And** contract evolution remains additive and serialization-tolerant.
-
-**Given** FrontComposer metadata is generated or registered for capture and catalog workflows
-**When** internal UI surfaces are composed
-**Then** they use FrontComposer command/projection patterns and Fluent UI V5-compatible metadata
-**And** no bespoke parallel portal or raw HTML-first component model is required.
-
-**Given** contract and metadata tests run
-**When** package boundary and UI conformance checks execute
-**Then** they prove Contracts remains infrastructure-free, no inline package versions are added, Fluent UI V4 components are not introduced, and generated surfaces expose required validation/status/freshness fields.
-
-**Given** API documentation or OpenAPI artifacts are produced
-**When** consumers inspect the public surface
-**Then** docs describe Timesheets commands, queries, states, and validation outcomes
-**And** they do not expose EventStore internals or imply Timesheets owns Party, Project, Work, Tenant, invoice, payroll, rate, or revenue state.
-
 ## Epic 2: Submission, Approval, Period Review & Corrections
 
 Contributors can submit entries and periods; approvers can approve or reject entries and periods; approved entries are locked from direct edit; corrections preserve evidence and lineage.
 
 ### Story 2.1: Submit Draft Time Entries for Approval
+
+**Requirements:** FR4
 
 As a contributor,
 I want to submit draft Time Entries for approval,
@@ -583,7 +683,48 @@ So that recorded effort can move from private capture into reviewable evidence.
 **Then** FrontComposer/Fluent UI V5 surfaces show entry status, blocking fields, projection freshness, and persistent message-bar state where needed
 **And** entered values and filters remain available after an interrupted command.
 
-### Story 2.2: Approve or Reject Submitted Time Entries
+### Story 2.2: Enforce Timesheet Approval Authority Policy
+
+**Requirements:** FR5, FR7, FR9
+
+As a tenant or project governance owner,
+I want Timesheets to resolve who can approve which entries and periods before review actions occur,
+So that approval decisions fail closed and follow a clear policy rather than ad hoc role checks.
+
+**Acceptance Criteria:**
+
+**Given** tenant admins, project managers, work owners, finance reviewers, and contributors may overlap
+**When** approver authority is evaluated
+**Then** Timesheets applies an explicit authority policy with precedence rules for entry approval, period approval, rejection, correction, and export eligibility
+**And** the authority source used for a decision is recorded where approval evidence requires it.
+
+**Given** self-approval is denied by default
+**When** a contributor attempts to approve their own entry or period
+**Then** the command is rejected unless policy explicitly allows self-approval for that context
+**And** the rejection is auditable without leaking protected cross-tenant detail.
+
+**Given** Tenants, Project, or Work authority projections are stale, unavailable, ambiguous, or contradictory
+**When** a trust-bearing approval decision is attempted
+**Then** the decision fails closed
+**And** the UI exposes unresolved authority or stale evidence as a blocking state.
+
+**Given** approver authority policy changes
+**When** the policy is configured or updated
+**Then** future approval decisions use the new policy
+**And** previously recorded approval evidence remains attributable to the policy/source in effect at decision time.
+
+**Given** approval surfaces display available actions
+**When** the current user lacks authority
+**Then** approve/reject controls are disabled or hidden according to policy
+**And** copy is specific enough to guide action without exposing protected identifiers or sibling-owned state.
+
+**Given** authority resolution tests run
+**When** they cover tenant admin, project approver, work owner, finance reviewer, contributor self-approval, missing user, disabled tenant, stale projection, and cross-tenant attempts
+**Then** all unauthorized, stale, or ambiguous cases fail closed.
+
+### Story 2.3: Approve or Reject Submitted Time Entries
+
+**Requirements:** FR5, FR9
 
 As an approver,
 I want to approve or reject submitted Time Entries with policy-governed reasons,
@@ -615,11 +756,48 @@ So that reviewed effort becomes trusted evidence or returns to the contributor f
 **When** users review the entry
 **Then** status badges include text, projection freshness is visible, dialogs focus required fields, and keyboard users can approve or reject without hover-only controls.
 
-### Story 2.3: Lock Approved Entries and Add Corrections
+### Story 2.4: Correct Rejected Entries for Resubmission
+
+**Requirements:** FR3, FR4, FR8
+
+As a contributor,
+I want to correct rejected entries after review,
+So that specific problems can be resolved without losing the original rejection evidence.
+
+**Acceptance Criteria:**
+
+**Given** a submitted Time Entry is Rejected
+**When** the contributor opens the correction flow
+**Then** the prior values and rejection reason are visible where authorized
+**And** the correction is saved as an additive EventStore-backed event, not a direct edit.
+
+**Given** a rejected entry correction is submitted
+**When** the correction changes date, duration, target reference, Activity Type, comment, Billable Flag, Contributor, or AI metrics
+**Then** original and corrected values are linked in lineage
+**And** the entry can be resubmitted according to policy without deleting the rejection reason.
+
+**Given** a correction would cross tenant boundaries, use an inactive/disallowed Activity Type, or reference unverifiable Project/Work/Party data for a trust-bearing change
+**When** the command is handled
+**Then** it fails closed
+**And** no partial correction is persisted.
+
+**Given** correction events replay into read models
+**When** projections rebuild
+**Then** rejected, corrected, and resubmitted states remain deterministic and idempotent
+**And** projection freshness is visible wherever correction state is displayed.
+
+**Given** the correction UI is displayed
+**When** users inspect the rejected entry and correction form
+**Then** FrontComposer/Fluent UI V5 components show rejection reason, correction lineage, field validation, consequence-aware copy, labels, focus order, and keyboard-accessible actions
+**And** no copy implies approved evidence can be directly edited.
+
+### Story 2.5: Enforce Approved Entry Locking
+
+**Requirements:** FR6, FR8
 
 As a contributor or reviewer,
-I want approved entries to be locked from direct edits and changed only through additive corrections,
-So that approved evidence remains trustworthy while mistakes can still be fixed.
+I want approved entries to be locked from direct edits,
+So that approved evidence remains trustworthy once it has become review evidence.
 
 **Acceptance Criteria:**
 
@@ -628,9 +806,34 @@ So that approved evidence remains trustworthy while mistakes can still be fixed.
 **Then** the command is rejected as a domain outcome
 **And** no approved event history is rewritten.
 
+**Given** an approved entry is included in a period approval or ledger-eligible state
+**When** lock state is evaluated
+**Then** the lock decision comes from EventStore-backed domain state and approved entry events
+**And** the Timesheet Period aggregate does not duplicate entry state as authority.
+
+**Given** lock enforcement tests run
+**When** they cover Draft, Submitted, Rejected, Approved, Corrected, Superseded, duplicate command, concurrent command, and cross-tenant attempts
+**Then** only allowed transitions succeed
+**And** invalid transitions produce typed domain rejections.
+
+**Given** lock state is displayed in Time Entry Detail, period review, reports, or ledger reads
+**When** projections are stale, rebuilding, degraded, or unavailable
+**Then** lock state is shown with projection freshness
+**And** stale read models are not used as write authority.
+
+### Story 2.6: Add Approved Entry Corrections
+
+**Requirements:** FR3, FR6, FR8
+
+As an authorized contributor or reviewer,
+I want approved entries to be corrected through additive events,
+So that mistakes can be fixed without editing approved evidence in place.
+
+**Acceptance Criteria:**
+
 **Given** an Approved Time Entry needs a correction
 **When** an authorized user adds a correction with corrected values and a reason where required
-**Then** a compensating correction event is persisted
+**Then** a compensating correction event is persisted through EventStore
 **And** original values, corrected values, actor, timestamp, reason, and lineage to the affected entry are preserved.
 
 **Given** a correction supersedes prior effective values
@@ -648,7 +851,9 @@ So that approved evidence remains trustworthy while mistakes can still be fixed.
 **Then** the effective read model remains idempotent
 **And** projection freshness reflects rebuilding or degraded states when trust is limited.
 
-### Story 2.4: Submit Timesheet Periods
+### Story 2.7: Submit Timesheet Periods
+
+**Requirements:** FR4, FR7, FR8
 
 As a contributor,
 I want to submit a weekly or monthly Timesheet Period containing my entries,
@@ -681,7 +886,9 @@ So that my work can be reviewed as a coherent period without losing entry-level 
 **Then** period state is shown separately from entry states
 **And** status badges, filters, required-field markers, and keyboard navigation remain accessible.
 
-### Story 2.5: Approve or Reject Timesheet Periods
+### Story 2.8: Approve or Reject Timesheet Periods
+
+**Requirements:** FR5, FR7, FR8, FR9
 
 As an approver,
 I want to approve or reject a submitted Timesheet Period while preserving entry-level decisions,
@@ -714,44 +921,13 @@ So that grouped review evidence does not flatten mixed entry states.
 **Then** period summary, entry state, and lock state remain consistent and idempotent
 **And** rebuilding/freshness status is available to approval and review surfaces.
 
-### Story 2.6: Correct Rejected Entries in Submitted Periods
-
-As a contributor,
-I want to correct rejected entries from a submitted period without rebuilding the whole period,
-So that approval evidence remains intact while specific problems are resolved.
-
-**Acceptance Criteria:**
-
-**Given** an entry in a submitted Timesheet Period is Rejected
-**When** the contributor opens the correction flow
-**Then** the prior values and rejection reason are visible where authorized
-**And** the correction is saved as an additive event, not a direct edit.
-
-**Given** a corrected entry belongs to a submitted or approved period
-**When** the correction is submitted
-**Then** the period shows a pending correction or mixed state as appropriate
-**And** the period history is not silently rewritten.
-
-**Given** the correction changes date, duration, target reference, Activity Type, comment, Billable Flag, Contributor, or AI metrics
-**When** the command is accepted
-**Then** original and corrected values are linked in lineage
-**And** downstream projections can include or exclude superseded values through query options.
-
-**Given** a correction would cross tenant boundaries, use an inactive/disallowed Activity Type, or reference unverifiable Project/Work/Party data for a trust-bearing change
-**When** the command is handled
-**Then** it fails closed
-**And** no partial correction is persisted.
-
-**Given** the correction UI is displayed
-**When** users inspect the rejected entry and correction form
-**Then** FrontComposer/Fluent UI V5 components show rejection reason, correction lineage, field validation, consequence-aware copy, and accessible focus order
-**And** no copy implies approved evidence can be directly edited.
-
 ## Epic 3: External Contributor Confirmation
 
 External contributors can submit or confirm scoped time without becoming full internal users, using API-only submission and no-disclosure Magic-Link Confirmation.
 
-### Story 3.1: Submit External Contributor Time Through API
+### Story 3.1: Expose External Contributor Confirmation API
+
+**Requirements:** FR12, FR13
 
 As an external contributor integration,
 I want to submit or confirm Time Entries through an API-only surface,
@@ -774,6 +950,11 @@ So that external effort can enter the same approval workflow without granting fu
 **Then** the entry shows external contributor category, source metadata, Party ID, target reference, Activity Type, billable flag, and approval state
 **And** it follows the same approval, rejection, correction, locking, and audit rules as internal entries.
 
+**Given** an external contributor confirms time through the API
+**When** the confirmation is accepted
+**Then** confirmation is recorded as contributor evidence, not approval
+**And** approval still requires the configured Timesheets approval workflow.
+
 **Given** external API requests are retried or duplicated
 **When** idempotency context matches a prior accepted command
 **Then** the system avoids duplicate Time Entries or duplicate submitted evidence
@@ -785,6 +966,8 @@ So that external effort can enter the same approval workflow without granting fu
 **And** comments, command bodies, personal data, token values, target names, and protected identifiers are not logged.
 
 ### Story 3.2: Issue Scoped Magic-Link Confirmation Capabilities
+
+**Requirements:** FR14
 
 As an authorized internal user,
 I want to issue a scoped Magic-Link Confirmation capability for one external contribution,
@@ -816,10 +999,12 @@ So that an external contributor can confirm or adjust proposed time without broa
 **When** the internal UI displays link state
 **Then** it uses FrontComposer/Fluent UI V5 status badges with text, expiry state, audit metadata, and no raw token values.
 
-### Story 3.3: Confirm or Adjust Time Through Magic Link
+### Story 3.3: Confirm Time Through Magic Link
+
+**Requirements:** FR13, FR14
 
 As an external contributor,
-I want to confirm or adjust a scoped proposed Time Entry from a magic link,
+I want to confirm a scoped proposed Time Entry from a magic link,
 So that my effort can be attributed and reviewed without internal account access.
 
 **Acceptance Criteria:**
@@ -834,10 +1019,10 @@ So that my effort can be attributed and reviewed without internal account access
 **Then** the entry is attributed to the scoped Contributor Party
 **And** confirmation use, timestamp, source, and resulting Time Entry state are recorded through EventStore-backed audit events.
 
-**Given** the external contributor adjusts allowed fields
-**When** they submit adjusted time
-**Then** only allowed fields are accepted
-**And** the adjustment follows the same validation, approval, correction, target-reference, and tenant-isolation rules as other Time Entry capture.
+**Given** the external contributor confirms scoped time
+**When** the confirmation succeeds
+**Then** confirmation is recorded as contributor evidence, not approval
+**And** the Time Entry still enters the configured Timesheets approval workflow.
 
 **Given** the confirmation has been accepted
 **When** the same token is used again
@@ -845,10 +1030,47 @@ So that my effort can be attributed and reviewed without internal account access
 **And** no previous confirmation details are shown.
 
 **Given** the external confirmation page is used on a phone viewport
-**When** the contributor reviews, confirms, or adjusts the proposed entry
+**When** the contributor reviews or confirms the proposed entry
 **Then** the page remains fully usable with Fluent UI V5 components, clear duration units, accessible focus order, keyboard/touch reachable controls, and no internal shell navigation.
 
-### Story 3.4: Protect Invalid Magic-Link States From Disclosure
+### Story 3.4: Adjust Time Through Magic Link
+
+**Requirements:** FR13, FR14
+
+As an external contributor,
+I want to adjust allowed fields in a scoped magic-link confirmation,
+So that proposed time can be corrected before it enters approval without granting internal access.
+
+**Acceptance Criteria:**
+
+**Given** a magic-link token is valid, unexpired, unused, tenant-scoped, and allows adjustment
+**When** the external contributor opens the adjustment flow
+**Then** only policy-allowed fields are editable
+**And** internal-only fields, approval state, tenant context, and broader Timesheets navigation remain unavailable.
+
+**Given** the external contributor submits adjusted time
+**When** the command is handled
+**Then** the adjustment follows the same EventStore-backed validation, target-reference, Activity Type, tenant-isolation, and audit rules as Time Entry capture
+**And** confirmation remains distinct from approval.
+
+**Given** an adjusted value uses an invalid duration, disallowed Activity Type, unauthorized target, or cross-tenant reference
+**When** the adjustment command is handled
+**Then** the command fails closed
+**And** no partial Time Entry, confirmation use, or protected details are persisted.
+
+**Given** adjustment telemetry and audit evidence are recorded
+**When** the adjustment succeeds or fails
+**Then** token values, decoded capability material, comments beyond policy, command bodies, personal data, and target names are not logged
+**And** only hashed/scoped references and outcome categories are available where policy allows.
+
+**Given** the adjustment page is used on phone or keyboard-only navigation
+**When** the contributor changes allowed fields and submits
+**Then** Fluent UI V5 components provide labels, validation messages, focus order, clear units, and accessible action controls
+**And** no hover-only or color-only state is introduced.
+
+### Story 3.5: Reject Invalid Confirmation Links Without Resource Disclosure
+
+**Requirements:** FR14
 
 As an external contributor or support operator,
 I want invalid, expired, used, revoked, unauthorized, or unknown magic links to reveal nothing sensitive,
@@ -877,15 +1099,17 @@ So that external confirmation cannot be used to probe tenant, Project, Work, Par
 **And** only hashed/scoped references and outcome categories are available where policy allows.
 
 **Given** no-disclosure behavior is tested
-**When** test cases cover expired, used, revoked, unauthorized, malformed, unknown, cross-tenant, and repeated tokens
+**When** test cases cover expired, used, revoked, unauthorized, malformed, unknown, cross-tenant, wrong-recipient, repeated-token, and enumeration attempts
 **Then** all cases produce equivalent external disclosure behavior
 **And** only authorized internal audit views can distinguish failure categories.
 
-## Epic 4: Operational Reporting, AI Effort Insight, Approved Ledger & Finance Export
+## Epic 4: Approved Time Ledger, Reporting & Finance Export
 
 Authorized users can query time entries, report actual time by Project and Work, inspect AI effort separately from human/external effort, use a rebuildable Approved-Time Ledger, and export approved billable evidence with stable IDs and correction lineage.
 
-### Story 4.1: Query Time Entries by Operational Dimensions
+### Story 4.1: Query Time Entries from Rebuildable Read Models
+
+**Requirements:** FR16
 
 As an authorized operational user,
 I want to query Time Entries by contributor, target, period, Activity Type, billable flag, approval state, and source type,
@@ -916,8 +1140,50 @@ So that I can find and review the effort evidence relevant to my work.
 **Given** the operational query UI is displayed
 **When** users filter, sort, page, drill into detail, and navigate back
 **Then** it uses FrontComposerProjectionView or FluentDataGrid, preserves filters, provides keyboard traversal, and shows status badges with text.
+**And** it does not expose raw EventStore stream browsing as a Timesheets UI path.
 
-### Story 4.2: Produce Project and Work Actual-Time Reports
+### Story 4.2: Project Approved Time Ledger from Domain Events
+
+**Requirements:** FR18, FR19
+
+As a finance or audit consumer,
+I want an Approved-Time Ledger projection with approval metadata and correction lineage,
+So that approved effort can be used as trusted downstream evidence without becoming separate authoritative storage.
+
+**Acceptance Criteria:**
+
+**Given** Time Entries are approved
+**When** approval events are projected
+**Then** the Approved-Time Ledger includes Time Entry ID, Contributor Party ID, Target Reference, date, duration, Activity Type, Billable Flag, approval metadata, correction lineage, and comment where policy allows
+**And** EventStore remains the source of authority.
+
+**Given** an approved entry is corrected or superseded
+**When** ledger projections rebuild
+**Then** original and corrected/superseded evidence remains visible with lineage
+**And** query options can include or exclude superseded entries.
+
+**Given** duplicate, replayed, or rebuilt event streams are processed
+**When** the Approved-Time Ledger projection is regenerated
+**Then** the ledger output is deterministic and idempotent
+**And** it does not accumulate duplicate rows.
+
+**Given** ledger reads depend on projection state
+**When** the projection is stale, rebuilding, degraded, or unavailable
+**Then** the API and UI expose freshness/trust metadata
+**And** finance export actions cannot treat stale data as fresh unless explicitly allowed by policy.
+
+**Given** unauthorized or cross-tenant ledger access is attempted
+**When** the ledger is queried
+**Then** access fails closed or filters according to policy
+**And** no protected contributor, target, comment, or ledger details are disclosed.
+
+**Given** the Approved-Time Ledger UI is displayed
+**When** users review approved evidence
+**Then** FrontComposer/Fluent UI V5 surfaces show stable IDs, approval metadata, billable status, comments where allowed, correction lineage, filters, projection freshness, keyboard flow, labels, and focus management.
+
+### Story 4.3: Produce Project and Work Actual-Time Reports
+
+**Requirements:** FR16, FR17
 
 As a project or work reviewer,
 I want actual-time reports by Project and Work item,
@@ -945,6 +1211,11 @@ So that I can compare effort against operational expectations without Timesheets
 **Then** rollups remain idempotent and deterministic
 **And** freshness states indicate rebuilding or unavailable data where appropriate.
 
+**Given** approved ledger data is available
+**When** actual-time reports need approved evidence
+**Then** reports consume rebuildable read models or approved-ledger projections
+**And** they do not re-create approval authority from raw entry state.
+
 **Given** report users interact with filter-heavy surfaces
 **When** they change filters or switch related report views
 **Then** FrontComposer/Fluent UI V5 components provide FilterBar, FluentDataGrid, status badges, related tabs where appropriate, and accessible keyboard/focus behavior.
@@ -954,44 +1225,13 @@ So that I can compare effort against operational expectations without Timesheets
 **Then** common report queries target 2 seconds p95 according to launch sizing assumptions
 **And** deviations are visible as quality evidence rather than hidden implementation details.
 
-### Story 4.3: Maintain Approved-Time Ledger Projection
-
-As a finance or audit consumer,
-I want an Approved-Time Ledger projection with approval metadata and correction lineage,
-So that approved effort can be used as trusted downstream evidence without becoming separate authoritative storage.
-
-**Acceptance Criteria:**
-
-**Given** Time Entries are approved
-**When** approval events are projected
-**Then** the Approved-Time Ledger includes Time Entry ID, Contributor Party ID, Target Reference, date, duration, Activity Type, Billable Flag, approval metadata, correction lineage, and comment where policy allows
-**And** EventStore remains the source of authority.
-
-**Given** an approved entry is corrected or superseded
-**When** ledger projections rebuild
-**Then** original and corrected/superseded evidence remains visible with lineage
-**And** query options can include or exclude superseded entries.
-
-**Given** duplicate, replayed, or rebuilt event streams are processed
-**When** the Approved-Time Ledger projection is regenerated
-**Then** the ledger output is deterministic and idempotent
-**And** it does not accumulate duplicate rows.
-
-**Given** ledger reads depend on projection state
-**When** the projection is stale, rebuilding, degraded, or unavailable
-**Then** the API and UI expose freshness/trust metadata
-**And** finance/export actions cannot treat stale data as fresh unless explicitly allowed by policy.
-
-**Given** unauthorized or cross-tenant ledger access is attempted
-**When** the ledger is queried
-**Then** access fails closed or filters according to policy
-**And** no protected contributor, target, comment, or ledger details are disclosed.
-
-**Given** the Approved-Time Ledger UI is displayed
-**When** users review approved evidence
-**Then** FrontComposer/Fluent UI V5 surfaces show stable IDs, approval metadata, billable status, comments where allowed, correction lineage, filters, and projection freshness.
+**Given** report contract tests run
+**When** seeded Project and Work report scenarios are compared
+**Then** stable ordering, period boundary behavior, redaction rules, and selected report fields are verified by deterministic fixtures or golden files.
 
 ### Story 4.4: Surface AI Effort Reporting
+
+**Requirements:** FR15, FR20
 
 As an AI agent operator or project reviewer,
 I want AI effort reported separately from human and external effort,
@@ -1024,7 +1264,9 @@ So that automation cost and runtime are visible without implying all units are i
 **Then** FrontComposer/Fluent UI V5 surfaces use clear labels, status badges, accessible tables, and explicit unavailable states
 **And** AI insight is not presented as approval, payroll, invoicing, or finance authority.
 
-### Story 4.5: Export Approved Billable Evidence
+### Story 4.5: Generate Finance Export from Approved Ledger
+
+**Requirements:** FR18, FR19
 
 As a finance or accounting consumer,
 I want to export approved billable time with stable IDs and correction lineage,
@@ -1052,12 +1294,86 @@ So that downstream billing workflows receive trustworthy evidence without Timesh
 **Then** export is disabled or blocked with persistent explanation
 **And** no empty or misleading finance evidence file is produced.
 
-**Given** the export is generated
-**When** contract and golden-file tests run
-**Then** output schema, stable field names, time-zone handling, correction lineage, billable filtering, and deterministic regeneration are verified
-**And** no rates, invoice totals, taxes, payroll values, revenue-recognition data, raw EventStore envelopes, or copied sibling-owned state are included.
+**Given** export output is generated
+**When** rows are written
+**Then** ordering is deterministic across repeated exports with the same filters and source events
+**And** no raw EventStore envelopes, copied sibling-owned state, rates, invoice totals, taxes, payroll values, or revenue-recognition data are included.
 
 **Given** export UI is displayed
 **When** users review scope and confirm
 **Then** a FluentDialog summarizes filters, output scope, included evidence fields, freshness state, and what Timesheets will not calculate
 **And** copy avoids invoice, payroll, rate, tax, and revenue-recognition ownership language.
+
+### Story 4.6: Verify Finance Export Evidence and Audit Trail
+
+**Requirements:** FR18, FR19
+
+As a finance or audit reviewer,
+I want export evidence and audit records to be deterministic and verifiable,
+So that downstream reconciliation can trust the exported approved-time evidence.
+
+**Acceptance Criteria:**
+
+**Given** a finance export is requested
+**When** the export is accepted
+**Then** requester, filters, timestamp, correlation ID, freshness state, output scope, and export format/version are recorded as audit evidence
+**And** the audit evidence does not include secrets, raw tokens, command bodies, or copied sibling-owned state.
+
+**Given** the export is generated
+**When** contract and golden-file tests run
+**Then** output schema, stable field names, time-zone handling, correction lineage, billable filtering, and deterministic regeneration are verified
+**And** no rates, invoice totals, taxes, payroll values, revenue-recognition data, raw EventStore envelopes, or copied sibling-owned state are included.
+
+**Given** comments are included or excluded by export policy
+**When** export redaction checks run
+**Then** comment visibility follows the evidence retention and comment sensitivity policy
+**And** unauthorized comment fields are absent from export output and diagnostics.
+
+**Given** export filters include tenant-local dates or period boundaries
+**When** time-zone boundary tests run
+**Then** UTC audit instants and tenant-local period keys are handled consistently
+**And** edge cases around period boundaries are covered by golden files.
+
+### Story 4.7: Surface Timesheets Dashboard Overview
+
+**Requirements:** FR16, FR18, FR20
+
+As an internal Timesheets user,
+I want a dashboard that summarizes my current period, pending actions, approval workload, and reporting shortcuts,
+So that I can start common capture, review, and finance workflows from one operational surface.
+
+**Acceptance Criteria:**
+
+**Given** an internal user opens the Timesheets module
+**When** the dashboard loads inside `FrontComposerShell`
+**Then** it shows the user's current period status, pending corrections or submissions, approval workload where authorized, and shortcuts to operational reports and the Approved-Time Ledger
+**And** it does not introduce a parallel shell, marketing hero, decorative card-heavy landing page, or custom portal.
+
+**Given** the dashboard depends on projections for counts, period state, approval workload, or ledger freshness
+**When** any projection is stale, rebuilding, degraded, or unavailable
+**Then** the dashboard shows explicit freshness/status messaging
+**And** it does not present stale data as fresh decision authority.
+
+**Given** the dashboard composes status from existing projections
+**When** it renders current period, approval workload, report shortcuts, or ledger shortcuts
+**Then** it remains read-only aggregation over existing read models
+**And** it introduces no new approval logic, finance math, export calculations, or write authority.
+
+**Given** a user lacks approver or finance authority
+**When** the dashboard is rendered
+**Then** approval workload, ledger, and export actions are hidden or disabled according to policy
+**And** no protected tenant, contributor, Project, Work, or Time Entry details are disclosed.
+
+**Given** the dashboard has no current entries, approvals, or exportable ledger data
+**When** empty states are shown
+**Then** the page provides the single most relevant action, such as `Record time`, and avoids misleading finance/export affordances.
+
+**Given** users navigate from dashboard shortcuts to capture, period review, approvals, reports, or ledger
+**When** they drill in and return
+**Then** filters, period context, and projection status are preserved where applicable
+**And** navigation remains keyboard accessible.
+
+**Given** dashboard UI is tested
+**When** accessibility and conformance checks run
+**Then** FrontComposer/Fluent UI V5 components, status badges with text, message bars, focus order, and WCAG 2.2 AA behavior are verified
+**And** hover-only controls or color-only statuses are not introduced.
