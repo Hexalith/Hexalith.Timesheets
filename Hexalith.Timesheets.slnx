@@ -1,0 +1,19 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj" />
+    <Project Path="src/Hexalith.Timesheets.Client/Hexalith.Timesheets.Client.csproj" />
+    <Project Path="src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj" />
+    <Project Path="src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj" />
+    <Project Path="src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj" />
+    <Project Path="src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj" />
+    <Project Path="src/Hexalith.Timesheets.Testing/Hexalith.Timesheets.Testing.csproj" />
+    <Project Path="src/Hexalith.Timesheets/Hexalith.Timesheets.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj" />
+    <Project Path="tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj" />
+    <Project Path="tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj" />
+    <Project Path="tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj" />
+    <Project Path="tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj" />
+  </Folder>
+</Solution>

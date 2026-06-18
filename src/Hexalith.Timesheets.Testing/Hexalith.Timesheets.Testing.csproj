@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Reusable Timesheets builders, fakes, and test helpers.</Description>
+    <PackageTags>timesheets;testing;fakes;dotnet</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
+  </ItemGroup>
+</Project>

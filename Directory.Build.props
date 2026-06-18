@@ -1,0 +1,49 @@
+<Project>
+  <PropertyGroup>
+    <HexalithEventStoreRoot Condition="'$(HexalithEventStoreRoot)' == '' and Exists('$(MSBuildThisFileDirectory)Hexalith.EventStore\src\Hexalith.EventStore.Contracts')">$(MSBuildThisFileDirectory)Hexalith.EventStore</HexalithEventStoreRoot>
+    <HexalithTenantsRoot Condition="'$(HexalithTenantsRoot)' == '' and Exists('$(MSBuildThisFileDirectory)Hexalith.Tenants\src\Hexalith.Tenants.Contracts')">$(MSBuildThisFileDirectory)Hexalith.Tenants</HexalithTenantsRoot>
+    <HexalithPartiesRoot Condition="'$(HexalithPartiesRoot)' == '' and Exists('$(MSBuildThisFileDirectory)Hexalith.Parties\src\Hexalith.Parties.Contracts')">$(MSBuildThisFileDirectory)Hexalith.Parties</HexalithPartiesRoot>
+    <HexalithProjectsRoot Condition="'$(HexalithProjectsRoot)' == '' and Exists('$(MSBuildThisFileDirectory)Hexalith.Projects\src\Hexalith.Projects.Contracts')">$(MSBuildThisFileDirectory)Hexalith.Projects</HexalithProjectsRoot>
+    <HexalithWorksRoot Condition="'$(HexalithWorksRoot)' == '' and Exists('$(MSBuildThisFileDirectory)Hexalith.Works\src\Hexalith.Works.Contracts')">$(MSBuildThisFileDirectory)Hexalith.Works</HexalithWorksRoot>
+    <HexalithFrontComposerRoot Condition="'$(HexalithFrontComposerRoot)' == '' and Exists('$(MSBuildThisFileDirectory)Hexalith.FrontComposer\src\Hexalith.FrontComposer.Contracts')">$(MSBuildThisFileDirectory)Hexalith.FrontComposer</HexalithFrontComposerRoot>
+    <HexalithCommonsRoot Condition="'$(HexalithCommonsRoot)' == '' and Exists('$(MSBuildThisFileDirectory)Hexalith.Commons\src\libraries\Hexalith.Commons')">$(MSBuildThisFileDirectory)Hexalith.Commons</HexalithCommonsRoot>
+    <HexalithEventStoreRoot Condition="'$(HexalithEventStoreRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.EventStore\src\Hexalith.EventStore.Contracts')">$(MSBuildThisFileDirectory)..\Hexalith.EventStore</HexalithEventStoreRoot>
+    <HexalithTenantsRoot Condition="'$(HexalithTenantsRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.Tenants\src\Hexalith.Tenants.Contracts')">$(MSBuildThisFileDirectory)..\Hexalith.Tenants</HexalithTenantsRoot>
+    <HexalithPartiesRoot Condition="'$(HexalithPartiesRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.Parties\src\Hexalith.Parties.Contracts')">$(MSBuildThisFileDirectory)..\Hexalith.Parties</HexalithPartiesRoot>
+    <HexalithProjectsRoot Condition="'$(HexalithProjectsRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.Projects\src\Hexalith.Projects.Contracts')">$(MSBuildThisFileDirectory)..\Hexalith.Projects</HexalithProjectsRoot>
+    <HexalithWorksRoot Condition="'$(HexalithWorksRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.Works\src\Hexalith.Works.Contracts')">$(MSBuildThisFileDirectory)..\Hexalith.Works</HexalithWorksRoot>
+    <HexalithFrontComposerRoot Condition="'$(HexalithFrontComposerRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.FrontComposer\src\Hexalith.FrontComposer.Contracts')">$(MSBuildThisFileDirectory)..\Hexalith.FrontComposer</HexalithFrontComposerRoot>
+    <HexalithCommonsRoot Condition="'$(HexalithCommonsRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.Commons\src\libraries\Hexalith.Commons')">$(MSBuildThisFileDirectory)..\Hexalith.Commons</HexalithCommonsRoot>
+
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NuGetAudit>false</NuGetAudit>
+
+    <IsPackable>true</IsPackable>
+    <IsPublishable>false</IsPublishable>
+    <Authors>Hexalith Contributors</Authors>
+    <Company>Hexalith</Company>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Hexalith/Hexalith.Timesheets</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Hexalith/Hexalith.Timesheets</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Description>Hexalith Timesheets domain module for trusted time capture and approval.</Description>
+    <PackageTags>timesheets;time-capture;dapr;eventsourcing;cqrs;dotnet</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

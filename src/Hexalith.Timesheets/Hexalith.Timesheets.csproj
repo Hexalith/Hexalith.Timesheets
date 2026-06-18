@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>true</IsPublishable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
+    <ProjectReference Include="..\Hexalith.Timesheets.ServiceDefaults\Hexalith.Timesheets.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+</Project>

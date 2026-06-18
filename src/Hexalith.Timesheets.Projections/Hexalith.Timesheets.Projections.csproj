@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Timesheets rebuildable projection contracts and replay-safe helpers.</Description>
+    <PackageTags>timesheets;projections;read-models;eventsourcing;dotnet</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
+  </ItemGroup>
+</Project>

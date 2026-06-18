@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Adopter-facing Timesheets client abstractions.</Description>
+    <PackageTags>timesheets;client;time-capture;dotnet</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
+  </ItemGroup>
+</Project>
