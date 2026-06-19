@@ -143,6 +143,14 @@ public enum TimeEntryCorrectionState
     Superseded = 3
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ApprovedTimeLedgerRowState>))]
+public enum ApprovedTimeLedgerRowState
+{
+    Unknown = 0,
+    Current = 1,
+    Superseded = 2
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<TimeEntryLockState>))]
 public enum TimeEntryLockState
 {

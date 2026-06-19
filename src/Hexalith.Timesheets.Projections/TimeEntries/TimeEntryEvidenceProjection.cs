@@ -110,7 +110,7 @@ public sealed class TimeEntryEvidenceProjection
             recorded.ContributorCategory,
             recorded.AiMetrics,
             TimeEntryCorrectionState.None,
-            ToFreshnessMetadata(checkpoint))
+            ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint))
         {
             Comment = recorded.Comment,
             ExternalSource = recorded.ExternalSource,
@@ -128,7 +128,7 @@ public sealed class TimeEntryEvidenceProjection
         => current with
         {
             ApprovalState = submitted.ApprovalState,
-            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            ProjectionFreshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = TimeEntryLockEvidence.Unlocked,
@@ -149,7 +149,7 @@ public sealed class TimeEntryEvidenceProjection
                 confirmed.Contributor,
                 confirmed.ConfirmedAtUtc,
                 confirmed.Source),
-            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            ProjectionFreshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = current.LockEvidence,
@@ -181,7 +181,7 @@ public sealed class TimeEntryEvidenceProjection
                 adjusted.PreviousValues,
                 adjusted.AdjustedValues,
                 adjusted.Source),
-            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            ProjectionFreshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = TimeEntryLockEvidence.Unlocked,
@@ -208,7 +208,7 @@ public sealed class TimeEntryEvidenceProjection
                 approved.ApprovalScope,
                 approved.AuthoritySource,
                 null),
-            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            ProjectionFreshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = TimeEntryLockEvidence.Approved(
@@ -239,7 +239,7 @@ public sealed class TimeEntryEvidenceProjection
                 rejected.ApprovalScope,
                 rejected.AuthoritySource,
                 rejected.Reason),
-            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            ProjectionFreshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = TimeEntryLockEvidence.Unlocked,
@@ -277,7 +277,7 @@ public sealed class TimeEntryEvidenceProjection
                 corrected.PreviousValues,
                 corrected.CorrectedValues,
                 corrected.CorrectionState),
-            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            ProjectionFreshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = corrected.CorrectionState == TimeEntryCorrectionState.Superseded
@@ -319,7 +319,7 @@ public sealed class TimeEntryEvidenceProjection
                 corrected.CorrectedValues,
                 corrected.ApprovalState,
                 corrected.CorrectionState),
-            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            ProjectionFreshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = current.LockEvidence.LockState == TimeEntryLockState.LockedFromDirectEdit
@@ -340,19 +340,4 @@ public sealed class TimeEntryEvidenceProjection
             projectionEvent.SequenceNumber,
             TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents);
 
-    private static ProjectionFreshnessMetadata ToFreshnessMetadata(TimesheetsProjectionCheckpoint checkpoint)
-        => checkpoint.Freshness switch
-        {
-            ProjectionFreshness.Fresh => new(
-                ProjectionFreshnessState.Fresh,
-                checkpoint.SequenceNumber.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                null,
-                null),
-            ProjectionFreshness.Rebuilding => ProjectionFreshnessMetadata.Rebuilding(),
-            ProjectionFreshness.Stale => ProjectionFreshnessMetadata.Stale(
-                checkpoint.SequenceNumber.ToString(System.Globalization.CultureInfo.InvariantCulture)),
-            ProjectionFreshness.Unavailable => ProjectionFreshnessMetadata.Unavailable(),
-            ProjectionFreshness.Degraded => ProjectionFreshnessMetadata.Degraded(),
-            _ => new(ProjectionFreshnessState.Unknown, null, null, "Projection freshness is unknown.")
-        };
 }

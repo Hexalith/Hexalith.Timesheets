@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Server.ApprovalAuthority;
+using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -41,6 +42,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();
         services.TryAddSingleton<TimeEntryEvidenceListQueryService>();
+        services.TryAddSingleton<ApprovedTimeLedgerQueryService>();
         services.TryAddSingleton<TimesheetPeriodSubmissionCommandService>();
         services.TryAddSingleton<TimesheetPeriodApprovalCommandService>();
         services.TryAddSingleton<TimesheetPeriodSummaryQueryService>();
@@ -53,6 +55,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IContributorPartyValidator, DenyAllContributorPartyValidator>();
         services.TryAddSingleton<ITimeEntryEvidenceProjectionReader, UnavailableTimeEntryEvidenceProjectionReader>();
         services.TryAddSingleton<ITimeEntryEvidenceListProjectionReader, UnavailableTimeEntryEvidenceListProjectionReader>();
+        services.TryAddSingleton<IApprovedTimeLedgerProjectionReader, UnavailableApprovedTimeLedgerProjectionReader>();
         services.TryAddSingleton<ITimesheetPeriodSummaryProjectionReader, UnavailableTimesheetPeriodSummaryProjectionReader>();
         services.TryAddSingleton<UnavailableDisplayHydrationProvider>();
         services.TryAddSingleton<IPartyDisplayHydrationProvider>(static provider =>

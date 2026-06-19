@@ -1062,6 +1062,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
                 "timesheets.projection.time-entry-query",
+                "timesheets.projection.approved-time-ledger",
                 "timesheets.projection.my-timesheet-period",
                 "timesheets.projection.period-approval-detail",
                 "timesheets.approvals.queue",
@@ -1100,6 +1101,7 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(BillableState));
         badgeVocabularies.ShouldContain(nameof(ContributorCategory));
         badgeVocabularies.ShouldContain(nameof(TimeEntrySourceType));
+        badgeVocabularies.ShouldContain(nameof(ApprovedTimeLedgerRowState));
         badgeVocabularies.ShouldContain(nameof(ActivityTypeActiveState));
         badgeVocabularies.ShouldContain(nameof(TimeEntryCorrectionState));
         badgeVocabularies.ShouldContain(nameof(ProjectionFreshnessState));

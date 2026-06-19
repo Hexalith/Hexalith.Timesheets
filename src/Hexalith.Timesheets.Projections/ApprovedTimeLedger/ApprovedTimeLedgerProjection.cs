@@ -3,15 +3,16 @@ using System.Text;
 
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
-using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
+using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Projections.TimeEntries;
 
-namespace Hexalith.Timesheets.Projections.TimeEntries;
+namespace Hexalith.Timesheets.Projections.ApprovedTimeLedger;
 
-public sealed class TimeEntryEvidenceListProjection
+public sealed class ApprovedTimeLedgerProjection
 {
-    public const string ProjectionName = "time-entry-evidence-list";
+    public const string ProjectionName = "approved-time-ledger";
 
     private const int DefaultPageSize = 50;
 
@@ -19,11 +20,11 @@ public sealed class TimeEntryEvidenceListProjection
 
     private readonly TimeEntryEvidenceProjection _evidenceProjection = new();
 
-    public TimeEntryQueryReadModel Project(
+    public ApprovedTimeLedgerReadModel Project(
         string tenantId,
         IEnumerable<TimeEntryProjectionEvent> events,
         TimesheetsProjectionCheckpoint checkpoint,
-        QueryTimeEntries query)
+        QueryApprovedTimeLedger query)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
         ArgumentNullException.ThrowIfNull(events);
@@ -34,7 +35,7 @@ public sealed class TimeEntryEvidenceListProjection
             .OrderBy(static projectionEvent => projectionEvent.SequenceNumber)
             .ToArray();
 
-        List<TimeEntryQueryRowReadModel> rows = [];
+        List<ApprovedTimeLedgerRowReadModel> rows = [];
         foreach (TimeEntryId timeEntryId in CandidateIds(eventList))
         {
             TimeEntryEvidenceReadModel? evidence = _evidenceProjection.Project(
@@ -43,30 +44,45 @@ public sealed class TimeEntryEvidenceListProjection
                 eventList,
                 checkpoint);
 
-            if (evidence is null)
+            if (evidence?.ApprovalState != TimeEntryApprovalState.Approved
+                || evidence.ApprovalDecision is null)
             {
                 continue;
             }
 
-            TimeEntryQueryRowReadModel row = TimeEntryQueryRowReadModel.FromEvidence(evidence);
-            if (Matches(row, query))
+            rows.Add(ApprovedTimeLedgerRowReadModel.CurrentFromEvidence(evidence));
+
+            ApprovedTimeLedgerRowReadModel? superseded = ApprovedTimeLedgerRowReadModel
+                .SupersededFromApprovedCorrection(evidence);
+            if (superseded is not null)
             {
-                rows.Add(row);
+                rows.Add(superseded);
             }
         }
 
-        IReadOnlyList<TimeEntryQueryRowReadModel> sortedRows = Sort(rows, query);
+        IReadOnlyList<ApprovedTimeLedgerRowReadModel> filteredRows = rows
+            .Where(row => Matches(row, query))
+            .ToArray();
+        IReadOnlyList<ApprovedTimeLedgerRowReadModel> sortedRows = Sort(filteredRows, query);
         int pageSize = NormalizePageSize(query.PageSize);
         int offset = DecodeCursor(query.Cursor);
-        TimeEntryQueryRowReadModel[] pageItems = sortedRows
+        ApprovedTimeLedgerRowReadModel[] pageItems = sortedRows
             .Skip(offset)
             .Take(pageSize)
             .ToArray();
         string? nextCursor = offset + pageItems.Length < sortedRows.Count
             ? EncodeCursor(offset + pageItems.Length)
             : null;
+        ProjectionFreshnessMetadata freshness = ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint);
 
-        return new(pageItems, nextCursor, ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint));
+        return new(
+            pageItems,
+            nextCursor,
+            freshness,
+            pageItems.Length > 0 && checkpoint.CanServeReads,
+            checkpoint.CanServeReads
+                ? "Approved ledger rows are fresh enough for export preview."
+                : "Projection freshness does not allow export preview.");
     }
 
     private static IEnumerable<TimeEntryId> CandidateIds(IEnumerable<TimeEntryProjectionEvent> events)
@@ -102,11 +118,11 @@ public sealed class TimeEntryEvidenceListProjection
         }
     }
 
-    private static bool Matches(TimeEntryQueryRowReadModel row, QueryTimeEntries query)
+    private static bool Matches(ApprovedTimeLedgerRowReadModel row, QueryApprovedTimeLedger query)
     {
-        if (query.CurrentEntriesOnly
-            && !query.IncludeNonCurrentStates
-            && row.CorrectionState == TimeEntryCorrectionState.Superseded)
+        if (query.CurrentRowsOnly
+            && !query.IncludeSupersededRows
+            && row.RowState == ApprovedTimeLedgerRowState.Superseded)
         {
             return false;
         }
@@ -117,27 +133,23 @@ public sealed class TimeEntryEvidenceListProjection
             && MatchesTenantLocalPeriod(row, query.TenantLocalPeriodKey)
             && MatchesDateRange(row, query.ServiceDateFrom, query.ServiceDateTo)
             && MatchesValue(row.ActivityTypeId, query.ActivityTypeId)
-            && MatchesNullableEnum(row.BillableState, query.BillableState)
-            && MatchesSet(row.ApprovalState, query.ApprovalStates)
-            && MatchesSet(row.CorrectionState, query.CorrectionStates)
-            && MatchesSet(row.ContributorCategory, query.ContributorCategories)
-            && MatchesSet(row.SourceType, query.SourceTypes);
+            && MatchesNullableEnum(row.BillableState, query.BillableState);
     }
 
-    private static bool MatchesContributor(TimeEntryQueryRowReadModel row, PartyReference? contributor)
+    private static bool MatchesContributor(ApprovedTimeLedgerRowReadModel row, PartyReference? contributor)
         => contributor is null || row.Contributor == contributor;
 
-    private static bool MatchesProject(TimeEntryQueryRowReadModel row, ProjectReference? project)
+    private static bool MatchesProject(ApprovedTimeLedgerRowReadModel row, ProjectReference? project)
         => project is null
             || (row.Target.TargetKind == TimeEntryTargetKind.Project
                 && string.Equals(row.Target.TargetId, project.ProjectId, StringComparison.Ordinal));
 
-    private static bool MatchesWork(TimeEntryQueryRowReadModel row, WorkReference? work)
+    private static bool MatchesWork(ApprovedTimeLedgerRowReadModel row, WorkReference? work)
         => work is null
             || (row.Target.TargetKind == TimeEntryTargetKind.Work
                 && string.Equals(row.Target.TargetId, work.WorkId, StringComparison.Ordinal));
 
-    private static bool MatchesTenantLocalPeriod(TimeEntryQueryRowReadModel row, string? periodKey)
+    private static bool MatchesTenantLocalPeriod(ApprovedTimeLedgerRowReadModel row, string? periodKey)
     {
         if (string.IsNullOrWhiteSpace(periodKey))
         {
@@ -152,7 +164,7 @@ public sealed class TimeEntryEvidenceListProjection
         return false;
     }
 
-    private static bool MatchesDateRange(TimeEntryQueryRowReadModel row, DateOnly? from, DateOnly? to)
+    private static bool MatchesDateRange(ApprovedTimeLedgerRowReadModel row, DateOnly? from, DateOnly? to)
         => (from is null || row.ServiceDate >= from.Value)
             && (to is null || row.ServiceDate <= to.Value);
 
@@ -164,37 +176,37 @@ public sealed class TimeEntryEvidenceListProjection
         where T : struct, Enum
         => expected is null || EqualityComparer<T>.Default.Equals(actual, expected.Value);
 
-    private static bool MatchesSet<T>(T actual, IReadOnlyList<T> expected)
-        where T : struct, Enum
-        => expected.Count == 0 || expected.Contains(actual);
-
-    private static IReadOnlyList<TimeEntryQueryRowReadModel> Sort(
-        IReadOnlyList<TimeEntryQueryRowReadModel> rows,
-        QueryTimeEntries query)
+    private static IReadOnlyList<ApprovedTimeLedgerRowReadModel> Sort(
+        IReadOnlyList<ApprovedTimeLedgerRowReadModel> rows,
+        QueryApprovedTimeLedger query)
     {
-        IEnumerable<TimeEntryQueryRowReadModel> ordered = query.SortBy switch
+        bool descending = query.SortDirection == TimeEntryQuerySortDirection.Descending;
+
+        IOrderedEnumerable<ApprovedTimeLedgerRowReadModel> ordered = query.SortBy switch
         {
-            TimeEntryQuerySortBy.TimeEntryId => rows.OrderBy(static row => row.TimeEntryId.Value, StringComparer.Ordinal),
-            TimeEntryQuerySortBy.DurationMinutes => rows.OrderBy(static row => row.DurationMinutes)
-                .ThenBy(static row => row.TimeEntryId.Value, StringComparer.Ordinal),
-            _ => rows.OrderBy(static row => row.ServiceDate)
-                .ThenBy(static row => row.TimeEntryId.Value, StringComparer.Ordinal)
+            TimeEntryQuerySortBy.TimeEntryId => OrderByPrimary(
+                rows, static row => row.TimeEntryId.Value, StringComparer.Ordinal, descending),
+            TimeEntryQuerySortBy.DurationMinutes => OrderByPrimary(
+                rows, static row => row.DurationMinutes, Comparer<int>.Default, descending),
+            _ => OrderByPrimary(
+                rows, static row => row.ServiceDate, Comparer<DateOnly>.Default, descending)
         };
 
-        if (query.SortDirection == TimeEntryQuerySortDirection.Descending)
-        {
-            ordered = query.SortBy switch
-            {
-                TimeEntryQuerySortBy.TimeEntryId => rows.OrderByDescending(static row => row.TimeEntryId.Value, StringComparer.Ordinal),
-                TimeEntryQuerySortBy.DurationMinutes => rows.OrderByDescending(static row => row.DurationMinutes)
-                    .ThenBy(static row => row.TimeEntryId.Value, StringComparer.Ordinal),
-                _ => rows.OrderByDescending(static row => row.ServiceDate)
-                    .ThenBy(static row => row.TimeEntryId.Value, StringComparer.Ordinal)
-            };
-        }
-
-        return ordered.ToArray();
+        // Deterministic tie-breakers always remain ascending so paging is stable across replay/rebuild.
+        return ordered
+            .ThenBy(static row => row.TimeEntryId.Value, StringComparer.Ordinal)
+            .ThenBy(static row => row.RowState)
+            .ToArray();
     }
+
+    private static IOrderedEnumerable<ApprovedTimeLedgerRowReadModel> OrderByPrimary<TKey>(
+        IReadOnlyList<ApprovedTimeLedgerRowReadModel> rows,
+        Func<ApprovedTimeLedgerRowReadModel, TKey> keySelector,
+        IComparer<TKey> comparer,
+        bool descending)
+        => descending
+            ? rows.OrderByDescending(keySelector, comparer)
+            : rows.OrderBy(keySelector, comparer);
 
     private static int NormalizePageSize(int requestedPageSize)
         => requestedPageSize <= 0
@@ -267,5 +279,4 @@ public sealed class TimeEntryEvidenceListProjection
             return 0;
         }
     }
-
 }
