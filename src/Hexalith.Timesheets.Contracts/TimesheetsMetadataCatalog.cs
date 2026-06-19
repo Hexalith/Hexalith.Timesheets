@@ -352,6 +352,47 @@ public static class TimesheetsMetadataCatalog
                 new("comment-export", "Comment export", nameof(TimesheetsCommentPolicyDecision))
             ]),
         new(
+            "timesheets.projection.time-entry-query",
+            "Time Entry Query",
+            "evidence",
+            TimesheetsSurfaceKind.Projection,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("contributorFilter", "Contributor filter", "PartyReference", false, "Preserved during drill-in and back navigation."),
+                new("projectFilter", "Project filter", "ProjectReference", false, "Project-target rows validate Project authority only."),
+                new("workFilter", "Work filter", "WorkReference", false, "Work-target rows validate Work authority only."),
+                new("periodFilter", "Period filter", "TenantLocalPeriod", false, "Tenant-local period or date range."),
+                new("activityTypeFilter", "Activity Type filter", nameof(ActivityTypeId), false),
+                new("billableFilter", "Billable filter", nameof(BillableState), false),
+                new("approvalStateFilter", "Approval state filter", nameof(TimeEntryApprovalState), false),
+                new("correctionStateFilter", "Correction state filter", nameof(TimeEntryCorrectionState), false),
+                new("sourceTypeFilter", "Source type filter", nameof(TimeEntrySourceType), false, "Derived from contributor category plus external source or AI metrics evidence."),
+                new("timeEntry", "Time Entry", nameof(TimeEntryId), true),
+                new("target", "Target reference", "TimeEntryTargetReference", true),
+                new("contributor", "Contributor", "PartyReference", true),
+                new("activityType", "Activity Type", nameof(ActivityTypeId), true),
+                new("serviceDate", "Service date", "DateOnly", true),
+                new("durationMinutes", "Duration minutes", "WholeMinutes", true),
+                new("billableState", "Billable state", nameof(BillableState), true),
+                new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true),
+                new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
+                new("sourceType", "Source type", nameof(TimeEntrySourceType), true, "Shown as text-bearing status."),
+                new("displayHydration", "Display hydration", nameof(TimeEntryDisplayHydration), true, "Labels are hydrated only after row authorization succeeds."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true, "Fresh, stale, rebuilding, degraded, or unavailable state remains visible.")
+            ],
+            [
+                new("drill-into-evidence", "Open evidence", "Timesheets.ReadTimeEntryEvidence"),
+                new("query-time-entries", "Query entries", "Timesheets.QueryTimeEntries")
+            ],
+            [
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("correction", "Correction", nameof(TimeEntryCorrectionState)),
+                new("billable", "Billable", nameof(BillableState)),
+                new("source-type", "Source type", nameof(TimeEntrySourceType)),
+                new("hydration-state", "Hydration state", nameof(DisplayHydrationState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
+            ]),
+        new(
             "timesheets.projection.my-timesheet-period",
             "My Timesheet Period",
             "submission",

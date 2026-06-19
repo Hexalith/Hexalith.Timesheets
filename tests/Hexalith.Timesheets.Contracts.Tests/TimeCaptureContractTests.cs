@@ -123,6 +123,84 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Query_time_entries_contract_round_trips_without_authority_fields()
+    {
+        QueryTimeEntries query = new()
+        {
+            Contributor = new PartyReference("party-123"),
+            Project = new ProjectReference("project-123"),
+            ServiceDateFrom = new DateOnly(2026, 6, 1),
+            ServiceDateTo = new DateOnly(2026, 6, 30),
+            ActivityTypeId = new ActivityTypeId("activity-type-123"),
+            BillableState = BillableState.Billable,
+            ApprovalStates = [TimeEntryApprovalState.Submitted, TimeEntryApprovalState.Approved],
+            CorrectionStates = [TimeEntryCorrectionState.None, TimeEntryCorrectionState.Corrected],
+            ContributorCategories = [ContributorCategory.Employee],
+            SourceTypes = [TimeEntrySourceType.Employee],
+            CurrentEntriesOnly = true,
+            SortBy = TimeEntryQuerySortBy.ServiceDate,
+            SortDirection = TimeEntryQuerySortDirection.Descending,
+            PageSize = 25,
+            Cursor = "opaque-cursor"
+        };
+
+        string json = JsonSerializer.Serialize(query, JsonOptions);
+
+        json.ShouldContain("\"approvalStates\":[\"Submitted\",\"Approved\"]");
+        json.ShouldContain("\"sourceTypes\":[\"Employee\"]");
+        json.ShouldContain("\"pageSize\":25");
+        AssertJsonOmitsCallerAuthority(json);
+
+        QueryTimeEntries? roundTripped = JsonSerializer.Deserialize<QueryTimeEntries>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.Contributor.ShouldBe(new PartyReference("party-123"));
+        roundTripped.Project.ShouldBe(new ProjectReference("project-123"));
+        roundTripped.ApprovalStates.ShouldBe([TimeEntryApprovalState.Submitted, TimeEntryApprovalState.Approved]);
+        roundTripped.SourceTypes.ShouldBe([TimeEntrySourceType.Employee]);
+        roundTripped.CurrentEntriesOnly.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Time_entry_query_read_model_round_trips_state_names_source_type_and_degraded_freshness()
+    {
+        TimeEntryQueryReadModel page = new(
+            [
+                new(
+                    new TimeEntryId("time-entry-789"),
+                    TimeEntryTargetReference.ForProject(new ProjectReference("project-789")),
+                    new PartyReference("party-789"),
+                    new ActivityTypeId("activity-type-789"),
+                    new DateOnly(2026, 6, 20),
+                    60,
+                    BillableState.Billable,
+                    TimeEntryApprovalState.Approved,
+                    TimeEntryCorrectionState.Corrected,
+                    ContributorCategory.AutomatedAgent,
+                    TimeEntrySourceType.AutomatedAgent,
+                    ProjectionFreshnessMetadata.Degraded("Projection shard is delayed."))
+            ],
+            "next-cursor",
+            ProjectionFreshnessMetadata.Degraded("Projection shard is delayed."));
+
+        string json = JsonSerializer.Serialize(page, JsonOptions);
+
+        json.ShouldContain("\"approvalState\":\"Approved\"");
+        json.ShouldContain("\"correctionState\":\"Corrected\"");
+        json.ShouldContain("\"sourceType\":\"AutomatedAgent\"");
+        json.ShouldContain("\"state\":\"Degraded\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimeEntryQueryReadModel? roundTripped = JsonSerializer.Deserialize<TimeEntryQueryReadModel>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        TimeEntryQueryRowReadModel row = roundTripped.Items.ShouldHaveSingleItem();
+        row.TimeEntryId.ShouldBe(new TimeEntryId("time-entry-789"));
+        row.SourceType.ShouldBe(TimeEntrySourceType.AutomatedAgent);
+        row.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Degraded);
+    }
+
+    [Fact]
     public void Submit_time_entries_contract_round_trips_without_authority_fields()
     {
         SubmitTimeEntriesForApproval command = new(
@@ -983,6 +1061,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.command.activity-type-catalog",
                 "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
+                "timesheets.projection.time-entry-query",
                 "timesheets.projection.my-timesheet-period",
                 "timesheets.projection.period-approval-detail",
                 "timesheets.approvals.queue",
@@ -1020,6 +1099,7 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(TimeEntryApprovalState));
         badgeVocabularies.ShouldContain(nameof(BillableState));
         badgeVocabularies.ShouldContain(nameof(ContributorCategory));
+        badgeVocabularies.ShouldContain(nameof(TimeEntrySourceType));
         badgeVocabularies.ShouldContain(nameof(ActivityTypeActiveState));
         badgeVocabularies.ShouldContain(nameof(TimeEntryCorrectionState));
         badgeVocabularies.ShouldContain(nameof(ProjectionFreshnessState));
@@ -1151,6 +1231,44 @@ public sealed class TimeCaptureContractTests
         periodApprovalDetail.Actions.Select(static action => action.Label).ShouldContain("Correct entry");
         periodApprovalDetail.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimesheetPeriodApprovalState));
         periodApprovalDetail.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryApprovalState));
+    }
+
+    [Fact]
+    public void Operational_time_entry_query_metadata_declares_filters_grid_fields_and_badges()
+    {
+        TimesheetsMetadataDescriptor query = Descriptor("timesheets.projection.time-entry-query");
+
+        query.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerProjectionView);
+        query.Fields.Select(static field => field.Name).ShouldBe(
+        [
+            "contributorFilter",
+            "projectFilter",
+            "workFilter",
+            "periodFilter",
+            "activityTypeFilter",
+            "billableFilter",
+            "approvalStateFilter",
+            "correctionStateFilter",
+            "sourceTypeFilter",
+            "timeEntry",
+            "target",
+            "contributor",
+            "activityType",
+            "serviceDate",
+            "durationMinutes",
+            "billableState",
+            "approvalState",
+            "correctionState",
+            "sourceType",
+            "displayHydration",
+            "projectionFreshness"
+        ]);
+        query.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryApprovalState));
+        query.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryCorrectionState));
+        query.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(BillableState));
+        query.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntrySourceType));
+        query.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(DisplayHydrationState));
+        query.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
     }
 
     [Fact]

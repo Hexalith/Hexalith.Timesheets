@@ -31,4 +31,10 @@ public sealed record ProjectionFreshnessMetadata(
         null,
         null,
         detail);
+
+    public static ProjectionFreshnessMetadata Degraded(string? detail = "Projection is degraded.") => new(
+        ProjectionFreshnessState.Degraded,
+        null,
+        null,
+        detail);
 }

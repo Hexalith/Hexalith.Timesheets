@@ -6,5 +6,6 @@ public enum ProjectionFreshness
     Rebuilding = 1,
     Fresh = 2,
     Stale = 3,
-    Unavailable = 4
+    Unavailable = 4,
+    Degraded = 5
 }

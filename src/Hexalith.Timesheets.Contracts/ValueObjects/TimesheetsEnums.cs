@@ -19,6 +19,15 @@ public enum ContributorCategory
     AutomatedAgent = 3
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<TimeEntrySourceType>))]
+public enum TimeEntrySourceType
+{
+    Unknown = 0,
+    Employee = 1,
+    ExternalContributor = 2,
+    AutomatedAgent = 3
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<TimeEntryApprovalState>))]
 public enum TimeEntryApprovalState
 {
@@ -76,7 +85,25 @@ public enum ProjectionFreshnessState
     Fresh = 1,
     Rebuilding = 2,
     Stale = 3,
-    Unavailable = 4
+    Unavailable = 4,
+    Degraded = 5
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TimeEntryQuerySortBy>))]
+public enum TimeEntryQuerySortBy
+{
+    Unknown = 0,
+    ServiceDate = 1,
+    TimeEntryId = 2,
+    DurationMinutes = 3
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TimeEntryQuerySortDirection>))]
+public enum TimeEntryQuerySortDirection
+{
+    Unknown = 0,
+    Ascending = 1,
+    Descending = 2
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AiMetricAvailability>))]

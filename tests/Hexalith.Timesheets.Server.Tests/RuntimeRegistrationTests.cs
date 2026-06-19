@@ -58,6 +58,8 @@ public sealed class RuntimeRegistrationTests
             .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntryEvidenceQueryService>()
             .ShouldNotBeNull();
+        provider.GetRequiredService<TimeEntryEvidenceListQueryService>()
+            .ShouldNotBeNull();
         provider.GetRequiredService<TimesheetPeriodSubmissionCommandService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<TimesheetPeriodApprovalCommandService>()
@@ -78,6 +80,8 @@ public sealed class RuntimeRegistrationTests
             .ShouldBeOfType<DenyAllContributorPartyValidator>();
         provider.GetRequiredService<ITimeEntryEvidenceProjectionReader>()
             .ShouldBeOfType<UnavailableTimeEntryEvidenceProjectionReader>();
+        provider.GetRequiredService<ITimeEntryEvidenceListProjectionReader>()
+            .ShouldBeOfType<UnavailableTimeEntryEvidenceListProjectionReader>();
         provider.GetRequiredService<ITimeEntryDisplayHydrator>()
             .ShouldBeOfType<UnavailableTimeEntryDisplayHydrator>();
         provider.GetRequiredService<IPartyDisplayHydrationProvider>()

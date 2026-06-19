@@ -127,6 +127,29 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
+    public void Host_metadata_api_contract_exports_operational_time_entry_query_descriptor()
+    {
+        var queryDescriptor = TimesheetsMetadataCatalog.Descriptors
+            .Single(static descriptor => descriptor.Name == "timesheets.projection.time-entry-query");
+
+        queryDescriptor.Capability.ShouldBe("evidence");
+        queryDescriptor.Pattern.ToString().ShouldBe("FrontComposerProjectionView");
+        queryDescriptor.Fields.Select(static field => field.Name).ShouldContain("periodFilter");
+        queryDescriptor.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
+        queryDescriptor.Actions.Select(static action => action.Label).ShouldContain("Open evidence");
+        queryDescriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain("ProjectionFreshnessState");
+        queryDescriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain("TimeEntrySourceType");
+
+        string json = JsonSerializer.Serialize(queryDescriptor, JsonOptions);
+
+        json.ShouldContain("Query entries");
+        json.ShouldContain("Tenant-local period or date range.");
+        AssertJsonOmitsCallerAuthority(json);
+        json.ShouldNotContain("EventStore");
+        json.ShouldNotContain("stream");
+    }
+
+    [Fact]
     public void Host_metadata_api_catalog_response_omits_authority_and_payload_identifiers()
     {
         var response = new
@@ -148,6 +171,7 @@ public sealed class HostMetadataEndpointTests
         json.ShouldContain("timesheets.command.activity-type-catalog");
         json.ShouldContain("timesheets.projection.activity-type-catalog");
         json.ShouldContain("timesheets.command.correct-rejected-time-entry");
+        json.ShouldContain("timesheets.projection.time-entry-query");
         AssertJsonOmitsCallerAuthority(json);
         json.ShouldNotContain("timeEntryId");
         json.ShouldNotContain("activityTypeId");

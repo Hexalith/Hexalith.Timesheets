@@ -2,6 +2,7 @@ using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ApprovalAuthority;
@@ -1305,6 +1306,164 @@ public sealed class TimeEntryAuthorizationTests
             .HydrateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryEvidenceReadModel>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task Evidence_list_query_fails_closed_before_projection_lookup_when_tenant_authority_is_missing()
+    {
+        Fixture fixture = new();
+        fixture.TenantValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), TimesheetsOperation.ProjectionRead, Arg.Any<CancellationToken>())
+            .Returns(TimesheetsTenantAccessResult.Denied(
+                TimesheetsTenantAccessState.MissingTenant,
+                "Authority cannot be resolved."));
+
+        TimeEntryEvidenceListQueryResult result = await fixture.CreateListQueryService().QueryAsync(
+            Context(),
+            new QueryTimeEntries(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDisclosed.ShouldBeFalse();
+        result.Page.ShouldBeNull();
+        result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.MissingTenant);
+        fixture.ListProjectionReader.ReceivedCalls().ShouldBeEmpty();
+        fixture.DisplayHydrator.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Evidence_list_query_filters_ordinary_unauthorized_rows_and_hydrates_only_disclosed_rows()
+    {
+        Fixture fixture = AuthorizedProjectionReadFixture();
+        ProjectReference deniedProject = new("project-denied");
+        fixture.ListProjectionReader
+            .QueryAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<QueryTimeEntries>(), Arg.Any<CancellationToken>())
+            .Returns(new TimeEntryQueryReadModel(
+                [
+                    QueryRow("time-entry-1", TimeEntryTargetReference.ForProject(Project())),
+                    QueryRow("time-entry-2", TimeEntryTargetReference.ForProject(deniedProject))
+                ],
+                null,
+                ProjectionFreshnessMetadata.Fresh));
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), deniedProject, Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Denied(ReferenceValidationState.Unauthorized, "Project is not visible."));
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.DisplayHydrator
+            .HydrateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryEvidenceReadModel>(), Arg.Any<CancellationToken>())
+            .Returns(new TimeEntryDisplayHydration(
+                TimeEntryHydratedDisplayLabel.Fresh("Contributor"),
+                TimeEntryHydratedDisplayLabel.Fresh("Project"),
+                TimeEntryHydratedDisplayLabel.Unavailable()));
+
+        TimeEntryEvidenceListQueryResult result = await fixture.CreateListQueryService().QueryAsync(
+            Context(),
+            new QueryTimeEntries(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDisclosed.ShouldBeTrue();
+        TimeEntryQueryRowReadModel row = result.Page.ShouldNotBeNull().Items.ShouldHaveSingleItem();
+        row.TimeEntryId.ShouldBe(TimeEntryId());
+        row.DisplayHydration.Target.Label.ShouldBe("Project");
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), deniedProject, Arg.Any<CancellationToken>());
+        await fixture.DisplayHydrator.Received(1)
+            .HydrateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryEvidenceReadModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Evidence_list_query_returns_authorized_empty_page_without_hydrating_labels()
+    {
+        Fixture fixture = AuthorizedProjectionReadFixture();
+        fixture.ListProjectionReader
+            .QueryAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<QueryTimeEntries>(), Arg.Any<CancellationToken>())
+            .Returns(new TimeEntryQueryReadModel([], null, ProjectionFreshnessMetadata.Fresh));
+
+        TimeEntryEvidenceListQueryResult result = await fixture.CreateListQueryService().QueryAsync(
+            Context(),
+            new QueryTimeEntries(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDisclosed.ShouldBeTrue();
+        result.Page.ShouldNotBeNull().Items.ShouldBeEmpty();
+        fixture.ProjectValidator.ReceivedCalls().ShouldBeEmpty();
+        fixture.WorkValidator.ReceivedCalls().ShouldBeEmpty();
+        fixture.PartyValidator.ReceivedCalls().ShouldBeEmpty();
+        fixture.DisplayHydrator.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Evidence_list_query_fails_closed_for_cross_tenant_row_without_hydrating_labels()
+    {
+        Fixture fixture = AuthorizedProjectionReadFixture();
+        fixture.ListProjectionReader
+            .QueryAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<QueryTimeEntries>(), Arg.Any<CancellationToken>())
+            .Returns(new TimeEntryQueryReadModel(
+                [QueryRow("time-entry-1", TimeEntryTargetReference.ForProject(Project()))],
+                null,
+                ProjectionFreshnessMetadata.Fresh));
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Denied(
+                ReferenceValidationState.TenantMismatch,
+                "Project belongs to a different tenant."));
+
+        TimeEntryEvidenceListQueryResult result = await fixture.CreateListQueryService().QueryAsync(
+            Context(),
+            new QueryTimeEntries(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDisclosed.ShouldBeFalse();
+        result.Page.ShouldBeNull();
+        result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.CrossTenantTarget);
+        fixture.DisplayHydrator.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Evidence_list_query_validates_work_target_without_project_lookup()
+    {
+        Fixture fixture = AuthorizedProjectionReadFixture();
+        fixture.ListProjectionReader
+            .QueryAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<QueryTimeEntries>(), Arg.Any<CancellationToken>())
+            .Returns(new TimeEntryQueryReadModel(
+                [QueryRow("time-entry-1", TimeEntryTargetReference.ForWork(Work()))],
+                null,
+                ProjectionFreshnessMetadata.Fresh));
+        fixture.WorkValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Work(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.DisplayHydrator
+            .HydrateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryEvidenceReadModel>(), Arg.Any<CancellationToken>())
+            .Returns(new TimeEntryDisplayHydration(
+                TimeEntryHydratedDisplayLabel.Fresh("Contributor"),
+                TimeEntryHydratedDisplayLabel.Fresh("Work"),
+                TimeEntryHydratedDisplayLabel.Unavailable()));
+
+        TimeEntryEvidenceListQueryResult result = await fixture.CreateListQueryService().QueryAsync(
+            Context(),
+            new QueryTimeEntries(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDisclosed.ShouldBeTrue();
+        TimeEntryQueryRowReadModel row = result.Page.ShouldNotBeNull().Items.ShouldHaveSingleItem();
+        row.Target.TargetKind.ShouldBe(TimeEntryTargetKind.Work);
+        row.DisplayHydration.Target.Label.ShouldBe("Work");
+        fixture.ProjectValidator.ReceivedCalls().ShouldBeEmpty();
+        await fixture.WorkValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Work(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>());
+        await fixture.DisplayHydrator.Received(1)
+            .HydrateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryEvidenceReadModel>(), Arg.Any<CancellationToken>());
+    }
+
     private static ActivityTypeCatalogReadModel FreshCatalog(ActivityTypeScope scope)
         => new(
             [
@@ -1443,6 +1602,21 @@ public sealed class TimeEntryAuthorizationTests
                 new(nameof(TimeEntryRecorded), 1, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents)
             ]
         };
+
+    private static TimeEntryQueryRowReadModel QueryRow(string timeEntryId, TimeEntryTargetReference target)
+        => new(
+            new TimeEntryId(timeEntryId),
+            target,
+            Contributor(),
+            ActivityId(),
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.None,
+            ContributorCategory.Employee,
+            TimeEntrySourceType.Employee,
+            ProjectionFreshnessMetadata.Fresh);
 
     private static IReadOnlyDictionary<TimeEntryId, TimeEntryState?> States(TimeEntryState state)
         => new Dictionary<TimeEntryId, TimeEntryState?> { [state.TimeEntryId.ShouldNotBeNull()] = state };
@@ -1629,6 +1803,8 @@ public sealed class TimeEntryAuthorizationTests
 
         public ITimeEntryEvidenceProjectionReader ProjectionReader { get; } = Substitute.For<ITimeEntryEvidenceProjectionReader>();
 
+        public ITimeEntryEvidenceListProjectionReader ListProjectionReader { get; } = Substitute.For<ITimeEntryEvidenceListProjectionReader>();
+
         public ITimeEntryDisplayHydrator DisplayHydrator { get; } = Substitute.For<ITimeEntryDisplayHydrator>();
 
         public ITimesheetsApprovalAuthorityResolver ApprovalResolver { get; } = Substitute.For<ITimesheetsApprovalAuthorityResolver>();
@@ -1684,6 +1860,17 @@ public sealed class TimeEntryAuthorizationTests
                     PartyValidator,
                     PolicyEvaluator),
                 ProjectionReader,
+                DisplayHydrator);
+
+        public TimeEntryEvidenceListQueryService CreateListQueryService()
+            => new(
+                new TimesheetsAccessGuard(
+                    TenantValidator,
+                    ProjectValidator,
+                    WorkValidator,
+                    PartyValidator,
+                    PolicyEvaluator),
+                ListProjectionReader,
                 DisplayHydrator);
     }
 

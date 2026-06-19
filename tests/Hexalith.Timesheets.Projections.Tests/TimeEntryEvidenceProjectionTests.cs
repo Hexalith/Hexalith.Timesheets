@@ -1,5 +1,6 @@
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
@@ -542,7 +543,190 @@ public sealed class TimeEntryEvidenceProjectionTests
         model.ProjectionFreshness.State.ShouldBe(expectedState);
     }
 
+    [Fact]
+    public void List_projection_filters_operational_dimensions_and_exposes_source_type()
+    {
+        TimeEntryQueryReadModel page = ListProjector().Project(
+            "tenant-1",
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, RecordedExternal("time-entry-2", 30)),
+                Event("m4", 4, Recorded("time-entry-3", 90, ProviderMetrics()))
+            ],
+            FreshCheckpoint(4),
+            new QueryTimeEntries
+            {
+                Contributor = Contributor(),
+                Project = Project(),
+                ServiceDateFrom = new DateOnly(2026, 6, 1),
+                ServiceDateTo = new DateOnly(2026, 6, 30),
+                ActivityTypeId = ActivityId(),
+                BillableState = BillableState.Billable,
+                ApprovalStates = [TimeEntryApprovalState.Submitted],
+                ContributorCategories = [ContributorCategory.Employee],
+                SourceTypes = [TimeEntrySourceType.Employee],
+                PageSize = 50
+            });
+
+        TimeEntryQueryRowReadModel row = page.Items.ShouldHaveSingleItem();
+        row.TimeEntryId.ShouldBe(TimeEntryId());
+        row.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        row.CorrectionState.ShouldBe(TimeEntryCorrectionState.None);
+        row.SourceType.ShouldBe(TimeEntrySourceType.Employee);
+        row.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        page.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+    }
+
+    [Fact]
+    public void List_projection_filters_work_target_and_external_source_type()
+    {
+        TimeEntryRecorded workExternal = RecordedExternal("time-entry-2", 30) with
+        {
+            Target = TimeEntryTargetReference.ForWork(Work())
+        };
+
+        TimeEntryQueryReadModel page = ListProjector().Project(
+            "tenant-1",
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, workExternal)
+            ],
+            FreshCheckpoint(2),
+            new QueryTimeEntries
+            {
+                Work = Work(),
+                SourceTypes = [TimeEntrySourceType.ExternalContributor],
+                PageSize = 50
+            });
+
+        TimeEntryQueryRowReadModel row = page.Items.ShouldHaveSingleItem();
+        row.TimeEntryId.ShouldBe(new TimeEntryId("time-entry-2"));
+        row.Target.TargetKind.ShouldBe(TimeEntryTargetKind.Work);
+        row.SourceType.ShouldBe(TimeEntrySourceType.ExternalContributor);
+    }
+
+    [Theory]
+    [InlineData("2026-06")]
+    [InlineData("2026-06-15/2026-06-21")]
+    public void List_projection_filters_by_tenant_local_period_key(string periodKey)
+    {
+        TimeEntryQueryReadModel page = ListProjector().Project(
+            "tenant-1",
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Recorded("time-entry-2", 30) with { ServiceDate = new DateOnly(2026, 7, 1) })
+            ],
+            FreshCheckpoint(2),
+            new QueryTimeEntries
+            {
+                TenantLocalPeriodKey = periodKey,
+                SortBy = TimeEntryQuerySortBy.TimeEntryId,
+                PageSize = 50
+            });
+
+        page.Items.ShouldHaveSingleItem().TimeEntryId.ShouldBe(TimeEntryId());
+    }
+
+    [Fact]
+    public void List_projection_returns_no_rows_for_invalid_tenant_local_period_key()
+    {
+        TimeEntryQueryReadModel page = ListProjector().Project(
+            "tenant-1",
+            [Event("m1", 1, Recorded("time-entry-1", 45))],
+            FreshCheckpoint(1),
+            new QueryTimeEntries
+            {
+                TenantLocalPeriodKey = "not-a-period"
+            });
+
+        page.Items.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void List_projection_paginates_with_stable_order_and_duplicate_replay_determinism()
+    {
+        TimeEntryProjectionEvent duplicate = Event("m2", 2, Recorded("time-entry-2", 20));
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m3", 3, Recorded("time-entry-3", 30)),
+            duplicate,
+            duplicate,
+            Event("m1", 1, Recorded("time-entry-1", 10))
+        ];
+
+        TimeEntryQueryReadModel firstPage = ListProjector().Project(
+            "tenant-1",
+            events,
+            FreshCheckpoint(3),
+            new QueryTimeEntries
+            {
+                SortBy = TimeEntryQuerySortBy.TimeEntryId,
+                SortDirection = TimeEntryQuerySortDirection.Ascending,
+                PageSize = 2
+            });
+
+        firstPage.Items.Select(static row => row.TimeEntryId.Value)
+            .ShouldBe(["time-entry-1", "time-entry-2"]);
+        firstPage.NextCursor.ShouldNotBeNull();
+
+        TimeEntryQueryReadModel secondPage = ListProjector().Project(
+            "tenant-1",
+            events,
+            FreshCheckpoint(3),
+            new QueryTimeEntries
+            {
+                SortBy = TimeEntryQuerySortBy.TimeEntryId,
+                SortDirection = TimeEntryQuerySortDirection.Ascending,
+                PageSize = 2,
+                Cursor = firstPage.NextCursor
+            });
+
+        secondPage.Items.Select(static row => row.TimeEntryId.Value)
+            .ShouldBe(["time-entry-3"]);
+        secondPage.NextCursor.ShouldBeNull();
+    }
+
+    [Fact]
+    public void List_projection_excludes_superseded_rows_by_default_unless_requested()
+    {
+        TimeEntryCorrected superseded = Corrected("time-entry-1", 75) with
+        {
+            CorrectionState = TimeEntryCorrectionState.Superseded
+        };
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded("time-entry-1", 45)),
+            Event("m2", 2, Submitted("time-entry-1")),
+            Event("m3", 3, Rejected("time-entry-1")),
+            Event("m4", 4, superseded)
+        ];
+
+        TimeEntryQueryReadModel currentOnly = ListProjector().Project(
+            "tenant-1",
+            events,
+            FreshCheckpoint(4),
+            new QueryTimeEntries());
+
+        currentOnly.Items.ShouldBeEmpty();
+
+        TimeEntryQueryReadModel includingNonCurrent = ListProjector().Project(
+            "tenant-1",
+            events,
+            FreshCheckpoint(4),
+            new QueryTimeEntries
+            {
+                CurrentEntriesOnly = false,
+                IncludeNonCurrentStates = true,
+                CorrectionStates = [TimeEntryCorrectionState.Superseded]
+            });
+
+        includingNonCurrent.Items.ShouldHaveSingleItem().CorrectionState.ShouldBe(TimeEntryCorrectionState.Superseded);
+    }
+
     private static TimeEntryEvidenceProjection Projector() => new();
+
+    private static TimeEntryEvidenceListProjection ListProjector() => new();
 
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
         => new(messageId, sequenceNumber, payload);
@@ -563,6 +747,18 @@ public sealed class TimeEntryEvidenceProjectionTests
             TimeEntryApprovalState.Draft,
             metrics == AiEffortMetrics.Unavailable ? ContributorCategory.Employee : ContributorCategory.AutomatedAgent,
             metrics);
+
+    private static AiEffortMetrics ProviderMetrics()
+        => new(
+            AiMetricAvailability.ProviderReported,
+            90000,
+            75000,
+            2,
+            100,
+            50,
+            150,
+            AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-1"),
+            AiTokenMetricAvailability.ProviderReported);
 
     private static TimeEntryRecorded RecordedExternal(string id, int durationMinutes)
         => Recorded(id, durationMinutes, null) with
@@ -697,6 +893,8 @@ public sealed class TimeEntryEvidenceProjectionTests
     private static TimeEntryId TimeEntryId() => new("time-entry-1");
 
     private static ProjectReference Project() => new("project-1");
+
+    private static WorkReference Work() => new("work-1");
 
     private static PartyReference Contributor() => new("party-1");
 

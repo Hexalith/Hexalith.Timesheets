@@ -352,6 +352,7 @@ public sealed class TimeEntryEvidenceProjection
             ProjectionFreshness.Stale => ProjectionFreshnessMetadata.Stale(
                 checkpoint.SequenceNumber.ToString(System.Globalization.CultureInfo.InvariantCulture)),
             ProjectionFreshness.Unavailable => ProjectionFreshnessMetadata.Unavailable(),
+            ProjectionFreshness.Degraded => ProjectionFreshnessMetadata.Degraded(),
             _ => new(ProjectionFreshnessState.Unknown, null, null, "Projection freshness is unknown.")
         };
 }

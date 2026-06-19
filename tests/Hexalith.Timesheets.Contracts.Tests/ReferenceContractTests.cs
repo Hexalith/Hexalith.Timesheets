@@ -62,7 +62,7 @@ public sealed class ReferenceContractTests
     [Fact]
     public void Metadata_catalog_exposes_capture_and_evidence_surface_descriptors()
     {
-        TimesheetsMetadataCatalog.Descriptors.Count.ShouldBe(17);
+        TimesheetsMetadataCatalog.Descriptors.Count.ShouldBe(18);
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
             .ShouldContain("timesheets.command.record-time");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
@@ -81,6 +81,8 @@ public sealed class ReferenceContractTests
             .ShouldContain("timesheets.projection.activity-type-catalog");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
             .ShouldContain("timesheets.projection.time-entry-evidence");
+        TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
+            .ShouldContain("timesheets.projection.time-entry-query");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
             .ShouldContain("timesheets.projection.period-approval-detail");
     }

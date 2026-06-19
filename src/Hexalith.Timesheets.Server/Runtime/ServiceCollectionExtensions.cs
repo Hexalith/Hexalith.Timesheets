@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();
+        services.TryAddSingleton<TimeEntryEvidenceListQueryService>();
         services.TryAddSingleton<TimesheetPeriodSubmissionCommandService>();
         services.TryAddSingleton<TimesheetPeriodApprovalCommandService>();
         services.TryAddSingleton<TimesheetPeriodSummaryQueryService>();
@@ -51,6 +52,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IWorkReferenceValidator, DenyAllWorkReferenceValidator>();
         services.TryAddSingleton<IContributorPartyValidator, DenyAllContributorPartyValidator>();
         services.TryAddSingleton<ITimeEntryEvidenceProjectionReader, UnavailableTimeEntryEvidenceProjectionReader>();
+        services.TryAddSingleton<ITimeEntryEvidenceListProjectionReader, UnavailableTimeEntryEvidenceListProjectionReader>();
         services.TryAddSingleton<ITimesheetPeriodSummaryProjectionReader, UnavailableTimesheetPeriodSummaryProjectionReader>();
         services.TryAddSingleton<UnavailableDisplayHydrationProvider>();
         services.TryAddSingleton<IPartyDisplayHydrationProvider>(static provider =>
