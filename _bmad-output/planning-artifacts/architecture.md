@@ -320,7 +320,7 @@ Use public templates only for empty project shells. Use Hexalith sibling modules
 **Deferred Decisions (Post-MVP or Later Architecture Category):**
 
 - Offset-entry correction support beyond superseding lineage.
-- Dedicated `UI`, `Mcp`, or export-specific package creation.
+- `Mcp` or export-specific package creation. (The `UI`/`UI.Tests` projects are **not** deferred indefinitely — see "UI project timing (decided 2026-06-19)" under Gap Analysis — but are scaffolded with the first UI-bearing story, not in Story 1.1.)
 - Full external-party portal.
 - Invoice/rate/payroll/revenue integrations.
 - Native mobile app.
@@ -963,6 +963,8 @@ Hexalith.Timesheets/
 - Dapr: service invocation, pub/sub, and state abstractions where required by established EventStore/Aspire patterns.
 - Keycloak/JWT: production identity provider when enabled.
 
+**Reference-validation adapter maturity (added 2026-06-19):** `Hexalith.Projects` exposes a consumer query (`GetProjectAsync`) suitable for FR-2 Project validation. `Hexalith.Works` currently exposes no consumer-facing read/validate query (only an internal `WhatsNext` queue handler and an unimplemented `IExpectationResolver`); its `WorkItemEffort` (FR-17) and `ExecutorBinding` (FR-15/FR-20) Contracts are stable. The Works reference-validation adapter must therefore either consume a new Works-owned `GetWorkItem` query or read the Works EventStore projection via a Timesheets adapter. This decision is required before Story 1.7 (Work path) and Story 4.3; Epic 1 foundation stories are unaffected.
+
 **Data Flow:**
 
 1. Request enters host endpoint.
@@ -1069,7 +1071,7 @@ Naming, structure, API format, data format, event communication, projection beha
 
 - Exact Dapr component manifest names can be refined during AppHost implementation.
 - Optional MCP/CLI helper packages remain deferred until a concrete requirement appears.
-- UI project can be scaffolded with the module shell or added with the first UI story, but it must follow the documented structure when added.
+- **UI project timing (decided 2026-06-19):** `Hexalith.Timesheets.UI` and `Hexalith.Timesheets.UI.Tests` are part of the target project tree but are scaffolded with the **first UI-bearing story, not in scaffold Story 1.1** (which creates host/Contracts/Client/Server/Projections/Testing/ServiceDefaults/AppHost only). When added, UI must follow the documented `UI/` structure and the Fluent UI V5-only rule.
 
 ### Validation Issues Addressed
 

@@ -127,7 +127,7 @@ Source: `prds/prd-timesheets-2026-06-18/prd.md` (+ `addendum.md`). PRD status: *
 
 ## Step 3 — Epic Coverage Validation
 
-Source: `epics.md` — 4 epics, 25 stories. The epics document restates the PRD's 23 FRs verbatim in its Requirements Inventory and provides an explicit FR Coverage Map. I traced each FR to the **actual stories** that list it under `**Requirements:**` (not just the high-level map).
+Source: `epics.md` — 4 epics, 29 stories. _(Corrected 2026-06-19: originally stated 25; the per-epic breakdown 9+8+5+7 sums to 29, matching `epics.md` and `sprint-status.yaml`.)_ The epics document restates the PRD's 23 FRs verbatim in its Requirements Inventory and provides an explicit FR Coverage Map. I traced each FR to the **actual stories** that list it under `**Requirements:**` (not just the high-level map).
 
 ### FR Coverage Matrix (traced to stories)
 
@@ -165,7 +165,7 @@ Source: `epics.md` — 4 epics, 25 stories. The epics document restates the PRD'
 - **Total PRD FRs:** 23
 - **FRs covered in epics/stories:** 23
 - **FR coverage percentage:** **100%**
-- **Stories:** 25 across 4 epics (Epic 1: 9 · Epic 2: 8 · Epic 3: 5 · Epic 4: 7 incl. dashboard)
+- **Stories:** 29 across 4 epics (Epic 1: 9 · Epic 2: 8 · Epic 3: 5 · Epic 4: 7 incl. dashboard) _(corrected 2026-06-19: 9+8+5+7 = 29)_
 
 ### Observations (carried forward, not FR-coverage gaps)
 - The high-level FR Coverage Map assigns each FR a *primary* epic; actual story coverage is broader (e.g., FR15 is primary-mapped to Epic 1 but also realized in Epic 4 Story 4.4). Internally consistent — no contradiction.
@@ -195,7 +195,7 @@ Source: `epics.md` — 4 epics, 25 stories. The epics document restates the PRD'
 - Architecture self-reports "Requirements Coverage Validation ✅" for all 23 FRs and NFRs, and "READY FOR IMPLEMENTATION."
 
 ### Alignment Issues / Warnings
-- ⚠️ **(Carry-forward, dependency — not a UX conflict) `Hexalith.Works` and a domain-level `Hexalith.Projects` are heavily referenced but their presence/maturity in this ecosystem is unconfirmed.** The umbrella's root submodules are AI.Tools, Builds, Commons, Conversations, EventStore, Folders, FrontComposer, Memories, Parties, Tenants — **no `Hexalith.Works`**, and the "Hexalith.Projects" project-context is actually the umbrella root context, not a Projects domain module. FR-2 (Work/Project reference validation), FR-17 (planned-vs-actual from Works), and UJ-4/FR-15/FR-20 (AI effort tied to Works execution) depend on these siblings. Architecture mitigates via fail-closed adapters/clients, so it is not a blocker, but **dependency readiness for Projects/Works should be confirmed or the affected stories explicitly gated**. Flagged for the cohesion/risk step.
+- ✅ **(CORRECTED 2026-06-19 — see `sprint-change-proposal-2026-06-19.md`) `Hexalith.Works` and `Hexalith.Projects` ARE both root-level submodules of this umbrella.** `.gitmodules` and `git submodule status` show both checked out at `heads/main`, each with a full `src/` tree and `.slnx`. The complete root set is AI.Tools, Builds, Commons, Conversations, EventStore, FrontComposer, Parties, PolymorphicSerializations, Projects, Tenants, Works — the original note wrongly listed Folders/Memories (not in this umbrella) and omitted Projects/Works/Commons/PolymorphicSerializations. **Narrowed residual:** a source scan shows `Hexalith.Projects` exposes a mature consumer query (`GetProjectAsync`/`ListProjectsAsync`) so FR-2 Project validation is supportable, while `Hexalith.Works` exposes the needed data model (`WorkItemEffort`→FR-17, `ExecutorBinding`→FR-15/FR-20) but **no consumer-facing read/validate query** — so FR-2 *Work*-reference validation needs a Works `GetWorkItem` query or a Timesheets adapter bridge. Gate Story 1.7 (Work path) and Story 4.3 accordingly; Epic 1 foundation is unaffected.
 - ⚠️ **(Minor, intra-architecture) Dedicated `Hexalith.Timesheets.UI` project is ambiguous.** The architecture project tree includes a `UI` project + `UI.Tests`, but "Deferred Decisions" lists dedicated UI package creation as deferred, and scaffold Story 1.1 omits a UI project. Clarify whether UI is scaffolded in Story 1.1 or added with the first UI story. Carried to the epic-quality step.
 - ✅ No UX requirement was found unsupported by the architecture; no architecture UI assumption contradicts the UX spine.
 
@@ -288,7 +288,7 @@ The planning set (PRD, Architecture, Epics/Stories, UX) is unusually complete an
 ### Issues to Resolve (non-blocking, before the affected epics)
 
 **Highest-attention item:**
-1. **Confirm `Hexalith.Works` and `Hexalith.Projects` domain-module availability/maturity.** Both are referenced by FR-2 (reference validation), FR-17 (planned-vs-actual), and UJ-4/FR-15/FR-20 (AI effort tied to Works). Neither appears as a root submodule in this umbrella (siblings present: AI.Tools, Builds, Commons, Conversations, EventStore, Folders, FrontComposer, Memories, Parties, Tenants). Architecture mitigates with fail-closed adapters, so Epic 1 foundation is unaffected — but reference-validation/reporting stories and the AI/Works journey need these siblings to exist. **Action:** confirm both modules' presence and contract surface, or explicitly gate the dependent stories.
+1. **Confirm the `Hexalith.Works` reference-validation query surface (Projects is ready).** **[UPDATED 2026-06-19]** Both modules are confirmed present as root submodules. `Hexalith.Projects` exposes `GetProjectAsync` (tenant-scoped, safe-denial) so FR-2 Project validation is ready. `Hexalith.Works` has stable `WorkItemEffort` (FR-17) and `ExecutorBinding` (FR-15/FR-20) Contracts but **no consumer-facing read/validate query**. **Action:** decide between adding a Works-owned `GetWorkItem` query or bridging to the Works EventStore projection from a Timesheets adapter, before Story 1.7 (Work path) and Story 4.3. Epic 1 foundation stories are unaffected.
 
 **Policy decisions to finalize before launch (owned by stories, values still open):**
 2. **Time-zone / period policy (NFR15 / PRD Q1):** architecture defaults to tenant time zone and Stories 2.7/4.6 handle boundaries, but the explicit policy value is still a launch gate.
