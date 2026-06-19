@@ -2,6 +2,7 @@ using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.ActivityTypes;
+using Hexalith.Timesheets.Server.Exports;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.OperationalReports;
 using Hexalith.Timesheets.Server.Policies;
@@ -44,6 +45,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();
         services.TryAddSingleton<TimeEntryEvidenceListQueryService>();
         services.TryAddSingleton<ApprovedTimeLedgerQueryService>();
+        services.TryAddSingleton<ApprovedTimeExportService>();
         services.TryAddSingleton<ActualTimeReportQueryService>();
         services.TryAddSingleton<TimesheetPeriodSubmissionCommandService>();
         services.TryAddSingleton<TimesheetPeriodApprovalCommandService>();

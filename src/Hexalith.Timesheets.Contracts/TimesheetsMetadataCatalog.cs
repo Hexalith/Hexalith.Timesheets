@@ -1,6 +1,7 @@
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Policies;
+using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.Ui;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 
@@ -425,12 +426,20 @@ public static class TimesheetsMetadataCatalog
                 new("commentPolicy", "Comment policy", nameof(TimesheetsCommentPolicyDecision), true, "Comment text is omitted unless projection policy allows it."),
                 new("comment", "Comment", nameof(TimeEntryComment), false, "Comments may be excluded by policy."),
                 new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true, "Fresh, stale, rebuilding, degraded, or unavailable state remains visible."),
-                new("exportReadiness", "Export readiness", "Boolean", true, "Preview only; export generation is implemented by later finance-export workflows.")
+                new("exportReadiness", "Export readiness", nameof(ApprovedTimeExportReadinessState), true, "Ready only when disclosed billable rows are fresh and policy allows export."),
+                new("exportOutputScope", "Export output scope", nameof(ApprovedTimeExportScope), false, "Row count and selected filters are reviewed before export."),
+                new("includedEvidenceFields", "Included evidence fields", "String[]", false, "Stable IDs, approval metadata, correction lineage, event lineage, AI evidence units, and policy-allowed comments."),
+                new("exportFormat", "Export format", nameof(ApprovedTimeExportFormat), true, "CSV v1 evidence export."),
+                new("exportAuditMetadata", "Export audit metadata", nameof(ApprovedTimeExportAuditMetadata), false, "Requester, filters, timestamp, correlation ID, output scope, format, freshness, row count, and blocked reason."),
+                new("exportReviewDialog", "Export Review Dialog", "FluentDialog", false, "One bounded dialog summarizes selected filters, output scope, evidence fields, freshness state, comment policy, audit metadata, and non-calculation boundaries."),
+                new("exportBlockMessage", "Export block message", "FluentMessageBar", false, "Persistent stale, no-results, permission, or policy block explanation."),
+                new("exportSuccessFeedback", "Export success feedback", "FluentToast", false, "Transient feedback only after successful export generation.")
             ],
             [
                 new("drill-into-evidence", "Open evidence", "Timesheets.ReadTimeEntryEvidence"),
                 new("query-approved-time-ledger", "Query ledger", "Timesheets.QueryApprovedTimeLedger"),
-                new("review-export-readiness", "Review export readiness", "Timesheets.ReviewExportReadiness")
+                new("review-export-readiness", "Review export readiness", "Timesheets.ReviewExportReadiness"),
+                new("export-approved-ledger", "Export approved ledger", "Timesheets.GenerateApprovedLedgerExport")
             ],
             [
                 new("billable", "Billable", nameof(BillableState)),
@@ -439,7 +448,36 @@ public static class TimesheetsMetadataCatalog
                 new("hydration-state", "Hydration state", nameof(DisplayHydrationState)),
                 new("authority-source", "Approval authority source", nameof(ApprovalAuthoritySource)),
                 new("comment-policy", "Comment policy", nameof(TimesheetsCommentPolicyDecision)),
-                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState)),
+                new("export-readiness", "Export readiness", nameof(ApprovedTimeExportReadinessState)),
+                new("export-format", "Export format", nameof(ApprovedTimeExportFormat))
+            ]),
+        new(
+            "timesheets.command.approved-ledger-export",
+            "Export approved ledger",
+            "reporting",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("ledgerQuery", "Selected filters", nameof(QueryApprovedTimeLedger), true, "Reuses Approved-Time Ledger filters for Project, Work, Contributor, Activity Type, period, date range, billable flag, and row lineage options."),
+                new("outputScope", "Output scope", nameof(ApprovedTimeExportScope), true, "Previewed row count and row-state options before generation."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true, "Freshness must be Fresh before export is enabled."),
+                new("exportReadiness", "Export readiness", nameof(ApprovedTimeExportReadinessState), true, "Blocked exports show a persistent explanation and produce no file."),
+                new("commentPolicy", "Comment policy", nameof(TimesheetsCommentPolicyDecision), true, "Comments are exported only when policy allows."),
+                new("includedEvidenceFields", "Included evidence fields", "String[]", true, "Stable IDs, target references, dates, durations, activity type, billable flag, approval metadata, correction lineage, event lineage, and allowed comments."),
+                new("auditMetadata", "Audit metadata", nameof(ApprovedTimeExportAuditMetadata), true, "Requester, filters, timestamp, correlation ID, output scope, format, freshness, row count, and blocked reason."),
+                new("reviewDialog", "Review dialog", "FluentDialog", true, "One bounded confirmation dialog for filters, scope, evidence fields, freshness, policy, and non-calculation boundaries."),
+                new("persistentBlock", "Persistent block", "FluentMessageBar", false, "Used for stale projection, no results, permission denial, or policy block."),
+                new("successFeedback", "Success feedback", "FluentToast", false, "Used only after a successful export request.")
+            ],
+            [
+                new("generate-approved-ledger-export", "Export approved ledger", "Timesheets.GenerateApprovedLedgerExport")
+            ],
+            [
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState)),
+                new("comment-policy", "Comment policy", nameof(TimesheetsCommentPolicyDecision)),
+                new("export-readiness", "Export readiness", nameof(ApprovedTimeExportReadinessState)),
+                new("export-format", "Export format", nameof(ApprovedTimeExportFormat))
             ]),
         new(
             "timesheets.projection.project-actual-time-report",

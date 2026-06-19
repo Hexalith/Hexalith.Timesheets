@@ -1064,6 +1064,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.projection.time-entry-evidence",
                 "timesheets.projection.time-entry-query",
                 "timesheets.projection.approved-time-ledger",
+                "timesheets.command.approved-ledger-export",
                 "timesheets.projection.project-actual-time-report",
                 "timesheets.projection.work-actual-time-report",
                 "timesheets.projection.my-timesheet-period",
@@ -1121,6 +1122,8 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(MagicLinkCapabilityState));
         badgeVocabularies.ShouldContain(nameof(MagicLinkExpiryState));
         badgeVocabularies.ShouldContain(nameof(MagicLinkAllowedAction));
+        badgeVocabularies.ShouldContain(nameof(ApprovedTimeExportReadinessState));
+        badgeVocabularies.ShouldContain(nameof(ApprovedTimeExportFormat));
     }
 
     [Fact]

@@ -159,6 +159,21 @@ public enum ActualTimeReportRowState
     IncludesSuperseded = 2
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ApprovedTimeExportFormat>))]
+public enum ApprovedTimeExportFormat
+{
+    Unknown = 0,
+    Csv = 1
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<ApprovedTimeExportReadinessState>))]
+public enum ApprovedTimeExportReadinessState
+{
+    Unknown = 0,
+    Ready = 1,
+    Blocked = 2
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<ActualTimeReportSortBy>))]
 public enum ActualTimeReportSortBy
 {

@@ -94,7 +94,12 @@ public sealed class ApprovedTimeLedgerContractTests
         descriptor.Fields.Select(static field => field.Name).ShouldContain("approvedCorrection");
         descriptor.Fields.Select(static field => field.Name).ShouldContain("commentPolicy");
         descriptor.Fields.Select(static field => field.Name).ShouldContain("exportReadiness");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("exportOutputScope");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("includedEvidenceFields");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("exportAuditMetadata");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("exportReviewDialog");
         descriptor.Actions.Select(static action => action.Intent).ShouldContain("Timesheets.ReviewExportReadiness");
+        descriptor.Actions.Select(static action => action.Intent).ShouldContain("Timesheets.GenerateApprovedLedgerExport");
         descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(BillableState));
         descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovedTimeLedgerRowState));
         descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryLockState));
@@ -102,9 +107,41 @@ public sealed class ApprovedTimeLedgerContractTests
         descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovalAuthoritySource));
         descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimesheetsCommentPolicyDecision));
         descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
+        descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovedTimeExportReadinessState));
 
         string metadata = JsonSerializer.Serialize(descriptor, JsonOptions);
+        metadata.ShouldContain("FluentDialog");
+        metadata.ShouldContain("FluentMessageBar");
+        metadata.ShouldContain("FluentToast");
         metadata.ShouldNotContain("EventStore");
+        AssertNoFinanceOwnershipLanguage(metadata);
+    }
+
+    [Fact]
+    public void Approved_ledger_export_metadata_declares_review_dialog_audit_and_blocking_copy()
+    {
+        TimesheetsMetadataDescriptor descriptor = TimesheetsMetadataCatalog.Descriptors
+            .Single(static descriptor => descriptor.Name == "timesheets.command.approved-ledger-export");
+
+        descriptor.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerGeneratedForm);
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("ledgerQuery");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("outputScope");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("exportReadiness");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("commentPolicy");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("includedEvidenceFields");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("auditMetadata");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("reviewDialog");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("persistentBlock");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("successFeedback");
+        descriptor.Actions.Select(static action => action.Label).ShouldContain("Export approved ledger");
+        descriptor.Actions.Select(static action => action.Intent).ShouldContain("Timesheets.GenerateApprovedLedgerExport");
+
+        string metadata = JsonSerializer.Serialize(descriptor, JsonOptions);
+        metadata.ShouldContain("FluentDialog");
+        metadata.ShouldContain("FluentMessageBar");
+        metadata.ShouldContain("FluentToast");
+        metadata.ShouldContain("blocked");
         AssertNoFinanceOwnershipLanguage(metadata);
     }
 
