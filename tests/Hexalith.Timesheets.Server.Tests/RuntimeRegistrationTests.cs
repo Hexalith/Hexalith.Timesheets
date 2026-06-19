@@ -1,5 +1,6 @@
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.Runtime;
 
@@ -27,7 +28,9 @@ public sealed class RuntimeRegistrationTests
         provider.GetRequiredService<ITimesheetsTenantAccessValidator>()
             .ShouldBeOfType<DenyAllTimesheetsTenantAccessValidator>();
         provider.GetRequiredService<ITimesheetsPolicyEvaluator>()
-            .ShouldBeOfType<DenyAllTimesheetsPolicyEvaluator>();
+            .ShouldBeOfType<TimesheetsEvidencePolicyEvaluator>();
+        provider.GetRequiredService<TimesheetsEvidencePolicyOptions>()
+            .ShouldBe(TimesheetsEvidencePolicyOptions.FailClosedDefault);
         provider.GetRequiredService<IProjectReferenceValidator>()
             .ShouldBeOfType<DenyAllProjectReferenceValidator>();
         provider.GetRequiredService<IWorkReferenceValidator>()

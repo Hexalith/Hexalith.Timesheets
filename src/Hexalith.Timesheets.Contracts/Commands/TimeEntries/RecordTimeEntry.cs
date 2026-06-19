@@ -13,4 +13,7 @@ public sealed record RecordTimeEntry(
     int DurationMinutes,
     BillableState BillableState,
     ContributorCategory ContributorCategory,
-    AiEffortMetrics? AiMetrics);
+    AiEffortMetrics? AiMetrics)
+{
+    public TimeEntryComment? Comment { get; init; }
+}

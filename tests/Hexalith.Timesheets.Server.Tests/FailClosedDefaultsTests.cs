@@ -1,3 +1,7 @@
+using Hexalith.Timesheets.Contracts.References;
+using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
+
 using Shouldly;
 
 namespace Hexalith.Timesheets.Server.Tests;
@@ -34,21 +38,35 @@ public sealed class FailClosedDefaultsTests
     }
 
     [Fact]
-    public void Default_tenant_and_policy_adapters_reject_unconfigured_authority()
+    public void Default_tenant_validator_rejects_unconfigured_authority()
     {
-        string[] adapterFiles =
-        [
-            ServerSourcePath("Authorization", "DenyAllTimesheetsTenantAccessValidator.cs"),
-            ServerSourcePath("Authorization", "DenyAllTimesheetsPolicyEvaluator.cs")
-        ];
+        string source = File.ReadAllText(ServerSourcePath(
+            "Authorization",
+            "DenyAllTimesheetsTenantAccessValidator.cs"));
 
-        foreach (string adapterFile in adapterFiles)
-        {
-            string source = File.ReadAllText(adapterFile);
-            source.ShouldContain("Denied");
-            source.ShouldNotContain("Allowed()");
-            source.ShouldNotContain("Authorized()");
-        }
+        source.ShouldContain("Denied");
+        source.ShouldNotContain("Allowed()");
+        source.ShouldNotContain("Authorized()");
+    }
+
+    [Fact]
+    public async Task Default_policy_evaluator_blocks_trust_bearing_operations_until_policy_is_configured()
+    {
+        // The registered default (TimesheetsEvidencePolicyEvaluator + FailClosedDefault options)
+        // must deny trust-bearing operations until retention/comment policy is configured.
+        TimesheetsEvidencePolicyEvaluator evaluator = new(TimesheetsEvidencePolicyOptions.FailClosedDefault);
+
+        TimesheetsPolicyEvaluationResult result = await evaluator.EvaluateAsync(
+            new TimesheetsAuthorizationRequest(
+                new TimesheetsRequestContext(
+                    new TenantReference("tenant_01"),
+                    new PartyReference("party_01"),
+                    "correlation_01"),
+                TimesheetsOperation.Command),
+            TestContext.Current.CancellationToken);
+
+        result.IsAllowed.ShouldBeFalse();
+        result.DenialCategory.ShouldBe(TimesheetsDenialCategory.RetentionPolicyMissing);
     }
 
     private static string ServerSourcePath(params string[] segments)

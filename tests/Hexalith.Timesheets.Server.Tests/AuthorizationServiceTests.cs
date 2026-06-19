@@ -35,6 +35,8 @@ public sealed class AuthorizationServiceTests
     [InlineData(TimesheetsDenialCategory.AmbiguousAuthority)]
     [InlineData(TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(TimesheetsDenialCategory.UnconfiguredPolicy)]
+    [InlineData(TimesheetsDenialCategory.CommentPolicyMissing)]
+    [InlineData(TimesheetsDenialCategory.RetentionPolicyMissing)]
     public void Denial_vocabulary_contains_safe_categories(TimesheetsDenialCategory category)
     {
         TimesheetsAuthorizationDecision decision = TimesheetsAuthorizationDecision.Denied(

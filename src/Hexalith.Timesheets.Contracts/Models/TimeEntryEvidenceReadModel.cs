@@ -16,4 +16,7 @@ public sealed record TimeEntryEvidenceReadModel(
     ContributorCategory ContributorCategory,
     AiEffortMetrics? AiMetrics,
     TimeEntryCorrectionState CorrectionState,
-    ProjectionFreshnessMetadata ProjectionFreshness);
+    ProjectionFreshnessMetadata ProjectionFreshness)
+{
+    public TimeEntryComment? Comment { get; init; }
+}

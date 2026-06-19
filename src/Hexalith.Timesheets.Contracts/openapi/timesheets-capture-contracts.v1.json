@@ -16,7 +16,7 @@
       "Party display and contact data",
       "Project or Work names, hierarchy, planning, or lifecycle state",
       "Tenant membership state",
-      "invoice, payroll, rate, tax, or revenue state"
+      "finance-owned state"
     ],
     "notInCallerPayloads": [
       "messageId",
@@ -27,6 +27,41 @@
       "claims",
       "jwt",
       "token"
+    ]
+  },
+  "x-hexalith-evidence-policy": {
+    "retentionCategories": [
+      {
+        "name": "TimeEntryEvidence",
+        "default": "RetainedByDefault",
+        "guidance": "Time Entry evidence is retained by default."
+      },
+      {
+        "name": "CommentText",
+        "default": "LegalHoldRequired",
+        "guidance": "Comment retention policy is unresolved."
+      },
+      {
+        "name": "ExportRecord",
+        "default": "TenantOverrideRequired",
+        "guidance": "Export record retention requires tenant policy."
+      },
+      {
+        "name": "MagicLinkConfirmationAuditMetadata",
+        "default": "LegalHoldRequired",
+        "guidance": "Confirmation audit metadata retention is unresolved."
+      }
+    ],
+    "commentRules": [
+      "Comments may contain sensitive information.",
+      "Comments may be excluded by policy.",
+      "Comment export is disabled until policy allows it.",
+      "Comments are excluded from diagnostics."
+    ],
+    "launchReadinessGaps": [
+      "Legal-hold policy is unresolved.",
+      "Tenant-specific retention overrides are unresolved.",
+      "Comment sensitivity policy is unresolved."
     ]
   },
   "components": {
@@ -52,7 +87,8 @@
           "durationMinutes": { "type": "integer", "minimum": 1 },
           "billableState": { "$ref": "#/components/schemas/BillableState" },
           "contributorCategory": { "$ref": "#/components/schemas/ContributorCategory" },
-          "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" }
+          "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" },
+          "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
         }
       },
       "TimeEntryTargetReference": {
@@ -87,7 +123,27 @@
       },
       "TimeEntryEvidenceReadModel": {
         "type": "object",
-        "description": "Evidence read model with stable references, approval/correction placeholders, optional AI metrics, and projection freshness metadata."
+        "description": "Evidence read model with stable references, approval/correction placeholders, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata."
+      },
+      "TimeEntryComment": {
+        "type": "object",
+        "required": [ "text", "policy" ],
+        "properties": {
+          "text": { "type": "string", "minLength": 1, "maxLength": 4096 },
+          "policy": { "$ref": "#/components/schemas/TimeEntryCommentPolicy" }
+        }
+      },
+      "TimeEntryCommentPolicy": {
+        "type": "object",
+        "properties": {
+          "internalDisplay": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision" },
+          "externalConfirmationDisplay": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision" },
+          "projectionInclusion": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision" },
+          "exportInclusion": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision" },
+          "supportDiagnostics": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision" },
+          "redactionRequirement": { "$ref": "#/components/schemas/TimesheetsCommentRedactionRequirement" },
+          "retentionCategory": { "$ref": "#/components/schemas/TimesheetsEvidenceRetentionCategory" }
+        }
       },
       "TimesheetsMetadataDescriptor": {
         "type": "object",
@@ -103,6 +159,22 @@
       "ContributorCategory": {
         "type": "string",
         "enum": [ "Unknown", "Employee", "ExternalContributor", "AutomatedAgent" ]
+      },
+      "TimesheetsEvidenceRetentionCategory": {
+        "type": "string",
+        "enum": [ "Unknown", "TimeEntryEvidence", "CommentText", "ExportRecord", "MagicLinkConfirmationAuditMetadata" ]
+      },
+      "TimesheetsRetentionPosture": {
+        "type": "string",
+        "enum": [ "Unknown", "RetainedByDefault", "ExcludedByDefault", "RedactedByDefault", "LegalHoldRequired", "TenantOverrideRequired" ]
+      },
+      "TimesheetsCommentPolicyDecision": {
+        "type": "string",
+        "enum": [ "Unknown", "Allowed", "Excluded", "Redacted", "PolicyRequired" ]
+      },
+      "TimesheetsCommentRedactionRequirement": {
+        "type": "string",
+        "enum": [ "Unknown", "NotRequired", "RequiredBeforeExternalDisclosure", "RequiredBeforeExport" ]
       }
     }
   },

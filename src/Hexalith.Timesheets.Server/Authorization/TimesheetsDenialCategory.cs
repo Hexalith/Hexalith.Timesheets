@@ -13,5 +13,7 @@ public enum TimesheetsDenialCategory
     AmbiguousAuthority = 8,
     UnavailableSiblingAuthority = 9,
     UnconfiguredPolicy = 10,
-    InvalidReference = 11
+    InvalidReference = 11,
+    CommentPolicyMissing = 12,
+    RetentionPolicyMissing = 13
 }

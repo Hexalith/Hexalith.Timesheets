@@ -15,4 +15,7 @@ public sealed record TimeEntryRecorded(
     BillableState BillableState,
     TimeEntryApprovalState ApprovalState,
     ContributorCategory ContributorCategory,
-    AiEffortMetrics? AiMetrics);
+    AiEffortMetrics? AiMetrics)
+{
+    public TimeEntryComment? Comment { get; init; }
+}

@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +16,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
         services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();
-        services.TryAddSingleton<ITimesheetsPolicyEvaluator, DenyAllTimesheetsPolicyEvaluator>();
+        services.TryAddSingleton(TimesheetsEvidencePolicyOptions.FailClosedDefault);
+        services.TryAddSingleton<ITimesheetsPolicyEvaluator, TimesheetsEvidencePolicyEvaluator>();
         services.TryAddSingleton<IProjectReferenceValidator, DenyAllProjectReferenceValidator>();
         services.TryAddSingleton<IWorkReferenceValidator, DenyAllWorkReferenceValidator>();
         services.TryAddSingleton<IContributorPartyValidator, DenyAllContributorPartyValidator>();

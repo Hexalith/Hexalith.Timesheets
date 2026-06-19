@@ -66,4 +66,50 @@ public sealed class DiagnosticsPrivacyTests
         hostProgram.ShouldNotContain("token", Case.Insensitive);
         hostProgram.ShouldNotContain("secret", Case.Insensitive);
     }
+
+    [Fact]
+    public void Policy_guidance_omits_protected_payloads_sibling_state_and_finance_ownership_language()
+    {
+        string[] artifactPaths =
+        [
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts", "openapi", "timesheets-capture-contracts.v1.json"),
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts", "openapi", "timesheets-evidence-policy.v1.md")
+        ];
+
+        foreach (string artifactPath in artifactPaths)
+        {
+            string content = File.ReadAllText(artifactPath);
+            if (Path.GetExtension(artifactPath).Equals(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                System.Text.Json.Nodes.JsonNode artifact =
+                    System.Text.Json.Nodes.JsonNode.Parse(content)
+                    ?? throw new InvalidOperationException("OpenAPI artifact could not be parsed.");
+                content = artifact["x-hexalith-evidence-policy"]?.ToJsonString()
+                    ?? throw new InvalidOperationException("Policy guidance metadata is missing.");
+            }
+
+            content.ShouldContain("Comments are excluded from diagnostics.");
+            content.ShouldNotContain("EventStore envelope", Case.Insensitive);
+            content.ShouldNotContain("command body", Case.Insensitive);
+            content.ShouldNotContain("event payload", Case.Insensitive);
+            content.ShouldNotContain("Party display", Case.Insensitive);
+            content.ShouldNotContain("Project name", Case.Insensitive);
+            content.ShouldNotContain("Work name", Case.Insensitive);
+            content.ShouldNotContain("token", Case.Insensitive);
+            content.ShouldNotContain("secret", Case.Insensitive);
+            AssertNoFinanceOwnershipLanguage(content);
+        }
+    }
+
+    private static void AssertNoFinanceOwnershipLanguage(string content)
+    {
+        foreach (string forbiddenWord in new[] { "invoice", "payroll", "rate", "tax", "revenue" })
+        {
+            System.Text.RegularExpressions.Regex.IsMatch(
+                content,
+                $@"\b{forbiddenWord}\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase,
+                TimeSpan.FromSeconds(1)).ShouldBeFalse(forbiddenWord);
+        }
+    }
 }

@@ -240,7 +240,8 @@ public sealed class TimeCaptureContractTests
             [
                 "timesheets.command.record-time",
                 "timesheets.command.activity-type-catalog",
-                "timesheets.projection.time-entry-evidence"
+                "timesheets.projection.time-entry-evidence",
+                "timesheets.review.export-policy"
             ]);
 
         TimesheetsMetadataCatalog.Descriptors

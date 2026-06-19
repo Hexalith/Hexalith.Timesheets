@@ -4,4 +4,5 @@ public sealed record TimesheetsMetadataFieldDescriptor(
     string Name,
     string Label,
     string ContractType,
-    bool IsRequired);
+    bool IsRequired,
+    string? HelpText = null);

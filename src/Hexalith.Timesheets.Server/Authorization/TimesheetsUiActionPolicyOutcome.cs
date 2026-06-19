@@ -58,6 +58,8 @@ public sealed record TimesheetsUiActionPolicyOutcome(
             or TimesheetsDenialCategory.StaleProjection
             or TimesheetsDenialCategory.AmbiguousAuthority
             or TimesheetsDenialCategory.UnavailableSiblingAuthority
-            or TimesheetsDenialCategory.UnconfiguredPolicy;
+            or TimesheetsDenialCategory.UnconfiguredPolicy
+            or TimesheetsDenialCategory.CommentPolicyMissing
+            or TimesheetsDenialCategory.RetentionPolicyMissing;
     }
 }
