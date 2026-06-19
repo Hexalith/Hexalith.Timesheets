@@ -859,6 +859,36 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
+    public async Task Approved_entry_correction_attempt_fails_closed_on_current_authority_before_lock_guard_dispatch()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Denied(
+                ReferenceValidationState.TenantMismatch,
+                "tenant-1 project-1 raw upstream detail"));
+
+        TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
+            Context(),
+            CorrectCommand(TimeEntryId()),
+            ApprovedState(ProjectCommand()),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.DomainResult.ShouldBeNull();
+        result.HasCurrentAuthorizationDenial.ShouldBeTrue();
+        result.CurrentAuthorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.CrossTenantTarget);
+        result.CurrentAuthorization.Reason.ShouldBe("Authority cannot be resolved.");
+        result.CurrentAuthorization.Reason.ShouldNotContain("project", Case.Insensitive);
+        result.CorrectedAuthorization.ShouldBeNull();
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        fixture.ApprovalResolver.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Correction_validates_current_and_corrected_references_then_uses_correction_authority_action()
     {
         Fixture fixture = AuthorizedProjectFixture();
@@ -1418,6 +1448,27 @@ public sealed class TimeEntryAuthorizationTests
                 ProjectionFreshnessMetadata.Fresh),
             TimeEntryApprovalScope.IndividualEntry,
             new TimeEntryRejectionReason("Needs customer PO evidence.")));
+        return state;
+    }
+
+    private static TimeEntryState ApprovedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = SubmittedState(command);
+        state.Apply(new TimeEntryApproved(
+            command.TimeEntryId,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            DecisionAtUtc(),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Approved,
+            new ApprovalAuthoritySourceAttribution(
+                ApprovalAuthorityAction.EntryApproval,
+                ApprovalAuthoritySource.ProjectApprover,
+                ApprovalAuthorityDecisionState.Allowed,
+                "timesheets.approval-authority.v1",
+                "v1",
+                ProjectionFreshnessMetadata.Fresh),
+            TimeEntryApprovalScope.IndividualEntry));
         return state;
     }
 

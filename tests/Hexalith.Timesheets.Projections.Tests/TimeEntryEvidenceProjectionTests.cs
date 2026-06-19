@@ -201,6 +201,34 @@ public sealed class TimeEntryEvidenceProjectionTests
         model.ApprovalDecision.Approver.ShouldBe(new PartyReference("approver-1"));
         model.ApprovalDecision.AuthoritySource.Source.ShouldBe(ApprovalAuthoritySource.ProjectApprover);
         model.ApprovalDecision.Reason.ShouldBeNull();
+        model.LockEvidence.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
+        model.LockEvidence.SourceApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-1"));
+        model.LockEvidence.SourceApprovalScope.ShouldBe(TimeEntryApprovalScope.IndividualEntry);
+        model.LockEvidence.LockedBy.ShouldBe(new PartyReference("approver-1"));
+        model.LockEvidence.LockedAtUtc.ShouldBe(new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero));
+    }
+
+    [Fact]
+    public void Projection_dedupes_duplicate_approval_without_duplicate_lock_lineage()
+    {
+        TimeEntryProjectionEvent approved = Event("m3", 3, Approved("time-entry-1"));
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                approved,
+                approved
+            ],
+            FreshCheckpoint(3));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        model.LockEvidence.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryApproved)]);
     }
 
     [Fact]
@@ -261,6 +289,7 @@ public sealed class TimeEntryEvidenceProjectionTests
         model.Correction.RejectionDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-2"));
         model.EventLineage.Select(static item => item.EventName)
             .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryRejected), nameof(TimeEntryCorrected)]);
+        model.LockEvidence.LockState.ShouldBe(TimeEntryLockState.Unlocked);
     }
 
     [Fact]
@@ -297,6 +326,7 @@ public sealed class TimeEntryEvidenceProjectionTests
         corrected.ShouldNotBeNull();
         corrected.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
         corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+        corrected.LockEvidence.LockState.ShouldBe(TimeEntryLockState.Unlocked);
         corrected.DurationMinutes.ShouldBe(75);
         corrected.ApprovalDecision.ShouldNotBeNull();
         corrected.ApprovalDecision.Reason.ShouldBe(new TimeEntryRejectionReason("Needs customer PO evidence."));
@@ -308,6 +338,39 @@ public sealed class TimeEntryEvidenceProjectionTests
                 nameof(TimeEntryCorrected),
                 nameof(TimeEntrySubmitted)
             ]);
+    }
+
+    [Fact]
+    public void Projection_marks_superseded_correction_as_superseded_locked_evidence()
+    {
+        TimeEntryCorrected superseded = new(
+            TimeEntryId(),
+            new TimeEntryCorrectionId("correction-1"),
+            new TenantReference("tenant-1"),
+            new PartyReference("operator-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            CorrectionValues(45, "Original evidence."),
+            CorrectionValues(75, "Corrected after rejection."),
+            new TimeEntryRejectionReason("Needs customer PO evidence."),
+            new TimeEntryApprovalDecisionId("decision-2"),
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Superseded);
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Rejected("time-entry-1")),
+                Event("m4", 4, superseded)
+            ],
+            FreshCheckpoint(4));
+
+        model.ShouldNotBeNull();
+        model.CorrectionState.ShouldBe(TimeEntryCorrectionState.Superseded);
+        model.LockEvidence.LockState.ShouldBe(TimeEntryLockState.SupersededLocked);
+        model.LockEvidence.SourceApprovalDecisionId.ShouldBeNull();
     }
 
     [Fact]

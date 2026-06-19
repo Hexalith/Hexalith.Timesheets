@@ -29,6 +29,9 @@ public sealed record TimeEntryEvidenceReadModel(
 
     public TimeEntryCorrectionEvidence? Correction { get; init; }
 
+    public TimeEntryLockEvidence LockEvidence { get; init; } =
+        TimeEntryLockEvidence.Unlocked;
+
     public TimeEntryDisplayHydration DisplayHydration { get; init; } =
         TimeEntryDisplayHydration.Unknown;
 }

@@ -138,6 +138,14 @@ public sealed class DiagnosticsPrivacyTests
         AssertClosedSchema(schemas, "TimeEntryEventLineageItem", ["eventName", "ordinal", "sourceAuthority"]);
         AssertClosedSchema(schemas, "TimeEntryHydratedDisplayLabel", ["state", "label", "asOfUtc", "detail"]);
         AssertClosedSchema(schemas, "TimeEntryDisplayHydration", ["contributor", "target", "activityType"]);
+        AssertClosedSchema(schemas, "TimeEntryLockEvidence", [
+            "lockState",
+            "sourceApprovalDecisionId",
+            "sourceApprovalScope",
+            "lockedBy",
+            "lockedAtUtc",
+            "explanation"
+        ]);
     }
 
     [Fact]

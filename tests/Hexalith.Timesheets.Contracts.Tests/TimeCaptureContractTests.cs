@@ -545,6 +545,79 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((ApprovalAuthoritySource)0).ShouldBe("Unknown");
         Enum.GetName((ApprovalAuthorityDecisionState)0).ShouldBe("Unknown");
         Enum.GetName((TimeEntryCorrectionState)0).ShouldBe("Unknown");
+        Enum.GetName((TimeEntryLockState)0).ShouldBe("Unknown");
+    }
+
+    [Fact]
+    public void Time_entry_lock_evidence_round_trips_without_authority_or_envelope_fields()
+    {
+        TimeEntryLockEvidence evidence = new(
+            TimeEntryLockState.LockedFromDirectEdit,
+            new TimeEntryApprovalDecisionId("approval-decision-123"),
+            TimeEntryApprovalScope.IndividualEntry,
+            new PartyReference("approver-123"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            "Approved entries are locked from direct edits.");
+
+        string json = JsonSerializer.Serialize(evidence, JsonOptions);
+
+        json.ShouldContain("\"lockState\":\"LockedFromDirectEdit\"");
+        json.ShouldContain("\"sourceApprovalDecisionId\"");
+        json.ShouldContain("\"sourceApprovalScope\":\"IndividualEntry\"");
+        json.ShouldContain("\"lockedBy\"");
+        json.ShouldContain("\"lockedAtUtc\"");
+        AssertJsonOmitsCallerAuthority(json);
+        json.ShouldNotContain("claim", Case.Insensitive);
+        json.ShouldNotContain("role", Case.Insensitive);
+        json.ShouldNotContain("envelope", Case.Insensitive);
+        json.ShouldNotContain("command", Case.Insensitive);
+
+        TimeEntryLockEvidence? roundTripped = JsonSerializer.Deserialize<TimeEntryLockEvidence>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
+        roundTripped.SourceApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("approval-decision-123"));
+        roundTripped.SourceApprovalScope.ShouldBe(TimeEntryApprovalScope.IndividualEntry);
+        roundTripped.LockedBy.ShouldBe(new PartyReference("approver-123"));
+    }
+
+    [Fact]
+    public void Time_entry_evidence_read_model_carries_lock_state_and_evidence()
+    {
+        TimeEntryEvidenceReadModel model = new(
+            new TimeEntryId("time-entry-1"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-1")),
+            new PartyReference("party-1"),
+            new ActivityTypeId("activity-type-1"),
+            ActivityTypeScope.Tenant,
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            TimeEntryApprovalState.Approved,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable,
+            TimeEntryCorrectionState.None,
+            ProjectionFreshnessMetadata.Fresh)
+        {
+            LockEvidence = new(
+                TimeEntryLockState.LockedFromDirectEdit,
+                new TimeEntryApprovalDecisionId("approval-decision-1"),
+                TimeEntryApprovalScope.IndividualEntry,
+                new PartyReference("approver-1"),
+                new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+                "Approved entries are locked from direct edits.")
+        };
+
+        string json = JsonSerializer.Serialize(model, JsonOptions);
+
+        json.ShouldContain("\"lockEvidence\"");
+        json.ShouldContain("\"lockState\":\"LockedFromDirectEdit\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimeEntryEvidenceReadModel? roundTripped = JsonSerializer.Deserialize<TimeEntryEvidenceReadModel>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.LockEvidence.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
     }
 
     [Fact]
@@ -686,6 +759,7 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(DisplayHydrationState));
         badgeVocabularies.ShouldContain(nameof(ApprovalAuthorityDecisionState));
         badgeVocabularies.ShouldContain(nameof(ApprovalAuthoritySource));
+        badgeVocabularies.ShouldContain(nameof(TimeEntryLockState));
     }
 
     [Fact]
@@ -761,6 +835,8 @@ public sealed class TimeCaptureContractTests
         evidence.Fields.Select(static field => field.Name).ShouldContain("authoritySource");
         evidence.Fields.Select(static field => field.Name).ShouldContain("authorityFreshness");
         evidence.Fields.Select(static field => field.Name).ShouldContain("displayHydration");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("lockEvidence");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("lockState");
         evidence.Fields.Select(static field => field.Name).ShouldContain("aiWallClockDurationMilliseconds");
         evidence.Fields.Select(static field => field.Name).ShouldContain("aiModelRuntimeMilliseconds");
         evidence.Fields.Select(static field => field.Name).ShouldContain("aiBillableEffortMinutes");
@@ -772,6 +848,7 @@ public sealed class TimeCaptureContractTests
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(DisplayHydrationState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovalAuthorityDecisionState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovalAuthoritySource));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryLockState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiTokenMetricAvailability));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiEffortMetricSourceCategory));
     }
@@ -843,6 +920,8 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("TimeEntryCorrectionId").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryCorrectionValues").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryCorrectionEvidence").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryLockEvidence").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryLockState").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionId").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApprovalDecisionId").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionScope").ShouldBeTrue();
@@ -875,6 +954,8 @@ public sealed class TimeCaptureContractTests
         schemaJson.ShouldContain("TimeEntryApproved");
         schemaJson.ShouldContain("TimeEntryRejected");
         schemaJson.ShouldContain("TimeEntryCorrected");
+        schemaJson.ShouldContain("LockedFromDirectEdit");
+        schemaJson.ShouldContain("Approved entries are locked from direct edits");
         schemaJson.ShouldNotContain("EventStore");
         schemaJson.ShouldNotContain("invoice", Case.Insensitive);
         schemaJson.ShouldNotContain("payroll", Case.Insensitive);

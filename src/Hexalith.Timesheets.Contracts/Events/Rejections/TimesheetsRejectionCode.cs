@@ -14,5 +14,6 @@ public enum TimesheetsRejectionCode
     ProjectionUnavailable = 6,
     ActivityTypeAlreadyExists = 7,
     ActivityTypeNotFound = 8,
-    ActivityTypeScopeMismatch = 9
+    ActivityTypeScopeMismatch = 9,
+    TimeEntryLocked = 10
 }

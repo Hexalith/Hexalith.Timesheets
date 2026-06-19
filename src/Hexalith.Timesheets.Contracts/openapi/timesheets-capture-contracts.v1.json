@@ -433,7 +433,7 @@
       },
       "TimeEntryEvidenceReadModel": {
         "type": "object",
-        "description": "Evidence read model with stable references, source authority, safe event lineage, read-time display hydration state, approval/correction placeholders, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata.",
+        "description": "Evidence read model with stable references, source authority, safe event lineage, read-time display hydration state, approval/correction placeholders, direct-edit lock evidence, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata.",
         "required": [
           "timeEntryId",
           "target",
@@ -447,6 +447,7 @@
           "contributorCategory",
           "correctionState",
           "projectionFreshness",
+          "lockEvidence",
           "sourceAuthority",
           "eventLineage",
           "displayHydration"
@@ -472,9 +473,28 @@
           },
           "approvalDecision": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionEvidence" },
           "correction": { "$ref": "#/components/schemas/TimeEntryCorrectionEvidence" },
+          "lockEvidence": { "$ref": "#/components/schemas/TimeEntryLockEvidence" },
           "displayHydration": { "$ref": "#/components/schemas/TimeEntryDisplayHydration" },
           "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
         }
+      },
+      "TimeEntryLockEvidence": {
+        "type": "object",
+        "description": "Safe direct-edit lock evidence for display surfaces. Approved entries are locked from direct edits. This carries stable approval decision, scope, approver reference, and UTC lock time when available without caller authority or upstream payload details.",
+        "required": [
+          "lockState",
+          "sourceApprovalScope",
+          "explanation"
+        ],
+        "properties": {
+          "lockState": { "$ref": "#/components/schemas/TimeEntryLockState" },
+          "sourceApprovalDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" },
+          "sourceApprovalScope": { "$ref": "#/components/schemas/TimeEntryApprovalScope" },
+          "lockedBy": { "$ref": "#/components/schemas/PartyReference" },
+          "lockedAtUtc": { "type": [ "string", "null" ], "format": "date-time" },
+          "explanation": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
       },
       "TimeEntryCorrectionValues": {
         "type": "object",
@@ -704,6 +724,10 @@
       "TimeEntryCorrectionState": {
         "type": "string",
         "enum": [ "Unknown", "None", "Corrected", "Superseded" ]
+      },
+      "TimeEntryLockState": {
+        "type": "string",
+        "enum": [ "Unknown", "Unlocked", "LockedFromDirectEdit", "SupersededLocked" ]
       },
       "TimeEntryEvidenceSourceAuthority": {
         "type": "string",

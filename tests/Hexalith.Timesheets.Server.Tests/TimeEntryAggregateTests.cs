@@ -465,6 +465,29 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
+    public void Approved_state_derives_locked_from_direct_edit_from_replayed_events()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = SubmittedState(command);
+
+        state.IsLockedFromDirectEdit.ShouldBeFalse();
+        state.LockState.ShouldBe(TimeEntryLockState.Unlocked);
+
+        state.Apply(new TimeEntryApproved(
+            command.TimeEntryId,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Approved,
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        state.IsLockedFromDirectEdit.ShouldBeTrue();
+        state.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
+    }
+
+    [Fact]
     public void Rejects_different_decision_id_after_terminal_approval_state()
     {
         RecordTimeEntry command = ValidCommand();
@@ -489,7 +512,50 @@ public sealed class TimeEntryAggregateTests
             AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
             TimeEntryApprovalScope.IndividualEntry));
 
-        rejection.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].approvalState" && error.Code == "terminal-state");
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].lockState" && error.Code == "locked-from-direct-edit");
+    }
+
+    [Fact]
+    public void Submit_after_approved_rejects_with_typed_lock_rejection()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = ApprovedState(command);
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            SubmitCommand(command.TimeEntryId, "submission-after-approval"),
+            command.TimeEntryId,
+            state,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 10, 0, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant));
+
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].lockState" && error.Code == "locked-from-direct-edit");
+    }
+
+    [Fact]
+    public void Reject_after_approved_rejects_with_typed_lock_rejection_without_new_event()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = ApprovedState(command);
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            RejectCommand(command.TimeEntryId, "decision-new"),
+            command.TimeEntryId,
+            state,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 5, 0, TimeSpan.Zero),
+            AllowedAuthority(ApprovalAuthorityAction.EntryRejection),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].lockState" && error.Code == "locked-from-direct-edit");
     }
 
     [Fact]
@@ -731,6 +797,110 @@ public sealed class TimeEntryAggregateTests
         state.CorrectionState.ShouldBe(TimeEntryCorrectionState.None);
     }
 
+    [Fact]
+    public void Correct_approved_entry_rejects_with_typed_lock_rejection_without_correction_event()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = ApprovedState(command);
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            CorrectCommand(command.TimeEntryId),
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant));
+
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].lockState" && error.Code == "locked-from-direct-edit");
+        state.CorrectionState.ShouldBe(TimeEntryCorrectionState.None);
+        state.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+    }
+
+    [Fact]
+    public void Submit_after_superseded_entry_rejects_with_typed_superseded_lock_rejection()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = RejectedState(command);
+        state.Apply(new TimeEntryCorrected(
+            command.TimeEntryId,
+            new TimeEntryCorrectionId("correction-1"),
+            new TenantReference("tenant-1"),
+            new PartyReference("operator-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            CorrectionValues(command),
+            CorrectionValues(command with { DurationMinutes = 75 }),
+            new TimeEntryRejectionReason("Needs customer PO evidence."),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Superseded));
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            SubmitCommand(command.TimeEntryId, "submission-after-superseded"),
+            command.TimeEntryId,
+            state,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 10, 0, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant));
+
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].lockState" && error.Code == "superseded-locked");
+        state.LockState.ShouldBe(TimeEntryLockState.SupersededLocked);
+        state.IsLockedFromDirectEdit.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Approve_after_superseded_submitted_rejects_with_typed_superseded_lock_without_event()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = SupersededSubmittedState(command);
+
+        state.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        state.LockState.ShouldBe(TimeEntryLockState.SupersededLocked);
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            ApproveCommand(command.TimeEntryId, "decision-after-superseded"),
+            command.TimeEntryId,
+            state,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 11, 0, 0, TimeSpan.Zero),
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].lockState" && error.Code == "superseded-locked");
+        state.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        state.LockState.ShouldBe(TimeEntryLockState.SupersededLocked);
+    }
+
+    [Fact]
+    public void Reject_after_superseded_submitted_rejects_with_typed_superseded_lock_without_event()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = SupersededSubmittedState(command);
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            RejectCommand(command.TimeEntryId, "decision-after-superseded"),
+            command.TimeEntryId,
+            state,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 11, 5, 0, TimeSpan.Zero),
+            AllowedAuthority(ApprovalAuthorityAction.EntryRejection),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].lockState" && error.Code == "superseded-locked");
+        state.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+    }
+
     private static RecordTimeEntry ValidCommand()
         => new(
             new TimeEntryId("time-entry-1"),
@@ -794,6 +964,21 @@ public sealed class TimeEntryAggregateTests
         return state;
     }
 
+    private static TimeEntryState ApprovedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = SubmittedState(command);
+        state.Apply(new TimeEntryApproved(
+            command.TimeEntryId,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Approved,
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry));
+        return state;
+    }
+
     private static TimeEntryState SubmittedState(RecordTimeEntry command)
     {
         TimeEntryState state = RecordedState(command);
@@ -823,6 +1008,46 @@ public sealed class TimeEntryAggregateTests
             new TimeEntryRejectionReason("Needs customer PO evidence.")));
         return state;
     }
+
+    private static TimeEntryState SupersededSubmittedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = RejectedState(command);
+        state.Apply(new TimeEntryCorrected(
+            command.TimeEntryId,
+            new TimeEntryCorrectionId("correction-1"),
+            new TenantReference("tenant-1"),
+            new PartyReference("operator-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            CorrectionValues(command),
+            CorrectionValues(command with { DurationMinutes = 75 }),
+            new TimeEntryRejectionReason("Needs customer PO evidence."),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Superseded));
+        state.Apply(new TimeEntrySubmitted(
+            command.TimeEntryId,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 10, 0, 0, TimeSpan.Zero),
+            new TimeEntrySubmissionId("submission-2"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted));
+        return state;
+    }
+
+    private static TimeEntryCorrectionValues CorrectionValues(RecordTimeEntry command)
+        => new(
+            command.Target,
+            command.Contributor,
+            command.ActivityTypeId,
+            command.ServiceDate,
+            command.DurationMinutes,
+            command.BillableState,
+            command.ContributorCategory,
+            command.AiMetrics)
+        {
+            Comment = command.Comment
+        };
 
     private static ApprovalAuthoritySourceAttribution AllowedAuthority(ApprovalAuthorityAction action)
         => new(

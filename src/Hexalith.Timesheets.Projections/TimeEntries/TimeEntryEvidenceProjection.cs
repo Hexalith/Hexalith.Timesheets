@@ -94,6 +94,7 @@ public sealed class TimeEntryEvidenceProjection
             Comment = recorded.Comment,
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
+            LockEvidence = TimeEntryLockEvidence.Unlocked,
             DisplayHydration = TimeEntryDisplayHydration.Unavailable()
         };
 
@@ -108,6 +109,7 @@ public sealed class TimeEntryEvidenceProjection
             ProjectionFreshness = ToFreshnessMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
+            LockEvidence = TimeEntryLockEvidence.Unlocked,
             DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
                 ? TimeEntryDisplayHydration.Unavailable()
                 : current.DisplayHydration
@@ -134,6 +136,11 @@ public sealed class TimeEntryEvidenceProjection
             ProjectionFreshness = ToFreshnessMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
+            LockEvidence = TimeEntryLockEvidence.Approved(
+                approved.TimeEntryApprovalDecisionId,
+                approved.ApprovalScope,
+                approved.Approver,
+                approved.DecidedAtUtc),
             DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
                 ? TimeEntryDisplayHydration.Unavailable()
                 : current.DisplayHydration
@@ -160,6 +167,7 @@ public sealed class TimeEntryEvidenceProjection
             ProjectionFreshness = ToFreshnessMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
+            LockEvidence = TimeEntryLockEvidence.Unlocked,
             DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
                 ? TimeEntryDisplayHydration.Unavailable()
                 : current.DisplayHydration
@@ -197,6 +205,9 @@ public sealed class TimeEntryEvidenceProjection
             ProjectionFreshness = ToFreshnessMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
+            LockEvidence = corrected.CorrectionState == TimeEntryCorrectionState.Superseded
+                ? TimeEntryLockEvidence.Superseded()
+                : TimeEntryLockEvidence.Unlocked,
             DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
                 ? TimeEntryDisplayHydration.Unavailable()
                 : current.DisplayHydration

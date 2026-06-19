@@ -1,8 +1,10 @@
 using System.Text.Json;
 
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
+using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
@@ -89,8 +91,82 @@ public sealed class ApproveOrRejectSubmittedTimeEntriesE2ETests
         string json = JsonSerializer.Serialize(evidence, JsonOptions);
 
         json.ShouldContain("\"approvalState\":\"Approved\"");
+        json.ShouldContain("\"lockState\":\"LockedFromDirectEdit\"");
         json.ShouldContain("\"approvalScope\":\"IndividualEntry\"");
         json.ShouldContain("\"source\":\"ProjectApprover\"");
+        AssertJsonOmitsCallerAndEnvelopeAuthority(json);
+    }
+
+    [Fact]
+    public async Task Approved_time_entry_direct_mutation_workflow_rejects_and_discloses_lock_evidence()
+    {
+        AllowAllAccessGuard accessGuard = new();
+        FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();
+        TimeEntryApprovalCommandService approvalService = ApprovalService(accessGuard, authorityProvider);
+        TimeEntryCommandService recordService = new(accessGuard);
+        TimeEntryState state = SubmittedState();
+        ApproveTimeEntry approve = new(TimeEntryId(), new TimeEntryApprovalDecisionId("approval-decision-1"));
+
+        TimeEntryApprovalCommandResult approvalResult = await approvalService.ApproveAsync(
+            Context(),
+            approve,
+            state,
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntryApproved approved = approvalResult.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryApproved>();
+        state.Apply(approved);
+
+        TimeEntryCommandResult mutationResult = await recordService.RecordAsync(
+            Context(),
+            DirectMutationCommand(),
+            state,
+            FreshCatalog(),
+            TestContext.Current.CancellationToken);
+
+        mutationResult.WasDispatched.ShouldBeTrue();
+        TimesheetsRejection rejection = mutationResult.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimesheetsRejection>();
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.TimeEntryLocked);
+        rejection.FieldErrors.ShouldHaveSingleItem().ShouldSatisfyAllConditions(
+            error => error.Field.ShouldBe("entries[time-entry-1].lockState"),
+            error => error.Code.ShouldBe("locked-from-direct-edit"));
+        state.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        state.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
+
+        TimeEntryEvidenceReadModel evidence = await DiscloseEvidenceAsync(accessGuard, Project(approved));
+
+        evidence.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        evidence.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        evidence.LockEvidence.ShouldSatisfyAllConditions(
+            lockEvidence => lockEvidence.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit),
+            lockEvidence => lockEvidence.SourceApprovalDecisionId.ShouldBe(approve.TimeEntryApprovalDecisionId),
+            lockEvidence => lockEvidence.SourceApprovalScope.ShouldBe(TimeEntryApprovalScope.IndividualEntry),
+            lockEvidence => lockEvidence.LockedBy.ShouldBe(Approver()),
+            lockEvidence => lockEvidence.LockedAtUtc.ShouldBe(DecidedAtUtc()),
+            lockEvidence => lockEvidence.Explanation.ShouldBe("Approved entries are locked from direct edits."));
+        evidence.EventLineage.Select(static item => item.EventName).ShouldBe(
+        [
+            nameof(TimeEntryRecorded),
+            nameof(TimeEntrySubmitted),
+            nameof(TimeEntryApproved)
+        ]);
+        accessGuard.Requests.Select(static request => request.Operation).ShouldBe(
+        [
+            TimesheetsOperation.Command,
+            TimesheetsOperation.Command,
+            TimesheetsOperation.ProjectionRead,
+            TimesheetsOperation.ProjectionRead
+        ]);
+
+        string json = JsonSerializer.Serialize(new { rejection, evidence }, JsonOptions);
+
+        json.ShouldContain("\"code\":\"TimeEntryLocked\"");
+        json.ShouldContain("\"lockState\":\"LockedFromDirectEdit\"");
+        json.ShouldContain("Approved entries are locked from direct edits.");
         AssertJsonOmitsCallerAndEnvelopeAuthority(json);
     }
 
@@ -257,6 +333,34 @@ public sealed class ApproveOrRejectSubmittedTimeEntriesE2ETests
         state.Apply(Submitted());
         return state;
     }
+
+    private static RecordTimeEntry DirectMutationCommand()
+        => new(
+            TimeEntryId(),
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            new DateOnly(2026, 6, 20),
+            90,
+            BillableState.NonBillable,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable)
+        {
+            Comment = new("Attempted direct mutation after approval.", TimeEntryCommentPolicy.SensitiveDefault)
+        };
+
+    private static ActivityTypeCatalogReadModel FreshCatalog()
+        => new(
+            [
+                new(
+                    ActivityId(),
+                    ActivityTypeScope.Tenant,
+                    null,
+                    "Delivery",
+                    true,
+                    BillableState.Billable)
+            ],
+            ProjectionFreshnessMetadata.Fresh);
 
     private static TimeEntryRecorded Recorded()
         => new(

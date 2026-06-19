@@ -73,6 +73,15 @@ public sealed class TimeEntryState
 
     public TimeEntryCorrectionValues? CorrectedValues { get; private set; }
 
+    public TimeEntryLockState LockState => CorrectionState == TimeEntryCorrectionState.Superseded
+        ? TimeEntryLockState.SupersededLocked
+        : ApprovalState == TimeEntryApprovalState.Approved
+            ? TimeEntryLockState.LockedFromDirectEdit
+            : TimeEntryLockState.Unlocked;
+
+    public bool IsLockedFromDirectEdit => LockState is TimeEntryLockState.LockedFromDirectEdit
+        or TimeEntryLockState.SupersededLocked;
+
     public void Apply(TimeEntryRecorded recorded)
     {
         ArgumentNullException.ThrowIfNull(recorded);

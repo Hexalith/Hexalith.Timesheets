@@ -185,6 +185,8 @@ public static class TimesheetsMetadataCatalog
                 new("approvalScope", "Approval scope", nameof(TimeEntryApprovalScope), false),
                 new("approver", "Approver", "PartyReference", false),
                 new("decidedAtUtc", "Decision time", "DateTimeOffset", false),
+                new("lockEvidence", "Lock evidence", nameof(TimeEntryLockEvidence), true, "Direct-edit lock state derived from Time Entry domain events."),
+                new("lockState", "Lock state", nameof(TimeEntryLockState), true, "Approved entries are locked from direct edits."),
                 new("rejectionReason", "Rejection reason", nameof(TimeEntryRejectionReason), false, "Required rejection reason preserved for correction workflow."),
                 new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), false, "Stable source attribution for the approval decision."),
                 new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), false),
@@ -215,6 +217,7 @@ public static class TimesheetsMetadataCatalog
                 new("authority-decision", "Authority decision", nameof(ApprovalAuthorityDecisionState)),
                 new("authority-source", "Authority source", nameof(ApprovalAuthoritySource)),
                 new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("lock", "Lock", nameof(TimeEntryLockState)),
                 new("billable", "Billable", nameof(BillableState)),
                 new("contributor", "Contributor", nameof(ContributorCategory)),
                 new("correction", "Correction", nameof(TimeEntryCorrectionState)),
@@ -236,6 +239,8 @@ public static class TimesheetsMetadataCatalog
                 new("priorValues", "Prior values", nameof(TimeEntryCorrectionValues), false),
                 new("correctedValues", "Corrected values", nameof(TimeEntryCorrectionValues), false),
                 new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
+                new("lockEvidence", "Lock evidence", nameof(TimeEntryLockEvidence), true, "Entry lock state is display evidence only; write authority remains the aggregate state."),
+                new("lockState", "Lock state", nameof(TimeEntryLockState), true),
                 new("fieldValidation", "Field validation", "TimesheetsFieldError[]", false),
                 new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true),
                 new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Period correction and freshness blockers remain visible.")
@@ -247,6 +252,7 @@ public static class TimesheetsMetadataCatalog
             [
                 new("approval", "Approval", nameof(TimeEntryApprovalState)),
                 new("correction", "Correction", nameof(TimeEntryCorrectionState)),
+                new("lock", "Lock", nameof(TimeEntryLockState)),
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
@@ -259,6 +265,8 @@ public static class TimesheetsMetadataCatalog
                 new("timeEntry", "Time Entry", "TimeEntryId", false),
                 new("period", "Period", "String", false),
                 new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true),
+                new("lockEvidence", "Lock evidence", nameof(TimeEntryLockEvidence), false, "Approved entries show direct-edit lock evidence."),
+                new("lockState", "Lock state", nameof(TimeEntryLockState), false),
                 new("authorityDecision", "Authority decision", nameof(ApprovalAuthorityDecisionState), true),
                 new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), true, "Stable source attribution for the policy decision."),
                 new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), true),
@@ -275,7 +283,8 @@ public static class TimesheetsMetadataCatalog
                 new("authority-decision", "Authority decision", nameof(ApprovalAuthorityDecisionState)),
                 new("authority-freshness", "Authority freshness", nameof(ProjectionFreshnessState)),
                 new("authority-source", "Authority source", nameof(ApprovalAuthoritySource)),
-                new("approval", "Approval", nameof(TimeEntryApprovalState))
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("lock", "Lock", nameof(TimeEntryLockState))
             ]),
         new(
             "timesheets.command.time-entry-approval",
@@ -332,12 +341,14 @@ public static class TimesheetsMetadataCatalog
             [
                 new("retentionCategory", "Retention category", nameof(TimesheetsEvidenceRetentionCategory), true),
                 new("commentExport", "Comment export", nameof(TimesheetsCommentPolicyDecision), true, "Export comments only when policy allows it."),
-                new("diagnostics", "Diagnostics", nameof(TimesheetsCommentPolicyDecision), true, "Comments are excluded from diagnostics.")
+                new("diagnostics", "Diagnostics", nameof(TimesheetsCommentPolicyDecision), true, "Comments are excluded from diagnostics."),
+                new("lockState", "Lock state", nameof(TimeEntryLockState), false, "Future ledger and report surfaces display approved-entry lock state as read evidence.")
             ],
             [],
             [
                 new("retention-posture", "Retention posture", nameof(TimesheetsRetentionPosture)),
-                new("comment-policy", "Comment policy", nameof(TimesheetsCommentPolicyDecision))
+                new("comment-policy", "Comment policy", nameof(TimesheetsCommentPolicyDecision)),
+                new("lock", "Lock", nameof(TimeEntryLockState))
             ])
     ];
 }

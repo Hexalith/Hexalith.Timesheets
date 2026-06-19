@@ -23,6 +23,11 @@ public static class TimeEntry
         ValidateAiMetrics(command.AiMetrics, command.ContributorCategory, errors);
         ValidateComment(command.Comment, errors);
 
+        if (state?.IsLockedFromDirectEdit == true)
+        {
+            return RejectLocked(command.TimeEntryId, state.LockState);
+        }
+
         if (state?.IsRecorded == true)
         {
             errors.Add(new("timeEntryId", "duplicate", "Time Entry ID already exists."));
@@ -74,6 +79,11 @@ public static class TimeEntry
             return TimesheetsDomainResult.NoOp();
         }
 
+        if (state?.IsLockedFromDirectEdit == true)
+        {
+            return RejectLocked(timeEntryId, state.LockState);
+        }
+
         if (errors.Count > 0)
         {
             return Reject(TimesheetsRejectionCode.ValidationFailed, "Time Entry submission failed validation.", errors);
@@ -122,6 +132,11 @@ public static class TimeEntry
             && errors.Count == 0)
         {
             return TimesheetsDomainResult.NoOp();
+        }
+
+        if (state?.IsLockedFromDirectEdit == true)
+        {
+            return RejectLocked(timeEntryId, state.LockState);
         }
 
         if (errors.Count > 0)
@@ -175,6 +190,11 @@ public static class TimeEntry
             return TimesheetsDomainResult.NoOp();
         }
 
+        if (state?.IsLockedFromDirectEdit == true)
+        {
+            return RejectLocked(timeEntryId, state.LockState);
+        }
+
         if (errors.Count > 0)
         {
             return Reject(TimesheetsRejectionCode.ValidationFailed, "Time Entry rejection failed validation.", errors);
@@ -211,6 +231,11 @@ public static class TimeEntry
             && state.CorrectedValues == ToCorrectionValues(command))
         {
             return TimesheetsDomainResult.NoOp();
+        }
+
+        if (state?.IsLockedFromDirectEdit == true)
+        {
+            return RejectLocked(timeEntryId, state.LockState);
         }
 
         List<TimesheetsFieldError> errors = [];
@@ -902,4 +927,20 @@ public static class TimeEntry
         => TimesheetsDomainResult.Rejection([
             new(code, message, errors)
         ]);
+
+    private static TimesheetsDomainResult RejectLocked(TimeEntryId timeEntryId, TimeEntryLockState lockState)
+        => Reject(
+            TimesheetsRejectionCode.TimeEntryLocked,
+            "Time Entry is locked from direct edits.",
+            [
+                new(
+                    $"{EntryFieldPrefix(timeEntryId)}.lockState",
+                    LockFieldCode(lockState),
+                    "Time Entry is locked from direct edits.")
+            ]);
+
+    private static string LockFieldCode(TimeEntryLockState lockState)
+        => lockState == TimeEntryLockState.SupersededLocked
+            ? "superseded-locked"
+            : "locked-from-direct-edit";
 }

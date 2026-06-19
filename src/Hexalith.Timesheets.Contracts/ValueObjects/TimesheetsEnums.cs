@@ -116,6 +116,15 @@ public enum TimeEntryCorrectionState
     Superseded = 3
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<TimeEntryLockState>))]
+public enum TimeEntryLockState
+{
+    Unknown = 0,
+    Unlocked = 1,
+    LockedFromDirectEdit = 2,
+    SupersededLocked = 3
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<TimeEntryEvidenceSourceAuthority>))]
 public enum TimeEntryEvidenceSourceAuthority
 {
