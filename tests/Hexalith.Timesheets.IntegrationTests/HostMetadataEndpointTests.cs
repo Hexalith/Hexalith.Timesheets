@@ -55,6 +55,7 @@ public sealed class HostMetadataEndpointTests
 
         metadataDescriptors.ShouldContain("timesheets.projection.project-actual-time-report");
         metadataDescriptors.ShouldContain("timesheets.projection.work-actual-time-report");
+        metadataDescriptors.ShouldContain("timesheets.dashboard.overview");
 
         string json = JsonSerializer.Serialize(
             TimesheetsMetadataCatalog.Descriptors

@@ -5,6 +5,12 @@ public sealed record TimesheetsUiActionPolicyOutcome(
     TimesheetsUiActionVisibility Visibility,
     string SafeMessage)
 {
+    /// <summary>
+    /// Safe message emitted when authority cannot be resolved. Shared so consumers can
+    /// detect the unresolved outcome without duplicating the literal text.
+    /// </summary>
+    public const string AuthorityUnresolvedMessage = "Authority cannot be resolved.";
+
     public static TimesheetsUiActionPolicyOutcome Allowed(TimesheetsUiAction action)
     {
         return new(action, TimesheetsUiActionVisibility.Allowed, "authorized");
@@ -31,7 +37,7 @@ public sealed record TimesheetsUiActionPolicyOutcome(
             throw new ArgumentOutOfRangeException(nameof(visibility), visibility, "Unresolved UI actions must be hidden or disabled.");
         }
 
-        return new(action, visibility, "Authority cannot be resolved.");
+        return new(action, visibility, AuthorityUnresolvedMessage);
     }
 
     public static TimesheetsUiActionPolicyOutcome FromDecision(

@@ -3,6 +3,7 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Dashboard;
 using Hexalith.Timesheets.Server.OperationalReports;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
@@ -62,6 +63,8 @@ public sealed class RuntimeRegistrationTests
         provider.GetRequiredService<TimeEntryEvidenceListQueryService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<ActualTimeReportQueryService>()
+            .ShouldNotBeNull();
+        provider.GetRequiredService<TimesheetsDashboardOverviewQueryService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<TimesheetPeriodSubmissionCommandService>()
             .ShouldNotBeNull();

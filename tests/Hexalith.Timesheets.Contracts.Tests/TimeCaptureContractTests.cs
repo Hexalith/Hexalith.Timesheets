@@ -1061,6 +1061,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.command.correct-approved-time-entry",
                 "timesheets.command.activity-type-catalog",
                 "timesheets.projection.activity-type-catalog",
+                "timesheets.dashboard.overview",
                 "timesheets.projection.time-entry-evidence",
                 "timesheets.projection.time-entry-query",
                 "timesheets.projection.approved-time-ledger",

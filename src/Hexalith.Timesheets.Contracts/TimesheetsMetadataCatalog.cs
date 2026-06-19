@@ -286,6 +286,49 @@ public static class TimesheetsMetadataCatalog
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
+            "timesheets.dashboard.overview",
+            "Timesheets Dashboard",
+            "dashboard",
+            TimesheetsSurfaceKind.Projection,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("tenantLocalPeriodKey", "Period", "TenantLocalPeriod", false, "Preserved across capture, review, approval, report, and ledger drill-in."),
+                new("dateRange", "Date range", "DateOnlyRange", false, "Tenant-local filter context is preserved when returning from shortcuts."),
+                new("projectFilter", "Project filter", "ProjectReference", false, "Stable Project reference only; labels hydrate on target surfaces after authorization."),
+                new("workFilter", "Work filter", "WorkReference", false, "Stable Work reference only; labels hydrate on target surfaces after authorization."),
+                new("currentPeriodState", "Current period state", nameof(TimesheetsDashboardCurrentPeriodState), true, "Text-bearing period status, not color-only state."),
+                new("entryCount", "Current entries", "Integer", true),
+                new("pendingSubmissionCount", "Pending submissions", "Integer", true),
+                new("pendingCorrectionCount", "Pending corrections", "Integer", true),
+                new("approvalWorkloadState", "Approval workload authority", nameof(TimesheetsDashboardAuthorityState), true, "Approval workload is hidden or disabled unless authority is resolved."),
+                new("approvalSubmittedCount", "Submitted entries awaiting approval", "Integer", false),
+                new("reportShortcuts", "Report shortcuts", nameof(TimesheetsDashboardShortcutReadModel), true, "Project, Work, and AI effort report shortcuts preserve filters."),
+                new("ledgerReadiness", "Approved-Time Ledger readiness", nameof(TimesheetsDashboardLedgerReadinessSummary), true, "Ledger and export shortcuts are policy and freshness gated."),
+                new("exportReadiness", "Export readiness", nameof(ApprovedTimeExportReadinessState), true, "Export is enabled only for fresh disclosed approved rows."),
+                new("projectionStatuses", "Projection statuses", nameof(TimesheetsDashboardProjectionStatusReadModel), true, "Freshness and degraded states remain visible as persistent status."),
+                new("freshnessMessage", "Freshness message", "FluentMessageBar", false, "Persistent stale, rebuilding, degraded, unavailable, or permission guidance."),
+                new("emptyStateAction", "Empty state action", nameof(TimesheetsDashboardShortcutReadModel), true, "One safe action such as Record time.")
+            ],
+            [
+                new("record-time", "Record time", "Timesheets.RecordTime"),
+                new("open-my-period", "My Timesheet Period", "Timesheets.OpenMyTimesheetPeriod"),
+                new("open-approvals", "Approvals Queue", "Timesheets.OpenApprovalsQueue"),
+                new("open-project-report", "Project report", "Timesheets.QueryProjectActualTimeReport"),
+                new("open-work-report", "Work report", "Timesheets.QueryWorkActualTimeReport"),
+                new("open-ai-effort-report", "AI effort report", "Timesheets.QueryAiEffortReport"),
+                new("open-approved-ledger", "Approved-Time Ledger", "Timesheets.QueryApprovedTimeLedger"),
+                new("export-approved-ledger", "Export approved ledger", "Timesheets.GenerateApprovedLedgerExport")
+            ],
+            [
+                new("current-period", "Current period", nameof(TimesheetsDashboardCurrentPeriodState)),
+                new("shortcut-state", "Shortcut state", nameof(TimesheetsDashboardShortcutState)),
+                new("shortcut-visibility", "Shortcut visibility", nameof(TimesheetsDashboardShortcutVisibility)),
+                new("authority-state", "Authority state", nameof(TimesheetsDashboardAuthorityState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState)),
+                new("decision-authority", "Decision authority", nameof(TimesheetsDashboardProjectionDecisionAuthority)),
+                new("export-readiness", "Export readiness", nameof(ApprovedTimeExportReadinessState))
+            ]),
+        new(
             "timesheets.projection.time-entry-evidence",
             "Time Entry Evidence",
             "evidence",
