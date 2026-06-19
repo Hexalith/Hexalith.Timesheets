@@ -168,7 +168,11 @@ public enum ActualTimeReportSortBy
     Contributor = 3,
     ActivityType = 4,
     ActualMinutes = 5,
-    SourceRowCount = 6
+    SourceRowCount = 6,
+    AiWallClockDurationMilliseconds = 7,
+    AiModelRuntimeMilliseconds = 8,
+    AiBillableEffortMinutes = 9,
+    AiProviderTotalTokenCount = 10
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<ActualTimeReferenceState>))]

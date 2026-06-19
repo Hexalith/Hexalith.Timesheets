@@ -118,9 +118,10 @@ public sealed class ActualTimeReportProjection
         {
             foreach (ApprovedTimeLedgerRowReadModel row in ApprovedRows(tenantId, events, checkpoint, query, targetKind))
             {
-                if (MatchesContributorCategory(row.ContributorCategory, query.ContributorCategory))
+                ReportSourceRow sourceRow = ReportSourceRow.FromLedger(row);
+                if (MatchesSourceRow(sourceRow, query))
                 {
-                    yield return ReportSourceRow.FromLedger(row);
+                    yield return sourceRow;
                 }
             }
         }
@@ -132,7 +133,11 @@ public sealed class ActualTimeReportProjection
 
         foreach (TimeEntryQueryRowReadModel row in EvidenceRows(tenantId, events, checkpoint, query, targetKind))
         {
-            yield return ReportSourceRow.FromEvidence(row);
+            ReportSourceRow sourceRow = ReportSourceRow.FromEvidence(row);
+            if (MatchesSourceRow(sourceRow, query))
+            {
+                yield return sourceRow;
+            }
         }
     }
 
@@ -154,7 +159,7 @@ public sealed class ActualTimeReportProjection
                 {
                     Project = targetKind == TimeEntryTargetKind.Project ? query.Project : null,
                     Work = targetKind == TimeEntryTargetKind.Work ? query.Work : null,
-                    Contributor = query.Contributor,
+                    Contributor = EffectiveContributor(query),
                     ActivityTypeId = query.ActivityTypeId,
                     TenantLocalPeriodKey = query.TenantLocalPeriodKey,
                     ServiceDateFrom = query.ServiceDateFrom,
@@ -201,7 +206,7 @@ public sealed class ActualTimeReportProjection
                 {
                     Project = targetKind == TimeEntryTargetKind.Project ? query.Project : null,
                     Work = targetKind == TimeEntryTargetKind.Work ? query.Work : null,
-                    Contributor = query.Contributor,
+                    Contributor = EffectiveContributor(query),
                     ActivityTypeId = query.ActivityTypeId,
                     TenantLocalPeriodKey = query.TenantLocalPeriodKey,
                     ServiceDateFrom = query.ServiceDateFrom,
@@ -229,8 +234,47 @@ public sealed class ActualTimeReportProjection
         while (cursor is not null);
     }
 
+    private static bool MatchesSourceRow(
+        ReportSourceRow row,
+        IActualTimeReportQuery query)
+        => MatchesContributorCategory(row.ContributorCategory, query.ContributorCategory)
+            && MatchesAiAgent(row, query.AiAgent)
+            && MatchesAiMetricAvailability(row.AiMetrics, query.AiMetricAvailability)
+            && MatchesAiTokenAvailability(row.AiMetrics, query.AiTokenAvailability)
+            && MatchesAiSourceCategory(row.AiMetrics, query.AiSourceCategory);
+
+    private static PartyReference? EffectiveContributor(IActualTimeReportQuery query)
+        => query.Contributor is not null && query.AiAgent is not null && query.Contributor != query.AiAgent
+            ? new PartyReference("__no-matching-contributor__")
+            : query.Contributor ?? query.AiAgent;
+
     private static bool MatchesContributorCategory(ContributorCategory actual, ContributorCategory? expected)
         => expected is null || actual == expected.Value;
+
+    private static bool MatchesAiAgent(
+        ReportSourceRow row,
+        PartyReference? expected)
+        => expected is null
+            || (row.ContributorCategory == ContributorCategory.AutomatedAgent
+                && EqualityComparer<PartyReference>.Default.Equals(row.Contributor, expected));
+
+    private static bool MatchesAiMetricAvailability(
+        AiEffortMetrics? metrics,
+        AiMetricAvailability? expected)
+        => expected is null
+            || (metrics?.Availability ?? AiMetricAvailability.Unavailable) == expected.Value;
+
+    private static bool MatchesAiTokenAvailability(
+        AiEffortMetrics? metrics,
+        AiTokenMetricAvailability? expected)
+        => expected is null
+            || (metrics?.TokenAvailability ?? AiTokenMetricAvailability.Unavailable) == expected.Value;
+
+    private static bool MatchesAiSourceCategory(
+        AiEffortMetrics? metrics,
+        AiEffortMetricSourceCategory? expected)
+        => expected is null
+            || (metrics?.Source?.SourceCategory ?? AiEffortMetricSourceCategory.Unavailable) == expected.Value;
 
     private static IReadOnlyList<ActualTimeReportRowReadModel> Sort(
         IReadOnlyList<ActualTimeReportRowReadModel> rows,
@@ -249,6 +293,14 @@ public sealed class ActualTimeReportProjection
                 rows, static row => row.ActualMinutes, Comparer<int>.Default, descending),
             ActualTimeReportSortBy.SourceRowCount => OrderByPrimary(
                 rows, static row => row.SourceRowCount, Comparer<int>.Default, descending),
+            ActualTimeReportSortBy.AiWallClockDurationMilliseconds => OrderByPrimary(
+                rows, static row => row.AiWallClockDurationMilliseconds.GetValueOrDefault(), Comparer<int>.Default, descending),
+            ActualTimeReportSortBy.AiModelRuntimeMilliseconds => OrderByPrimary(
+                rows, static row => row.AiModelRuntimeMilliseconds.GetValueOrDefault(), Comparer<int>.Default, descending),
+            ActualTimeReportSortBy.AiBillableEffortMinutes => OrderByPrimary(
+                rows, static row => row.AiBillableEffortMinutes.GetValueOrDefault(), Comparer<int>.Default, descending),
+            ActualTimeReportSortBy.AiProviderTotalTokenCount => OrderByPrimary(
+                rows, static row => row.AiProviderTotalTokenCount.GetValueOrDefault(), Comparer<long>.Default, descending),
             _ => OrderByPrimary(
                 rows, static row => row.PeriodStart, Comparer<DateOnly>.Default, descending)
         };
@@ -318,6 +370,8 @@ public sealed class ActualTimeReportProjection
 
         PartyReference? Contributor { get; }
 
+        PartyReference? AiAgent { get; }
+
         ActivityTypeId? ActivityTypeId { get; }
 
         string? TenantLocalPeriodKey { get; }
@@ -331,6 +385,12 @@ public sealed class ActualTimeReportProjection
         TimeEntryApprovalState? ApprovalState { get; }
 
         ContributorCategory? ContributorCategory { get; }
+
+        AiMetricAvailability? AiMetricAvailability { get; }
+
+        AiTokenMetricAvailability? AiTokenAvailability { get; }
+
+        AiEffortMetricSourceCategory? AiSourceCategory { get; }
 
         bool CurrentRowsOnly { get; }
 
@@ -353,6 +413,8 @@ public sealed class ActualTimeReportProjection
 
         public PartyReference? Contributor => Query.Contributor;
 
+        public PartyReference? AiAgent => Query.AiAgent;
+
         public ActivityTypeId? ActivityTypeId => Query.ActivityTypeId;
 
         public string? TenantLocalPeriodKey => Query.TenantLocalPeriodKey;
@@ -366,6 +428,12 @@ public sealed class ActualTimeReportProjection
         public TimeEntryApprovalState? ApprovalState => Query.ApprovalState;
 
         public ContributorCategory? ContributorCategory => Query.ContributorCategory;
+
+        public AiMetricAvailability? AiMetricAvailability => Query.AiMetricAvailability;
+
+        public AiTokenMetricAvailability? AiTokenAvailability => Query.AiTokenAvailability;
+
+        public AiEffortMetricSourceCategory? AiSourceCategory => Query.AiSourceCategory;
 
         public bool CurrentRowsOnly => Query.CurrentRowsOnly;
 
@@ -388,6 +456,8 @@ public sealed class ActualTimeReportProjection
 
         public PartyReference? Contributor => Query.Contributor;
 
+        public PartyReference? AiAgent => Query.AiAgent;
+
         public ActivityTypeId? ActivityTypeId => Query.ActivityTypeId;
 
         public string? TenantLocalPeriodKey => Query.TenantLocalPeriodKey;
@@ -401,6 +471,12 @@ public sealed class ActualTimeReportProjection
         public TimeEntryApprovalState? ApprovalState => Query.ApprovalState;
 
         public ContributorCategory? ContributorCategory => Query.ContributorCategory;
+
+        public AiMetricAvailability? AiMetricAvailability => Query.AiMetricAvailability;
+
+        public AiTokenMetricAvailability? AiTokenAvailability => Query.AiTokenAvailability;
+
+        public AiEffortMetricSourceCategory? AiSourceCategory => Query.AiSourceCategory;
 
         public bool CurrentRowsOnly => Query.CurrentRowsOnly;
 
@@ -456,13 +532,33 @@ public sealed class ActualTimeReportProjection
     private sealed class ReportGroupAccumulator(ReportGroupKey key)
     {
         private int _actualMinutes;
+        private int _aiWallClockDurationMilliseconds;
+        private int _aiModelRuntimeMilliseconds;
+        private int _aiBillableEffortMinutes;
+        private long _aiProviderInputTokenCount;
+        private long _aiProviderOutputTokenCount;
+        private long _aiProviderTotalTokenCount;
         private int _sourceRowCount;
         private int _correctionCount;
         private int _supersededCount;
+        private bool _hasAiWallClockDurationMilliseconds;
+        private bool _hasAiModelRuntimeMilliseconds;
+        private bool _hasAiBillableEffortMinutes;
+        private bool _hasAiProviderInputTokenCount;
+        private bool _hasAiProviderOutputTokenCount;
+        private bool _hasAiProviderTotalTokenCount;
+        private AiMetricAvailability _aiMetricAvailability = AiMetricAvailability.Unavailable;
+        private AiTokenMetricAvailability _aiTokenAvailability = AiTokenMetricAvailability.Unavailable;
+        private AiEffortMetricSourceMetadata? _aiMetricSourceMetadata;
 
         public void Add(ReportSourceRow row)
         {
-            _actualMinutes += row.DurationMinutes;
+            if (row.ContributorCategory != ContributorCategory.AutomatedAgent)
+            {
+                _actualMinutes += row.DurationMinutes;
+            }
+
+            AddAiMetrics(row.AiMetrics);
             _sourceRowCount++;
             if (row.IsCorrected)
             {
@@ -501,10 +597,102 @@ public sealed class ActualTimeReportProjection
                 ReferenceStateFrom(freshness),
                 freshness)
             {
+                AiWallClockDurationMilliseconds = _hasAiWallClockDurationMilliseconds
+                    ? _aiWallClockDurationMilliseconds
+                    : null,
+                AiModelRuntimeMilliseconds = _hasAiModelRuntimeMilliseconds
+                    ? _aiModelRuntimeMilliseconds
+                    : null,
+                AiBillableEffortMinutes = _hasAiBillableEffortMinutes
+                    ? _aiBillableEffortMinutes
+                    : null,
+                AiProviderInputTokenCount = _hasAiProviderInputTokenCount
+                    ? _aiProviderInputTokenCount
+                    : null,
+                AiProviderOutputTokenCount = _hasAiProviderOutputTokenCount
+                    ? _aiProviderOutputTokenCount
+                    : null,
+                AiProviderTotalTokenCount = _hasAiProviderTotalTokenCount
+                    ? _aiProviderTotalTokenCount
+                    : null,
+                AiMetricAvailability = _aiMetricAvailability,
+                AiTokenAvailability = _aiTokenAvailability,
+                AiMetricSourceMetadata = _aiMetricSourceMetadata,
                 WorkPlannedEffort = key.Target.TargetKind == TimeEntryTargetKind.Work
                     ? WorkPlannedEffortReadModel.NotSupplied()
                     : null
             };
+        }
+
+        private void AddAiMetrics(AiEffortMetrics? metrics)
+        {
+            if (metrics is null || metrics.Availability == AiMetricAvailability.Unavailable)
+            {
+                return;
+            }
+
+            _aiMetricAvailability = MergeMetricAvailability(_aiMetricAvailability, metrics.Availability);
+            _aiTokenAvailability = MergeTokenAvailability(_aiTokenAvailability, metrics.TokenAvailability);
+            _aiMetricSourceMetadata ??= metrics.Source;
+
+            AddNullable(metrics.WallClockDurationMilliseconds, ref _aiWallClockDurationMilliseconds, ref _hasAiWallClockDurationMilliseconds);
+            AddNullable(metrics.ModelRuntimeMilliseconds, ref _aiModelRuntimeMilliseconds, ref _hasAiModelRuntimeMilliseconds);
+            AddNullable(metrics.BillableEffortMinutes, ref _aiBillableEffortMinutes, ref _hasAiBillableEffortMinutes);
+            AddNullable(metrics.ProviderInputTokenCount, ref _aiProviderInputTokenCount, ref _hasAiProviderInputTokenCount);
+            AddNullable(metrics.ProviderOutputTokenCount, ref _aiProviderOutputTokenCount, ref _hasAiProviderOutputTokenCount);
+            AddNullable(metrics.ProviderTotalTokenCount, ref _aiProviderTotalTokenCount, ref _hasAiProviderTotalTokenCount);
+        }
+
+        private static AiMetricAvailability MergeMetricAvailability(
+            AiMetricAvailability current,
+            AiMetricAvailability next)
+            => (current, next) switch
+            {
+                (_, AiMetricAvailability.Unknown) => AiMetricAvailability.Unknown,
+                (AiMetricAvailability.Unknown, _) => AiMetricAvailability.Unknown,
+                (_, AiMetricAvailability.Estimated) => AiMetricAvailability.Estimated,
+                (AiMetricAvailability.Estimated, _) => AiMetricAvailability.Estimated,
+                (_, AiMetricAvailability.ProviderReported) => AiMetricAvailability.ProviderReported,
+                _ => current
+            };
+
+        // Conservative, order-independent precedence: Unknown > NotReported > ProviderReported.
+        // A group is only ProviderReported when every contributing row was provider-reported; any
+        // not-reported sibling keeps the aggregate "Not reported by provider" regardless of the
+        // order events are replayed in. Mirrors MergeMetricAvailability so both stay deterministic.
+        private static AiTokenMetricAvailability MergeTokenAvailability(
+            AiTokenMetricAvailability current,
+            AiTokenMetricAvailability next)
+            => (current, next) switch
+            {
+                (_, AiTokenMetricAvailability.Unknown) => AiTokenMetricAvailability.Unknown,
+                (AiTokenMetricAvailability.Unknown, _) => AiTokenMetricAvailability.Unknown,
+                (_, AiTokenMetricAvailability.NotReported) => AiTokenMetricAvailability.NotReported,
+                (AiTokenMetricAvailability.NotReported, _) => AiTokenMetricAvailability.NotReported,
+                (_, AiTokenMetricAvailability.ProviderReported) => AiTokenMetricAvailability.ProviderReported,
+                _ => current
+            };
+
+        private static void AddNullable(int? value, ref int total, ref bool hasValue)
+        {
+            if (value is null)
+            {
+                return;
+            }
+
+            total += value.Value;
+            hasValue = true;
+        }
+
+        private static void AddNullable(long? value, ref long total, ref bool hasValue)
+        {
+            if (value is null)
+            {
+                return;
+            }
+
+            total += value.Value;
+            hasValue = true;
         }
 
         private static ActualTimeReferenceStateMetadata ReferenceStateFrom(ProjectionFreshnessMetadata freshness)
@@ -530,6 +718,7 @@ public sealed class ActualTimeReportProjection
         BillableState BillableState,
         TimeEntryApprovalState ApprovalState,
         ContributorCategory ContributorCategory,
+        AiEffortMetrics? AiMetrics,
         bool IsCorrected,
         bool IsSuperseded)
     {
@@ -544,6 +733,7 @@ public sealed class ActualTimeReportProjection
                 row.BillableState,
                 TimeEntryApprovalState.Approved,
                 row.ContributorCategory,
+                row.AiMetrics,
                 row.ApprovedCorrection is not null || row.Correction is not null,
                 row.RowState == ApprovedTimeLedgerRowState.Superseded);
 
@@ -558,6 +748,7 @@ public sealed class ActualTimeReportProjection
                 row.BillableState,
                 row.ApprovalState,
                 row.ContributorCategory,
+                row.AiMetrics,
                 row.CorrectionState == TimeEntryCorrectionState.Corrected,
                 row.CorrectionState == TimeEntryCorrectionState.Superseded);
     }

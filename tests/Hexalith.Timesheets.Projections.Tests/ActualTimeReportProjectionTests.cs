@@ -130,6 +130,240 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
+    public void Report_rolls_up_ai_effort_units_without_merging_them_into_actual_minutes()
+    {
+        TimeEntryProjectionEvent duplicateApproval = Event("m6", 6, Approved("ai-entry-1", "decision-2"));
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded("human-entry", 60, ProjectTarget())),
+            Event("m2", 2, Submitted("human-entry")),
+            Event("m3", 3, Approved("human-entry", "decision-human")),
+            Event("m4", 4, Recorded(
+                "ai-entry-1",
+                15,
+                ProjectTarget(),
+                contributorCategory: ContributorCategory.AutomatedAgent,
+                aiMetrics: ProviderMetrics(90_000, 75_000, 2, 10, 20, 30))),
+            Event("m5", 5, Submitted("ai-entry-1", "submission-ai-1")),
+            duplicateApproval,
+            duplicateApproval
+        ];
+
+        ActualTimeReportReadModel page = Projector().ProjectByProject(
+            "tenant-1",
+            events,
+            FreshCheckpoint(6),
+            new QueryProjectActualTimeReport
+            {
+                Project = Project(),
+                ApprovalState = TimeEntryApprovalState.Approved,
+                SortBy = ActualTimeReportSortBy.ActualMinutes
+            });
+
+        page.Items.Count.ShouldBe(2);
+        ActualTimeReportRowReadModel aiRow = page.Items.Single(static row => row.ContributorCategory == ContributorCategory.AutomatedAgent);
+        aiRow.ActualMinutes.ShouldBe(0);
+        aiRow.AiWallClockDurationMilliseconds.ShouldBe(90_000);
+        aiRow.AiModelRuntimeMilliseconds.ShouldBe(75_000);
+        aiRow.AiBillableEffortMinutes.ShouldBe(2);
+        aiRow.AiProviderInputTokenCount.ShouldBe(10);
+        aiRow.AiProviderOutputTokenCount.ShouldBe(20);
+        aiRow.AiProviderTotalTokenCount.ShouldBe(30);
+        aiRow.AiMetricAvailability.ShouldBe(AiMetricAvailability.ProviderReported);
+        aiRow.AiTokenAvailability.ShouldBe(AiTokenMetricAvailability.ProviderReported);
+        aiRow.AiMetricSourceMetadata.ShouldNotBeNull().SourceCategory.ShouldBe(AiEffortMetricSourceCategory.Provider);
+        aiRow.SourceRowCount.ShouldBe(1);
+
+        ActualTimeReportRowReadModel humanRow = page.Items.Single(static row => row.ContributorCategory == ContributorCategory.Employee);
+        humanRow.ActualMinutes.ShouldBe(60);
+        humanRow.AiProviderTotalTokenCount.ShouldBeNull();
+        humanRow.AiMetricAvailability.ShouldBe(AiMetricAvailability.Unavailable);
+    }
+
+    [Fact]
+    public void Ai_report_filters_agent_availability_source_and_keeps_not_reported_tokens_null()
+    {
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded(
+                "ai-entry-1",
+                15,
+                WorkTarget(),
+                contributorCategory: ContributorCategory.AutomatedAgent,
+                aiMetrics: NotReportedTokenMetrics())),
+            Event("m2", 2, Submitted("ai-entry-1")),
+            Event("m3", 3, Approved("ai-entry-1")),
+            Event("m4", 4, Recorded(
+                "human-entry",
+                30,
+                WorkTarget(),
+                contributorCategory: ContributorCategory.Employee))
+        ];
+
+        ActualTimeReportReadModel page = Projector().ProjectByWork(
+            "tenant-1",
+            events,
+            FreshCheckpoint(4),
+            new QueryWorkActualTimeReport
+            {
+                Work = Work(),
+                AiAgent = Contributor(),
+                AiMetricAvailability = AiMetricAvailability.ProviderReported,
+                AiTokenAvailability = AiTokenMetricAvailability.NotReported,
+                AiSourceCategory = AiEffortMetricSourceCategory.Provider
+            });
+
+        ActualTimeReportRowReadModel row = page.Items.ShouldHaveSingleItem();
+        row.ContributorCategory.ShouldBe(ContributorCategory.AutomatedAgent);
+        row.ActualMinutes.ShouldBe(0);
+        row.AiBillableEffortMinutes.ShouldBe(2);
+        row.AiProviderInputTokenCount.ShouldBeNull();
+        row.AiProviderOutputTokenCount.ShouldBeNull();
+        row.AiProviderTotalTokenCount.ShouldBeNull();
+        row.AiTokenAvailability.ShouldBe(AiTokenMetricAvailability.NotReported);
+    }
+
+    [Fact]
+    public void Ai_agent_filter_excludes_human_rows_for_the_same_party_reference()
+    {
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded("human-entry", 45, WorkTarget())),
+            Event("m2", 2, Submitted("human-entry")),
+            Event("m3", 3, Approved("human-entry", "decision-human")),
+            Event("m4", 4, Recorded(
+                "ai-entry-1",
+                15,
+                WorkTarget(),
+                contributorCategory: ContributorCategory.AutomatedAgent,
+                aiMetrics: ProviderMetrics(90_000, 75_000, 2, 10, 20, 30))),
+            Event("m5", 5, Submitted("ai-entry-1", "submission-ai-1")),
+            Event("m6", 6, Approved("ai-entry-1", "decision-ai"))
+        ];
+
+        ActualTimeReportReadModel page = Projector().ProjectByWork(
+            "tenant-1",
+            events,
+            FreshCheckpoint(6),
+            new QueryWorkActualTimeReport
+            {
+                Work = Work(),
+                AiAgent = Contributor()
+            });
+
+        ActualTimeReportRowReadModel row = page.Items.ShouldHaveSingleItem();
+        row.Contributor.ShouldBe(Contributor());
+        row.ContributorCategory.ShouldBe(ContributorCategory.AutomatedAgent);
+        row.ActualMinutes.ShouldBe(0);
+        row.AiProviderTotalTokenCount.ShouldBe(30);
+    }
+
+    [Fact]
+    public void Approved_ai_metric_corrections_use_current_values_by_default_and_superseded_values_when_requested()
+    {
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded(
+                "ai-entry-1",
+                15,
+                WorkTarget(),
+                contributorCategory: ContributorCategory.AutomatedAgent,
+                aiMetrics: ProviderMetrics(90_000, 75_000, 2, 10, 20, 30))),
+            Event("m2", 2, Submitted("ai-entry-1")),
+            Event("m3", 3, Approved("ai-entry-1")),
+            Event("m4", 4, ApprovedCorrected(
+                "ai-entry-1",
+                25,
+                WorkTarget(),
+                ProviderMetrics(90_000, 75_000, 2, 10, 20, 30),
+                ProviderMetrics(120_000, 100_000, 3, 15, 25, 40)))
+        ];
+
+        ActualTimeReportReadModel currentOnly = Projector().ProjectByWork(
+            "tenant-1",
+            events,
+            FreshCheckpoint(4),
+            new QueryWorkActualTimeReport
+            {
+                Work = Work(),
+                ApprovalState = TimeEntryApprovalState.Approved
+            });
+
+        ActualTimeReportRowReadModel current = currentOnly.Items.ShouldHaveSingleItem();
+        current.ActualMinutes.ShouldBe(0);
+        current.AiWallClockDurationMilliseconds.ShouldBe(120_000);
+        current.AiProviderTotalTokenCount.ShouldBe(40);
+        current.SourceRowCount.ShouldBe(1);
+
+        ActualTimeReportReadModel includingSuperseded = Projector().ProjectByWork(
+            "tenant-1",
+            events,
+            FreshCheckpoint(4),
+            new QueryWorkActualTimeReport
+            {
+                Work = Work(),
+                ApprovalState = TimeEntryApprovalState.Approved,
+                CurrentRowsOnly = false,
+                IncludeSupersededRows = true
+            });
+
+        ActualTimeReportRowReadModel row = includingSuperseded.Items.ShouldHaveSingleItem();
+        row.ActualMinutes.ShouldBe(0);
+        row.AiWallClockDurationMilliseconds.ShouldBe(210_000);
+        row.AiProviderTotalTokenCount.ShouldBe(70);
+        row.SourceRowCount.ShouldBe(2);
+        row.SupersededCount.ShouldBe(1);
+        row.RowState.ShouldBe(ActualTimeReportRowState.IncludesSuperseded);
+    }
+
+    [Fact]
+    public void Mixed_provider_reported_and_not_reported_token_rows_merge_to_not_reported_regardless_of_order()
+    {
+        // Two automated-agent entries in the same rollup group: one provider-reported,
+        // one not-reported. The aggregate token availability must be conservative and
+        // order-independent, otherwise a "Not reported by provider" group could be
+        // silently upgraded to "ProviderReported" by event ordering.
+        ActualTimeReportRowReadModel providerApprovedFirst = MergeTokenAvailabilityRow(providerFirst: true);
+        ActualTimeReportRowReadModel notReportedApprovedFirst = MergeTokenAvailabilityRow(providerFirst: false);
+
+        providerApprovedFirst.AiTokenAvailability.ShouldBe(AiTokenMetricAvailability.NotReported);
+        notReportedApprovedFirst.AiTokenAvailability.ShouldBe(AiTokenMetricAvailability.NotReported);
+        providerApprovedFirst.AiProviderTotalTokenCount.ShouldBe(30);
+        notReportedApprovedFirst.AiProviderTotalTokenCount.ShouldBe(30);
+        providerApprovedFirst.SourceRowCount.ShouldBe(2);
+        notReportedApprovedFirst.SourceRowCount.ShouldBe(2);
+    }
+
+    private static ActualTimeReportRowReadModel MergeTokenAvailabilityRow(bool providerFirst)
+    {
+        AiEffortMetrics providerMetrics = ProviderMetrics(90_000, 75_000, 2, 10, 20, 30);
+        AiEffortMetrics notReportedMetrics = NotReportedTokenMetrics();
+        (string firstId, AiEffortMetrics firstMetrics, string secondId, AiEffortMetrics secondMetrics) = providerFirst
+            ? ("ai-provider", providerMetrics, "ai-not-reported", notReportedMetrics)
+            : ("ai-not-reported", notReportedMetrics, "ai-provider", providerMetrics);
+
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded(firstId, 15, WorkTarget(), contributorCategory: ContributorCategory.AutomatedAgent, aiMetrics: firstMetrics)),
+            Event("m2", 2, Submitted(firstId, "submission-first")),
+            Event("m3", 3, Approved(firstId, "decision-first")),
+            Event("m4", 4, Recorded(secondId, 15, WorkTarget(), contributorCategory: ContributorCategory.AutomatedAgent, aiMetrics: secondMetrics)),
+            Event("m5", 5, Submitted(secondId, "submission-second")),
+            Event("m6", 6, Approved(secondId, "decision-second"))
+        ];
+
+        return Projector().ProjectByWork(
+            "tenant-1",
+            events,
+            FreshCheckpoint(6),
+            new QueryWorkActualTimeReport
+            {
+                Work = Work(),
+                ApprovalState = TimeEntryApprovalState.Approved
+            }).Items.ShouldHaveSingleItem();
+    }
+
+    [Fact]
     public void Selected_non_approved_rows_preserve_activity_type_scope_as_a_grouping_dimension()
     {
         TimeEntryProjectionEvent[] events =
@@ -299,7 +533,8 @@ public sealed class ActualTimeReportProjectionTests
         DateOnly? serviceDate = null,
         BillableState billableState = BillableState.Billable,
         ContributorCategory contributorCategory = ContributorCategory.Employee,
-        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant,
+        AiEffortMetrics? aiMetrics = null)
         => new(
             new TimeEntryId(id),
             target,
@@ -311,7 +546,7 @@ public sealed class ActualTimeReportProjectionTests
             billableState,
             TimeEntryApprovalState.Draft,
             contributorCategory,
-            AiEffortMetrics.Unavailable)
+            aiMetrics ?? AiEffortMetrics.Unavailable)
         {
             Comment = new("Internal context.", TimeEntryCommentPolicy.SensitiveDefault)
         };
@@ -340,22 +575,36 @@ public sealed class ActualTimeReportProjectionTests
     private static TimeEntryApprovedCorrected ApprovedCorrected(
         string id,
         int durationMinutes,
-        TimeEntryTargetReference target)
+        TimeEntryTargetReference target,
+        AiEffortMetrics? priorMetrics = null,
+        AiEffortMetrics? correctedMetrics = null)
         => new(
             new TimeEntryId(id),
             new TimeEntryCorrectionId("approved-correction-1"),
             new TenantReference("tenant-1"),
             new PartyReference("operator-1"),
             new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
-            Values(45, target),
-            Values(durationMinutes, target),
+            Values(
+                45,
+                target,
+                priorMetrics,
+                priorMetrics is null ? ContributorCategory.Employee : ContributorCategory.AutomatedAgent),
+            Values(
+                durationMinutes,
+                target,
+                correctedMetrics,
+                correctedMetrics is null ? ContributorCategory.Employee : ContributorCategory.AutomatedAgent),
             new TimeEntryCorrectionReason("Correct approved duration after audit review."),
             new TimeEntryApprovalDecisionId("decision-1"),
             TimeEntryApprovalScope.IndividualEntry,
             TimeEntryApprovalState.Approved,
             TimeEntryCorrectionState.Corrected);
 
-    private static TimeEntryCorrectionValues Values(int durationMinutes, TimeEntryTargetReference target)
+    private static TimeEntryCorrectionValues Values(
+        int durationMinutes,
+        TimeEntryTargetReference target,
+        AiEffortMetrics? aiMetrics = null,
+        ContributorCategory contributorCategory = ContributorCategory.Employee)
         => new(
             target,
             Contributor(),
@@ -363,8 +612,8 @@ public sealed class ActualTimeReportProjectionTests
             new DateOnly(2026, 6, 19),
             durationMinutes,
             BillableState.Billable,
-            ContributorCategory.Employee,
-            AiEffortMetrics.Unavailable);
+            contributorCategory,
+            aiMetrics ?? AiEffortMetrics.Unavailable);
 
     private static ApprovalAuthoritySourceAttribution Authority(ApprovalAuthorityAction action)
         => new(
@@ -391,4 +640,34 @@ public sealed class ActualTimeReportProjectionTests
     private static PartyReference Contributor() => new("party-1");
 
     private static ActivityTypeId Activity() => new("activity-type-1");
+
+    private static AiEffortMetrics ProviderMetrics(
+        int wallClockMilliseconds,
+        int modelRuntimeMilliseconds,
+        int billableEffortMinutes,
+        long inputTokens,
+        long outputTokens,
+        long totalTokens)
+        => new(
+            AiMetricAvailability.ProviderReported,
+            wallClockMilliseconds,
+            modelRuntimeMilliseconds,
+            billableEffortMinutes,
+            inputTokens,
+            outputTokens,
+            totalTokens,
+            AiEffortMetricSourceMetadata.Provider("provider-a", "tool-a", "run-1"),
+            AiTokenMetricAvailability.ProviderReported);
+
+    private static AiEffortMetrics NotReportedTokenMetrics()
+        => new(
+            AiMetricAvailability.ProviderReported,
+            90_000,
+            75_000,
+            2,
+            null,
+            null,
+            null,
+            AiEffortMetricSourceMetadata.Provider("provider-a", "tool-a", "run-1"),
+            AiTokenMetricAvailability.NotReported);
 }

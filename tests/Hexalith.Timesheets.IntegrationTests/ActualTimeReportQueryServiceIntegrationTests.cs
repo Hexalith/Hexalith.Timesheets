@@ -140,10 +140,82 @@ public sealed class ActualTimeReportQueryServiceIntegrationTests
         drillIn.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
     }
 
+    [Fact]
+    public async Task Seeded_ai_work_report_preserves_units_authorization_hydration_freshness_and_unavailable_tokens()
+    {
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded("human-entry", 45, WorkTarget("work-1"))),
+            Event("m2", 2, Submitted("human-entry")),
+            Event("m3", 3, Approved("human-entry", "decision-human")),
+            Event("m4", 4, Recorded(
+                "ai-entry-1",
+                15,
+                WorkTarget("work-1"),
+                ContributorCategory.AutomatedAgent,
+                NotReportedTokenMetrics())),
+            Event("m5", 5, Submitted("ai-entry-1")),
+            Event("m6", 6, Approved("ai-entry-1", "decision-1"))
+        ];
+        TimesheetsProjectionCheckpoint checkpoint = new(
+            "tenant-1",
+            ActualTimeReportProjection.ProjectionName,
+            6,
+            ProjectionFreshness.Fresh);
+        ActualTimeReportQueryService service = new(
+            new AllowAllAccessGuard(),
+            new SeededReportReader(new ActualTimeReportProjection(), events, checkpoint),
+            new StaticHydrationProvider(),
+            new StaticHydrationProvider(),
+            new StaticHydrationProvider(),
+            new StaticHydrationProvider(),
+            new StaticPlannedEffortProvider());
+
+        ActualTimeReportQueryResult result = await service.QueryWorkAsync(
+            Context(),
+            new QueryWorkActualTimeReport
+            {
+                Work = new WorkReference("work-1"),
+                AiAgent = new PartyReference("party-1"),
+                AiTokenAvailability = AiTokenMetricAvailability.NotReported,
+                PageSize = 10
+            },
+            TestContext.Current.CancellationToken);
+
+        result.WasDisclosed.ShouldBeTrue();
+        ActualTimeReportRowReadModel row = result.Page.ShouldNotBeNull().Items.ShouldHaveSingleItem();
+        row.ContributorCategory.ShouldBe(ContributorCategory.AutomatedAgent);
+        row.ActualMinutes.ShouldBe(0);
+        row.AiWallClockDurationMilliseconds.ShouldBe(90_000);
+        row.AiModelRuntimeMilliseconds.ShouldBe(75_000);
+        row.AiBillableEffortMinutes.ShouldBe(2);
+        row.AiProviderTotalTokenCount.ShouldBeNull();
+        row.AiTokenAvailability.ShouldBe(AiTokenMetricAvailability.NotReported);
+        row.DisplayHydration.Contributor.Label.ShouldBe("Contributor");
+        row.WorkPlannedEffort.ShouldNotBeNull().SourceModuleName.ShouldBe("Works");
+        row.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        result.Page.NextCursor.ShouldBeNull();
+
+        TimeEntryEvidenceReadModel? drillIn = new TimeEntryEvidenceProjection().Project(
+            "tenant-1",
+            new TimeEntryId("ai-entry-1"),
+            events,
+            new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, 6, ProjectionFreshness.Fresh));
+
+        drillIn.ShouldNotBeNull();
+        drillIn.AiMetrics.ShouldNotBeNull().TokenAvailability.ShouldBe(AiTokenMetricAvailability.NotReported);
+        drillIn.AiMetrics.ProviderTotalTokenCount.ShouldBeNull();
+    }
+
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
         => new(messageId, sequenceNumber, payload);
 
-    private static TimeEntryRecorded Recorded(string id, int durationMinutes, TimeEntryTargetReference target)
+    private static TimeEntryRecorded Recorded(
+        string id,
+        int durationMinutes,
+        TimeEntryTargetReference target,
+        ContributorCategory contributorCategory = ContributorCategory.Employee,
+        AiEffortMetrics? aiMetrics = null)
         => new(
             new TimeEntryId(id),
             target,
@@ -154,8 +226,8 @@ public sealed class ActualTimeReportQueryServiceIntegrationTests
             durationMinutes,
             BillableState.Billable,
             TimeEntryApprovalState.Draft,
-            ContributorCategory.Employee,
-            AiEffortMetrics.Unavailable);
+            contributorCategory,
+            aiMetrics ?? AiEffortMetrics.Unavailable);
 
     private static TimeEntrySubmitted Submitted(string id)
         => new(
@@ -196,6 +268,18 @@ public sealed class ActualTimeReportQueryServiceIntegrationTests
     private static PartyReference Contributor() => new("party-1");
 
     private static ActivityTypeId ActivityType() => new("activity-type-1");
+
+    private static AiEffortMetrics NotReportedTokenMetrics()
+        => new(
+            AiMetricAvailability.ProviderReported,
+            90_000,
+            75_000,
+            2,
+            null,
+            null,
+            null,
+            AiEffortMetricSourceMetadata.Provider("provider-a", "tool-a", "run-1"),
+            AiTokenMetricAvailability.NotReported);
 
     private static TimesheetsRequestContext Context()
         => new(new TenantReference("tenant-1"), new PartyReference("operator-1"), "correlation-1");

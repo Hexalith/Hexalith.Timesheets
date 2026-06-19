@@ -77,13 +77,35 @@ public sealed class DependencyDirectionTests
 
         foreach (string contractFile in contractFiles)
         {
-            string source = File.ReadAllText(contractFile);
+            string source = RemoveAllowedDomainTokenMetricTerms(File.ReadAllText(contractFile));
 
             foreach (string forbiddenTerm in forbiddenTerms)
             {
                 source.Contains(forbiddenTerm, StringComparison.Ordinal).ShouldBeFalse(contractFile);
             }
         }
+    }
+
+    // "Token" is forbidden in contracts to block auth/bearer tokens and other credentials from
+    // leaking into public command/query bodies. The AI-effort domain legitimately uses provider
+    // token-metric vocabulary, which is not a credential. Only these exact identifiers are exempt;
+    // any other "...Token..." member (e.g. AuthToken, AccessToken) still trips the scan because the
+    // surrounding identifier survives the removal. Longest identifier is stripped first so the
+    // shorter one cannot partially consume it.
+    private static readonly string[] AllowedDomainTokenMetricIdentifiers =
+    [
+        "AiTokenMetricAvailability",
+        "AiTokenAvailability"
+    ];
+
+    private static string RemoveAllowedDomainTokenMetricTerms(string source)
+    {
+        foreach (string allowed in AllowedDomainTokenMetricIdentifiers)
+        {
+            source = source.Replace(allowed, string.Empty, StringComparison.Ordinal);
+        }
+
+        return source;
     }
 
     [Fact]

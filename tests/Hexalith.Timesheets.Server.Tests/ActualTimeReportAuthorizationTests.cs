@@ -154,6 +154,36 @@ public sealed class ActualTimeReportAuthorizationTests
     }
 
     [Fact]
+    public async Task Ai_report_row_authorization_uses_exact_ai_agent_contributor_and_work_target()
+    {
+        RecordingAccessGuard guard = new();
+        ActualTimeReportQueryService service = Service(
+            guard,
+            new TrackingReportReader(Page([Row(
+                WorkTarget(),
+                new PartyReference("ai-agent-1"),
+                ContributorCategory.AutomatedAgent)])),
+            new TrackingHydrationProvider(),
+            new TrackingPlannedEffortProvider());
+
+        ActualTimeReportQueryResult result = await service.QueryWorkAsync(
+            Context(),
+            new QueryWorkActualTimeReport
+            {
+                Work = new WorkReference("work-1"),
+                AiAgent = new PartyReference("ai-agent-1")
+            },
+            TestContext.Current.CancellationToken);
+
+        result.WasDisclosed.ShouldBeTrue();
+        guard.Requests.Count.ShouldBe(2);
+        guard.Requests[0].Contributor.ShouldBeNull();
+        guard.Requests[0].Work.ShouldBeNull();
+        guard.Requests[1].Contributor.ShouldBe(new PartyReference("ai-agent-1"));
+        guard.Requests[1].Work.ShouldBe(new WorkReference("work-1"));
+    }
+
+    [Fact]
     public async Task Project_report_hydrates_authorized_rows_without_planned_effort_lookup()
     {
         TrackingHydrationProvider hydration = new();
@@ -223,18 +253,21 @@ public sealed class ActualTimeReportAuthorizationTests
     private static ActualTimeReportReadModel Page(IReadOnlyList<ActualTimeReportRowReadModel> rows)
         => new(rows, null, ProjectionFreshnessMetadata.Fresh);
 
-    private static ActualTimeReportRowReadModel Row(TimeEntryTargetReference target)
+    private static ActualTimeReportRowReadModel Row(
+        TimeEntryTargetReference target,
+        PartyReference? contributor = null,
+        ContributorCategory contributorCategory = ContributorCategory.Employee)
         => new(
             target,
             "2026-06",
             new DateOnly(2026, 6, 1),
             new DateOnly(2026, 6, 30),
-            new PartyReference("party-1"),
+            contributor ?? new PartyReference("party-1"),
             new ActivityTypeId("activity-type-1"),
             ActivityTypeScope.Tenant,
             BillableState.Billable,
             TimeEntryApprovalState.Approved,
-            ContributorCategory.Employee,
+            contributorCategory,
             60,
             1,
             0,

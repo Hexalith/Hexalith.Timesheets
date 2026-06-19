@@ -19,6 +19,8 @@ public sealed record ApprovedTimeLedgerRowReadModel(
     ApprovedTimeLedgerRowState RowState,
     ProjectionFreshnessMetadata ProjectionFreshness)
 {
+    public AiEffortMetrics? AiMetrics { get; init; }
+
     public TimeEntryApprovedCorrectionEvidence? ApprovedCorrection { get; init; }
 
     public TimeEntryCorrectionEvidence? Correction { get; init; }
@@ -55,6 +57,7 @@ public sealed record ApprovedTimeLedgerRowReadModel(
             ApprovedTimeLedgerRowState.Current,
             evidence.ProjectionFreshness)
         {
+            AiMetrics = evidence.AiMetrics,
             ApprovedCorrection = Sanitize(evidence.ApprovedCorrection),
             Correction = Sanitize(evidence.Correction),
             EventLineage = [.. evidence.EventLineage],
@@ -90,6 +93,7 @@ public sealed record ApprovedTimeLedgerRowReadModel(
             ApprovedTimeLedgerRowState.Superseded,
             evidence.ProjectionFreshness)
         {
+            AiMetrics = priorValues.AiMetrics,
             ApprovedCorrection = Sanitize(evidence.ApprovedCorrection),
             Correction = Sanitize(evidence.Correction),
             EventLineage = [.. evidence.EventLineage],

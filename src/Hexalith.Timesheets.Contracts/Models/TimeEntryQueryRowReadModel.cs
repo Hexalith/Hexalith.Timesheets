@@ -18,6 +18,8 @@ public sealed record TimeEntryQueryRowReadModel(
     TimeEntrySourceType SourceType,
     ProjectionFreshnessMetadata ProjectionFreshness)
 {
+    public AiEffortMetrics? AiMetrics { get; init; }
+
     public TimeEntryDisplayHydration DisplayHydration { get; init; } =
         TimeEntryDisplayHydration.Unknown;
 
@@ -40,6 +42,7 @@ public sealed record TimeEntryQueryRowReadModel(
             ResolveSourceType(evidence),
             evidence.ProjectionFreshness)
         {
+            AiMetrics = evidence.AiMetrics,
             DisplayHydration = evidence.DisplayHydration
         };
     }

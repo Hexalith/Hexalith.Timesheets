@@ -9,6 +9,8 @@ public sealed record QueryProjectActualTimeReport
 
     public PartyReference? Contributor { get; init; }
 
+    public PartyReference? AiAgent { get; init; }
+
     public ActivityTypeId? ActivityTypeId { get; init; }
 
     public string? TenantLocalPeriodKey { get; init; }
@@ -22,6 +24,12 @@ public sealed record QueryProjectActualTimeReport
     public TimeEntryApprovalState? ApprovalState { get; init; }
 
     public ContributorCategory? ContributorCategory { get; init; }
+
+    public AiMetricAvailability? AiMetricAvailability { get; init; }
+
+    public AiTokenMetricAvailability? AiTokenAvailability { get; init; }
+
+    public AiEffortMetricSourceCategory? AiSourceCategory { get; init; }
 
     public bool CurrentRowsOnly { get; init; } = true;
 
