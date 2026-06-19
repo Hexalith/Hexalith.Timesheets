@@ -5,7 +5,9 @@ Launch-relevant targets:
 - Common command acknowledgements: `500 ms p95`.
 - Common report queries: `2s p95`.
 
-Story 1.1 reserves the test lane and documentation point only. Later data-bearing stories must add realistic tenant, project, contributor, period, and ledger fixtures without slowing the fast architecture/unit baseline.
+The current integration project contains in-process workflow coverage for capture, submission, approval, correction, locking, period submission, and period approval. This is functional workflow proof, not launch latency evidence.
+
+The performance lane remains reserved with an explicit skipped test until realistic EventStore-backed tenant, project, contributor, period, ledger, and report fixtures exist without slowing the fast architecture/unit baseline.
 
 Evidence should be collected in the integration/performance lane and should distinguish:
 

@@ -419,8 +419,8 @@ Launch readiness requires: passing tenant-isolation tests, approval/correction e
 ## 14. Open Questions
 
 1. **Time-zone and period policy** — **[RESOLVED 2026-06-19]** v1 uses **tenant time zone** as the canonical policy (UTC audit instants + tenant-local period keys). Owned by Stories 2.7/4.6.
-2. **Approver precedence** — If tenant admin, project manager, work owner, and finance reviewer disagree, which approval authority wins?
-3. **Correction model detail** — Should corrections supersede an entry, offset with a new entry, or support both patterns?
+2. **Approver precedence** — **[RESOLVED 2026-06-19]** v1 uses explicit authority-provider precedence. Same-precedence contradictions fail closed as ambiguous, self-approval is denied by default for entry and period approval unless explicitly allowed, and unavailable higher-precedence provider fall-through remains a policy follow-up for real provider/export stories.
+3. **Correction model detail** — **[RESOLVED 2026-06-19]** v1 uses additive correction events with superseding correction lineage for rejected-entry and approved-entry correction. Offset-entry correction remains deferred unless finance/export decisions require it at launch.
 4. **Magic-Link Confirmation issuance** — Story 3.2 owns issuance authority. **[RESOLVED 2026-06-19]** v1 baseline = single-use scoped expiring links (FR-14); **secondary identity verification for high-value/billable entries is deferred to post-v1** (explicit assumption, not silently closed).
 5. **Retention and legal hold** — **[RESOLVED 2026-06-19]** v1 default retention per §9; **legal-hold override is a launch-readiness gate** pending tenant/legal sign-off (owned by Story 1.4).
 6. **Activity Type governance** — Who can define project-level Activity Types, and can a project restrict tenant-level defaults?
@@ -435,7 +435,7 @@ Launch readiness requires: passing tenant-isolation tests, approval/correction e
 - §5.2 FR-5 — Self-approval is denied by default.
 - §5.2 FR-7 — A Timesheet Period is scoped to one Contributor, one Tenant, and one weekly or monthly period.
 - §5.2 FR-8 — Period approval is not an irreversible freeze; corrections remain possible with audit evidence.
-- §5.2 FR-9 — Exact approver role names and precedence are architecture decisions.
+- §5.2 FR-9 — Exact approver role names remain provider/policy decisions; v1 precedence behavior is resolved in §14.
 - §5.3 FR-11 — Project-level catalog restrictions are opt-in; default is tenant plus project Activity Types.
 - §5.4 FR-14 — Single-use scoped magic links are v1 security baseline.
 - §5.4 FR-15 — Provider metric gaps are represented as unavailable/unknown, not zero.

@@ -3,7 +3,8 @@
 ## Timesheets Owns
 
 - Time entry lifecycle and submission state.
-- Timesheet period submission, approval, rejection, correction, and locking rules.
+- Timesheet period submission, approval, rejection, and grouped review evidence.
+- Time Entry correction and locking rules, including rejected-entry correction and approved-entry additive correction.
 - Activity type governance for tenant and project scopes.
 - External contributor confirmation state and evidence.
 - Approved-time ledger projections, reporting views, and finance export evidence.
