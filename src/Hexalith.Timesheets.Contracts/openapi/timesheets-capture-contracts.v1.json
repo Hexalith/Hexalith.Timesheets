@@ -185,6 +185,12 @@
         },
         "additionalProperties": false
       },
+      "ConfirmTimeThroughMagicLink": {
+        "type": "object",
+        "description": "Confirm scoped time after server-side capability validation. The payload carries no authority or attribution fields; the server derives all attribution from the validated capability.",
+        "properties": {},
+        "additionalProperties": false
+      },
       "MagicLinkIssueResponse": {
         "type": "object",
         "description": "One-time issuance response that may contain the usable opaque token. This schema is not persisted, projected, exported, or exposed by metadata/read models.",
@@ -1216,6 +1222,20 @@
         },
         "additionalProperties": false
       },
+      "MagicLinkConfirmationCapabilityUsed": {
+        "type": "object",
+        "description": "Auditable single-use event for a magic-link confirmation capability. Stores scoped identifiers and safe source metadata only.",
+        "required": [ "capabilityId", "tenant", "contributor", "timeEntryId", "usedAtUtc", "source" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "usedAtUtc": { "type": "string", "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" }
+        },
+        "additionalProperties": false
+      },
       "MagicLinkConfirmationCapabilityReadModel": {
         "type": "object",
         "description": "Operator-visible magic-link state. Excludes capability secrets, capability payload material, hashes, narrative text, display names, and command bodies.",
@@ -1237,12 +1257,30 @@
           "revokedBy": { "$ref": "#/components/schemas/PartyReference" },
           "revokedAtUtc": { "type": "string", "format": "date-time" },
           "expiredAtUtc": { "type": "string", "format": "date-time" },
+          "usedAtUtc": { "type": "string", "format": "date-time" },
           "issueMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
           "revocationMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
           "expiryMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
+          "useMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
           "projectionFreshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" },
           "stateBadgeText": { "type": "string" },
           "expiryBadgeText": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkConfirmationDisplayResponse": {
+        "type": "object",
+        "description": "Safe external confirmation display details returned only after capability validation. Excludes authority, approval, and sibling-owned state.",
+        "required": [ "proposedDate", "durationMinutes", "durationUnit", "activityTypeId", "activityTypeLabel", "billableState", "targetContext" ],
+        "properties": {
+          "proposedDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "format": "int32", "minimum": 1 },
+          "durationUnit": { "type": "string" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "activityTypeLabel": { "type": "string" },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "targetContext": { "type": "string" },
+          "comment": { "type": "string", "nullable": true }
         },
         "additionalProperties": false
       },
@@ -1422,5 +1460,41 @@
       }
     }
   },
-  "paths": {}
+  "paths": {
+    "/api/timesheets/magic-links/confirm": {
+      "get": {
+        "summary": "Display scoped magic-link confirmation details",
+        "parameters": [
+          { "name": "t", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe confirmation details",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/MagicLinkConfirmationDisplayResponse" } }
+            }
+          },
+          "403": { "description": "Opaque invalid-link response" }
+        }
+      }
+    },
+    "/api/timesheets/magic-links/confirm/submit": {
+      "post": {
+        "summary": "Confirm scoped proposed time through a magic link",
+        "parameters": [
+          { "name": "t", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/ConfirmTimeThroughMagicLink" } }
+          }
+        },
+        "responses": {
+          "202": { "description": "Confirmation accepted" },
+          "403": { "description": "Opaque invalid-link response" }
+        }
+      }
+    }
+  }
 }

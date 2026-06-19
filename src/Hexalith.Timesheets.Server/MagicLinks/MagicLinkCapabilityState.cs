@@ -21,6 +21,8 @@ public sealed class MagicLinkCapabilityState
 
     public TimeEntryId? TimeEntryId { get; private set; }
 
+    public MagicLinkTargetKind TargetKind { get; private set; }
+
     public MagicLinkAllowedAction AllowedAction { get; private set; }
 
     public Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState State { get; private set; }
@@ -32,6 +34,10 @@ public sealed class MagicLinkCapabilityState
     public DateTimeOffset? IssuedAtUtc { get; private set; }
 
     public MagicLinkTokenHash? TokenHash { get; private set; }
+
+    public DateTimeOffset? UsedAtUtc { get; private set; }
+
+    public MagicLinkAuditMetadata? UseMetadata { get; private set; }
 
     public bool IsTerminal => State is Contracts.ValueObjects.MagicLinkCapabilityState.Revoked
         or Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Expired
@@ -48,6 +54,7 @@ public sealed class MagicLinkCapabilityState
         Target = issued.Target;
         ActivityTypeId = issued.ActivityTypeId;
         TimeEntryId = issued.TimeEntryId;
+        TargetKind = issued.TargetKind;
         AllowedAction = issued.AllowedAction;
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued;
         ExpiresAtUtc = issued.ExpiresAtUtc;
@@ -66,5 +73,13 @@ public sealed class MagicLinkCapabilityState
     {
         ArgumentNullException.ThrowIfNull(expired);
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Expired;
+    }
+
+    public void Apply(MagicLinkConfirmationCapabilityUsed used)
+    {
+        ArgumentNullException.ThrowIfNull(used);
+        State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used;
+        UsedAtUtc = used.UsedAtUtc;
+        UseMetadata = used.Source;
     }
 }

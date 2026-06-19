@@ -1,3 +1,4 @@
+using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Models;
@@ -6,23 +7,28 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.TimeEntries;
 
 namespace Hexalith.Timesheets.Server.MagicLinks;
 
 public sealed class MagicLinkConfirmationCapabilityCommandService
 {
     private readonly ITimesheetsAccessGuard _accessGuard;
+    private readonly ExternalContributionCommandService _externalContributionService;
     private readonly IMagicLinkTokenGenerator _tokenGenerator;
 
     public MagicLinkConfirmationCapabilityCommandService(
         ITimesheetsAccessGuard accessGuard,
-        IMagicLinkTokenGenerator tokenGenerator)
+        IMagicLinkTokenGenerator tokenGenerator,
+        ExternalContributionCommandService externalContributionService)
     {
         ArgumentNullException.ThrowIfNull(accessGuard);
         ArgumentNullException.ThrowIfNull(tokenGenerator);
+        ArgumentNullException.ThrowIfNull(externalContributionService);
 
         _accessGuard = accessGuard;
         _tokenGenerator = tokenGenerator;
+        _externalContributionService = externalContributionService;
     }
 
     public async ValueTask<MagicLinkCapabilityCommandResult> IssueAsync(
@@ -115,6 +121,136 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         return MagicLinkConfirmationCapability.HandleExpire(command, state, context.Tenant, expiredAtUtc);
     }
 
+    public async ValueTask<MagicLinkConfirmationUseResult> ConfirmAsync(
+        TimesheetsRequestContext context,
+        string oneTimeToken,
+        ConfirmTimeThroughMagicLink command,
+        MagicLinkCapabilityState? capabilityState,
+        TimeEntryState? timeEntryState,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(command);
+
+        TimesheetsAuthorizationDecision authorization = await _accessGuard.AuthorizeAsync(
+            CreateDisclosureAuthorizationRequest(context, capabilityState),
+            cancellationToken).ConfigureAwait(false);
+
+        if (!authorization.IsAuthorized)
+        {
+            return new(null, null);
+        }
+
+        if (string.IsNullOrWhiteSpace(oneTimeToken))
+        {
+            return new(InvalidLinkRejection(), null);
+        }
+
+        MagicLinkTokenHash tokenHash;
+        try
+        {
+            tokenHash = _tokenGenerator.DeriveHash(oneTimeToken);
+        }
+        catch (ArgumentException)
+        {
+            return new(InvalidLinkRejection(), null);
+        }
+
+        TimesheetsDomainResult scopeResult = ValidateConfirmationScope(capabilityState, timeEntryState);
+        if (scopeResult.IsRejection)
+        {
+            return new(scopeResult, null);
+        }
+
+        TimesheetsDomainResult capabilityResult = MagicLinkConfirmationCapability.HandleUse(
+            command,
+            capabilityState,
+            context.Tenant,
+            tokenHash,
+            confirmedAtUtc);
+
+        if (!capabilityResult.IsSuccess)
+        {
+            return new(capabilityResult, null);
+        }
+
+        TimeEntryConfirmationCommandResult timeEntryResult = await _externalContributionService.ConfirmAsync(
+            context,
+            new ConfirmExternalTimeEntry(
+                capabilityState!.TimeEntryId!,
+                capabilityState.Contributor!,
+                ServerDerivedSource(capabilityState)),
+            timeEntryState,
+            confirmedAtUtc,
+            cancellationToken).ConfigureAwait(false);
+
+        return new(capabilityResult, timeEntryResult);
+    }
+
+    /// <summary>
+    /// Validates a one-time token against the scoped capability and proposed Time Entry, then returns only the
+    /// minimal, no-disclosure confirmation details. Every invalid, expired, used, revoked, wrong-action,
+    /// wrong-scope, hash-mismatch, tenant-mismatch, or unavailable-state path returns <see langword="null"/> so
+    /// callers emit the single opaque invalid-link response without revealing whether anything exists.
+    /// </summary>
+    /// <param name="context">The trusted request context.</param>
+    /// <param name="oneTimeToken">The opaque one-time token presented by the external contributor.</param>
+    /// <param name="capabilityState">The folded magic-link capability state, or <see langword="null"/>.</param>
+    /// <param name="timeEntryState">The folded proposed Time Entry state, or <see langword="null"/>.</param>
+    /// <param name="activityTypeCatalog">The Activity Type catalog used to resolve the display label.</param>
+    /// <param name="observedAtUtc">The evaluation instant in UTC.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The safe display response, or <see langword="null"/> for any invalid-link state.</returns>
+    public async ValueTask<MagicLinkConfirmationDisplayResponse?> DescribeAsync(
+        TimesheetsRequestContext context,
+        string oneTimeToken,
+        MagicLinkCapabilityState? capabilityState,
+        TimeEntryState? timeEntryState,
+        ActivityTypeCatalogReadModel activityTypeCatalog,
+        DateTimeOffset observedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(activityTypeCatalog);
+
+        TimesheetsAuthorizationDecision authorization = await _accessGuard.AuthorizeAsync(
+            CreateDisclosureAuthorizationRequest(context, capabilityState),
+            cancellationToken).ConfigureAwait(false);
+
+        if (!authorization.IsAuthorized || string.IsNullOrWhiteSpace(oneTimeToken))
+        {
+            return null;
+        }
+
+        MagicLinkTokenHash tokenHash;
+        try
+        {
+            tokenHash = _tokenGenerator.DeriveHash(oneTimeToken);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+
+        if (ValidateConfirmationScope(capabilityState, timeEntryState).IsRejection
+            || !MagicLinkConfirmationCapability.IsValidForUse(capabilityState, context.Tenant, tokenHash, observedAtUtc))
+        {
+            return null;
+        }
+
+        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, out string? activityTypeLabel)
+            ? new MagicLinkConfirmationDisplayResponse(
+                timeEntryState!.ServiceDate,
+                timeEntryState.DurationMinutes,
+                "minutes",
+                capabilityState!.ActivityTypeId!,
+                activityTypeLabel!,
+                timeEntryState.BillableState,
+                capabilityState.Target!.TargetKind.ToString())
+            : null;
+    }
+
     private static TimesheetsAuthorizationRequest CreateAuthorizationRequest(
         TimesheetsRequestContext context,
         IssueMagicLinkConfirmationCapability command)
@@ -157,6 +293,73 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         }
 
         return request;
+    }
+
+    private static TimesheetsAuthorizationRequest CreateDisclosureAuthorizationRequest(
+        TimesheetsRequestContext context,
+        MagicLinkCapabilityState? state)
+    {
+        TimesheetsAuthorizationRequest request = new(context, TimesheetsOperation.MagicLinkDisclosure)
+        {
+            Contributor = state?.Contributor
+        };
+
+        if (state?.Target?.TargetKind == TimeEntryTargetKind.Project)
+        {
+            return request with { Project = new ProjectReference(state.Target.TargetId) };
+        }
+
+        if (state?.Target?.TargetKind == TimeEntryTargetKind.Work)
+        {
+            return request with { Work = new WorkReference(state.Target.TargetId) };
+        }
+
+        return request;
+    }
+
+    private static TimesheetsDomainResult ValidateConfirmationScope(
+        MagicLinkCapabilityState? capabilityState,
+        TimeEntryState? timeEntryState)
+    {
+        if (capabilityState?.Exists != true || timeEntryState?.IsRecorded != true)
+        {
+            return InvalidLinkRejection();
+        }
+
+        return timeEntryState.TimeEntryId == capabilityState.TimeEntryId
+            && timeEntryState.Contributor == capabilityState.Contributor
+            && timeEntryState.Target == capabilityState.Target
+            ? TimesheetsDomainResult.NoOp()
+            : InvalidLinkRejection();
+    }
+
+    private static ExternalContributionSource ServerDerivedSource(MagicLinkCapabilityState state)
+        => new("magic-link", state.CapabilityId!.Value);
+
+    private static bool TryResolveDisplayLabel(
+        MagicLinkCapabilityState state,
+        ActivityTypeCatalogReadModel catalog,
+        out string? label)
+    {
+        label = null;
+
+        if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+        {
+            return false;
+        }
+
+        ActivityTypeCatalogItem[] matches = catalog.Items
+            .Where(item => item.ActivityTypeId == state.ActivityTypeId)
+            .Take(2)
+            .ToArray();
+
+        if (matches.Length != 1 || !matches[0].IsActive || !matches[0].IsAvailableForCapture)
+        {
+            return false;
+        }
+
+        label = matches[0].Label;
+        return true;
     }
 
     private static bool TryResolveActivityTypeScope(
@@ -266,4 +469,11 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         => TimesheetsDomainResult.Rejection([
             new(code, message, [new TimesheetsFieldError(field, fieldCode, message)])
         ]);
+
+    private static TimesheetsDomainResult InvalidLinkRejection()
+        => Reject(
+            TimesheetsRejectionCode.ValidationFailed,
+            "Magic-link confirmation request was not accepted.",
+            "capability",
+            "invalid-link");
 }

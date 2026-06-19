@@ -533,6 +533,7 @@ public static class TimesheetsMetadataCatalog
                 new("expiresAtUtc", "Expires", "DateTimeOffset", true),
                 new("issuer", "Issuer", "PartyReference", true),
                 new("issuedAtUtc", "Issued", "DateTimeOffset", true),
+                new("usedAtUtc", "Used", "DateTimeOffset", false),
                 new("auditMetadata", "Audit metadata", nameof(MagicLinkAuditMetadata), false, "Safe source system and idempotency reference only."),
                 new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true)
             ],

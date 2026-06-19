@@ -1,5 +1,6 @@
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
+using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.References;
@@ -8,6 +9,7 @@ using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.References;
+using Hexalith.Timesheets.Server.TimeEntries;
 
 using NSubstitute;
 
@@ -384,6 +386,247 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         terminalExpire.IsRejection.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task Confirm_magic_link_consumes_capability_and_records_contributor_evidence_not_approval()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        MagicLinkConfirmationUseResult result = await fixture.CreateService().ConfirmAsync(
+            Context(),
+            "opaque-once",
+            ConfirmCommand(),
+            IssuedState(),
+            RecordedExternalState(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        MagicLinkConfirmationCapabilityUsed used = result.CapabilityResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityUsed>();
+        used.CapabilityId.ShouldBe(CapabilityId());
+        used.Contributor.ShouldBe(Contributor());
+        used.TimeEntryId.ShouldBe(TimeEntryId());
+        used.Source.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
+
+        TimeEntryConfirmationCommandResult timeEntryResult = result.TimeEntryResult.ShouldNotBeNull();
+        TimesheetsDomainResult timeEntryDomainResult = timeEntryResult.DomainResult.ShouldNotBeNull();
+        TimeEntryContributorConfirmed confirmed = timeEntryDomainResult
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryContributorConfirmed>();
+        confirmed.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
+        timeEntryDomainResult.Events.ShouldNotContain(static @event => @event is TimeEntryApproved);
+    }
+
+    [Theory]
+    [InlineData("different-token")]
+    [InlineData("")]
+    public async Task Confirm_magic_link_fails_closed_for_invalid_tokens_without_time_entry_confirmation(string token)
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        MagicLinkConfirmationUseResult result = await fixture.CreateService().ConfirmAsync(
+            Context(),
+            token,
+            ConfirmCommand(),
+            IssuedState(),
+            RecordedExternalState(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        result.TimeEntryResult.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Confirm_magic_link_rejects_reuse_without_time_entry_confirmation()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        CapabilityStateData state = IssuedState();
+        state.Apply(new MagicLinkConfirmationCapabilityUsed(
+            CapabilityId(),
+            Context().Tenant!,
+            Contributor(),
+            TimeEntryId(),
+            ConfirmedAtUtc(),
+            new MagicLinkAuditMetadata("magic-link", "capability-1")));
+
+        MagicLinkConfirmationUseResult result = await fixture.CreateService().ConfirmAsync(
+            Context(),
+            "opaque-once",
+            ConfirmCommand(),
+            state,
+            RecordedExternalState(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        result.TimeEntryResult.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Confirm_magic_link_fails_closed_for_unavailable_or_terminal_capabilities_without_time_entry_confirmation()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        CapabilityStateData revoked = IssuedState();
+        revoked.Apply(new MagicLinkConfirmationCapabilityRevoked(
+            CapabilityId(),
+            Context().Tenant!,
+            Context().Actor!,
+            RevokedAtUtc(),
+            new MagicLinkAuditMetadata("timesheets", "revoke-1")));
+        CapabilityStateData expired = IssuedState();
+        expired.Apply(new MagicLinkConfirmationCapabilityExpired(
+            CapabilityId(),
+            Context().Tenant!,
+            ExpiresAtUtc(),
+            new MagicLinkAuditMetadata("timesheets", "expire-1")));
+
+        foreach (CapabilityStateData? state in new CapabilityStateData?[] { null, revoked, expired })
+        {
+            MagicLinkConfirmationUseResult result = await fixture.CreateService().ConfirmAsync(
+                Context(),
+                "opaque-once",
+                ConfirmCommand(),
+                state,
+                RecordedExternalState(),
+                ConfirmedAtUtc(),
+                TestContext.Current.CancellationToken);
+
+            result.WasDispatched.ShouldBeFalse();
+            result.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+            result.TimeEntryResult.ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task Confirm_magic_link_fails_closed_for_expired_tenant_mismatched_wrong_action_or_wrong_scope_state()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        (CapabilityStateData State, DateTimeOffset ConfirmedAtUtc)[] cases =
+        [
+            (IssuedState(expiresAtUtc: ConfirmedAtUtc()), ConfirmedAtUtc()),
+            (IssuedState(tenant: new TenantReference("tenant-2")), ConfirmedAtUtc()),
+            (IssuedState(allowedAction: MagicLinkAllowedAction.Adjust), ConfirmedAtUtc()),
+            (IssuedState(targetKind: MagicLinkTargetKind.ExistingTimeEntry), ConfirmedAtUtc())
+        ];
+
+        foreach ((CapabilityStateData state, DateTimeOffset confirmedAtUtc) in cases)
+        {
+            MagicLinkConfirmationUseResult result = await fixture.CreateService().ConfirmAsync(
+                Context(),
+                "opaque-once",
+                ConfirmCommand(),
+                state,
+                RecordedExternalState(),
+                confirmedAtUtc,
+                TestContext.Current.CancellationToken);
+
+            result.WasDispatched.ShouldBeFalse();
+            result.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+            result.TimeEntryResult.ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task Confirm_magic_link_fails_closed_when_time_entry_state_does_not_match_capability_scope()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryState differentContributor = RecordedExternalState(contributor: new PartyReference("party-2"));
+        TimeEntryState differentTarget = RecordedExternalState(target: TimeEntryTargetReference.ForProject(new ProjectReference("project-2")));
+        TimeEntryState differentEntry = RecordedExternalState(timeEntryId: new TimeEntryId("time-entry-2"));
+
+        foreach (TimeEntryState state in new[] { differentContributor, differentTarget, differentEntry })
+        {
+            MagicLinkConfirmationUseResult result = await fixture.CreateService().ConfirmAsync(
+                Context(),
+                "opaque-once",
+                ConfirmCommand(),
+                IssuedState(),
+                state,
+                ConfirmedAtUtc(),
+                TestContext.Current.CancellationToken);
+
+            result.WasDispatched.ShouldBeFalse();
+            result.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+            result.TimeEntryResult.ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task Describe_magic_link_returns_only_safe_confirmation_details_for_valid_token()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        MagicLinkConfirmationDisplayResponse response = (await fixture.CreateService().DescribeAsync(
+            Context(),
+            "opaque-once",
+            IssuedState(),
+            RecordedExternalState(),
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+
+        response.ProposedDate.ShouldBe(new DateOnly(2026, 6, 19));
+        response.DurationMinutes.ShouldBe(60);
+        response.DurationUnit.ShouldBe("minutes");
+        response.ActivityTypeId.ShouldBe(ActivityId());
+        response.ActivityTypeLabel.ShouldBe("Delivery");
+        response.BillableState.ShouldBe(BillableState.Billable);
+        response.TargetContext.ShouldBe("Project");
+        response.Comment.ShouldBeNull();
+
+        string json = System.Text.Json.JsonSerializer.Serialize(
+            response,
+            new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
+        json.ShouldNotContain("opaque-once");
+        json.ShouldNotContain("token", Case.Insensitive);
+        json.ShouldNotContain("party", Case.Insensitive);
+        json.ShouldNotContain("tenant", Case.Insensitive);
+    }
+
+    [Fact]
+    public async Task Describe_magic_link_fails_closed_for_invalid_used_expired_wrong_scope_or_unfresh_states()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        CapabilityStateData used = IssuedState();
+        used.Apply(new MagicLinkConfirmationCapabilityUsed(
+            CapabilityId(),
+            Context().Tenant!,
+            Contributor(),
+            TimeEntryId(),
+            ConfirmedAtUtc(),
+            new MagicLinkAuditMetadata("magic-link", "capability-1")));
+
+        // (token, capability, time entry, catalog, observedAt) tuples that must each fail closed to null.
+        (string Token, CapabilityStateData? Capability, TimeEntryState? TimeEntry, ActivityTypeCatalogReadModel Catalog, DateTimeOffset ObservedAt)[] cases =
+        [
+            ("different-token", IssuedState(), RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", null, RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", used, RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", IssuedState(), RecordedExternalState(), FreshCatalog(), ExpiresAtUtc()),
+            ("opaque-once", IssuedState(), RecordedExternalState(timeEntryId: new TimeEntryId("time-entry-2")), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", IssuedState(), null, FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", IssuedState(), RecordedExternalState(), new ActivityTypeCatalogReadModel([], ProjectionFreshnessMetadata.Stale()), ConfirmedAtUtc())
+        ];
+
+        foreach ((string token, CapabilityStateData? capability, TimeEntryState? timeEntry, ActivityTypeCatalogReadModel catalog, DateTimeOffset observedAt) in cases)
+        {
+            MagicLinkConfirmationDisplayResponse? response = await fixture.CreateService().DescribeAsync(
+                Context(),
+                token,
+                capability,
+                timeEntry,
+                catalog,
+                observedAt,
+                TestContext.Current.CancellationToken);
+
+            response.ShouldBeNull();
+        }
+    }
+
     private static bool JsonContainsNoRawToken(MagicLinkConfirmationCapabilityIssued issued)
     {
         string json = System.Text.Json.JsonSerializer.Serialize(issued, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
@@ -421,24 +664,59 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     private static ExpireMagicLinkConfirmationCapability ExpireCommand()
         => new(CapabilityId(), new MagicLinkAuditMetadata("timesheets", "expire-1"));
 
-    private static CapabilityStateData IssuedState()
+    private static ConfirmTimeThroughMagicLink ConfirmCommand()
+        => new();
+
+    private static CapabilityStateData IssuedState(
+        TenantReference? tenant = null,
+        PartyReference? contributor = null,
+        TimeEntryTargetReference? target = null,
+        TimeEntryId? timeEntryId = null,
+        MagicLinkTargetKind targetKind = MagicLinkTargetKind.ProposedTimeEntry,
+        MagicLinkAllowedAction allowedAction = MagicLinkAllowedAction.Confirm,
+        MagicLinkTokenHash? tokenHash = null,
+        DateTimeOffset? expiresAtUtc = null)
     {
         CapabilityStateData state = new();
         state.Apply(new MagicLinkConfirmationCapabilityIssued(
             CapabilityId(),
-            Context().Tenant!,
-            Contributor(),
-            TimeEntryTargetReference.ForProject(Project()),
+            tenant ?? Context().Tenant!,
+            contributor ?? Contributor(),
+            target ?? TimeEntryTargetReference.ForProject(Project()),
             ActivityId(),
-            TimeEntryId(),
-            MagicLinkTargetKind.ProposedTimeEntry,
-            MagicLinkAllowedAction.Confirm,
-            new MagicLinkTokenHash("hash-only"),
-            ExpiresAtUtc(),
+            timeEntryId ?? TimeEntryId(),
+            targetKind,
+            allowedAction,
+            tokenHash ?? new MagicLinkTokenHash("hash-only"),
+            expiresAtUtc ?? ExpiresAtUtc(),
             Context().Actor!,
             IssuedAtUtc(),
             new MagicLinkAuditMetadata("timesheets", "issue-1"),
             true));
+        return state;
+    }
+
+    private static TimeEntryState RecordedExternalState(
+        TimeEntryId? timeEntryId = null,
+        TimeEntryTargetReference? target = null,
+        PartyReference? contributor = null)
+    {
+        TimeEntryState state = new();
+        state.Apply(new TimeEntryRecorded(
+            timeEntryId ?? TimeEntryId(),
+            target ?? TimeEntryTargetReference.ForProject(Project()),
+            contributor ?? Contributor(),
+            ActivityId(),
+            ActivityTypeScope.Tenant,
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            TimeEntryApprovalState.Draft,
+            ContributorCategory.ExternalContributor,
+            null)
+        {
+            ExternalSource = new ExternalContributionSource("supplier-api", "request-1")
+        });
         return state;
     }
 
@@ -463,6 +741,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     private static DateTimeOffset ExpiresAtUtc() => new(2026, 6, 20, 12, 0, 0, TimeSpan.Zero);
 
     private static DateTimeOffset RevokedAtUtc() => new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
+
+    private static DateTimeOffset ConfirmedAtUtc() => new(2026, 6, 19, 14, 0, 0, TimeSpan.Zero);
 
     private static MagicLinkCapabilityId CapabilityId() => new("capability-1");
 
@@ -521,7 +801,15 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
                 PartyValidator,
                 PolicyEvaluator);
 
-            return new(accessGuard, TokenGenerator);
+            TimeEntryCommandService recordService = new(accessGuard);
+            TimeEntrySubmissionCommandService submissionService = new(accessGuard);
+            ExternalContributionCommandService externalContributionService = new(
+                recordService,
+                submissionService,
+                accessGuard,
+                new ExternalContributionPolicyOptions());
+
+            return new(accessGuard, TokenGenerator, externalContributionService);
         }
     }
 
@@ -534,5 +822,10 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             GenerateCount++;
             return new("opaque-once", new MagicLinkTokenHash("hash-only"));
         }
+
+        public MagicLinkTokenHash DeriveHash(string oneTimeToken)
+            => oneTimeToken == "opaque-once"
+                ? new MagicLinkTokenHash("hash-only")
+                : new MagicLinkTokenHash("different-hash");
     }
 }

@@ -110,6 +110,66 @@ public static class MagicLinkConfirmationCapability
         ]);
     }
 
+    public static TimesheetsDomainResult HandleUse(
+        ConfirmTimeThroughMagicLink command,
+        MagicLinkCapabilityState? state,
+        TenantReference? tenant,
+        MagicLinkTokenHash tokenHash,
+        DateTimeOffset usedAtUtc)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(tokenHash);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateUse(state, tenant, tokenHash, usedAtUtc, errors);
+
+        if (errors.Count > 0)
+        {
+            return Reject("Magic-link confirmation request was not accepted.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new MagicLinkConfirmationCapabilityUsed(
+                state!.CapabilityId!,
+                tenant!,
+                state.Contributor!,
+                state.TimeEntryId!,
+                usedAtUtc.ToUniversalTime(),
+                ServerDerivedSource(state))
+        ]);
+    }
+
+    /// <summary>
+    /// Determines whether a capability can currently back a confirmation or its read-only display,
+    /// applying the exact same fail-closed checks as <see cref="HandleUse"/> without emitting an event.
+    /// </summary>
+    /// <param name="state">The folded capability state.</param>
+    /// <param name="tenant">The trusted tenant authority.</param>
+    /// <param name="tokenHash">The server-derived token hash.</param>
+    /// <param name="atUtc">The evaluation instant in UTC.</param>
+    /// <returns><see langword="true"/> when the capability is valid, unexpired, unused, and confirm-scoped.</returns>
+    public static bool IsValidForUse(
+        MagicLinkCapabilityState? state,
+        TenantReference? tenant,
+        MagicLinkTokenHash tokenHash,
+        DateTimeOffset atUtc)
+    {
+        ArgumentNullException.ThrowIfNull(tokenHash);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateUse(state, tenant, tokenHash, atUtc, errors);
+        return errors.Count == 0;
+    }
+
+    /// <summary>
+    /// Builds the audit source from validated server-side capability state only, never from caller input,
+    /// so external request bodies cannot inject audit/source metadata into persisted events.
+    /// </summary>
+    /// <param name="state">The validated capability state.</param>
+    /// <returns>The server-derived magic-link audit metadata.</returns>
+    private static MagicLinkAuditMetadata ServerDerivedSource(MagicLinkCapabilityState state)
+        => new("magic-link", state.CapabilityId!.Value);
+
     private static void ValidateIssue(
         IssueMagicLinkConfirmationCapability command,
         TenantReference? tenant,
@@ -205,6 +265,60 @@ public static class MagicLinkConfirmationCapability
             errors.Add(new("state", "terminal", "Magic-link capability is already terminal."));
         }
     }
+
+    private static void ValidateUse(
+        MagicLinkCapabilityState? state,
+        TenantReference? tenant,
+        MagicLinkTokenHash tokenHash,
+        DateTimeOffset usedAtUtc,
+        List<TimesheetsFieldError> errors)
+    {
+        if (tenant is null)
+        {
+            errors.Add(InvalidLink("tenant"));
+        }
+
+        if (usedAtUtc.Offset != TimeSpan.Zero)
+        {
+            errors.Add(InvalidLink("usedAtUtc"));
+        }
+
+        if (state?.Exists != true)
+        {
+            errors.Add(InvalidLink("capability"));
+            return;
+        }
+
+        if (state.Tenant != tenant
+            || state.CapabilityId is null
+            || state.Contributor is null
+            || state.TimeEntryId is null
+            || state.Target is null
+            || state.Target.TargetKind == TimeEntryTargetKind.Unknown
+            || state.TargetKind != MagicLinkTargetKind.ProposedTimeEntry
+            || state.TokenHash != tokenHash)
+        {
+            errors.Add(InvalidLink("capability"));
+        }
+
+        if (state.IsTerminal || state.State != Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued)
+        {
+            errors.Add(InvalidLink("capability"));
+        }
+
+        if (state.ExpiresAtUtc <= usedAtUtc.ToUniversalTime())
+        {
+            errors.Add(InvalidLink("capability"));
+        }
+
+        if (state.AllowedAction is not (MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.ConfirmOrAdjust))
+        {
+            errors.Add(InvalidLink("capability"));
+        }
+    }
+
+    private static TimesheetsFieldError InvalidLink(string field)
+        => new(field, "invalid-link", "Magic-link confirmation request was not accepted.");
 
     private static TimesheetsDomainResult Reject(
         string message,

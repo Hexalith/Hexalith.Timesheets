@@ -1192,7 +1192,11 @@ public sealed class TimeCaptureContractTests
 
         JsonObject paths = artifact["paths"]?.AsObject()
             ?? throw new InvalidOperationException("OpenAPI paths node is missing.");
-        paths.Count.ShouldBe(0);
+        paths.Select(static path => path.Key).Order(StringComparer.Ordinal).ShouldBe(
+        [
+            "/api/timesheets/magic-links/confirm",
+            "/api/timesheets/magic-links/confirm/submit"
+        ]);
 
         JsonArray serverDerivedContext = artifact["x-hexalith-boundaries"]?["serverDerivedContext"]?.AsArray()
             ?? throw new InvalidOperationException("serverDerivedContext boundary metadata is missing.");

@@ -19,9 +19,12 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         endpoint.ShouldContain("/api/timesheets/magic-links/confirmation-capabilities");
         endpoint.ShouldContain("/{capabilityId}/revoke");
         endpoint.ShouldContain("/{capabilityId}/expire");
+        endpoint.ShouldContain("/api/timesheets/magic-links/confirm");
+        endpoint.ShouldContain("/api/timesheets/magic-links/confirm/submit");
         endpoint.ShouldContain("IssueMagicLinkConfirmationCapability");
         endpoint.ShouldContain("RevokeMagicLinkConfirmationCapability");
         endpoint.ShouldContain("ExpireMagicLinkConfirmationCapability");
+        endpoint.ShouldContain("ConfirmTimeThroughMagicLink");
         endpoint.ShouldContain("TimesheetsServerRequestContext");
         endpoint.ShouldNotContain("command.Tenant");
         endpoint.ShouldNotContain("command.Actor");

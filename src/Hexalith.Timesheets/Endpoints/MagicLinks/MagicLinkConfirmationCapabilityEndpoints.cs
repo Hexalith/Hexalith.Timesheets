@@ -101,6 +101,67 @@ public static class MagicLinkConfirmationCapabilityEndpoints
                     : Results.Accepted();
             });
 
+        endpoints.MapGet(
+            "/api/timesheets/magic-links/confirm",
+            static async Task<IResult> (
+                string t,
+                HttpContext httpContext,
+                MagicLinkConfirmationCapabilityCommandService service,
+                TimeProvider timeProvider,
+                CancellationToken cancellationToken) =>
+            {
+                if (string.IsNullOrWhiteSpace(t))
+                {
+                    return Denied();
+                }
+
+                ClaimsPrincipal user = httpContext.User;
+                MagicLinkConfirmationDisplayResponse? response = await service.DescribeAsync(
+                    TimesheetsServerRequestContext.FromTrustedSources(
+                        FirstClaimValue(user, "tenant_id", "tenant"),
+                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                        httpContext.TraceIdentifier),
+                    t,
+                    null,
+                    null,
+                    UnavailableCatalog(),
+                    timeProvider.GetUtcNow(),
+                    cancellationToken).ConfigureAwait(false);
+
+                return response is null ? Denied() : Results.Ok(response);
+            });
+
+        endpoints.MapPost(
+            "/api/timesheets/magic-links/confirm/submit",
+            static async Task<IResult> (
+                string t,
+                ConfirmTimeThroughMagicLink command,
+                HttpContext httpContext,
+                MagicLinkConfirmationCapabilityCommandService service,
+                TimeProvider timeProvider,
+                CancellationToken cancellationToken) =>
+            {
+                if (string.IsNullOrWhiteSpace(t))
+                {
+                    return Denied();
+                }
+
+                ClaimsPrincipal user = httpContext.User;
+                MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
+                    TimesheetsServerRequestContext.FromTrustedSources(
+                        FirstClaimValue(user, "tenant_id", "tenant"),
+                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                        httpContext.TraceIdentifier),
+                    t,
+                    command,
+                    null,
+                    null,
+                    timeProvider.GetUtcNow(),
+                    cancellationToken).ConfigureAwait(false);
+
+                return result.WasDispatched ? Results.Accepted() : Denied();
+            });
+
         return endpoints;
     }
 

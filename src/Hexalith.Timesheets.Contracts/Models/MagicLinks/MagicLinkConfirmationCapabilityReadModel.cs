@@ -31,6 +31,10 @@ public sealed record MagicLinkConfirmationCapabilityReadModel(
 
     public MagicLinkAuditMetadata? ExpiryMetadata { get; init; }
 
+    public DateTimeOffset? UsedAtUtc { get; init; }
+
+    public MagicLinkAuditMetadata? UseMetadata { get; init; }
+
     public string StateBadgeText { get; init; } = State.ToString();
 
     public string ExpiryBadgeText { get; init; } = ExpiryState.ToString();

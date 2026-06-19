@@ -52,6 +52,13 @@ public sealed class MagicLinkConfirmationCapabilityProjection
             {
                 model = Apply(expired, model, checkpoint, observedAtUtc);
             }
+            else if (projectionEvent.Payload is MagicLinkConfirmationCapabilityUsed used
+                && used.CapabilityId == capabilityId
+                && model is not null
+                && model.State == CapabilityState.Issued)
+            {
+                model = Apply(used, model, checkpoint, observedAtUtc);
+            }
         }
 
         return model;
@@ -122,6 +129,26 @@ public sealed class MagicLinkConfirmationCapabilityProjection
             StateBadgeText = "Expired",
             ExpiryBadgeText = ToExpiryBadgeText(MagicLinkExpiryState.Expired)
         };
+
+    private static MagicLinkConfirmationCapabilityReadModel Apply(
+        MagicLinkConfirmationCapabilityUsed used,
+        MagicLinkConfirmationCapabilityReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        DateTimeOffset observedAtUtc)
+    {
+        MagicLinkExpiryState expiryState = ToExpiryState(current.ExpiresAtUtc, observedAtUtc);
+
+        return current with
+        {
+            State = CapabilityState.Used,
+            ExpiryState = expiryState,
+            UsedAtUtc = used.UsedAtUtc,
+            UseMetadata = used.Source,
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            StateBadgeText = "Used",
+            ExpiryBadgeText = ToExpiryBadgeText(expiryState)
+        };
+    }
 
     private static MagicLinkExpiryState ToExpiryState(DateTimeOffset expiresAtUtc, DateTimeOffset observedAtUtc)
     {

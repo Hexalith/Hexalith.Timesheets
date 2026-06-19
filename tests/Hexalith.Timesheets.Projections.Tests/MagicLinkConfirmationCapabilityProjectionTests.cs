@@ -87,6 +87,29 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
         model.ExpiredAtUtc.ShouldBe(ExpiresAtUtc());
     }
 
+    [Fact]
+    public void Projection_exposes_used_state_and_ignores_later_terminal_mutations()
+    {
+        MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
+            CapabilityId(),
+            [
+                Event("m1", 1, Issued()),
+                Event("m2", 2, Used()),
+                Event("m3", 3, Revoked())
+            ],
+            FreshCheckpoint(3),
+            ObservedAtUtc());
+
+        model.ShouldNotBeNull();
+        model.State.ShouldBe(CapabilityState.Used);
+        model.StateBadgeText.ShouldBe("Used");
+        model.UsedAtUtc.ShouldBe(UsedAtUtc());
+        model.UseMetadata.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
+        model.RevokedAtUtc.ShouldBeNull();
+        Serialized(model).ShouldNotContain("token", Case.Insensitive);
+        Serialized(model).ShouldNotContain("comment", Case.Insensitive);
+    }
+
     private static string Serialized(MagicLinkConfirmationCapabilityReadModel model)
         => JsonSerializer.Serialize(model, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 
@@ -130,6 +153,15 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
             ExpiresAtUtc(),
             new MagicLinkAuditMetadata("timesheets", "expire-1"));
 
+    private static MagicLinkConfirmationCapabilityUsed Used()
+        => new(
+            CapabilityId(),
+            new TenantReference("tenant-1"),
+            new PartyReference("party-1"),
+            new TimeEntryId("time-entry-1"),
+            UsedAtUtc(),
+            new MagicLinkAuditMetadata("magic-link", "capability-1"));
+
     private static MagicLinkCapabilityId CapabilityId() => new("capability-1");
 
     private static DateTimeOffset IssuedAtUtc() => new(2026, 6, 19, 12, 0, 0, TimeSpan.Zero);
@@ -137,6 +169,8 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     private static DateTimeOffset ObservedAtUtc() => new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
 
     private static DateTimeOffset RevokedAtUtc() => new(2026, 6, 19, 14, 0, 0, TimeSpan.Zero);
+
+    private static DateTimeOffset UsedAtUtc() => new(2026, 6, 19, 15, 0, 0, TimeSpan.Zero);
 
     private static DateTimeOffset ExpiresAtUtc() => new(2026, 6, 21, 12, 0, 0, TimeSpan.Zero);
 }

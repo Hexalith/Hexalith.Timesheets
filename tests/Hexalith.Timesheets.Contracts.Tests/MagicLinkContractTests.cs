@@ -82,6 +82,61 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
+    public void Confirm_magic_link_command_and_used_event_round_trip_without_raw_token_material()
+    {
+        ConfirmTimeThroughMagicLink command = new();
+        MagicLinkConfirmationCapabilityUsed used = new(
+            new MagicLinkCapabilityId("capability-1"),
+            new TenantReference("tenant-1"),
+            new PartyReference("party-1"),
+            new TimeEntryId("entry-1"),
+            IssuedAtUtc(),
+            new MagicLinkAuditMetadata("magic-link", "capability-1"));
+
+        string commandJson = JsonSerializer.Serialize(command, JsonOptions);
+        string eventJson = JsonSerializer.Serialize(used, JsonOptions);
+
+        // The command body carries no caller-supplied audit/source, token, tenant, or actor material.
+        commandJson.ShouldNotContain("source", Case.Insensitive);
+        commandJson.ShouldNotContain("token", Case.Insensitive);
+        commandJson.ShouldNotContain("tenant", Case.Insensitive);
+        commandJson.ShouldNotContain("actor", Case.Insensitive);
+        eventJson.ShouldContain("\"usedAtUtc\"");
+        eventJson.ShouldNotContain("oneTimeToken");
+        eventJson.ShouldNotContain("rawToken");
+        eventJson.ShouldNotContain("tokenHash");
+
+        JsonSerializer.Deserialize<ConfirmTimeThroughMagicLink>(commandJson, JsonOptions).ShouldNotBeNull();
+        JsonSerializer.Deserialize<MagicLinkConfirmationCapabilityUsed>(eventJson, JsonOptions)
+            .ShouldNotBeNull()
+            .Source.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
+    }
+
+    [Fact]
+    public void Display_response_shape_contains_only_safe_confirmation_details()
+    {
+        MagicLinkConfirmationDisplayResponse response = new(
+            new DateOnly(2026, 6, 19),
+            60,
+            "minutes",
+            new ActivityTypeId("activity-1"),
+            "Delivery",
+            BillableState.Billable,
+            "Project");
+
+        string json = JsonSerializer.Serialize(response, JsonOptions);
+
+        json.ShouldContain("\"proposedDate\"");
+        json.ShouldContain("\"durationUnit\":\"minutes\"");
+        json.ShouldContain("\"billableState\":\"Billable\"");
+        json.ShouldNotContain("token", Case.Insensitive);
+        json.ShouldNotContain("hash", Case.Insensitive);
+        json.ShouldNotContain("tenant", Case.Insensitive);
+        json.ShouldNotContain("party", Case.Insensitive);
+        json.ShouldNotContain("approval", Case.Insensitive);
+    }
+
+    [Fact]
     public void Read_model_and_metadata_are_free_of_raw_token_fields()
     {
         MagicLinkConfirmationCapabilityReadModel readModel = new(
@@ -126,8 +181,11 @@ public sealed class MagicLinkContractTests
         schemas.ContainsKey("IssueMagicLinkConfirmationCapability").ShouldBeTrue();
         schemas.ContainsKey("RevokeMagicLinkConfirmationCapability").ShouldBeTrue();
         schemas.ContainsKey("ExpireMagicLinkConfirmationCapability").ShouldBeTrue();
+        schemas.ContainsKey("ConfirmTimeThroughMagicLink").ShouldBeTrue();
         schemas.ContainsKey("MagicLinkConfirmationCapabilityIssued").ShouldBeTrue();
+        schemas.ContainsKey("MagicLinkConfirmationCapabilityUsed").ShouldBeTrue();
         schemas.ContainsKey("MagicLinkConfirmationCapabilityReadModel").ShouldBeTrue();
+        schemas.ContainsKey("MagicLinkConfirmationDisplayResponse").ShouldBeTrue();
         schemas.ContainsKey("MagicLinkIssueResponse").ShouldBeTrue();
 
         JsonObject issueProperties = schemas["IssueMagicLinkConfirmationCapability"].ShouldNotBeNull()["properties"]?.AsObject()
@@ -142,6 +200,17 @@ public sealed class MagicLinkContractTests
         readModelSchema.ShouldNotContain("oneTimeToken");
         readModelSchema.ShouldNotContain("tokenHash");
         readModelSchema.ShouldNotContain("rawToken");
+
+        string confirmSchema = schemas["ConfirmTimeThroughMagicLink"].ShouldNotBeNull().ToJsonString();
+        confirmSchema.ShouldNotContain("token", Case.Insensitive);
+        confirmSchema.ShouldNotContain("tenant", Case.Insensitive);
+        confirmSchema.ShouldNotContain("actor", Case.Insensitive);
+
+        string displaySchema = schemas["MagicLinkConfirmationDisplayResponse"].ShouldNotBeNull().ToJsonString();
+        displaySchema.ShouldNotContain("token", Case.Insensitive);
+        displaySchema.ShouldNotContain("tokenHash", Case.Insensitive);
+        displaySchema.ShouldNotContain("tenant", Case.Insensitive);
+        displaySchema.ShouldNotContain("party", Case.Insensitive);
 
         string responseSchema = schemas["MagicLinkIssueResponse"].ShouldNotBeNull().ToJsonString();
         responseSchema.ShouldContain("oneTimeToken");

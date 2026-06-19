@@ -11,8 +11,15 @@ public sealed class CryptographicMagicLinkTokenGenerator : IMagicLinkTokenGenera
     {
         byte[] bytes = RandomNumberGenerator.GetBytes(32);
         string token = ToBase64Url(bytes);
-        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(token));
-        return new(token, new MagicLinkTokenHash(ToBase64Url(hash)));
+        return new(token, DeriveHash(token));
+    }
+
+    public MagicLinkTokenHash DeriveHash(string oneTimeToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(oneTimeToken);
+
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(oneTimeToken));
+        return new MagicLinkTokenHash(ToBase64Url(hash));
     }
 
     private static string ToBase64Url(byte[] bytes)

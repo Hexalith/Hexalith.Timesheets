@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
+using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.References;
@@ -11,6 +12,7 @@ using Hexalith.Timesheets.Projections.MagicLinks;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.TimeEntries;
 
 using Shouldly;
 
@@ -28,7 +30,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     {
         RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
         DeterministicTokenGenerator tokenGenerator = new();
-        MagicLinkConfirmationCapabilityCommandService service = new(accessGuard, tokenGenerator);
+        MagicLinkConfirmationCapabilityCommandService service = CreateService(accessGuard, tokenGenerator);
 
         MagicLinkCapabilityCommandResult issueResult = await service.IssueAsync(
             Context(),
@@ -102,7 +104,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     {
         RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
         DeterministicTokenGenerator tokenGenerator = new();
-        MagicLinkConfirmationCapabilityCommandService service = new(accessGuard, tokenGenerator);
+        MagicLinkConfirmationCapabilityCommandService service = CreateService(accessGuard, tokenGenerator);
 
         MagicLinkCapabilityCommandResult result = await service.IssueAsync(
             Context(),
@@ -123,6 +125,101 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             ObservedAtUtc()).ShouldBeNull();
     }
 
+    [Fact]
+    public async Task Magic_link_confirmation_workflow_consumes_token_projects_used_state_and_rejects_replay()
+    {
+        RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
+        DeterministicTokenGenerator tokenGenerator = new();
+        MagicLinkConfirmationCapabilityCommandService service = CreateService(accessGuard, tokenGenerator);
+
+        MagicLinkCapabilityCommandResult issueResult = await service.IssueAsync(
+            Context(),
+            IssueCommand(),
+            null,
+            FreshCatalog(),
+            IssuedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        MagicLinkConfirmationCapabilityIssued issued = issueResult.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityIssued>();
+        MagicLinkIssueResponse issueResponse = issueResult.IssueResponse.ShouldNotBeNull();
+        ServerCapabilityState state = new();
+        state.Apply(issued);
+
+        MagicLinkConfirmationDisplayResponse display = (await service.DescribeAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            state,
+            RecordedExternalState(),
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        display.ProposedDate.ShouldBe(new DateOnly(2026, 6, 19));
+        display.DurationMinutes.ShouldBe(60);
+        display.ActivityTypeLabel.ShouldBe("Delivery");
+        display.TargetContext.ShouldBe("Project");
+        JsonSerializer.Serialize(display, JsonOptions).ShouldNotContain(issueResponse.OneTimeToken);
+
+        MagicLinkConfirmationUseResult confirmation = await service.ConfirmAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            ConfirmCommand(),
+            state,
+            RecordedExternalState(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        confirmation.WasDispatched.ShouldBeTrue();
+        MagicLinkConfirmationCapabilityUsed used = confirmation.CapabilityResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityUsed>();
+        TimeEntryContributorConfirmed contributorConfirmed = confirmation.TimeEntryResult.ShouldNotBeNull()
+            .DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryContributorConfirmed>();
+        contributorConfirmed.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
+
+        MagicLinkConfirmationCapabilityReadModel readModel = new MagicLinkConfirmationCapabilityProjection().Project(
+            CapabilityId(),
+            [new("message-1", 1, issued), new("message-2", 2, used), new("message-2", 2, used)],
+            new("tenant-1", MagicLinkConfirmationCapabilityProjection.ProjectionName, 2, ProjectionFreshness.Fresh),
+            ObservedAtUtc())
+            .ShouldNotBeNull();
+
+        readModel.State.ShouldBe(CapabilityState.Used);
+        readModel.StateBadgeText.ShouldBe("Used");
+        readModel.UsedAtUtc.ShouldBe(ConfirmedAtUtc());
+        readModel.UseMetadata.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
+        string readModelJson = JsonSerializer.Serialize(readModel, JsonOptions);
+        readModelJson.ShouldNotContain(issueResponse.OneTimeToken);
+        readModelJson.ShouldNotContain("token", Case.Insensitive);
+
+        state.Apply(used);
+        MagicLinkConfirmationUseResult replay = await service.ConfirmAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            ConfirmCommand(),
+            state,
+            RecordedExternalState(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        replay.WasDispatched.ShouldBeFalse();
+        replay.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        replay.TimeEntryResult.ShouldBeNull();
+
+        // A used link discloses nothing on the display surface either (AC4 no-disclosure).
+        (await service.DescribeAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            state,
+            RecordedExternalState(),
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldBeNull();
+    }
+
     private static IssueMagicLinkConfirmationCapability IssueCommand()
         => new(
             CapabilityId(),
@@ -139,6 +236,30 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     private static RevokeMagicLinkConfirmationCapability RevokeCommand()
         => new(CapabilityId(), new MagicLinkAuditMetadata("timesheets", "revoke-1"));
 
+    private static ConfirmTimeThroughMagicLink ConfirmCommand()
+        => new();
+
+    private static TimeEntryState RecordedExternalState()
+    {
+        TimeEntryState state = new();
+        state.Apply(new TimeEntryRecorded(
+            TimeEntryId(),
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            ActivityTypeScope.Tenant,
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            TimeEntryApprovalState.Draft,
+            ContributorCategory.ExternalContributor,
+            null)
+        {
+            ExternalSource = new ExternalContributionSource("supplier-api", "request-1")
+        });
+        return state;
+    }
+
     private static ActivityTypeCatalogReadModel FreshCatalog()
         => new(
             [
@@ -152,12 +273,29 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             ],
             ProjectionFreshnessMetadata.Fresh);
 
+    private static MagicLinkConfirmationCapabilityCommandService CreateService(
+        ITimesheetsAccessGuard accessGuard,
+        IMagicLinkTokenGenerator tokenGenerator)
+    {
+        TimeEntryCommandService recordService = new(accessGuard);
+        TimeEntrySubmissionCommandService submissionService = new(accessGuard);
+        ExternalContributionCommandService externalContributionService = new(
+            recordService,
+            submissionService,
+            accessGuard,
+            new ExternalContributionPolicyOptions());
+
+        return new(accessGuard, tokenGenerator, externalContributionService);
+    }
+
     private static TimesheetsRequestContext Context()
         => new(new TenantReference("tenant-1"), Operator(), "correlation-1");
 
     private static DateTimeOffset IssuedAtUtc() => new(2026, 6, 19, 12, 0, 0, TimeSpan.Zero);
 
     private static DateTimeOffset RevokedAtUtc() => new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
+
+    private static DateTimeOffset ConfirmedAtUtc() => new(2026, 6, 19, 13, 30, 0, TimeSpan.Zero);
 
     private static DateTimeOffset ObservedAtUtc() => new(2026, 6, 19, 14, 0, 0, TimeSpan.Zero);
 
@@ -234,5 +372,10 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             GenerateCount++;
             return new("opaque-once", new MagicLinkTokenHash("hash-only"));
         }
+
+        public MagicLinkTokenHash DeriveHash(string oneTimeToken)
+            => oneTimeToken == "opaque-once"
+                ? new MagicLinkTokenHash("hash-only")
+                : new MagicLinkTokenHash("different-hash");
     }
 }
