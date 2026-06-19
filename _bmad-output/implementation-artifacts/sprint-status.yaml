@@ -1,5 +1,5 @@
 # generated: 2026-06-18 23:50:36
-# last_updated: 2026-06-19 (story 2.3 created)
+# last_updated: 2026-06-19 (story 2.4 ready for review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-19 (story 2.3 ready for review)
+last_updated: 2026-06-19 (story 2.4 ready for review)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -60,7 +60,7 @@ development_status:
   2-1-submit-draft-time-entries-for-approval: done
   2-2-enforce-timesheet-approval-authority-policy: done
   2-3-approve-or-reject-submitted-time-entries: done
-  2-4-correct-rejected-entries-for-resubmission: backlog
+  2-4-correct-rejected-entries-for-resubmission: done
   2-5-enforce-approved-entry-locking: backlog
   2-6-add-approved-entry-corrections: backlog
   2-7-submit-timesheet-periods: backlog

@@ -190,6 +190,57 @@ public sealed class DiagnosticsPrivacyTests
         schemaJson.ShouldNotContain("payload body", Case.Insensitive);
     }
 
+    [Fact]
+    public void Correction_evidence_schema_exposes_only_stable_lineage_without_display_or_raw_authority_material()
+    {
+        string openApiPath = RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.Contracts",
+            "openapi",
+            "timesheets-capture-contracts.v1.json");
+
+        System.Text.Json.Nodes.JsonNode artifact =
+            System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(openApiPath))
+            ?? throw new InvalidOperationException("OpenAPI artifact could not be parsed.");
+
+        System.Text.Json.Nodes.JsonNode schemas =
+            artifact["components"]?["schemas"]
+            ?? throw new InvalidOperationException("OpenAPI schema components are missing.");
+
+        System.Text.Json.Nodes.JsonNode schema = schemas["TimeEntryCorrectionEvidence"]
+            ?? throw new InvalidOperationException("Correction evidence schema is missing.");
+
+        bool additionalProperties = schema["additionalProperties"]?.GetValue<bool>()
+            ?? throw new InvalidOperationException("Correction evidence schema must declare additionalProperties:false.");
+        additionalProperties.ShouldBeFalse();
+
+        System.Text.Json.Nodes.JsonObject properties = schema["properties"]?.AsObject()
+            ?? throw new InvalidOperationException("Correction evidence schema has no properties.");
+
+        properties.Select(static property => property.Key).ShouldBe([
+            "timeEntryId",
+            "timeEntryCorrectionId",
+            "correctedBy",
+            "tenant",
+            "correctedAtUtc",
+            "rejectionReason",
+            "rejectionDecisionId",
+            "previousValues",
+            "correctedValues",
+            "correctionState"
+        ]);
+
+        string schemaJson = schema.ToJsonString();
+        schemaJson.ShouldNotContain("displayName", Case.Insensitive);
+        schemaJson.ShouldNotContain("role", Case.Insensitive);
+        schemaJson.ShouldNotContain("claim", Case.Insensitive);
+        schemaJson.ShouldNotContain("token", Case.Insensitive);
+        schemaJson.ShouldNotContain("envelope", Case.Insensitive);
+        schemaJson.ShouldNotContain("messageId", Case.Insensitive);
+        schemaJson.ShouldNotContain("correlationId", Case.Insensitive);
+        schemaJson.ShouldNotContain("payload body", Case.Insensitive);
+    }
+
     private static void AssertClosedSchema(
         System.Text.Json.Nodes.JsonNode schemas,
         string schemaName,

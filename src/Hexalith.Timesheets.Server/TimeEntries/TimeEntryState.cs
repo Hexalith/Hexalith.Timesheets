@@ -57,6 +57,22 @@ public sealed class TimeEntryState
 
     public TimeEntryRejectionReason? RejectionReason { get; private set; }
 
+    public TimeEntryCorrectionState CorrectionState { get; private set; } = TimeEntryCorrectionState.None;
+
+    public TimeEntryCorrectionId? TimeEntryCorrectionId { get; private set; }
+
+    public PartyReference? CorrectedBy { get; private set; }
+
+    public TenantReference? CorrectionTenant { get; private set; }
+
+    public DateTimeOffset? CorrectedAtUtc { get; private set; }
+
+    public TimeEntryApprovalDecisionId? RejectionDecisionId { get; private set; }
+
+    public TimeEntryCorrectionValues? PreviousValues { get; private set; }
+
+    public TimeEntryCorrectionValues? CorrectedValues { get; private set; }
+
     public void Apply(TimeEntryRecorded recorded)
     {
         ArgumentNullException.ThrowIfNull(recorded);
@@ -114,5 +130,30 @@ public sealed class TimeEntryState
         ApprovalAuthoritySource = rejected.AuthoritySource;
         ApprovalScope = rejected.ApprovalScope;
         RejectionReason = rejected.Reason;
+        RejectionDecisionId = rejected.TimeEntryApprovalDecisionId;
+    }
+
+    public void Apply(TimeEntryCorrected corrected)
+    {
+        ArgumentNullException.ThrowIfNull(corrected);
+
+        Target = corrected.CorrectedValues.Target;
+        Contributor = corrected.CorrectedValues.Contributor;
+        ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
+        ServiceDate = corrected.CorrectedValues.ServiceDate;
+        DurationMinutes = corrected.CorrectedValues.DurationMinutes;
+        BillableState = corrected.CorrectedValues.BillableState;
+        ContributorCategory = corrected.CorrectedValues.ContributorCategory;
+        AiMetrics = corrected.CorrectedValues.AiMetrics;
+        Comment = corrected.CorrectedValues.Comment;
+        ApprovalState = corrected.ApprovalState;
+        CorrectionState = corrected.CorrectionState;
+        TimeEntryCorrectionId = corrected.TimeEntryCorrectionId;
+        CorrectedBy = corrected.CorrectedBy;
+        CorrectionTenant = corrected.Tenant;
+        CorrectedAtUtc = corrected.CorrectedAtUtc;
+        RejectionDecisionId = corrected.RejectionDecisionId;
+        PreviousValues = corrected.PreviousValues;
+        CorrectedValues = corrected.CorrectedValues;
     }
 }

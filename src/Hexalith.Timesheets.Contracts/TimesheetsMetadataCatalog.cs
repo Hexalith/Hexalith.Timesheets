@@ -70,6 +70,43 @@ public static class TimesheetsMetadataCatalog
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
+            "timesheets.command.correct-rejected-time-entry",
+            "Correct entry",
+            "correction",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("timeEntry", "Time Entry", "TimeEntryId", true),
+                new("timeEntryCorrectionId", "Correction ID", nameof(TimeEntryCorrectionId), true),
+                new("priorValues", "Prior values", nameof(TimeEntryCorrectionValues), true, "Prior rejected facts remain visible where authorized."),
+                new("correctedValues", "Corrected values", nameof(TimeEntryCorrectionValues), true, "Corrected facts are submitted as a correction command."),
+                new("target", "Target reference", "TimeEntryTargetReference", true),
+                new("contributor", "Contributor", "PartyReference", true),
+                new("activityType", "Activity Type", "ActivityTypeId", true),
+                new("serviceDate", "Service date", "DateOnly", true),
+                new("durationMinutes", "Duration minutes", "WholeMinutes", true, "Corrected duration supersedes the rejected value after acceptance."),
+                new("billableState", "Billable state", nameof(BillableState), true),
+                new("contributorCategory", "Contributor category", nameof(ContributorCategory), true),
+                new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false),
+                new("comment", "Comment", nameof(TimeEntryComment), false, "Correction comments are additive evidence."),
+                new("rejectionReason", "Rejection reason", nameof(TimeEntryRejectionReason), true, "Rejection reason remains visible where authorized."),
+                new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
+                new("fieldValidation", "Field validation", "TimesheetsFieldError[]", false),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Policy, freshness, and permission messages persist across interrupted correction attempts.")
+            ],
+            [
+                new("correct-entry", "Correct entry", "Timesheets.CorrectRejectedTimeEntry"),
+                new("submit-corrected-entry", "Submit corrected entry", "Timesheets.SubmitTimeEntriesForApproval")
+            ],
+            [
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("correction", "Correction", nameof(TimeEntryCorrectionState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState)),
+                new("billable", "Billable", nameof(BillableState)),
+                new("contributor", "Contributor", nameof(ContributorCategory))
+            ]),
+        new(
             "timesheets.command.activity-type-catalog",
             "Activity Type Catalog",
             "catalog",
@@ -152,6 +189,7 @@ public static class TimesheetsMetadataCatalog
                 new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), false, "Stable source attribution for the approval decision."),
                 new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), false),
                 new("displayHydration", "Display hydration", nameof(TimeEntryDisplayHydration), true, "Read-time labels keep explicit hydration state."),
+                new("correction", "Correction evidence", nameof(TimeEntryCorrectionEvidence), false, "Original and corrected values are shown as additive lineage."),
                 new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false),
                 new("aiWallClockDurationMilliseconds", "AI wall-clock execution", "Milliseconds", false, "AI wall-clock execution time is displayed separately from human/external duration."),
                 new("aiModelRuntimeMilliseconds", "AI model/tool runtime", "Milliseconds", false, "AI model or tool runtime is displayed in milliseconds."),
@@ -159,10 +197,15 @@ public static class TimesheetsMetadataCatalog
                 new("aiTokenAvailability", "AI token availability", nameof(AiTokenMetricAvailability), false, "Unavailable provider token metrics are shown with explicit text, not zero or silence."),
                 new("aiMetricSource", "AI metric source", nameof(AiEffortMetricSourceMetadata), false, "Compact audit source metadata for provider, tool, or work execution context."),
                 new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
+                new("priorValues", "Prior values", nameof(TimeEntryCorrectionValues), false),
+                new("correctedValues", "Corrected values", nameof(TimeEntryCorrectionValues), false),
+                new("fieldValidation", "Field validation", "TimesheetsFieldError[]", false),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Freshness and correction policy messages persist."),
                 new("comment", "Comment", nameof(TimeEntryComment), false, "Comments may contain sensitive information."),
                 new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true)
             ],
             [
+                new("correct-entry", "Correct entry", "Timesheets.CorrectRejectedTimeEntry"),
                 new("review-export-policy", "Review export policy", "Timesheets.ReviewExportPolicy")
             ],
             [
@@ -179,6 +222,32 @@ public static class TimesheetsMetadataCatalog
                 new("ai-tokens", "AI token availability", nameof(AiTokenMetricAvailability)),
                 new("ai-source", "AI metric source category", nameof(AiEffortMetricSourceCategory)),
                 new("comment-export", "Comment export", nameof(TimesheetsCommentPolicyDecision))
+            ]),
+        new(
+            "timesheets.projection.my-timesheet-period",
+            "My Timesheet Period",
+            "submission",
+            TimesheetsSurfaceKind.Projection,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("period", "Period", "String", true),
+                new("timeEntries", "TimeEntry evidence", "TimeEntryEvidenceReadModel[]", true),
+                new("rejectionReason", "Rejection reason", nameof(TimeEntryRejectionReason), false),
+                new("priorValues", "Prior values", nameof(TimeEntryCorrectionValues), false),
+                new("correctedValues", "Corrected values", nameof(TimeEntryCorrectionValues), false),
+                new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
+                new("fieldValidation", "Field validation", "TimesheetsFieldError[]", false),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Period correction and freshness blockers remain visible.")
+            ],
+            [
+                new("correct-entry", "Correct entry", "Timesheets.CorrectRejectedTimeEntry"),
+                new("submit-time-entries", "Submit entries", "Timesheets.SubmitTimeEntriesForApproval")
+            ],
+            [
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("correction", "Correction", nameof(TimeEntryCorrectionState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
             "timesheets.approvals.queue",

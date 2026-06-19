@@ -31,6 +31,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntryCommandService>();
         services.TryAddSingleton<TimeEntrySubmissionCommandService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
+        services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
         services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();

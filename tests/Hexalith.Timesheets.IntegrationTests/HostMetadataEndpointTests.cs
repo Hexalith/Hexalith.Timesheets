@@ -76,6 +76,25 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
+    public void Host_metadata_api_contract_exports_correct_rejected_entry_descriptor()
+    {
+        var correctionDescriptor = TimesheetsMetadataCatalog.Descriptors
+            .Single(static descriptor => descriptor.Name == "timesheets.command.correct-rejected-time-entry");
+
+        correctionDescriptor.Capability.ShouldBe("correction");
+        correctionDescriptor.Fields.Select(static field => field.Name).ShouldContain("rejectionReason");
+        correctionDescriptor.Fields.Select(static field => field.Name).ShouldContain("correctionState");
+        correctionDescriptor.Actions.Select(static action => action.Label).ShouldContain("Correct entry");
+        correctionDescriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain("TimeEntryCorrectionState");
+
+        string json = JsonSerializer.Serialize(correctionDescriptor, JsonOptions);
+
+        json.ShouldContain("Correct entry");
+        json.ShouldContain("rejectionReason");
+        AssertJsonOmitsCallerAuthority(json);
+    }
+
+    [Fact]
     public void Host_metadata_api_catalog_response_omits_authority_and_payload_identifiers()
     {
         var response = new
@@ -96,6 +115,7 @@ public sealed class HostMetadataEndpointTests
         json.ShouldContain("Hexalith.Timesheets");
         json.ShouldContain("timesheets.command.activity-type-catalog");
         json.ShouldContain("timesheets.projection.activity-type-catalog");
+        json.ShouldContain("timesheets.command.correct-rejected-time-entry");
         AssertJsonOmitsCallerAuthority(json);
         json.ShouldNotContain("timeEntryId");
         json.ShouldNotContain("activityTypeId");

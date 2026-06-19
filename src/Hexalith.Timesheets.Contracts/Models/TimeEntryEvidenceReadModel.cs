@@ -27,6 +27,8 @@ public sealed record TimeEntryEvidenceReadModel(
 
     public TimeEntryApprovalDecisionEvidence? ApprovalDecision { get; init; }
 
+    public TimeEntryCorrectionEvidence? Correction { get; init; }
+
     public TimeEntryDisplayHydration DisplayHydration { get; init; } =
         TimeEntryDisplayHydration.Unknown;
 }

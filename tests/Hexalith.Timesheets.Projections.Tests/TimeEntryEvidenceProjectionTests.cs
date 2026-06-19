@@ -229,6 +229,88 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void Projection_applies_corrected_after_rejected_and_preserves_rejection_evidence()
+    {
+        TimeEntryProjectionEvent corrected = Event("m4", 4, Corrected("time-entry-1", 75));
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Rejected("time-entry-1")),
+                corrected,
+                corrected
+            ],
+            FreshCheckpoint(4));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        model.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+        model.DurationMinutes.ShouldBe(75);
+        model.Comment.ShouldNotBeNull();
+        model.Comment.Text.ShouldBe("Corrected after rejection.");
+        model.ApprovalDecision.ShouldNotBeNull();
+        model.ApprovalDecision.Reason.ShouldBe(new TimeEntryRejectionReason("Needs customer PO evidence."));
+        model.Correction.ShouldNotBeNull();
+        model.Correction.TimeEntryCorrectionId.ShouldBe(new TimeEntryCorrectionId("correction-1"));
+        model.Correction.PreviousValues.DurationMinutes.ShouldBe(45);
+        model.Correction.CorrectedValues.DurationMinutes.ShouldBe(75);
+        model.Correction.RejectionReason.ShouldBe(new TimeEntryRejectionReason("Needs customer PO evidence."));
+        model.Correction.RejectionDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-2"));
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryRejected), nameof(TimeEntryCorrected)]);
+    }
+
+    [Fact]
+    public void Projection_applies_resubmission_only_after_correction_and_keeps_lineage()
+    {
+        TimeEntryEvidenceReadModel? blocked = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Rejected("time-entry-1")),
+                Event("m5", 5, Submitted("time-entry-1", "submission-2"))
+            ],
+            FreshCheckpoint(5));
+
+        blocked.ShouldNotBeNull();
+        blocked.ApprovalState.ShouldBe(TimeEntryApprovalState.Rejected);
+        blocked.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryRejected)]);
+
+        TimeEntryEvidenceReadModel? corrected = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Rejected("time-entry-1")),
+                Event("m4", 4, Corrected("time-entry-1", 75)),
+                Event("m5", 5, Submitted("time-entry-1", "submission-2"))
+            ],
+            FreshCheckpoint(5));
+
+        corrected.ShouldNotBeNull();
+        corrected.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+        corrected.DurationMinutes.ShouldBe(75);
+        corrected.ApprovalDecision.ShouldNotBeNull();
+        corrected.ApprovalDecision.Reason.ShouldBe(new TimeEntryRejectionReason("Needs customer PO evidence."));
+        corrected.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([
+                nameof(TimeEntryRecorded),
+                nameof(TimeEntrySubmitted),
+                nameof(TimeEntryRejected),
+                nameof(TimeEntryCorrected),
+                nameof(TimeEntrySubmitted)
+            ]);
+    }
+
+    [Fact]
     public void Projection_ignores_approval_for_unrelated_entries()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
@@ -288,13 +370,13 @@ public sealed class TimeEntryEvidenceProjectionTests
             metrics == AiEffortMetrics.Unavailable ? ContributorCategory.Employee : ContributorCategory.AutomatedAgent,
             metrics);
 
-    private static TimeEntrySubmitted Submitted(string id)
+    private static TimeEntrySubmitted Submitted(string id, string submissionId = "submission-1")
         => new(
             new TimeEntryId(id),
             new PartyReference("submitter-1"),
             new TenantReference("tenant-1"),
             new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
-            new TimeEntrySubmissionId("submission-1"),
+            new TimeEntrySubmissionId(submissionId),
             TimeEntrySubmissionScope.SelectedEntries,
             TimeEntryApprovalState.Submitted);
 
@@ -320,6 +402,36 @@ public sealed class TimeEntryEvidenceProjectionTests
             Authority(ApprovalAuthorityAction.EntryRejection),
             TimeEntryApprovalScope.IndividualEntry,
             new TimeEntryRejectionReason("Needs customer PO evidence."));
+
+    private static TimeEntryCorrected Corrected(string id, int durationMinutes)
+        => new(
+            new TimeEntryId(id),
+            new TimeEntryCorrectionId("correction-1"),
+            new TenantReference("tenant-1"),
+            new PartyReference("operator-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            CorrectionValues(45, "Original evidence."),
+            CorrectionValues(durationMinutes, "Corrected after rejection."),
+            new TimeEntryRejectionReason("Needs customer PO evidence."),
+            new TimeEntryApprovalDecisionId("decision-2"),
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Corrected);
+
+    private static TimeEntryCorrectionValues CorrectionValues(int durationMinutes, string comment)
+        => new(
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            new DateOnly(2026, 6, 19),
+            durationMinutes,
+            BillableState.Billable,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable)
+        {
+            Comment = new(
+                comment,
+                Hexalith.Timesheets.Contracts.Policies.TimeEntryCommentPolicy.SensitiveDefault)
+        };
 
     private static ApprovalAuthoritySourceAttribution Authority(ApprovalAuthorityAction action)
         => new(

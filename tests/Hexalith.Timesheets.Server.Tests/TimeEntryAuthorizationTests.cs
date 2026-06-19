@@ -828,6 +828,197 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
+    public async Task Correction_fails_closed_on_current_entry_authority_before_corrected_reference_or_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Denied(
+                ReferenceValidationState.TenantMismatch,
+                "Project authority cannot be resolved."));
+
+        TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
+            Context(),
+            CorrectCommand(TimeEntryId()),
+            RejectedState(ProjectCommand()),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.DomainResult.ShouldBeNull();
+        result.HasCurrentAuthorizationDenial.ShouldBeTrue();
+        result.CurrentAuthorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.CrossTenantTarget);
+        result.CurrentAuthorization.Reason.ShouldBe("Authority cannot be resolved.");
+        result.CorrectedAuthorization.ShouldBeNull();
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(0)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>());
+        fixture.ApprovalResolver.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Correction_validates_current_and_corrected_references_then_uses_correction_authority_action()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.ApprovalResolver
+            .ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(AllowedResolution(ApprovalAuthorityAction.CorrectionAuthorization)));
+
+        TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
+            Context(),
+            CorrectCommand(TimeEntryId()),
+            RejectedState(ProjectCommand()),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        TimeEntryCorrected corrected = result.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryCorrected>();
+        corrected.CorrectedBy.ShouldBe(Context().Actor);
+        corrected.Tenant.ShouldBe(Context().Tenant);
+        corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+        await fixture.ProjectValidator.Received(2)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(2)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>());
+        await fixture.ApprovalResolver.Received(1)
+            .ResolveAsync(
+                Arg.Is<ApprovalAuthorityResolutionRequest>(request =>
+                    request != null
+                    && request.Action == ApprovalAuthorityAction.CorrectionAuthorization
+                    && request.Contributor == Contributor()
+                    && request.AuthorizationRequest.Contributor == Contributor()
+                    && request.AuthorizationRequest.Project == Project()),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Correction_fails_closed_on_corrected_target_authority_before_resolver_or_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedFixture();
+        ProjectReference correctedProject = new("project-2");
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), correctedProject, Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Denied(
+                ReferenceValidationState.TenantMismatch,
+                "tenant-1 project-2 raw upstream detail"));
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+
+        TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
+            Context(),
+            CorrectCommand(TimeEntryId()) with { Target = TimeEntryTargetReference.ForProject(correctedProject) },
+            RejectedState(ProjectCommand()),
+            Catalog(Item(ActivityId(), ActivityTypeScope.Project, correctedProject, true)),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.HasCorrectedAuthorizationDenial.ShouldBeTrue();
+        result.CorrectedAuthorization.ShouldNotBeNull().DenialCategory.ShouldBe(TimesheetsDenialCategory.CrossTenantTarget);
+        result.CorrectedAuthorization.ShouldNotBeNull().Reason.ShouldBe("Authority cannot be resolved.");
+        result.AuthorityResolution.ShouldBeNull();
+        result.DomainResult.ShouldBeNull();
+        fixture.ApprovalResolver.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Correction_authority_denial_uses_safe_copy_and_does_not_dispatch_domain()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.ApprovalResolver
+            .ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(ApprovalAuthorityResolutionResult.Denied(
+                TimesheetsDenialCategory.AmbiguousAuthority,
+                "tenant-1 project-1 role Owner upstream detail",
+                new ApprovalAuthoritySourceAttribution(
+                    ApprovalAuthorityAction.CorrectionAuthorization,
+                    ApprovalAuthoritySource.ProjectApprover,
+                    ApprovalAuthorityDecisionState.Ambiguous,
+                    "timesheets.approval-authority.v1",
+                    "v1",
+                    ProjectionFreshnessMetadata.Stale()))));
+
+        TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
+            Context(),
+            CorrectCommand(TimeEntryId()),
+            RejectedState(ProjectCommand()),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.HasCorrectionPolicyDenial.ShouldBeTrue();
+        result.DomainResult.ShouldBeNull();
+        result.AuthorityResolution.ShouldNotBeNull();
+        result.AuthorityResolution.Reason.ShouldBe("Authority cannot be resolved.");
+        result.AuthorityResolution.Reason.ShouldNotContain("project", Case.Insensitive);
+        result.AuthorityResolution.Reason.ShouldNotContain("role", Case.Insensitive);
+    }
+
+    [Fact]
+    public async Task Correction_rejects_stale_activity_type_catalog_before_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.ApprovalResolver
+            .ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(AllowedResolution(ApprovalAuthorityAction.CorrectionAuthorization)));
+
+        TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
+            Context(),
+            CorrectCommand(TimeEntryId()),
+            RejectedState(ProjectCommand()),
+            new([], ProjectionFreshnessMetadata.Stale("42")),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        TimesheetsRejection rejection = CorrectionRejection(result);
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.ProjectionUnavailable);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "activityTypeCatalog" && error.Code == "not-fresh");
+    }
+
+    [Fact]
+    public async Task Correction_authority_is_provider_resolved_and_fails_closed_for_self_correction_without_a_granting_provider()
+    {
+        // Documents the chosen correction-policy boundary: correction is resolved through the
+        // approval-authority providers (CorrectionAuthorization), NOT contributor-self-owned. The
+        // resolver's self-approval shortcut applies only to entry/period approval, so a contributor
+        // correcting their own rejected entry must still obtain provider authority and fails closed
+        // when no provider grants it. Uses the real resolver with no source providers configured.
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryCorrectionCommandService service = fixture.CreateCorrectionService(
+            new TimesheetsApprovalAuthorityResolver(
+                TimesheetsApprovalAuthorityPolicyOptions.Default,
+                []));
+
+        TimeEntryCorrectionCommandResult result = await service.CorrectAsync(
+            Context(),
+            CorrectCommand(TimeEntryId()) with { Contributor = Context().Actor! },
+            RejectedState(ProjectCommand() with { Contributor = Context().Actor! }),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.HasCorrectionPolicyDenial.ShouldBeTrue();
+        result.DomainResult.ShouldBeNull();
+        result.AuthorityResolution.ShouldNotBeNull().IsAllowed.ShouldBeFalse();
+        result.AuthorityResolution.DenialCategory.ShouldBe(TimesheetsDenialCategory.UnavailableSiblingAuthority);
+        result.AuthorityResolution.SourceAttribution.Action.ShouldBe(ApprovalAuthorityAction.CorrectionAuthorization);
+        result.AuthorityResolution.Reason.ShouldBe("Authority cannot be resolved.");
+    }
+
+    [Fact]
     public async Task Evidence_query_fails_closed_before_projection_lookup_when_tenant_authority_is_missing()
     {
         Fixture fixture = new();
@@ -1119,6 +1310,19 @@ public sealed class TimeEntryAuthorizationTests
             new TimeEntryApprovalDecisionId("decision-1"),
             new TimeEntryRejectionReason("Needs customer PO evidence."));
 
+    private static CorrectRejectedTimeEntry CorrectCommand(TimeEntryId timeEntryId)
+        => new(
+            timeEntryId,
+            new TimeEntryCorrectionId("correction-1"),
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            new DateOnly(2026, 6, 20),
+            75,
+            BillableState.Billable,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable);
+
     private static RecordTimeEntry Command(TimeEntryTargetReference target)
         => new(
             TimeEntryId(),
@@ -1195,11 +1399,36 @@ public sealed class TimeEntryAuthorizationTests
         return state;
     }
 
+    private static TimeEntryState RejectedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = SubmittedState(command);
+        state.Apply(new TimeEntryRejected(
+            command.TimeEntryId,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            DecisionAtUtc(),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Rejected,
+            new ApprovalAuthoritySourceAttribution(
+                ApprovalAuthorityAction.EntryRejection,
+                ApprovalAuthoritySource.ProjectApprover,
+                ApprovalAuthorityDecisionState.Allowed,
+                "timesheets.approval-authority.v1",
+                "v1",
+                ProjectionFreshnessMetadata.Fresh),
+            TimeEntryApprovalScope.IndividualEntry,
+            new TimeEntryRejectionReason("Needs customer PO evidence.")));
+        return state;
+    }
+
     private static DateTimeOffset SubmittedAtUtc()
         => new(2026, 6, 19, 12, 0, 0, TimeSpan.Zero);
 
     private static DateTimeOffset DecisionAtUtc()
         => new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
+
+    private static DateTimeOffset CorrectionAtUtc()
+        => new(2026, 6, 20, 9, 30, 0, TimeSpan.Zero);
 
     private static ApprovalAuthorityResolutionResult AllowedResolution(ApprovalAuthorityAction action)
         => ApprovalAuthorityResolutionResult.Allowed(new ApprovalAuthoritySourceAttribution(
@@ -1272,6 +1501,16 @@ public sealed class TimeEntryAuthorizationTests
         return result.DomainResult.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
     }
 
+    private static TimesheetsRejection CorrectionRejection(TimeEntryCorrectionCommandResult result)
+    {
+        result.CurrentAuthorization.IsAuthorized.ShouldBeTrue();
+        result.CorrectedAuthorization.ShouldNotBeNull().IsAuthorized.ShouldBeTrue();
+        result.AuthorityResolution.ShouldNotBeNull().IsAllowed.ShouldBeTrue();
+        result.DomainResult.ShouldNotBeNull();
+        result.DomainResult.IsRejection.ShouldBeTrue();
+        return result.DomainResult.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
+    }
+
     private sealed class Fixture
     {
         public ITimesheetsTenantAccessValidator TenantValidator { get; } = Substitute.For<ITimesheetsTenantAccessValidator>();
@@ -1310,6 +1549,19 @@ public sealed class TimeEntryAuthorizationTests
             => CreateApprovalService(ApprovalResolver);
 
         public TimeEntryApprovalCommandService CreateApprovalService(ITimesheetsApprovalAuthorityResolver resolver)
+            => new(
+                new TimesheetsAccessGuard(
+                    TenantValidator,
+                    ProjectValidator,
+                    WorkValidator,
+                    PartyValidator,
+                    PolicyEvaluator),
+                resolver);
+
+        public TimeEntryCorrectionCommandService CreateCorrectionService()
+            => CreateCorrectionService(ApprovalResolver);
+
+        public TimeEntryCorrectionCommandService CreateCorrectionService(ITimesheetsApprovalAuthorityResolver resolver)
             => new(
                 new TimesheetsAccessGuard(
                     TenantValidator,

@@ -194,6 +194,49 @@ public static class TimeEntry
         ]);
     }
 
+    public static TimesheetsDomainResult Handle(
+        CorrectRejectedTimeEntry command,
+        TimeEntryId timeEntryId,
+        TimeEntryState? state,
+        PartyReference? correctedBy,
+        TenantReference? tenant,
+        DateTimeOffset correctedAtUtc,
+        ActivityTypeScope activityTypeScope)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(timeEntryId);
+
+        if (state?.CorrectionState == TimeEntryCorrectionState.Corrected
+            && state.TimeEntryCorrectionId == command.TimeEntryCorrectionId
+            && state.CorrectedValues == ToCorrectionValues(command))
+        {
+            return TimesheetsDomainResult.NoOp();
+        }
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateCorrection(command, timeEntryId, state, correctedBy, tenant, correctedAtUtc, activityTypeScope, errors);
+
+        if (errors.Count > 0)
+        {
+            return Reject(TimesheetsRejectionCode.ValidationFailed, "Time Entry correction failed validation.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new TimeEntryCorrected(
+                timeEntryId,
+                command.TimeEntryCorrectionId,
+                tenant!,
+                correctedBy!,
+                correctedAtUtc.ToUniversalTime(),
+                ToCorrectionValues(state!),
+                ToCorrectionValues(command),
+                state!.RejectionReason!,
+                state!.RejectionDecisionId ?? state.TimeEntryApprovalDecisionId!,
+                TimeEntryApprovalState.Draft,
+                TimeEntryCorrectionState.Corrected)
+        ]);
+    }
+
     private static void ValidateRequiredFields(
         RecordTimeEntry command,
         ActivityTypeScope activityTypeScope,
@@ -502,6 +545,75 @@ public static class TimeEntry
         ValidateComment(state.Comment, errors);
     }
 
+    private static void ValidateCorrection(
+        CorrectRejectedTimeEntry command,
+        TimeEntryId timeEntryId,
+        TimeEntryState? state,
+        PartyReference? correctedBy,
+        TenantReference? tenant,
+        DateTimeOffset correctedAtUtc,
+        ActivityTypeScope activityTypeScope,
+        List<TimesheetsFieldError> errors)
+    {
+        string prefix = EntryFieldPrefix(timeEntryId);
+
+        if (command.TimeEntryCorrectionId is null || string.IsNullOrWhiteSpace(command.TimeEntryCorrectionId.Value))
+        {
+            errors.Add(new("timeEntryCorrectionId", "required", "Correction ID is required."));
+        }
+
+        if (command.TimeEntryId is null || command.TimeEntryId != timeEntryId)
+        {
+            errors.Add(new($"{prefix}.timeEntryId", "mismatch", "Correction command must target the handled Time Entry."));
+        }
+
+        if (correctedBy is null || string.IsNullOrWhiteSpace(correctedBy.PartyId))
+        {
+            errors.Add(new("correctedBy", "required", "Correction actor Party reference is required."));
+        }
+
+        if (tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId))
+        {
+            errors.Add(new("tenant", "required", "Tenant reference is required."));
+        }
+
+        if (correctedAtUtc.Offset != TimeSpan.Zero)
+        {
+            errors.Add(new("correctedAtUtc", "utc-required", "Correction timestamp must be a UTC instant."));
+        }
+
+        if (state?.IsRecorded != true)
+        {
+            errors.Add(new($"{prefix}.timeEntryId", "not-recorded", "Time Entry must be recorded before correction."));
+            return;
+        }
+
+        if (state.CorrectionState == TimeEntryCorrectionState.Corrected)
+        {
+            errors.Add(new($"{prefix}.correctionState", "already-corrected", "A corrected Time Entry cannot receive a different correction."));
+            return;
+        }
+
+        if (state.ApprovalState != TimeEntryApprovalState.Rejected)
+        {
+            errors.Add(new($"{prefix}.approvalState", "invalid-transition", "Only Rejected Time Entries can be corrected."));
+        }
+
+        if (state.RejectionDecisionId is null && state.TimeEntryApprovalDecisionId is null)
+        {
+            errors.Add(new($"{prefix}.rejectionDecisionId", "required", "Correction requires rejection decision lineage."));
+        }
+
+        if (state.RejectionReason is null)
+        {
+            errors.Add(new($"{prefix}.rejectionReason", "required", "Correction requires rejection reason lineage."));
+        }
+
+        ValidateCorrectionValues(command, activityTypeScope, prefix, errors);
+        ValidateAiMetrics(command.AiMetrics, command.ContributorCategory, errors);
+        ValidateComment(command.Comment, errors);
+    }
+
     private static void ValidateApprovalDecision(
         TimeEntryApprovalDecisionId? decisionId,
         TimeEntryId timeEntryId,
@@ -705,6 +817,80 @@ public static class TimeEntry
             errors.Add(new($"{prefix}.contributorCategory", "unknown", "Contributor category is required."));
         }
     }
+
+    private static void ValidateCorrectionValues(
+        CorrectRejectedTimeEntry command,
+        ActivityTypeScope activityTypeScope,
+        string prefix,
+        List<TimesheetsFieldError> errors)
+    {
+        if (command.Target is null)
+        {
+            errors.Add(new($"{prefix}.target", "required", "Target reference is required."));
+        }
+        else if (command.Target.TargetKind is not (TimeEntryTargetKind.Project or TimeEntryTargetKind.Work))
+        {
+            errors.Add(new($"{prefix}.target.targetKind", "invalid", "Target kind must be Project or Work."));
+        }
+
+        if (command.Contributor is null || string.IsNullOrWhiteSpace(command.Contributor.PartyId))
+        {
+            errors.Add(new($"{prefix}.contributor", "required", "Contributor Party reference is required."));
+        }
+
+        if (command.ActivityTypeId is null || string.IsNullOrWhiteSpace(command.ActivityTypeId.Value))
+        {
+            errors.Add(new($"{prefix}.activityTypeId", "required", "Activity Type ID is required."));
+        }
+
+        if (activityTypeScope == ActivityTypeScope.Unknown)
+        {
+            errors.Add(new($"{prefix}.activityTypeScope", "unknown", "Activity Type scope is required."));
+        }
+
+        if (command.DurationMinutes <= 0)
+        {
+            errors.Add(new($"{prefix}.durationMinutes", "positive", "Duration must be a positive whole-minute value."));
+        }
+
+        if (command.BillableState == BillableState.Unknown)
+        {
+            errors.Add(new($"{prefix}.billableState", "unknown", "Billable state is required."));
+        }
+
+        if (command.ContributorCategory == ContributorCategory.Unknown)
+        {
+            errors.Add(new($"{prefix}.contributorCategory", "unknown", "Contributor category is required."));
+        }
+    }
+
+    private static TimeEntryCorrectionValues ToCorrectionValues(TimeEntryState state)
+        => new(
+            state.Target!,
+            state.Contributor!,
+            state.ActivityTypeId!,
+            state.ServiceDate,
+            state.DurationMinutes,
+            state.BillableState,
+            state.ContributorCategory,
+            state.AiMetrics)
+        {
+            Comment = state.Comment
+        };
+
+    private static TimeEntryCorrectionValues ToCorrectionValues(CorrectRejectedTimeEntry command)
+        => new(
+            command.Target,
+            command.Contributor,
+            command.ActivityTypeId,
+            command.ServiceDate,
+            command.DurationMinutes,
+            command.BillableState,
+            command.ContributorCategory,
+            command.AiMetrics)
+        {
+            Comment = command.Comment
+        };
 
     private static string EntryFieldPrefix(TimeEntryId timeEntryId)
         => $"entries[{timeEntryId.Value}]";

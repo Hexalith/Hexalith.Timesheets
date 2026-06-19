@@ -138,6 +138,35 @@
         },
         "additionalProperties": false
       },
+      "CorrectRejectedTimeEntry": {
+        "type": "object",
+        "description": "Correct one Rejected Time Entry by submitting additive correction values. Tenant, user, correlation, authority source, actor, and authorization context are server-derived and not accepted from the caller payload.",
+        "required": [
+          "timeEntryId",
+          "timeEntryCorrectionId",
+          "target",
+          "contributor",
+          "activityTypeId",
+          "serviceDate",
+          "durationMinutes",
+          "billableState",
+          "contributorCategory"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "timeEntryCorrectionId": { "$ref": "#/components/schemas/TimeEntryCorrectionId" },
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "serviceDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "minimum": 1 },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "contributorCategory": { "$ref": "#/components/schemas/ContributorCategory" },
+          "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" },
+          "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
+        },
+        "additionalProperties": false
+      },
       "TimeEntrySubmitted": {
         "type": "object",
         "description": "Domain event emitted for one accepted Time Entry submission. It records server-derived submitter and tenant evidence without exposing raw envelopes or command bodies.",
@@ -210,6 +239,37 @@
           "authoritySource": { "$ref": "#/components/schemas/ApprovalAuthoritySourceAttribution" },
           "approvalScope": { "$ref": "#/components/schemas/TimeEntryApprovalScope" },
           "reason": { "$ref": "#/components/schemas/TimeEntryRejectionReason" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryCorrected": {
+        "type": "object",
+        "description": "Domain event emitted for one accepted rejected-entry correction. It links prior and corrected values to the rejection decision while preserving server-derived actor and tenant evidence.",
+        "required": [
+          "timeEntryId",
+          "timeEntryCorrectionId",
+          "tenant",
+          "correctedBy",
+          "correctedAtUtc",
+          "previousValues",
+          "correctedValues",
+          "rejectionReason",
+          "rejectionDecisionId",
+          "approvalState",
+          "correctionState"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "timeEntryCorrectionId": { "$ref": "#/components/schemas/TimeEntryCorrectionId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "correctedBy": { "$ref": "#/components/schemas/PartyReference" },
+          "correctedAtUtc": { "type": "string", "format": "date-time" },
+          "previousValues": { "$ref": "#/components/schemas/TimeEntryCorrectionValues" },
+          "correctedValues": { "$ref": "#/components/schemas/TimeEntryCorrectionValues" },
+          "rejectionReason": { "$ref": "#/components/schemas/TimeEntryRejectionReason" },
+          "rejectionDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" },
+          "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" },
+          "correctionState": { "$ref": "#/components/schemas/TimeEntryCorrectionState" }
         },
         "additionalProperties": false
       },
@@ -411,9 +471,64 @@
             "items": { "$ref": "#/components/schemas/TimeEntryEventLineageItem" }
           },
           "approvalDecision": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionEvidence" },
+          "correction": { "$ref": "#/components/schemas/TimeEntryCorrectionEvidence" },
           "displayHydration": { "$ref": "#/components/schemas/TimeEntryDisplayHydration" },
           "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
         }
+      },
+      "TimeEntryCorrectionValues": {
+        "type": "object",
+        "description": "Snapshot of entry facts before or after a correction. Display labels and sibling-owned personal data are hydrated at read time.",
+        "required": [
+          "target",
+          "contributor",
+          "activityTypeId",
+          "serviceDate",
+          "durationMinutes",
+          "billableState",
+          "contributorCategory"
+        ],
+        "properties": {
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "serviceDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "minimum": 1 },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "contributorCategory": { "$ref": "#/components/schemas/ContributorCategory" },
+          "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" },
+          "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryCorrectionEvidence": {
+        "type": "object",
+        "description": "Correction evidence that links original values, corrected values, actor, tenant, UTC correction time, and rejection decision lineage.",
+        "required": [
+          "timeEntryId",
+          "timeEntryCorrectionId",
+          "correctedBy",
+          "tenant",
+          "correctedAtUtc",
+          "rejectionReason",
+          "rejectionDecisionId",
+          "previousValues",
+          "correctedValues",
+          "correctionState"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "timeEntryCorrectionId": { "$ref": "#/components/schemas/TimeEntryCorrectionId" },
+          "correctedBy": { "$ref": "#/components/schemas/PartyReference" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "correctedAtUtc": { "type": "string", "format": "date-time" },
+          "rejectionReason": { "$ref": "#/components/schemas/TimeEntryRejectionReason" },
+          "rejectionDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" },
+          "previousValues": { "$ref": "#/components/schemas/TimeEntryCorrectionValues" },
+          "correctedValues": { "$ref": "#/components/schemas/TimeEntryCorrectionValues" },
+          "correctionState": { "$ref": "#/components/schemas/TimeEntryCorrectionState" }
+        },
+        "additionalProperties": false
       },
       "TimeEntryApprovalDecisionEvidence": {
         "type": "object",
@@ -525,6 +640,7 @@
       "TimeEntryId": { "type": "string", "minLength": 1 },
       "TimeEntrySubmissionId": { "type": "string", "minLength": 1 },
       "TimeEntryApprovalDecisionId": { "type": "string", "minLength": 1 },
+      "TimeEntryCorrectionId": { "type": "string", "minLength": 1 },
       "TimeEntryRejectionReason": { "type": "string", "minLength": 1, "maxLength": 1000 },
       "ActivityTypeId": { "type": "string", "minLength": 1 },
       "PartyReference": { "type": "string", "minLength": 1 },

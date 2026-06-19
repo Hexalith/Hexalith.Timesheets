@@ -40,7 +40,8 @@ public sealed class TimeEntryEvidenceProjection
             }
             else if (projectionEvent.Payload is TimeEntrySubmitted submitted
                 && submitted.TimeEntryId == timeEntryId
-                && model is not null)
+                && model is not null
+                && model.ApprovalState == TimeEntryApprovalState.Draft)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
                 model = Apply(submitted, model, checkpoint, lineage);
@@ -58,6 +59,13 @@ public sealed class TimeEntryEvidenceProjection
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
                 model = Apply(rejected, model, checkpoint, lineage);
+            }
+            else if (projectionEvent.Payload is TimeEntryCorrected corrected
+                && corrected.TimeEntryId == timeEntryId
+                && model?.ApprovalState == TimeEntryApprovalState.Rejected)
+            {
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(corrected, model, checkpoint, lineage);
             }
         }
 
@@ -149,6 +157,43 @@ public sealed class TimeEntryEvidenceProjection
                 rejected.ApprovalScope,
                 rejected.AuthoritySource,
                 rejected.Reason),
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
+                ? TimeEntryDisplayHydration.Unavailable()
+                : current.DisplayHydration
+        };
+
+    private static TimeEntryEvidenceReadModel Apply(
+        TimeEntryCorrected corrected,
+        TimeEntryEvidenceReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => current with
+        {
+            Target = corrected.CorrectedValues.Target,
+            Contributor = corrected.CorrectedValues.Contributor,
+            ActivityTypeId = corrected.CorrectedValues.ActivityTypeId,
+            ServiceDate = corrected.CorrectedValues.ServiceDate,
+            DurationMinutes = corrected.CorrectedValues.DurationMinutes,
+            BillableState = corrected.CorrectedValues.BillableState,
+            ApprovalState = corrected.ApprovalState,
+            ContributorCategory = corrected.CorrectedValues.ContributorCategory,
+            AiMetrics = corrected.CorrectedValues.AiMetrics,
+            CorrectionState = corrected.CorrectionState,
+            Comment = corrected.CorrectedValues.Comment,
+            Correction = new(
+                corrected.TimeEntryId,
+                corrected.TimeEntryCorrectionId,
+                corrected.CorrectedBy,
+                corrected.Tenant,
+                corrected.CorrectedAtUtc,
+                corrected.RejectionReason,
+                corrected.RejectionDecisionId,
+                corrected.PreviousValues,
+                corrected.CorrectedValues,
+                corrected.CorrectionState),
             ProjectionFreshness = ToFreshnessMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],

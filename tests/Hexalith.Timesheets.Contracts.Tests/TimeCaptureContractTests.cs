@@ -300,6 +300,87 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Correct_rejected_time_entry_contract_round_trips_without_caller_authority_fields()
+    {
+        CorrectRejectedTimeEntry command = new(
+            new TimeEntryId("time-entry-123"),
+            new TimeEntryCorrectionId("correction-123"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-456")),
+            new PartyReference("party-456"),
+            new ActivityTypeId("activity-type-456"),
+            new DateOnly(2026, 6, 20),
+            75,
+            BillableState.NonBillable,
+            ContributorCategory.AutomatedAgent,
+            AiEffortMetrics.Unavailable)
+        {
+            Comment = new("Corrected after rejection.", TimeEntryCommentPolicy.SensitiveDefault)
+        };
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timeEntryCorrectionId\"");
+        json.ShouldContain("\"targetKind\":\"Project\"");
+        json.ShouldContain("\"durationMinutes\":75");
+        json.ShouldContain("\"comment\"");
+        AssertJsonOmitsCallerAuthority(json);
+
+        CorrectRejectedTimeEntry? roundTripped = JsonSerializer.Deserialize<CorrectRejectedTimeEntry>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.TimeEntryCorrectionId.Value.ShouldBe("correction-123");
+        roundTripped.Target.TargetId.ShouldBe("project-456");
+        roundTripped.Contributor.PartyId.ShouldBe("party-456");
+        roundTripped.DurationMinutes.ShouldBe(75);
+        roundTripped.Comment.ShouldNotBeNull();
+        roundTripped.Comment.Text.ShouldBe("Corrected after rejection.");
+    }
+
+    [Fact]
+    public void Time_entry_corrected_event_links_previous_corrected_values_and_rejection_lineage()
+    {
+        TimeEntryCorrectionValues previous = CorrectionValues(60);
+        TimeEntryCorrectionValues corrected = CorrectionValues(75) with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference("project-456"))
+        };
+        TimeEntryCorrected correctedEvent = new(
+            new TimeEntryId("time-entry-123"),
+            new TimeEntryCorrectionId("correction-123"),
+            new TenantReference("tenant-123"),
+            new PartyReference("party-operator"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            previous,
+            corrected,
+            new TimeEntryRejectionReason("Needs customer PO evidence."),
+            new TimeEntryApprovalDecisionId("approval-decision-456"),
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Corrected);
+
+        string json = JsonSerializer.Serialize(correctedEvent, JsonOptions);
+
+        json.ShouldContain("\"timeEntryCorrectionId\"");
+        json.ShouldContain("\"previousValues\"");
+        json.ShouldContain("\"correctedValues\"");
+        json.ShouldContain("\"rejectionReason\"");
+        json.ShouldContain("\"rejectionDecisionId\"");
+        json.ShouldContain("\"correctionState\":\"Corrected\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimeEntryCorrected? roundTripped = JsonSerializer.Deserialize<TimeEntryCorrected>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryCorrectionId.Value.ShouldBe("correction-123");
+        roundTripped.PreviousValues.DurationMinutes.ShouldBe(60);
+        roundTripped.CorrectedValues.DurationMinutes.ShouldBe(75);
+        roundTripped.RejectionReason.Value.ShouldBe("Needs customer PO evidence.");
+        roundTripped.RejectionDecisionId.Value.ShouldBe("approval-decision-456");
+        roundTripped.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        roundTripped.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+    }
+
+    [Fact]
     public void Time_entry_evidence_read_model_round_trips_source_lineage_and_display_hydration_without_raw_envelope_fields()
     {
         TimeEntryEvidenceReadModel readModel = new(
@@ -401,6 +482,7 @@ public sealed class TimeCaptureContractTests
             typeof(SubmitTimeEntriesForApproval),
             typeof(ApproveTimeEntry),
             typeof(RejectTimeEntry),
+            typeof(CorrectRejectedTimeEntry),
             typeof(CreateTenantActivityType),
             typeof(CreateProjectActivityType),
             typeof(RenameProjectActivityType),
@@ -462,6 +544,7 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((ApprovalAuthorityAction)0).ShouldBe("Unknown");
         Enum.GetName((ApprovalAuthoritySource)0).ShouldBe("Unknown");
         Enum.GetName((ApprovalAuthorityDecisionState)0).ShouldBe("Unknown");
+        Enum.GetName((TimeEntryCorrectionState)0).ShouldBe("Unknown");
     }
 
     [Fact]
@@ -557,9 +640,11 @@ public sealed class TimeCaptureContractTests
             [
                 "timesheets.command.record-time",
                 "timesheets.command.submit-time-entries",
+                "timesheets.command.correct-rejected-time-entry",
                 "timesheets.command.activity-type-catalog",
                 "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
+                "timesheets.projection.my-timesheet-period",
                 "timesheets.approvals.queue",
                 "timesheets.command.time-entry-approval",
                 "timesheets.command.period-approval",
@@ -668,6 +753,7 @@ public sealed class TimeCaptureContractTests
         command.Fields.Select(static field => field.Name).ShouldContain("aiTokenAvailability");
         evidence.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
         evidence.Fields.Select(static field => field.Name).ShouldContain("correctionState");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("correction");
         evidence.Fields.Select(static field => field.Name).ShouldContain("sourceAuthority");
         evidence.Fields.Select(static field => field.Name).ShouldContain("eventLineage");
         evidence.Fields.Select(static field => field.Name).ShouldContain("approvalDecision");
@@ -749,9 +835,14 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("SubmitTimeEntriesForApproval").ShouldBeTrue();
         schemas.ContainsKey("ApproveTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("RejectTimeEntry").ShouldBeTrue();
+        schemas.ContainsKey("CorrectRejectedTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmitted").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApproved").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryRejected").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryCorrected").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryCorrectionId").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryCorrectionValues").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryCorrectionEvidence").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionId").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApprovalDecisionId").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionScope").ShouldBeTrue();
@@ -780,8 +871,10 @@ public sealed class TimeCaptureContractTests
         schemaJson.ShouldContain("TimeEntrySubmitted");
         schemaJson.ShouldContain("ApproveTimeEntry");
         schemaJson.ShouldContain("RejectTimeEntry");
+        schemaJson.ShouldContain("CorrectRejectedTimeEntry");
         schemaJson.ShouldContain("TimeEntryApproved");
         schemaJson.ShouldContain("TimeEntryRejected");
+        schemaJson.ShouldContain("TimeEntryCorrected");
         schemaJson.ShouldNotContain("EventStore");
         schemaJson.ShouldNotContain("invoice", Case.Insensitive);
         schemaJson.ShouldNotContain("payroll", Case.Insensitive);
@@ -821,6 +914,20 @@ public sealed class TimeCaptureContractTests
 
     private static TimesheetsMetadataDescriptor Descriptor(string name)
         => TimesheetsMetadataCatalog.Descriptors.Single(descriptor => descriptor.Name == name);
+
+    private static TimeEntryCorrectionValues CorrectionValues(int durationMinutes)
+        => new(
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-123")),
+            new PartyReference("party-123"),
+            new ActivityTypeId("activity-type-123"),
+            new DateOnly(2026, 6, 19),
+            durationMinutes,
+            BillableState.Billable,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable)
+        {
+            Comment = new("Prior evidence.", TimeEntryCommentPolicy.SensitiveDefault)
+        };
 
     private static string RepositoryPath(params string[] segments)
     {
