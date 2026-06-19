@@ -378,6 +378,167 @@ public sealed class TimeEntryAggregateTests
         rejection.FieldErrors.Select(static error => error.Field).ShouldContain("entries[time-entry-1].contributorCategory");
     }
 
+    [Fact]
+    public void Approve_submitted_time_entry_emits_approved_event_and_preserves_prior_evidence()
+    {
+        RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
+        TimeEntryState state = SubmittedState(command);
+        DateTimeOffset decidedAtUtc = new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
+
+        TimeEntryApproved approved = SingleSuccess<TimeEntryApproved>(
+            TimeEntry.Handle(
+                ApproveCommand(command.TimeEntryId),
+                command.TimeEntryId,
+                state,
+                new PartyReference("approver-1"),
+                new TenantReference("tenant-1"),
+                decidedAtUtc,
+                AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+                TimeEntryApprovalScope.IndividualEntry));
+
+        approved.TimeEntryId.ShouldBe(command.TimeEntryId);
+        approved.Approver.ShouldBe(new PartyReference("approver-1"));
+        approved.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        approved.DecidedAtUtc.ShouldBe(decidedAtUtc);
+        approved.TimeEntryApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-1"));
+        approved.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        approved.AuthoritySource.Action.ShouldBe(ApprovalAuthorityAction.EntryApproval);
+        approved.ApprovalScope.ShouldBe(TimeEntryApprovalScope.IndividualEntry);
+        state.DurationMinutes.ShouldBe(command.DurationMinutes);
+        state.Target.ShouldBe(command.Target);
+        state.Contributor.ShouldBe(command.Contributor);
+        state.TimeEntrySubmissionId.ShouldBe(new TimeEntrySubmissionId("submission-1"));
+        state.Comment.ShouldBe(command.Comment);
+    }
+
+    [Fact]
+    public void Reject_submitted_time_entry_emits_rejected_event_with_required_reason()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = SubmittedState(command);
+        RejectTimeEntry reject = RejectCommand(command.TimeEntryId);
+
+        TimeEntryRejected rejected = SingleSuccess<TimeEntryRejected>(
+            TimeEntry.Handle(
+                reject,
+                command.TimeEntryId,
+                state,
+                new PartyReference("approver-1"),
+                new TenantReference("tenant-1"),
+                new DateTimeOffset(2026, 6, 19, 13, 15, 0, TimeSpan.Zero),
+                AllowedAuthority(ApprovalAuthorityAction.EntryRejection),
+                TimeEntryApprovalScope.IndividualEntry));
+
+        rejected.TimeEntryId.ShouldBe(command.TimeEntryId);
+        rejected.ApprovalState.ShouldBe(TimeEntryApprovalState.Rejected);
+        rejected.AuthoritySource.Action.ShouldBe(ApprovalAuthorityAction.EntryRejection);
+        rejected.ApprovalScope.ShouldBe(TimeEntryApprovalScope.IndividualEntry);
+        rejected.Reason.ShouldBe(reject.Reason);
+    }
+
+    [Fact]
+    public void Approve_duplicate_same_decision_id_and_resulting_state_is_noop()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = SubmittedState(command);
+        state.Apply(new TimeEntryApproved(
+            command.TimeEntryId,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Approved,
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        TimesheetsDomainResult result = TimeEntry.Handle(
+            ApproveCommand(command.TimeEntryId),
+            command.TimeEntryId,
+            state,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry);
+
+        result.IsNoOp.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Rejects_different_decision_id_after_terminal_approval_state()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = SubmittedState(command);
+        state.Apply(new TimeEntryApproved(
+            command.TimeEntryId,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("decision-original"),
+            TimeEntryApprovalState.Approved,
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            ApproveCommand(command.TimeEntryId, "decision-new"),
+            command.TimeEntryId,
+            state,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 5, 0, TimeSpan.Zero),
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].approvalState" && error.Code == "terminal-state");
+    }
+
+    [Fact]
+    public void Approve_rejects_unrecorded_draft_missing_context_and_non_utc_timestamp()
+    {
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            ApproveCommand(new TimeEntryId("time-entry-1")),
+            new TimeEntryId("time-entry-1"),
+            null,
+            null,
+            null,
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.FromHours(2)),
+            AllowedAuthority(ApprovalAuthorityAction.EntryApproval) with
+            {
+                DecisionState = ApprovalAuthorityDecisionState.Unknown
+            },
+            TimeEntryApprovalScope.Unknown));
+
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "approver" && error.Code == "required");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "tenant" && error.Code == "required");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "decidedAtUtc" && error.Code == "utc-required");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "authoritySource.decisionState" && error.Code == "unknown");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "approvalScope" && error.Code == "unknown");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].timeEntryId" && error.Code == "not-recorded");
+    }
+
+    [Fact]
+    public void Reject_revalidates_missing_reason_and_submitted_state()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = RecordedState(command);
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            new RejectTimeEntry(
+                command.TimeEntryId,
+                new TimeEntryApprovalDecisionId("decision-1"),
+                null!),
+            command.TimeEntryId,
+            state,
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            AllowedAuthority(ApprovalAuthorityAction.EntryRejection),
+            TimeEntryApprovalScope.IndividualEntry));
+
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "reason" && error.Code == "required");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].approvalState" && error.Code == "invalid-transition");
+    }
+
     private static RecordTimeEntry ValidCommand()
         => new(
             new TimeEntryId("time-entry-1"),
@@ -389,6 +550,17 @@ public sealed class TimeEntryAggregateTests
             BillableState.Billable,
             ContributorCategory.Employee,
             AiEffortMetrics.Unavailable);
+
+    private static ApproveTimeEntry ApproveCommand(TimeEntryId timeEntryId, string decisionId = "decision-1")
+        => new(
+            timeEntryId,
+            new TimeEntryApprovalDecisionId(decisionId));
+
+    private static RejectTimeEntry RejectCommand(TimeEntryId timeEntryId, string decisionId = "decision-1")
+        => new(
+            timeEntryId,
+            new TimeEntryApprovalDecisionId(decisionId),
+            new TimeEntryRejectionReason("Needs customer PO evidence."));
 
     private static SubmitTimeEntriesForApproval SubmitCommand(TimeEntryId timeEntryId, string submissionId = "submission-1")
         => new(
@@ -416,6 +588,29 @@ public sealed class TimeEntryAggregateTests
         });
         return state;
     }
+
+    private static TimeEntryState SubmittedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = RecordedState(command);
+        state.Apply(new TimeEntrySubmitted(
+            command.TimeEntryId,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
+            new TimeEntrySubmissionId("submission-1"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted));
+        return state;
+    }
+
+    private static ApprovalAuthoritySourceAttribution AllowedAuthority(ApprovalAuthorityAction action)
+        => new(
+            action,
+            ApprovalAuthoritySource.ProjectApprover,
+            ApprovalAuthorityDecisionState.Allowed,
+            "project-approval",
+            "2026-06",
+            ProjectionFreshnessMetadata.Fresh);
 
     private static AiEffortMetrics ProviderReportedMetrics(int billableEffortMinutes = 2)
         => new(

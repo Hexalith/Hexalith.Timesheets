@@ -68,7 +68,7 @@ public sealed class TimeCaptureContractTests
         json.ShouldContain("\"targetKind\":\"Project\"");
         json.ShouldContain("\"durationMinutes\":45");
         json.ShouldContain("\"providerTotalTokenCount\":1250");
-        AssertJsonOmitsCallerAuthority(json);
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
 
         RecordTimeEntry? roundTripped = JsonSerializer.Deserialize<RecordTimeEntry>(json, JsonOptions);
 
@@ -147,6 +147,50 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Approve_time_entry_contract_round_trips_without_caller_authority_fields()
+    {
+        ApproveTimeEntry command = new(
+            new TimeEntryId("time-entry-123"),
+            new TimeEntryApprovalDecisionId("approval-decision-123"));
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timeEntryId\"");
+        json.ShouldContain("\"timeEntryApprovalDecisionId\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        ApproveTimeEntry? roundTripped = JsonSerializer.Deserialize<ApproveTimeEntry>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.TimeEntryApprovalDecisionId.Value.ShouldBe("approval-decision-123");
+    }
+
+    [Fact]
+    public void Reject_time_entry_contract_round_trips_reason_without_caller_authority_fields()
+    {
+        RejectTimeEntry command = new(
+            new TimeEntryId("time-entry-123"),
+            new TimeEntryApprovalDecisionId("approval-decision-456"),
+            new TimeEntryRejectionReason("Needs customer PO evidence."));
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timeEntryId\"");
+        json.ShouldContain("\"timeEntryApprovalDecisionId\"");
+        json.ShouldContain("\"reason\"");
+        json.ShouldContain("Needs customer PO evidence.");
+        AssertJsonOmitsCallerAuthority(json);
+
+        RejectTimeEntry? roundTripped = JsonSerializer.Deserialize<RejectTimeEntry>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.TimeEntryApprovalDecisionId.Value.ShouldBe("approval-decision-456");
+        roundTripped.Reason.Value.ShouldBe("Needs customer PO evidence.");
+    }
+
+    [Fact]
     public void Time_entry_submitted_event_records_submission_evidence_and_resulting_state()
     {
         TimeEntrySubmitted submitted = new(
@@ -176,6 +220,86 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Time_entry_approved_event_records_decision_evidence_and_resulting_state()
+    {
+        TimeEntryApproved approved = new(
+            new TimeEntryId("time-entry-123"),
+            new PartyReference("party-approver"),
+            new TenantReference("tenant-123"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("approval-decision-123"),
+            TimeEntryApprovalState.Approved,
+            new(
+                ApprovalAuthorityAction.EntryApproval,
+                ApprovalAuthoritySource.ProjectApprover,
+                ApprovalAuthorityDecisionState.Allowed,
+                "project-approval",
+                "2026-06",
+                ProjectionFreshnessMetadata.Fresh),
+            TimeEntryApprovalScope.IndividualEntry);
+
+        string json = JsonSerializer.Serialize(approved, JsonOptions);
+
+        json.ShouldContain("\"approvalState\":\"Approved\"");
+        json.ShouldContain("\"approvalScope\":\"IndividualEntry\"");
+        json.ShouldContain("\"authoritySource\"");
+        json.ShouldContain("\"decidedAtUtc\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimeEntryApproved? roundTripped = JsonSerializer.Deserialize<TimeEntryApproved>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.Approver.PartyId.ShouldBe("party-approver");
+        roundTripped.Tenant.TenantId.ShouldBe("tenant-123");
+        roundTripped.TimeEntryApprovalDecisionId.Value.ShouldBe("approval-decision-123");
+        roundTripped.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        roundTripped.AuthoritySource.Source.ShouldBe(ApprovalAuthoritySource.ProjectApprover);
+        roundTripped.ApprovalScope.ShouldBe(TimeEntryApprovalScope.IndividualEntry);
+    }
+
+    [Fact]
+    public void Time_entry_rejected_event_records_reason_and_decision_evidence()
+    {
+        TimeEntryRejected rejected = new(
+            new TimeEntryId("time-entry-123"),
+            new PartyReference("party-approver"),
+            new TenantReference("tenant-123"),
+            new DateTimeOffset(2026, 6, 19, 13, 15, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("approval-decision-456"),
+            TimeEntryApprovalState.Rejected,
+            new(
+                ApprovalAuthorityAction.EntryRejection,
+                ApprovalAuthoritySource.WorkOwner,
+                ApprovalAuthorityDecisionState.Allowed,
+                "work-approval",
+                "2026-06",
+                ProjectionFreshnessMetadata.Fresh),
+            TimeEntryApprovalScope.IndividualEntry,
+            new TimeEntryRejectionReason("Needs customer PO evidence."));
+
+        string json = JsonSerializer.Serialize(rejected, JsonOptions);
+
+        json.ShouldContain("\"approvalState\":\"Rejected\"");
+        json.ShouldContain("\"approvalScope\":\"IndividualEntry\"");
+        json.ShouldContain("\"reason\"");
+        json.ShouldContain("Needs customer PO evidence.");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimeEntryRejected? roundTripped = JsonSerializer.Deserialize<TimeEntryRejected>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.Approver.PartyId.ShouldBe("party-approver");
+        roundTripped.Tenant.TenantId.ShouldBe("tenant-123");
+        roundTripped.TimeEntryApprovalDecisionId.Value.ShouldBe("approval-decision-456");
+        roundTripped.ApprovalState.ShouldBe(TimeEntryApprovalState.Rejected);
+        roundTripped.AuthoritySource.Source.ShouldBe(ApprovalAuthoritySource.WorkOwner);
+        roundTripped.ApprovalScope.ShouldBe(TimeEntryApprovalScope.IndividualEntry);
+        roundTripped.Reason.Value.ShouldBe("Needs customer PO evidence.");
+    }
+
+    [Fact]
     public void Time_entry_evidence_read_model_round_trips_source_lineage_and_display_hydration_without_raw_envelope_fields()
     {
         TimeEntryEvidenceReadModel readModel = new(
@@ -198,6 +322,22 @@ public sealed class TimeCaptureContractTests
             [
                 new("TimeEntryRecorded", 7, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents)
             ],
+            ApprovalDecision = new(
+                new TimeEntryId("time-entry-789"),
+                new TimeEntryApprovalDecisionId("decision-789"),
+                new PartyReference("approver-789"),
+                new TenantReference("tenant-789"),
+                new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+                TimeEntryApprovalState.Approved,
+                TimeEntryApprovalScope.IndividualEntry,
+                new(
+                    ApprovalAuthorityAction.EntryApproval,
+                    ApprovalAuthoritySource.ProjectApprover,
+                    ApprovalAuthorityDecisionState.Allowed,
+                    "timesheets.approval-authority.v1",
+                    "v1",
+                    ProjectionFreshnessMetadata.Fresh),
+                null),
             DisplayHydration = new(
                 TimeEntryHydratedDisplayLabel.Fresh("Contributor label"),
                 TimeEntryHydratedDisplayLabel.Stale("Project label"),
@@ -210,9 +350,11 @@ public sealed class TimeCaptureContractTests
         json.ShouldContain("\"eventLineage\"");
         json.ShouldContain("\"eventName\":\"TimeEntryRecorded\"");
         json.ShouldContain("\"ordinal\":7");
+        json.ShouldContain("\"approvalDecision\"");
+        json.ShouldContain("\"approvalScope\":\"IndividualEntry\"");
         json.ShouldContain("\"displayHydration\"");
         json.ShouldContain("\"state\":\"Stale\"");
-        AssertJsonOmitsCallerAuthority(json);
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
         json.ShouldNotContain("\"payload\"", Case.Insensitive);
         json.ShouldNotContain("\"envelope\"", Case.Insensitive);
 
@@ -221,6 +363,8 @@ public sealed class TimeCaptureContractTests
         roundTripped.ShouldNotBeNull();
         roundTripped.SourceAuthority.ShouldBe(TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents);
         roundTripped.EventLineage.ShouldHaveSingleItem().Ordinal.ShouldBe(7);
+        roundTripped.ApprovalDecision.ShouldNotBeNull();
+        roundTripped.ApprovalDecision.TimeEntryApprovalDecisionId.Value.ShouldBe("decision-789");
         roundTripped.DisplayHydration.Target.State.ShouldBe(DisplayHydrationState.Stale);
     }
 
@@ -255,6 +399,8 @@ public sealed class TimeCaptureContractTests
         [
             typeof(RecordTimeEntry),
             typeof(SubmitTimeEntriesForApproval),
+            typeof(ApproveTimeEntry),
+            typeof(RejectTimeEntry),
             typeof(CreateTenantActivityType),
             typeof(CreateProjectActivityType),
             typeof(RenameProjectActivityType),
@@ -303,6 +449,7 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((ContributorCategory)0).ShouldBe("Unknown");
         Enum.GetName((TimeEntryApprovalState)0).ShouldBe("Unknown");
         Enum.GetName((TimeEntrySubmissionScope)0).ShouldBe("Unknown");
+        Enum.GetName((TimeEntryApprovalScope)0).ShouldBe("Unknown");
         Enum.GetName((BillableState)0).ShouldBe("Unknown");
         Enum.GetName((ActivityTypeScope)0).ShouldBe("Unknown");
         Enum.GetName((ActivityTypeActiveState)0).ShouldBe("Unknown");
@@ -523,6 +670,10 @@ public sealed class TimeCaptureContractTests
         evidence.Fields.Select(static field => field.Name).ShouldContain("correctionState");
         evidence.Fields.Select(static field => field.Name).ShouldContain("sourceAuthority");
         evidence.Fields.Select(static field => field.Name).ShouldContain("eventLineage");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("approvalDecision");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("rejectionReason");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("authoritySource");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("authorityFreshness");
         evidence.Fields.Select(static field => field.Name).ShouldContain("displayHydration");
         evidence.Fields.Select(static field => field.Name).ShouldContain("aiWallClockDurationMilliseconds");
         evidence.Fields.Select(static field => field.Name).ShouldContain("aiModelRuntimeMilliseconds");
@@ -533,6 +684,8 @@ public sealed class TimeCaptureContractTests
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryCorrectionState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryEvidenceSourceAuthority));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(DisplayHydrationState));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovalAuthorityDecisionState));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovalAuthoritySource));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiTokenMetricAvailability));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiEffortMetricSourceCategory));
     }
@@ -594,9 +747,16 @@ public sealed class TimeCaptureContractTests
 
         schemas.ContainsKey("RecordTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("SubmitTimeEntriesForApproval").ShouldBeTrue();
+        schemas.ContainsKey("ApproveTimeEntry").ShouldBeTrue();
+        schemas.ContainsKey("RejectTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmitted").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryApproved").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryRejected").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionId").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryApprovalDecisionId").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionScope").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryApprovalScope").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryRejectionReason").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryTargetReference").ShouldBeTrue();
         schemas.ContainsKey("AiEffortMetrics").ShouldBeTrue();
         schemas.ContainsKey("AiEffortMetricSourceMetadata").ShouldBeTrue();
@@ -618,6 +778,10 @@ public sealed class TimeCaptureContractTests
         schemaJson.ShouldContain("AiEffortMetricSourceMetadata");
         schemaJson.ShouldContain("SubmitTimeEntriesForApproval");
         schemaJson.ShouldContain("TimeEntrySubmitted");
+        schemaJson.ShouldContain("ApproveTimeEntry");
+        schemaJson.ShouldContain("RejectTimeEntry");
+        schemaJson.ShouldContain("TimeEntryApproved");
+        schemaJson.ShouldContain("TimeEntryRejected");
         schemaJson.ShouldNotContain("EventStore");
         schemaJson.ShouldNotContain("invoice", Case.Insensitive);
         schemaJson.ShouldNotContain("payroll", Case.Insensitive);

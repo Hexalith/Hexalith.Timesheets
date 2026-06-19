@@ -25,6 +25,8 @@ public sealed record TimeEntryEvidenceReadModel(
 
     public IReadOnlyList<TimeEntryEventLineageItem> EventLineage { get; init; } = [];
 
+    public TimeEntryApprovalDecisionEvidence? ApprovalDecision { get; init; }
+
     public TimeEntryDisplayHydration DisplayHydration { get; init; } =
         TimeEntryDisplayHydration.Unknown;
 }

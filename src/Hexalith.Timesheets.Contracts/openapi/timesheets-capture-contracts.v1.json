@@ -110,6 +110,34 @@
         },
         "additionalProperties": false
       },
+      "ApproveTimeEntry": {
+        "type": "object",
+        "description": "Approve one Submitted Time Entry. Tenant, user, correlation, role, authority source, approver, and authorization context are server-derived and not accepted from the caller payload.",
+        "required": [
+          "timeEntryId",
+          "timeEntryApprovalDecisionId"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "timeEntryApprovalDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" }
+        },
+        "additionalProperties": false
+      },
+      "RejectTimeEntry": {
+        "type": "object",
+        "description": "Reject one Submitted Time Entry with a required reason. Tenant, user, correlation, role, authority source, approver, and authorization context are server-derived and not accepted from the caller payload.",
+        "required": [
+          "timeEntryId",
+          "timeEntryApprovalDecisionId",
+          "reason"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "timeEntryApprovalDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" },
+          "reason": { "$ref": "#/components/schemas/TimeEntryRejectionReason" }
+        },
+        "additionalProperties": false
+      },
       "TimeEntrySubmitted": {
         "type": "object",
         "description": "Domain event emitted for one accepted Time Entry submission. It records server-derived submitter and tenant evidence without exposing raw envelopes or command bodies.",
@@ -130,6 +158,58 @@
           "timeEntrySubmissionId": { "$ref": "#/components/schemas/TimeEntrySubmissionId" },
           "submissionScope": { "$ref": "#/components/schemas/TimeEntrySubmissionScope" },
           "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryApproved": {
+        "type": "object",
+        "description": "Domain event emitted for one accepted Time Entry approval. It records approver, tenant, UTC decision time, approval decision id, resulting state, authority source, and approval scope without exposing raw envelopes or command bodies.",
+        "required": [
+          "timeEntryId",
+          "approver",
+          "tenant",
+          "decidedAtUtc",
+          "timeEntryApprovalDecisionId",
+          "approvalState",
+          "authoritySource",
+          "approvalScope"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "approver": { "$ref": "#/components/schemas/PartyReference" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "decidedAtUtc": { "type": "string", "format": "date-time" },
+          "timeEntryApprovalDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" },
+          "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" },
+          "authoritySource": { "$ref": "#/components/schemas/ApprovalAuthoritySourceAttribution" },
+          "approvalScope": { "$ref": "#/components/schemas/TimeEntryApprovalScope" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryRejected": {
+        "type": "object",
+        "description": "Domain event emitted for one accepted Time Entry rejection. It preserves the affected entry id, approver, tenant, UTC decision time, required reason, approval decision id, resulting state, authority source, and approval scope without exposing raw envelopes or command bodies.",
+        "required": [
+          "timeEntryId",
+          "approver",
+          "tenant",
+          "decidedAtUtc",
+          "timeEntryApprovalDecisionId",
+          "approvalState",
+          "authoritySource",
+          "approvalScope",
+          "reason"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "approver": { "$ref": "#/components/schemas/PartyReference" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "decidedAtUtc": { "type": "string", "format": "date-time" },
+          "timeEntryApprovalDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" },
+          "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" },
+          "authoritySource": { "$ref": "#/components/schemas/ApprovalAuthoritySourceAttribution" },
+          "approvalScope": { "$ref": "#/components/schemas/TimeEntryApprovalScope" },
+          "reason": { "$ref": "#/components/schemas/TimeEntryRejectionReason" }
         },
         "additionalProperties": false
       },
@@ -330,9 +410,36 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/TimeEntryEventLineageItem" }
           },
+          "approvalDecision": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionEvidence" },
           "displayHydration": { "$ref": "#/components/schemas/TimeEntryDisplayHydration" },
           "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
         }
+      },
+      "TimeEntryApprovalDecisionEvidence": {
+        "type": "object",
+        "description": "Stable approval or rejection evidence for a Time Entry. It uses stable Party/Tenant references, authority attribution, scope, UTC decision time, and optional rejection reason without copying display names or raw authority payloads.",
+        "required": [
+          "timeEntryId",
+          "timeEntryApprovalDecisionId",
+          "approver",
+          "tenant",
+          "decidedAtUtc",
+          "approvalState",
+          "approvalScope",
+          "authoritySource"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "timeEntryApprovalDecisionId": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionId" },
+          "approver": { "$ref": "#/components/schemas/PartyReference" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "decidedAtUtc": { "type": "string", "format": "date-time" },
+          "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" },
+          "approvalScope": { "$ref": "#/components/schemas/TimeEntryApprovalScope" },
+          "authoritySource": { "$ref": "#/components/schemas/ApprovalAuthoritySourceAttribution" },
+          "reason": { "$ref": "#/components/schemas/TimeEntryRejectionReason" }
+        },
+        "additionalProperties": false
       },
       "TimeEntryEventLineageItem": {
         "type": "object",
@@ -417,6 +524,8 @@
       },
       "TimeEntryId": { "type": "string", "minLength": 1 },
       "TimeEntrySubmissionId": { "type": "string", "minLength": 1 },
+      "TimeEntryApprovalDecisionId": { "type": "string", "minLength": 1 },
+      "TimeEntryRejectionReason": { "type": "string", "minLength": 1, "maxLength": 1000 },
       "ActivityTypeId": { "type": "string", "minLength": 1 },
       "PartyReference": { "type": "string", "minLength": 1 },
       "TenantReference": {
@@ -471,6 +580,10 @@
       "TimeEntrySubmissionScope": {
         "type": "string",
         "enum": [ "Unknown", "SelectedEntries", "TimesheetPeriod" ]
+      },
+      "TimeEntryApprovalScope": {
+        "type": "string",
+        "enum": [ "Unknown", "IndividualEntry", "TimesheetPeriod" ]
       },
       "TimeEntryCorrectionState": {
         "type": "string",

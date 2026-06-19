@@ -176,6 +176,78 @@ public sealed class TimeEntryEvidenceProjectionTests
         model.EventLineage.Select(static item => item.EventName).ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted)]);
     }
 
+    [Fact]
+    public void Projection_applies_approved_after_submitted_without_mutating_recorded_or_submitted_evidence()
+    {
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m3", 3, Approved("time-entry-1")),
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1"))
+            ],
+            FreshCheckpoint(3));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        model.DurationMinutes.ShouldBe(45);
+        model.Target.ShouldBe(TimeEntryTargetReference.ForProject(Project()));
+        model.Contributor.ShouldBe(Contributor());
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryApproved)]);
+        model.ApprovalDecision.ShouldNotBeNull();
+        model.ApprovalDecision.TimeEntryApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-1"));
+        model.ApprovalDecision.Approver.ShouldBe(new PartyReference("approver-1"));
+        model.ApprovalDecision.AuthoritySource.Source.ShouldBe(ApprovalAuthoritySource.ProjectApprover);
+        model.ApprovalDecision.Reason.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Projection_applies_rejected_after_submitted_and_preserves_rejection_reason()
+    {
+        TimeEntryProjectionEvent rejected = Event("m3", 3, Rejected("time-entry-1"));
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                rejected,
+                rejected
+            ],
+            FreshCheckpoint(3));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Rejected);
+        model.ApprovalDecision.ShouldNotBeNull();
+        model.ApprovalDecision.Reason.ShouldBe(new TimeEntryRejectionReason("Needs customer PO evidence."));
+        model.ApprovalDecision.TimeEntryId.ShouldBe(TimeEntryId());
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryRejected)]);
+    }
+
+    [Fact]
+    public void Projection_ignores_approval_for_unrelated_entries()
+    {
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Approved("other-entry"))
+            ],
+            FreshCheckpoint(3));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        model.ApprovalDecision.ShouldBeNull();
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted)]);
+    }
+
     [Theory]
     [InlineData(ProjectionFreshness.Stale, ProjectionFreshnessState.Stale)]
     [InlineData(ProjectionFreshness.Rebuilding, ProjectionFreshnessState.Rebuilding)]
@@ -225,6 +297,38 @@ public sealed class TimeEntryEvidenceProjectionTests
             new TimeEntrySubmissionId("submission-1"),
             TimeEntrySubmissionScope.SelectedEntries,
             TimeEntryApprovalState.Submitted);
+
+    private static TimeEntryApproved Approved(string id)
+        => new(
+            new TimeEntryId(id),
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Approved,
+            Authority(ApprovalAuthorityAction.EntryApproval),
+            TimeEntryApprovalScope.IndividualEntry);
+
+    private static TimeEntryRejected Rejected(string id)
+        => new(
+            new TimeEntryId(id),
+            new PartyReference("approver-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 13, 15, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("decision-2"),
+            TimeEntryApprovalState.Rejected,
+            Authority(ApprovalAuthorityAction.EntryRejection),
+            TimeEntryApprovalScope.IndividualEntry,
+            new TimeEntryRejectionReason("Needs customer PO evidence."));
+
+    private static ApprovalAuthoritySourceAttribution Authority(ApprovalAuthorityAction action)
+        => new(
+            action,
+            ApprovalAuthoritySource.ProjectApprover,
+            ApprovalAuthorityDecisionState.Allowed,
+            "timesheets.approval-authority.v1",
+            "v1",
+            ProjectionFreshnessMetadata.Fresh);
 
     private static TimesheetsProjectionCheckpoint FreshCheckpoint(long sequenceNumber)
         => new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, sequenceNumber, ProjectionFreshness.Fresh);

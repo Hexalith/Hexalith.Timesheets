@@ -37,6 +37,14 @@ public enum TimeEntrySubmissionScope
     TimesheetPeriod = 2
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<TimeEntryApprovalScope>))]
+public enum TimeEntryApprovalScope
+{
+    Unknown = 0,
+    IndividualEntry = 1,
+    TimesheetPeriod = 2
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<BillableState>))]
 public enum BillableState
 {

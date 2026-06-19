@@ -47,6 +47,8 @@ public sealed class RuntimeRegistrationTests
             .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntrySubmissionCommandService>()
             .ShouldNotBeNull();
+        provider.GetRequiredService<TimeEntryApprovalCommandService>()
+            .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntryEvidenceQueryService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<ITimesheetsTenantAccessValidator>()

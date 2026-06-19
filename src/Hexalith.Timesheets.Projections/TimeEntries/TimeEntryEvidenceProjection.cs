@@ -45,6 +45,20 @@ public sealed class TimeEntryEvidenceProjection
                 lineage.Add(CreateLineageItem(projectionEvent));
                 model = Apply(submitted, model, checkpoint, lineage);
             }
+            else if (projectionEvent.Payload is TimeEntryApproved approved
+                && approved.TimeEntryId == timeEntryId
+                && model?.ApprovalState == TimeEntryApprovalState.Submitted)
+            {
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(approved, model, checkpoint, lineage);
+            }
+            else if (projectionEvent.Payload is TimeEntryRejected rejected
+                && rejected.TimeEntryId == timeEntryId
+                && model?.ApprovalState == TimeEntryApprovalState.Submitted)
+            {
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(rejected, model, checkpoint, lineage);
+            }
         }
 
         return model;
@@ -83,6 +97,58 @@ public sealed class TimeEntryEvidenceProjection
         => current with
         {
             ApprovalState = submitted.ApprovalState,
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
+                ? TimeEntryDisplayHydration.Unavailable()
+                : current.DisplayHydration
+        };
+
+    private static TimeEntryEvidenceReadModel Apply(
+        TimeEntryApproved approved,
+        TimeEntryEvidenceReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => current with
+        {
+            ApprovalState = approved.ApprovalState,
+            ApprovalDecision = new(
+                approved.TimeEntryId,
+                approved.TimeEntryApprovalDecisionId,
+                approved.Approver,
+                approved.Tenant,
+                approved.DecidedAtUtc,
+                approved.ApprovalState,
+                approved.ApprovalScope,
+                approved.AuthoritySource,
+                null),
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
+                ? TimeEntryDisplayHydration.Unavailable()
+                : current.DisplayHydration
+        };
+
+    private static TimeEntryEvidenceReadModel Apply(
+        TimeEntryRejected rejected,
+        TimeEntryEvidenceReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => current with
+        {
+            ApprovalState = rejected.ApprovalState,
+            ApprovalDecision = new(
+                rejected.TimeEntryId,
+                rejected.TimeEntryApprovalDecisionId,
+                rejected.Approver,
+                rejected.Tenant,
+                rejected.DecidedAtUtc,
+                rejected.ApprovalState,
+                rejected.ApprovalScope,
+                rejected.AuthoritySource,
+                rejected.Reason),
             ProjectionFreshness = ToFreshnessMetadata(checkpoint),
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],

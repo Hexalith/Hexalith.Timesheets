@@ -43,6 +43,20 @@ public sealed class TimeEntryState
 
     public TimeEntrySubmissionScope SubmissionScope { get; private set; }
 
+    public TimeEntryApprovalDecisionId? TimeEntryApprovalDecisionId { get; private set; }
+
+    public PartyReference? Approver { get; private set; }
+
+    public TenantReference? ApprovalTenant { get; private set; }
+
+    public DateTimeOffset? DecidedAtUtc { get; private set; }
+
+    public ApprovalAuthoritySourceAttribution? ApprovalAuthoritySource { get; private set; }
+
+    public TimeEntryApprovalScope ApprovalScope { get; private set; }
+
+    public TimeEntryRejectionReason? RejectionReason { get; private set; }
+
     public void Apply(TimeEntryRecorded recorded)
     {
         ArgumentNullException.ThrowIfNull(recorded);
@@ -72,5 +86,33 @@ public sealed class TimeEntryState
         SubmissionTenant = submitted.Tenant;
         SubmittedAtUtc = submitted.SubmittedAtUtc;
         SubmissionScope = submitted.SubmissionScope;
+    }
+
+    public void Apply(TimeEntryApproved approved)
+    {
+        ArgumentNullException.ThrowIfNull(approved);
+
+        ApprovalState = approved.ApprovalState;
+        TimeEntryApprovalDecisionId = approved.TimeEntryApprovalDecisionId;
+        Approver = approved.Approver;
+        ApprovalTenant = approved.Tenant;
+        DecidedAtUtc = approved.DecidedAtUtc;
+        ApprovalAuthoritySource = approved.AuthoritySource;
+        ApprovalScope = approved.ApprovalScope;
+        RejectionReason = null;
+    }
+
+    public void Apply(TimeEntryRejected rejected)
+    {
+        ArgumentNullException.ThrowIfNull(rejected);
+
+        ApprovalState = rejected.ApprovalState;
+        TimeEntryApprovalDecisionId = rejected.TimeEntryApprovalDecisionId;
+        Approver = rejected.Approver;
+        ApprovalTenant = rejected.Tenant;
+        DecidedAtUtc = rejected.DecidedAtUtc;
+        ApprovalAuthoritySource = rejected.AuthoritySource;
+        ApprovalScope = rejected.ApprovalScope;
+        RejectionReason = rejected.Reason;
     }
 }

@@ -4,6 +4,7 @@ using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.TimeEntries;
@@ -639,6 +640,194 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
+    public async Task Approval_fails_closed_on_base_authority_before_resolver_or_domain_dispatch()
+    {
+        Fixture fixture = new();
+        fixture.TenantValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), TimesheetsOperation.Command, Arg.Any<CancellationToken>())
+            .Returns(TimesheetsTenantAccessResult.Denied(
+                TimesheetsTenantAccessState.MissingTenant,
+                "tenant-1 project-1 raw upstream detail"));
+
+        TimeEntryApprovalCommandResult result = await fixture.CreateApprovalService().ApproveAsync(
+            Context(),
+            ApproveCommand(TimeEntryId()),
+            SubmittedState(ProjectCommand()),
+            DecisionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.DomainResult.ShouldBeNull();
+        result.AuthorityResolution.ShouldBeNull();
+        result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.MissingTenant);
+        result.Authorization.Reason.ShouldBe("Authority cannot be resolved.");
+        fixture.ApprovalResolver.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Project_approval_uses_same_contributor_source_for_access_and_resolver_then_dispatches()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.ApprovalResolver
+            .ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(AllowedResolution(ApprovalAuthorityAction.EntryApproval)));
+
+        TimeEntryApprovalCommandResult result = await fixture.CreateApprovalService().ApproveAsync(
+            Context(),
+            ApproveCommand(TimeEntryId()),
+            SubmittedState(ProjectCommand()),
+            DecisionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        TimeEntryApproved approved = result.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryApproved>();
+        approved.Approver.ShouldBe(Context().Actor);
+        approved.Tenant.ShouldBe(Context().Tenant);
+        approved.AuthoritySource.Source.ShouldBe(ApprovalAuthoritySource.ProjectApprover);
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>());
+        await fixture.ApprovalResolver.Received(1)
+            .ResolveAsync(
+                Arg.Is<ApprovalAuthorityResolutionRequest>(request =>
+                    request != null
+                    && request.Action == ApprovalAuthorityAction.EntryApproval
+                    && request.Contributor == Contributor()
+                    && request.AuthorizationRequest.Contributor == Contributor()
+                    && request.AuthorizationRequest.Project == Project()),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Rejection_uses_entry_rejection_authority_action_and_dispatches_rejected_event()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.ApprovalResolver
+            .ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(AllowedResolution(ApprovalAuthorityAction.EntryRejection)));
+
+        TimeEntryApprovalCommandResult result = await fixture.CreateApprovalService().RejectAsync(
+            Context(),
+            RejectCommand(TimeEntryId()),
+            SubmittedState(ProjectCommand()),
+            DecisionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        TimeEntryRejected rejected = result.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryRejected>();
+        rejected.Reason.Value.ShouldBe("Needs customer PO evidence.");
+        rejected.AuthoritySource.Action.ShouldBe(ApprovalAuthorityAction.EntryRejection);
+        await fixture.ApprovalResolver.Received(1)
+            .ResolveAsync(
+                Arg.Is<ApprovalAuthorityResolutionRequest>(request =>
+                    request != null
+                    && request.Action == ApprovalAuthorityAction.EntryRejection
+                    && request.Contributor == Contributor()
+                    && request.AuthorizationRequest.Contributor == Contributor()),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Approval_authority_denial_uses_safe_copy_and_does_not_dispatch_domain()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.ApprovalResolver
+            .ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(ApprovalAuthorityResolutionResult.Denied(
+                TimesheetsDenialCategory.AmbiguousAuthority,
+                "tenant-1 project-1 role Owner upstream detail",
+                new ApprovalAuthoritySourceAttribution(
+                    ApprovalAuthorityAction.EntryApproval,
+                    ApprovalAuthoritySource.ProjectApprover,
+                    ApprovalAuthorityDecisionState.Ambiguous,
+                    "timesheets.approval-authority.v1",
+                    "v1",
+                    ProjectionFreshnessMetadata.Stale()))));
+
+        TimeEntryApprovalCommandResult result = await fixture.CreateApprovalService().ApproveAsync(
+            Context(),
+            ApproveCommand(TimeEntryId()),
+            SubmittedState(ProjectCommand()),
+            DecisionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.DomainResult.ShouldBeNull();
+        result.AuthorityResolution.ShouldNotBeNull();
+        result.AuthorityResolution.IsAllowed.ShouldBeFalse();
+        result.AuthorityResolution.Reason.ShouldBe("Authority cannot be resolved.");
+        result.AuthorityResolution.Reason.ShouldNotContain("project", Case.Insensitive);
+        result.AuthorityResolution.Reason.ShouldNotContain("role", Case.Insensitive);
+    }
+
+    [Fact]
+    public async Task Approval_service_denies_self_approval_by_default_through_resolver()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        TimeEntryApprovalCommandService service = fixture.CreateApprovalService(
+            new TimesheetsApprovalAuthorityResolver(
+                TimesheetsApprovalAuthorityPolicyOptions.Default,
+                [new AllowingAuthorityProvider(ApprovalAuthoritySource.ProjectApprover)]));
+
+        TimeEntryApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            ApproveCommand(TimeEntryId()),
+            SubmittedState(ProjectCommand() with { Contributor = Context().Actor! }),
+            DecisionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.AuthorityResolution.ShouldNotBeNull().DenialCategory.ShouldBe(TimesheetsDenialCategory.InsufficientRole);
+        result.AuthorityResolution.Reason.ShouldBe("Access denied for this action.");
+    }
+
+    [Fact]
+    public async Task Approval_service_allows_self_approval_only_when_policy_explicitly_allows_entry_approval()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        TimeEntryApprovalCommandService service = fixture.CreateApprovalService(
+            new TimesheetsApprovalAuthorityResolver(
+                new TimesheetsApprovalAuthorityPolicyOptions
+                {
+                    SelfApprovalAllowedActions = new HashSet<ApprovalAuthorityAction>
+                    {
+                        ApprovalAuthorityAction.EntryApproval
+                    }
+                },
+                []));
+
+        TimeEntryApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            ApproveCommand(TimeEntryId()),
+            SubmittedState(ProjectCommand() with { Contributor = Context().Actor! }),
+            DecisionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        result.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryApproved>()
+            .AuthoritySource.Source.ShouldBe(ApprovalAuthoritySource.SelfApprovalPolicy);
+    }
+
+    [Fact]
     public async Task Evidence_query_fails_closed_before_projection_lookup_when_tenant_authority_is_missing()
     {
         Fixture fixture = new();
@@ -919,6 +1108,17 @@ public sealed class TimeEntryAuthorizationTests
             timeEntryIds,
             TimeEntrySubmissionScope.SelectedEntries);
 
+    private static ApproveTimeEntry ApproveCommand(TimeEntryId timeEntryId)
+        => new(
+            timeEntryId,
+            new TimeEntryApprovalDecisionId("decision-1"));
+
+    private static RejectTimeEntry RejectCommand(TimeEntryId timeEntryId)
+        => new(
+            timeEntryId,
+            new TimeEntryApprovalDecisionId("decision-1"),
+            new TimeEntryRejectionReason("Needs customer PO evidence."));
+
     private static RecordTimeEntry Command(TimeEntryTargetReference target)
         => new(
             TimeEntryId(),
@@ -981,8 +1181,34 @@ public sealed class TimeEntryAuthorizationTests
         return state;
     }
 
+    private static TimeEntryState SubmittedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = RecordedState(command);
+        state.Apply(new TimeEntrySubmitted(
+            command.TimeEntryId,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            SubmittedAtUtc(),
+            new TimeEntrySubmissionId("submission-1"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted));
+        return state;
+    }
+
     private static DateTimeOffset SubmittedAtUtc()
         => new(2026, 6, 19, 12, 0, 0, TimeSpan.Zero);
+
+    private static DateTimeOffset DecisionAtUtc()
+        => new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
+
+    private static ApprovalAuthorityResolutionResult AllowedResolution(ApprovalAuthorityAction action)
+        => ApprovalAuthorityResolutionResult.Allowed(new ApprovalAuthoritySourceAttribution(
+            action,
+            ApprovalAuthoritySource.ProjectApprover,
+            ApprovalAuthorityDecisionState.Allowed,
+            "timesheets.approval-authority.v1",
+            "v1",
+            ProjectionFreshnessMetadata.Fresh));
 
     private static ProjectReference Project() => new("project-1");
 
@@ -1062,6 +1288,8 @@ public sealed class TimeEntryAuthorizationTests
 
         public ITimeEntryDisplayHydrator DisplayHydrator { get; } = Substitute.For<ITimeEntryDisplayHydrator>();
 
+        public ITimesheetsApprovalAuthorityResolver ApprovalResolver { get; } = Substitute.For<ITimesheetsApprovalAuthorityResolver>();
+
         public TimeEntryCommandService CreateService()
             => new(new TimesheetsAccessGuard(
                 TenantValidator,
@@ -1078,6 +1306,19 @@ public sealed class TimeEntryAuthorizationTests
                 PartyValidator,
                 PolicyEvaluator));
 
+        public TimeEntryApprovalCommandService CreateApprovalService()
+            => CreateApprovalService(ApprovalResolver);
+
+        public TimeEntryApprovalCommandService CreateApprovalService(ITimesheetsApprovalAuthorityResolver resolver)
+            => new(
+                new TimesheetsAccessGuard(
+                    TenantValidator,
+                    ProjectValidator,
+                    WorkValidator,
+                    PartyValidator,
+                    PolicyEvaluator),
+                resolver);
+
         public TimeEntryEvidenceQueryService CreateQueryService()
             => new(
                 new TimesheetsAccessGuard(
@@ -1088,5 +1329,21 @@ public sealed class TimeEntryAuthorizationTests
                     PolicyEvaluator),
                 ProjectionReader,
                 DisplayHydrator);
+    }
+
+    private sealed class AllowingAuthorityProvider(ApprovalAuthoritySource source) : IApprovalAuthoritySourceProvider
+    {
+        public ApprovalAuthoritySource Source { get; } = source;
+
+        public int Precedence => TimesheetsApprovalAuthorityPolicyOptions.DefaultPrecedence(Source);
+
+        public ValueTask<ApprovalAuthoritySourceResult> EvaluateAsync(
+            ApprovalAuthorityResolutionRequest request,
+            CancellationToken cancellationToken)
+        {
+            return ValueTask.FromResult(ApprovalAuthoritySourceResult.Allowed(
+                Source,
+                ProjectionFreshnessMetadata.Fresh));
+        }
     }
 }

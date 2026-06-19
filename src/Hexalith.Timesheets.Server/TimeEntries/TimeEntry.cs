@@ -91,6 +91,109 @@ public static class TimeEntry
         ]);
     }
 
+    public static TimesheetsDomainResult Handle(
+        ApproveTimeEntry command,
+        TimeEntryId timeEntryId,
+        TimeEntryState? state,
+        PartyReference? approver,
+        TenantReference? tenant,
+        DateTimeOffset decidedAtUtc,
+        ApprovalAuthoritySourceAttribution? authoritySource,
+        TimeEntryApprovalScope approvalScope)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(timeEntryId);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateApprovalDecision(
+            command.TimeEntryApprovalDecisionId,
+            timeEntryId,
+            state,
+            approver,
+            tenant,
+            decidedAtUtc,
+            authoritySource,
+            approvalScope,
+            ApprovalAuthorityAction.EntryApproval,
+            null,
+            errors);
+
+        if (IsDuplicateDecision(state, command.TimeEntryApprovalDecisionId, TimeEntryApprovalState.Approved)
+            && errors.Count == 0)
+        {
+            return TimesheetsDomainResult.NoOp();
+        }
+
+        if (errors.Count > 0)
+        {
+            return Reject(TimesheetsRejectionCode.ValidationFailed, "Time Entry approval failed validation.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new TimeEntryApproved(
+                timeEntryId,
+                approver!,
+                tenant!,
+                decidedAtUtc.ToUniversalTime(),
+                command.TimeEntryApprovalDecisionId,
+                TimeEntryApprovalState.Approved,
+                authoritySource!,
+                approvalScope)
+        ]);
+    }
+
+    public static TimesheetsDomainResult Handle(
+        RejectTimeEntry command,
+        TimeEntryId timeEntryId,
+        TimeEntryState? state,
+        PartyReference? approver,
+        TenantReference? tenant,
+        DateTimeOffset decidedAtUtc,
+        ApprovalAuthoritySourceAttribution? authoritySource,
+        TimeEntryApprovalScope approvalScope)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(timeEntryId);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateApprovalDecision(
+            command.TimeEntryApprovalDecisionId,
+            timeEntryId,
+            state,
+            approver,
+            tenant,
+            decidedAtUtc,
+            authoritySource,
+            approvalScope,
+            ApprovalAuthorityAction.EntryRejection,
+            command.Reason,
+            errors);
+
+        if (IsDuplicateDecision(state, command.TimeEntryApprovalDecisionId, TimeEntryApprovalState.Rejected)
+            && errors.Count == 0)
+        {
+            return TimesheetsDomainResult.NoOp();
+        }
+
+        if (errors.Count > 0)
+        {
+            return Reject(TimesheetsRejectionCode.ValidationFailed, "Time Entry rejection failed validation.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new TimeEntryRejected(
+                timeEntryId,
+                approver!,
+                tenant!,
+                decidedAtUtc.ToUniversalTime(),
+                command.TimeEntryApprovalDecisionId,
+                TimeEntryApprovalState.Rejected,
+                authoritySource!,
+                approvalScope,
+                command.Reason)
+        ]);
+    }
+
     private static void ValidateRequiredFields(
         RecordTimeEntry command,
         ActivityTypeScope activityTypeScope,
@@ -398,6 +501,163 @@ public static class TimeEntry
         ValidateRecordedFacts(state, activityTypeScope, prefix, errors);
         ValidateComment(state.Comment, errors);
     }
+
+    private static void ValidateApprovalDecision(
+        TimeEntryApprovalDecisionId? decisionId,
+        TimeEntryId timeEntryId,
+        TimeEntryState? state,
+        PartyReference? approver,
+        TenantReference? tenant,
+        DateTimeOffset decidedAtUtc,
+        ApprovalAuthoritySourceAttribution? authoritySource,
+        TimeEntryApprovalScope approvalScope,
+        ApprovalAuthorityAction expectedAction,
+        TimeEntryRejectionReason? reason,
+        List<TimesheetsFieldError> errors)
+    {
+        string prefix = EntryFieldPrefix(timeEntryId);
+
+        if (decisionId is null || string.IsNullOrWhiteSpace(decisionId.Value))
+        {
+            errors.Add(new("timeEntryApprovalDecisionId", "required", "Approval decision ID is required."));
+        }
+
+        if (approver is null || string.IsNullOrWhiteSpace(approver.PartyId))
+        {
+            errors.Add(new("approver", "required", "Approver Party reference is required."));
+        }
+
+        if (tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId))
+        {
+            errors.Add(new("tenant", "required", "Tenant reference is required."));
+        }
+
+        if (decidedAtUtc.Offset != TimeSpan.Zero)
+        {
+            errors.Add(new("decidedAtUtc", "utc-required", "Approval decision timestamp must be a UTC instant."));
+        }
+
+        ValidateAuthoritySource(authoritySource, expectedAction, errors);
+
+        if (approvalScope == TimeEntryApprovalScope.Unknown)
+        {
+            errors.Add(new("approvalScope", "unknown", "Approval scope is required."));
+        }
+
+        if (expectedAction == ApprovalAuthorityAction.EntryRejection)
+        {
+            ValidateRejectionReason(reason, errors);
+        }
+
+        if (state?.IsRecorded != true)
+        {
+            errors.Add(new($"{prefix}.timeEntryId", "not-recorded", "Time Entry must be recorded before approval."));
+            return;
+        }
+
+        if (state.ApprovalState is TimeEntryApprovalState.Approved or TimeEntryApprovalState.Rejected)
+        {
+            if (state.TimeEntryApprovalDecisionId == decisionId
+                && state.ApprovalState == ResultingApprovalState(expectedAction))
+            {
+                return;
+            }
+
+            errors.Add(new($"{prefix}.approvalState", "terminal-state", "Approved or Rejected Time Entries cannot receive another approval decision."));
+            return;
+        }
+
+        if (state.ApprovalState != TimeEntryApprovalState.Submitted)
+        {
+            errors.Add(new($"{prefix}.approvalState", "invalid-transition", "Only Submitted Time Entries can be approved or rejected."));
+        }
+
+        ValidateRecordedFacts(state, state.ActivityTypeScope, prefix, errors);
+        ValidateComment(state.Comment, errors);
+    }
+
+    private static void ValidateAuthoritySource(
+        ApprovalAuthoritySourceAttribution? authoritySource,
+        ApprovalAuthorityAction expectedAction,
+        List<TimesheetsFieldError> errors)
+    {
+        if (authoritySource is null)
+        {
+            errors.Add(new("authoritySource", "required", "Approval authority source is required."));
+            return;
+        }
+
+        if (authoritySource.Action == ApprovalAuthorityAction.Unknown)
+        {
+            errors.Add(new("authoritySource.action", "unknown", "Approval authority action is required."));
+        }
+        else if (authoritySource.Action != expectedAction)
+        {
+            errors.Add(new("authoritySource.action", "mismatch", "Approval authority action does not match the decision."));
+        }
+
+        if (authoritySource.Source == ApprovalAuthoritySource.Unknown)
+        {
+            errors.Add(new("authoritySource.source", "unknown", "Approval authority source is required."));
+        }
+
+        if (authoritySource.DecisionState == ApprovalAuthorityDecisionState.Unknown)
+        {
+            errors.Add(new("authoritySource.decisionState", "unknown", "Approval authority decision state is required."));
+        }
+        else if (authoritySource.DecisionState != ApprovalAuthorityDecisionState.Allowed)
+        {
+            errors.Add(new("authoritySource.decisionState", "not-allowed", "Approval authority must allow the decision."));
+        }
+
+        if (string.IsNullOrWhiteSpace(authoritySource.PolicyKey))
+        {
+            errors.Add(new("authoritySource.policyKey", "required", "Approval authority policy key is required."));
+        }
+
+        if (string.IsNullOrWhiteSpace(authoritySource.PolicyVersion))
+        {
+            errors.Add(new("authoritySource.policyVersion", "required", "Approval authority policy version is required."));
+        }
+
+        if (authoritySource.Freshness is null)
+        {
+            errors.Add(new("authoritySource.freshness", "required", "Approval authority freshness is required."));
+        }
+    }
+
+    private static void ValidateRejectionReason(
+        TimeEntryRejectionReason? reason,
+        List<TimesheetsFieldError> errors)
+    {
+        if (reason is null)
+        {
+            errors.Add(new("reason", "required", "Rejection reason is required."));
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(reason.Value))
+        {
+            errors.Add(new("reason", "blank", "Rejection reason cannot be blank."));
+        }
+
+        if (reason.Value.Length > TimeEntryRejectionReason.MaxLength)
+        {
+            errors.Add(new("reason", "too-long", "Rejection reason exceeds the maximum supported length."));
+        }
+    }
+
+    private static bool IsDuplicateDecision(
+        TimeEntryState? state,
+        TimeEntryApprovalDecisionId? decisionId,
+        TimeEntryApprovalState resultingState)
+        => state?.ApprovalState == resultingState
+            && state.TimeEntryApprovalDecisionId == decisionId;
+
+    private static TimeEntryApprovalState ResultingApprovalState(ApprovalAuthorityAction action)
+        => action == ApprovalAuthorityAction.EntryApproval
+            ? TimeEntryApprovalState.Approved
+            : TimeEntryApprovalState.Rejected;
 
     private static void ValidateRecordedFacts(
         TimeEntryState state,
