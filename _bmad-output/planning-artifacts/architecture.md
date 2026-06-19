@@ -429,7 +429,7 @@ Baseline:
 
 **Query API model:**
 
-Timesheets exposes query contracts and read models for operational views, approval queues, reports, AI effort reporting, and Approved-Time Ledger reads.
+Timesheets exposes query contracts and read models for operational views, approval queues, reports, AI effort reporting, Approved-Time Ledger reads, export readiness, and dashboard overview composition.
 
 Baseline:
 
@@ -437,6 +437,7 @@ Baseline:
 - Query results include projection freshness/trust metadata.
 - Stale, rebuilding, unavailable, forbidden, and degraded states are explicit outcomes.
 - Trust-bearing decisions such as approval/export must require current/fresh enough projections or fall back to command-side validation.
+- Epic 4 implementation note: `QueryTimeEntries`, `QueryApprovedTimeLedger`, `QueryProjectActualTimeReport`, `QueryWorkActualTimeReport`, and `QueryTimesheetsDashboardOverview` are typed contract surfaces. Dashboard overview is read-only composition over existing query services and action-policy outcomes; it must not become write authority or a dashboard-specific state store.
 
 **External submission API:**
 
@@ -453,6 +454,8 @@ Use Dapr service invocation/pub-sub through existing Hexalith/EventStore pattern
 **API documentation:**
 
 Use the existing Hexalith documentation/OpenAPI conventions for public HTTP surfaces. Do not create a separate OpenAPI contract for internal aggregate mechanics.
+
+Epic 4 implementation note: `PreviewApprovedTimeExport` is a contract shape, but current preview/readiness behavior is served by Approved-Time Ledger query output and by `GenerateApprovedTimeExport` results. A dedicated server preview handler requires an explicit later decision.
 
 **Version notes:**
 
@@ -965,7 +968,9 @@ Hexalith.Timesheets/
 - Dapr: service invocation, pub/sub, and state abstractions where required by established EventStore/Aspire patterns.
 - Keycloak/JWT: production identity provider when enabled.
 
-**Reference-validation adapter maturity (added 2026-06-19):** `Hexalith.Projects` exposes a consumer query (`GetProjectAsync`) suitable for FR-2 Project validation. `Hexalith.Works` currently exposes no consumer-facing read/validate query (only an internal `WhatsNext` queue handler and an unimplemented `IExpectationResolver`); its `WorkItemEffort` (FR-17) and `ExecutorBinding` (FR-15/FR-20) Contracts are stable. The Works reference-validation adapter must therefore either consume a new Works-owned `GetWorkItem` query or read the Works EventStore projection via a Timesheets adapter. This decision is required before Story 1.7 (Work path) and Story 4.3; Epic 1 foundation stories are unaffected.
+**Reference-validation adapter maturity (added 2026-06-19):** `Hexalith.Projects` exposes a consumer query (`GetProjectAsync`) suitable for FR-2 Project validation. `Hexalith.Works` currently exposes no consumer-facing read/validate query (only an internal `WhatsNext` queue handler and an unimplemented `IExpectationResolver`); its `WorkItemEffort` (FR-17) and `ExecutorBinding` (FR-15/FR-20) Contracts are stable. The Works reference-validation adapter must therefore either consume a new Works-owned `GetWorkItem` query or read the Works EventStore projection via a Timesheets adapter. Epic 4 implemented planned-effort access behind `IWorkPlannedEffortProvider` with `UnavailableWorkPlannedEffortProvider` as the fail-closed default, so Work reports can disclose actuals while marking planned-effort state unavailable until the Works adapter is made concrete.
+
+**Export audit implementation note (added 2026-06-19):** accepted approved-time exports emit safe `ApprovedTimeExported` domain-event evidence through `IApprovedTimeExportAuditRecorder`. The audit evidence stores requester, tenant, filter snapshot, UTC request/generation instants, correlation ID, output scope, CSV format/version, projection freshness state, row count, and output content hash. It does not store CSV rows, comments, display labels, credential material, caller bodies, raw EventStore envelopes, or sibling-owned state.
 
 **Data Flow:**
 

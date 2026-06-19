@@ -5,7 +5,7 @@ Launch-relevant targets:
 - Common command acknowledgements: `500 ms p95`.
 - Common Project and Work actual-time report queries over tenant/project/period filters: `2s p95`.
 
-The current integration project contains in-process workflow coverage for capture, submission, approval, correction, locking, period submission, and period approval. This is functional workflow proof, not launch latency evidence.
+The current integration project contains in-process workflow coverage for capture, submission, approval, correction, locking, period submission, period approval, operational Time Entry queries, Approved-Time Ledger queries, Project/Work actual-time reports, approved billable-time export, and dashboard overview composition. This is functional workflow proof, not launch latency evidence.
 
 The performance lane remains reserved with an explicit skipped test until realistic EventStore-backed tenant, project, work, contributor, period, ledger, and actual-time report fixtures exist without slowing the fast architecture/unit baseline.
 
