@@ -927,6 +927,45 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
+    public async Task Approved_correction_validates_current_and_corrected_references_then_dispatches_additive_event()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.ApprovalResolver
+            .ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(AllowedResolution(ApprovalAuthorityAction.CorrectionAuthorization)));
+
+        TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
+            Context(),
+            ApprovedCorrectionCommand(TimeEntryId()),
+            ApprovedState(ProjectCommand()),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            CorrectionAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        TimeEntryApprovedCorrected corrected = result.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryApprovedCorrected>();
+        corrected.CorrectedBy.ShouldBe(Context().Actor);
+        corrected.Tenant.ShouldBe(Context().Tenant);
+        corrected.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+        await fixture.ProjectValidator.Received(2)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(2)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>());
+        await fixture.ApprovalResolver.Received(1)
+            .ResolveAsync(
+                Arg.Is<ApprovalAuthorityResolutionRequest>(request =>
+                    request != null
+                    && request.Action == ApprovalAuthorityAction.CorrectionAuthorization
+                    && request.Contributor == Contributor()
+                    && request.AuthorizationRequest.Contributor == Contributor()
+                    && request.AuthorizationRequest.Project == Project()),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Correction_fails_closed_on_corrected_target_authority_before_resolver_or_domain_dispatch()
     {
         Fixture fixture = AuthorizedFixture();
@@ -1352,6 +1391,20 @@ public sealed class TimeEntryAuthorizationTests
             BillableState.Billable,
             ContributorCategory.Employee,
             AiEffortMetrics.Unavailable);
+
+    private static CorrectApprovedTimeEntry ApprovedCorrectionCommand(TimeEntryId timeEntryId)
+        => new(
+            timeEntryId,
+            new TimeEntryCorrectionId("approved-correction-1"),
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            new DateOnly(2026, 6, 20),
+            75,
+            BillableState.Billable,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable,
+            new TimeEntryCorrectionReason("Correct approved duration after audit review."));
 
     private static RecordTimeEntry Command(TimeEntryTargetReference target)
         => new(

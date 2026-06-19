@@ -67,6 +67,13 @@ public sealed class TimeEntryEvidenceProjection
                 lineage.Add(CreateLineageItem(projectionEvent));
                 model = Apply(corrected, model, checkpoint, lineage);
             }
+            else if (projectionEvent.Payload is TimeEntryApprovedCorrected approvedCorrected
+                && approvedCorrected.TimeEntryId == timeEntryId
+                && model?.ApprovalState == TimeEntryApprovalState.Approved)
+            {
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(approvedCorrected, model, checkpoint, lineage);
+            }
         }
 
         return model;
@@ -208,6 +215,52 @@ public sealed class TimeEntryEvidenceProjection
             LockEvidence = corrected.CorrectionState == TimeEntryCorrectionState.Superseded
                 ? TimeEntryLockEvidence.Superseded()
                 : TimeEntryLockEvidence.Unlocked,
+            DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
+                ? TimeEntryDisplayHydration.Unavailable()
+                : current.DisplayHydration
+        };
+
+    private static TimeEntryEvidenceReadModel Apply(
+        TimeEntryApprovedCorrected corrected,
+        TimeEntryEvidenceReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => current with
+        {
+            Target = corrected.CorrectedValues.Target,
+            Contributor = corrected.CorrectedValues.Contributor,
+            ActivityTypeId = corrected.CorrectedValues.ActivityTypeId,
+            ServiceDate = corrected.CorrectedValues.ServiceDate,
+            DurationMinutes = corrected.CorrectedValues.DurationMinutes,
+            BillableState = corrected.CorrectedValues.BillableState,
+            ApprovalState = corrected.ApprovalState,
+            ContributorCategory = corrected.CorrectedValues.ContributorCategory,
+            AiMetrics = corrected.CorrectedValues.AiMetrics,
+            CorrectionState = corrected.CorrectionState,
+            Comment = corrected.CorrectedValues.Comment,
+            ApprovedCorrection = new(
+                corrected.TimeEntryId,
+                corrected.TimeEntryCorrectionId,
+                corrected.CorrectedBy,
+                corrected.Tenant,
+                corrected.CorrectedAtUtc,
+                corrected.Reason,
+                corrected.SourceApprovalDecisionId,
+                corrected.SourceApprovalScope,
+                corrected.PreviousValues,
+                corrected.CorrectedValues,
+                corrected.ApprovalState,
+                corrected.CorrectionState),
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            LockEvidence = current.LockEvidence.LockState == TimeEntryLockState.LockedFromDirectEdit
+                ? current.LockEvidence
+                : TimeEntryLockEvidence.Approved(
+                    corrected.SourceApprovalDecisionId,
+                    corrected.SourceApprovalScope,
+                    corrected.CorrectedBy,
+                    corrected.CorrectedAtUtc),
             DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
                 ? TimeEntryDisplayHydration.Unavailable()
                 : current.DisplayHydration

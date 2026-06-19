@@ -338,6 +338,42 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Correct_approved_time_entry_contract_round_trips_reason_without_caller_authority_fields()
+    {
+        CorrectApprovedTimeEntry command = new(
+            new TimeEntryId("time-entry-123"),
+            new TimeEntryCorrectionId("approved-correction-123"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-456")),
+            new PartyReference("party-456"),
+            new ActivityTypeId("activity-type-456"),
+            new DateOnly(2026, 6, 20),
+            75,
+            BillableState.NonBillable,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable,
+            new TimeEntryCorrectionReason("Correct approved duration after audit review."))
+        {
+            Comment = new("Approved correction evidence.", TimeEntryCommentPolicy.SensitiveDefault)
+        };
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timeEntryCorrectionId\"");
+        json.ShouldContain("\"reason\"");
+        json.ShouldContain("Correct approved duration after audit review.");
+        AssertJsonOmitsCallerAuthority(json);
+
+        CorrectApprovedTimeEntry? roundTripped = JsonSerializer.Deserialize<CorrectApprovedTimeEntry>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.TimeEntryCorrectionId.Value.ShouldBe("approved-correction-123");
+        roundTripped.Reason.Value.ShouldBe("Correct approved duration after audit review.");
+        roundTripped.Comment.ShouldNotBeNull();
+        roundTripped.Comment.Text.ShouldBe("Approved correction evidence.");
+    }
+
+    [Fact]
     public void Time_entry_corrected_event_links_previous_corrected_values_and_rejection_lineage()
     {
         TimeEntryCorrectionValues previous = CorrectionValues(60);
@@ -377,6 +413,48 @@ public sealed class TimeCaptureContractTests
         roundTripped.RejectionReason.Value.ShouldBe("Needs customer PO evidence.");
         roundTripped.RejectionDecisionId.Value.ShouldBe("approval-decision-456");
         roundTripped.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        roundTripped.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+    }
+
+    [Fact]
+    public void Time_entry_approved_corrected_event_links_previous_corrected_values_reason_and_approval_lineage()
+    {
+        TimeEntryCorrectionValues previous = CorrectionValues(60);
+        TimeEntryCorrectionValues corrected = CorrectionValues(75);
+        TimeEntryApprovedCorrected correctedEvent = new(
+            new TimeEntryId("time-entry-123"),
+            new TimeEntryCorrectionId("approved-correction-123"),
+            new TenantReference("tenant-123"),
+            new PartyReference("party-operator"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            previous,
+            corrected,
+            new TimeEntryCorrectionReason("Correct approved duration after audit review."),
+            new TimeEntryApprovalDecisionId("approval-decision-123"),
+            TimeEntryApprovalScope.IndividualEntry,
+            TimeEntryApprovalState.Approved,
+            TimeEntryCorrectionState.Corrected);
+
+        string json = JsonSerializer.Serialize(correctedEvent, JsonOptions);
+
+        json.ShouldContain("\"timeEntryCorrectionId\"");
+        json.ShouldContain("\"previousValues\"");
+        json.ShouldContain("\"correctedValues\"");
+        json.ShouldContain("\"reason\"");
+        json.ShouldContain("\"sourceApprovalDecisionId\"");
+        json.ShouldContain("\"approvalState\":\"Approved\"");
+        json.ShouldContain("\"correctionState\":\"Corrected\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimeEntryApprovedCorrected? roundTripped = JsonSerializer.Deserialize<TimeEntryApprovedCorrected>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryCorrectionId.Value.ShouldBe("approved-correction-123");
+        roundTripped.PreviousValues.DurationMinutes.ShouldBe(60);
+        roundTripped.CorrectedValues.DurationMinutes.ShouldBe(75);
+        roundTripped.Reason.Value.ShouldBe("Correct approved duration after audit review.");
+        roundTripped.SourceApprovalDecisionId.Value.ShouldBe("approval-decision-123");
+        roundTripped.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
         roundTripped.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
     }
 
@@ -483,6 +561,7 @@ public sealed class TimeCaptureContractTests
             typeof(ApproveTimeEntry),
             typeof(RejectTimeEntry),
             typeof(CorrectRejectedTimeEntry),
+            typeof(CorrectApprovedTimeEntry),
             typeof(CreateTenantActivityType),
             typeof(CreateProjectActivityType),
             typeof(RenameProjectActivityType),
@@ -714,6 +793,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.command.record-time",
                 "timesheets.command.submit-time-entries",
                 "timesheets.command.correct-rejected-time-entry",
+                "timesheets.command.correct-approved-time-entry",
                 "timesheets.command.activity-type-catalog",
                 "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
@@ -828,6 +908,8 @@ public sealed class TimeCaptureContractTests
         evidence.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
         evidence.Fields.Select(static field => field.Name).ShouldContain("correctionState");
         evidence.Fields.Select(static field => field.Name).ShouldContain("correction");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("approvedCorrection");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("correctionReason");
         evidence.Fields.Select(static field => field.Name).ShouldContain("sourceAuthority");
         evidence.Fields.Select(static field => field.Name).ShouldContain("eventLineage");
         evidence.Fields.Select(static field => field.Name).ShouldContain("approvalDecision");
@@ -913,13 +995,17 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("ApproveTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("RejectTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("CorrectRejectedTimeEntry").ShouldBeTrue();
+        schemas.ContainsKey("CorrectApprovedTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmitted").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApproved").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryRejected").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryCorrected").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryApprovedCorrected").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryCorrectionId").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryCorrectionReason").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryCorrectionValues").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryCorrectionEvidence").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntryApprovedCorrectionEvidence").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryLockEvidence").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryLockState").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionId").ShouldBeTrue();
@@ -951,9 +1037,11 @@ public sealed class TimeCaptureContractTests
         schemaJson.ShouldContain("ApproveTimeEntry");
         schemaJson.ShouldContain("RejectTimeEntry");
         schemaJson.ShouldContain("CorrectRejectedTimeEntry");
+        schemaJson.ShouldContain("CorrectApprovedTimeEntry");
         schemaJson.ShouldContain("TimeEntryApproved");
         schemaJson.ShouldContain("TimeEntryRejected");
         schemaJson.ShouldContain("TimeEntryCorrected");
+        schemaJson.ShouldContain("TimeEntryApprovedCorrected");
         schemaJson.ShouldContain("LockedFromDirectEdit");
         schemaJson.ShouldContain("Approved entries are locked from direct edits");
         schemaJson.ShouldNotContain("EventStore");

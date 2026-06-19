@@ -341,6 +341,77 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void Projection_applies_approved_correction_after_approval_and_preserves_lock_and_approval_evidence()
+    {
+        TimeEntryProjectionEvent corrected = Event("m4", 4, ApprovedCorrected("time-entry-1", 75));
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Approved("time-entry-1")),
+                corrected,
+                corrected
+            ],
+            FreshCheckpoint(4));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        model.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+        model.DurationMinutes.ShouldBe(75);
+        model.Comment.ShouldNotBeNull();
+        model.Comment.Text.ShouldBe("Approved correction evidence.");
+        model.ApprovalDecision.ShouldNotBeNull();
+        model.ApprovalDecision.TimeEntryApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-1"));
+        model.LockEvidence.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
+        model.ApprovedCorrection.ShouldNotBeNull();
+        model.ApprovedCorrection.TimeEntryCorrectionId.ShouldBe(new TimeEntryCorrectionId("approved-correction-1"));
+        model.ApprovedCorrection.PreviousValues.DurationMinutes.ShouldBe(45);
+        model.ApprovedCorrection.CorrectedValues.DurationMinutes.ShouldBe(75);
+        model.ApprovedCorrection.Reason.ShouldBe(new TimeEntryCorrectionReason("Correct approved duration after audit review."));
+        model.ApprovedCorrection.SourceApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-1"));
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryApproved), nameof(TimeEntryApprovedCorrected)]);
+    }
+
+    [Fact]
+    public void Projection_ignores_approved_correction_before_approval_until_replayed_in_supported_order()
+    {
+        TimeEntryEvidenceReadModel? blocked = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, ApprovedCorrected("time-entry-1", 75)),
+                Event("m3", 3, Submitted("time-entry-1")),
+                Event("m4", 4, Approved("time-entry-1"))
+            ],
+            FreshCheckpoint(4));
+
+        blocked.ShouldNotBeNull();
+        blocked.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        blocked.DurationMinutes.ShouldBe(45);
+        blocked.ApprovedCorrection.ShouldBeNull();
+
+        TimeEntryEvidenceReadModel? supported = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Approved("time-entry-1")),
+                Event("m4", 4, ApprovedCorrected("time-entry-1", 75))
+            ],
+            FreshCheckpoint(4));
+
+        supported.ShouldNotBeNull();
+        supported.DurationMinutes.ShouldBe(75);
+        supported.ApprovedCorrection.ShouldNotBeNull();
+    }
+
+    [Fact]
     public void Projection_marks_superseded_correction_as_superseded_locked_evidence()
     {
         TimeEntryCorrected superseded = new(
@@ -478,6 +549,21 @@ public sealed class TimeEntryEvidenceProjectionTests
             new TimeEntryRejectionReason("Needs customer PO evidence."),
             new TimeEntryApprovalDecisionId("decision-2"),
             TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Corrected);
+
+    private static TimeEntryApprovedCorrected ApprovedCorrected(string id, int durationMinutes)
+        => new(
+            new TimeEntryId(id),
+            new TimeEntryCorrectionId("approved-correction-1"),
+            new TenantReference("tenant-1"),
+            new PartyReference("operator-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            CorrectionValues(45, "Original evidence."),
+            CorrectionValues(durationMinutes, "Approved correction evidence."),
+            new TimeEntryCorrectionReason("Correct approved duration after audit review."),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalScope.IndividualEntry,
+            TimeEntryApprovalState.Approved,
             TimeEntryCorrectionState.Corrected);
 
     private static TimeEntryCorrectionValues CorrectionValues(int durationMinutes, string comment)

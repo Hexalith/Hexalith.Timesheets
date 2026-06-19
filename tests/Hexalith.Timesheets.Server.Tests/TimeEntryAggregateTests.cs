@@ -820,6 +820,130 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
+    public void Correct_approved_time_entry_emits_additive_correction_and_preserves_approval_evidence()
+    {
+        RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
+        TimeEntryState state = ApprovedState(command);
+        CorrectApprovedTimeEntry correction = ApprovedCorrectionCommand(command.TimeEntryId) with
+        {
+            DurationMinutes = 75,
+            Comment = new("Approved correction evidence.", Hexalith.Timesheets.Contracts.Policies.TimeEntryCommentPolicy.SensitiveDefault)
+        };
+        DateTimeOffset correctedAtUtc = new(2026, 6, 20, 9, 30, 0, TimeSpan.Zero);
+
+        TimeEntryApprovedCorrected corrected = SingleSuccess<TimeEntryApprovedCorrected>(
+            TimeEntry.Handle(
+                correction,
+                command.TimeEntryId,
+                state,
+                new PartyReference("operator-1"),
+                new TenantReference("tenant-1"),
+                correctedAtUtc,
+                ActivityTypeScope.Tenant));
+
+        corrected.TimeEntryId.ShouldBe(command.TimeEntryId);
+        corrected.TimeEntryCorrectionId.ShouldBe(correction.TimeEntryCorrectionId);
+        corrected.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        corrected.CorrectedBy.ShouldBe(new PartyReference("operator-1"));
+        corrected.CorrectedAtUtc.ShouldBe(correctedAtUtc);
+        corrected.PreviousValues.DurationMinutes.ShouldBe(60);
+        corrected.PreviousValues.Comment.ShouldBe(command.Comment);
+        corrected.CorrectedValues.DurationMinutes.ShouldBe(75);
+        corrected.CorrectedValues.Comment.ShouldBe(correction.Comment);
+        corrected.Reason.ShouldBe(correction.Reason);
+        corrected.SourceApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-1"));
+        corrected.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+
+        state.Apply(corrected);
+        state.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        state.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
+        state.DurationMinutes.ShouldBe(75);
+        state.TimeEntryApprovalDecisionId.ShouldBe(new TimeEntryApprovalDecisionId("decision-1"));
+    }
+
+    [Fact]
+    public void Correct_approved_duplicate_same_correction_id_after_apply_is_noop()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = ApprovedState(command);
+        CorrectApprovedTimeEntry correction = ApprovedCorrectionCommand(command.TimeEntryId);
+        TimeEntryApprovedCorrected corrected = SingleSuccess<TimeEntryApprovedCorrected>(
+            TimeEntry.Handle(
+                correction,
+                command.TimeEntryId,
+                state,
+                new PartyReference("operator-1"),
+                new TenantReference("tenant-1"),
+                new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+                ActivityTypeScope.Tenant));
+        state.Apply(corrected);
+
+        TimesheetsDomainResult result = TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 35, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant);
+
+        result.IsNoOp.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Correct_approved_rejects_same_id_different_values_missing_reason_and_non_utc_timestamp()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = ApprovedState(command);
+        CorrectApprovedTimeEntry correction = ApprovedCorrectionCommand(command.TimeEntryId);
+        state.Apply(SingleSuccess<TimeEntryApprovedCorrected>(
+            TimeEntry.Handle(
+                correction,
+                command.TimeEntryId,
+                state,
+                new PartyReference("operator-1"),
+                new TenantReference("tenant-1"),
+                new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+                ActivityTypeScope.Tenant)));
+
+        TimesheetsRejection repeatedDifferent = Rejection(TimeEntry.Handle(
+            correction with { DurationMinutes = 90 },
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 35, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant));
+
+        repeatedDifferent.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].correctionState" && error.Code == "already-corrected");
+
+        TimeEntryState approved = ApprovedState(command);
+        TimesheetsRejection invalid = Rejection(TimeEntry.Handle(
+            ApprovedCorrectionCommand(command.TimeEntryId) with
+            {
+                Reason = null!,
+                TimeEntryCorrectionId = null!,
+                DurationMinutes = 0
+            },
+            command.TimeEntryId,
+            approved,
+            null,
+            null,
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.FromHours(2)),
+            ActivityTypeScope.Unknown));
+
+        invalid.FieldErrors.ShouldContain(static error => error.Field == "timeEntryCorrectionId" && error.Code == "required");
+        invalid.FieldErrors.ShouldContain(static error => error.Field == "reason" && error.Code == "required");
+        invalid.FieldErrors.ShouldContain(static error => error.Field == "correctedBy" && error.Code == "required");
+        invalid.FieldErrors.ShouldContain(static error => error.Field == "tenant" && error.Code == "required");
+        invalid.FieldErrors.ShouldContain(static error => error.Field == "correctedAtUtc" && error.Code == "utc-required");
+        invalid.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].durationMinutes" && error.Code == "positive");
+        invalid.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].activityTypeScope" && error.Code == "unknown");
+    }
+
+    [Fact]
     public void Submit_after_superseded_entry_rejects_with_typed_superseded_lock_rejection()
     {
         RecordTimeEntry command = ValidCommand();
@@ -936,6 +1060,20 @@ public sealed class TimeEntryAggregateTests
             BillableState.Billable,
             ContributorCategory.Employee,
             AiEffortMetrics.Unavailable);
+
+    private static CorrectApprovedTimeEntry ApprovedCorrectionCommand(TimeEntryId timeEntryId, string correctionId = "approved-correction-1")
+        => new(
+            timeEntryId,
+            new TimeEntryCorrectionId(correctionId),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-1")),
+            new PartyReference("party-1"),
+            new ActivityTypeId("activity-type-1"),
+            new DateOnly(2026, 6, 20),
+            75,
+            BillableState.Billable,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable,
+            new TimeEntryCorrectionReason("Correct approved duration after audit review."));
 
     private static SubmitTimeEntriesForApproval SubmitCommand(TimeEntryId timeEntryId, string submissionId = "submission-1")
         => new(

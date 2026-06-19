@@ -73,6 +73,12 @@ public sealed class TimeEntryState
 
     public TimeEntryCorrectionValues? CorrectedValues { get; private set; }
 
+    public TimeEntryCorrectionReason? CorrectionReason { get; private set; }
+
+    public TimeEntryApprovalDecisionId? SourceApprovalDecisionId { get; private set; }
+
+    public TimeEntryApprovalScope SourceApprovalScope { get; private set; }
+
     public TimeEntryLockState LockState => CorrectionState == TimeEntryCorrectionState.Superseded
         ? TimeEntryLockState.SupersededLocked
         : ApprovalState == TimeEntryApprovalState.Approved
@@ -164,5 +170,31 @@ public sealed class TimeEntryState
         RejectionDecisionId = corrected.RejectionDecisionId;
         PreviousValues = corrected.PreviousValues;
         CorrectedValues = corrected.CorrectedValues;
+    }
+
+    public void Apply(TimeEntryApprovedCorrected corrected)
+    {
+        ArgumentNullException.ThrowIfNull(corrected);
+
+        Target = corrected.CorrectedValues.Target;
+        Contributor = corrected.CorrectedValues.Contributor;
+        ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
+        ServiceDate = corrected.CorrectedValues.ServiceDate;
+        DurationMinutes = corrected.CorrectedValues.DurationMinutes;
+        BillableState = corrected.CorrectedValues.BillableState;
+        ContributorCategory = corrected.CorrectedValues.ContributorCategory;
+        AiMetrics = corrected.CorrectedValues.AiMetrics;
+        Comment = corrected.CorrectedValues.Comment;
+        ApprovalState = corrected.ApprovalState;
+        CorrectionState = corrected.CorrectionState;
+        TimeEntryCorrectionId = corrected.TimeEntryCorrectionId;
+        CorrectedBy = corrected.CorrectedBy;
+        CorrectionTenant = corrected.Tenant;
+        CorrectedAtUtc = corrected.CorrectedAtUtc;
+        PreviousValues = corrected.PreviousValues;
+        CorrectedValues = corrected.CorrectedValues;
+        CorrectionReason = corrected.Reason;
+        SourceApprovalDecisionId = corrected.SourceApprovalDecisionId;
+        SourceApprovalScope = corrected.SourceApprovalScope;
     }
 }

@@ -107,6 +107,46 @@ public static class TimesheetsMetadataCatalog
                 new("contributor", "Contributor", nameof(ContributorCategory))
             ]),
         new(
+            "timesheets.command.correct-approved-time-entry",
+            "Add correction",
+            "correction",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("timeEntry", "Time Entry", "TimeEntryId", true),
+                new("timeEntryCorrectionId", "Correction ID", nameof(TimeEntryCorrectionId), true),
+                new("priorValues", "Prior values", nameof(TimeEntryCorrectionValues), true, "Prior approved facts remain visible where authorized."),
+                new("correctedValues", "Corrected values", nameof(TimeEntryCorrectionValues), true, "Corrected facts are appended as correction evidence."),
+                new("target", "Target reference", "TimeEntryTargetReference", true),
+                new("contributor", "Contributor", "PartyReference", true),
+                new("activityType", "Activity Type", "ActivityTypeId", true),
+                new("serviceDate", "Service date", "DateOnly", true),
+                new("durationMinutes", "Duration minutes", "WholeMinutes", true, "Corrected duration becomes the effective value without editing approved history."),
+                new("billableState", "Billable state", nameof(BillableState), true),
+                new("contributorCategory", "Contributor category", nameof(ContributorCategory), true),
+                new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false),
+                new("comment", "Comment", nameof(TimeEntryComment), false, "Correction comments are additive evidence."),
+                new("reason", "Correction reason", nameof(TimeEntryCorrectionReason), true, "Correction reason is audit evidence and must remain policy-safe."),
+                new("sourceApprovalDecisionId", "Source approval decision", nameof(TimeEntryApprovalDecisionId), true),
+                new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true),
+                new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
+                new("lockState", "Lock state", nameof(TimeEntryLockState), true, "Corrected approved entries remain locked from direct edits."),
+                new("fieldValidation", "Field validation", "TimesheetsFieldError[]", false),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Authority, freshness, and correction policy messages persist across interrupted correction attempts.")
+            ],
+            [
+                new("add-correction", "Add correction", "Timesheets.CorrectApprovedTimeEntry")
+            ],
+            [
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("correction", "Correction", nameof(TimeEntryCorrectionState)),
+                new("lock", "Lock", nameof(TimeEntryLockState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState)),
+                new("billable", "Billable", nameof(BillableState)),
+                new("contributor", "Contributor", nameof(ContributorCategory))
+            ]),
+        new(
             "timesheets.command.activity-type-catalog",
             "Activity Type Catalog",
             "catalog",
@@ -192,6 +232,8 @@ public static class TimesheetsMetadataCatalog
                 new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), false),
                 new("displayHydration", "Display hydration", nameof(TimeEntryDisplayHydration), true, "Read-time labels keep explicit hydration state."),
                 new("correction", "Correction evidence", nameof(TimeEntryCorrectionEvidence), false, "Original and corrected values are shown as additive lineage."),
+                new("approvedCorrection", "Approved correction evidence", nameof(TimeEntryApprovedCorrectionEvidence), false, "Approved correction lineage is shown separately from rejected correction lineage."),
+                new("correctionReason", "Correction reason", nameof(TimeEntryCorrectionReason), false, "Approved correction reason is visible only on authorized evidence surfaces."),
                 new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false),
                 new("aiWallClockDurationMilliseconds", "AI wall-clock execution", "Milliseconds", false, "AI wall-clock execution time is displayed separately from human/external duration."),
                 new("aiModelRuntimeMilliseconds", "AI model/tool runtime", "Milliseconds", false, "AI model or tool runtime is displayed in milliseconds."),
@@ -208,6 +250,7 @@ public static class TimesheetsMetadataCatalog
             ],
             [
                 new("correct-entry", "Correct entry", "Timesheets.CorrectRejectedTimeEntry"),
+                new("add-correction", "Add correction", "Timesheets.CorrectApprovedTimeEntry"),
                 new("review-export-policy", "Review export policy", "Timesheets.ReviewExportPolicy")
             ],
             [
@@ -236,6 +279,8 @@ public static class TimesheetsMetadataCatalog
                 new("period", "Period", "String", true),
                 new("timeEntries", "TimeEntry evidence", "TimeEntryEvidenceReadModel[]", true),
                 new("rejectionReason", "Rejection reason", nameof(TimeEntryRejectionReason), false),
+                new("approvedCorrection", "Approved correction evidence", nameof(TimeEntryApprovedCorrectionEvidence), false),
+                new("correctionReason", "Correction reason", nameof(TimeEntryCorrectionReason), false),
                 new("priorValues", "Prior values", nameof(TimeEntryCorrectionValues), false),
                 new("correctedValues", "Corrected values", nameof(TimeEntryCorrectionValues), false),
                 new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
@@ -247,6 +292,7 @@ public static class TimesheetsMetadataCatalog
             ],
             [
                 new("correct-entry", "Correct entry", "Timesheets.CorrectRejectedTimeEntry"),
+                new("add-correction", "Add correction", "Timesheets.CorrectApprovedTimeEntry"),
                 new("submit-time-entries", "Submit entries", "Timesheets.SubmitTimeEntriesForApproval")
             ],
             [
@@ -267,6 +313,8 @@ public static class TimesheetsMetadataCatalog
                 new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true),
                 new("lockEvidence", "Lock evidence", nameof(TimeEntryLockEvidence), false, "Approved entries show direct-edit lock evidence."),
                 new("lockState", "Lock state", nameof(TimeEntryLockState), false),
+                new("approvedCorrection", "Approved correction evidence", nameof(TimeEntryApprovedCorrectionEvidence), false),
+                new("correctionReason", "Correction reason", nameof(TimeEntryCorrectionReason), false),
                 new("authorityDecision", "Authority decision", nameof(ApprovalAuthorityDecisionState), true),
                 new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), true, "Stable source attribution for the policy decision."),
                 new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), true),
@@ -276,6 +324,7 @@ public static class TimesheetsMetadataCatalog
             [
                 new("approve-entry", "Approve entry", "Timesheets.ApproveEntry"),
                 new("reject-entry", "Reject entry", "Timesheets.RejectEntry"),
+                new("add-correction", "Add correction", "Timesheets.CorrectApprovedTimeEntry"),
                 new("approve-period", "Approve period", "Timesheets.ApprovePeriod"),
                 new("reject-period", "Reject period", "Timesheets.RejectPeriod")
             ],
