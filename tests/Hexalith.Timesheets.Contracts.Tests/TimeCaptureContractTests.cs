@@ -312,6 +312,9 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((AiTokenMetricAvailability)0).ShouldBe("Unknown");
         Enum.GetName((TimeEntryEvidenceSourceAuthority)0).ShouldBe("Unknown");
         Enum.GetName((DisplayHydrationState)0).ShouldBe("Unknown");
+        Enum.GetName((ApprovalAuthorityAction)0).ShouldBe("Unknown");
+        Enum.GetName((ApprovalAuthoritySource)0).ShouldBe("Unknown");
+        Enum.GetName((ApprovalAuthorityDecisionState)0).ShouldBe("Unknown");
     }
 
     [Fact]
@@ -410,6 +413,9 @@ public sealed class TimeCaptureContractTests
                 "timesheets.command.activity-type-catalog",
                 "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
+                "timesheets.approvals.queue",
+                "timesheets.command.time-entry-approval",
+                "timesheets.command.period-approval",
                 "timesheets.review.export-policy"
             ]);
 
@@ -446,6 +452,8 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(ProjectionFreshnessState));
         badgeVocabularies.ShouldContain(nameof(TimeEntryEvidenceSourceAuthority));
         badgeVocabularies.ShouldContain(nameof(DisplayHydrationState));
+        badgeVocabularies.ShouldContain(nameof(ApprovalAuthorityDecisionState));
+        badgeVocabularies.ShouldContain(nameof(ApprovalAuthoritySource));
     }
 
     [Fact]

@@ -171,6 +171,80 @@ public static class TimesheetsMetadataCatalog
                 new("comment-export", "Comment export", nameof(TimesheetsCommentPolicyDecision))
             ]),
         new(
+            "timesheets.approvals.queue",
+            "Approvals Queue",
+            "approval",
+            TimesheetsSurfaceKind.Projection,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("timeEntry", "Time Entry", "TimeEntryId", false),
+                new("period", "Period", "String", false),
+                new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true),
+                new("authorityDecision", "Authority decision", nameof(ApprovalAuthorityDecisionState), true),
+                new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), true, "Stable source attribution for the policy decision."),
+                new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), true),
+                new("blockingState", "Blocking state", "String", true, "Authority cannot be resolved."),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", true, "Authority cannot be resolved.")
+            ],
+            [
+                new("approve-entry", "Approve entry", "Timesheets.ApproveEntry"),
+                new("reject-entry", "Reject entry", "Timesheets.RejectEntry"),
+                new("approve-period", "Approve period", "Timesheets.ApprovePeriod"),
+                new("reject-period", "Reject period", "Timesheets.RejectPeriod")
+            ],
+            [
+                new("authority-decision", "Authority decision", nameof(ApprovalAuthorityDecisionState)),
+                new("authority-freshness", "Authority freshness", nameof(ProjectionFreshnessState)),
+                new("authority-source", "Authority source", nameof(ApprovalAuthoritySource)),
+                new("approval", "Approval", nameof(TimeEntryApprovalState))
+            ]),
+        new(
+            "timesheets.command.time-entry-approval",
+            "Time Entry Approval",
+            "approval",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("timeEntry", "Time Entry", "TimeEntryId", true),
+                new("approvalAction", "Approval action", nameof(ApprovalAuthorityAction), true),
+                new("authorityDecision", "Authority decision", nameof(ApprovalAuthorityDecisionState), true),
+                new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), false),
+                new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), true),
+                new("blockingState", "Blocking state", "String", false, "Authority cannot be resolved.")
+            ],
+            [
+                new("approve-entry", "Approve entry", "Timesheets.ApproveEntry"),
+                new("reject-entry", "Reject entry", "Timesheets.RejectEntry")
+            ],
+            [
+                new("authority-decision", "Authority decision", nameof(ApprovalAuthorityDecisionState)),
+                new("authority-freshness", "Authority freshness", nameof(ProjectionFreshnessState)),
+                new("authority-source", "Authority source", nameof(ApprovalAuthoritySource))
+            ]),
+        new(
+            "timesheets.command.period-approval",
+            "Period Approval",
+            "approval",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("period", "Period", "String", true),
+                new("approvalAction", "Approval action", nameof(ApprovalAuthorityAction), true),
+                new("authorityDecision", "Authority decision", nameof(ApprovalAuthorityDecisionState), true),
+                new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), false),
+                new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), true),
+                new("blockingState", "Blocking state", "String", false, "Authority cannot be resolved.")
+            ],
+            [
+                new("approve-period", "Approve period", "Timesheets.ApprovePeriod"),
+                new("reject-period", "Reject period", "Timesheets.RejectPeriod")
+            ],
+            [
+                new("authority-decision", "Authority decision", nameof(ApprovalAuthorityDecisionState)),
+                new("authority-freshness", "Authority freshness", nameof(ProjectionFreshnessState)),
+                new("authority-source", "Authority source", nameof(ApprovalAuthoritySource))
+            ]),
+        new(
             "timesheets.review.export-policy",
             "Export policy review",
             "evidence",

@@ -1,3 +1,4 @@
+using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Policies;
@@ -16,6 +17,15 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
+        services.TryAddSingleton(TimesheetsApprovalAuthorityPolicyOptions.Default);
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IApprovalAuthoritySourceProvider, DefaultProjectApprovalAuthoritySourceProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IApprovalAuthoritySourceProvider, DefaultWorkApprovalAuthoritySourceProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IApprovalAuthoritySourceProvider, DefaultTenantApprovalAuthoritySourceProvider>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IApprovalAuthoritySourceProvider, DefaultFinanceApprovalAuthoritySourceProvider>());
+        services.TryAddSingleton<ITimesheetsApprovalAuthorityResolver>(static provider => new TimesheetsApprovalAuthorityResolver(
+            provider.GetRequiredService<TimesheetsApprovalAuthorityPolicyOptions>(),
+            provider.GetServices<IApprovalAuthoritySourceProvider>(),
+            provider.GetRequiredService<ITimesheetsAccessGuard>()));
         services.TryAddSingleton<TenantActivityTypeCommandService>();
         services.TryAddSingleton<ProjectActivityTypeCommandService>();
         services.TryAddSingleton<TimeEntryCommandService>();

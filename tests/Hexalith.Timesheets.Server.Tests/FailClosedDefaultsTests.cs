@@ -50,6 +50,17 @@ public sealed class FailClosedDefaultsTests
     }
 
     [Fact]
+    public void Default_approval_authority_source_providers_are_fail_closed()
+    {
+        string source = File.ReadAllText(ServerSourcePath(
+            "ApprovalAuthority",
+            "DefaultApprovalAuthoritySourceProviders.cs"));
+
+        source.ShouldContain("ApprovalAuthoritySourceResult.Unavailable");
+        source.ShouldNotContain("ApprovalAuthoritySourceResult.Allowed");
+    }
+
+    [Fact]
     public async Task Default_policy_evaluator_blocks_trust_bearing_operations_until_policy_is_configured()
     {
         // The registered default (TimesheetsEvidencePolicyEvaluator + FailClosedDefault options)

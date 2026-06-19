@@ -377,6 +377,20 @@
           "detail": { "type": [ "string", "null" ] }
         }
       },
+      "ApprovalAuthoritySourceAttribution": {
+        "type": "object",
+        "description": "Stable approval authority evidence for later approval decisions. It records the action, source, decision state, policy key, policyVersion, and freshness without accepting caller authority input.",
+        "required": [ "action", "source", "decisionState", "policyKey", "policyVersion", "freshness" ],
+        "properties": {
+          "action": { "$ref": "#/components/schemas/ApprovalAuthorityAction" },
+          "source": { "$ref": "#/components/schemas/ApprovalAuthoritySource" },
+          "decisionState": { "$ref": "#/components/schemas/ApprovalAuthorityDecisionState" },
+          "policyKey": { "type": "string", "minLength": 1 },
+          "policyVersion": { "type": "string", "minLength": 1 },
+          "freshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" }
+        },
+        "additionalProperties": false
+      },
       "TimeEntryComment": {
         "type": "object",
         "required": [ "text", "policy" ],
@@ -469,6 +483,18 @@
       "DisplayHydrationState": {
         "type": "string",
         "enum": [ "Unknown", "Fresh", "Stale", "Unavailable", "Denied" ]
+      },
+      "ApprovalAuthorityAction": {
+        "type": "string",
+        "enum": [ "Unknown", "EntryApproval", "EntryRejection", "PeriodApproval", "PeriodRejection", "CorrectionAuthorization", "ApprovedTimeExportEligibility" ]
+      },
+      "ApprovalAuthoritySource": {
+        "type": "string",
+        "enum": [ "Unknown", "SelfApprovalPolicy", "ProjectApprover", "WorkOwner", "TenantAdministrator", "FinanceReviewer", "DefaultDeny" ]
+      },
+      "ApprovalAuthorityDecisionState": {
+        "type": "string",
+        "enum": [ "Unknown", "Allowed", "Denied", "Stale", "Unavailable", "Ambiguous", "MissingActor", "DisabledTenant", "InvalidReference", "CrossTenantTarget" ]
       },
       "TimesheetsEvidenceRetentionCategory": {
         "type": "string",

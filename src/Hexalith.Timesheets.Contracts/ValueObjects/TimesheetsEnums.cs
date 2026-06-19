@@ -124,3 +124,42 @@ public enum DisplayHydrationState
     Unavailable = 3,
     Denied = 4
 }
+
+[JsonConverter(typeof(JsonStringEnumConverter<ApprovalAuthorityAction>))]
+public enum ApprovalAuthorityAction
+{
+    Unknown = 0,
+    EntryApproval = 1,
+    EntryRejection = 2,
+    PeriodApproval = 3,
+    PeriodRejection = 4,
+    CorrectionAuthorization = 5,
+    ApprovedTimeExportEligibility = 6
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<ApprovalAuthoritySource>))]
+public enum ApprovalAuthoritySource
+{
+    Unknown = 0,
+    SelfApprovalPolicy = 1,
+    ProjectApprover = 2,
+    WorkOwner = 3,
+    TenantAdministrator = 4,
+    FinanceReviewer = 5,
+    DefaultDeny = 6
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<ApprovalAuthorityDecisionState>))]
+public enum ApprovalAuthorityDecisionState
+{
+    Unknown = 0,
+    Allowed = 1,
+    Denied = 2,
+    Stale = 3,
+    Unavailable = 4,
+    Ambiguous = 5,
+    MissingActor = 6,
+    DisabledTenant = 7,
+    InvalidReference = 8,
+    CrossTenantTarget = 9
+}

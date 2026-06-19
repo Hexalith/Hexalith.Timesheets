@@ -1,4 +1,6 @@
 using Hexalith.Timesheets.Contracts.References;
+using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Policies;
@@ -27,6 +29,16 @@ public sealed class RuntimeRegistrationTests
             .ShouldBeOfType<DenyAllTimesheetsAuthorizationGate>();
         provider.GetRequiredService<ITimesheetsAccessGuard>()
             .ShouldBeOfType<TimesheetsAccessGuard>();
+        provider.GetRequiredService<ITimesheetsApprovalAuthorityResolver>()
+            .ShouldBeOfType<TimesheetsApprovalAuthorityResolver>();
+        provider.GetServices<IApprovalAuthoritySourceProvider>()
+            .Select(static provider => provider.Source)
+            .ShouldBe([
+                ApprovalAuthoritySource.ProjectApprover,
+                ApprovalAuthoritySource.WorkOwner,
+                ApprovalAuthoritySource.TenantAdministrator,
+                ApprovalAuthoritySource.FinanceReviewer
+            ]);
         provider.GetRequiredService<TenantActivityTypeCommandService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<ProjectActivityTypeCommandService>()
