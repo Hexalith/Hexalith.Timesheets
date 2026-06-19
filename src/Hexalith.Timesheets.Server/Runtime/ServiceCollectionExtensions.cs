@@ -4,6 +4,7 @@ using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.TimeEntries;
+using Hexalith.Timesheets.Server.TimesheetPeriods;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -33,6 +34,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();
+        services.TryAddSingleton<TimesheetPeriodSubmissionCommandService>();
+        services.TryAddSingleton<TimesheetPeriodSummaryQueryService>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
         services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();
         services.TryAddSingleton(TimesheetsEvidencePolicyOptions.FailClosedDefault);
@@ -41,6 +44,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IWorkReferenceValidator, DenyAllWorkReferenceValidator>();
         services.TryAddSingleton<IContributorPartyValidator, DenyAllContributorPartyValidator>();
         services.TryAddSingleton<ITimeEntryEvidenceProjectionReader, UnavailableTimeEntryEvidenceProjectionReader>();
+        services.TryAddSingleton<ITimesheetPeriodSummaryProjectionReader, UnavailableTimesheetPeriodSummaryProjectionReader>();
         services.TryAddSingleton<UnavailableDisplayHydrationProvider>();
         services.TryAddSingleton<IPartyDisplayHydrationProvider>(static provider =>
             provider.GetRequiredService<UnavailableDisplayHydrationProvider>());

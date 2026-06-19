@@ -70,6 +70,34 @@ public static class TimesheetsMetadataCatalog
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
+            "timesheets.command.submit-period",
+            "Submit period",
+            "submission",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("timesheetPeriodId", "Timesheet Period", nameof(TimesheetPeriodId), true),
+                new("contributor", "Contributor", "PartyReference", true),
+                new("periodKind", "Period kind", nameof(TimesheetPeriodKind), true),
+                new("localAnchorDate", "Local period date", "DateOnly", true, "Tenant-local period key is resolved from tenant policy."),
+                new("timeEntryIds", "Time Entries", "TimeEntryId[]", true, "Draft and already Submitted entries remain visible before submission."),
+                new("tenantTimeZoneId", "Tenant time-zone", "String", true, "Displayed from tenant policy; not accepted as caller authority."),
+                new("periodState", "Period state", nameof(TimesheetPeriodApprovalState), true, "Period state stays separate from entry Approval State."),
+                new("blockingEntryGuidance", "Blocking-entry guidance", nameof(TimesheetPeriodBlockingEntryGuidance), false, "Entry needs correction."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Blocking policy and freshness messages persist across interrupted commands.")
+            ],
+            [
+                new("submit-period", "Submit period", "Timesheets.SubmitTimesheetPeriod"),
+                new("submit-time-entries", "Submit entries", "Timesheets.SubmitTimeEntriesForApproval")
+            ],
+            [
+                new("period", "Period", nameof(TimesheetPeriodApprovalState)),
+                new("period-kind", "Period kind", nameof(TimesheetPeriodKind)),
+                new("approval", "Entry approval", nameof(TimeEntryApprovalState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
+            ]),
+        new(
             "timesheets.command.correct-rejected-time-entry",
             "Correct entry",
             "correction",
@@ -276,8 +304,15 @@ public static class TimesheetsMetadataCatalog
             TimesheetsSurfaceKind.Projection,
             TimesheetsCompositionPattern.FrontComposerProjectionView,
             [
-                new("period", "Period", "String", true),
+                new("timesheetPeriodId", "Timesheet Period", nameof(TimesheetPeriodId), true),
+                new("periodKind", "Period kind", nameof(TimesheetPeriodKind), true),
+                new("periodState", "Period state", nameof(TimesheetPeriodApprovalState), true, "Period state stays separate from entry Approval State."),
+                new("tenantTimeZoneId", "Tenant time-zone", "String", true),
+                new("localBoundary", "Local boundary", nameof(TenantLocalPeriodBoundary), true),
+                new("includedEntryCount", "Included entries", "Integer", true),
                 new("timeEntries", "TimeEntry evidence", "TimeEntryEvidenceReadModel[]", true),
+                new("entrySummaries", "Entry summaries", nameof(TimesheetPeriodEntrySummary), true, "Entry badges stay separate from period state."),
+                new("blockingEntryGuidance", "Blocking-entry guidance", nameof(TimesheetPeriodBlockingEntryGuidance), false, "Entry needs correction."),
                 new("rejectionReason", "Rejection reason", nameof(TimeEntryRejectionReason), false),
                 new("approvedCorrection", "Approved correction evidence", nameof(TimeEntryApprovedCorrectionEvidence), false),
                 new("correctionReason", "Correction reason", nameof(TimeEntryCorrectionReason), false),
@@ -291,11 +326,14 @@ public static class TimesheetsMetadataCatalog
                 new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Period correction and freshness blockers remain visible.")
             ],
             [
+                new("submit-period", "Submit period", "Timesheets.SubmitTimesheetPeriod"),
                 new("correct-entry", "Correct entry", "Timesheets.CorrectRejectedTimeEntry"),
                 new("add-correction", "Add correction", "Timesheets.CorrectApprovedTimeEntry"),
                 new("submit-time-entries", "Submit entries", "Timesheets.SubmitTimeEntriesForApproval")
             ],
             [
+                new("period", "Period", nameof(TimesheetPeriodApprovalState)),
+                new("period-kind", "Period kind", nameof(TimesheetPeriodKind)),
                 new("approval", "Approval", nameof(TimeEntryApprovalState)),
                 new("correction", "Correction", nameof(TimeEntryCorrectionState)),
                 new("lock", "Lock", nameof(TimeEntryLockState)),

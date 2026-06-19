@@ -125,6 +125,23 @@ public enum TimeEntryLockState
     SupersededLocked = 3
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<TimesheetPeriodKind>))]
+public enum TimesheetPeriodKind
+{
+    Unknown = 0,
+    Weekly = 1,
+    Monthly = 2
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<TimesheetPeriodApprovalState>))]
+public enum TimesheetPeriodApprovalState
+{
+    Unknown = 0,
+    Submitted = 1,
+    Approved = 2,
+    Rejected = 3
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<TimeEntryEvidenceSourceAuthority>))]
 public enum TimeEntryEvidenceSourceAuthority
 {

@@ -3,8 +3,10 @@ using System.Text.Json.Nodes;
 
 using Hexalith.Timesheets.Contracts.Commands.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
+using Hexalith.Timesheets.Contracts.Commands.TimesheetPeriods;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Events.TimesheetPeriods;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
@@ -144,6 +146,70 @@ public sealed class TimeCaptureContractTests
         roundTripped.TimeEntrySubmissionId.Value.ShouldBe("submission-123");
         roundTripped.TimeEntryIds.Select(static id => id.Value).ShouldBe(["time-entry-123", "time-entry-456"]);
         roundTripped.SubmissionScope.ShouldBe(TimeEntrySubmissionScope.SelectedEntries);
+    }
+
+    [Fact]
+    public void Submit_timesheet_period_contract_round_trips_without_authority_or_policy_fields()
+    {
+        SubmitTimesheetPeriod command = new(
+            new TimesheetPeriodId("period-2026-w25"),
+            new PartyReference("party-contributor"),
+            new TimesheetPeriodRequest(TimesheetPeriodKind.Weekly, new DateOnly(2026, 6, 19)),
+            [
+                new("time-entry-123"),
+                new("time-entry-456")
+            ]);
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timesheetPeriodId\"");
+        json.ShouldContain("\"contributor\"");
+        json.ShouldContain("\"periodKind\":\"Weekly\"");
+        json.ShouldContain("\"timeEntryIds\"");
+        json.ShouldNotContain("tenantTimeZoneId");
+        json.ShouldNotContain("submittedAtUtc");
+        AssertJsonOmitsCallerAuthority(json);
+
+        SubmitTimesheetPeriod? roundTripped = JsonSerializer.Deserialize<SubmitTimesheetPeriod>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimesheetPeriodId.Value.ShouldBe("period-2026-w25");
+        roundTripped.Contributor.PartyId.ShouldBe("party-contributor");
+        roundTripped.Period.PeriodKind.ShouldBe(TimesheetPeriodKind.Weekly);
+        roundTripped.TimeEntryIds.Select(static id => id.Value).ShouldBe(["time-entry-123", "time-entry-456"]);
+    }
+
+    [Fact]
+    public void Timesheet_period_submitted_event_records_boundary_and_keeps_utc_audit_instant_separate()
+    {
+        TimesheetPeriodSubmitted submitted = new(
+            new TimesheetPeriodId("period-2026-06"),
+            new TenantReference("tenant-123"),
+            new PartyReference("party-contributor"),
+            new PartyReference("party-submitter"),
+            new DateTimeOffset(2026, 6, 19, 10, 0, 0, TimeSpan.Zero),
+            TimesheetPeriodKind.Monthly,
+            "2026-06",
+            new DateOnly(2026, 6, 1),
+            new DateOnly(2026, 6, 30),
+            "Europe/Paris",
+            [new("time-entry-123")],
+            TimesheetPeriodApprovalState.Submitted);
+
+        string json = JsonSerializer.Serialize(submitted, JsonOptions);
+
+        json.ShouldContain("\"periodState\":\"Submitted\"");
+        json.ShouldContain("\"periodKind\":\"Monthly\"");
+        json.ShouldContain("\"tenantTimeZoneId\":\"Europe/Paris\"");
+        json.ShouldContain("\"submittedAtUtc\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimesheetPeriodSubmitted? roundTripped = JsonSerializer.Deserialize<TimesheetPeriodSubmitted>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.PeriodKey.ShouldBe("2026-06");
+        roundTripped.LocalStartDate.ShouldBe(new DateOnly(2026, 6, 1));
+        roundTripped.SubmittedAtUtc.Offset.ShouldBe(TimeSpan.Zero);
     }
 
     [Fact]
@@ -792,6 +858,7 @@ public sealed class TimeCaptureContractTests
             [
                 "timesheets.command.record-time",
                 "timesheets.command.submit-time-entries",
+                "timesheets.command.submit-period",
                 "timesheets.command.correct-rejected-time-entry",
                 "timesheets.command.correct-approved-time-entry",
                 "timesheets.command.activity-type-catalog",
@@ -840,6 +907,8 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(ApprovalAuthorityDecisionState));
         badgeVocabularies.ShouldContain(nameof(ApprovalAuthoritySource));
         badgeVocabularies.ShouldContain(nameof(TimeEntryLockState));
+        badgeVocabularies.ShouldContain(nameof(TimesheetPeriodApprovalState));
+        badgeVocabularies.ShouldContain(nameof(TimesheetPeriodKind));
     }
 
     [Fact]
@@ -847,7 +916,9 @@ public sealed class TimeCaptureContractTests
     {
         TimesheetsMetadataDescriptor command = Descriptor("timesheets.command.record-time");
         TimesheetsMetadataDescriptor submission = Descriptor("timesheets.command.submit-time-entries");
+        TimesheetsMetadataDescriptor periodSubmission = Descriptor("timesheets.command.submit-period");
         TimesheetsMetadataDescriptor evidence = Descriptor("timesheets.projection.time-entry-evidence");
+        TimesheetsMetadataDescriptor myPeriod = Descriptor("timesheets.projection.my-timesheet-period");
 
         command.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerGeneratedForm);
         command.Fields.Select(static field => field.Name).ShouldBe(
@@ -890,6 +961,10 @@ public sealed class TimeCaptureContractTests
             "persistentMessageBarState"
         ]);
         submission.Actions.Select(static action => action.Label).ShouldContain("Submit entries");
+        periodSubmission.Actions.Select(static action => action.Label).ShouldContain("Submit period");
+        periodSubmission.Actions.Select(static action => action.Intent).ShouldContain("Timesheets.SubmitTimesheetPeriod");
+        periodSubmission.Fields.Select(static field => field.Name).ShouldContain("blockingEntryGuidance");
+        periodSubmission.Fields.Select(static field => field.Name).ShouldContain("tenantTimeZoneId");
         submission.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryApprovalState));
         submission.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
         command.StateBadges.Select(static badge => badge.StateVocabulary).ShouldBe(
@@ -933,6 +1008,11 @@ public sealed class TimeCaptureContractTests
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryLockState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiTokenMetricAvailability));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiEffortMetricSourceCategory));
+        myPeriod.Actions.Select(static action => action.Name).ShouldContain("submit-period");
+        myPeriod.Fields.Select(static field => field.Name).ShouldContain("periodState");
+        myPeriod.Fields.Select(static field => field.Name).ShouldContain("entrySummaries");
+        myPeriod.Fields.Select(static field => field.Name).ShouldContain("blockingEntryGuidance");
+        myPeriod.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimesheetPeriodApprovalState));
     }
 
     [Fact]
@@ -992,11 +1072,13 @@ public sealed class TimeCaptureContractTests
 
         schemas.ContainsKey("RecordTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("SubmitTimeEntriesForApproval").ShouldBeTrue();
+        schemas.ContainsKey("SubmitTimesheetPeriod").ShouldBeTrue();
         schemas.ContainsKey("ApproveTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("RejectTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("CorrectRejectedTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("CorrectApprovedTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmitted").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodSubmitted").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApproved").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryRejected").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryCorrected").ShouldBeTrue();
@@ -1009,6 +1091,11 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("TimeEntryLockEvidence").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryLockState").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionId").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodId").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodRequest").ShouldBeTrue();
+        schemas.ContainsKey("TenantLocalPeriodBoundary").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodBlockingEntryGuidance").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodSummaryReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApprovalDecisionId").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionScope").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApprovalScope").ShouldBeTrue();
@@ -1033,7 +1120,9 @@ public sealed class TimeCaptureContractTests
         schemaJson.ShouldContain("AiTokenMetricAvailability");
         schemaJson.ShouldContain("AiEffortMetricSourceMetadata");
         schemaJson.ShouldContain("SubmitTimeEntriesForApproval");
+        schemaJson.ShouldContain("SubmitTimesheetPeriod");
         schemaJson.ShouldContain("TimeEntrySubmitted");
+        schemaJson.ShouldContain("TimesheetPeriodSubmitted");
         schemaJson.ShouldContain("ApproveTimeEntry");
         schemaJson.ShouldContain("RejectTimeEntry");
         schemaJson.ShouldContain("CorrectRejectedTimeEntry");
