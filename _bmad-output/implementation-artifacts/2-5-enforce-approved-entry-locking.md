@@ -247,7 +247,7 @@ Codex GPT-5
 - `dotnet test` was blocked by local VSTest socket permissions: `System.Net.Sockets.SocketException (13): Permission denied`.
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` passed.
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` passed with 0 warnings and 0 errors.
-- Direct xUnit v3 fallback passed (re-verified during review, 2026-06-19): Contracts.Tests 47/47, Server.Tests 243/243, Projections.Tests 30/30 (1 review test added for superseded lock evidence), ArchitectureTests 19/19, IntegrationTests 19/21 passed with 2 explicit infrastructure/performance skips.
+- Direct xUnit v3 fallback passed (re-verified during review, 2026-06-19): Contracts.Tests 47/47, Server.Tests 245/245 (1 review test added for superseded lock evidence, 2 added for the Approve/Reject lock-bypass fix), Projections.Tests 30/30, ArchitectureTests 19/19, IntegrationTests 19/21 passed with 2 explicit infrastructure/performance skips.
 
 ### Completion Notes List
 
@@ -279,12 +279,12 @@ Codex GPT-5
 ## Senior Developer Review (AI)
 
 **Reviewer:** Jérôme Piquot (automated adversarial review) on 2026-06-19
-**Outcome:** Approved (auto-fixed) — Status set to `done`. No critical issues remain.
+**Outcome:** Approved (auto-fixed) — Status set to `done`. A second review pass found and fixed a High-severity lock bypass (see Findings); after fixes, no High or Critical issues remain and all affected lanes pass.
 
 ### Verification
 
 - `dotnet restore` and `dotnet build Hexalith.Timesheets.slnx -warnaserror` both passed with 0 warnings / 0 errors.
-- Re-ran affected lanes via the README direct xUnit v3 fallback: Contracts.Tests 47/47, Server.Tests 243/243, Projections.Tests 30/30, ArchitectureTests 19/19, IntegrationTests 19/21 (2 explicit infrastructure/performance skips).
+- Re-ran affected lanes via the README direct xUnit v3 fallback after the lock-bypass fix: Contracts.Tests 47/47, Server.Tests 245/245 (+2 lock-bypass regression tests), Projections.Tests 30/30, ArchitectureTests 19/19, IntegrationTests 19/21 (2 explicit infrastructure/performance skips).
 
 ### Acceptance Criteria Assessment
 
@@ -295,19 +295,21 @@ Codex GPT-5
 
 ### Findings and Resolutions
 
+- **[High][Fixed] Lock bypass for superseded-but-submitted entries in the Approve/Reject handlers.** The lock guard in `TimeEntry.Handle(ApproveTimeEntry, ...)` and `TimeEntry.Handle(RejectTimeEntry, ...)` was gated on `state?.IsLockedFromDirectEdit == true && errors.Count > 0`. A `SupersededLocked` entry whose `ApprovalState` is `Submitted` (a valid state for approval/rejection) reaches the guard with **zero** validation errors, so the `&& errors.Count > 0` condition skipped the guard and the handler emitted a `TimeEntryApproved`/`TimeEntryRejected` success event — defeating the lock invariant that AC1/AC3 require for superseded entries. This was proven with red-phase tests (`result.IsRejection == false` before the fix). Resolution: removed the `&& errors.Count > 0` qualifier so the Approve/Reject lock guards are unconditional and consistent with the Record/Submit/Correct handlers (the guard still sits after the idempotent `NoOp` early-return, so legitimate duplicate decisions still return `NoOp`). Added regression tests `Approve_after_superseded_submitted_rejects_with_typed_superseded_lock_without_event` and `Reject_after_superseded_submitted_rejects_with_typed_superseded_lock_without_event`, which now reject with `TimeEntryLocked` / `superseded-locked`.
 - **[Medium][Fixed] Incomplete File List.** `tests/Hexalith.Timesheets.IntegrationTests/ApproveOrRejectSubmittedTimeEntriesE2ETests.cs` was modified (new approved-entry lock E2E test + helpers) but omitted from the Dev Agent Record File List. Added to the File List.
 - **[Low][Fixed] Projection/aggregate lock inconsistency for superseded entries.** `TimeEntryEvidenceProjection.Apply(TimeEntryCorrected, ...)` unconditionally emitted `TimeEntryLockEvidence.Unlocked`, while the aggregate derives `SupersededLocked` and rejects edits with `superseded-locked`. Corrected handler now emits `TimeEntryLockEvidence.Superseded()` when `CorrectionState == Superseded`; added `Projection_marks_superseded_correction_as_superseded_locked_evidence` projection test.
 - **[Low][Fixed] Inaccurate Debug Log counts.** Recorded Server.Tests 242 and IntegrationTests 18/20 were stale; updated to re-verified 243 and 19/21.
 
 ### Notes (no change required)
 
-- The `&& errors.Count > 0` qualifier on the lock guard inside the Approve/Reject handlers is intentional and correct: it sits after the idempotent `NoOp` early-return, and Approved/Superseded states always produce a terminal-state/invalid-transition error before reaching it, so legitimate idempotent retries still return `NoOp` while non-idempotent retries surface `TimeEntryLocked`.
+- An earlier review pass concluded the `&& errors.Count > 0` qualifier on the Approve/Reject lock guard was safe because "Approved/Superseded states always produce a terminal-state/invalid-transition error before reaching it." That assumption was wrong for a `Superseded` + `Submitted` entry, which is a valid-to-approve state producing zero errors. The qualifier has been removed (see the High finding above).
 - `TimeEntryLockEvidence` exposes only stable references (decision id, scope, approver Party id, lock time, safe static explanation); architecture privacy test asserts the closed schema. No caller authority, claims, roles, comments, or envelope fields leak.
 
 ## Change Log
 
 | Date       | Version | Description | Author |
 |------------|---------|-------------|--------|
+| 2026-06-19 | 1.3 | Adversarial review (second pass): found and fixed a proven lock bypass — `Superseded`+`Submitted` entries were approvable/rejectable because the Approve/Reject lock guard was gated on `errors.Count > 0`. Made the guards unconditional and added two red→green regression tests. Build/tests re-verified (Server.Tests 245/245). | Automated Review |
 | 2026-06-19 | 1.2 | Adversarial review: fixed File List omission, projection superseded-lock evidence consistency (+test), and Debug Log counts. Build/tests re-verified; status set to done. | Automated Review |
 | 2026-06-19 | 1.1 | Implemented approved-entry lock contracts, aggregate guard, projection evidence, metadata/OpenAPI, tests, and validation. | Codex GPT-5 |
 | 2026-06-19 | 1.0 | Story 2.5 context created for approved-entry direct-mutation locking. | Codex GPT-5 |
