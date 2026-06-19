@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 
@@ -14,6 +15,7 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
+        services.TryAddSingleton<TenantActivityTypeCommandService>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
         services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();
         services.TryAddSingleton(TimesheetsEvidencePolicyOptions.FailClosedDefault);

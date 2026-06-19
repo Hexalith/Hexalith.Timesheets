@@ -9,4 +9,13 @@ public sealed record ActivityTypeCatalogItem(
     ProjectReference? Project,
     string Label,
     bool IsActive,
-    BillableState DefaultBillableState);
+    BillableState DefaultBillableState)
+{
+    public ActivityTypeActiveState ActiveState { get; init; } = IsActive
+        ? ActivityTypeActiveState.Active
+        : ActivityTypeActiveState.Inactive;
+
+    public string StatusText { get; init; } = IsActive ? "Active" : "Inactive";
+
+    public bool IsAvailableForCapture { get; init; } = IsActive;
+}

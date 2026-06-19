@@ -187,6 +187,7 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((TimeEntryApprovalState)0).ShouldBe("Unknown");
         Enum.GetName((BillableState)0).ShouldBe("Unknown");
         Enum.GetName((ActivityTypeScope)0).ShouldBe("Unknown");
+        Enum.GetName((ActivityTypeActiveState)0).ShouldBe("Unknown");
         Enum.GetName((ProjectionFreshnessState)0).ShouldBe("Unknown");
         Enum.GetName((AiMetricAvailability)0).ShouldBe("Unknown");
     }
@@ -240,6 +241,7 @@ public sealed class TimeCaptureContractTests
             [
                 "timesheets.command.record-time",
                 "timesheets.command.activity-type-catalog",
+                "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
                 "timesheets.review.export-policy"
             ]);
@@ -272,8 +274,33 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(TimeEntryApprovalState));
         badgeVocabularies.ShouldContain(nameof(BillableState));
         badgeVocabularies.ShouldContain(nameof(ContributorCategory));
+        badgeVocabularies.ShouldContain(nameof(ActivityTypeActiveState));
         badgeVocabularies.ShouldContain(nameof(TimeEntryCorrectionState));
         badgeVocabularies.ShouldContain(nameof(ProjectionFreshnessState));
+    }
+
+    [Fact]
+    public void Activity_type_catalog_read_model_exposes_text_status_and_selection_metadata()
+    {
+        ActivityTypeCatalogReadModel model = new(
+            [
+                new(
+                    new ActivityTypeId("activity-type-1"),
+                    ActivityTypeScope.Tenant,
+                    null,
+                    "Discovery",
+                    false,
+                    BillableState.Billable)
+            ],
+            ProjectionFreshnessMetadata.Stale("42"));
+
+        string json = JsonSerializer.Serialize(model, JsonOptions);
+
+        json.ShouldContain("\"statusText\":\"Inactive\"");
+        json.ShouldContain("\"activeState\":\"Inactive\"");
+        json.ShouldContain("\"isAvailableForCapture\":false");
+        json.ShouldContain("\"state\":\"Stale\"");
+        AssertJsonOmitsCallerAuthority(json);
     }
 
     [Fact]
@@ -311,6 +338,7 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("TimeEntryTargetReference").ShouldBeTrue();
         schemas.ContainsKey("AiEffortMetrics").ShouldBeTrue();
         schemas.ContainsKey("ActivityTypeCatalogCommand").ShouldBeTrue();
+        schemas.ContainsKey("ActivityTypeCatalogReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryEvidenceReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimesheetsMetadataDescriptor").ShouldBeTrue();
 

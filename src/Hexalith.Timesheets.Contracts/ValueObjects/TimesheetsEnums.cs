@@ -45,6 +45,14 @@ public enum ActivityTypeScope
     Project = 2
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ActivityTypeActiveState>))]
+public enum ActivityTypeActiveState
+{
+    Unknown = 0,
+    Active = 1,
+    Inactive = 2
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<ProjectionFreshnessState>))]
 public enum ProjectionFreshnessState
 {

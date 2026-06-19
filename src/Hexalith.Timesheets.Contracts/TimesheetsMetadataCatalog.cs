@@ -47,12 +47,39 @@ public static class TimesheetsMetadataCatalog
                 new("create-tenant-activity-type", "Create tenant Activity Type", "Timesheets.CreateTenantActivityType"),
                 new("create-project-activity-type", "Create project Activity Type", "Timesheets.CreateProjectActivityType"),
                 new("rename-activity-type", "Rename Activity Type", "Timesheets.RenameActivityType"),
+                new("update-billable-default", "Update billable default", "Timesheets.UpdateActivityTypeMetadata"),
                 new("deactivate-activity-type", "Deactivate Activity Type", "Timesheets.DeactivateActivityType"),
                 new("reactivate-activity-type", "Reactivate Activity Type", "Timesheets.ReactivateActivityType")
             ],
             [
                 new("activity-type-scope", "Scope", nameof(ActivityTypeScope)),
-                new("active-state", "Active state", "ActivityTypeActiveState")
+                new("active-state", "Active state", nameof(ActivityTypeActiveState))
+            ]),
+        new(
+            "timesheets.projection.activity-type-catalog",
+            "Activity Type Catalog",
+            "catalog",
+            TimesheetsSurfaceKind.Projection,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("activityType", "Activity Type", "ActivityTypeId", true),
+                new("label", "Label", "String", true),
+                new("scope", "Scope", nameof(ActivityTypeScope), true),
+                new("activeState", "Active state", nameof(ActivityTypeActiveState), true),
+                new("statusText", "Status text", "String", true, "Active and inactive state is shown as text."),
+                new("billableDefault", "Billable default", nameof(BillableState), false),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true)
+            ],
+            [
+                new("create-tenant-activity-type", "Create tenant Activity Type", "Timesheets.CreateTenantActivityType"),
+                new("rename-activity-type", "Rename Activity Type", "Timesheets.RenameActivityType"),
+                new("update-billable-default", "Update billable default", "Timesheets.UpdateActivityTypeMetadata"),
+                new("deactivate-activity-type", "Deactivate Activity Type", "Timesheets.DeactivateActivityType"),
+                new("reactivate-activity-type", "Reactivate Activity Type", "Timesheets.ReactivateActivityType")
+            ],
+            [
+                new("active-state", "Active state", nameof(ActivityTypeActiveState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
             "timesheets.projection.time-entry-evidence",

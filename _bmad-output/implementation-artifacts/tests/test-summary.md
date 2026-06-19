@@ -2,55 +2,40 @@
 
 ## Generated Tests
 
-### API / Contract Tests
-
-- [x] `tests/Hexalith.Timesheets.Contracts.Tests/EvidencePolicyContractTests.cs` - Added descriptor-level comment sensitivity rule coverage for internal display, external confirmation, projection inclusion, export output, support diagnostics, retention category, and export redaction.
-- [x] `tests/Hexalith.Timesheets.Contracts.Tests/EvidencePolicyContractTests.cs` - Added event contract JSON round-trip coverage proving `TimeEntryRecorded.Comment` is additive and excludes external/export/diagnostic comment disclosure by default.
-- [x] Existing contract tests continue to cover retention categories, launch-readiness gaps, command/read-model comment JSON, OpenAPI policy guidance, no server-controlled authority fields, and no finance ownership language.
-
-### Server Policy Tests
-
-- [x] `tests/Hexalith.Timesheets.Server.Tests/EvidencePolicyEvaluatorTests.cs` - Added fail-closed coverage for approval, correction, confirmation, and export UI actions when retention policy is missing.
-- [x] `tests/Hexalith.Timesheets.Server.Tests/EvidencePolicyEvaluatorTests.cs` - Added explicit export-comment allowance coverage proving export comments become allowed only when configured and still require export redaction.
-- [x] `tests/Hexalith.Timesheets.Server.Tests/EvidencePolicyEvaluatorTests.cs` - Added non-trust-bearing read operation coverage and unknown-operation fail-closed coverage with safe copy.
+### API Tests
+- [x] `tests/Hexalith.Timesheets.IntegrationTests/HostMetadataEndpointTests.cs` - Metadata endpoint contract exports the Activity Type Catalog capability and omits authority/payload identifiers.
 
 ### E2E Tests
-
-- [x] Browser E2E tests are not applicable to Story 1.4 because the story adds contract/server policy vocabulary, metadata, and static guidance only. No Timesheets UI workflow or browser surface exists for this story.
+- [x] `tests/Hexalith.Timesheets.Contracts.Tests/ActivityTypeCatalogE2ETests.cs` - Activity Type Catalog operator workflow metadata exposes create, rename, update billable default, deactivate, and reactivate commands with textual state/freshness cues.
+- [x] `tests/Hexalith.Timesheets.Contracts.Tests/ActivityTypeCatalogE2ETests.cs` - Activity Type Catalog read model round-trips active and inactive rows while preserving capture-selection availability.
+- [x] `tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAuthorizationTests.cs` - Policy denial after tenant authorization fails before Activity Type domain dispatch.
 
 ## Coverage
 
-- Retention policy categories: 4/4 covered.
-- Comment sensitivity scopes: 5/5 covered.
-- Trust-bearing server operations: command/export/confirmation/UI visibility covered.
-- Trust-bearing UI actions: approval/correction/confirmation/export covered for fail-closed policy behavior.
-- Additive comment contracts: command/event/read model covered.
-- Static policy guidance and diagnostics/privacy exclusions: covered by Contracts and Architecture tests.
-- Browser UI workflows: 0/0 applicable for this story.
+- API endpoints: 1/1 Timesheets host endpoint covered (`/metadata/timesheets`).
+- Activity Type Catalog workflow metadata: 5/5 tenant catalog verbs covered in generated E2E-style tests.
+- Activity Type Catalog read model states: 2/2 active/inactive states covered.
+- Critical error cases: tenant access denials, stale/ambiguous/unavailable authority, projection freshness denial, duplicate/unknown domain outcomes, and policy denial before dispatch are covered across the existing and generated test set.
+- Browser E2E: not generated because the Timesheets module currently has no local UI project, Playwright workspace, or rendered Activity Type Catalog page; Story 1.5 exposes FrontComposer metadata and host metadata only.
 
 ## Validation
 
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1` passed.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1` passed with 0 warnings and 0 errors.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj --no-build` passed: 24 total, 0 failed, 0 skipped.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj --no-build` passed: 74 total, 0 failed, 0 skipped.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --no-build` passed: 16 total, 0 failed, 0 skipped.
-- Integration tests were not rerun because this QA pass did not change the host metadata endpoint or static OpenAPI/guidance artifacts.
+- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1`
+- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1`
+- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj --no-build`
+- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj --no-build`
+- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --no-build`
+- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-build`
+
+`dotnet test` was attempted first and was blocked by VSTest socket permissions (`System.Net.Sockets.SocketException (13): Permission denied`), so validation used the direct xUnit v3 in-process runner fallback already documented by Story 1.5.
 
 ## Checklist Status
 
-- [x] API tests generated where applicable
-- [x] E2E tests assessed; browser E2E not applicable because no Timesheets UI exists for Story 1.4
-- [x] Tests use standard xUnit v3 and Shouldly APIs
-- [x] Tests cover happy paths
-- [x] Tests cover critical fail-closed/error cases
-- [x] Generated tests run successfully
-- [x] Tests use semantic contract/server assertions; no UI locators apply
-- [x] Tests have clear descriptions
-- [x] No hardcoded waits or sleeps
-- [x] Tests are independent
-- [x] Summary includes coverage metrics
-
-## Next Steps
-
-- Add browser E2E tests when later stories introduce concrete Timesheets UI workflows for comment display, approval/correction, confirmation, or export review.
+- [x] API tests generated where applicable.
+- [x] E2E-style tests generated for the metadata-exposed UI workflow; browser E2E is not applicable until a Timesheets UI runner/page exists.
+- [x] Tests use standard xUnit v3 and Shouldly APIs.
+- [x] Tests cover happy paths and critical error cases.
+- [x] Generated tests run successfully.
+- [x] Tests use semantic contract assertions; no UI locators, waits, sleeps, or order dependency apply.
+- [x] Tests are saved in the existing test directories.
+- [x] Summary includes coverage metrics.

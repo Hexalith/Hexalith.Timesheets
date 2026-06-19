@@ -11,5 +11,8 @@ public enum TimesheetsRejectionCode
     PolicyDenied = 3,
     TargetNotFound = 4,
     ActivityTypeInactive = 5,
-    ProjectionUnavailable = 6
+    ProjectionUnavailable = 6,
+    ActivityTypeAlreadyExists = 7,
+    ActivityTypeNotFound = 8,
+    ActivityTypeScopeMismatch = 9
 }

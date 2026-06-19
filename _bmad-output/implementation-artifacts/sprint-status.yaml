@@ -1,5 +1,5 @@
 # generated: 2026-06-18 23:50:36
-# last_updated: 2026-06-19 (story 1.4 dev-story -> review)
+# last_updated: 2026-06-19 (story 1.5 dev-story -> review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-19 (story 1.4 dev-story -> review)
+last_updated: 2026-06-19 (story 1.5 dev-story -> review)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -48,7 +48,7 @@ development_status:
   1-2-enforce-tenant-and-resource-authorization-gates: done
   1-3-publish-time-capture-api-contracts-and-frontcomposer-metadata: done
   1-4-establish-evidence-retention-and-comment-sensitivity-policy: done
-  1-5-configure-tenant-activity-types: backlog
+  1-5-configure-tenant-activity-types: done
   1-6-configure-project-activity-types: backlog
   1-7-record-draft-time-entry-against-project-or-work: backlog
   1-8-display-time-entry-evidence-from-read-models: backlog

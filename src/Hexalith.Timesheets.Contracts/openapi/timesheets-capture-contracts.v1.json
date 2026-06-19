@@ -121,9 +121,54 @@
         "type": "object",
         "description": "Create, rename, update metadata, deactivate, or reactivate Activity Types at tenant or project scope. Project-scoped commands carry only a stable Project reference."
       },
+      "ActivityTypeCatalogReadModel": {
+        "type": "object",
+        "description": "Tenant Activity Type catalog read model with stable IDs, active/inactive text status, capture-selection availability metadata, and projection freshness.",
+        "required": [ "items", "projectionFreshness" ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ActivityTypeCatalogItem" }
+          },
+          "projectionFreshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" }
+        }
+      },
+      "ActivityTypeCatalogItem": {
+        "type": "object",
+        "required": [
+          "activityTypeId",
+          "scope",
+          "label",
+          "isActive",
+          "defaultBillableState",
+          "activeState",
+          "statusText",
+          "isAvailableForCapture"
+        ],
+        "properties": {
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "scope": { "$ref": "#/components/schemas/ActivityTypeScope" },
+          "project": { "$ref": "#/components/schemas/ProjectReference" },
+          "label": { "type": "string", "minLength": 1 },
+          "isActive": { "type": "boolean" },
+          "defaultBillableState": { "$ref": "#/components/schemas/BillableState" },
+          "activeState": { "$ref": "#/components/schemas/ActivityTypeActiveState" },
+          "statusText": { "type": "string", "enum": [ "Active", "Inactive" ] },
+          "isAvailableForCapture": { "type": "boolean" }
+        }
+      },
       "TimeEntryEvidenceReadModel": {
         "type": "object",
         "description": "Evidence read model with stable references, approval/correction placeholders, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata."
+      },
+      "ProjectionFreshnessMetadata": {
+        "type": "object",
+        "properties": {
+          "state": { "$ref": "#/components/schemas/ProjectionFreshnessState" },
+          "cursor": { "type": [ "string", "null" ] },
+          "asOfUtc": { "type": [ "string", "null" ], "format": "date-time" },
+          "detail": { "type": [ "string", "null" ] }
+        }
       },
       "TimeEntryComment": {
         "type": "object",
@@ -152,9 +197,22 @@
       "TimeEntryId": { "type": "string", "minLength": 1 },
       "ActivityTypeId": { "type": "string", "minLength": 1 },
       "PartyReference": { "type": "string", "minLength": 1 },
+      "ProjectReference": { "type": "string", "minLength": 1 },
       "BillableState": {
         "type": "string",
         "enum": [ "Unknown", "NonBillable", "Billable" ]
+      },
+      "ActivityTypeScope": {
+        "type": "string",
+        "enum": [ "Unknown", "Tenant", "Project" ]
+      },
+      "ActivityTypeActiveState": {
+        "type": "string",
+        "enum": [ "Unknown", "Active", "Inactive" ]
+      },
+      "ProjectionFreshnessState": {
+        "type": "string",
+        "enum": [ "Unknown", "Fresh", "Rebuilding", "Stale", "Unavailable" ]
       },
       "ContributorCategory": {
         "type": "string",

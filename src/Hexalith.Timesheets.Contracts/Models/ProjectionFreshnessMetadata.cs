@@ -19,4 +19,16 @@ public sealed record ProjectionFreshnessMetadata(
         null,
         null,
         detail);
+
+    public static ProjectionFreshnessMetadata Stale(string? cursor = null, DateTimeOffset? asOfUtc = null, string? detail = "Projection is stale.") => new(
+        ProjectionFreshnessState.Stale,
+        cursor,
+        asOfUtc,
+        detail);
+
+    public static ProjectionFreshnessMetadata Unavailable(string? detail = "Projection is unavailable.") => new(
+        ProjectionFreshnessState.Unavailable,
+        null,
+        null,
+        detail);
 }
