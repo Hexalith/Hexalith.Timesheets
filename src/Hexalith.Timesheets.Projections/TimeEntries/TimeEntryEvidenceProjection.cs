@@ -38,6 +38,13 @@ public sealed class TimeEntryEvidenceProjection
                 lineage.Add(CreateLineageItem(projectionEvent));
                 model = Apply(recorded, checkpoint, lineage);
             }
+            else if (projectionEvent.Payload is TimeEntrySubmitted submitted
+                && submitted.TimeEntryId == timeEntryId
+                && model is not null)
+            {
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(submitted, model, checkpoint, lineage);
+            }
         }
 
         return model;
@@ -66,6 +73,22 @@ public sealed class TimeEntryEvidenceProjection
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             DisplayHydration = TimeEntryDisplayHydration.Unavailable()
+        };
+
+    private static TimeEntryEvidenceReadModel Apply(
+        TimeEntrySubmitted submitted,
+        TimeEntryEvidenceReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => current with
+        {
+            ApprovalState = submitted.ApprovalState,
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
+                ? TimeEntryDisplayHydration.Unavailable()
+                : current.DisplayHydration
         };
 
     private static TimeEntryEventLineageItem CreateLineageItem(TimeEntryProjectionEvent projectionEvent)

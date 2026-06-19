@@ -29,6 +29,14 @@ public enum TimeEntryApprovalState
     Rejected = 4
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<TimeEntrySubmissionScope>))]
+public enum TimeEntrySubmissionScope
+{
+    Unknown = 0,
+    SelectedEntries = 1,
+    TimesheetPeriod = 2
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<BillableState>))]
 public enum BillableState
 {

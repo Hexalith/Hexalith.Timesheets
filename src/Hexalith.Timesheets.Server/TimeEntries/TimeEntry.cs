@@ -3,6 +3,7 @@ using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
+using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 
@@ -48,6 +49,45 @@ public static class TimeEntry
             {
                 Comment = command.Comment
             }
+        ]);
+    }
+
+    public static TimesheetsDomainResult Handle(
+        SubmitTimeEntriesForApproval command,
+        TimeEntryId timeEntryId,
+        TimeEntryState? state,
+        PartyReference? submitter,
+        TenantReference? tenant,
+        DateTimeOffset submittedAtUtc,
+        ActivityTypeScope activityTypeScope)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(timeEntryId);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateSubmission(command, timeEntryId, state, submitter, tenant, submittedAtUtc, activityTypeScope, errors);
+
+        if (state?.ApprovalState == TimeEntryApprovalState.Submitted
+            && state.TimeEntrySubmissionId == command.TimeEntrySubmissionId
+            && errors.Count == 0)
+        {
+            return TimesheetsDomainResult.NoOp();
+        }
+
+        if (errors.Count > 0)
+        {
+            return Reject(TimesheetsRejectionCode.ValidationFailed, "Time Entry submission failed validation.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new TimeEntrySubmitted(
+                timeEntryId,
+                submitter!,
+                tenant!,
+                submittedAtUtc.ToUniversalTime(),
+                command.TimeEntrySubmissionId,
+                command.SubmissionScope,
+                TimeEntryApprovalState.Submitted)
         ]);
     }
 
@@ -291,6 +331,123 @@ public static class TimeEntry
             errors.Add(new("comment.policy.retentionCategory", "unknown", "Comment retention category must be explicit."));
         }
     }
+
+    private static void ValidateSubmission(
+        SubmitTimeEntriesForApproval command,
+        TimeEntryId timeEntryId,
+        TimeEntryState? state,
+        PartyReference? submitter,
+        TenantReference? tenant,
+        DateTimeOffset submittedAtUtc,
+        ActivityTypeScope activityTypeScope,
+        List<TimesheetsFieldError> errors)
+    {
+        string prefix = EntryFieldPrefix(timeEntryId);
+
+        if (command.TimeEntrySubmissionId is null || string.IsNullOrWhiteSpace(command.TimeEntrySubmissionId.Value))
+        {
+            errors.Add(new("timeEntrySubmissionId", "required", "Submission ID is required."));
+        }
+
+        if (command.TimeEntryIds is null || command.TimeEntryIds.Count == 0)
+        {
+            errors.Add(new("timeEntryIds", "required", "At least one Time Entry ID is required."));
+        }
+        else if (!command.TimeEntryIds.Contains(timeEntryId))
+        {
+            errors.Add(new($"{prefix}.timeEntryId", "not-in-submission", "Time Entry is not included in the submission command."));
+        }
+
+        if (command.SubmissionScope == TimeEntrySubmissionScope.Unknown)
+        {
+            errors.Add(new("submissionScope", "unknown", "Submission scope is required."));
+        }
+
+        if (submitter is null || string.IsNullOrWhiteSpace(submitter.PartyId))
+        {
+            errors.Add(new("submitter", "required", "Submitter Party reference is required."));
+        }
+
+        if (tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId))
+        {
+            errors.Add(new("tenant", "required", "Tenant reference is required."));
+        }
+
+        if (submittedAtUtc.Offset != TimeSpan.Zero)
+        {
+            errors.Add(new("submittedAtUtc", "utc-required", "Submission timestamp must be a UTC instant."));
+        }
+
+        if (state?.IsRecorded != true)
+        {
+            errors.Add(new($"{prefix}.timeEntryId", "not-recorded", "Time Entry must be recorded before submission."));
+            return;
+        }
+
+        if (state.ApprovalState != TimeEntryApprovalState.Draft)
+        {
+            if (state.ApprovalState == TimeEntryApprovalState.Submitted
+                && state.TimeEntrySubmissionId == command.TimeEntrySubmissionId)
+            {
+                return;
+            }
+
+            errors.Add(new($"{prefix}.approvalState", "invalid-transition", "Only Draft Time Entries can be submitted."));
+        }
+
+        ValidateRecordedFacts(state, activityTypeScope, prefix, errors);
+        ValidateComment(state.Comment, errors);
+    }
+
+    private static void ValidateRecordedFacts(
+        TimeEntryState state,
+        ActivityTypeScope activityTypeScope,
+        string prefix,
+        List<TimesheetsFieldError> errors)
+    {
+        if (state.TimeEntryId is null || string.IsNullOrWhiteSpace(state.TimeEntryId.Value))
+        {
+            errors.Add(new($"{prefix}.timeEntryId", "required", "Time Entry ID is required."));
+        }
+
+        if (state.Target is null)
+        {
+            errors.Add(new($"{prefix}.target", "required", "Target reference is required."));
+        }
+
+        if (state.Contributor is null || string.IsNullOrWhiteSpace(state.Contributor.PartyId))
+        {
+            errors.Add(new($"{prefix}.contributor", "required", "Contributor Party reference is required."));
+        }
+
+        if (state.ActivityTypeId is null || string.IsNullOrWhiteSpace(state.ActivityTypeId.Value))
+        {
+            errors.Add(new($"{prefix}.activityTypeId", "required", "Activity Type ID is required."));
+        }
+
+        if (activityTypeScope == ActivityTypeScope.Unknown)
+        {
+            errors.Add(new($"{prefix}.activityTypeScope", "unknown", "Activity Type scope is required."));
+        }
+
+        if (state.DurationMinutes <= 0)
+        {
+            errors.Add(new($"{prefix}.durationMinutes", "positive", "Duration must be a positive whole-minute value."));
+        }
+
+        if (state.BillableState == BillableState.Unknown)
+        {
+            errors.Add(new($"{prefix}.billableState", "unknown", "Billable state is required."));
+        }
+
+        if (state.ContributorCategory == ContributorCategory.Unknown)
+        {
+            errors.Add(new($"{prefix}.contributorCategory", "unknown", "Contributor category is required."));
+        }
+    }
+
+    private static string EntryFieldPrefix(TimeEntryId timeEntryId)
+        => $"entries[{timeEntryId.Value}]";
 
     private static TimesheetsDomainResult Reject(
         TimesheetsRejectionCode code,

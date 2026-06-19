@@ -1,5 +1,5 @@
 # generated: 2026-06-18 23:50:36
-# last_updated: 2026-06-19 (story 1.9 ready for review)
+# last_updated: 2026-06-19 (story 2.1 review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-19 (story 1.9 ready for review)
+last_updated: 2026-06-19 (story 2.1 review)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -43,7 +43,7 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 1: Trusted Time Capture & Activity Governance
-  epic-1: in-progress
+  epic-1: done
   1-1-set-up-initial-timesheets-project-from-hexalith-module-scaffold: done
   1-2-enforce-tenant-and-resource-authorization-gates: done
   1-3-publish-time-capture-api-contracts-and-frontcomposer-metadata: done
@@ -53,11 +53,11 @@ development_status:
   1-7-record-draft-time-entry-against-project-or-work: done
   1-8-display-time-entry-evidence-from-read-models: done
   1-9-project-ai-assisted-time-capture-metrics: done
-  epic-1-retrospective: optional
+  epic-1-retrospective: done
 
   # Epic 2: Submission, Approval, Period Review & Corrections
-  epic-2: backlog
-  2-1-submit-draft-time-entries-for-approval: backlog
+  epic-2: in-progress
+  2-1-submit-draft-time-entries-for-approval: done
   2-2-enforce-timesheet-approval-authority-policy: backlog
   2-3-approve-or-reject-submitted-time-entries: backlog
   2-4-correct-rejected-entries-for-resubmission: backlog

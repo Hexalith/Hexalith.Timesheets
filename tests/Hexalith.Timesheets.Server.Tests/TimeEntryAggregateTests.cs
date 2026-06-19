@@ -242,6 +242,142 @@ public sealed class TimeEntryAggregateTests
         rejection.FieldErrors.ShouldContain(static error => error.Field == "comment.policy" && error.Code == "unknown");
     }
 
+    [Fact]
+    public void Submit_draft_time_entry_emits_submitted_event_and_preserves_recorded_state()
+    {
+        RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
+        TimeEntryState state = RecordedState(command);
+        SubmitTimeEntriesForApproval submit = SubmitCommand(command.TimeEntryId);
+        DateTimeOffset submittedAtUtc = new(2026, 6, 19, 12, 0, 0, TimeSpan.Zero);
+
+        TimeEntrySubmitted submitted = SingleSuccess<TimeEntrySubmitted>(
+            TimeEntry.Handle(
+                submit,
+                command.TimeEntryId,
+                state,
+                new PartyReference("submitter-1"),
+                new TenantReference("tenant-1"),
+                submittedAtUtc,
+                ActivityTypeScope.Tenant));
+
+        submitted.TimeEntryId.ShouldBe(command.TimeEntryId);
+        submitted.Submitter.ShouldBe(new PartyReference("submitter-1"));
+        submitted.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        submitted.SubmittedAtUtc.ShouldBe(submittedAtUtc);
+        submitted.TimeEntrySubmissionId.ShouldBe(submit.TimeEntrySubmissionId);
+        submitted.SubmissionScope.ShouldBe(TimeEntrySubmissionScope.SelectedEntries);
+        submitted.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        state.DurationMinutes.ShouldBe(command.DurationMinutes);
+        state.Comment.ShouldBe(command.Comment);
+    }
+
+    [Fact]
+    public void Submit_duplicate_same_submission_id_is_noop()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = RecordedState(command);
+        SubmitTimeEntriesForApproval submit = SubmitCommand(command.TimeEntryId);
+        TimeEntrySubmitted submitted = new(
+            command.TimeEntryId,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
+            submit.TimeEntrySubmissionId,
+            submit.SubmissionScope,
+            TimeEntryApprovalState.Submitted);
+        state.Apply(submitted);
+
+        TimesheetsDomainResult result = TimeEntry.Handle(
+            submit,
+            command.TimeEntryId,
+            state,
+            submitted.Submitter,
+            submitted.Tenant,
+            submitted.SubmittedAtUtc,
+            ActivityTypeScope.Tenant);
+
+        result.IsNoOp.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Submit_rejects_non_draft_state_with_different_submission_id()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = RecordedState(command);
+        state.Apply(new TimeEntrySubmitted(
+            command.TimeEntryId,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
+            new TimeEntrySubmissionId("submission-original"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted));
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            SubmitCommand(command.TimeEntryId, "submission-new"),
+            command.TimeEntryId,
+            state,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 12, 5, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant));
+
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].approvalState" && error.Code == "invalid-transition");
+    }
+
+    [Fact]
+    public void Submit_rejects_missing_submitter_tenant_and_unrecorded_state()
+    {
+        SubmitTimeEntriesForApproval submit = SubmitCommand(new TimeEntryId("time-entry-1"));
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            submit,
+            new TimeEntryId("time-entry-1"),
+            null,
+            null,
+            null,
+            new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant));
+
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "submitter" && error.Code == "required");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "tenant" && error.Code == "required");
+        rejection.FieldErrors.ShouldContain(static error => error.Field == "entries[time-entry-1].timeEntryId" && error.Code == "not-recorded");
+    }
+
+    [Fact]
+    public void Submit_revalidates_required_recorded_facts_with_entry_field_paths()
+    {
+        TimeEntryState state = new();
+        state.Apply(new TimeEntryRecorded(
+            new TimeEntryId("time-entry-1"),
+            null!,
+            null!,
+            null!,
+            ActivityTypeScope.Unknown,
+            new DateOnly(2026, 6, 19),
+            0,
+            BillableState.Unknown,
+            TimeEntryApprovalState.Draft,
+            ContributorCategory.Unknown,
+            null));
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
+            SubmitCommand(new TimeEntryId("time-entry-1")),
+            new TimeEntryId("time-entry-1"),
+            state,
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
+            ActivityTypeScope.Unknown));
+
+        rejection.FieldErrors.Select(static error => error.Field).ShouldContain("entries[time-entry-1].target");
+        rejection.FieldErrors.Select(static error => error.Field).ShouldContain("entries[time-entry-1].contributor");
+        rejection.FieldErrors.Select(static error => error.Field).ShouldContain("entries[time-entry-1].activityTypeId");
+        rejection.FieldErrors.Select(static error => error.Field).ShouldContain("entries[time-entry-1].durationMinutes");
+        rejection.FieldErrors.Select(static error => error.Field).ShouldContain("entries[time-entry-1].billableState");
+        rejection.FieldErrors.Select(static error => error.Field).ShouldContain("entries[time-entry-1].contributorCategory");
+    }
+
     private static RecordTimeEntry ValidCommand()
         => new(
             new TimeEntryId("time-entry-1"),
@@ -253,6 +389,33 @@ public sealed class TimeEntryAggregateTests
             BillableState.Billable,
             ContributorCategory.Employee,
             AiEffortMetrics.Unavailable);
+
+    private static SubmitTimeEntriesForApproval SubmitCommand(TimeEntryId timeEntryId, string submissionId = "submission-1")
+        => new(
+            new TimeEntrySubmissionId(submissionId),
+            [timeEntryId],
+            TimeEntrySubmissionScope.SelectedEntries);
+
+    private static TimeEntryState RecordedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = new();
+        state.Apply(new TimeEntryRecorded(
+            command.TimeEntryId,
+            command.Target,
+            command.Contributor,
+            command.ActivityTypeId,
+            ActivityTypeScope.Tenant,
+            command.ServiceDate,
+            command.DurationMinutes,
+            command.BillableState,
+            TimeEntryApprovalState.Draft,
+            command.ContributorCategory,
+            command.AiMetrics)
+        {
+            Comment = command.Comment
+        });
+        return state;
+    }
 
     private static AiEffortMetrics ProviderReportedMetrics(int billableEffortMinutes = 2)
         => new(

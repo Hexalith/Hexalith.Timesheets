@@ -33,6 +33,16 @@ public sealed class TimeEntryState
 
     public TimeEntryComment? Comment { get; private set; }
 
+    public TimeEntrySubmissionId? TimeEntrySubmissionId { get; private set; }
+
+    public PartyReference? Submitter { get; private set; }
+
+    public TenantReference? SubmissionTenant { get; private set; }
+
+    public DateTimeOffset? SubmittedAtUtc { get; private set; }
+
+    public TimeEntrySubmissionScope SubmissionScope { get; private set; }
+
     public void Apply(TimeEntryRecorded recorded)
     {
         ArgumentNullException.ThrowIfNull(recorded);
@@ -50,5 +60,17 @@ public sealed class TimeEntryState
         ContributorCategory = recorded.ContributorCategory;
         AiMetrics = recorded.AiMetrics;
         Comment = recorded.Comment;
+    }
+
+    public void Apply(TimeEntrySubmitted submitted)
+    {
+        ArgumentNullException.ThrowIfNull(submitted);
+
+        ApprovalState = submitted.ApprovalState;
+        TimeEntrySubmissionId = submitted.TimeEntrySubmissionId;
+        Submitter = submitted.Submitter;
+        SubmissionTenant = submitted.Tenant;
+        SubmittedAtUtc = submitted.SubmittedAtUtc;
+        SubmissionScope = submitted.SubmissionScope;
     }
 }

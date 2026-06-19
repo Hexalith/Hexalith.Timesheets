@@ -47,6 +47,35 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
+    public void Host_metadata_api_contract_exports_submit_time_entries_descriptor()
+    {
+        var submitDescriptor = TimesheetsMetadataCatalog.Descriptors
+            .Single(static descriptor => descriptor.Name == "timesheets.command.submit-time-entries");
+
+        submitDescriptor.Capability.ShouldBe("submission");
+        submitDescriptor.Fields.Select(static field => field.Name).ShouldBe(
+        [
+            "timeEntryIds",
+            "timeEntrySubmissionId",
+            "submissionScope",
+            "approvalState",
+            "blockingFields",
+            "projectionFreshness",
+            "partialSubmission",
+            "persistentMessageBarState"
+        ]);
+        submitDescriptor.Actions.Select(static action => action.Label).ShouldContain("Submit entries");
+        submitDescriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain("TimeEntryApprovalState");
+        submitDescriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain("ProjectionFreshnessState");
+
+        string json = JsonSerializer.Serialize(submitDescriptor, JsonOptions);
+
+        json.ShouldContain("Submit entries");
+        json.ShouldContain("persistentMessageBarState");
+        AssertJsonOmitsCallerAuthority(json);
+    }
+
+    [Fact]
     public void Host_metadata_api_catalog_response_omits_authority_and_payload_identifiers()
     {
         var response = new

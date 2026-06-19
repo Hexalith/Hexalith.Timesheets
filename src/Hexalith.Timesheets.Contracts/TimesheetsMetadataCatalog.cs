@@ -46,6 +46,30 @@ public static class TimesheetsMetadataCatalog
                 new("comment-retention", "Comment retention", nameof(TimesheetsEvidenceRetentionCategory))
             ]),
         new(
+            "timesheets.command.submit-time-entries",
+            "Submit entries",
+            "submission",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("timeEntryIds", "Time Entries", "TimeEntryId[]", true, "Selected Draft entries remain visible before submission."),
+                new("timeEntrySubmissionId", "Submission ID", nameof(TimeEntrySubmissionId), true),
+                new("submissionScope", "Submission scope", nameof(TimeEntrySubmissionScope), true),
+                new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true, "Draft entries become Submitted when accepted."),
+                new("blockingFields", "Blocking fields", "TimesheetsFieldError[]", false, "Invalid entries show correction fields without hiding selected entries."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true),
+                new("partialSubmission", "Partial submission", "Boolean", false, "Valid entries and blocked entries are reported distinctly."),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", false, "Blocking policy and freshness messages persist across interrupted commands.")
+            ],
+            [
+                new("submit-time-entries", "Submit entries", "Timesheets.SubmitTimeEntriesForApproval"),
+                new("submit-for-approval", "Submit for approval", "Timesheets.SubmitForApproval")
+            ],
+            [
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
+            ]),
+        new(
             "timesheets.command.activity-type-catalog",
             "Activity Type Catalog",
             "catalog",

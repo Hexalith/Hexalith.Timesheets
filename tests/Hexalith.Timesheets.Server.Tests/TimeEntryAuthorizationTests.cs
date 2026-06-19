@@ -366,6 +366,279 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
+    public async Task Submission_fails_closed_on_tenant_authority_before_reference_policy_catalog_or_domain_dispatch()
+    {
+        Fixture fixture = new();
+        fixture.TenantValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), TimesheetsOperation.Command, Arg.Any<CancellationToken>())
+            .Returns(TimesheetsTenantAccessResult.Denied(
+                TimesheetsTenantAccessState.MissingTenant,
+                "Authority cannot be resolved."));
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(ProjectCommand())),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeFalse();
+        entry.DomainResult.ShouldBeNull();
+        entry.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.MissingTenant);
+        fixture.ProjectValidator.ReceivedCalls().ShouldBeEmpty();
+        fixture.WorkValidator.ReceivedCalls().ShouldBeEmpty();
+        fixture.PartyValidator.ReceivedCalls().ShouldBeEmpty();
+        fixture.PolicyEvaluator.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Project_submission_validates_authority_and_dispatches_with_server_context()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(ProjectCommand())),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeTrue();
+        TimeEntrySubmitted submitted = entry.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntrySubmitted>();
+        submitted.Submitter.ShouldBe(Context().Actor);
+        submitted.Tenant.ShouldBe(Context().Tenant);
+        submitted.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>());
+        await fixture.PolicyEvaluator.Received(1)
+            .EvaluateAsync(
+                Arg.Is<TimesheetsAuthorizationRequest>(request =>
+                    request != null
+                    && request.Project == Project()
+                    && request.Contributor == Contributor()),
+                Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Project_submission_fails_closed_on_project_authority_before_contributor_policy_or_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Denied(
+                ReferenceValidationState.Stale,
+                "Project authority cannot be resolved."));
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(ProjectCommand())),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeFalse();
+        entry.DomainResult.ShouldBeNull();
+        entry.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.StaleProjection);
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        fixture.PartyValidator.ReceivedCalls().ShouldBeEmpty();
+        fixture.PolicyEvaluator.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Submission_fails_closed_on_contributor_authority_before_policy_or_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Denied(
+                ReferenceValidationState.Unavailable,
+                "Contributor authority cannot be resolved."));
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(ProjectCommand())),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeFalse();
+        entry.DomainResult.ShouldBeNull();
+        entry.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.UnavailableSiblingAuthority);
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>());
+        fixture.PolicyEvaluator.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Submission_policy_denial_fails_before_catalog_or_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        fixture.PolicyEvaluator
+            .EvaluateAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>())
+            .Returns(TimesheetsPolicyEvaluationResult.Denied(
+                TimesheetsDenialCategory.CommentPolicyMissing,
+                "Comment policy is not resolved."));
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(ProjectCommand())),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeFalse();
+        entry.DomainResult.ShouldBeNull();
+        entry.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.CommentPolicyMissing);
+    }
+
+    [Fact]
+    public async Task Submission_rejects_stale_activity_type_catalog_before_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(ProjectCommand())),
+            new([], ProjectionFreshnessMetadata.Stale("42")),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeFalse();
+        TimesheetsRejection rejection = SubmissionRejection(entry);
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.ProjectionUnavailable);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].activityTypeCatalog" && error.Code == "not-fresh");
+    }
+
+    [Fact]
+    public async Task Submission_rejects_inactive_activity_type_before_domain_dispatch()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(ProjectCommand())),
+            Catalog(Item(ActivityId(), ActivityTypeScope.Tenant, null, false)),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeFalse();
+        TimesheetsRejection rejection = SubmissionRejection(entry);
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.ActivityTypeInactive);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].activityTypeId" && error.Code == "unavailable");
+    }
+
+    [Fact]
+    public async Task Work_submission_rejects_project_activity_type_until_governing_project_adapter_exists()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.WorkValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<WorkReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(TimeEntryId()),
+            States(RecordedState(WorkCommand())),
+            Catalog(Item(ActivityId(), ActivityTypeScope.Project, Project(), true)),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.WasDispatched.ShouldBeFalse();
+        TimesheetsRejection rejection = SubmissionRejection(entry);
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.AuthorityCannotBeResolved);
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "entries[time-entry-1].target" && error.Code == "work-project-unresolved");
+    }
+
+    [Fact]
+    public async Task Submission_partial_batch_reports_accepted_and_blocked_entries()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryId validId = TimeEntryId();
+        TimeEntryId invalidId = new("time-entry-2");
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(validId, invalidId),
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [validId] = RecordedState(ProjectCommand()),
+                [invalidId] = RecordedState(ProjectCommand() with
+                {
+                    TimeEntryId = invalidId,
+                    ActivityTypeId = new ActivityTypeId("missing-activity-type")
+                })
+            },
+            FreshCatalog(ActivityTypeScope.Tenant),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.Entries.Count.ShouldBe(2);
+        result.HasAcceptedEvents.ShouldBeTrue();
+        result.HasBlockedEntries.ShouldBeTrue();
+        result.IsPartial.ShouldBeTrue();
+        result.Entries.Single(entry => entry.TimeEntryId == validId)
+            .DomainResult.ShouldNotBeNull()
+            .IsSuccess.ShouldBeTrue();
+        SubmissionRejection(result.Entries.Single(entry => entry.TimeEntryId == invalidId))
+            .Code.ShouldBe(TimesheetsRejectionCode.ActivityTypeNotFound);
+    }
+
+    [Fact]
+    public async Task Submission_deduplicates_repeated_time_entry_ids_into_a_single_transition()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryId duplicatedId = TimeEntryId();
+
+        TimeEntrySubmissionCommandResult result = await fixture.CreateSubmissionService().SubmitAsync(
+            Context(),
+            SubmitCommand(duplicatedId, duplicatedId),
+            States(RecordedState(ProjectCommand())),
+            FreshCatalog(ActivityTypeScope.Tenant),
+            SubmittedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        TimeEntrySubmissionEntryResult entry = result.Entries.ShouldHaveSingleItem();
+        entry.TimeEntryId.ShouldBe(duplicatedId);
+        entry.WasDispatched.ShouldBeTrue();
+        entry.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntrySubmitted>();
+        result.HasAcceptedEvents.ShouldBeTrue();
+        result.HasBlockedEntries.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Evidence_query_fails_closed_before_projection_lookup_when_tenant_authority_is_missing()
     {
         Fixture fixture = new();
@@ -640,6 +913,12 @@ public sealed class TimeEntryAuthorizationTests
     private static RecordTimeEntry WorkCommand()
         => Command(TimeEntryTargetReference.ForWork(Work()));
 
+    private static SubmitTimeEntriesForApproval SubmitCommand(params TimeEntryId[] timeEntryIds)
+        => new(
+            new TimeEntrySubmissionId("submission-1"),
+            timeEntryIds,
+            TimeEntrySubmissionScope.SelectedEntries);
+
     private static RecordTimeEntry Command(TimeEntryTargetReference target)
         => new(
             TimeEntryId(),
@@ -677,6 +956,33 @@ public sealed class TimeEntryAuthorizationTests
                 new(nameof(TimeEntryRecorded), 1, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents)
             ]
         };
+
+    private static IReadOnlyDictionary<TimeEntryId, TimeEntryState?> States(TimeEntryState state)
+        => new Dictionary<TimeEntryId, TimeEntryState?> { [state.TimeEntryId.ShouldNotBeNull()] = state };
+
+    private static TimeEntryState RecordedState(RecordTimeEntry command)
+    {
+        TimeEntryState state = new();
+        state.Apply(new TimeEntryRecorded(
+            command.TimeEntryId,
+            command.Target,
+            command.Contributor,
+            command.ActivityTypeId,
+            ActivityTypeScope.Tenant,
+            command.ServiceDate,
+            command.DurationMinutes,
+            command.BillableState,
+            TimeEntryApprovalState.Draft,
+            command.ContributorCategory,
+            command.AiMetrics)
+        {
+            Comment = command.Comment
+        });
+        return state;
+    }
+
+    private static DateTimeOffset SubmittedAtUtc()
+        => new(2026, 6, 19, 12, 0, 0, TimeSpan.Zero);
 
     private static ProjectReference Project() => new("project-1");
 
@@ -732,6 +1038,14 @@ public sealed class TimeEntryAuthorizationTests
         return result.DomainResult.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
     }
 
+    private static TimesheetsRejection SubmissionRejection(TimeEntrySubmissionEntryResult result)
+    {
+        result.Authorization.IsAuthorized.ShouldBeTrue();
+        result.DomainResult.ShouldNotBeNull();
+        result.DomainResult.IsRejection.ShouldBeTrue();
+        return result.DomainResult.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
+    }
+
     private sealed class Fixture
     {
         public ITimesheetsTenantAccessValidator TenantValidator { get; } = Substitute.For<ITimesheetsTenantAccessValidator>();
@@ -749,6 +1063,14 @@ public sealed class TimeEntryAuthorizationTests
         public ITimeEntryDisplayHydrator DisplayHydrator { get; } = Substitute.For<ITimeEntryDisplayHydrator>();
 
         public TimeEntryCommandService CreateService()
+            => new(new TimesheetsAccessGuard(
+                TenantValidator,
+                ProjectValidator,
+                WorkValidator,
+                PartyValidator,
+                PolicyEvaluator));
+
+        public TimeEntrySubmissionCommandService CreateSubmissionService()
             => new(new TimesheetsAccessGuard(
                 TenantValidator,
                 ProjectValidator,

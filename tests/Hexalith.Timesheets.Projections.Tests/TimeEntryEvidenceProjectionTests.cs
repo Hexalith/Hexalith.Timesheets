@@ -134,6 +134,48 @@ public sealed class TimeEntryEvidenceProjectionTests
         model.EventLineage.Select(static item => item.Ordinal).ShouldBe([1, 3]);
     }
 
+    [Fact]
+    public void Projection_applies_submitted_after_recorded_without_mutating_evidence()
+    {
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m1", 1, Recorded("time-entry-1", 45))
+            ],
+            FreshCheckpoint(2));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        model.DurationMinutes.ShouldBe(45);
+        model.Target.ShouldBe(TimeEntryTargetReference.ForProject(Project()));
+        model.Contributor.ShouldBe(Contributor());
+        model.ActivityTypeId.ShouldBe(ActivityId());
+        model.CorrectionState.ShouldBe(TimeEntryCorrectionState.None);
+        model.EventLineage.Select(static item => item.EventName).ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted)]);
+    }
+
+    [Fact]
+    public void Projection_dedupes_duplicate_submitted_message_id()
+    {
+        TimeEntryProjectionEvent submitted = Event("m2", 2, Submitted("time-entry-1"));
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45)),
+                submitted,
+                submitted
+            ],
+            FreshCheckpoint(2));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        model.EventLineage.Select(static item => item.EventName).ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted)]);
+    }
+
     [Theory]
     [InlineData(ProjectionFreshness.Stale, ProjectionFreshnessState.Stale)]
     [InlineData(ProjectionFreshness.Rebuilding, ProjectionFreshnessState.Rebuilding)]
@@ -173,6 +215,16 @@ public sealed class TimeEntryEvidenceProjectionTests
             TimeEntryApprovalState.Draft,
             metrics == AiEffortMetrics.Unavailable ? ContributorCategory.Employee : ContributorCategory.AutomatedAgent,
             metrics);
+
+    private static TimeEntrySubmitted Submitted(string id)
+        => new(
+            new TimeEntryId(id),
+            new PartyReference("submitter-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
+            new TimeEntrySubmissionId("submission-1"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted);
 
     private static TimesheetsProjectionCheckpoint FreshCheckpoint(long sequenceNumber)
         => new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, sequenceNumber, ProjectionFreshness.Fresh);

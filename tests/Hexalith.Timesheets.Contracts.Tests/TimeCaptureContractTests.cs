@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using Hexalith.Timesheets.Contracts.Commands.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
+using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
@@ -107,7 +108,7 @@ public sealed class TimeCaptureContractTests
         json.ShouldContain("\"approvalState\":\"Submitted\"");
         json.ShouldContain("\"projectionFreshness\"");
         json.ShouldContain("Projection is rebuilding.");
-        AssertJsonOmitsCallerAuthority(json);
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
 
         TimeEntryEvidenceReadModel? roundTripped = JsonSerializer.Deserialize<TimeEntryEvidenceReadModel>(json, JsonOptions);
 
@@ -117,6 +118,61 @@ public sealed class TimeCaptureContractTests
         roundTripped.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Rebuilding);
         roundTripped.AiMetrics.ShouldNotBeNull();
         roundTripped.AiMetrics.ProviderInputTokenCount.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Submit_time_entries_contract_round_trips_without_authority_fields()
+    {
+        SubmitTimeEntriesForApproval command = new(
+            new TimeEntrySubmissionId("submission-123"),
+            [
+                new("time-entry-123"),
+                new("time-entry-456")
+            ],
+            TimeEntrySubmissionScope.SelectedEntries);
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timeEntrySubmissionId\"");
+        json.ShouldContain("\"timeEntryIds\"");
+        json.ShouldContain("\"submissionScope\":\"SelectedEntries\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        SubmitTimeEntriesForApproval? roundTripped = JsonSerializer.Deserialize<SubmitTimeEntriesForApproval>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntrySubmissionId.Value.ShouldBe("submission-123");
+        roundTripped.TimeEntryIds.Select(static id => id.Value).ShouldBe(["time-entry-123", "time-entry-456"]);
+        roundTripped.SubmissionScope.ShouldBe(TimeEntrySubmissionScope.SelectedEntries);
+    }
+
+    [Fact]
+    public void Time_entry_submitted_event_records_submission_evidence_and_resulting_state()
+    {
+        TimeEntrySubmitted submitted = new(
+            new TimeEntryId("time-entry-123"),
+            new PartyReference("party-submitter"),
+            new TenantReference("tenant-123"),
+            new DateTimeOffset(2026, 6, 19, 12, 30, 0, TimeSpan.Zero),
+            new TimeEntrySubmissionId("submission-123"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted);
+
+        string json = JsonSerializer.Serialize(submitted, JsonOptions);
+
+        json.ShouldContain("\"approvalState\":\"Submitted\"");
+        json.ShouldContain("\"submissionScope\":\"SelectedEntries\"");
+        json.ShouldContain("\"submittedAtUtc\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimeEntrySubmitted? roundTripped = JsonSerializer.Deserialize<TimeEntrySubmitted>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.Submitter.PartyId.ShouldBe("party-submitter");
+        roundTripped.Tenant.TenantId.ShouldBe("tenant-123");
+        roundTripped.TimeEntrySubmissionId.Value.ShouldBe("submission-123");
+        roundTripped.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
     }
 
     [Fact]
@@ -198,6 +254,7 @@ public sealed class TimeCaptureContractTests
         Type[] commandTypes =
         [
             typeof(RecordTimeEntry),
+            typeof(SubmitTimeEntriesForApproval),
             typeof(CreateTenantActivityType),
             typeof(CreateProjectActivityType),
             typeof(RenameProjectActivityType),
@@ -245,6 +302,7 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((TimeEntryTargetKind)0).ShouldBe("Unknown");
         Enum.GetName((ContributorCategory)0).ShouldBe("Unknown");
         Enum.GetName((TimeEntryApprovalState)0).ShouldBe("Unknown");
+        Enum.GetName((TimeEntrySubmissionScope)0).ShouldBe("Unknown");
         Enum.GetName((BillableState)0).ShouldBe("Unknown");
         Enum.GetName((ActivityTypeScope)0).ShouldBe("Unknown");
         Enum.GetName((ActivityTypeActiveState)0).ShouldBe("Unknown");
@@ -348,6 +406,7 @@ public sealed class TimeCaptureContractTests
             .ShouldBe(
             [
                 "timesheets.command.record-time",
+                "timesheets.command.submit-time-entries",
                 "timesheets.command.activity-type-catalog",
                 "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
@@ -393,6 +452,7 @@ public sealed class TimeCaptureContractTests
     public void Record_time_entry_e2e_metadata_exposes_expected_capture_workflow()
     {
         TimesheetsMetadataDescriptor command = Descriptor("timesheets.command.record-time");
+        TimesheetsMetadataDescriptor submission = Descriptor("timesheets.command.submit-time-entries");
         TimesheetsMetadataDescriptor evidence = Descriptor("timesheets.projection.time-entry-evidence");
 
         command.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerGeneratedForm);
@@ -423,6 +483,21 @@ public sealed class TimeCaptureContractTests
             "record-project-time",
             "record-work-time"
         ]);
+        submission.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerGeneratedForm);
+        submission.Fields.Select(static field => field.Name).ShouldBe(
+        [
+            "timeEntryIds",
+            "timeEntrySubmissionId",
+            "submissionScope",
+            "approvalState",
+            "blockingFields",
+            "projectionFreshness",
+            "partialSubmission",
+            "persistentMessageBarState"
+        ]);
+        submission.Actions.Select(static action => action.Label).ShouldContain("Submit entries");
+        submission.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryApprovalState));
+        submission.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
         command.StateBadges.Select(static badge => badge.StateVocabulary).ShouldBe(
         [
             nameof(TimeEntryApprovalState),
@@ -510,6 +585,10 @@ public sealed class TimeCaptureContractTests
             ?? throw new InvalidOperationException("OpenAPI schemas node is missing.");
 
         schemas.ContainsKey("RecordTimeEntry").ShouldBeTrue();
+        schemas.ContainsKey("SubmitTimeEntriesForApproval").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntrySubmitted").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntrySubmissionId").ShouldBeTrue();
+        schemas.ContainsKey("TimeEntrySubmissionScope").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryTargetReference").ShouldBeTrue();
         schemas.ContainsKey("AiEffortMetrics").ShouldBeTrue();
         schemas.ContainsKey("AiEffortMetricSourceMetadata").ShouldBeTrue();
@@ -523,19 +602,21 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("TimesheetsMetadataDescriptor").ShouldBeTrue();
 
         string schemaJson = schemas.ToJsonString();
-        AssertJsonOmitsCallerAuthority(schemaJson);
+        AssertJsonOmitsCallerAuthority(schemaJson, allowTenantId: true);
         schemaJson.ShouldContain("wall-clock execution time in milliseconds");
         schemaJson.ShouldContain("model or tool runtime in milliseconds");
         schemaJson.ShouldContain("Provider token counts are nullable when not reported");
         schemaJson.ShouldContain("AiTokenMetricAvailability");
         schemaJson.ShouldContain("AiEffortMetricSourceMetadata");
+        schemaJson.ShouldContain("SubmitTimeEntriesForApproval");
+        schemaJson.ShouldContain("TimeEntrySubmitted");
         schemaJson.ShouldNotContain("EventStore");
         schemaJson.ShouldNotContain("invoice", Case.Insensitive);
         schemaJson.ShouldNotContain("payroll", Case.Insensitive);
         schemaJson.ShouldNotContain("revenue", Case.Insensitive);
     }
 
-    private static void AssertJsonOmitsCallerAuthority(string json)
+    private static void AssertJsonOmitsCallerAuthority(string json, bool allowTenantId = false)
     {
         string normalizedJson = json.ToLowerInvariant();
         string[] forbiddenPropertyNames =
@@ -555,6 +636,11 @@ public sealed class TimeCaptureContractTests
 
         foreach (string forbiddenPropertyName in forbiddenPropertyNames)
         {
+            if (allowTenantId && forbiddenPropertyName == "tenantId")
+            {
+                continue;
+            }
+
             normalizedJson.Contains(
                 $"\"{forbiddenPropertyName.ToLowerInvariant()}\"",
                 StringComparison.Ordinal).ShouldBeFalse(forbiddenPropertyName);

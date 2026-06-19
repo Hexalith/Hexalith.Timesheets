@@ -91,6 +91,48 @@
           "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
         }
       },
+      "SubmitTimeEntriesForApproval": {
+        "type": "object",
+        "description": "Submit one or more Draft Time Entries for approval. Tenant, user, correlation, role, and authorization context are server-derived and not accepted from the caller payload.",
+        "required": [
+          "timeEntrySubmissionId",
+          "timeEntryIds",
+          "submissionScope"
+        ],
+        "properties": {
+          "timeEntrySubmissionId": { "$ref": "#/components/schemas/TimeEntrySubmissionId" },
+          "timeEntryIds": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/components/schemas/TimeEntryId" }
+          },
+          "submissionScope": { "$ref": "#/components/schemas/TimeEntrySubmissionScope" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntrySubmitted": {
+        "type": "object",
+        "description": "Domain event emitted for one accepted Time Entry submission. It records server-derived submitter and tenant evidence without exposing raw envelopes or command bodies.",
+        "required": [
+          "timeEntryId",
+          "submitter",
+          "tenant",
+          "submittedAtUtc",
+          "timeEntrySubmissionId",
+          "submissionScope",
+          "approvalState"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "submitter": { "$ref": "#/components/schemas/PartyReference" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "submittedAtUtc": { "type": "string", "format": "date-time" },
+          "timeEntrySubmissionId": { "$ref": "#/components/schemas/TimeEntrySubmissionId" },
+          "submissionScope": { "$ref": "#/components/schemas/TimeEntrySubmissionScope" },
+          "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" }
+        },
+        "additionalProperties": false
+      },
       "TimeEntryTargetReference": {
         "type": "object",
         "required": [ "targetKind", "targetId" ],
@@ -360,8 +402,17 @@
         "description": "Runtime-neutral metadata for generated command forms, projection views, fields, actions, and state badges."
       },
       "TimeEntryId": { "type": "string", "minLength": 1 },
+      "TimeEntrySubmissionId": { "type": "string", "minLength": 1 },
       "ActivityTypeId": { "type": "string", "minLength": 1 },
       "PartyReference": { "type": "string", "minLength": 1 },
+      "TenantReference": {
+        "type": "object",
+        "required": [ "tenantId" ],
+        "properties": {
+          "tenantId": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
       "ProjectReference": {
         "type": "object",
         "required": [ "projectId" ],
@@ -402,6 +453,10 @@
       "TimeEntryApprovalState": {
         "type": "string",
         "enum": [ "Unknown", "Draft", "Submitted", "Approved", "Rejected" ]
+      },
+      "TimeEntrySubmissionScope": {
+        "type": "string",
+        "enum": [ "Unknown", "SelectedEntries", "TimesheetPeriod" ]
       },
       "TimeEntryCorrectionState": {
         "type": "string",
