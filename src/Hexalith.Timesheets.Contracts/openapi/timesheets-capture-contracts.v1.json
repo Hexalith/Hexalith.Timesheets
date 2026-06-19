@@ -152,6 +152,50 @@
         },
         "additionalProperties": false
       },
+      "IssueMagicLinkConfirmationCapability": {
+        "type": "object",
+        "description": "Issue one scoped, single-use magic-link confirmation capability. Tenant, issuer, authority, correlation, and hash material are server-derived and not accepted from the caller payload.",
+        "required": [ "capabilityId", "scope", "allowedAction", "expiresAtUtc", "source" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "scope": { "$ref": "#/components/schemas/MagicLinkConfirmationScope" },
+          "allowedAction": { "$ref": "#/components/schemas/MagicLinkAllowedAction" },
+          "expiresAtUtc": { "type": "string", "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" }
+        },
+        "additionalProperties": false
+      },
+      "RevokeMagicLinkConfirmationCapability": {
+        "type": "object",
+        "description": "Revoke one previously issued magic-link confirmation capability. Tenant, actor, and correlation fields are server-derived.",
+        "required": [ "capabilityId", "source" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" }
+        },
+        "additionalProperties": false
+      },
+      "ExpireMagicLinkConfirmationCapability": {
+        "type": "object",
+        "description": "Record policy-driven expiry for one magic-link confirmation capability. Tenant, actor, and correlation fields are server-derived.",
+        "required": [ "capabilityId", "source" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkIssueResponse": {
+        "type": "object",
+        "description": "One-time issuance response that may contain the usable opaque token. This schema is not persisted, projected, exported, or exposed by metadata/read models.",
+        "required": [ "capabilityId", "oneTimeToken", "expiresAtUtc" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "oneTimeToken": { "type": "string", "minLength": 1 },
+          "expiresAtUtc": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      },
       "SubmitTimesheetPeriod": {
         "type": "object",
         "description": "Submit one weekly or monthly Timesheet Period. Tenant, submitter, submitted timestamp, tenant time-zone policy, correlation, role, and authorization context are server-derived and not accepted from the caller payload.",
@@ -1096,11 +1140,109 @@
       },
       "ExternalContributionSource": {
         "type": "object",
-        "description": "Safe external source metadata for idempotency and audit. It must not contain personal data, raw provider payloads, bearer tokens, decoded capability material, display names, comments, or upstream problem details.",
+        "description": "Safe external source metadata for idempotency and audit. It must not contain personal data, raw provider payloads, bearer credentials, capability payload material, display names, comments, or upstream problem details.",
         "required": [ "sourceSystem", "externalRequestId" ],
         "properties": {
           "sourceSystem": { "type": "string", "minLength": 1, "maxLength": 80 },
           "externalRequestId": { "type": "string", "minLength": 1, "maxLength": 120 }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkConfirmationScope": {
+        "type": "object",
+        "description": "Safe magic-link target scope. It carries stable IDs only and no display names, comments, authority decisions, capability secrets, or caller-supplied tenant fields.",
+        "required": [ "contributor", "target", "activityTypeId", "timeEntryId", "targetKind" ],
+        "properties": {
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "targetKind": { "$ref": "#/components/schemas/MagicLinkTargetKind" }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkAuditMetadata": {
+        "type": "object",
+        "description": "Correlation-safe audit source metadata. It must not contain capability secrets, capability payload material, comments, personal data, display names, or command bodies.",
+        "required": [ "sourceSystem", "sourceReference" ],
+        "properties": {
+          "sourceSystem": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "sourceReference": { "type": "string", "minLength": 1, "maxLength": 120 }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkConfirmationCapabilityIssued": {
+        "type": "object",
+        "description": "Auditable issuance event. Stores hash material and safe metadata only; capability secrets and capability payload material are excluded.",
+        "required": [ "capabilityId", "tenant", "contributor", "target", "activityTypeId", "timeEntryId", "targetKind", "allowedAction", "tokenHash", "expiresAtUtc", "issuer", "issuedAtUtc", "source", "isSingleUse" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "targetKind": { "$ref": "#/components/schemas/MagicLinkTargetKind" },
+          "allowedAction": { "$ref": "#/components/schemas/MagicLinkAllowedAction" },
+          "tokenHash": { "$ref": "#/components/schemas/MagicLinkTokenHash" },
+          "expiresAtUtc": { "type": "string", "format": "date-time" },
+          "issuer": { "$ref": "#/components/schemas/PartyReference" },
+          "issuedAtUtc": { "type": "string", "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
+          "isSingleUse": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkConfirmationCapabilityRevoked": {
+        "type": "object",
+        "required": [ "capabilityId", "tenant", "revokedBy", "revokedAtUtc", "source" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "revokedBy": { "$ref": "#/components/schemas/PartyReference" },
+          "revokedAtUtc": { "type": "string", "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkConfirmationCapabilityExpired": {
+        "type": "object",
+        "required": [ "capabilityId", "tenant", "expiredAtUtc", "source" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "expiredAtUtc": { "type": "string", "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkConfirmationCapabilityReadModel": {
+        "type": "object",
+        "description": "Operator-visible magic-link state. Excludes capability secrets, capability payload material, hashes, narrative text, display names, and command bodies.",
+        "required": [ "capabilityId", "tenant", "contributor", "target", "activityTypeId", "timeEntryId", "targetKind", "allowedAction", "state", "expiryState", "expiresAtUtc", "issuer", "issuedAtUtc", "projectionFreshness", "stateBadgeText", "expiryBadgeText" ],
+        "properties": {
+          "capabilityId": { "$ref": "#/components/schemas/MagicLinkCapabilityId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "targetKind": { "$ref": "#/components/schemas/MagicLinkTargetKind" },
+          "allowedAction": { "$ref": "#/components/schemas/MagicLinkAllowedAction" },
+          "state": { "$ref": "#/components/schemas/MagicLinkCapabilityState" },
+          "expiryState": { "$ref": "#/components/schemas/MagicLinkExpiryState" },
+          "expiresAtUtc": { "type": "string", "format": "date-time" },
+          "issuer": { "$ref": "#/components/schemas/PartyReference" },
+          "issuedAtUtc": { "type": "string", "format": "date-time" },
+          "revokedBy": { "$ref": "#/components/schemas/PartyReference" },
+          "revokedAtUtc": { "type": "string", "format": "date-time" },
+          "expiredAtUtc": { "type": "string", "format": "date-time" },
+          "issueMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
+          "revocationMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
+          "expiryMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
+          "projectionFreshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" },
+          "stateBadgeText": { "type": "string" },
+          "expiryBadgeText": { "type": "string" }
         },
         "additionalProperties": false
       },
@@ -1146,6 +1288,8 @@
       "TimeEntryApprovalDecisionId": { "type": "string", "minLength": 1 },
       "TimesheetPeriodApprovalDecisionId": { "type": "string", "minLength": 1 },
       "TimeEntryCorrectionId": { "type": "string", "minLength": 1 },
+      "MagicLinkCapabilityId": { "type": "string", "minLength": 1, "maxLength": 120 },
+      "MagicLinkTokenHash": { "type": "string", "minLength": 1, "maxLength": 128 },
       "TimeEntryRejectionReason": { "type": "string", "minLength": 1, "maxLength": 1000 },
       "TimesheetPeriodRejectionReason": { "type": "string", "minLength": 1, "maxLength": 1000 },
       "TimeEntryCorrectionReason": { "type": "string", "minLength": 1, "maxLength": 1024 },
@@ -1243,6 +1387,22 @@
       "ApprovalAuthorityDecisionState": {
         "type": "string",
         "enum": [ "Unknown", "Allowed", "Denied", "Stale", "Unavailable", "Ambiguous", "MissingActor", "DisabledTenant", "InvalidReference", "CrossTenantTarget" ]
+      },
+      "MagicLinkAllowedAction": {
+        "type": "string",
+        "enum": [ "Unknown", "Confirm", "Adjust", "ConfirmOrAdjust" ]
+      },
+      "MagicLinkCapabilityState": {
+        "type": "string",
+        "enum": [ "Unknown", "Issued", "Revoked", "Expired", "Used" ]
+      },
+      "MagicLinkTargetKind": {
+        "type": "string",
+        "enum": [ "Unknown", "ProposedTimeEntry", "ExistingTimeEntry" ]
+      },
+      "MagicLinkExpiryState": {
+        "type": "string",
+        "enum": [ "Unknown", "Active", "ExpiringSoon", "Expired" ]
       },
       "TimesheetsEvidenceRetentionCategory": {
         "type": "string",

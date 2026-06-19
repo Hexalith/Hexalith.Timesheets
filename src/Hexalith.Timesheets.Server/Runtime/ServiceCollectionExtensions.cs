@@ -1,6 +1,7 @@
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.ActivityTypes;
+using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.TimeEntries;
@@ -33,6 +34,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntrySubmissionCommandService>();
         services.TryAddSingleton(ExternalContributionPolicyOptions.Default);
         services.TryAddSingleton<ExternalContributionCommandService>();
+        services.TryAddSingleton<IMagicLinkTokenGenerator, CryptographicMagicLinkTokenGenerator>();
+        services.TryAddSingleton<MagicLinkConfirmationCapabilityCommandService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();

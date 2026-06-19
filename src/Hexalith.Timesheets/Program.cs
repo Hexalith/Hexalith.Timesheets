@@ -1,5 +1,6 @@
 using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Endpoints;
+using Hexalith.Timesheets.Endpoints.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.ServiceDefaults;
 
@@ -10,11 +11,13 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // has its registration seams present from the first executable slice.
 builder.AddTimesheetsServiceDefaults();
 builder.Services.AddTimesheetsServerKernel();
+builder.Services.AddSingleton(TimeProvider.System);
 
 WebApplication app = builder.Build();
 
 app.MapTimesheetsDefaultEndpoints();
 app.MapTimesheetsExternalContributionEndpoints();
+app.MapTimesheetsMagicLinkConfirmationCapabilityEndpoints();
 
 app.MapGet(
     "/metadata/timesheets",

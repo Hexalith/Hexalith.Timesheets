@@ -1,5 +1,5 @@
 # generated: 2026-06-18 23:50:36
-# last_updated: 2026-06-19 (story 3.1 reviewed - done)
+# last_updated: 2026-06-19 (story 3.2 review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-19 (story 3.1 reviewed - done)
+last_updated: 2026-06-19 (story 3.2 review)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -70,7 +70,7 @@ development_status:
   # Epic 3: External Contributor Confirmation
   epic-3: in-progress
   3-1-expose-external-contributor-confirmation-api: done
-  3-2-issue-scoped-magic-link-confirmation-capabilities: backlog
+  3-2-issue-scoped-magic-link-confirmation-capabilities: done
   3-3-confirm-time-through-magic-link: backlog
   3-4-adjust-time-through-magic-link: backlog
   3-5-reject-invalid-confirmation-links-without-resource-disclosure: backlog

@@ -199,6 +199,44 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
+    public void Magic_link_read_schema_exposes_operator_state_without_raw_capability_material()
+    {
+        string openApiPath = RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.Contracts",
+            "openapi",
+            "timesheets-capture-contracts.v1.json");
+
+        System.Text.Json.Nodes.JsonNode artifact =
+            System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(openApiPath))
+            ?? throw new InvalidOperationException("OpenAPI artifact could not be parsed.");
+
+        System.Text.Json.Nodes.JsonNode schemas =
+            artifact["components"]?["schemas"]
+            ?? throw new InvalidOperationException("OpenAPI schema components are missing.");
+
+        System.Text.Json.Nodes.JsonNode schema = schemas["MagicLinkConfirmationCapabilityReadModel"]
+            ?? throw new InvalidOperationException("Magic-link read model schema is missing.");
+
+        bool additionalProperties = schema["additionalProperties"]?.GetValue<bool>()
+            ?? throw new InvalidOperationException("Magic-link read model schema must declare additionalProperties:false.");
+        additionalProperties.ShouldBeFalse();
+
+        string schemaJson = schema.ToJsonString();
+        schemaJson.ShouldContain("stateBadgeText");
+        schemaJson.ShouldContain("expiryBadgeText");
+        schemaJson.ShouldNotContain("oneTimeToken");
+        schemaJson.ShouldNotContain("rawToken");
+        schemaJson.ShouldNotContain("tokenHash");
+        schemaJson.ShouldNotContain("decoded");
+        schemaJson.ShouldNotContain("comment", Case.Insensitive);
+        schemaJson.ShouldNotContain("displayName", Case.Insensitive);
+        schemaJson.ShouldNotContain("messageId");
+        schemaJson.ShouldNotContain("correlationId");
+        schemaJson.ShouldNotContain("envelope", Case.Insensitive);
+    }
+
+    [Fact]
     public void Correction_evidence_schema_exposes_only_stable_lineage_without_display_or_raw_authority_material()
     {
         string openApiPath = RepositoryRoot.PathTo(

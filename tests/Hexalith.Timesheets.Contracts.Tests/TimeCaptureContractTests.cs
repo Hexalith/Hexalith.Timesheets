@@ -987,7 +987,8 @@ public sealed class TimeCaptureContractTests
                 "timesheets.approvals.queue",
                 "timesheets.command.time-entry-approval",
                 "timesheets.command.period-approval",
-                "timesheets.review.export-policy"
+                "timesheets.review.export-policy",
+                "timesheets.projection.magic-link-confirmation-capabilities"
             ]);
 
         TimesheetsMetadataCatalog.Descriptors
@@ -1028,6 +1029,9 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(TimeEntryLockState));
         badgeVocabularies.ShouldContain(nameof(TimesheetPeriodApprovalState));
         badgeVocabularies.ShouldContain(nameof(TimesheetPeriodKind));
+        badgeVocabularies.ShouldContain(nameof(MagicLinkCapabilityState));
+        badgeVocabularies.ShouldContain(nameof(MagicLinkExpiryState));
+        badgeVocabularies.ShouldContain(nameof(MagicLinkAllowedAction));
     }
 
     [Fact]

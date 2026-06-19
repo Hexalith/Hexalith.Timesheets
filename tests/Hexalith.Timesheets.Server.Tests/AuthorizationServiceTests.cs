@@ -20,7 +20,9 @@ public sealed class AuthorizationServiceTests
             "ProjectionRead",
             "Export",
             "Confirmation",
-            "UiActionVisibility"
+            "UiActionVisibility",
+            "MagicLinkIssuance",
+            "MagicLinkDisclosure"
         ]);
     }
 

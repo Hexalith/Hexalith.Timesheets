@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Ui;
 using Hexalith.Timesheets.Contracts.ValueObjects;
@@ -510,6 +511,41 @@ public static class TimesheetsMetadataCatalog
                 new("retention-posture", "Retention posture", nameof(TimesheetsRetentionPosture)),
                 new("comment-policy", "Comment policy", nameof(TimesheetsCommentPolicyDecision)),
                 new("lock", "Lock", nameof(TimeEntryLockState))
+            ]),
+        new(
+            "timesheets.projection.magic-link-confirmation-capabilities",
+            "Magic-Link Confirmation Requests",
+            "external-contribution",
+            TimesheetsSurfaceKind.Projection,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("capabilityId", "Capability ID", nameof(MagicLinkCapabilityId), true),
+                new("contributor", "Contributor", "PartyReference", true),
+                new("target", "Target reference", "TimeEntryTargetReference", true),
+                new("activityType", "Activity Type", nameof(ActivityTypeId), true),
+                new("timeEntry", "Time Entry", nameof(TimeEntryId), true),
+                new("targetKind", "Target kind", nameof(MagicLinkTargetKind), true),
+                new("allowedAction", "Allowed action", nameof(MagicLinkAllowedAction), true),
+                new("state", "State", nameof(MagicLinkCapabilityState), true),
+                new("stateBadgeText", "State status", "String", true, "Status is shown with text, not color alone."),
+                new("expiryState", "Expiry state", nameof(MagicLinkExpiryState), true),
+                new("expiryBadgeText", "Expiry status", "String", true, "Expiry status is shown with text, not color alone."),
+                new("expiresAtUtc", "Expires", "DateTimeOffset", true),
+                new("issuer", "Issuer", "PartyReference", true),
+                new("issuedAtUtc", "Issued", "DateTimeOffset", true),
+                new("auditMetadata", "Audit metadata", nameof(MagicLinkAuditMetadata), false, "Safe source system and idempotency reference only."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true)
+            ],
+            [
+                new("issue-confirmation-capability", "Issue confirmation request", "Timesheets.IssueMagicLinkConfirmationCapability"),
+                new("revoke-confirmation-capability", "Revoke confirmation request", "Timesheets.RevokeMagicLinkConfirmationCapability"),
+                new("expire-confirmation-capability", "Expire confirmation request", "Timesheets.ExpireMagicLinkConfirmationCapability")
+            ],
+            [
+                new("magic-link-state", "Magic-link state", nameof(MagicLinkCapabilityState)),
+                new("magic-link-expiry", "Magic-link expiry", nameof(MagicLinkExpiryState)),
+                new("allowed-action", "Allowed action", nameof(MagicLinkAllowedAction)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ])
     ];
 }

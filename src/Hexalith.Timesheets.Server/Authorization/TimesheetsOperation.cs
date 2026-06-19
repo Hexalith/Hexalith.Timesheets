@@ -8,5 +8,7 @@ public enum TimesheetsOperation
     ProjectionRead = 3,
     Export = 4,
     Confirmation = 5,
-    UiActionVisibility = 6
+    UiActionVisibility = 6,
+    MagicLinkIssuance = 7,
+    MagicLinkDisclosure = 8
 }
