@@ -149,6 +149,113 @@ public sealed class ActivityTypeAggregateTests
             .Code.ShouldBe(TimesheetsRejectionCode.ActivityTypeScopeMismatch);
     }
 
+    [Fact]
+    public void Create_project_activity_type_emits_project_scoped_created_event()
+    {
+        TimesheetsDomainResult result = ProjectActivityTypeAggregate.Handle(
+            new CreateProjectActivityType(ActivityId(), Project(), " Delivery ", BillableState.Billable),
+            null);
+
+        ActivityTypeCreated created = SingleSuccess<ActivityTypeCreated>(result);
+        created.ActivityTypeId.ShouldBe(ActivityId());
+        created.Scope.ShouldBe(ActivityTypeScope.Project);
+        created.Project.ShouldBe(Project());
+        created.Label.ShouldBe("Delivery");
+        created.DefaultBillableState.ShouldBe(BillableState.Billable);
+    }
+
+    [Fact]
+    public void Project_activity_type_rejects_duplicate_scope_mismatch_and_missing_project_reference()
+    {
+        ActivityTypeCatalogState state = CreatedState();
+
+        Rejection(ProjectActivityTypeAggregate.Handle(
+                new CreateProjectActivityType(ActivityId(), Project(), "Project work", BillableState.Billable),
+                state))
+            .Code.ShouldBe(TimesheetsRejectionCode.ActivityTypeScopeMismatch);
+
+        ActivityTypeCatalogState projectState = ProjectCreatedState();
+
+        Rejection(ProjectActivityTypeAggregate.Handle(
+                new CreateProjectActivityType(ActivityId(), Project(), "Project work", BillableState.Billable),
+                projectState))
+            .Code.ShouldBe(TimesheetsRejectionCode.ActivityTypeAlreadyExists);
+
+        Rejection(ProjectActivityTypeAggregate.Handle(
+                new RenameProjectActivityType(ActivityId(), new ProjectReference("other-project"), "Renamed"),
+                projectState))
+            .Code.ShouldBe(TimesheetsRejectionCode.ActivityTypeScopeMismatch);
+    }
+
+    [Fact]
+    public void Project_commands_reject_missing_project_reference_with_typed_validation_outcome()
+    {
+        Rejection(ProjectActivityTypeAggregate.Handle(
+                new CreateProjectActivityType(ActivityId(), null!, "Delivery", BillableState.Billable),
+                null))
+            .Code.ShouldBe(TimesheetsRejectionCode.ValidationFailed);
+
+        Rejection(ProjectActivityTypeAggregate.Handle(
+                new RenameProjectActivityType(ActivityId(), null!, "Delivery"),
+                ProjectCreatedState()))
+            .Code.ShouldBe(TimesheetsRejectionCode.ValidationFailed);
+
+        Rejection(ProjectActivityTypeAggregate.Handle(
+                new DeactivateProjectActivityType(ActivityId(), null!),
+                ProjectCreatedState()))
+            .Code.ShouldBe(TimesheetsRejectionCode.ValidationFailed);
+
+        Rejection(ProjectActivityTypeAggregate.Handle(
+                new ConfigureProjectActivityTypeCatalogRestriction(null!, true, [], [])))
+            .Code.ShouldBe(TimesheetsRejectionCode.ValidationFailed);
+    }
+
+    [Fact]
+    public void Project_mutations_preserve_stable_activity_type_id()
+    {
+        ActivityTypeCatalogState state = ProjectCreatedState();
+
+        SingleSuccess<ActivityTypeRenamed>(ProjectActivityTypeAggregate.Handle(
+                new RenameProjectActivityType(ActivityId(), Project(), "Delivery"),
+                state))
+            .ActivityTypeId.ShouldBe(ActivityId());
+
+        SingleSuccess<ActivityTypeMetadataUpdated>(ProjectActivityTypeAggregate.Handle(
+                new UpdateProjectActivityTypeMetadata(ActivityId(), Project(), BillableState.NonBillable),
+                state))
+            .ActivityTypeId.ShouldBe(ActivityId());
+
+        SingleSuccess<ActivityTypeDeactivated>(ProjectActivityTypeAggregate.Handle(
+                new DeactivateProjectActivityType(ActivityId(), Project()),
+                state))
+            .ActivityTypeId.ShouldBe(ActivityId());
+
+        state.Apply(new ActivityTypeDeactivated(ActivityId()));
+
+        SingleSuccess<ActivityTypeReactivated>(ProjectActivityTypeAggregate.Handle(
+                new ReactivateProjectActivityType(ActivityId(), Project()),
+                state))
+            .ActivityTypeId.ShouldBe(ActivityId());
+    }
+
+    [Fact]
+    public void Project_restriction_configuration_emits_replayable_policy_event()
+    {
+        TimesheetsDomainResult result = ProjectActivityTypeAggregate.Handle(
+            new ConfigureProjectActivityTypeCatalogRestriction(
+                Project(),
+                true,
+                [new ActivityTypeId("tenant-allowed")],
+                [ActivityId()]));
+
+        ProjectActivityTypeCatalogRestrictionConfigured configured =
+            SingleSuccess<ProjectActivityTypeCatalogRestrictionConfigured>(result);
+        configured.Project.ShouldBe(Project());
+        configured.IsRestricted.ShouldBeTrue();
+        configured.AllowedTenantActivityTypeIds.ShouldBe([new ActivityTypeId("tenant-allowed")]);
+        configured.AllowedProjectActivityTypeIds.ShouldBe([ActivityId()]);
+    }
+
     private static ActivityTypeCatalogState CreatedState()
     {
         ActivityTypeCatalogState state = new();
@@ -161,7 +268,21 @@ public sealed class ActivityTypeAggregateTests
         return state;
     }
 
+    private static ActivityTypeCatalogState ProjectCreatedState()
+    {
+        ActivityTypeCatalogState state = new();
+        state.Apply(new ActivityTypeCreated(
+            ActivityId(),
+            ActivityTypeScope.Project,
+            Project(),
+            "Project discovery",
+            BillableState.Billable));
+        return state;
+    }
+
     private static ActivityTypeId ActivityId() => new("activity-type-1");
+
+    private static ProjectReference Project() => new("project-1");
 
     private static TEvent SingleSuccess<TEvent>(TimesheetsDomainResult result)
     {

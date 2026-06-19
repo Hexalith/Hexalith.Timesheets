@@ -16,6 +16,7 @@ public static class ServiceCollectionExtensions
 
         services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
         services.TryAddSingleton<TenantActivityTypeCommandService>();
+        services.TryAddSingleton<ProjectActivityTypeCommandService>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
         services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();
         services.TryAddSingleton(TimesheetsEvidencePolicyOptions.FailClosedDefault);

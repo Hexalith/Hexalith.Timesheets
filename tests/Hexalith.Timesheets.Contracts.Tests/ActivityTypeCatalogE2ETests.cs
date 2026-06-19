@@ -28,19 +28,23 @@ public sealed class ActivityTypeCatalogE2ETests
         workflowActions.ShouldBe(
         [
             "create-tenant-activity-type",
+            "create-project-activity-type",
             "rename-activity-type",
             "update-billable-default",
             "deactivate-activity-type",
-            "reactivate-activity-type"
+            "reactivate-activity-type",
+            "configure-project-catalog-restriction"
         ]);
 
         projection.Actions.Select(static action => action.Label).ShouldBe(
         [
             "Create tenant Activity Type",
+            "Create project Activity Type",
             "Rename Activity Type",
             "Update billable default",
             "Deactivate Activity Type",
-            "Reactivate Activity Type"
+            "Reactivate Activity Type",
+            "Restrict project Activity Type selection"
         ]);
 
         projection.Actions.All(static action =>
@@ -54,6 +58,8 @@ public sealed class ActivityTypeCatalogE2ETests
     {
         TimesheetsMetadataDescriptor projection = Descriptor("timesheets.projection.activity-type-catalog");
 
+        projection.Fields.Select(static field => field.Name).ShouldContain("projectFilter");
+        projection.Fields.Select(static field => field.Name).ShouldContain("project");
         projection.Fields.Select(static field => field.Name).ShouldContain("activeState");
         projection.Fields.Select(static field => field.Name).ShouldContain("statusText");
         projection.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
@@ -112,6 +118,20 @@ public sealed class ActivityTypeCatalogE2ETests
             new ActivityTypeId("discovery"),
             "Discovery",
             BillableState.Billable));
+        CreateProjectActivityType createProject = RoundTrip(new CreateProjectActivityType(
+            new ActivityTypeId("project-discovery"),
+            new ProjectReference("project-1"),
+            "Project discovery",
+            BillableState.Billable));
+        RenameProjectActivityType renameProject = RoundTrip(new RenameProjectActivityType(
+            new ActivityTypeId("project-discovery"),
+            new ProjectReference("project-1"),
+            "Project discovery updated"));
+        ConfigureProjectActivityTypeCatalogRestriction restriction = RoundTrip(new ConfigureProjectActivityTypeCatalogRestriction(
+            new ProjectReference("project-1"),
+            true,
+            [new ActivityTypeId("discovery")],
+            [new ActivityTypeId("project-discovery")]));
         RenameActivityType rename = RoundTrip(new RenameActivityType(
             new ActivityTypeId("discovery"),
             "Customer discovery"));
@@ -122,6 +142,9 @@ public sealed class ActivityTypeCatalogE2ETests
         ReactivateActivityType reactivate = RoundTrip(new ReactivateActivityType(new ActivityTypeId("discovery")));
 
         create.ActivityTypeId.Value.ShouldBe("discovery");
+        createProject.Project.ProjectId.ShouldBe("project-1");
+        renameProject.Project.ProjectId.ShouldBe("project-1");
+        restriction.AllowedTenantActivityTypeIds.ShouldBe([new ActivityTypeId("discovery")]);
         rename.Label.ShouldBe("Customer discovery");
         update.DefaultBillableState.ShouldBe(BillableState.NonBillable);
         deactivate.ActivityTypeId.Value.ShouldBe("discovery");
@@ -158,7 +181,13 @@ public sealed class ActivityTypeCatalogE2ETests
             "token",
             "stream",
             "sequence",
-            nameof(ProjectReference.ProjectId)
+            "projectName",
+            "projectDisplayName",
+            "hierarchy",
+            "lifecycle",
+            "owner",
+            "manager",
+            "approver"
         ];
 
         foreach (string forbiddenPropertyName in forbiddenPropertyNames)

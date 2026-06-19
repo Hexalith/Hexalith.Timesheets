@@ -145,6 +145,11 @@ public sealed class TimeCaptureContractTests
             typeof(RecordTimeEntry),
             typeof(CreateTenantActivityType),
             typeof(CreateProjectActivityType),
+            typeof(RenameProjectActivityType),
+            typeof(UpdateProjectActivityTypeMetadata),
+            typeof(DeactivateProjectActivityType),
+            typeof(ReactivateProjectActivityType),
+            typeof(ConfigureProjectActivityTypeCatalogRestriction),
             typeof(RenameActivityType),
             typeof(UpdateActivityTypeMetadata),
             typeof(DeactivateActivityType),
@@ -338,6 +343,10 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("TimeEntryTargetReference").ShouldBeTrue();
         schemas.ContainsKey("AiEffortMetrics").ShouldBeTrue();
         schemas.ContainsKey("ActivityTypeCatalogCommand").ShouldBeTrue();
+        schemas.ContainsKey("CreateProjectActivityType").ShouldBeTrue();
+        schemas.ContainsKey("RenameProjectActivityType").ShouldBeTrue();
+        schemas.ContainsKey("UpdateProjectActivityTypeMetadata").ShouldBeTrue();
+        schemas.ContainsKey("ConfigureProjectActivityTypeCatalogRestriction").ShouldBeTrue();
         schemas.ContainsKey("ActivityTypeCatalogReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryEvidenceReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimesheetsMetadataDescriptor").ShouldBeTrue();

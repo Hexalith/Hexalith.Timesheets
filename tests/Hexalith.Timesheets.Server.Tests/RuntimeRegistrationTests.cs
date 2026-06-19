@@ -28,6 +28,8 @@ public sealed class RuntimeRegistrationTests
             .ShouldBeOfType<TimesheetsAccessGuard>();
         provider.GetRequiredService<TenantActivityTypeCommandService>()
             .ShouldNotBeNull();
+        provider.GetRequiredService<ProjectActivityTypeCommandService>()
+            .ShouldNotBeNull();
         provider.GetRequiredService<ITimesheetsTenantAccessValidator>()
             .ShouldBeOfType<DenyAllTimesheetsTenantAccessValidator>();
         provider.GetRequiredService<ITimesheetsPolicyEvaluator>()

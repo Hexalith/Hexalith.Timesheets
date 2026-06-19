@@ -8,15 +8,17 @@
 ### E2E Tests
 - [x] `tests/Hexalith.Timesheets.Contracts.Tests/ActivityTypeCatalogE2ETests.cs` - Activity Type Catalog operator workflow metadata exposes create, rename, update billable default, deactivate, and reactivate commands with textual state/freshness cues.
 - [x] `tests/Hexalith.Timesheets.Contracts.Tests/ActivityTypeCatalogE2ETests.cs` - Activity Type Catalog read model round-trips active and inactive rows while preserving capture-selection availability.
-- [x] `tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAuthorizationTests.cs` - Policy denial after tenant authorization fails before Activity Type domain dispatch.
+- [x] `tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAuthorizationTests.cs` - Project Activity Type catalog commands validate tenant authority, Project reference authority, and policy before domain dispatch.
+- [x] `tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAuthorizationTests.cs` - Project create, rename, metadata update, deactivate, reactivate, and restriction configuration fail closed before dispatch when Project authority or policy denies access.
 
 ## Coverage
 
 - API endpoints: 1/1 Timesheets host endpoint covered (`/metadata/timesheets`).
-- Activity Type Catalog workflow metadata: 5/5 tenant catalog verbs covered in generated E2E-style tests.
+- Activity Type Catalog workflow metadata: project catalog action exposure covered, including project create and restriction configuration.
+- Project Activity Type service commands: 6/6 project catalog command paths covered through the authorization/service boundary.
 - Activity Type Catalog read model states: 2/2 active/inactive states covered.
-- Critical error cases: tenant access denials, stale/ambiguous/unavailable authority, projection freshness denial, duplicate/unknown domain outcomes, and policy denial before dispatch are covered across the existing and generated test set.
-- Browser E2E: not generated because the Timesheets module currently has no local UI project, Playwright workspace, or rendered Activity Type Catalog page; Story 1.5 exposes FrontComposer metadata and host metadata only.
+- Critical error cases: tenant access denials, stale/ambiguous/unavailable Project authority, invalid Project reference, projection freshness denial, duplicate/unknown domain outcomes, and policy denial before dispatch are covered across the generated and existing test set.
+- Browser E2E: not generated because the Timesheets module currently has no local UI project, Playwright workspace, or rendered Activity Type Catalog page; Story 1.6 exposes FrontComposer metadata and host metadata only.
 
 ## Validation
 
@@ -25,9 +27,10 @@
 - [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj --no-build`
 - [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj --no-build`
 - [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --no-build`
+- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --no-build`
 - [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-build`
 
-`dotnet test` was attempted first and was blocked by VSTest socket permissions (`System.Net.Sockets.SocketException (13): Permission denied`), so validation used the direct xUnit v3 in-process runner fallback already documented by Story 1.5.
+`dotnet test` was attempted first and failed in this sandbox before useful VSTest diagnostics were emitted, so validation used the direct xUnit v3 in-process runner fallback documented by the story record.
 
 ## Checklist Status
 

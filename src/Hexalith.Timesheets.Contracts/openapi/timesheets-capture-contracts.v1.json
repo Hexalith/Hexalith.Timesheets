@@ -119,7 +119,51 @@
       },
       "ActivityTypeCatalogCommand": {
         "type": "object",
-        "description": "Create, rename, update metadata, deactivate, or reactivate Activity Types at tenant or project scope. Project-scoped commands carry only a stable Project reference."
+        "description": "Create, rename, update metadata, deactivate, reactivate, or restrict Activity Types at tenant or project scope. Project-scoped commands carry only a stable Project reference."
+      },
+      "CreateProjectActivityType": {
+        "type": "object",
+        "required": [ "activityTypeId", "project", "label", "defaultBillableState" ],
+        "properties": {
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "project": { "$ref": "#/components/schemas/ProjectReference" },
+          "label": { "type": "string", "minLength": 1 },
+          "defaultBillableState": { "$ref": "#/components/schemas/BillableState" }
+        }
+      },
+      "RenameProjectActivityType": {
+        "type": "object",
+        "required": [ "activityTypeId", "project", "label" ],
+        "properties": {
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "project": { "$ref": "#/components/schemas/ProjectReference" },
+          "label": { "type": "string", "minLength": 1 }
+        }
+      },
+      "UpdateProjectActivityTypeMetadata": {
+        "type": "object",
+        "required": [ "activityTypeId", "project", "defaultBillableState" ],
+        "properties": {
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "project": { "$ref": "#/components/schemas/ProjectReference" },
+          "defaultBillableState": { "$ref": "#/components/schemas/BillableState" }
+        }
+      },
+      "ConfigureProjectActivityTypeCatalogRestriction": {
+        "type": "object",
+        "required": [ "project", "isRestricted", "allowedTenantActivityTypeIds", "allowedProjectActivityTypeIds" ],
+        "properties": {
+          "project": { "$ref": "#/components/schemas/ProjectReference" },
+          "isRestricted": { "type": "boolean" },
+          "allowedTenantActivityTypeIds": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ActivityTypeId" }
+          },
+          "allowedProjectActivityTypeIds": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ActivityTypeId" }
+          }
+        }
       },
       "ActivityTypeCatalogReadModel": {
         "type": "object",
@@ -197,7 +241,14 @@
       "TimeEntryId": { "type": "string", "minLength": 1 },
       "ActivityTypeId": { "type": "string", "minLength": 1 },
       "PartyReference": { "type": "string", "minLength": 1 },
-      "ProjectReference": { "type": "string", "minLength": 1 },
+      "ProjectReference": {
+        "type": "object",
+        "required": [ "projectId" ],
+        "properties": {
+          "projectId": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      },
       "BillableState": {
         "type": "string",
         "enum": [ "Unknown", "NonBillable", "Billable" ]

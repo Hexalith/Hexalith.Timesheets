@@ -39,6 +39,7 @@ public static class TimesheetsMetadataCatalog
             TimesheetsCompositionPattern.FrontComposerGeneratedForm,
             [
                 new("activityType", "Activity Type", "ActivityTypeId", true),
+                new("project", "Project reference", "ProjectReference", false),
                 new("label", "Label", "String", true),
                 new("scope", "Scope", nameof(ActivityTypeScope), true),
                 new("billableDefault", "Billable default", nameof(BillableState), false)
@@ -49,7 +50,8 @@ public static class TimesheetsMetadataCatalog
                 new("rename-activity-type", "Rename Activity Type", "Timesheets.RenameActivityType"),
                 new("update-billable-default", "Update billable default", "Timesheets.UpdateActivityTypeMetadata"),
                 new("deactivate-activity-type", "Deactivate Activity Type", "Timesheets.DeactivateActivityType"),
-                new("reactivate-activity-type", "Reactivate Activity Type", "Timesheets.ReactivateActivityType")
+                new("reactivate-activity-type", "Reactivate Activity Type", "Timesheets.ReactivateActivityType"),
+                new("configure-project-catalog-restriction", "Restrict project Activity Type selection", "Timesheets.ConfigureProjectActivityTypeCatalogRestriction")
             ],
             [
                 new("activity-type-scope", "Scope", nameof(ActivityTypeScope)),
@@ -63,6 +65,8 @@ public static class TimesheetsMetadataCatalog
             TimesheetsCompositionPattern.FrontComposerProjectionView,
             [
                 new("activityType", "Activity Type", "ActivityTypeId", true),
+                new("projectFilter", "Project filter", "ProjectReference", false, "Preserved when drilling into project-scoped catalog entries."),
+                new("project", "Project reference", "ProjectReference", false),
                 new("label", "Label", "String", true),
                 new("scope", "Scope", nameof(ActivityTypeScope), true),
                 new("activeState", "Active state", nameof(ActivityTypeActiveState), true),
@@ -72,10 +76,12 @@ public static class TimesheetsMetadataCatalog
             ],
             [
                 new("create-tenant-activity-type", "Create tenant Activity Type", "Timesheets.CreateTenantActivityType"),
+                new("create-project-activity-type", "Create project Activity Type", "Timesheets.CreateProjectActivityType"),
                 new("rename-activity-type", "Rename Activity Type", "Timesheets.RenameActivityType"),
                 new("update-billable-default", "Update billable default", "Timesheets.UpdateActivityTypeMetadata"),
                 new("deactivate-activity-type", "Deactivate Activity Type", "Timesheets.DeactivateActivityType"),
-                new("reactivate-activity-type", "Reactivate Activity Type", "Timesheets.ReactivateActivityType")
+                new("reactivate-activity-type", "Reactivate Activity Type", "Timesheets.ReactivateActivityType"),
+                new("configure-project-catalog-restriction", "Restrict project Activity Type selection", "Timesheets.ConfigureProjectActivityTypeCatalogRestriction")
             ],
             [
                 new("active-state", "Active state", nameof(ActivityTypeActiveState)),
