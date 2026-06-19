@@ -5,6 +5,7 @@ using Hexalith.Timesheets.Contracts.Commands.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.Ui;
@@ -285,6 +286,50 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Record_time_entry_e2e_metadata_exposes_expected_capture_workflow()
+    {
+        TimesheetsMetadataDescriptor command = Descriptor("timesheets.command.record-time");
+        TimesheetsMetadataDescriptor evidence = Descriptor("timesheets.projection.time-entry-evidence");
+
+        command.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerGeneratedForm);
+        command.Fields.Select(static field => field.Name).ShouldBe(
+        [
+            "serviceDate",
+            "target",
+            "contributor",
+            "activityType",
+            "durationMinutes",
+            "billableState",
+            "contributorCategory",
+            "aiMetrics",
+            "comment"
+        ]);
+        command.Fields.Single(static field => field.Name == "durationMinutes")
+            .ContractType.ShouldBe("WholeMinutes");
+        command.Fields.Single(static field => field.Name == "aiMetrics")
+            .HelpText.ShouldBe("AI metrics keep runtime, effort, and token units explicit.");
+        command.Actions.Select(static action => action.Name).ShouldBe(
+        [
+            "record-time",
+            "record-project-time",
+            "record-work-time"
+        ]);
+        command.StateBadges.Select(static badge => badge.StateVocabulary).ShouldBe(
+        [
+            nameof(TimeEntryApprovalState),
+            nameof(BillableState),
+            nameof(ContributorCategory),
+            nameof(AiMetricAvailability),
+            nameof(TimesheetsEvidenceRetentionCategory)
+        ]);
+
+        evidence.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("correctionState");
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryCorrectionState));
+    }
+
+    [Fact]
     public void Activity_type_catalog_read_model_exposes_text_status_and_selection_metadata()
     {
         ActivityTypeCatalogReadModel model = new(
@@ -384,6 +429,9 @@ public sealed class TimeCaptureContractTests
                 StringComparison.Ordinal).ShouldBeFalse(forbiddenPropertyName);
         }
     }
+
+    private static TimesheetsMetadataDescriptor Descriptor(string name)
+        => TimesheetsMetadataCatalog.Descriptors.Single(descriptor => descriptor.Name == name);
 
     private static string RepositoryPath(params string[] segments)
     {

@@ -4,6 +4,7 @@ using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.Runtime;
+using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,6 +30,8 @@ public sealed class RuntimeRegistrationTests
         provider.GetRequiredService<TenantActivityTypeCommandService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<ProjectActivityTypeCommandService>()
+            .ShouldNotBeNull();
+        provider.GetRequiredService<TimeEntryCommandService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<ITimesheetsTenantAccessValidator>()
             .ShouldBeOfType<DenyAllTimesheetsTenantAccessValidator>();

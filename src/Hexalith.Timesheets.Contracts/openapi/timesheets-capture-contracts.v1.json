@@ -203,7 +203,37 @@
       },
       "TimeEntryEvidenceReadModel": {
         "type": "object",
-        "description": "Evidence read model with stable references, approval/correction placeholders, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata."
+        "description": "Evidence read model with stable references, approval/correction placeholders, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata.",
+        "required": [
+          "timeEntryId",
+          "target",
+          "contributor",
+          "activityTypeId",
+          "activityTypeScope",
+          "serviceDate",
+          "durationMinutes",
+          "billableState",
+          "approvalState",
+          "contributorCategory",
+          "correctionState",
+          "projectionFreshness"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "activityTypeScope": { "$ref": "#/components/schemas/ActivityTypeScope" },
+          "serviceDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "minimum": 1 },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" },
+          "contributorCategory": { "$ref": "#/components/schemas/ContributorCategory" },
+          "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" },
+          "correctionState": { "$ref": "#/components/schemas/TimeEntryCorrectionState" },
+          "projectionFreshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" },
+          "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
+        }
       },
       "ProjectionFreshnessMetadata": {
         "type": "object",
@@ -268,6 +298,14 @@
       "ContributorCategory": {
         "type": "string",
         "enum": [ "Unknown", "Employee", "ExternalContributor", "AutomatedAgent" ]
+      },
+      "TimeEntryApprovalState": {
+        "type": "string",
+        "enum": [ "Unknown", "Draft", "Submitted", "Approved", "Rejected" ]
+      },
+      "TimeEntryCorrectionState": {
+        "type": "string",
+        "enum": [ "Unknown", "None", "Corrected", "Superseded" ]
       },
       "TimesheetsEvidenceRetentionCategory": {
         "type": "string",

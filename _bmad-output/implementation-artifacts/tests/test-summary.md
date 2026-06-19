@@ -3,34 +3,37 @@
 ## Generated Tests
 
 ### API Tests
-- [x] `tests/Hexalith.Timesheets.IntegrationTests/HostMetadataEndpointTests.cs` - Metadata endpoint contract exports the Activity Type Catalog capability and omits authority/payload identifiers.
+- [x] `tests/Hexalith.Timesheets.IntegrationTests/HostMetadataEndpointTests.cs` - Metadata endpoint contract exports Timesheets capability descriptors and omits authority/payload identifiers.
 
 ### E2E Tests
-- [x] `tests/Hexalith.Timesheets.Contracts.Tests/ActivityTypeCatalogE2ETests.cs` - Activity Type Catalog operator workflow metadata exposes create, rename, update billable default, deactivate, and reactivate commands with textual state/freshness cues.
-- [x] `tests/Hexalith.Timesheets.Contracts.Tests/ActivityTypeCatalogE2ETests.cs` - Activity Type Catalog read model round-trips active and inactive rows while preserving capture-selection availability.
-- [x] `tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAuthorizationTests.cs` - Project Activity Type catalog commands validate tenant authority, Project reference authority, and policy before domain dispatch.
-- [x] `tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAuthorizationTests.cs` - Project create, rename, metadata update, deactivate, reactivate, and restriction configuration fail closed before dispatch when Project authority or policy denies access.
+- [x] `tests/Hexalith.Timesheets.Contracts.Tests/TimeCaptureContractTests.cs` - Record Time Entry command metadata exposes the FrontComposer-generated form workflow, Project/Work context actions, required fields, explicit whole-minute duration units, and textual status vocabularies.
+- [x] `tests/Hexalith.Timesheets.Server.Tests/TimeEntryAuthorizationTests.cs` - Time Entry capture validates tenant, exact Project-or-Work target, Contributor Party, and policy before Activity Type selection or aggregate dispatch.
+- [x] `tests/Hexalith.Timesheets.Server.Tests/TimeEntryAuthorizationTests.cs` - Time Entry capture fails closed for tenant denial, target denial, contributor denial, policy denial, stale catalog authority, missing/inactive Activity Types, Project scope mismatch, and unresolved Work-to-Project authority.
+- [x] `tests/Hexalith.Timesheets.Server.Tests/TimeEntryAggregateTests.cs` - Draft recording covers success, duplicate ID, required fields, non-positive duration, enum sentinels, AI metric units, and comment validation.
+- [x] `tests/Hexalith.Timesheets.Projections.Tests/TimeEntryEvidenceProjectionTests.cs` - Time Entry evidence projection covers freshness metadata, duplicate delivery, sequence ordering, and unfresh checkpoint states.
 
 ## Coverage
 
 - API endpoints: 1/1 Timesheets host endpoint covered (`/metadata/timesheets`).
-- Activity Type Catalog workflow metadata: project catalog action exposure covered, including project create and restriction configuration.
-- Project Activity Type service commands: 6/6 project catalog command paths covered through the authorization/service boundary.
-- Activity Type Catalog read model states: 2/2 active/inactive states covered.
-- Critical error cases: tenant access denials, stale/ambiguous/unavailable Project authority, invalid Project reference, projection freshness denial, duplicate/unknown domain outcomes, and policy denial before dispatch are covered across the generated and existing test set.
-- Browser E2E: not generated because the Timesheets module currently has no local UI project, Playwright workspace, or rendered Activity Type Catalog page; Story 1.6 exposes FrontComposer metadata and host metadata only.
+- Time Entry command surface: 1/1 record-time metadata descriptor covered.
+- Time Entry target paths: 2/2 Project and Work capture authorization paths covered.
+- Time Entry authority boundaries: tenant, target, contributor, and policy denials covered before aggregate dispatch.
+- Activity Type capture selection: fresh, stale, missing, inactive, Project-scope match/mismatch, and unresolved Work governing Project cases covered.
+- Time Entry aggregate draft path: happy path plus critical validation errors covered.
+- Time Entry projection path: duplicate delivery, ordering, freshness, and stable evidence read model coverage.
+- Browser E2E: not generated because the Timesheets module currently has no local UI project, Playwright workspace, or rendered capture page; Story 1.7 exposes FrontComposer metadata and host metadata only.
 
 ## Validation
 
 - [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1`
 - [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1`
-- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj --no-build`
-- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj --no-build`
-- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --no-build`
-- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --no-build`
-- [x] `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet run --project tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-build`
+- [x] `./tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests` - 31 passed.
+- [x] `./tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests` - 156 passed.
+- [x] `./tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests` - 19 passed.
+- [x] `./tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests` - 16 passed.
+- [x] `./tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests` - 3 passed, 2 skipped by existing infrastructure/performance placeholders.
 
-`dotnet test` was attempted first and failed in this sandbox before useful VSTest diagnostics were emitted, so validation used the direct xUnit v3 in-process runner fallback documented by the story record.
+`DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj --no-build` was attempted and aborted with `System.Net.Sockets.SocketException (13): Permission denied` from VSTest `TcpListener`, so validation used the direct xUnit v3 in-process runner fallback documented by the story record.
 
 ## Checklist Status
 

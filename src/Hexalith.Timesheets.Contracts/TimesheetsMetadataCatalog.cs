@@ -1,3 +1,4 @@
+using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Ui;
 using Hexalith.Timesheets.Contracts.ValueObjects;
@@ -15,20 +16,26 @@ public static class TimesheetsMetadataCatalog
             TimesheetsSurfaceKind.Command,
             TimesheetsCompositionPattern.FrontComposerGeneratedForm,
             [
+                new("serviceDate", "Service date", "DateOnly", true),
                 new("target", "Target reference", "TimeEntryTargetReference", true),
                 new("contributor", "Contributor", "PartyReference", true),
                 new("activityType", "Activity Type", "ActivityTypeId", true),
                 new("durationMinutes", "Duration minutes", "WholeMinutes", true),
                 new("billableState", "Billable state", nameof(BillableState), true),
+                new("contributorCategory", "Contributor category", nameof(ContributorCategory), true),
+                new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false, "AI metrics keep runtime, effort, and token units explicit."),
                 new("comment", "Comment", nameof(TimeEntryComment), false, "Comments may be excluded by policy.")
             ],
             [
-                new("record-time", "Record time", "Timesheets.RecordTime")
+                new("record-time", "Record time", "Timesheets.RecordTime"),
+                new("record-project-time", "Record project time", "Timesheets.RecordProjectTime"),
+                new("record-work-time", "Record work time", "Timesheets.RecordWorkTime")
             ],
             [
                 new("approval", "Approval", nameof(TimeEntryApprovalState)),
                 new("billable", "Billable", nameof(BillableState)),
                 new("contributor", "Contributor", nameof(ContributorCategory)),
+                new("ai-metrics", "AI metric availability", nameof(AiMetricAvailability)),
                 new("comment-retention", "Comment retention", nameof(TimesheetsEvidenceRetentionCategory))
             ]),
         new(
@@ -98,6 +105,13 @@ public static class TimesheetsMetadataCatalog
                 new("target", "Target reference", "TimeEntryTargetReference", true),
                 new("contributor", "Contributor", "PartyReference", true),
                 new("activityType", "Activity Type", "ActivityTypeId", true),
+                new("serviceDate", "Service date", "DateOnly", true),
+                new("durationMinutes", "Duration minutes", "WholeMinutes", true),
+                new("billableState", "Billable state", nameof(BillableState), true),
+                new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true),
+                new("contributorCategory", "Contributor category", nameof(ContributorCategory), true),
+                new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false),
+                new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
                 new("comment", "Comment", nameof(TimeEntryComment), false, "Comments may contain sensitive information."),
                 new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true)
             ],

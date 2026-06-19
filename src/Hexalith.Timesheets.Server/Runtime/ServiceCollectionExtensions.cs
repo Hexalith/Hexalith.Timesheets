@@ -2,6 +2,7 @@ using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
+using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -17,6 +18,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
         services.TryAddSingleton<TenantActivityTypeCommandService>();
         services.TryAddSingleton<ProjectActivityTypeCommandService>();
+        services.TryAddSingleton<TimeEntryCommandService>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
         services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();
         services.TryAddSingleton(TimesheetsEvidencePolicyOptions.FailClosedDefault);
