@@ -117,6 +117,38 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void Projection_exposes_external_source_and_confirmation_evidence_idempotently()
+    {
+        TimeEntryRecorded recorded = Recorded("time-entry-1", 45) with
+        {
+            ContributorCategory = ContributorCategory.ExternalContributor,
+            ExternalSource = new ExternalContributionSource("supplier-api", "request-1")
+        };
+        TimeEntryContributorConfirmed confirmed = Confirmed("time-entry-1");
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, recorded),
+                Event("m2", 2, confirmed),
+                Event("m2", 2, confirmed)
+            ],
+            FreshCheckpoint(2));
+
+        model.ShouldNotBeNull();
+        model.ContributorCategory.ShouldBe(ContributorCategory.ExternalContributor);
+        model.ExternalSource.ShouldBe(new ExternalContributionSource("supplier-api", "request-1"));
+        model.ContributorConfirmation.ShouldNotBeNull();
+        model.ContributorConfirmation.Source.ShouldBe(new ExternalContributionSource("supplier-api", "confirm-1"));
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        model.ApprovalDecision.ShouldBeNull();
+        model.LockEvidence.LockState.ShouldBe(TimeEntryLockState.Unlocked);
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntryContributorConfirmed)]);
+    }
+
+    [Fact]
     public void Projection_orders_events_by_sequence_number_and_ignores_other_entries()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
@@ -513,6 +545,14 @@ public sealed class TimeEntryEvidenceProjectionTests
             new TimeEntrySubmissionId(submissionId),
             TimeEntrySubmissionScope.SelectedEntries,
             TimeEntryApprovalState.Submitted);
+
+    private static TimeEntryContributorConfirmed Confirmed(string id)
+        => new(
+            new TimeEntryId(id),
+            Contributor(),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 12, 30, 0, TimeSpan.Zero),
+            new ExternalContributionSource("supplier-api", "confirm-1"));
 
     private static TimeEntryApproved Approved(string id)
         => new(

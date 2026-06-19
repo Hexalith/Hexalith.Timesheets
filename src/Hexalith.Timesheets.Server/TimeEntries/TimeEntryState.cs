@@ -33,6 +33,16 @@ public sealed class TimeEntryState
 
     public TimeEntryComment? Comment { get; private set; }
 
+    public ExternalContributionSource? ExternalSource { get; private set; }
+
+    public ExternalContributionSource? ContributorConfirmationSource { get; private set; }
+
+    public PartyReference? ConfirmedContributor { get; private set; }
+
+    public TenantReference? ConfirmationTenant { get; private set; }
+
+    public DateTimeOffset? ConfirmedAtUtc { get; private set; }
+
     public TimeEntrySubmissionId? TimeEntrySubmissionId { get; private set; }
 
     public PartyReference? Submitter { get; private set; }
@@ -105,6 +115,7 @@ public sealed class TimeEntryState
         ContributorCategory = recorded.ContributorCategory;
         AiMetrics = recorded.AiMetrics;
         Comment = recorded.Comment;
+        ExternalSource = recorded.ExternalSource;
     }
 
     public void Apply(TimeEntrySubmitted submitted)
@@ -117,6 +128,16 @@ public sealed class TimeEntryState
         SubmissionTenant = submitted.Tenant;
         SubmittedAtUtc = submitted.SubmittedAtUtc;
         SubmissionScope = submitted.SubmissionScope;
+    }
+
+    public void Apply(TimeEntryContributorConfirmed confirmed)
+    {
+        ArgumentNullException.ThrowIfNull(confirmed);
+
+        ConfirmedContributor = confirmed.Contributor;
+        ConfirmationTenant = confirmed.Tenant;
+        ConfirmedAtUtc = confirmed.ConfirmedAtUtc;
+        ContributorConfirmationSource = confirmed.Source;
     }
 
     public void Apply(TimeEntryApproved approved)

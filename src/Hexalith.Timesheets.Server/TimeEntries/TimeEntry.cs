@@ -1,3 +1,4 @@
+using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
@@ -52,7 +53,8 @@ public static class TimeEntry
                 command.ContributorCategory,
                 command.AiMetrics)
             {
-                Comment = command.Comment
+                Comment = command.Comment,
+                ExternalSource = command.ExternalSource
             }
         ]);
     }
@@ -98,6 +100,37 @@ public static class TimeEntry
                 command.TimeEntrySubmissionId,
                 command.SubmissionScope,
                 TimeEntryApprovalState.Submitted)
+        ]);
+    }
+
+    public static TimesheetsDomainResult Handle(
+        ConfirmExternalTimeEntry command,
+        TimeEntryState? state,
+        TenantReference? tenant,
+        DateTimeOffset confirmedAtUtc)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        if (state?.ContributorConfirmationSource == command.Source)
+        {
+            return TimesheetsDomainResult.NoOp();
+        }
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateExternalConfirmation(command, state, tenant, confirmedAtUtc, errors);
+
+        if (errors.Count > 0)
+        {
+            return Reject(TimesheetsRejectionCode.ValidationFailed, "External contributor confirmation failed validation.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new TimeEntryContributorConfirmed(
+                command.TimeEntryId,
+                command.Contributor,
+                tenant!,
+                confirmedAtUtc.ToUniversalTime(),
+                command.Source)
         ]);
     }
 
@@ -886,6 +919,57 @@ public static class TimeEntry
         if (authoritySource.Freshness is null)
         {
             errors.Add(new("authoritySource.freshness", "required", "Approval authority freshness is required."));
+        }
+    }
+
+    private static void ValidateExternalConfirmation(
+        ConfirmExternalTimeEntry command,
+        TimeEntryState? state,
+        TenantReference? tenant,
+        DateTimeOffset confirmedAtUtc,
+        List<TimesheetsFieldError> errors)
+    {
+        if (command.TimeEntryId is null || string.IsNullOrWhiteSpace(command.TimeEntryId.Value))
+        {
+            errors.Add(new("timeEntryId", "required", "Time Entry ID is required."));
+        }
+
+        if (command.Contributor is null || string.IsNullOrWhiteSpace(command.Contributor.PartyId))
+        {
+            errors.Add(new("contributor", "required", "Contributor Party reference is required."));
+        }
+
+        if (command.Source is null
+            || string.IsNullOrWhiteSpace(command.Source.SourceSystem)
+            || string.IsNullOrWhiteSpace(command.Source.ExternalRequestId))
+        {
+            errors.Add(new("source", "required", "External confirmation source metadata is required."));
+        }
+
+        if (tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId))
+        {
+            errors.Add(new("tenant", "required", "Tenant reference is required."));
+        }
+
+        if (confirmedAtUtc.Offset != TimeSpan.Zero)
+        {
+            errors.Add(new("confirmedAtUtc", "utc-required", "Confirmation timestamp must be a UTC instant."));
+        }
+
+        if (state?.IsRecorded != true)
+        {
+            errors.Add(new("timeEntryId", "not-recorded", "Time Entry must be recorded before external confirmation."));
+            return;
+        }
+
+        if (state.ContributorCategory != ContributorCategory.ExternalContributor)
+        {
+            errors.Add(new("contributorCategory", "external-required", "External confirmation requires an external contributor Time Entry."));
+        }
+
+        if (state.Contributor != command.Contributor)
+        {
+            errors.Add(new("contributor", "mismatch", "Confirmation contributor must match the recorded Time Entry contributor."));
         }
     }
 

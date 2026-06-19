@@ -48,6 +48,10 @@ public sealed class RuntimeRegistrationTests
             .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntrySubmissionCommandService>()
             .ShouldNotBeNull();
+        provider.GetRequiredService<ExternalContributionCommandService>()
+            .ShouldNotBeNull();
+        provider.GetRequiredService<ExternalContributionPolicyOptions>()
+            .ShouldBe(ExternalContributionPolicyOptions.Default);
         provider.GetRequiredService<TimeEntryApprovalCommandService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntryCorrectionCommandService>()

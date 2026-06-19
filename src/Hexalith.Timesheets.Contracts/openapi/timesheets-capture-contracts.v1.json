@@ -88,6 +88,7 @@
           "billableState": { "$ref": "#/components/schemas/BillableState" },
           "contributorCategory": { "$ref": "#/components/schemas/ContributorCategory" },
           "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" },
+          "externalSource": { "$ref": "#/components/schemas/ExternalContributionSource" },
           "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
         }
       },
@@ -107,6 +108,47 @@
             "items": { "$ref": "#/components/schemas/TimeEntryId" }
           },
           "submissionScope": { "$ref": "#/components/schemas/TimeEntrySubmissionScope" }
+        },
+        "additionalProperties": false
+      },
+      "SubmitExternalTimeEntry": {
+        "type": "object",
+        "description": "Submit external contributor time through the same Timesheets capture flow. Tenant, actor, correlation, authority, workflow policy, and message envelope fields are server-derived and not accepted from the caller payload.",
+        "required": [
+          "timeEntryId",
+          "target",
+          "contributor",
+          "activityTypeId",
+          "serviceDate",
+          "durationMinutes",
+          "billableState",
+          "source"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "serviceDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "minimum": 1 },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "source": { "$ref": "#/components/schemas/ExternalContributionSource" },
+          "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
+        },
+        "additionalProperties": false
+      },
+      "ConfirmExternalTimeEntry": {
+        "type": "object",
+        "description": "Record external contributor confirmation evidence for an existing Time Entry. Confirmation is not approval and carries no approval authority.",
+        "required": [
+          "timeEntryId",
+          "contributor",
+          "source"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "source": { "$ref": "#/components/schemas/ExternalContributionSource" }
         },
         "additionalProperties": false
       },
@@ -273,6 +315,25 @@
           "timeEntrySubmissionId": { "$ref": "#/components/schemas/TimeEntrySubmissionId" },
           "submissionScope": { "$ref": "#/components/schemas/TimeEntrySubmissionScope" },
           "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryContributorConfirmed": {
+        "type": "object",
+        "description": "Domain event for external contributor confirmation evidence. It records confirmation evidence only and does not approve, lock, or make a Time Entry ledger-eligible.",
+        "required": [
+          "timeEntryId",
+          "contributor",
+          "tenant",
+          "confirmedAtUtc",
+          "source"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "confirmedAtUtc": { "type": "string", "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/ExternalContributionSource" }
         },
         "additionalProperties": false
       },
@@ -686,6 +747,8 @@
           "approvalState": { "$ref": "#/components/schemas/TimeEntryApprovalState" },
           "contributorCategory": { "$ref": "#/components/schemas/ContributorCategory" },
           "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" },
+          "externalSource": { "$ref": "#/components/schemas/ExternalContributionSource" },
+          "contributorConfirmation": { "$ref": "#/components/schemas/TimeEntryContributorConfirmationEvidence" },
           "correctionState": { "$ref": "#/components/schemas/TimeEntryCorrectionState" },
           "projectionFreshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" },
           "sourceAuthority": { "$ref": "#/components/schemas/TimeEntryEvidenceSourceAuthority" },
@@ -1028,6 +1091,28 @@
           "policyKey": { "type": "string", "minLength": 1 },
           "policyVersion": { "type": "string", "minLength": 1 },
           "freshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" }
+        },
+        "additionalProperties": false
+      },
+      "ExternalContributionSource": {
+        "type": "object",
+        "description": "Safe external source metadata for idempotency and audit. It must not contain personal data, raw provider payloads, bearer tokens, decoded capability material, display names, comments, or upstream problem details.",
+        "required": [ "sourceSystem", "externalRequestId" ],
+        "properties": {
+          "sourceSystem": { "type": "string", "minLength": 1, "maxLength": 80 },
+          "externalRequestId": { "type": "string", "minLength": 1, "maxLength": 120 }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryContributorConfirmationEvidence": {
+        "type": "object",
+        "description": "Contributor confirmation evidence exposed to authorized approvers. It is separate from approval evidence.",
+        "required": [ "timeEntryId", "contributor", "confirmedAtUtc", "source" ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "confirmedAtUtc": { "type": "string", "format": "date-time" },
+          "source": { "$ref": "#/components/schemas/ExternalContributionSource" }
         },
         "additionalProperties": false
       },

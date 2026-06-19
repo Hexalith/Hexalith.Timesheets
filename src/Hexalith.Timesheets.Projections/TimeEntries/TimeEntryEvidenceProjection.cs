@@ -46,6 +46,13 @@ public sealed class TimeEntryEvidenceProjection
                 lineage.Add(CreateLineageItem(projectionEvent));
                 model = Apply(submitted, model, checkpoint, lineage);
             }
+            else if (projectionEvent.Payload is TimeEntryContributorConfirmed confirmed
+                && confirmed.TimeEntryId == timeEntryId
+                && model is not null)
+            {
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(confirmed, model, checkpoint, lineage);
+            }
             else if (projectionEvent.Payload is TimeEntryApproved approved
                 && approved.TimeEntryId == timeEntryId
                 && model?.ApprovalState == TimeEntryApprovalState.Submitted)
@@ -99,6 +106,7 @@ public sealed class TimeEntryEvidenceProjection
             ToFreshnessMetadata(checkpoint))
         {
             Comment = recorded.Comment,
+            ExternalSource = recorded.ExternalSource,
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = TimeEntryLockEvidence.Unlocked,
@@ -117,6 +125,27 @@ public sealed class TimeEntryEvidenceProjection
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = TimeEntryLockEvidence.Unlocked,
+            DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
+                ? TimeEntryDisplayHydration.Unavailable()
+                : current.DisplayHydration
+        };
+
+    private static TimeEntryEvidenceReadModel Apply(
+        TimeEntryContributorConfirmed confirmed,
+        TimeEntryEvidenceReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => current with
+        {
+            ContributorConfirmation = new(
+                confirmed.TimeEntryId,
+                confirmed.Contributor,
+                confirmed.ConfirmedAtUtc,
+                confirmed.Source),
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            LockEvidence = current.LockEvidence,
             DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
                 ? TimeEntryDisplayHydration.Unavailable()
                 : current.DisplayHydration

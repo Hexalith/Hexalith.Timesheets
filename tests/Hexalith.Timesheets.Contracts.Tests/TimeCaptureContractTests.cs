@@ -975,6 +975,7 @@ public sealed class TimeCaptureContractTests
             [
                 "timesheets.command.record-time",
                 "timesheets.command.submit-time-entries",
+                "timesheets.command.external-contribution",
                 "timesheets.command.submit-period",
                 "timesheets.command.correct-rejected-time-entry",
                 "timesheets.command.correct-approved-time-entry",

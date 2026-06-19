@@ -20,6 +20,10 @@ public sealed record TimeEntryEvidenceReadModel(
 {
     public TimeEntryComment? Comment { get; init; }
 
+    public ExternalContributionSource? ExternalSource { get; init; }
+
+    public TimeEntryContributorConfirmationEvidence? ContributorConfirmation { get; init; }
+
     public TimeEntryEvidenceSourceAuthority SourceAuthority { get; init; } =
         TimeEntryEvidenceSourceAuthority.Unknown;
 

@@ -70,6 +70,34 @@ public static class TimesheetsMetadataCatalog
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
+            "timesheets.command.external-contribution",
+            "External contributor",
+            "external-contribution",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("source", "External source", nameof(ExternalContributionSource), true, "Safe source system and idempotency reference only."),
+                new("timeEntry", "Time Entry", nameof(TimeEntryId), true),
+                new("target", "Target reference", "TimeEntryTargetReference", true),
+                new("contributor", "Contributor", "PartyReference", true),
+                new("activityType", "Activity Type", "ActivityTypeId", true),
+                new("serviceDate", "Service date", "DateOnly", true),
+                new("durationMinutes", "Duration minutes", "WholeMinutes", true),
+                new("billableState", "Billable state", nameof(BillableState), true),
+                new("confirmation", "Confirmation recorded", nameof(TimeEntryContributorConfirmationEvidence), false, "Contributor confirmation is evidence, not approval."),
+                new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true, "Approval still follows the configured Timesheets workflow."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true)
+            ],
+            [
+                new("submit-external-time", "Submit external time", "Timesheets.SubmitExternalTimeEntry"),
+                new("confirm-time", "Confirm time", "Timesheets.ConfirmExternalTimeEntry")
+            ],
+            [
+                new("external-contributor", "External contributor", nameof(ContributorCategory)),
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
+            ]),
+        new(
             "timesheets.command.submit-period",
             "Submit period",
             "submission",

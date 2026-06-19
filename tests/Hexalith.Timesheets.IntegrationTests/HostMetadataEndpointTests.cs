@@ -76,6 +76,38 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
+    public void Host_metadata_api_contract_exports_external_contribution_descriptor()
+    {
+        var descriptor = TimesheetsMetadataCatalog.Descriptors
+            .Single(static descriptor => descriptor.Name == "timesheets.command.external-contribution");
+
+        descriptor.Capability.ShouldBe("external-contribution");
+        descriptor.Fields.Select(static field => field.Name).ShouldBe(
+        [
+            "source",
+            "timeEntry",
+            "target",
+            "contributor",
+            "activityType",
+            "serviceDate",
+            "durationMinutes",
+            "billableState",
+            "confirmation",
+            "approvalState",
+            "projectionFreshness"
+        ]);
+        descriptor.Actions.Select(static action => action.Label).ShouldBe(["Submit external time", "Confirm time"]);
+        descriptor.StateBadges.Select(static badge => badge.Label).ShouldContain("External contributor");
+
+        string json = JsonSerializer.Serialize(descriptor, JsonOptions);
+
+        json.ShouldContain("Confirmation recorded");
+        AssertJsonOmitsCallerAuthority(json);
+        json.ShouldNotContain("invoice", Case.Insensitive);
+        json.ShouldNotContain("payroll", Case.Insensitive);
+    }
+
+    [Fact]
     public void Host_metadata_api_contract_exports_correct_rejected_entry_descriptor()
     {
         var correctionDescriptor = TimesheetsMetadataCatalog.Descriptors

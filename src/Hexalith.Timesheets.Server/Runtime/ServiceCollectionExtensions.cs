@@ -31,6 +31,8 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ProjectActivityTypeCommandService>();
         services.TryAddSingleton<TimeEntryCommandService>();
         services.TryAddSingleton<TimeEntrySubmissionCommandService>();
+        services.TryAddSingleton(ExternalContributionPolicyOptions.Default);
+        services.TryAddSingleton<ExternalContributionCommandService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();

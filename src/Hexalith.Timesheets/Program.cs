@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Contracts;
+using Hexalith.Timesheets.Endpoints;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.ServiceDefaults;
 
@@ -13,6 +14,7 @@ builder.Services.AddTimesheetsServerKernel();
 WebApplication app = builder.Build();
 
 app.MapTimesheetsDefaultEndpoints();
+app.MapTimesheetsExternalContributionEndpoints();
 
 app.MapGet(
     "/metadata/timesheets",

@@ -18,4 +18,6 @@ public sealed record TimeEntryRecorded(
     AiEffortMetrics? AiMetrics)
 {
     public TimeEntryComment? Comment { get; init; }
+
+    public ExternalContributionSource? ExternalSource { get; init; }
 }

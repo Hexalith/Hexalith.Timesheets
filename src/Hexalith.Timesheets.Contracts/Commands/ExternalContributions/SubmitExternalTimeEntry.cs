@@ -2,9 +2,9 @@ using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 
-namespace Hexalith.Timesheets.Contracts.Commands.TimeEntries;
+namespace Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 
-public sealed record RecordTimeEntry(
+public sealed record SubmitExternalTimeEntry(
     TimeEntryId TimeEntryId,
     TimeEntryTargetReference Target,
     PartyReference Contributor,
@@ -12,10 +12,7 @@ public sealed record RecordTimeEntry(
     DateOnly ServiceDate,
     int DurationMinutes,
     BillableState BillableState,
-    ContributorCategory ContributorCategory,
-    AiEffortMetrics? AiMetrics)
+    ExternalContributionSource Source)
 {
     public TimeEntryComment? Comment { get; init; }
-
-    public ExternalContributionSource? ExternalSource { get; init; }
 }
