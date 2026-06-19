@@ -1,5 +1,5 @@
 # generated: 2026-06-18 23:50:36
-# last_updated: 2026-06-19 (story 4.2 ready for review)
+# last_updated: 2026-06-19 (story 4.3 review complete)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-19 (story 4.2 ready for review)
+last_updated: 2026-06-19 (story 4.3 review complete)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -80,7 +80,7 @@ development_status:
   epic-4: in-progress
   4-1-query-time-entries-from-rebuildable-read-models: done
   4-2-project-approved-time-ledger-from-domain-events: done
-  4-3-produce-project-and-work-actual-time-reports: backlog
+  4-3-produce-project-and-work-actual-time-reports: done
   4-4-surface-ai-effort-reporting: backlog
   4-5-generate-finance-export-from-approved-ledger: backlog
   4-6-verify-finance-export-evidence-and-audit-trail: backlog

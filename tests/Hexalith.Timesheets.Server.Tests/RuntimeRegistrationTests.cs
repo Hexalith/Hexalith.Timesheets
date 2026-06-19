@@ -3,6 +3,7 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.OperationalReports;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.Runtime;
@@ -60,6 +61,8 @@ public sealed class RuntimeRegistrationTests
             .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntryEvidenceListQueryService>()
             .ShouldNotBeNull();
+        provider.GetRequiredService<ActualTimeReportQueryService>()
+            .ShouldNotBeNull();
         provider.GetRequiredService<TimesheetPeriodSubmissionCommandService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<TimesheetPeriodApprovalCommandService>()
@@ -82,6 +85,10 @@ public sealed class RuntimeRegistrationTests
             .ShouldBeOfType<UnavailableTimeEntryEvidenceProjectionReader>();
         provider.GetRequiredService<ITimeEntryEvidenceListProjectionReader>()
             .ShouldBeOfType<UnavailableTimeEntryEvidenceListProjectionReader>();
+        provider.GetRequiredService<IActualTimeReportProjectionReader>()
+            .ShouldBeOfType<UnavailableActualTimeReportProjectionReader>();
+        provider.GetRequiredService<IWorkPlannedEffortProvider>()
+            .ShouldBeOfType<UnavailableWorkPlannedEffortProvider>();
         provider.GetRequiredService<ITimeEntryDisplayHydrator>()
             .ShouldBeOfType<UnavailableTimeEntryDisplayHydrator>();
         provider.GetRequiredService<IPartyDisplayHydrationProvider>()

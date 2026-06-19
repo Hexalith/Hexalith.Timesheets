@@ -1609,6 +1609,7 @@ public sealed class TimeEntryAuthorizationTests
             target,
             Contributor(),
             ActivityId(),
+            ActivityTypeScope.Tenant,
             new DateOnly(2026, 6, 19),
             60,
             BillableState.Billable,

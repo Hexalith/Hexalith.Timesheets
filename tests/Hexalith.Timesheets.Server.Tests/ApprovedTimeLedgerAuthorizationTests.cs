@@ -176,6 +176,7 @@ public sealed class ApprovedTimeLedgerAuthorizationTests
             new ActivityTypeId("activity-type-1"),
             ActivityTypeScope.Tenant,
             BillableState.Billable,
+            ContributorCategory.Employee,
             Approval(id),
             TimeEntryLockEvidence.Approved(
                 new TimeEntryApprovalDecisionId("decision-" + id),

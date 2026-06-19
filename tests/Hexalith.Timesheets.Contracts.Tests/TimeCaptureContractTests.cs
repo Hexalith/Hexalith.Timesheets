@@ -171,6 +171,7 @@ public sealed class TimeCaptureContractTests
                     TimeEntryTargetReference.ForProject(new ProjectReference("project-789")),
                     new PartyReference("party-789"),
                     new ActivityTypeId("activity-type-789"),
+                    ActivityTypeScope.Tenant,
                     new DateOnly(2026, 6, 20),
                     60,
                     BillableState.Billable,
@@ -1063,6 +1064,8 @@ public sealed class TimeCaptureContractTests
                 "timesheets.projection.time-entry-evidence",
                 "timesheets.projection.time-entry-query",
                 "timesheets.projection.approved-time-ledger",
+                "timesheets.projection.project-actual-time-report",
+                "timesheets.projection.work-actual-time-report",
                 "timesheets.projection.my-timesheet-period",
                 "timesheets.projection.period-approval-detail",
                 "timesheets.approvals.queue",
@@ -1102,6 +1105,9 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(ContributorCategory));
         badgeVocabularies.ShouldContain(nameof(TimeEntrySourceType));
         badgeVocabularies.ShouldContain(nameof(ApprovedTimeLedgerRowState));
+        badgeVocabularies.ShouldContain(nameof(ActualTimeReportRowState));
+        badgeVocabularies.ShouldContain(nameof(ActualTimeReferenceState));
+        badgeVocabularies.ShouldContain(nameof(WorkPlannedEffortAvailability));
         badgeVocabularies.ShouldContain(nameof(ActivityTypeActiveState));
         badgeVocabularies.ShouldContain(nameof(TimeEntryCorrectionState));
         badgeVocabularies.ShouldContain(nameof(ProjectionFreshnessState));

@@ -151,6 +151,49 @@ public enum ApprovedTimeLedgerRowState
     Superseded = 2
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<ActualTimeReportRowState>))]
+public enum ActualTimeReportRowState
+{
+    Unknown = 0,
+    Current = 1,
+    IncludesSuperseded = 2
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<ActualTimeReportSortBy>))]
+public enum ActualTimeReportSortBy
+{
+    Unknown = 0,
+    TargetReference = 1,
+    Period = 2,
+    Contributor = 3,
+    ActivityType = 4,
+    ActualMinutes = 5,
+    SourceRowCount = 6
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<ActualTimeReferenceState>))]
+public enum ActualTimeReferenceState
+{
+    Unknown = 0,
+    Current = 1,
+    Stale = 2,
+    Unavailable = 3,
+    Unauthorized = 4,
+    Invalid = 5,
+    Rebuilding = 6
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<WorkPlannedEffortAvailability>))]
+public enum WorkPlannedEffortAvailability
+{
+    Unknown = 0,
+    Supplied = 1,
+    NotSupplied = 2,
+    Unavailable = 3,
+    Unauthorized = 4,
+    Stale = 5
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<TimeEntryLockState>))]
 public enum TimeEntryLockState
 {

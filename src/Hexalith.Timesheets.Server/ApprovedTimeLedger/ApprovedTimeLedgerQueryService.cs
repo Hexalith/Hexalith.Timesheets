@@ -139,7 +139,7 @@ public sealed class ApprovedTimeLedgerQueryService
             row.DurationMinutes,
             row.BillableState,
             TimeEntryApprovalState.Approved,
-            ContributorCategory.Unknown,
+            row.ContributorCategory,
             null,
             ResolveCorrectionState(row),
             row.ProjectionFreshness)

@@ -47,6 +47,29 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
+    public void Host_metadata_api_contract_exports_actual_time_report_descriptors()
+    {
+        string[] metadataDescriptors = TimesheetsMetadataCatalog.Descriptors
+            .Select(static descriptor => descriptor.Name)
+            .ToArray();
+
+        metadataDescriptors.ShouldContain("timesheets.projection.project-actual-time-report");
+        metadataDescriptors.ShouldContain("timesheets.projection.work-actual-time-report");
+
+        string json = JsonSerializer.Serialize(
+            TimesheetsMetadataCatalog.Descriptors
+                .Where(static descriptor => descriptor.Name.Contains("actual-time-report", StringComparison.Ordinal)),
+            JsonOptions);
+
+        json.ShouldContain("filter", Case.Insensitive);
+        json.ShouldContain("Actual minutes");
+        json.ShouldContain("Projection freshness");
+        json.ShouldNotContain("EventStore");
+        json.ShouldNotContain("invoice", Case.Insensitive);
+        json.ShouldNotContain("payroll", Case.Insensitive);
+    }
+
+    [Fact]
     public void Host_metadata_api_contract_exports_submit_time_entries_descriptor()
     {
         var submitDescriptor = TimesheetsMetadataCatalog.Descriptors
@@ -172,6 +195,8 @@ public sealed class HostMetadataEndpointTests
         json.ShouldContain("timesheets.projection.activity-type-catalog");
         json.ShouldContain("timesheets.command.correct-rejected-time-entry");
         json.ShouldContain("timesheets.projection.time-entry-query");
+        json.ShouldContain("timesheets.projection.project-actual-time-report");
+        json.ShouldContain("timesheets.projection.work-actual-time-report");
         AssertJsonOmitsCallerAuthority(json);
         json.ShouldNotContain("timeEntryId");
         json.ShouldNotContain("activityTypeId");
