@@ -144,6 +144,7 @@ public sealed class MagicLinkConfirmationCapabilityProjection
             ExpiryState = expiryState,
             UsedAtUtc = used.UsedAtUtc,
             UseMetadata = used.Source,
+            UseOutcomeCategory = used.OutcomeCategory,
             ProjectionFreshness = ToFreshnessMetadata(checkpoint),
             StateBadgeText = "Used",
             ExpiryBadgeText = ToExpiryBadgeText(expiryState)

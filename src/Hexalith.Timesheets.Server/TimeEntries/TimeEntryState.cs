@@ -89,6 +89,8 @@ public sealed class TimeEntryState
 
     public TimeEntryApprovalScope SourceApprovalScope { get; private set; }
 
+    public TimeEntryExternalAdjustmentEvidence? ExternalAdjustment { get; private set; }
+
     public TimeEntryLockState LockState => CorrectionState == TimeEntryCorrectionState.Superseded
         ? TimeEntryLockState.SupersededLocked
         : ApprovalState == TimeEntryApprovalState.Approved
@@ -138,6 +140,28 @@ public sealed class TimeEntryState
         ConfirmationTenant = confirmed.Tenant;
         ConfirmedAtUtc = confirmed.ConfirmedAtUtc;
         ContributorConfirmationSource = confirmed.Source;
+    }
+
+    public void Apply(TimeEntryAdjustedThroughMagicLink adjusted)
+    {
+        ArgumentNullException.ThrowIfNull(adjusted);
+
+        ActivityTypeId = adjusted.AdjustedValues.ActivityTypeId;
+        ActivityTypeScope = adjusted.ActivityTypeScope;
+        ServiceDate = adjusted.AdjustedValues.ServiceDate;
+        DurationMinutes = adjusted.AdjustedValues.DurationMinutes;
+        BillableState = adjusted.AdjustedValues.BillableState;
+        ContributorCategory = adjusted.AdjustedValues.ContributorCategory;
+        AiMetrics = adjusted.AdjustedValues.AiMetrics;
+        Comment = adjusted.AdjustedValues.Comment;
+        ExternalAdjustment = new(
+            adjusted.TimeEntryId,
+            adjusted.Contributor,
+            adjusted.Tenant,
+            adjusted.AdjustedAtUtc,
+            adjusted.PreviousValues,
+            adjusted.AdjustedValues,
+            adjusted.Source);
     }
 
     public void Apply(TimeEntryApproved approved)

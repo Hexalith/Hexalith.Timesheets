@@ -121,7 +121,13 @@ public static class MagicLinkConfirmationCapability
         ArgumentNullException.ThrowIfNull(tokenHash);
 
         List<TimesheetsFieldError> errors = [];
-        ValidateUse(state, tenant, tokenHash, usedAtUtc, errors);
+        ValidateUse(
+            state,
+            tenant,
+            tokenHash,
+            usedAtUtc,
+            static action => action is MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.ConfirmOrAdjust,
+            errors);
 
         if (errors.Count > 0)
         {
@@ -136,6 +142,47 @@ public static class MagicLinkConfirmationCapability
                 state.TimeEntryId!,
                 usedAtUtc.ToUniversalTime(),
                 ServerDerivedSource(state))
+            {
+                OutcomeCategory = "confirmed"
+            }
+        ]);
+    }
+
+    public static TimesheetsDomainResult HandleUse(
+        AdjustTimeThroughMagicLink command,
+        MagicLinkCapabilityState? state,
+        TenantReference? tenant,
+        MagicLinkTokenHash tokenHash,
+        DateTimeOffset usedAtUtc)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(tokenHash);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateUse(
+            state,
+            tenant,
+            tokenHash,
+            usedAtUtc,
+            static action => action is MagicLinkAllowedAction.Adjust or MagicLinkAllowedAction.ConfirmOrAdjust,
+            errors);
+
+        if (errors.Count > 0)
+        {
+            return Reject("Magic-link adjustment request was not accepted.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new MagicLinkConfirmationCapabilityUsed(
+                state!.CapabilityId!,
+                tenant!,
+                state.Contributor!,
+                state.TimeEntryId!,
+                usedAtUtc.ToUniversalTime(),
+                ServerDerivedSource(state))
+            {
+                OutcomeCategory = "adjusted"
+            }
         ]);
     }
 
@@ -157,7 +204,32 @@ public static class MagicLinkConfirmationCapability
         ArgumentNullException.ThrowIfNull(tokenHash);
 
         List<TimesheetsFieldError> errors = [];
-        ValidateUse(state, tenant, tokenHash, atUtc, errors);
+        ValidateUse(
+            state,
+            tenant,
+            tokenHash,
+            atUtc,
+            static action => action is MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.ConfirmOrAdjust,
+            errors);
+        return errors.Count == 0;
+    }
+
+    public static bool IsValidForAdjustment(
+        MagicLinkCapabilityState? state,
+        TenantReference? tenant,
+        MagicLinkTokenHash tokenHash,
+        DateTimeOffset atUtc)
+    {
+        ArgumentNullException.ThrowIfNull(tokenHash);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateUse(
+            state,
+            tenant,
+            tokenHash,
+            atUtc,
+            static action => action is MagicLinkAllowedAction.Adjust or MagicLinkAllowedAction.ConfirmOrAdjust,
+            errors);
         return errors.Count == 0;
     }
 
@@ -271,6 +343,7 @@ public static class MagicLinkConfirmationCapability
         TenantReference? tenant,
         MagicLinkTokenHash tokenHash,
         DateTimeOffset usedAtUtc,
+        Func<MagicLinkAllowedAction, bool> isAllowedAction,
         List<TimesheetsFieldError> errors)
     {
         if (tenant is null)
@@ -311,7 +384,7 @@ public static class MagicLinkConfirmationCapability
             errors.Add(InvalidLink("capability"));
         }
 
-        if (state.AllowedAction is not (MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.ConfirmOrAdjust))
+        if (!isAllowedAction(state.AllowedAction))
         {
             errors.Add(InvalidLink("capability"));
         }

@@ -191,6 +191,19 @@
         "properties": {},
         "additionalProperties": false
       },
+      "AdjustTimeThroughMagicLink": {
+        "type": "object",
+        "description": "Adjust policy-allowed proposed-entry fields after server-side capability validation. Caller payload is restricted to editable proposed-entry values.",
+        "required": [ "serviceDate", "durationMinutes", "activityTypeId", "billableState" ],
+        "properties": {
+          "serviceDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "format": "int32", "minimum": 1 },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
+        },
+        "additionalProperties": false
+      },
       "MagicLinkIssueResponse": {
         "type": "object",
         "description": "One-time issuance response that may contain the usable opaque token. This schema is not persisted, projected, exported, or exposed by metadata/read models.",
@@ -1232,7 +1245,8 @@
           "contributor": { "$ref": "#/components/schemas/PartyReference" },
           "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
           "usedAtUtc": { "type": "string", "format": "date-time" },
-          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" }
+          "source": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
+          "outcomeCategory": { "type": "string", "enum": [ "confirmed", "adjusted" ] }
         },
         "additionalProperties": false
       },
@@ -1262,9 +1276,28 @@
           "revocationMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
           "expiryMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
           "useMetadata": { "$ref": "#/components/schemas/MagicLinkAuditMetadata" },
+          "useOutcomeCategory": { "type": "string", "nullable": true },
           "projectionFreshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" },
           "stateBadgeText": { "type": "string" },
           "expiryBadgeText": { "type": "string" }
+        },
+        "additionalProperties": false
+      },
+      "MagicLinkAdjustmentDisplayResponse": {
+        "type": "object",
+        "description": "Safe external adjustment display details returned only after capability validation. Read-only and editable fields are explicit.",
+        "required": [ "proposedDate", "durationMinutes", "durationUnit", "activityTypeId", "activityTypeLabel", "billableState", "targetContext", "editableFields", "readOnlyFields" ],
+        "properties": {
+          "proposedDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "format": "int32", "minimum": 1 },
+          "durationUnit": { "type": "string" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "activityTypeLabel": { "type": "string" },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "targetContext": { "type": "string" },
+          "editableFields": { "type": "array", "items": { "type": "string" } },
+          "readOnlyFields": { "type": "array", "items": { "type": "string" } },
+          "comment": { "type": "string", "nullable": true }
         },
         "additionalProperties": false
       },
@@ -1492,6 +1525,41 @@
         },
         "responses": {
           "202": { "description": "Confirmation accepted" },
+          "403": { "description": "Opaque invalid-link response" }
+        }
+      }
+    },
+    "/api/timesheets/magic-links/adjust": {
+      "get": {
+        "summary": "Display scoped magic-link adjustment details",
+        "parameters": [
+          { "name": "t", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe adjustment details",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/MagicLinkAdjustmentDisplayResponse" } }
+            }
+          },
+          "403": { "description": "Opaque invalid-link response" }
+        }
+      }
+    },
+    "/api/timesheets/magic-links/adjust/submit": {
+      "post": {
+        "summary": "Adjust scoped proposed time through a magic link",
+        "parameters": [
+          { "name": "t", "in": "query", "required": true, "schema": { "type": "string", "minLength": 1 } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": { "schema": { "$ref": "#/components/schemas/AdjustTimeThroughMagicLink" } }
+          }
+        },
+        "responses": {
+          "202": { "description": "Adjustment accepted" },
           "403": { "description": "Opaque invalid-link response" }
         }
       }

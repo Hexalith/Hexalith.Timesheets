@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
+using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
@@ -131,6 +132,50 @@ public static class TimeEntry
                 tenant!,
                 confirmedAtUtc.ToUniversalTime(),
                 command.Source)
+        ]);
+    }
+
+    public static TimesheetsDomainResult Handle(
+        AdjustTimeThroughMagicLink command,
+        TimeEntryState? state,
+        TenantReference? tenant,
+        PartyReference? contributor,
+        TimeEntryId? timeEntryId,
+        TimeEntryTargetReference? target,
+        DateTimeOffset adjustedAtUtc,
+        ActivityTypeScope activityTypeScope,
+        ExternalContributionSource? source)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        List<TimesheetsFieldError> errors = [];
+        ValidateExternalAdjustment(
+            command,
+            state,
+            tenant,
+            contributor,
+            timeEntryId,
+            target,
+            adjustedAtUtc,
+            activityTypeScope,
+            source,
+            errors);
+
+        if (errors.Count > 0)
+        {
+            return Reject(TimesheetsRejectionCode.ValidationFailed, "External contributor adjustment failed validation.", errors);
+        }
+
+        return TimesheetsDomainResult.Success([
+            new TimeEntryAdjustedThroughMagicLink(
+                timeEntryId!,
+                tenant!,
+                contributor!,
+                adjustedAtUtc.ToUniversalTime(),
+                activityTypeScope,
+                ToCorrectionValues(state!),
+                ToAdjustmentValues(command, state!, target!, contributor!),
+                source!)
         ]);
     }
 
@@ -973,6 +1018,114 @@ public static class TimeEntry
         }
     }
 
+    private static void ValidateExternalAdjustment(
+        AdjustTimeThroughMagicLink command,
+        TimeEntryState? state,
+        TenantReference? tenant,
+        PartyReference? contributor,
+        TimeEntryId? timeEntryId,
+        TimeEntryTargetReference? target,
+        DateTimeOffset adjustedAtUtc,
+        ActivityTypeScope activityTypeScope,
+        ExternalContributionSource? source,
+        List<TimesheetsFieldError> errors)
+    {
+        if (timeEntryId is null || string.IsNullOrWhiteSpace(timeEntryId.Value))
+        {
+            errors.Add(new("timeEntryId", "required", "Time Entry ID is required."));
+        }
+
+        if (target is null)
+        {
+            errors.Add(new("target", "required", "Target reference is required."));
+        }
+
+        if (contributor is null || string.IsNullOrWhiteSpace(contributor.PartyId))
+        {
+            errors.Add(new("contributor", "required", "Contributor Party reference is required."));
+        }
+
+        if (tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId))
+        {
+            errors.Add(new("tenant", "required", "Tenant reference is required."));
+        }
+
+        if (source is null
+            || string.IsNullOrWhiteSpace(source.SourceSystem)
+            || string.IsNullOrWhiteSpace(source.ExternalRequestId))
+        {
+            errors.Add(new("source", "required", "External adjustment source metadata is required."));
+        }
+
+        if (adjustedAtUtc.Offset != TimeSpan.Zero)
+        {
+            errors.Add(new("adjustedAtUtc", "utc-required", "Adjustment timestamp must be a UTC instant."));
+        }
+
+        if (command.ActivityTypeId is null || string.IsNullOrWhiteSpace(command.ActivityTypeId.Value))
+        {
+            errors.Add(new("activityTypeId", "required", "Activity Type ID is required."));
+        }
+
+        if (activityTypeScope == ActivityTypeScope.Unknown)
+        {
+            errors.Add(new("activityTypeScope", "unknown", "Activity Type scope is required."));
+        }
+
+        if (command.DurationMinutes <= 0)
+        {
+            errors.Add(new("durationMinutes", "positive", "Duration must be a positive whole-minute value."));
+        }
+
+        if (command.BillableState == BillableState.Unknown)
+        {
+            errors.Add(new("billableState", "unknown", "Billable state is required."));
+        }
+
+        ValidateComment(command.Comment, errors);
+
+        if (state?.IsRecorded != true)
+        {
+            errors.Add(new("timeEntryId", "not-recorded", "Time Entry must be recorded before external adjustment."));
+            return;
+        }
+
+        if (state.ApprovalState != TimeEntryApprovalState.Draft)
+        {
+            errors.Add(new("approvalState", "invalid-transition", "Only Draft Time Entries can be adjusted through a magic link."));
+        }
+
+        if (state.ContributorCategory != ContributorCategory.ExternalContributor)
+        {
+            errors.Add(new("contributorCategory", "external-required", "External adjustment requires an external contributor Time Entry."));
+        }
+
+        if (state.CorrectionState != TimeEntryCorrectionState.None)
+        {
+            errors.Add(new("correctionState", "already-corrected", "Corrected Time Entries cannot be adjusted through a magic link."));
+        }
+
+        if (state.IsLockedFromDirectEdit)
+        {
+            errors.Add(new("lockState", LockFieldCode(state.LockState), "Locked Time Entries cannot be adjusted through a magic link."));
+        }
+
+        if (state.TimeEntryId != timeEntryId)
+        {
+            errors.Add(new("timeEntryId", "mismatch", "Adjustment scope must match the recorded Time Entry."));
+        }
+
+        if (state.Contributor != contributor)
+        {
+            errors.Add(new("contributor", "mismatch", "Adjustment contributor must match the recorded Time Entry contributor."));
+        }
+
+        if (state.Target != target)
+        {
+            errors.Add(new("target", "mismatch", "Adjustment target must match the recorded Time Entry target."));
+        }
+    }
+
     private static void ValidateRejectionReason(
         TimeEntryRejectionReason? reason,
         List<TimesheetsFieldError> errors)
@@ -1204,6 +1357,24 @@ public static class TimeEntry
             command.BillableState,
             command.ContributorCategory,
             command.AiMetrics)
+        {
+            Comment = command.Comment
+        };
+
+    private static TimeEntryCorrectionValues ToAdjustmentValues(
+        AdjustTimeThroughMagicLink command,
+        TimeEntryState state,
+        TimeEntryTargetReference target,
+        PartyReference contributor)
+        => new(
+            target,
+            contributor,
+            command.ActivityTypeId,
+            command.ServiceDate,
+            command.DurationMinutes,
+            command.BillableState,
+            ContributorCategory.ExternalContributor,
+            state.AiMetrics)
         {
             Comment = command.Comment
         };

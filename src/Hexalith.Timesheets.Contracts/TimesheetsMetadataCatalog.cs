@@ -99,6 +99,31 @@ public static class TimesheetsMetadataCatalog
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
+            "timesheets.command.magic-link-adjustment",
+            "Adjust external time",
+            "external-contribution",
+            TimesheetsSurfaceKind.Command,
+            TimesheetsCompositionPattern.FrontComposerGeneratedForm,
+            [
+                new("serviceDate", "Service date", "DateOnly", true),
+                new("durationMinutes", "Duration minutes", "WholeMinutes", true, "Duration is edited in whole minutes."),
+                new("activityType", "Activity Type", nameof(ActivityTypeId), true),
+                new("billableState", "Billable state", nameof(BillableState), true),
+                new("comment", "Comment", nameof(TimeEntryComment), false, "Comment submission follows the external display policy."),
+                new("targetContext", "Target context", "String", true, "Read-only scoped target kind; target names are not exposed."),
+                new("editableFields", "Editable fields", "String[]", true),
+                new("readOnlyFields", "Read-only fields", "String[]", true),
+                new("adjustmentOutcome", "Adjustment outcome", "String", true, "Status is shown with text, not color alone.")
+            ],
+            [
+                new("display-adjustment", "Display adjustment", "Timesheets.DisplayMagicLinkAdjustment"),
+                new("submit-adjustment", "Submit adjustment", "Timesheets.AdjustTimeThroughMagicLink")
+            ],
+            [
+                new("billable", "Billable", nameof(BillableState)),
+                new("adjustment-status", "Adjustment status", "String")
+            ]),
+        new(
             "timesheets.command.submit-period",
             "Submit period",
             "submission",

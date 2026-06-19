@@ -976,6 +976,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.command.record-time",
                 "timesheets.command.submit-time-entries",
                 "timesheets.command.external-contribution",
+                "timesheets.command.magic-link-adjustment",
                 "timesheets.command.submit-period",
                 "timesheets.command.correct-rejected-time-entry",
                 "timesheets.command.correct-approved-time-entry",
@@ -1194,6 +1195,8 @@ public sealed class TimeCaptureContractTests
             ?? throw new InvalidOperationException("OpenAPI paths node is missing.");
         paths.Select(static path => path.Key).Order(StringComparer.Ordinal).ShouldBe(
         [
+            "/api/timesheets/magic-links/adjust",
+            "/api/timesheets/magic-links/adjust/submit",
             "/api/timesheets/magic-links/confirm",
             "/api/timesheets/magic-links/confirm/submit"
         ]);

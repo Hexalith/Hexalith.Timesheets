@@ -35,6 +35,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(ExternalContributionPolicyOptions.Default);
         services.TryAddSingleton<ExternalContributionCommandService>();
         services.TryAddSingleton<IMagicLinkTokenGenerator, CryptographicMagicLinkTokenGenerator>();
+        services.TryAddSingleton<IMagicLinkConfirmationCapabilityStateLoader, UnavailableMagicLinkConfirmationCapabilityStateLoader>();
         services.TryAddSingleton<MagicLinkConfirmationCapabilityCommandService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();

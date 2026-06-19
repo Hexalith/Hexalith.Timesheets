@@ -3,33 +3,29 @@
 ## Generated Tests
 
 ### API Tests
-- [x] tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs - Narrow confirmation display/submit routes, authority-field exclusion, opaque denial, and no token-inspection route coverage.
-- [x] tests/Hexalith.Timesheets.Contracts.Tests/MagicLinkContractTests.cs - Magic-link command/event/display/read-model/OpenAPI contract validation with raw-token and authority-field exclusion checks.
-- [x] tests/Hexalith.Timesheets.Server.Tests/MagicLinkConfirmationCapabilityCommandServiceTests.cs - Confirmation-use service coverage for valid token use, invalid tokens, replay, terminal/unavailable capability state, expiry, tenant mismatch, wrong action/scope, and Time Entry scope mismatch.
+- [x] tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs - Existing endpoint route coverage for narrow adjustment display/submit routes, request authority-field exclusion, opaque denial copy, and no token-inspection route.
+- [x] tests/Hexalith.Timesheets.Contracts.Tests/MagicLinkContractTests.cs - Existing adjustment command/display/OpenAPI contract validation with raw-token, token-hash, target, tenant, contributor, and approval-field exclusion checks.
+- [x] tests/Hexalith.Timesheets.Server.Tests/MagicLinkConfirmationCapabilityCommandServiceTests.cs - Existing adjustment service coverage for allowed fields, server-derived scope/source metadata, invalid values, wrong action, and no capability use on failed adjustment.
 
 ### E2E Tests
-- [x] tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityWorkflowE2ETests.cs - In-process issue -> confirm -> used projection -> replay rejection workflow coverage with contributor evidence and token-material exclusion.
-- [x] tests/Hexalith.Timesheets.Projections.Tests/MagicLinkConfirmationCapabilityProjectionTests.cs - Issued/revoked/expired/used projection replay, duplicate delivery, terminal ordering, freshness, and badge coverage.
+- [x] tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityWorkflowE2ETests.cs - Added story 3.4 issue -> safe adjustment display -> invalid adjustment no-use -> valid adjustment -> used capability projection -> Time Entry evidence projection -> replay rejection workflow coverage.
+- [x] tests/Hexalith.Timesheets.Projections.Tests/TimeEntryEvidenceProjectionTests.cs - Existing projection coverage for adjusted effective draft values, previous/adjusted value lineage, duplicate delivery, and safe source evidence.
+- [x] tests/Hexalith.Timesheets.Projections.Tests/MagicLinkConfirmationCapabilityProjectionTests.cs - Existing projection coverage for safe adjusted outcome category on used capabilities.
 
 ## Coverage
 
-- Story 3.3 API routes: 2/2 confirmation routes covered by endpoint tests, with no generic token inspection route.
-- Story 3.3 workflow paths: valid confirmation, contributor evidence, used-state projection, and replay rejection covered end to end through the in-process workflow lane.
-- Story 3.3 critical error paths: invalid/missing token, used, revoked, expired, unavailable capability, tenant mismatch, wrong action, wrong target kind, and mismatched Time Entry scope covered.
-- Story 3.3 privacy checks: raw token, token hash exposure, decoded material, authority fields, command/comment leakage, metadata, read-model, OpenAPI, and diagnostics lanes covered.
-- UI feature coverage: no Timesheets UI package or browser surface exists in the current implementation; phone/browser checks are represented by safe display contract shape and route-surface coverage only.
+- Story 3.4 API routes: 2/2 adjustment routes covered by endpoint/static route tests.
+- Story 3.4 workflow paths: safe display, valid adjustment, no approval transition, capability used outcome, Time Entry evidence projection, duplicate-delivery projection, and replay rejection covered.
+- Story 3.4 critical error paths: invalid duration, confirm-only capability, wrong/used capability, stale/unavailable catalog, invalid/inactive/ambiguous Activity Type, scope mismatch, tenant/contributor/target mismatch, and non-editable server-derived fields covered across server, contract, projection, and integration lanes.
+- Story 3.4 privacy checks: raw token, token hash exposure, decoded/token material, command-body leakage, target/contributor/tenant request authority, comments beyond policy, and token-inspection route absence covered.
+- UI feature coverage: no Timesheets UI package or browser surface exists for this story; display/UI behavior is covered through safe display contracts, route surface, metadata, labels/units fields, and server-side no-disclosure behavior.
 
 ## Validation
 
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` passed with 0 warnings and 0 errors.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj --no-build /nr:false` was blocked by local VSTest socket permissions: `System.Net.Sockets.SocketException (13): Permission denied`.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-build /nr:false` was blocked by local VSTest socket permissions: `System.Net.Sockets.SocketException (13): Permission denied`.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests` passed: 65 total, 0 failed.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests` passed: 316 total, 0 failed.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests` passed: 45 total, 0 failed.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests` passed: 20 total, 0 failed.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests` passed: 38 total, 0 failed, 2 skipped by existing infrastructure/performance skip policy.
-- `jq empty src/Hexalith.Timesheets.Contracts/openapi/timesheets-capture-contracts.v1.json && git diff --check` passed.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-restore -m:1 /nr:false` was blocked by local VSTest socket permissions: `System.Net.Sockets.SocketException (13): Permission denied`.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests` passed: 39 total, 0 failed, 2 skipped by existing infrastructure/performance skip policy.
+- `git diff --check` passed.
 
 ## Checklist
 

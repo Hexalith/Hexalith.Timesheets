@@ -53,6 +53,13 @@ public sealed class TimeEntryEvidenceProjection
                 lineage.Add(CreateLineageItem(projectionEvent));
                 model = Apply(confirmed, model, checkpoint, lineage);
             }
+            else if (projectionEvent.Payload is TimeEntryAdjustedThroughMagicLink adjusted
+                && adjusted.TimeEntryId == timeEntryId
+                && model?.ApprovalState == TimeEntryApprovalState.Draft)
+            {
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(adjusted, model, checkpoint, lineage);
+            }
             else if (projectionEvent.Payload is TimeEntryApproved approved
                 && approved.TimeEntryId == timeEntryId
                 && model?.ApprovalState == TimeEntryApprovalState.Submitted)
@@ -146,6 +153,38 @@ public sealed class TimeEntryEvidenceProjection
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
             LockEvidence = current.LockEvidence,
+            DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
+                ? TimeEntryDisplayHydration.Unavailable()
+                : current.DisplayHydration
+        };
+
+    private static TimeEntryEvidenceReadModel Apply(
+        TimeEntryAdjustedThroughMagicLink adjusted,
+        TimeEntryEvidenceReadModel current,
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => current with
+        {
+            ActivityTypeId = adjusted.AdjustedValues.ActivityTypeId,
+            ActivityTypeScope = adjusted.ActivityTypeScope,
+            ServiceDate = adjusted.AdjustedValues.ServiceDate,
+            DurationMinutes = adjusted.AdjustedValues.DurationMinutes,
+            BillableState = adjusted.AdjustedValues.BillableState,
+            ContributorCategory = adjusted.AdjustedValues.ContributorCategory,
+            AiMetrics = adjusted.AdjustedValues.AiMetrics,
+            Comment = adjusted.AdjustedValues.Comment,
+            ExternalAdjustment = new(
+                adjusted.TimeEntryId,
+                adjusted.Contributor,
+                adjusted.Tenant,
+                adjusted.AdjustedAtUtc,
+                adjusted.PreviousValues,
+                adjusted.AdjustedValues,
+                adjusted.Source),
+            ProjectionFreshness = ToFreshnessMetadata(checkpoint),
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            LockEvidence = TimeEntryLockEvidence.Unlocked,
             DisplayHydration = current.DisplayHydration == TimeEntryDisplayHydration.Unknown
                 ? TimeEntryDisplayHydration.Unavailable()
                 : current.DisplayHydration

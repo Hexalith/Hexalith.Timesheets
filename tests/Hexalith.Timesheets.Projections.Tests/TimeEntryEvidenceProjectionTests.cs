@@ -496,6 +496,34 @@ public sealed class TimeEntryEvidenceProjectionTests
             .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted)]);
     }
 
+    [Fact]
+    public void Projection_applies_magic_link_adjustment_to_effective_draft_values()
+    {
+        TimeEntryAdjustedThroughMagicLink adjusted = Adjusted("time-entry-1", 75);
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, RecordedExternal("time-entry-1", 45)),
+                Event("m2", 2, adjusted),
+                Event("m2", 2, adjusted)
+            ],
+            FreshCheckpoint(2));
+
+        model.ShouldNotBeNull();
+        model.DurationMinutes.ShouldBe(75);
+        model.ServiceDate.ShouldBe(new DateOnly(2026, 6, 20));
+        model.BillableState.ShouldBe(BillableState.NonBillable);
+        model.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        model.ExternalAdjustment.ShouldNotBeNull();
+        model.ExternalAdjustment.PreviousValues.DurationMinutes.ShouldBe(45);
+        model.ExternalAdjustment.AdjustedValues.DurationMinutes.ShouldBe(75);
+        model.ExternalAdjustment.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntryAdjustedThroughMagicLink)]);
+    }
+
     [Theory]
     [InlineData(ProjectionFreshness.Stale, ProjectionFreshnessState.Stale)]
     [InlineData(ProjectionFreshness.Rebuilding, ProjectionFreshnessState.Rebuilding)]
@@ -536,6 +564,13 @@ public sealed class TimeEntryEvidenceProjectionTests
             metrics == AiEffortMetrics.Unavailable ? ContributorCategory.Employee : ContributorCategory.AutomatedAgent,
             metrics);
 
+    private static TimeEntryRecorded RecordedExternal(string id, int durationMinutes)
+        => Recorded(id, durationMinutes, null) with
+        {
+            ContributorCategory = ContributorCategory.ExternalContributor,
+            ExternalSource = new ExternalContributionSource("supplier-api", "request-1")
+        };
+
     private static TimeEntrySubmitted Submitted(string id, string submissionId = "submission-1")
         => new(
             new TimeEntryId(id),
@@ -553,6 +588,31 @@ public sealed class TimeEntryEvidenceProjectionTests
             new TenantReference("tenant-1"),
             new DateTimeOffset(2026, 6, 19, 12, 30, 0, TimeSpan.Zero),
             new ExternalContributionSource("supplier-api", "confirm-1"));
+
+    private static TimeEntryAdjustedThroughMagicLink Adjusted(string id, int durationMinutes)
+        => new(
+            new TimeEntryId(id),
+            new TenantReference("tenant-1"),
+            Contributor(),
+            new DateTimeOffset(2026, 6, 19, 12, 45, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant,
+            ExternalAdjustmentValues(45, new DateOnly(2026, 6, 19), BillableState.Billable),
+            ExternalAdjustmentValues(durationMinutes, new DateOnly(2026, 6, 20), BillableState.NonBillable),
+            new ExternalContributionSource("magic-link", "capability-1"));
+
+    private static TimeEntryCorrectionValues ExternalAdjustmentValues(
+        int durationMinutes,
+        DateOnly serviceDate,
+        BillableState billableState)
+        => new(
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            serviceDate,
+            durationMinutes,
+            billableState,
+            ContributorCategory.ExternalContributor,
+            null);
 
     private static TimeEntryApproved Approved(string id)
         => new(

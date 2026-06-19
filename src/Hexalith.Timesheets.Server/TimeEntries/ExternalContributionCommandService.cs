@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
+using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
@@ -109,6 +110,46 @@ public sealed class ExternalContributionCommandService
         return new(authorization, result, true);
     }
 
+    public async ValueTask<TimeEntryAdjustmentCommandResult> AdjustAsync(
+        TimesheetsRequestContext context,
+        AdjustTimeThroughMagicLink command,
+        TimeEntryState? state,
+        TenantReference? tenant,
+        PartyReference? contributor,
+        TimeEntryId? timeEntryId,
+        TimeEntryTargetReference? target,
+        ActivityTypeScope activityTypeScope,
+        ExternalContributionSource source,
+        DateTimeOffset adjustedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(source);
+
+        TimesheetsAuthorizationDecision authorization = await _accessGuard.AuthorizeAsync(
+            CreateAdjustmentAuthorizationRequest(context, contributor, state),
+            cancellationToken).ConfigureAwait(false);
+
+        if (!authorization.IsAuthorized)
+        {
+            return new(authorization, null, false);
+        }
+
+        TimesheetsDomainResult result = TimeEntry.Handle(
+            command,
+            state,
+            tenant,
+            contributor,
+            timeEntryId,
+            target,
+            adjustedAtUtc,
+            activityTypeScope,
+            source);
+
+        return new(authorization, result, true);
+    }
+
     private static RecordTimeEntry ToRecordCommand(SubmitExternalTimeEntry command)
         => new(
             command.TimeEntryId,
@@ -164,6 +205,29 @@ public sealed class ExternalContributionCommandService
         TimesheetsAuthorizationRequest request = new(context, TimesheetsOperation.Confirmation)
         {
             Contributor = command.Contributor
+        };
+
+        if (state?.Target?.TargetKind == TimeEntryTargetKind.Project)
+        {
+            return request with { Project = new ProjectReference(state.Target.TargetId) };
+        }
+
+        if (state?.Target?.TargetKind == TimeEntryTargetKind.Work)
+        {
+            return request with { Work = new WorkReference(state.Target.TargetId) };
+        }
+
+        return request;
+    }
+
+    private static TimesheetsAuthorizationRequest CreateAdjustmentAuthorizationRequest(
+        TimesheetsRequestContext context,
+        PartyReference? contributor,
+        TimeEntryState? state)
+    {
+        TimesheetsAuthorizationRequest request = new(context, TimesheetsOperation.Confirmation)
+        {
+            Contributor = contributor
         };
 
         if (state?.Target?.TargetKind == TimeEntryTargetKind.Project)

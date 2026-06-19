@@ -9,6 +9,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.MagicLinks;
+using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -97,6 +98,152 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
         readModelJson.ShouldNotContain("token", Case.Insensitive);
         readModelJson.ShouldNotContain("comment", Case.Insensitive);
         readModelJson.ShouldNotContain("command", Case.Insensitive);
+    }
+
+    [Fact]
+    public async Task Magic_link_adjustment_workflow_updates_draft_values_projects_safe_evidence_and_rejects_replay()
+    {
+        RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
+        DeterministicTokenGenerator tokenGenerator = new();
+        MagicLinkConfirmationCapabilityCommandService service = CreateService(accessGuard, tokenGenerator);
+        TimeEntryRecorded recorded = RecordedExternalEvent();
+        TimeEntryState timeEntryState = new();
+        timeEntryState.Apply(recorded);
+
+        MagicLinkCapabilityCommandResult issueResult = await service.IssueAsync(
+            Context(),
+            IssueCommand(MagicLinkAllowedAction.Adjust),
+            null,
+            FreshCatalog(),
+            IssuedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        MagicLinkConfirmationCapabilityIssued issued = issueResult.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityIssued>();
+        MagicLinkIssueResponse issueResponse = issueResult.IssueResponse.ShouldNotBeNull();
+        ServerCapabilityState capabilityState = new();
+        capabilityState.Apply(issued);
+
+        MagicLinkAdjustmentDisplayResponse display = (await service.DescribeAdjustmentAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            capabilityState,
+            timeEntryState,
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        display.ProposedDate.ShouldBe(new DateOnly(2026, 6, 19));
+        display.DurationMinutes.ShouldBe(60);
+        display.DurationUnit.ShouldBe("minutes");
+        display.ActivityTypeLabel.ShouldBe("Delivery");
+        display.EditableFields.ShouldBe(["serviceDate", "durationMinutes", "activityTypeId", "billableState", "comment"]);
+        display.ReadOnlyFields.ShouldBe(["target", "contributor", "tenant", "timeEntryId", "approvalState"]);
+        string displayJson = JsonSerializer.Serialize(display, JsonOptions);
+        displayJson.ShouldNotContain(issueResponse.OneTimeToken);
+        displayJson.ShouldNotContain("token", Case.Insensitive);
+        displayJson.ShouldNotContain("party", Case.Insensitive);
+
+        MagicLinkConfirmationUseResult invalidAdjustment = await service.AdjustAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            AdjustCommand() with { DurationMinutes = 0 },
+            capabilityState,
+            timeEntryState,
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        invalidAdjustment.WasDispatched.ShouldBeFalse();
+        invalidAdjustment.CapabilityResult.ShouldBeNull();
+        invalidAdjustment.AdjustmentResult.ShouldNotBeNull().DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+
+        MagicLinkConfirmationUseResult adjustment = await service.AdjustAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            AdjustCommand(),
+            capabilityState,
+            timeEntryState,
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        adjustment.WasDispatched.ShouldBeTrue();
+        TimeEntryAdjustedThroughMagicLink adjusted = adjustment.AdjustmentResult.ShouldNotBeNull()
+            .DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryAdjustedThroughMagicLink>();
+        adjusted.AdjustedValues.ServiceDate.ShouldBe(new DateOnly(2026, 6, 20));
+        adjusted.AdjustedValues.DurationMinutes.ShouldBe(75);
+        adjusted.AdjustedValues.BillableState.ShouldBe(BillableState.NonBillable);
+        adjusted.AdjustedValues.Target.ShouldBe(TimeEntryTargetReference.ForProject(Project()));
+        adjusted.AdjustedValues.Contributor.ShouldBe(Contributor());
+        adjusted.PreviousValues.DurationMinutes.ShouldBe(60);
+        adjusted.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
+
+        MagicLinkConfirmationCapabilityUsed used = adjustment.CapabilityResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityUsed>();
+        used.OutcomeCategory.ShouldBe("adjusted");
+        used.Source.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
+
+        MagicLinkConfirmationCapabilityReadModel capabilityReadModel = new MagicLinkConfirmationCapabilityProjection().Project(
+            CapabilityId(),
+            [new("message-1", 1, issued), new("message-2", 2, used), new("message-2", 2, used)],
+            new("tenant-1", MagicLinkConfirmationCapabilityProjection.ProjectionName, 2, ProjectionFreshness.Fresh),
+            ObservedAtUtc())
+            .ShouldNotBeNull();
+
+        capabilityReadModel.State.ShouldBe(CapabilityState.Used);
+        capabilityReadModel.UseOutcomeCategory.ShouldBe("adjusted");
+        capabilityReadModel.UseMetadata.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
+        string capabilityJson = JsonSerializer.Serialize(capabilityReadModel, JsonOptions);
+        capabilityJson.ShouldNotContain(issueResponse.OneTimeToken);
+        capabilityJson.ShouldNotContain("token", Case.Insensitive);
+        capabilityJson.ShouldNotContain("command", Case.Insensitive);
+
+        TimeEntryEvidenceReadModel evidence = new TimeEntryEvidenceProjection().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                new("time-message-1", 1, recorded),
+                new("time-message-2", 2, adjusted),
+                new("time-message-2", 2, adjusted)
+            ],
+            new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, 2, ProjectionFreshness.Fresh))
+            .ShouldNotBeNull();
+
+        evidence.ServiceDate.ShouldBe(new DateOnly(2026, 6, 20));
+        evidence.DurationMinutes.ShouldBe(75);
+        evidence.BillableState.ShouldBe(BillableState.NonBillable);
+        evidence.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        evidence.ApprovalDecision.ShouldBeNull();
+        evidence.ExternalAdjustment.ShouldNotBeNull();
+        evidence.ExternalAdjustment.PreviousValues.DurationMinutes.ShouldBe(60);
+        evidence.ExternalAdjustment.AdjustedValues.DurationMinutes.ShouldBe(75);
+        evidence.ExternalAdjustment.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
+        evidence.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntryAdjustedThroughMagicLink)]);
+        string evidenceJson = JsonSerializer.Serialize(evidence, JsonOptions);
+        evidenceJson.ShouldNotContain(issueResponse.OneTimeToken);
+        evidenceJson.ShouldNotContain("token", Case.Insensitive);
+        evidenceJson.ShouldNotContain("command", Case.Insensitive);
+
+        capabilityState.Apply(used);
+        timeEntryState.Apply(adjusted);
+        MagicLinkConfirmationUseResult replay = await service.AdjustAsync(
+            Context(),
+            issueResponse.OneTimeToken,
+            AdjustCommand(),
+            capabilityState,
+            timeEntryState,
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        replay.WasDispatched.ShouldBeFalse();
+        replay.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        replay.AdjustmentResult.ShouldBeNull();
     }
 
     [Fact]
@@ -220,7 +367,8 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
-    private static IssueMagicLinkConfirmationCapability IssueCommand()
+    private static IssueMagicLinkConfirmationCapability IssueCommand(
+        MagicLinkAllowedAction allowedAction = MagicLinkAllowedAction.Confirm)
         => new(
             CapabilityId(),
             new MagicLinkConfirmationScope(
@@ -229,7 +377,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
                 ActivityId(),
                 TimeEntryId(),
                 MagicLinkTargetKind.ProposedTimeEntry),
-            MagicLinkAllowedAction.Confirm,
+            allowedAction,
             ExpiresAtUtc(),
             new MagicLinkAuditMetadata("timesheets", "issue-1"));
 
@@ -239,10 +387,22 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     private static ConfirmTimeThroughMagicLink ConfirmCommand()
         => new();
 
+    private static AdjustTimeThroughMagicLink AdjustCommand()
+        => new(
+            new DateOnly(2026, 6, 20),
+            75,
+            ActivityId(),
+            BillableState.NonBillable);
+
     private static TimeEntryState RecordedExternalState()
     {
         TimeEntryState state = new();
-        state.Apply(new TimeEntryRecorded(
+        state.Apply(RecordedExternalEvent());
+        return state;
+    }
+
+    private static TimeEntryRecorded RecordedExternalEvent()
+        => new(
             TimeEntryId(),
             TimeEntryTargetReference.ForProject(Project()),
             Contributor(),
@@ -256,9 +416,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             null)
         {
             ExternalSource = new ExternalContributionSource("supplier-api", "request-1")
-        });
-        return state;
-    }
+        };
 
     private static ActivityTypeCatalogReadModel FreshCatalog()
         => new(

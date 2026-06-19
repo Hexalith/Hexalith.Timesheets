@@ -418,6 +418,80 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         timeEntryDomainResult.Events.ShouldNotContain(static @event => @event is TimeEntryApproved);
     }
 
+    [Fact]
+    public async Task Adjust_magic_link_updates_draft_external_values_then_consumes_capability()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        AdjustTimeThroughMagicLink command = AdjustCommand();
+
+        MagicLinkConfirmationUseResult result = await fixture.CreateService().AdjustAsync(
+            Context(),
+            "opaque-once",
+            command,
+            IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(),
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        TimeEntryAdjustedThroughMagicLink adjusted = result.AdjustmentResult.ShouldNotBeNull()
+            .DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryAdjustedThroughMagicLink>();
+        adjusted.AdjustedValues.ServiceDate.ShouldBe(command.ServiceDate);
+        adjusted.AdjustedValues.DurationMinutes.ShouldBe(command.DurationMinutes);
+        adjusted.AdjustedValues.BillableState.ShouldBe(command.BillableState);
+        adjusted.AdjustedValues.Target.ShouldBe(TimeEntryTargetReference.ForProject(Project()));
+        adjusted.AdjustedValues.Contributor.ShouldBe(Contributor());
+        adjusted.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
+
+        MagicLinkConfirmationCapabilityUsed used = result.CapabilityResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityUsed>();
+        used.OutcomeCategory.ShouldBe("adjusted");
+    }
+
+    [Fact]
+    public async Task Adjust_magic_link_fails_closed_without_capability_use_when_values_are_invalid()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        MagicLinkConfirmationUseResult result = await fixture.CreateService().AdjustAsync(
+            Context(),
+            "opaque-once",
+            AdjustCommand() with { DurationMinutes = 0 },
+            IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(),
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.CapabilityResult.ShouldBeNull();
+        result.AdjustmentResult.ShouldNotBeNull().DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Adjust_magic_link_rejects_confirm_only_capability_without_time_entry_adjustment()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+
+        MagicLinkConfirmationUseResult result = await fixture.CreateService().AdjustAsync(
+            Context(),
+            "opaque-once",
+            AdjustCommand(),
+            IssuedState(allowedAction: MagicLinkAllowedAction.Confirm),
+            RecordedExternalState(),
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeFalse();
+        result.CapabilityResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        result.AdjustmentResult.ShouldBeNull();
+    }
+
     [Theory]
     [InlineData("different-token")]
     [InlineData("")]
@@ -666,6 +740,13 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
 
     private static ConfirmTimeThroughMagicLink ConfirmCommand()
         => new();
+
+    private static AdjustTimeThroughMagicLink AdjustCommand()
+        => new(
+            new DateOnly(2026, 6, 20),
+            75,
+            ActivityId(),
+            BillableState.NonBillable);
 
     private static CapabilityStateData IssuedState(
         TenantReference? tenant = null,

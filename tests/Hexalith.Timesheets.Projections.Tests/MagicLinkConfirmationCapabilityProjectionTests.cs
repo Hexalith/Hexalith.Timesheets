@@ -105,9 +105,28 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
         model.StateBadgeText.ShouldBe("Used");
         model.UsedAtUtc.ShouldBe(UsedAtUtc());
         model.UseMetadata.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
+        model.UseOutcomeCategory.ShouldBe("confirmed");
         model.RevokedAtUtc.ShouldBeNull();
         Serialized(model).ShouldNotContain("token", Case.Insensitive);
         Serialized(model).ShouldNotContain("comment", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Projection_exposes_safe_adjustment_use_outcome_category()
+    {
+        MagicLinkConfirmationCapabilityUsed used = Used() with { OutcomeCategory = "adjusted" };
+
+        MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
+            CapabilityId(),
+            [Event("m1", 1, Issued()), Event("m2", 2, used)],
+            FreshCheckpoint(2),
+            ObservedAtUtc());
+
+        model.ShouldNotBeNull();
+        model.State.ShouldBe(CapabilityState.Used);
+        model.UseOutcomeCategory.ShouldBe("adjusted");
+        Serialized(model).ShouldNotContain("token", Case.Insensitive);
+        Serialized(model).ShouldNotContain("hash", Case.Insensitive);
     }
 
     private static string Serialized(MagicLinkConfirmationCapabilityReadModel model)

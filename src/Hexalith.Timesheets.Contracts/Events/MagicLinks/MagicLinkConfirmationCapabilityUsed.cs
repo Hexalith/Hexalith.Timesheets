@@ -10,4 +10,7 @@ public sealed record MagicLinkConfirmationCapabilityUsed(
     PartyReference Contributor,
     TimeEntryId TimeEntryId,
     DateTimeOffset UsedAtUtc,
-    MagicLinkAuditMetadata Source);
+    MagicLinkAuditMetadata Source)
+{
+    public string OutcomeCategory { get; init; } = "confirmed";
+}
