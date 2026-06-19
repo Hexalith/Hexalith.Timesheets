@@ -1,23 +1,20 @@
+using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 
-namespace Hexalith.Timesheets.Contracts.Models;
+namespace Hexalith.Timesheets.Contracts.Events.Exports;
 
-public sealed record ApprovedTimeExportAuditMetadata(
+public sealed record ApprovedTimeExported(
     PartyReference? Requester,
+    TenantReference Tenant,
     QueryApprovedTimeLedger Filters,
     DateTimeOffset RequestedAtUtc,
-    DateTimeOffset? GeneratedAtUtc,
+    DateTimeOffset GeneratedAtUtc,
     string CorrelationId,
     ApprovedTimeExportScope OutputScope,
     ApprovedTimeExportFormat Format,
     string FormatVersion,
     ProjectionFreshnessState FreshnessState,
     int RowCount,
-    string? BlockedReason)
-{
-    public TenantReference? Tenant { get; init; }
-
-    public string? OutputContentHashSha256 { get; init; }
-}
+    string OutputContentHashSha256);

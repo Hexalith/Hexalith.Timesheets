@@ -1,10 +1,14 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 using Hexalith.Timesheets.Contracts.Commands.Exports;
+using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
 
@@ -15,16 +19,19 @@ public sealed class ApprovedTimeExportService
     private const string DefaultFormatVersion = "approved-time-export.csv.v1";
 
     private readonly ITimesheetsAccessGuard _accessGuard;
+    private readonly IApprovedTimeExportAuditRecorder _auditRecorder;
     private readonly ApprovedTimeLedgerQueryService _ledgerQueryService;
 
     public ApprovedTimeExportService(
         ITimesheetsAccessGuard accessGuard,
-        ApprovedTimeLedgerQueryService ledgerQueryService)
+        ApprovedTimeLedgerQueryService ledgerQueryService,
+        IApprovedTimeExportAuditRecorder? auditRecorder = null)
     {
         ArgumentNullException.ThrowIfNull(accessGuard);
         ArgumentNullException.ThrowIfNull(ledgerQueryService);
 
         _accessGuard = accessGuard;
+        _auditRecorder = auditRecorder ?? new DomainEventApprovedTimeExportAuditRecorder();
         _ledgerQueryService = ledgerQueryService;
     }
 
@@ -44,6 +51,13 @@ public sealed class ApprovedTimeExportService
         if (!exportDecision.IsAuthorized)
         {
             return ApprovedTimeExportResult.NotFoundOrDenied(exportDecision);
+        }
+
+        if (context.Tenant is null)
+        {
+            return ApprovedTimeExportResult.NotFoundOrDenied(TimesheetsAuthorizationDecision.Denied(
+                TimesheetsDenialCategory.MissingTenant,
+                "Tenant context is required for approved-time export."));
         }
 
         string? contractBlock = ValidateContract(command);
@@ -88,28 +102,47 @@ public sealed class ApprovedTimeExportService
 
         string csv = ApprovedTimeExportCsvWriter.Write(rows);
         ApprovedTimeExportScope scope = Scope(command.LedgerQuery, rows.Count);
+        string outputContentHash = ComputeSha256(csv);
+        ApprovedTimeExportAuditMetadata audit = Audit(
+            context,
+            command,
+            requestedAtUtc,
+            requestedAtUtc,
+            scope,
+            ledger.ProjectionFreshness.State,
+            rows.Count,
+            null,
+            outputContentHash);
         ApprovedTimeExportReadModel export = new(
             ApprovedTimeExportReadinessState.Ready,
             "Approved ledger rows are fresh enough for export.",
             scope,
             ledger.ProjectionFreshness,
-            Audit(
-                context,
-                command,
-                requestedAtUtc,
-                requestedAtUtc,
-                scope,
-                ledger.ProjectionFreshness.State,
-                rows.Count,
-                null),
+            audit,
             command.Format,
             ResolveFormatVersion(command),
             rows)
         {
             CsvContent = csv
         };
+        ApprovedTimeExported evidence = new(
+            context.Actor,
+            context.Tenant,
+            command.LedgerQuery,
+            requestedAtUtc,
+            requestedAtUtc,
+            context.CorrelationId,
+            scope,
+            command.Format,
+            ResolveFormatVersion(command),
+            ledger.ProjectionFreshness.State,
+            rows.Count,
+            outputContentHash);
+        TimesheetsDomainResult auditResult = await _auditRecorder
+            .RecordAcceptedExportAsync(evidence, cancellationToken)
+            .ConfigureAwait(false);
 
-        return ApprovedTimeExportResult.Generated(export);
+        return ApprovedTimeExportResult.Generated(export, auditResult);
     }
 
     private static string? ValidateContract(GenerateApprovedTimeExport command)
@@ -174,7 +207,8 @@ public sealed class ApprovedTimeExportService
                 scope,
                 freshness.State,
                 0,
-                reason),
+                reason,
+                null),
             command.Format,
             ResolveFormatVersion(command),
             []);
@@ -309,7 +343,8 @@ public sealed class ApprovedTimeExportService
         ApprovedTimeExportScope scope,
         ProjectionFreshnessState freshnessState,
         int rowCount,
-        string? blockedReason)
+        string? blockedReason,
+        string? outputContentHashSha256)
         => new(
             context.Actor,
             command.LedgerQuery,
@@ -321,7 +356,17 @@ public sealed class ApprovedTimeExportService
             ResolveFormatVersion(command),
             freshnessState,
             rowCount,
-            blockedReason);
+            blockedReason)
+        {
+            Tenant = context.Tenant,
+            OutputContentHashSha256 = outputContentHashSha256
+        };
+
+    private static string ComputeSha256(string content)
+    {
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(content));
+        return Convert.ToHexString(hash).ToLowerInvariant();
+    }
 
     private static string ResolveFormatVersion(GenerateApprovedTimeExport command)
         => string.IsNullOrWhiteSpace(command.FormatVersion)

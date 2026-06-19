@@ -119,6 +119,36 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
+    public void Export_metadata_and_golden_fixtures_omit_raw_payloads_and_finance_ownership_language()
+    {
+        string[] exportMetadataLines = File.ReadAllLines(RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.Contracts",
+            "TimesheetsMetadataCatalog.cs"))
+            .Where(static line => line.Contains("export", StringComparison.OrdinalIgnoreCase)
+                || line.Contains("ApprovedTimeExport", StringComparison.Ordinal))
+            .ToArray();
+        string[] goldenFiles = Directory.GetFiles(
+            RepositoryRoot.PathTo("tests", "Hexalith.Timesheets.IntegrationTests", "Exports", "Golden"),
+            "*.csv",
+            SearchOption.AllDirectories);
+
+        goldenFiles.ShouldNotBeEmpty();
+
+        foreach (string content in goldenFiles.Select(File.ReadAllText).Append(string.Join('\n', exportMetadataLines)))
+        {
+            content.ShouldNotContain("raw EventStore", Case.Insensitive);
+            content.ShouldNotContain("EventStore envelope", Case.Insensitive);
+            content.ShouldNotContain("command body", Case.Insensitive);
+            content.ShouldNotContain("claims", Case.Insensitive);
+            content.ShouldNotContain("bearer", Case.Insensitive);
+            content.ShouldNotContain("secret", Case.Insensitive);
+            content.ShouldNotContain("displayName", Case.Insensitive);
+            AssertNoFinanceOwnershipLanguage(content);
+        }
+    }
+
+    [Fact]
     public void Evidence_detail_contract_schemas_expose_no_envelope_or_identifier_fields()
     {
         string openApiPath = RepositoryRoot.PathTo(

@@ -1,6 +1,7 @@
 using Hexalith.Timesheets.Contracts.Commands.Exports;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
@@ -18,6 +19,73 @@ namespace Hexalith.Timesheets.IntegrationTests;
 
 public sealed class ApprovedTimeExportIntegrationTests
 {
+    [Fact]
+    public void Golden_csv_v1_fixture_pins_project_work_boundaries_lineage_ai_metrics_and_comment_safety()
+    {
+        string actual = ApprovedTimeExportCsvWriter.Write([
+            GoldenRow(
+                "project-entry",
+                TimeEntryTargetReference.ForProject(Project()),
+                new PartyReference("party-1"),
+                new ActivityTypeId("activity-type-1"),
+                ActivityTypeScope.Tenant,
+                new DateOnly(2026, 3, 29),
+                30,
+                "approver-1",
+                new DateTimeOffset(2026, 3, 29, 21, 30, 0, TimeSpan.Zero),
+                ApprovedTimeLedgerRowState.Current,
+                [
+                    new("TimeEntryRecorded", 1, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents),
+                    new("TimeEntryApproved", 2, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents)
+                ]) with
+            {
+                AiMetrics = AiEffortMetrics.Unavailable
+            },
+            GoldenRow(
+                "work-entry",
+                TimeEntryTargetReference.ForWork(Work()),
+                new PartyReference("party-2"),
+                new ActivityTypeId("activity-type-2"),
+                ActivityTypeScope.Project,
+                new DateOnly(2026, 10, 25),
+                45,
+                "approver-2",
+                new DateTimeOffset(2026, 10, 25, 22, 30, 0, TimeSpan.Zero),
+                ApprovedTimeLedgerRowState.Superseded,
+                [
+                    new("TimeEntryRecorded", 1, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents),
+                    new("TimeEntryRejected", 2, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents),
+                    new("TimeEntryCorrected", 3, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents),
+                    new("TimeEntryApproved", 4, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents)
+                ]) with
+            {
+                ApprovedCorrection = GoldenApprovedCorrection("work-entry"),
+                Correction = GoldenRejectedCorrection("work-entry"),
+                AiMetrics = new(
+                    AiMetricAvailability.ProviderReported,
+                    1200,
+                    900,
+                    15,
+                    100,
+                    50,
+                    150),
+                CommentExportState = TimesheetsCommentPolicyDecision.Allowed,
+                Comment = AllowedExportComment("=SUM(A1:A2)")
+            }
+        ]);
+        string expected = File.ReadAllText(TestRepositoryRoot.PathTo(
+            "tests",
+            "Hexalith.Timesheets.IntegrationTests",
+            "Exports",
+            "Golden",
+            "approved-time-export-v1-project-work-boundaries.csv")).TrimEnd('\n');
+
+        actual.ShouldBe(expected);
+        actual.ShouldNotContain("\r\n");
+        actual.ShouldContain("'=SUM(A1:A2)");
+        actual.ShouldNotContain("Comment that must not be exported");
+    }
+
     [Fact]
     public async Task Seeded_approved_billable_project_and_work_rows_export_with_freshness_lineage_and_no_empty_file()
     {
@@ -223,6 +291,89 @@ public sealed class ApprovedTimeExportIntegrationTests
         export.CsvContent.ShouldNotBeNull().ShouldNotContain("out-of-period-entry");
     }
 
+    [Fact]
+    public async Task Export_tenant_local_period_key_filters_independently_of_utc_audit_instants()
+    {
+        // Both entries are approved at the same June UTC instant. The period key keys off the
+        // tenant-local service date only, so "2026-03" must include the March-service row and
+        // exclude the April-service row even though the UTC approval instant is identical and
+        // sits in a different month. No ServiceDateFrom/To is supplied, so the tenant-local
+        // period key is the sole discriminator (NFR15 / AC4).
+        TimeEntryProjectionEvent[] events =
+        [
+            Event(
+                "m1",
+                1,
+                Recorded(
+                    "march-service-entry",
+                    TimeEntryTargetReference.ForWork(Work()),
+                    30,
+                    new PartyReference("party-1"),
+                    new ActivityTypeId("activity-type-1"),
+                    new DateOnly(2026, 3, 31),
+                    BillableState.Billable)),
+            Event("m2", 2, Submitted("march-service-entry")),
+            Event("m3", 3, Approved("march-service-entry", "decision-1")),
+            Event(
+                "m4",
+                4,
+                Recorded(
+                    "april-service-entry",
+                    TimeEntryTargetReference.ForWork(Work()),
+                    30,
+                    new PartyReference("party-1"),
+                    new ActivityTypeId("activity-type-1"),
+                    new DateOnly(2026, 4, 1),
+                    BillableState.Billable)),
+            Event("m5", 5, Submitted("april-service-entry")),
+            Event("m6", 6, Approved("april-service-entry", "decision-2"))
+        ];
+        ApprovedTimeLedgerProjection ledgerProjection = new();
+        ApprovedTimeExportService service = new(
+            new AllowAllAccessGuard(),
+            new ApprovedTimeLedgerQueryService(
+                new AllowAllAccessGuard(),
+                new SeededLedgerReader(
+                    ledgerProjection,
+                    events,
+                    new("tenant-1", ApprovedTimeLedgerProjection.ProjectionName, 6, ProjectionFreshness.Fresh)),
+                new StaticHydrator()));
+
+        GenerateApprovedTimeExport command = new()
+        {
+            LedgerQuery = new QueryApprovedTimeLedger
+            {
+                Work = Work(),
+                TenantLocalPeriodKey = "2026-03",
+                BillableState = BillableState.Billable,
+                SortBy = TimeEntryQuerySortBy.TimeEntryId,
+                PageSize = 50
+            }
+        };
+
+        ApprovedTimeExportResult result = await service.GenerateAsync(
+            Context(),
+            command,
+            new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero),
+            TestContext.Current.CancellationToken);
+
+        result.WasGenerated.ShouldBeTrue();
+        ApprovedTimeExportReadModel export = result.Export.ShouldNotBeNull();
+        ApprovedTimeExportRowReadModel row = export.Rows.ShouldHaveSingleItem();
+        row.TimeEntryId.ShouldBe(new TimeEntryId("march-service-entry"));
+        row.ServiceDate.ShouldBe(new DateOnly(2026, 3, 31));
+
+        // The period key alone did the filtering: no UTC date range was supplied.
+        export.Audit.Filters.TenantLocalPeriodKey.ShouldBe("2026-03");
+        export.Audit.Filters.ServiceDateFrom.ShouldBeNull();
+        export.Audit.Filters.ServiceDateTo.ShouldBeNull();
+
+        // Tenant-local period key (March) stays separate from the UTC audit instant (June).
+        export.CsvContent.ShouldNotBeNull().ShouldContain("2026-03-31");
+        export.CsvContent.ShouldNotBeNull().ShouldContain("2026-06-19T13:00:00.0000000+00:00");
+        export.CsvContent.ShouldNotBeNull().ShouldNotContain("april-service-entry");
+    }
+
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
         => new(messageId, sequenceNumber, payload);
 
@@ -296,6 +447,82 @@ public sealed class ApprovedTimeExportIntegrationTests
             BillableState.Billable,
             ContributorCategory.Employee,
             AiEffortMetrics.Unavailable);
+
+    private static ApprovedTimeExportRowReadModel GoldenRow(
+        string id,
+        TimeEntryTargetReference target,
+        PartyReference contributor,
+        ActivityTypeId activityTypeId,
+        ActivityTypeScope activityTypeScope,
+        DateOnly serviceDate,
+        int durationMinutes,
+        string approver,
+        DateTimeOffset approvedAtUtc,
+        ApprovedTimeLedgerRowState rowState,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => new(
+            new TimeEntryId(id),
+            contributor,
+            target,
+            serviceDate,
+            durationMinutes,
+            activityTypeId,
+            activityTypeScope,
+            BillableState.Billable,
+            new(
+                new TimeEntryId(id),
+                new TimeEntryApprovalDecisionId("decision-" + id),
+                new PartyReference(approver),
+                new TenantReference("tenant-1"),
+                approvedAtUtc,
+                TimeEntryApprovalState.Approved,
+                TimeEntryApprovalScope.IndividualEntry,
+                Authority(ApprovalAuthorityAction.EntryApproval),
+                null),
+            rowState)
+        {
+            EventLineage = lineage
+        };
+
+    private static TimeEntryApprovedCorrectionEvidence GoldenApprovedCorrection(string id)
+        => new(
+            new TimeEntryId(id),
+            new TimeEntryCorrectionId("approved-correction-1"),
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 10, 26, 8, 0, 0, TimeSpan.Zero),
+            new TimeEntryCorrectionReason("Approved correction for reconciliation."),
+            new TimeEntryApprovalDecisionId("decision-" + id),
+            TimeEntryApprovalScope.IndividualEntry,
+            Values(TimeEntryTargetReference.ForWork(Work()), 40),
+            Values(TimeEntryTargetReference.ForWork(Work()), 45),
+            TimeEntryApprovalState.Approved,
+            TimeEntryCorrectionState.Corrected);
+
+    private static TimeEntryCorrectionEvidence GoldenRejectedCorrection(string id)
+        => new(
+            new TimeEntryId(id),
+            new TimeEntryCorrectionId("rejected-correction-1"),
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 10, 25, 12, 0, 0, TimeSpan.Zero),
+            new TimeEntryRejectionReason("Rejected entry corrected before approval."),
+            new TimeEntryApprovalDecisionId("rejected-decision-" + id),
+            Values(TimeEntryTargetReference.ForWork(Work()), 35),
+            Values(TimeEntryTargetReference.ForWork(Work()), 45),
+            TimeEntryCorrectionState.Corrected);
+
+    private static TimeEntryComment AllowedExportComment(string text)
+        => new(
+            text,
+            new(
+                TimesheetsCommentPolicyDecision.Allowed,
+                TimesheetsCommentPolicyDecision.Excluded,
+                TimesheetsCommentPolicyDecision.Allowed,
+                TimesheetsCommentPolicyDecision.Allowed,
+                TimesheetsCommentPolicyDecision.Excluded,
+                TimesheetsCommentRedactionRequirement.NotRequired,
+                TimesheetsEvidenceRetentionCategory.CommentText));
 
     private static ApprovalAuthoritySourceAttribution Authority(ApprovalAuthorityAction action)
         => new(

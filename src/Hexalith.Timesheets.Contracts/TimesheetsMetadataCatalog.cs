@@ -430,7 +430,8 @@ public static class TimesheetsMetadataCatalog
                 new("exportOutputScope", "Export output scope", nameof(ApprovedTimeExportScope), false, "Row count and selected filters are reviewed before export."),
                 new("includedEvidenceFields", "Included evidence fields", "String[]", false, "Stable IDs, approval metadata, correction lineage, event lineage, AI evidence units, and policy-allowed comments."),
                 new("exportFormat", "Export format", nameof(ApprovedTimeExportFormat), true, "CSV v1 evidence export."),
-                new("exportAuditMetadata", "Export audit metadata", nameof(ApprovedTimeExportAuditMetadata), false, "Requester, filters, timestamp, correlation ID, output scope, format, freshness, row count, and blocked reason."),
+                new("exportAuditMetadata", "Export audit metadata", nameof(ApprovedTimeExportAuditMetadata), false, "Requester, tenant, filters, timestamps, correlation ID, output scope, format, freshness, row count, content fingerprint, and block status."),
+                new("exportAuditEvidence", "Export audit evidence", "ApprovedTimeExported", false, "Accepted exports emit domain-event evidence with safe references, filter snapshot, UTC timestamps, output scope, format, freshness, row count, and content fingerprint."),
                 new("exportReviewDialog", "Export Review Dialog", "FluentDialog", false, "One bounded dialog summarizes selected filters, output scope, evidence fields, freshness state, comment policy, audit metadata, and non-calculation boundaries."),
                 new("exportBlockMessage", "Export block message", "FluentMessageBar", false, "Persistent stale, no-results, permission, or policy block explanation."),
                 new("exportSuccessFeedback", "Export success feedback", "FluentToast", false, "Transient feedback only after successful export generation.")
@@ -465,7 +466,8 @@ public static class TimesheetsMetadataCatalog
                 new("exportReadiness", "Export readiness", nameof(ApprovedTimeExportReadinessState), true, "Blocked exports show a persistent explanation and produce no file."),
                 new("commentPolicy", "Comment policy", nameof(TimesheetsCommentPolicyDecision), true, "Comments are exported only when policy allows."),
                 new("includedEvidenceFields", "Included evidence fields", "String[]", true, "Stable IDs, target references, dates, durations, activity type, billable flag, approval metadata, correction lineage, event lineage, and allowed comments."),
-                new("auditMetadata", "Audit metadata", nameof(ApprovedTimeExportAuditMetadata), true, "Requester, filters, timestamp, correlation ID, output scope, format, freshness, row count, and blocked reason."),
+                new("auditMetadata", "Audit metadata", nameof(ApprovedTimeExportAuditMetadata), true, "Requester, tenant, filters, timestamps, correlation ID, output scope, format, freshness, row count, content fingerprint, and block status."),
+                new("auditEvidence", "Audit evidence", "ApprovedTimeExported", false, "Generated exports emit domain-event evidence without CSV rows, comments, display labels, credential material, caller bodies, or sibling-owned state."),
                 new("reviewDialog", "Review dialog", "FluentDialog", true, "One bounded confirmation dialog for filters, scope, evidence fields, freshness, policy, and non-calculation boundaries."),
                 new("persistentBlock", "Persistent block", "FluentMessageBar", false, "Used for stale projection, no results, permission denial, or policy block."),
                 new("successFeedback", "Success feedback", "FluentToast", false, "Used only after a successful export request.")

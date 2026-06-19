@@ -1,9 +1,11 @@
 using Hexalith.Timesheets.Contracts.Commands.Exports;
+using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Exports;
@@ -34,10 +36,36 @@ public sealed class ApprovedTimeExportServiceTests
             TestContext.Current.CancellationToken);
 
         result.WasGenerated.ShouldBeFalse();
+        result.AuditResult.ShouldBeNull();
         result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.InsufficientRole);
         result.Export.ShouldBeNull();
         reader.Calls.ShouldBe(0);
         hydrator.Calls.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Export_missing_tenant_context_prevents_ledger_lookup_and_audit_recording()
+    {
+        TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
+        TrackingAuditRecorder auditRecorder = new();
+        ApprovedTimeExportService service = Service(
+            new SequencedAccessGuard([TimesheetsAuthorizationDecision.Allowed()]),
+            reader,
+            new TrackingHydrator(),
+            auditRecorder);
+
+        ApprovedTimeExportResult result = await service.GenerateAsync(
+            MissingTenantContext(),
+            Command(),
+            RequestedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasGenerated.ShouldBeFalse();
+        result.AuditResult.ShouldBeNull();
+        result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.MissingTenant);
+        result.Export.ShouldBeNull();
+        reader.Calls.ShouldBe(0);
+        auditRecorder.Events.ShouldBeEmpty();
     }
 
     [Theory]
@@ -60,6 +88,7 @@ public sealed class ApprovedTimeExportServiceTests
             TestContext.Current.CancellationToken);
 
         result.WasGenerated.ShouldBeFalse();
+        result.AuditResult.ShouldBeNull();
         result.Authorization.DenialCategory.ShouldBe(category);
         reader.Calls.ShouldBe(0);
     }
@@ -85,6 +114,7 @@ public sealed class ApprovedTimeExportServiceTests
             TestContext.Current.CancellationToken);
 
         result.WasGenerated.ShouldBeFalse();
+        result.AuditResult.ShouldBeNull();
         ApprovedTimeExportReadModel export = result.Export.ShouldNotBeNull();
         export.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
         export.ReadinessDetail.ShouldBe("Projection freshness does not allow export preview.");
@@ -108,6 +138,7 @@ public sealed class ApprovedTimeExportServiceTests
             TestContext.Current.CancellationToken);
 
         result.WasGenerated.ShouldBeFalse();
+        result.AuditResult.ShouldBeNull();
         ApprovedTimeExportReadModel export = result.Export.ShouldNotBeNull();
         export.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
         export.ReadinessDetail.ShouldBe("No approved ledger rows are available for export preview.");
@@ -147,6 +178,7 @@ public sealed class ApprovedTimeExportServiceTests
                 TestContext.Current.CancellationToken);
 
             result.WasGenerated.ShouldBeFalse(reason);
+            result.AuditResult.ShouldBeNull();
             ApprovedTimeExportReadModel export = result.Export.ShouldNotBeNull();
             export.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
             export.ReadinessDetail.ShouldBe(reason);
@@ -176,6 +208,7 @@ public sealed class ApprovedTimeExportServiceTests
             TestContext.Current.CancellationToken);
 
         result.WasGenerated.ShouldBeFalse();
+        result.AuditResult.ShouldBeNull();
         ApprovedTimeExportReadModel export = result.Export.ShouldNotBeNull();
         export.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
         export.ReadinessDetail.ShouldBe("Approved billable ledger evidence is required for export.");
@@ -197,6 +230,7 @@ public sealed class ApprovedTimeExportServiceTests
                 CommentProjectionState = TimesheetsCommentPolicyDecision.PolicyRequired
             }
         ]);
+        TrackingAuditRecorder auditRecorder = new();
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([
                 TimesheetsAuthorizationDecision.Allowed(),
@@ -205,7 +239,8 @@ public sealed class ApprovedTimeExportServiceTests
                 TimesheetsAuthorizationDecision.Allowed()
             ]),
             new TrackingLedgerReader(page),
-            new TrackingHydrator());
+            new TrackingHydrator(),
+            auditRecorder);
 
         GenerateApprovedTimeExport command = Command() with
         {
@@ -230,6 +265,8 @@ public sealed class ApprovedTimeExportServiceTests
 
         first.WasGenerated.ShouldBeTrue();
         second.WasGenerated.ShouldBeTrue();
+        first.AuditResult.ShouldNotBeNull().Events.ShouldHaveSingleItem().ShouldBeOfType<ApprovedTimeExported>();
+        auditRecorder.Events.Count.ShouldBe(2);
         first.Export.ShouldNotBeNull().CsvContent.ShouldBe(second.Export.ShouldNotBeNull().CsvContent);
         string csv = first.Export.ShouldNotBeNull().CsvContent.ShouldNotBeNull();
         csv.Split('\n')[0].ShouldBe(
@@ -240,6 +277,169 @@ public sealed class ApprovedTimeExportServiceTests
         csv.ShouldNotContain("Comment that must not be exported");
         csv.IndexOf("time-entry-1", StringComparison.Ordinal).ShouldBeLessThan(
             csv.IndexOf("time-entry-2", StringComparison.Ordinal));
+        ApprovedTimeExported auditEvent = auditRecorder.Events[0];
+        auditEvent.Requester.ShouldBe(new PartyReference("operator-1"));
+        auditEvent.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        auditEvent.CorrelationId.ShouldBe("correlation-1");
+        auditEvent.OutputScope.RowCount.ShouldBe(2);
+        auditEvent.OutputContentHashSha256.ShouldBe(first.Export.ShouldNotBeNull().Audit.OutputContentHashSha256);
+        auditEvent.OutputContentHashSha256.Length.ShouldBe(64);
+        auditEvent.OutputContentHashSha256.ShouldBe(second.Export.ShouldNotBeNull().Audit.OutputContentHashSha256);
+    }
+
+    [Fact]
+    public async Task Accepted_export_audit_evidence_records_filter_snapshot_timestamps_format_freshness_and_scope()
+    {
+        TrackingAuditRecorder auditRecorder = new();
+        ApprovedTimeExportService service = Service(
+            new SequencedAccessGuard([]),
+            new TrackingLedgerReader(Page([Row("time-entry-1", WorkTarget())])),
+            new TrackingHydrator(),
+            auditRecorder);
+        GenerateApprovedTimeExport command = Command() with
+        {
+            FormatVersion = "approved-time-export.csv.v1",
+            LedgerQuery = Command().LedgerQuery with
+            {
+                Project = null,
+                Work = new WorkReference("work-1"),
+                Contributor = new PartyReference("party-2"),
+                ActivityTypeId = new ActivityTypeId("activity-type-2"),
+                TenantLocalPeriodKey = "2026-06",
+                ServiceDateFrom = new DateOnly(2026, 6, 1),
+                ServiceDateTo = new DateOnly(2026, 6, 30),
+                IncludeSupersededRows = true,
+                CurrentRowsOnly = false,
+                SortBy = TimeEntryQuerySortBy.TimeEntryId
+            }
+        };
+        DateTimeOffset requestedAtUtc = RequestedAtUtc();
+
+        ApprovedTimeExportResult result = await service.GenerateAsync(
+            Context(),
+            command,
+            requestedAtUtc,
+            TestContext.Current.CancellationToken);
+
+        result.WasGenerated.ShouldBeTrue();
+        ApprovedTimeExportReadModel export = result.Export.ShouldNotBeNull();
+        ApprovedTimeExported auditEvent = auditRecorder.Events.ShouldHaveSingleItem();
+        auditEvent.Filters.ShouldBe(command.LedgerQuery);
+        auditEvent.RequestedAtUtc.ShouldBe(requestedAtUtc);
+        auditEvent.GeneratedAtUtc.ShouldBe(requestedAtUtc);
+        auditEvent.Format.ShouldBe(ApprovedTimeExportFormat.Csv);
+        auditEvent.FormatVersion.ShouldBe("approved-time-export.csv.v1");
+        auditEvent.FreshnessState.ShouldBe(ProjectionFreshnessState.Fresh);
+        auditEvent.RowCount.ShouldBe(1);
+        auditEvent.OutputScope.ShouldBe(export.Scope);
+        auditEvent.OutputScope.Filters.ShouldBe(command.LedgerQuery);
+        auditEvent.OutputScope.IncludesSupersededRows.ShouldBeTrue();
+        auditEvent.OutputScope.CurrentRowsOnly.ShouldBeFalse();
+        auditEvent.OutputContentHashSha256.ShouldBe(export.Audit.OutputContentHashSha256);
+        export.Audit.Filters.ShouldBe(command.LedgerQuery);
+        export.Audit.RequestedAtUtc.ShouldBe(requestedAtUtc);
+        export.Audit.GeneratedAtUtc.ShouldBe(requestedAtUtc);
+        export.Audit.Format.ShouldBe(ApprovedTimeExportFormat.Csv);
+        export.Audit.FormatVersion.ShouldBe("approved-time-export.csv.v1");
+        export.Audit.FreshnessState.ShouldBe(ProjectionFreshnessState.Fresh);
+        export.Audit.RowCount.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Csv_v1_uses_lf_line_endings_and_neutralizes_formula_leading_comments()
+    {
+        string csv = ApprovedTimeExportCsvWriter.Write([
+            ExportRow("time-entry-1", ProjectTarget()) with
+            {
+                Comment = AllowedExportComment("=SUM(A1:A2)"),
+                CommentExportState = TimesheetsCommentPolicyDecision.Allowed
+            }
+        ]);
+
+        csv.ShouldNotContain("\r\n");
+        csv.Split('\n').Length.ShouldBe(2);
+        csv.ShouldContain("'=SUM(A1:A2)");
+    }
+
+    [Fact]
+    public void Csv_v1_quotes_carriage_returns_commas_quotes_and_unicode_without_mutating_plain_text()
+    {
+        string csv = ApprovedTimeExportCsvWriter.Write([
+            ExportRow("time-entry-1", ProjectTarget()) with
+            {
+                Comment = AllowedExportComment("Carriage\rReturn, \"quoted\" café"),
+                CommentExportState = TimesheetsCommentPolicyDecision.Allowed
+            }
+        ]);
+
+        // The whole comment field is quoted, the embedded quote is doubled, the carriage return
+        // and Unicode text survive verbatim, and plain (non-formula) text is not apostrophe-prefixed.
+        csv.ShouldContain("\"Carriage\rReturn, \"\"quoted\"\" café\"");
+        csv.ShouldNotContain("'Carriage");
+        csv.Split('\n').Length.ShouldBe(2);
+    }
+
+    [Fact]
+    public void Csv_v1_neutralizes_formula_leading_values_in_any_field_not_only_comments()
+    {
+        // The formula-injection policy protects every column, so a structured field whose value
+        // begins with a formula trigger is neutralized just like a free-text comment would be.
+        string csv = ApprovedTimeExportCsvWriter.Write([
+            ExportRow("=cmd-injection", ProjectTarget())
+        ]);
+
+        csv.ShouldContain("\n'=cmd-injection");
+        csv.ShouldNotContain("\n=cmd-injection");
+    }
+
+    [Fact]
+    public async Task Export_omits_comment_text_unless_export_policy_allows_it()
+    {
+        ApprovedTimeExportService service = Service(
+            new SequencedAccessGuard([]),
+            new TrackingLedgerReader(Page([
+                Row("time-entry-allowed", ProjectTarget()) with
+                {
+                    Comment = CommentWithExportDecision("Allowed export comment", TimesheetsCommentPolicyDecision.Allowed)
+                },
+                Row("time-entry-excluded", ProjectTarget()) with
+                {
+                    Comment = CommentWithExportDecision("Excluded export comment", TimesheetsCommentPolicyDecision.Excluded)
+                },
+                Row("time-entry-redacted", ProjectTarget()) with
+                {
+                    Comment = CommentWithExportDecision("Redacted export comment", TimesheetsCommentPolicyDecision.Redacted)
+                },
+                Row("time-entry-policy-required", ProjectTarget()) with
+                {
+                    Comment = CommentWithExportDecision("Policy required export comment", TimesheetsCommentPolicyDecision.PolicyRequired)
+                }
+            ])),
+            new TrackingHydrator());
+
+        ApprovedTimeExportResult result = await service.GenerateAsync(
+            Context(),
+            Command(),
+            RequestedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasGenerated.ShouldBeTrue();
+        ApprovedTimeExportReadModel export = result.Export.ShouldNotBeNull();
+        export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-allowed")
+            .CommentExportState.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
+        export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-excluded")
+            .Comment.ShouldBeNull();
+        export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-redacted")
+            .Comment.ShouldBeNull();
+        export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-policy-required")
+            .Comment.ShouldBeNull();
+        string csv = export.CsvContent.ShouldNotBeNull();
+        csv.ShouldContain("Allowed export comment");
+        csv.ShouldNotContain("Excluded export comment");
+        csv.ShouldNotContain("Redacted export comment");
+        csv.ShouldNotContain("Policy required export comment");
+        export.Audit.BlockedReason.ShouldBeNull();
+        export.Audit.OutputContentHashSha256.ShouldNotBeNull();
     }
 
     [Fact]
@@ -292,6 +492,7 @@ public sealed class ApprovedTimeExportServiceTests
             TestContext.Current.CancellationToken);
 
         result.WasGenerated.ShouldBeFalse();
+        result.AuditResult.ShouldBeNull();
         result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.CrossTenantTarget);
         result.Export.ShouldBeNull();
     }
@@ -320,6 +521,9 @@ public sealed class ApprovedTimeExportServiceTests
         reader.ObservedCursors.ShouldBe([null, "cursor-2"]);
         export.Scope.RowCount.ShouldBe(2);
         export.Audit.RowCount.ShouldBe(2);
+        export.Audit.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        export.Audit.OutputContentHashSha256.ShouldNotBeNull().Length.ShouldBe(64);
+        result.AuditResult.ShouldNotBeNull().Events.ShouldHaveSingleItem().ShouldBeOfType<ApprovedTimeExported>();
         export.Rows.Select(static row => row.TimeEntryId.Value).ShouldBe(["time-entry-1", "time-entry-2"]);
         export.CsvContent.ShouldNotBeNull().ShouldContain("time-entry-1");
         export.CsvContent.ShouldNotBeNull().ShouldContain("time-entry-2");
@@ -359,10 +563,12 @@ public sealed class ApprovedTimeExportServiceTests
     private static ApprovedTimeExportService Service(
         ITimesheetsAccessGuard accessGuard,
         IApprovedTimeLedgerProjectionReader reader,
-        ITimeEntryDisplayHydrator hydrator)
+        ITimeEntryDisplayHydrator hydrator,
+        IApprovedTimeExportAuditRecorder? auditRecorder = null)
         => new(
             accessGuard,
-            new ApprovedTimeLedgerQueryService(accessGuard, reader, hydrator));
+            new ApprovedTimeLedgerQueryService(accessGuard, reader, hydrator),
+            auditRecorder);
 
     private static GenerateApprovedTimeExport Command()
         => new()
@@ -418,6 +624,26 @@ public sealed class ApprovedTimeExportServiceTests
             AiMetrics = AiEffortMetrics.Unavailable
         };
 
+    private static ApprovedTimeExportRowReadModel ExportRow(string id, TimeEntryTargetReference target)
+        => new(
+            new TimeEntryId(id),
+            new PartyReference("party-1"),
+            target,
+            new DateOnly(2026, 6, 19),
+            60,
+            new ActivityTypeId("activity-type-1"),
+            ActivityTypeScope.Tenant,
+            BillableState.Billable,
+            Approval(id),
+            ApprovedTimeLedgerRowState.Current)
+        {
+            EventLineage = [
+                new("TimeEntryRecorded", 1, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents),
+                new("TimeEntryApproved", 3, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents)
+            ],
+            AiMetrics = AiEffortMetrics.Unavailable
+        };
+
     private static TimeEntryApprovalDecisionEvidence Approval(string id)
         => new(
             new TimeEntryId(id),
@@ -437,13 +663,18 @@ public sealed class ApprovedTimeExportServiceTests
             null);
 
     private static TimeEntryComment AllowedExportComment(string text)
+        => CommentWithExportDecision(text, TimesheetsCommentPolicyDecision.Allowed);
+
+    private static TimeEntryComment CommentWithExportDecision(
+        string text,
+        TimesheetsCommentPolicyDecision exportDecision)
         => new(
             text,
             new(
                 TimesheetsCommentPolicyDecision.Allowed,
                 TimesheetsCommentPolicyDecision.Excluded,
                 TimesheetsCommentPolicyDecision.Allowed,
-                TimesheetsCommentPolicyDecision.Allowed,
+                exportDecision,
                 TimesheetsCommentPolicyDecision.Excluded,
                 TimesheetsCommentRedactionRequirement.NotRequired,
                 TimesheetsEvidenceRetentionCategory.CommentText));
@@ -455,6 +686,9 @@ public sealed class ApprovedTimeExportServiceTests
 
     private static TimesheetsRequestContext Context()
         => new(new TenantReference("tenant-1"), new PartyReference("operator-1"), "correlation-1");
+
+    private static TimesheetsRequestContext MissingTenantContext()
+        => new(null, new PartyReference("operator-1"), "correlation-1");
 
     private sealed class TrackingLedgerReader(ApprovedTimeLedgerReadModel page) : IApprovedTimeLedgerProjectionReader
     {
@@ -500,6 +734,19 @@ public sealed class ApprovedTimeExportServiceTests
         {
             Calls++;
             return ValueTask.FromResult(TimeEntryDisplayHydration.Unavailable());
+        }
+    }
+
+    private sealed class TrackingAuditRecorder : IApprovedTimeExportAuditRecorder
+    {
+        public List<ApprovedTimeExported> Events { get; } = [];
+
+        public ValueTask<TimesheetsDomainResult> RecordAcceptedExportAsync(
+            ApprovedTimeExported evidence,
+            CancellationToken cancellationToken)
+        {
+            Events.Add(evidence);
+            return ValueTask.FromResult(TimesheetsDomainResult.Success([evidence]));
         }
     }
 

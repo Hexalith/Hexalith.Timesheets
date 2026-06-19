@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using Hexalith.Timesheets.Contracts.Commands.Exports;
+using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.Exports;
@@ -71,7 +72,11 @@ public sealed class ApprovedTimeExportContractTests
                 "approved-time-export.csv.v1",
                 ProjectionFreshnessState.Fresh,
                 1,
-                null),
+                null)
+            {
+                Tenant = new TenantReference("tenant-1"),
+                OutputContentHashSha256 = "abcdef"
+            },
             ApprovedTimeExportFormat.Csv,
             "approved-time-export.csv.v1",
             [Row()])
@@ -98,6 +103,47 @@ public sealed class ApprovedTimeExportContractTests
         roundTripped.HasOutput.ShouldBeTrue();
         roundTripped.Rows.ShouldHaveSingleItem().Comment.ShouldBeNull();
         roundTripped.Audit.Requester.ShouldBe(new PartyReference("operator-1"));
+        roundTripped.Audit.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        roundTripped.Audit.OutputContentHashSha256.ShouldBe("abcdef");
+    }
+
+    [Fact]
+    public void Approved_time_exported_event_round_trips_safe_audit_evidence_without_output_payloads()
+    {
+        ApprovedTimeExported exported = new(
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            Filters(),
+            new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.Zero),
+            new DateTimeOffset(2026, 6, 19, 14, 0, 1, TimeSpan.Zero),
+            "correlation-1",
+            new ApprovedTimeExportScope(Filters(), 1, true, false),
+            ApprovedTimeExportFormat.Csv,
+            "approved-time-export.csv.v1",
+            ProjectionFreshnessState.Fresh,
+            1,
+            "e3b0c44298fc1c149afbf4c8996fb924");
+
+        string json = JsonSerializer.Serialize(exported, JsonOptions);
+
+        json.ShouldContain("\"tenant\":{\"tenantId\":\"tenant-1\"}");
+        json.ShouldContain("\"correlationId\":\"correlation-1\"");
+        json.ShouldContain("\"outputContentHashSha256\":\"e3b0c44298fc1c149afbf4c8996fb924\"");
+        json.ShouldNotContain("csvContent", Case.Insensitive);
+        json.ShouldNotContain("comment", Case.Insensitive);
+        json.ShouldNotContain("display", Case.Insensitive);
+        json.ShouldNotContain("claims", Case.Insensitive);
+        json.ShouldNotContain("body", Case.Insensitive);
+        json.ShouldNotContain("envelope", Case.Insensitive);
+        AssertNoFinanceOwnershipLanguage(json);
+
+        ApprovedTimeExported? roundTripped = JsonSerializer.Deserialize<ApprovedTimeExported>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.Requester.ShouldBe(new PartyReference("operator-1"));
+        roundTripped.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        roundTripped.OutputScope.RowCount.ShouldBe(1);
+        roundTripped.OutputContentHashSha256.ShouldBe("e3b0c44298fc1c149afbf4c8996fb924");
     }
 
     private static QueryApprovedTimeLedger Filters()

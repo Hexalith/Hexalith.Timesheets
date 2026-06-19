@@ -6,6 +6,21 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 
 namespace Hexalith.Timesheets.Server.Exports;
 
+/// <summary>
+/// Writes the deterministic CSV v1 approved-time export evidence.
+/// </summary>
+/// <remarks>
+/// CSV v1 evidence policy (pinned by golden fixtures and server tests):
+/// <list type="bullet">
+/// <item>Row separator is a single line feed (<c>\n</c>), not RFC 4180 <c>\r\n</c>.</item>
+/// <item>Fields are quoted only when they contain a comma, double quote, carriage return,
+/// or line feed; embedded double quotes are doubled.</item>
+/// <item>Spreadsheet formula neutralization is applied to <em>every</em> field whose first
+/// character is <c>=</c>, <c>+</c>, <c>-</c>, or <c>@</c> by prefixing an apostrophe. This is a
+/// deliberate, versioned mutation that protects every column (not only free-text comments) from
+/// formula injection when the evidence file is opened in a spreadsheet.</item>
+/// </list>
+/// </remarks>
 public static class ApprovedTimeExportCsvWriter
 {
     public const string Header =
@@ -79,6 +94,9 @@ public static class ApprovedTimeExportCsvWriter
             return;
         }
 
+        string safeValue = RequiresSpreadsheetNeutralization(value)
+            ? "'" + value
+            : value;
         bool mustQuote = value.Contains(',', StringComparison.Ordinal)
             || value.Contains('"', StringComparison.Ordinal)
             || value.Contains('\n', StringComparison.Ordinal)
@@ -86,12 +104,15 @@ public static class ApprovedTimeExportCsvWriter
 
         if (!mustQuote)
         {
-            builder.Append(value);
+            builder.Append(safeValue);
             return;
         }
 
         builder.Append('"');
-        builder.Append(value.Replace("\"", "\"\"", StringComparison.Ordinal));
+        builder.Append(safeValue.Replace("\"", "\"\"", StringComparison.Ordinal));
         builder.Append('"');
     }
+
+    private static bool RequiresSpreadsheetNeutralization(string value)
+        => value[0] is '=' or '+' or '-' or '@';
 }
