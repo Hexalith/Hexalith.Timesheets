@@ -7,6 +7,7 @@ using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
+using Hexalith.Timesheets.Server.TimesheetPeriods;
 
 using Microsoft.Extensions.DependencyInjection;
 
@@ -52,6 +53,12 @@ public sealed class RuntimeRegistrationTests
         provider.GetRequiredService<TimeEntryCorrectionCommandService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntryEvidenceQueryService>()
+            .ShouldNotBeNull();
+        provider.GetRequiredService<TimesheetPeriodSubmissionCommandService>()
+            .ShouldNotBeNull();
+        provider.GetRequiredService<TimesheetPeriodApprovalCommandService>()
+            .ShouldNotBeNull();
+        provider.GetRequiredService<TimesheetPeriodSummaryQueryService>()
             .ShouldNotBeNull();
         provider.GetRequiredService<ITimesheetsTenantAccessValidator>()
             .ShouldBeOfType<DenyAllTimesheetsTenantAccessValidator>();

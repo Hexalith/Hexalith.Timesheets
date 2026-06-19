@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Contracts.Events.TimesheetPeriods;
+using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 
@@ -24,6 +25,22 @@ public sealed class TimesheetPeriodState
 
     public TimesheetPeriodApprovalState PeriodState { get; private set; }
 
+    public TimesheetPeriodApprovalDecisionId? TimesheetPeriodApprovalDecisionId { get; private set; }
+
+    public PartyReference? Approver { get; private set; }
+
+    public TenantReference? DecisionTenant { get; private set; }
+
+    public DateTimeOffset? DecidedAtUtc { get; private set; }
+
+    public ApprovalAuthoritySourceAttribution? ApprovalAuthoritySource { get; private set; }
+
+    public TimesheetPeriodRejectionReason? RejectionReason { get; private set; }
+
+    public IReadOnlyList<TimeEntryId> AffectedTimeEntryIds { get; private set; } = [];
+
+    public IReadOnlyList<TimesheetPeriodSelectedEntryRejectionEvidence> RejectedEntries { get; private set; } = [];
+
     public void Apply(TimesheetPeriodSubmitted submitted)
     {
         ArgumentNullException.ThrowIfNull(submitted);
@@ -42,5 +59,35 @@ public sealed class TimesheetPeriodState
             submitted.TenantTimeZoneId);
         IncludedTimeEntryIds = [.. submitted.IncludedTimeEntryIds];
         PeriodState = submitted.PeriodState;
+    }
+
+    public void Apply(TimesheetPeriodApproved approved)
+    {
+        ArgumentNullException.ThrowIfNull(approved);
+
+        PeriodState = approved.PeriodState;
+        TimesheetPeriodApprovalDecisionId = approved.TimesheetPeriodApprovalDecisionId;
+        DecisionTenant = approved.Tenant;
+        Approver = approved.Approver;
+        DecidedAtUtc = approved.DecidedAtUtc;
+        ApprovalAuthoritySource = approved.AuthoritySource;
+        AffectedTimeEntryIds = [.. approved.IncludedTimeEntryIds];
+        RejectionReason = null;
+        RejectedEntries = [];
+    }
+
+    public void Apply(TimesheetPeriodRejected rejected)
+    {
+        ArgumentNullException.ThrowIfNull(rejected);
+
+        PeriodState = rejected.PeriodState;
+        TimesheetPeriodApprovalDecisionId = rejected.TimesheetPeriodApprovalDecisionId;
+        DecisionTenant = rejected.Tenant;
+        Approver = rejected.Approver;
+        DecidedAtUtc = rejected.DecidedAtUtc;
+        ApprovalAuthoritySource = rejected.AuthoritySource;
+        AffectedTimeEntryIds = [.. rejected.AffectedTimeEntryIds];
+        RejectionReason = rejected.Reason;
+        RejectedEntries = [.. rejected.RejectedEntries];
     }
 }

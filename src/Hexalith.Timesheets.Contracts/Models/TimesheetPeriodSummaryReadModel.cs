@@ -23,4 +23,8 @@ public sealed record TimesheetPeriodSummaryReadModel(
     public IReadOnlyList<TimesheetPeriodEntrySummary> EntrySummaries { get; init; } = [];
 
     public IReadOnlyList<TimeEntryId> IncompleteEntryEvidenceIds { get; init; } = [];
+
+    public TimesheetPeriodApprovalDecisionEvidence? PeriodDecision { get; init; }
+
+    public IReadOnlyList<TimeEntryId> AffectedEntryIds { get; init; } = [];
 }

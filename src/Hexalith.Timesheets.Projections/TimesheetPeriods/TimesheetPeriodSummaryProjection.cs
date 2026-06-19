@@ -33,6 +33,11 @@ public sealed class TimesheetPeriodSummaryProjection
             return null;
         }
 
+        object? periodDecisionEvent = ordered
+            .Select(static item => item.Payload)
+            .Where(item => IsPeriodDecision(item, timesheetPeriodId))
+            .LastOrDefault();
+
         List<TimeEntryProjectionEvent> entryEvents = ordered
             .Select(static item => new TimeEntryProjectionEvent(
                 item.MessageId,
@@ -80,13 +85,69 @@ public sealed class TimesheetPeriodSummaryProjection
             submitted.LocalEndDate,
             submitted.TenantTimeZoneId,
             submitted.IncludedTimeEntryIds,
-            submitted.PeriodState,
+            PeriodState(periodDecisionEvent, submitted.PeriodState),
             freshness)
         {
             EntrySummaries = entrySummaries,
-            IncompleteEntryEvidenceIds = incomplete
+            IncompleteEntryEvidenceIds = incomplete,
+            PeriodDecision = ToDecisionEvidence(periodDecisionEvent),
+            AffectedEntryIds = AffectedEntryIds(periodDecisionEvent)
         };
     }
+
+    private static bool IsPeriodDecision(object payload, TimesheetPeriodId timesheetPeriodId)
+        => payload switch
+        {
+            TimesheetPeriodApproved approved => approved.TimesheetPeriodId == timesheetPeriodId,
+            TimesheetPeriodRejected rejected => rejected.TimesheetPeriodId == timesheetPeriodId,
+            _ => false
+        };
+
+    private static TimesheetPeriodApprovalState PeriodState(
+        object? periodDecisionEvent,
+        TimesheetPeriodApprovalState submittedState)
+        => periodDecisionEvent switch
+        {
+            TimesheetPeriodApproved approved => approved.PeriodState,
+            TimesheetPeriodRejected rejected => rejected.PeriodState,
+            _ => submittedState
+        };
+
+    private static TimesheetPeriodApprovalDecisionEvidence? ToDecisionEvidence(object? periodDecisionEvent)
+        => periodDecisionEvent switch
+        {
+            TimesheetPeriodApproved approved => new(
+                approved.TimesheetPeriodId,
+                approved.TimesheetPeriodApprovalDecisionId,
+                approved.Approver,
+                approved.Tenant,
+                approved.DecidedAtUtc,
+                approved.PeriodState,
+                approved.AuthoritySource,
+                approved.IncludedTimeEntryIds),
+            TimesheetPeriodRejected rejected => new(
+                rejected.TimesheetPeriodId,
+                rejected.TimesheetPeriodApprovalDecisionId,
+                rejected.Approver,
+                rejected.Tenant,
+                rejected.DecidedAtUtc,
+                rejected.PeriodState,
+                rejected.AuthoritySource,
+                rejected.AffectedTimeEntryIds)
+            {
+                PeriodRejectionReason = rejected.Reason,
+                RejectedEntries = rejected.RejectedEntries
+            },
+            _ => null
+        };
+
+    private static IReadOnlyList<TimeEntryId> AffectedEntryIds(object? periodDecisionEvent)
+        => periodDecisionEvent switch
+        {
+            TimesheetPeriodApproved approved => approved.IncludedTimeEntryIds,
+            TimesheetPeriodRejected rejected => rejected.AffectedTimeEntryIds,
+            _ => []
+        };
 
     private static List<TimesheetPeriodProjectionEvent> Deduplicate(
         IEnumerable<TimesheetPeriodProjectionEvent> events)

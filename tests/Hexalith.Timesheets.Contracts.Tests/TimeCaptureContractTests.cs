@@ -180,6 +180,56 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Approve_timesheet_period_contract_round_trips_without_authority_fields()
+    {
+        ApproveTimesheetPeriod command = new(
+            new TimesheetPeriodId("period-2026-w25"),
+            new TimesheetPeriodApprovalDecisionId("period-decision-123"));
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timesheetPeriodId\"");
+        json.ShouldContain("\"timesheetPeriodApprovalDecisionId\"");
+        AssertJsonOmitsCallerAuthority(json);
+
+        ApproveTimesheetPeriod? roundTripped = JsonSerializer.Deserialize<ApproveTimesheetPeriod>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimesheetPeriodId.Value.ShouldBe("period-2026-w25");
+        roundTripped.TimesheetPeriodApprovalDecisionId.Value.ShouldBe("period-decision-123");
+    }
+
+    [Fact]
+    public void Reject_timesheet_period_contract_round_trips_selected_entry_reasons_without_authority_fields()
+    {
+        RejectTimesheetPeriod command = new(
+            new TimesheetPeriodId("period-2026-w25"),
+            new TimesheetPeriodApprovalDecisionId("period-decision-456"),
+            [
+                new(new TimeEntryId("time-entry-123"), new TimeEntryRejectionReason("Missing customer evidence."))
+            ],
+            new TimesheetPeriodRejectionReason("Period contains entries needing correction."));
+
+        string json = JsonSerializer.Serialize(command, JsonOptions);
+
+        json.ShouldContain("\"timesheetPeriodId\"");
+        json.ShouldContain("\"timesheetPeriodApprovalDecisionId\"");
+        json.ShouldContain("\"rejectedEntries\"");
+        json.ShouldContain("Missing customer evidence.");
+        json.ShouldContain("Period contains entries needing correction.");
+        AssertJsonOmitsCallerAuthority(json);
+
+        RejectTimesheetPeriod? roundTripped = JsonSerializer.Deserialize<RejectTimesheetPeriod>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimesheetPeriodId.Value.ShouldBe("period-2026-w25");
+        roundTripped.TimesheetPeriodApprovalDecisionId.Value.ShouldBe("period-decision-456");
+        roundTripped.RejectedEntries.Single().TimeEntryId.Value.ShouldBe("time-entry-123");
+        roundTripped.RejectedEntries.Single().Reason.Value.ShouldBe("Missing customer evidence.");
+        roundTripped.Reason.Value.ShouldBe("Period contains entries needing correction.");
+    }
+
+    [Fact]
     public void Timesheet_period_submitted_event_records_boundary_and_keeps_utc_audit_instant_separate()
     {
         TimesheetPeriodSubmitted submitted = new(
@@ -210,6 +260,71 @@ public sealed class TimeCaptureContractTests
         roundTripped.PeriodKey.ShouldBe("2026-06");
         roundTripped.LocalStartDate.ShouldBe(new DateOnly(2026, 6, 1));
         roundTripped.SubmittedAtUtc.Offset.ShouldBe(TimeSpan.Zero);
+    }
+
+    [Fact]
+    public void Timesheet_period_approved_event_records_grouped_decision_evidence()
+    {
+        TimesheetPeriodApproved approved = new(
+            new TimesheetPeriodId("period-2026-w25"),
+            new TenantReference("tenant-123"),
+            new PartyReference("party-contributor"),
+            new PartyReference("party-approver"),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            new TimesheetPeriodApprovalDecisionId("period-decision-123"),
+            TimesheetPeriodApprovalState.Approved,
+            AuthoritySource(ApprovalAuthorityAction.PeriodApproval),
+            [new("time-entry-123"), new("time-entry-456")]);
+
+        string json = JsonSerializer.Serialize(approved, JsonOptions);
+
+        json.ShouldContain("\"periodState\":\"Approved\"");
+        json.ShouldContain("\"includedTimeEntryIds\"");
+        json.ShouldContain("\"authoritySource\"");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimesheetPeriodApproved? roundTripped = JsonSerializer.Deserialize<TimesheetPeriodApproved>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimesheetPeriodApprovalDecisionId.Value.ShouldBe("period-decision-123");
+        roundTripped.PeriodState.ShouldBe(TimesheetPeriodApprovalState.Approved);
+        roundTripped.AuthoritySource.Action.ShouldBe(ApprovalAuthorityAction.PeriodApproval);
+        roundTripped.IncludedTimeEntryIds.Select(static id => id.Value).ShouldBe(["time-entry-123", "time-entry-456"]);
+    }
+
+    [Fact]
+    public void Timesheet_period_rejected_event_records_grouped_and_selected_entry_reasons()
+    {
+        TimesheetPeriodRejected rejected = new(
+            new TimesheetPeriodId("period-2026-w25"),
+            new TenantReference("tenant-123"),
+            new PartyReference("party-contributor"),
+            new PartyReference("party-approver"),
+            new DateTimeOffset(2026, 6, 19, 13, 15, 0, TimeSpan.Zero),
+            new TimesheetPeriodApprovalDecisionId("period-decision-456"),
+            TimesheetPeriodApprovalState.Rejected,
+            AuthoritySource(ApprovalAuthorityAction.PeriodRejection),
+            [new("time-entry-123")],
+            new TimesheetPeriodRejectionReason("Period contains entries needing correction."),
+            [
+                new(new TimeEntryId("time-entry-123"), new TimeEntryRejectionReason("Missing customer evidence."))
+            ]);
+
+        string json = JsonSerializer.Serialize(rejected, JsonOptions);
+
+        json.ShouldContain("\"periodState\":\"Rejected\"");
+        json.ShouldContain("\"affectedTimeEntryIds\"");
+        json.ShouldContain("\"rejectedEntries\"");
+        json.ShouldContain("Missing customer evidence.");
+        AssertJsonOmitsCallerAuthority(json, allowTenantId: true);
+
+        TimesheetPeriodRejected? roundTripped = JsonSerializer.Deserialize<TimesheetPeriodRejected>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.TimesheetPeriodApprovalDecisionId.Value.ShouldBe("period-decision-456");
+        roundTripped.AffectedTimeEntryIds.Single().Value.ShouldBe("time-entry-123");
+        roundTripped.RejectedEntries.Single().Reason.Value.ShouldBe("Missing customer evidence.");
+        roundTripped.AuthoritySource.Action.ShouldBe(ApprovalAuthorityAction.PeriodRejection);
     }
 
     [Fact]
@@ -624,6 +739,8 @@ public sealed class TimeCaptureContractTests
         [
             typeof(RecordTimeEntry),
             typeof(SubmitTimeEntriesForApproval),
+            typeof(ApproveTimesheetPeriod),
+            typeof(RejectTimesheetPeriod),
             typeof(ApproveTimeEntry),
             typeof(RejectTimeEntry),
             typeof(CorrectRejectedTimeEntry),
@@ -865,6 +982,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.projection.activity-type-catalog",
                 "timesheets.projection.time-entry-evidence",
                 "timesheets.projection.my-timesheet-period",
+                "timesheets.projection.period-approval-detail",
                 "timesheets.approvals.queue",
                 "timesheets.command.time-entry-approval",
                 "timesheets.command.period-approval",
@@ -919,6 +1037,7 @@ public sealed class TimeCaptureContractTests
         TimesheetsMetadataDescriptor periodSubmission = Descriptor("timesheets.command.submit-period");
         TimesheetsMetadataDescriptor evidence = Descriptor("timesheets.projection.time-entry-evidence");
         TimesheetsMetadataDescriptor myPeriod = Descriptor("timesheets.projection.my-timesheet-period");
+        TimesheetsMetadataDescriptor periodApprovalDetail = Descriptor("timesheets.projection.period-approval-detail");
 
         command.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerGeneratedForm);
         command.Fields.Select(static field => field.Name).ShouldBe(
@@ -1013,6 +1132,19 @@ public sealed class TimeCaptureContractTests
         myPeriod.Fields.Select(static field => field.Name).ShouldContain("entrySummaries");
         myPeriod.Fields.Select(static field => field.Name).ShouldContain("blockingEntryGuidance");
         myPeriod.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimesheetPeriodApprovalState));
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("periodState");
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("entrySummaries");
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("affectedEntryIds");
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("periodDecision");
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("rejectedEntries");
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("authorityFreshness");
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("lockState");
+        periodApprovalDetail.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
+        periodApprovalDetail.Actions.Select(static action => action.Label).ShouldContain("Approve period");
+        periodApprovalDetail.Actions.Select(static action => action.Label).ShouldContain("Reject period");
+        periodApprovalDetail.Actions.Select(static action => action.Label).ShouldContain("Correct entry");
+        periodApprovalDetail.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimesheetPeriodApprovalState));
+        periodApprovalDetail.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryApprovalState));
     }
 
     [Fact]
@@ -1097,6 +1229,10 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("TimesheetPeriodBlockingEntryGuidance").ShouldBeTrue();
         schemas.ContainsKey("TimesheetPeriodSummaryReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApprovalDecisionId").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodApprovalDecisionId").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodRejectionReason").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodSelectedEntryRejectionEvidence").ShouldBeTrue();
+        schemas.ContainsKey("TimesheetPeriodApprovalDecisionEvidence").ShouldBeTrue();
         schemas.ContainsKey("TimeEntrySubmissionScope").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryApprovalScope").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryRejectionReason").ShouldBeTrue();
@@ -1121,8 +1257,12 @@ public sealed class TimeCaptureContractTests
         schemaJson.ShouldContain("AiEffortMetricSourceMetadata");
         schemaJson.ShouldContain("SubmitTimeEntriesForApproval");
         schemaJson.ShouldContain("SubmitTimesheetPeriod");
+        schemaJson.ShouldContain("ApproveTimesheetPeriod");
+        schemaJson.ShouldContain("RejectTimesheetPeriod");
         schemaJson.ShouldContain("TimeEntrySubmitted");
         schemaJson.ShouldContain("TimesheetPeriodSubmitted");
+        schemaJson.ShouldContain("TimesheetPeriodApproved");
+        schemaJson.ShouldContain("TimesheetPeriodRejected");
         schemaJson.ShouldContain("ApproveTimeEntry");
         schemaJson.ShouldContain("RejectTimeEntry");
         schemaJson.ShouldContain("CorrectRejectedTimeEntry");
@@ -1133,6 +1273,8 @@ public sealed class TimeCaptureContractTests
         schemaJson.ShouldContain("TimeEntryApprovedCorrected");
         schemaJson.ShouldContain("LockedFromDirectEdit");
         schemaJson.ShouldContain("Approved entries are locked from direct edits");
+        schemaJson.ShouldContain("selected-entry rejection evidence");
+        schemaJson.ShouldContain("period state separately from entry states");
         schemaJson.ShouldNotContain("EventStore");
         schemaJson.ShouldNotContain("invoice", Case.Insensitive);
         schemaJson.ShouldNotContain("payroll", Case.Insensitive);
@@ -1186,6 +1328,15 @@ public sealed class TimeCaptureContractTests
         {
             Comment = new("Prior evidence.", TimeEntryCommentPolicy.SensitiveDefault)
         };
+
+    private static ApprovalAuthoritySourceAttribution AuthoritySource(ApprovalAuthorityAction action)
+        => new(
+            action,
+            ApprovalAuthoritySource.ProjectApprover,
+            ApprovalAuthorityDecisionState.Allowed,
+            "timesheets.approval-authority.v1",
+            "v1",
+            ProjectionFreshnessMetadata.Fresh);
 
     private static string RepositoryPath(params string[] segments)
     {

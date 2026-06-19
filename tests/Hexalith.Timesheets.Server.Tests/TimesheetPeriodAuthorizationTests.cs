@@ -6,6 +6,7 @@ using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
+using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.TimeEntries;
 using Hexalith.Timesheets.Server.TimesheetPeriods;
@@ -273,6 +274,272 @@ public sealed class TimesheetPeriodAuthorizationTests
         result.EntryResults.ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task Period_approval_dispatches_period_scoped_entry_approvals_before_period_event()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId entry1 = new("time-entry-1");
+        TimeEntryId entry2 = new("time-entry-2");
+        TimesheetPeriodState periodState = SubmittedPeriodState(entry1, entry2);
+
+        TimesheetPeriodApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            new ApproveTimesheetPeriod(PeriodId(), PeriodDecisionId()),
+            periodState,
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [entry1] = SubmittedState(entry1),
+                [entry2] = SubmittedState(entry2)
+            },
+            FreshPeriodProjection(entry1, entry2),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasPeriodDispatched.ShouldBeTrue();
+        result.EntryResults.Count.ShouldBe(2);
+        result.EntryResults.SelectMany(static entry => entry.DomainResult?.Events ?? [])
+            .OfType<TimeEntryApproved>()
+            .Select(static approved => approved.ApprovalScope)
+            .ShouldBe([TimeEntryApprovalScope.TimesheetPeriod, TimeEntryApprovalScope.TimesheetPeriod]);
+        result.PeriodResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimesheetPeriodApproved>()
+            .IncludedTimeEntryIds.ShouldBe([entry1, entry2]);
+    }
+
+    [Fact]
+    public async Task Period_rejection_dispatches_selected_period_scoped_entry_rejections()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodRejection);
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId entry1 = new("time-entry-1");
+        TimeEntryId entry2 = new("time-entry-2");
+        TimesheetPeriodState periodState = SubmittedPeriodState(entry1, entry2);
+
+        TimesheetPeriodApprovalCommandResult result = await service.RejectAsync(
+            Context(),
+            new RejectTimesheetPeriod(
+                PeriodId(),
+                PeriodDecisionId(),
+                [new(entry1, new TimeEntryRejectionReason("Missing customer evidence."))],
+                new TimesheetPeriodRejectionReason("Period contains entries needing correction.")),
+            periodState,
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [entry1] = SubmittedState(entry1),
+                [entry2] = SubmittedState(entry2)
+            },
+            FreshPeriodProjection(entry1, entry2),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasPeriodDispatched.ShouldBeTrue();
+        result.EntryResults.ShouldHaveSingleItem()
+            .DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryRejected>()
+            .ApprovalScope.ShouldBe(TimeEntryApprovalScope.TimesheetPeriod);
+        result.PeriodResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimesheetPeriodRejected>()
+            .AffectedTimeEntryIds.ShouldBe([entry1]);
+    }
+
+    [Fact]
+    public async Task Period_approval_blocks_stale_period_projection_before_entry_or_period_dispatch()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId entryId = new("time-entry-1");
+
+        TimesheetPeriodApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            new ApproveTimesheetPeriod(PeriodId(), PeriodDecisionId()),
+            SubmittedPeriodState(entryId),
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [entryId] = SubmittedState(entryId)
+            },
+            StalePeriodProjection(entryId),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasPeriodDispatched.ShouldBeFalse();
+        result.EntryResults.ShouldBeEmpty();
+        result.BlockingGuidance.ShouldContain(static item =>
+            item.Field == "projectionFreshness"
+            && item.Code == "not-fresh"
+            && item.Guidance == "Projection is rebuilding.");
+    }
+
+    [Fact]
+    public async Task Period_approval_fails_closed_when_authority_cannot_be_resolved()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        ITimesheetsApprovalAuthorityResolver resolver = Substitute.For<ITimesheetsApprovalAuthorityResolver>();
+        resolver.ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(ApprovalAuthorityResolutionResult.Denied(
+                TimesheetsDenialCategory.AmbiguousAuthority,
+                "tenant-1 role Owner raw detail",
+                AuthoritySource(ApprovalAuthorityAction.PeriodApproval))));
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId entryId = new("time-entry-1");
+
+        TimesheetPeriodApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            new ApproveTimesheetPeriod(PeriodId(), PeriodDecisionId()),
+            SubmittedPeriodState(entryId),
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [entryId] = SubmittedState(entryId)
+            },
+            FreshPeriodProjection(entryId),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasPeriodDispatched.ShouldBeFalse();
+        result.PeriodResult.ShouldBeNull();
+        result.AuthorityResolution.ShouldNotBeNull().Reason.ShouldBe("Authority cannot be resolved.");
+        result.AuthorityResolution.Reason.ShouldNotContain("role", Case.Insensitive);
+    }
+
+    [Fact]
+    public async Task Period_approval_blocks_cross_contributor_entries_without_dispatching_period_event()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId entryId = new("time-entry-1");
+
+        TimesheetPeriodApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            new ApproveTimesheetPeriod(PeriodId(), PeriodDecisionId()),
+            SubmittedPeriodState(entryId),
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [entryId] = SubmittedState(entryId, contributor: OtherContributor())
+            },
+            FreshPeriodProjection(entryId),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasPeriodDispatched.ShouldBeFalse();
+        result.EntryResults.ShouldBeEmpty();
+        result.BlockingGuidance.ShouldContain(static item =>
+            item.Field == "contributor" && item.Code == "mismatch");
+    }
+
+    [Fact]
+    public async Task Period_approval_blocks_when_an_entry_summary_evidence_is_stale_even_if_period_projection_is_fresh()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId freshEntry = new("time-entry-1");
+        TimeEntryId staleEntry = new("time-entry-2");
+
+        TimesheetPeriodApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            new ApproveTimesheetPeriod(PeriodId(), PeriodDecisionId()),
+            SubmittedPeriodState(freshEntry, staleEntry),
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [freshEntry] = SubmittedState(freshEntry),
+                [staleEntry] = SubmittedState(staleEntry)
+            },
+            EntryStalePeriodProjection(staleEntry, freshEntry, staleEntry),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasPeriodDispatched.ShouldBeFalse();
+        result.EntryResults.ShouldBeEmpty();
+        result.BlockingGuidance.ShouldContain(static item =>
+            item.Field == "projectionFreshness"
+            && item.Code == "not-fresh"
+            && item.Guidance == "Projection is rebuilding.");
+    }
+
+    [Fact]
+    public async Task Period_approval_blocks_cross_tenant_entries_with_safe_denial_copy()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        guard.AuthorizeAsync(
+                Arg.Is<TimesheetsAuthorizationRequest>(request => request != null && request.Project == Project()),
+                Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(TimesheetsAuthorizationDecision.Denied(
+                TimesheetsDenialCategory.CrossTenantTarget,
+                "tenant-2 project-1 cross tenant raw detail")));
+        ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId entryId = new("time-entry-1");
+
+        TimesheetPeriodApprovalCommandResult result = await service.ApproveAsync(
+            Context(),
+            new ApproveTimesheetPeriod(PeriodId(), PeriodDecisionId()),
+            SubmittedPeriodState(entryId),
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [entryId] = SubmittedState(entryId)
+            },
+            FreshPeriodProjection(entryId),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.WasPeriodDispatched.ShouldBeFalse();
+        result.EntryResults.ShouldBeEmpty();
+        TimesheetPeriodBlockingEntryGuidance guidance = result.BlockingGuidance.ShouldHaveSingleItem();
+        guidance.Field.ShouldBe("authorization");
+        guidance.Code.ShouldBe(nameof(TimesheetsDenialCategory.CrossTenantTarget));
+        guidance.Guidance.ShouldBe("Authority cannot be resolved.");
+        guidance.Guidance.ShouldNotContain("tenant", Case.Insensitive);
+        guidance.Guidance.ShouldNotContain("project", Case.Insensitive);
+    }
+
+    [Fact]
+    public async Task Period_approval_forwards_contributor_and_period_action_so_self_approval_is_denied_fail_closed()
+    {
+        ITimesheetsAccessGuard guard = AllowingGuard();
+        ITimesheetsApprovalAuthorityResolver resolver = Substitute.For<ITimesheetsApprovalAuthorityResolver>();
+        resolver.ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(ApprovalAuthorityResolutionResult.Denied(
+                TimesheetsDenialCategory.AmbiguousAuthority,
+                "contributor-1 self approval is not allowed raw detail",
+                AuthoritySource(ApprovalAuthorityAction.PeriodApproval))));
+        TimesheetPeriodApprovalCommandService service = new(guard, resolver);
+        TimeEntryId entryId = new("time-entry-1");
+
+        // Self-approval: the acting party is the same Party as the period contributor.
+        TimesheetsRequestContext selfApprovalContext = new(Tenant(), Contributor(), "correlation-1");
+
+        TimesheetPeriodApprovalCommandResult result = await service.ApproveAsync(
+            selfApprovalContext,
+            new ApproveTimesheetPeriod(PeriodId(), PeriodDecisionId()),
+            SubmittedPeriodState(entryId),
+            new Dictionary<TimeEntryId, TimeEntryState?>
+            {
+                [entryId] = SubmittedState(entryId)
+            },
+            FreshPeriodProjection(entryId),
+            DecidedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        await resolver.Received(1).ResolveAsync(
+            Arg.Is<ApprovalAuthorityResolutionRequest>(request =>
+                request != null
+                && request.Action == ApprovalAuthorityAction.PeriodApproval
+                && request.Contributor == Contributor()),
+            Arg.Any<CancellationToken>());
+        result.WasPeriodDispatched.ShouldBeFalse();
+        result.PeriodResult.ShouldBeNull();
+        result.EntryResults.ShouldBeEmpty();
+        result.AuthorityResolution.ShouldNotBeNull().Reason.ShouldBe("Authority cannot be resolved.");
+        result.AuthorityResolution.Reason.ShouldNotContain("self approval", Case.Insensitive);
+    }
+
     private static ITimesheetsAccessGuard AllowingGuard()
     {
         ITimesheetsAccessGuard guard = Substitute.For<ITimesheetsAccessGuard>();
@@ -281,12 +548,103 @@ public sealed class TimesheetPeriodAuthorizationTests
         return guard;
     }
 
+    private static ITimesheetsApprovalAuthorityResolver AllowingAuthority(ApprovalAuthorityAction action)
+    {
+        ITimesheetsApprovalAuthorityResolver resolver = Substitute.For<ITimesheetsApprovalAuthorityResolver>();
+        resolver.ResolveAsync(Arg.Any<ApprovalAuthorityResolutionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(ApprovalAuthorityResolutionResult.Allowed(AuthoritySource(action))));
+        return resolver;
+    }
+
     private static SubmitTimesheetPeriod Command(params TimeEntryId[] ids)
         => new(
             new TimesheetPeriodId("period-1"),
             Contributor(),
             new TimesheetPeriodRequest(TimesheetPeriodKind.Monthly, new DateOnly(2026, 6, 19)),
             ids);
+
+    private static TimesheetPeriodId PeriodId() => new("period-1");
+
+    private static TimesheetPeriodApprovalDecisionId PeriodDecisionId() => new("period-decision-1");
+
+    private static TimesheetPeriodState SubmittedPeriodState(params TimeEntryId[] ids)
+    {
+        TimesheetPeriodState state = new();
+        state.Apply(new TimesheetPeriodSubmitted(
+            PeriodId(),
+            Tenant(),
+            Contributor(),
+            Submitter(),
+            SubmittedAtUtc(),
+            TimesheetPeriodKind.Monthly,
+            "2026-06",
+            new DateOnly(2026, 6, 1),
+            new DateOnly(2026, 6, 30),
+            "UTC",
+            ids,
+            TimesheetPeriodApprovalState.Submitted));
+        return state;
+    }
+
+    private static TimesheetPeriodSummaryReadModel FreshPeriodProjection(params TimeEntryId[] ids)
+        => PeriodProjection(ProjectionFreshnessMetadata.Fresh, ids);
+
+    private static TimesheetPeriodSummaryReadModel StalePeriodProjection(params TimeEntryId[] ids)
+        => PeriodProjection(ProjectionFreshnessMetadata.Stale("period-checkpoint"), ids);
+
+    private static TimesheetPeriodSummaryReadModel PeriodProjection(
+        ProjectionFreshnessMetadata freshness,
+        params TimeEntryId[] ids)
+        => new(
+            PeriodId(),
+            Tenant(),
+            Contributor(),
+            Submitter(),
+            SubmittedAtUtc(),
+            TimesheetPeriodKind.Monthly,
+            "2026-06",
+            new DateOnly(2026, 6, 1),
+            new DateOnly(2026, 6, 30),
+            "UTC",
+            ids,
+            TimesheetPeriodApprovalState.Submitted,
+            freshness)
+        {
+            EntrySummaries = ids.Select(static id => new TimesheetPeriodEntrySummary(
+                id,
+                TimeEntryApprovalState.Submitted,
+                TimeEntryCorrectionState.None,
+                TimeEntryLockState.Unlocked,
+                ProjectionFreshnessMetadata.Fresh)).ToArray()
+        };
+
+    private static TimesheetPeriodSummaryReadModel EntryStalePeriodProjection(
+        TimeEntryId staleEntryId,
+        params TimeEntryId[] ids)
+        => new(
+            PeriodId(),
+            Tenant(),
+            Contributor(),
+            Submitter(),
+            SubmittedAtUtc(),
+            TimesheetPeriodKind.Monthly,
+            "2026-06",
+            new DateOnly(2026, 6, 1),
+            new DateOnly(2026, 6, 30),
+            "UTC",
+            ids,
+            TimesheetPeriodApprovalState.Submitted,
+            ProjectionFreshnessMetadata.Fresh)
+        {
+            EntrySummaries = ids.Select(id => new TimesheetPeriodEntrySummary(
+                id,
+                TimeEntryApprovalState.Submitted,
+                TimeEntryCorrectionState.None,
+                TimeEntryLockState.Unlocked,
+                id == staleEntryId
+                    ? ProjectionFreshnessMetadata.Stale("entry-checkpoint")
+                    : ProjectionFreshnessMetadata.Fresh)).ToArray()
+        };
 
     private static TimeEntryState RecordedState(
         TimeEntryId timeEntryId,
@@ -335,9 +693,9 @@ public sealed class TimesheetPeriodAuthorizationTests
         return state;
     }
 
-    private static TimeEntryState SubmittedState(TimeEntryId timeEntryId)
+    private static TimeEntryState SubmittedState(TimeEntryId timeEntryId, PartyReference? contributor = null)
     {
-        TimeEntryState state = RecordedState(timeEntryId);
+        TimeEntryState state = RecordedState(timeEntryId, contributor: contributor);
         state.Apply(new TimeEntrySubmitted(
             timeEntryId,
             Submitter(),
@@ -416,4 +774,15 @@ public sealed class TimesheetPeriodAuthorizationTests
     private static TenantTimesheetPeriodPolicy Policy() => new("UTC", DayOfWeek.Monday);
 
     private static DateTimeOffset SubmittedAtUtc() => new(2026, 6, 19, 12, 0, 0, TimeSpan.Zero);
+
+    private static DateTimeOffset DecidedAtUtc() => new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
+
+    private static ApprovalAuthoritySourceAttribution AuthoritySource(ApprovalAuthorityAction action)
+        => new(
+            action,
+            ApprovalAuthoritySource.ProjectApprover,
+            ApprovalAuthorityDecisionState.Allowed,
+            "timesheets.approval-authority.v1",
+            "v1",
+            ProjectionFreshnessMetadata.Fresh);
 }

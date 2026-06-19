@@ -124,7 +124,9 @@ public static class TimeEntry
             decidedAtUtc,
             authoritySource,
             approvalScope,
-            ApprovalAuthorityAction.EntryApproval,
+            approvalScope == TimeEntryApprovalScope.TimesheetPeriod
+                ? ApprovalAuthorityAction.PeriodApproval
+                : ApprovalAuthorityAction.EntryApproval,
             null,
             errors);
 
@@ -180,7 +182,9 @@ public static class TimeEntry
             decidedAtUtc,
             authoritySource,
             approvalScope,
-            ApprovalAuthorityAction.EntryRejection,
+            approvalScope == TimeEntryApprovalScope.TimesheetPeriod
+                ? ApprovalAuthorityAction.PeriodRejection
+                : ApprovalAuthorityAction.EntryRejection,
             command.Reason,
             errors);
 

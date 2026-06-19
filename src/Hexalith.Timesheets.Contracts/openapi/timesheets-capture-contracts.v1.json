@@ -131,6 +131,40 @@
         },
         "additionalProperties": false
       },
+      "ApproveTimesheetPeriod": {
+        "type": "object",
+        "description": "Approve one Submitted Timesheet Period. Tenant, user, correlation, authority source, approver, decision timestamp, and authorization context are server-derived and not accepted from the caller payload.",
+        "required": [
+          "timesheetPeriodId",
+          "timesheetPeriodApprovalDecisionId"
+        ],
+        "properties": {
+          "timesheetPeriodId": { "$ref": "#/components/schemas/TimesheetPeriodId" },
+          "timesheetPeriodApprovalDecisionId": { "$ref": "#/components/schemas/TimesheetPeriodApprovalDecisionId" }
+        },
+        "additionalProperties": false
+      },
+      "RejectTimesheetPeriod": {
+        "type": "object",
+        "description": "Reject one Submitted Timesheet Period or selected included entries with required reasons. Tenant, user, correlation, authority source, approver, decision timestamp, and authorization context are server-derived and not accepted from the caller payload.",
+        "required": [
+          "timesheetPeriodId",
+          "timesheetPeriodApprovalDecisionId",
+          "rejectedEntries",
+          "reason"
+        ],
+        "properties": {
+          "timesheetPeriodId": { "$ref": "#/components/schemas/TimesheetPeriodId" },
+          "timesheetPeriodApprovalDecisionId": { "$ref": "#/components/schemas/TimesheetPeriodApprovalDecisionId" },
+          "rejectedEntries": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/components/schemas/TimesheetPeriodSelectedEntryRejectionEvidence" }
+          },
+          "reason": { "$ref": "#/components/schemas/TimesheetPeriodRejectionReason" }
+        },
+        "additionalProperties": false
+      },
       "ApproveTimeEntry": {
         "type": "object",
         "description": "Approve one Submitted Time Entry. Tenant, user, correlation, role, authority source, approver, and authorization context are server-derived and not accepted from the caller payload.",
@@ -275,6 +309,73 @@
             "items": { "$ref": "#/components/schemas/TimeEntryId" }
           },
           "periodState": { "$ref": "#/components/schemas/TimesheetPeriodApprovalState" }
+        },
+        "additionalProperties": false
+      },
+      "TimesheetPeriodApproved": {
+        "type": "object",
+        "description": "Domain event emitted for one accepted Timesheet Period approval. It records grouped period decision evidence and included Time Entry IDs without exposing raw envelopes or command bodies.",
+        "required": [
+          "timesheetPeriodId",
+          "tenant",
+          "contributor",
+          "approver",
+          "decidedAtUtc",
+          "timesheetPeriodApprovalDecisionId",
+          "periodState",
+          "authoritySource",
+          "includedTimeEntryIds"
+        ],
+        "properties": {
+          "timesheetPeriodId": { "$ref": "#/components/schemas/TimesheetPeriodId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "approver": { "$ref": "#/components/schemas/PartyReference" },
+          "decidedAtUtc": { "type": "string", "format": "date-time" },
+          "timesheetPeriodApprovalDecisionId": { "$ref": "#/components/schemas/TimesheetPeriodApprovalDecisionId" },
+          "periodState": { "$ref": "#/components/schemas/TimesheetPeriodApprovalState" },
+          "authoritySource": { "$ref": "#/components/schemas/ApprovalAuthoritySourceAttribution" },
+          "includedTimeEntryIds": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimeEntryId" }
+          }
+        },
+        "additionalProperties": false
+      },
+      "TimesheetPeriodRejected": {
+        "type": "object",
+        "description": "Domain event emitted for one accepted Timesheet Period rejection. It records grouped period evidence, affected Time Entry IDs, selected-entry reasons, and authority attribution without exposing raw envelopes or command bodies.",
+        "required": [
+          "timesheetPeriodId",
+          "tenant",
+          "contributor",
+          "approver",
+          "decidedAtUtc",
+          "timesheetPeriodApprovalDecisionId",
+          "periodState",
+          "authoritySource",
+          "affectedTimeEntryIds",
+          "reason",
+          "rejectedEntries"
+        ],
+        "properties": {
+          "timesheetPeriodId": { "$ref": "#/components/schemas/TimesheetPeriodId" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "approver": { "$ref": "#/components/schemas/PartyReference" },
+          "decidedAtUtc": { "type": "string", "format": "date-time" },
+          "timesheetPeriodApprovalDecisionId": { "$ref": "#/components/schemas/TimesheetPeriodApprovalDecisionId" },
+          "periodState": { "$ref": "#/components/schemas/TimesheetPeriodApprovalState" },
+          "authoritySource": { "$ref": "#/components/schemas/ApprovalAuthoritySourceAttribution" },
+          "affectedTimeEntryIds": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimeEntryId" }
+          },
+          "reason": { "$ref": "#/components/schemas/TimesheetPeriodRejectionReason" },
+          "rejectedEntries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimesheetPeriodSelectedEntryRejectionEvidence" }
+          }
         },
         "additionalProperties": false
       },
@@ -731,6 +832,49 @@
         },
         "additionalProperties": false
       },
+      "TimesheetPeriodSelectedEntryRejectionEvidence": {
+        "type": "object",
+        "description": "Selected-entry rejection evidence supplied as business intent and later stored with grouped period rejection evidence. It contains only the affected Time Entry ID and required entry rejection reason.",
+        "required": [ "timeEntryId", "reason" ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "reason": { "$ref": "#/components/schemas/TimeEntryRejectionReason" }
+        },
+        "additionalProperties": false
+      },
+      "TimesheetPeriodApprovalDecisionEvidence": {
+        "type": "object",
+        "description": "Stable approval or rejection evidence for a Timesheet Period. It preserves period state separately from entry states and includes affected entry ids, authority attribution, UTC decision time, and optional rejection reasons.",
+        "required": [
+          "timesheetPeriodId",
+          "timesheetPeriodApprovalDecisionId",
+          "approver",
+          "tenant",
+          "decidedAtUtc",
+          "periodState",
+          "authoritySource",
+          "affectedTimeEntryIds"
+        ],
+        "properties": {
+          "timesheetPeriodId": { "$ref": "#/components/schemas/TimesheetPeriodId" },
+          "timesheetPeriodApprovalDecisionId": { "$ref": "#/components/schemas/TimesheetPeriodApprovalDecisionId" },
+          "approver": { "$ref": "#/components/schemas/PartyReference" },
+          "tenant": { "$ref": "#/components/schemas/TenantReference" },
+          "decidedAtUtc": { "type": "string", "format": "date-time" },
+          "periodState": { "$ref": "#/components/schemas/TimesheetPeriodApprovalState" },
+          "authoritySource": { "$ref": "#/components/schemas/ApprovalAuthoritySourceAttribution" },
+          "affectedTimeEntryIds": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimeEntryId" }
+          },
+          "periodRejectionReason": { "$ref": "#/components/schemas/TimesheetPeriodRejectionReason" },
+          "rejectedEntries": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimesheetPeriodSelectedEntryRejectionEvidence" }
+          }
+        },
+        "additionalProperties": false
+      },
       "TimeEntryEventLineageItem": {
         "type": "object",
         "description": "Safe domain event summary for evidence lineage. It omits raw envelopes, stream names, message identifiers, tenant/user context, and payload bodies.",
@@ -860,6 +1004,15 @@
           "entrySummaries": {
             "type": "array",
             "items": { "$ref": "#/components/schemas/TimesheetPeriodEntrySummary" }
+          },
+          "incompleteEntryEvidenceIds": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimeEntryId" }
+          },
+          "periodDecision": { "$ref": "#/components/schemas/TimesheetPeriodApprovalDecisionEvidence" },
+          "affectedEntryIds": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimeEntryId" }
           }
         },
         "additionalProperties": false
@@ -906,8 +1059,10 @@
       "TimesheetPeriodId": { "type": "string", "minLength": 1 },
       "TimeEntrySubmissionId": { "type": "string", "minLength": 1 },
       "TimeEntryApprovalDecisionId": { "type": "string", "minLength": 1 },
+      "TimesheetPeriodApprovalDecisionId": { "type": "string", "minLength": 1 },
       "TimeEntryCorrectionId": { "type": "string", "minLength": 1 },
       "TimeEntryRejectionReason": { "type": "string", "minLength": 1, "maxLength": 1000 },
+      "TimesheetPeriodRejectionReason": { "type": "string", "minLength": 1, "maxLength": 1000 },
       "TimeEntryCorrectionReason": { "type": "string", "minLength": 1, "maxLength": 1024 },
       "ActivityTypeId": { "type": "string", "minLength": 1 },
       "PartyReference": { "type": "string", "minLength": 1 },

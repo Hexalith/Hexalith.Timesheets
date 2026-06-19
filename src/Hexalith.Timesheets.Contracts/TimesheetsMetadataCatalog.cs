@@ -340,6 +340,46 @@ public static class TimesheetsMetadataCatalog
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
             ]),
         new(
+            "timesheets.projection.period-approval-detail",
+            "Period Approval Detail",
+            "approval",
+            TimesheetsSurfaceKind.Projection,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("timesheetPeriodId", "Timesheet Period", nameof(TimesheetPeriodId), true),
+                new("periodState", "Period state", nameof(TimesheetPeriodApprovalState), true, "Period state stays separate from entry Approval State."),
+                new("entrySummaries", "Entry summaries", nameof(TimesheetPeriodEntrySummary), true, "Entry rows show entry states separately from the period decision."),
+                new("affectedEntryIds", "Affected entries", "TimeEntryId[]", false, "Affected entry ids remain grouped decision evidence."),
+                new("periodDecision", "Period decision evidence", nameof(TimesheetPeriodApprovalDecisionEvidence), false, "Grouped approval or rejection decision evidence."),
+                new("rejectedEntries", "Rejected entries", nameof(TimesheetPeriodSelectedEntryRejectionEvidence), false, "Selected rejected entries carry required reasons."),
+                new("rejectionReason", "Rejection reason", nameof(TimesheetPeriodRejectionReason), false, "Period rejection reason is separate from entry rejection reasons."),
+                new("authorityDecision", "Authority decision", nameof(ApprovalAuthorityDecisionState), true, "Authority cannot be resolved."),
+                new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), false),
+                new("authorityFreshness", "Authority freshness", nameof(ProjectionFreshnessState), true),
+                new("lockEvidence", "Lock evidence", nameof(TimeEntryLockEvidence), true, "Entry lock state is derived from Time Entry approval events."),
+                new("lockState", "Lock state", nameof(TimeEntryLockState), true),
+                new("blockingEntryGuidance", "Blocking-entry guidance", nameof(TimesheetPeriodBlockingEntryGuidance), false, "Entry needs correction."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true, "Projection is rebuilding."),
+                new("persistentMessageBarState", "Persistent message-bar state", "String", true, "Authority cannot be resolved.")
+            ],
+            [
+                new("approve-period", "Approve period", "Timesheets.ApprovePeriod"),
+                new("reject-period", "Reject period", "Timesheets.RejectPeriod"),
+                new("approve-entry", "Approve entry", "Timesheets.ApproveEntry"),
+                new("reject-entry", "Reject entry", "Timesheets.RejectEntry"),
+                new("correct-entry", "Correct entry", "Timesheets.CorrectRejectedTimeEntry")
+            ],
+            [
+                new("period", "Period", nameof(TimesheetPeriodApprovalState)),
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("correction", "Correction", nameof(TimeEntryCorrectionState)),
+                new("lock", "Lock", nameof(TimeEntryLockState)),
+                new("authority-decision", "Authority decision", nameof(ApprovalAuthorityDecisionState)),
+                new("authority-freshness", "Authority freshness", nameof(ProjectionFreshnessState)),
+                new("authority-source", "Authority source", nameof(ApprovalAuthoritySource)),
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState))
+            ]),
+        new(
             "timesheets.approvals.queue",
             "Approvals Queue",
             "approval",
@@ -404,6 +444,12 @@ public static class TimesheetsMetadataCatalog
             TimesheetsCompositionPattern.FrontComposerGeneratedForm,
             [
                 new("period", "Period", "String", true),
+                new("timesheetPeriodId", "Timesheet Period", nameof(TimesheetPeriodId), true),
+                new("periodState", "Period state", nameof(TimesheetPeriodApprovalState), true, "Period state stays separate from entry Approval State."),
+                new("affectedEntryIds", "Affected entries", "TimeEntryId[]", false),
+                new("rejectedEntries", "Rejected entries", nameof(TimesheetPeriodSelectedEntryRejectionEvidence), false, "Entry needs correction."),
+                new("rejectionReason", "Rejection reason", nameof(TimesheetPeriodRejectionReason), false),
+                new("lockState", "Lock state", nameof(TimeEntryLockState), false),
                 new("approvalAction", "Approval action", nameof(ApprovalAuthorityAction), true),
                 new("authorityDecision", "Authority decision", nameof(ApprovalAuthorityDecisionState), true),
                 new("authoritySource", "Authority source", nameof(ApprovalAuthoritySource), false),
