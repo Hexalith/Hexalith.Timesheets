@@ -121,7 +121,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
         endpoints.MapGet(
             "/api/timesheets/magic-links/confirm",
             static async Task<IResult> (
-                string t,
+                string? t,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
@@ -155,7 +155,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
         endpoints.MapPost(
             "/api/timesheets/magic-links/confirm/submit",
             static async Task<IResult> (
-                string t,
+                string? t,
                 ConfirmTimeThroughMagicLink command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
@@ -190,7 +190,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
         endpoints.MapGet(
             "/api/timesheets/magic-links/adjust",
             static async Task<IResult> (
-                string t,
+                string? t,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
@@ -224,7 +224,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
         endpoints.MapPost(
             "/api/timesheets/magic-links/adjust/submit",
             static async Task<IResult> (
-                string t,
+                string? t,
                 AdjustTimeThroughMagicLink command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
@@ -262,7 +262,8 @@ public static class MagicLinkConfirmationCapabilityEndpoints
 
     private static IResult Denied()
         => Results.Problem(
-            title: "Magic-link confirmation request was not accepted.",
+            title: MagicLinkInvalidLinkDenial.Default.Title,
+            detail: MagicLinkInvalidLinkDenial.Default.Detail,
             statusCode: StatusCodes.Status403Forbidden);
 
     private static string? FirstClaimValue(ClaimsPrincipal user, params string[] claimTypes)

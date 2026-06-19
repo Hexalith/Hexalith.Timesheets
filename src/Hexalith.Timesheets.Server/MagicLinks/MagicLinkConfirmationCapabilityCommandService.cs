@@ -214,7 +214,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
 
         if (string.IsNullOrWhiteSpace(oneTimeToken))
         {
-            return new(InvalidLinkRejection("Magic-link adjustment request was not accepted."), null);
+            return new(InvalidLinkRejection(), null);
         }
 
         MagicLinkTokenHash tokenHash;
@@ -224,7 +224,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         }
         catch (ArgumentException)
         {
-            return new(InvalidLinkRejection("Magic-link adjustment request was not accepted."), null);
+            return new(InvalidLinkRejection(), null);
         }
 
         TimesheetsDomainResult scopeResult = ValidateAdjustmentScope(capabilityState, timeEntryState);
@@ -235,7 +235,12 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
 
         if (!MagicLinkConfirmationCapability.IsValidForAdjustment(capabilityState, context.Tenant, tokenHash, adjustedAtUtc))
         {
-            return new(InvalidLinkRejection("Magic-link adjustment request was not accepted."), null);
+            return new(InvalidLinkRejection(), null);
+        }
+
+        if (activityTypeCatalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+        {
+            return new(InvalidLinkRejection(), null);
         }
 
         if (!TryResolveActivityTypeScope(command, capabilityState!, activityTypeCatalog, out ActivityTypeScope activityTypeScope, out TimesheetsDomainResult? rejection))
@@ -478,7 +483,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
     {
         if (capabilityState?.Exists != true || timeEntryState?.IsRecorded != true)
         {
-            return InvalidLinkRejection("Magic-link adjustment request was not accepted.");
+            return InvalidLinkRejection();
         }
 
         return timeEntryState.TimeEntryId == capabilityState.TimeEntryId
@@ -489,7 +494,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             && !timeEntryState.IsLockedFromDirectEdit
             && timeEntryState.CorrectionState == TimeEntryCorrectionState.None
             ? TimesheetsDomainResult.NoOp()
-            : InvalidLinkRejection("Magic-link adjustment request was not accepted.");
+            : InvalidLinkRejection();
     }
 
     private static ExternalContributionSource ServerDerivedSource(MagicLinkCapabilityState state)
@@ -632,7 +637,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
 
         if (capabilityState.Target is null || capabilityState.Target.TargetKind == TimeEntryTargetKind.Unknown)
         {
-            rejection = InvalidLinkRejection("Magic-link adjustment request was not accepted.");
+            rejection = InvalidLinkRejection();
             return false;
         }
 
@@ -711,7 +716,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         ]);
 
     private static TimesheetsDomainResult InvalidLinkRejection()
-        => InvalidLinkRejection("Magic-link confirmation request was not accepted.");
+        => InvalidLinkRejection(MagicLinkInvalidLinkDenial.Default.Title);
 
     private static TimesheetsDomainResult InvalidLinkRejection(string message)
         => Reject(

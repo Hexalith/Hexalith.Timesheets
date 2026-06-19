@@ -226,6 +226,30 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
+    public void Invalid_link_denial_contract_has_one_safe_recovery_path_without_authority_material()
+    {
+        MagicLinkInvalidLinkDenial denial = MagicLinkInvalidLinkDenial.Default;
+
+        string json = JsonSerializer.Serialize(denial, JsonOptions);
+
+        denial.Title.ShouldBe("This link is expired or unavailable.");
+        denial.Detail.ShouldBe("Request a new confirmation link from the sender.");
+        denial.RecoveryPath.ShouldBe(denial.Detail);
+        json.ShouldNotContain("reason", Case.Insensitive);
+        json.ShouldNotContain("tenant", Case.Insensitive);
+        json.ShouldNotContain("project", Case.Insensitive);
+        json.ShouldNotContain("work", Case.Insensitive);
+        json.ShouldNotContain("party", Case.Insensitive);
+        json.ShouldNotContain("timeEntry", Case.Insensitive);
+        json.ShouldNotContain("duration", Case.Insensitive);
+        json.ShouldNotContain("comment", Case.Insensitive);
+        json.ShouldNotContain("activityType", Case.Insensitive);
+        json.ShouldNotContain("approval", Case.Insensitive);
+        json.ShouldNotContain("token", Case.Insensitive);
+        json.ShouldNotContain("hash", Case.Insensitive);
+    }
+
+    [Fact]
     public void Openapi_declares_magic_link_schemas_additively_without_authority_body_fields()
     {
         JsonObject schemas = LoadSchemas();
@@ -241,6 +265,7 @@ public sealed class MagicLinkContractTests
         schemas.ContainsKey("MagicLinkConfirmationDisplayResponse").ShouldBeTrue();
         schemas.ContainsKey("MagicLinkAdjustmentDisplayResponse").ShouldBeTrue();
         schemas.ContainsKey("MagicLinkIssueResponse").ShouldBeTrue();
+        schemas.ContainsKey("MagicLinkInvalidLinkDenial").ShouldBeTrue();
 
         JsonObject issueProperties = schemas["IssueMagicLinkConfirmationCapability"].ShouldNotBeNull()["properties"]?.AsObject()
             ?? throw new InvalidOperationException("IssueMagicLinkConfirmationCapability properties are missing.");
@@ -275,6 +300,13 @@ public sealed class MagicLinkContractTests
 
         string responseSchema = schemas["MagicLinkIssueResponse"].ShouldNotBeNull().ToJsonString();
         responseSchema.ShouldContain("oneTimeToken");
+
+        string invalidSchema = schemas["MagicLinkInvalidLinkDenial"].ShouldNotBeNull().ToJsonString();
+        invalidSchema.ShouldContain("recoveryPath");
+        invalidSchema.ShouldNotContain("token", Case.Insensitive);
+        invalidSchema.ShouldNotContain("hash", Case.Insensitive);
+        invalidSchema.ShouldNotContain("tenant", Case.Insensitive);
+        invalidSchema.ShouldNotContain("party", Case.Insensitive);
     }
 
     private static IssueMagicLinkConfirmationCapability IssueCommand()

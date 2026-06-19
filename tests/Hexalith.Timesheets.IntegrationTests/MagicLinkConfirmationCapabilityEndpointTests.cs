@@ -51,7 +51,11 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
             "MagicLinks",
             "MagicLinkConfirmationCapabilityEndpoints.cs"));
 
-        endpoint.ShouldContain("Magic-link confirmation request was not accepted.");
+        endpoint.ShouldContain("MagicLinkInvalidLinkDenial.Default.Title");
+        endpoint.ShouldContain("MagicLinkInvalidLinkDenial.Default.Detail");
+        endpoint.ShouldContain("string? t");
+        endpoint.ShouldNotContain("Magic-link adjustment request was not accepted.");
+        endpoint.ShouldNotContain("Magic-link confirmation request was not accepted.");
         endpoint.ShouldNotContain("Project authority cannot be resolved.");
         endpoint.ShouldNotContain("Contributor authority cannot be resolved.");
         endpoint.ShouldNotContain("Activity Type was not found");
@@ -59,5 +63,19 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         endpoint.ShouldNotContain("Party display", Case.Insensitive);
         endpoint.ShouldNotContain("Project name", Case.Insensitive);
         endpoint.ShouldNotContain("Work name", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Magic_link_external_routes_share_one_denial_helper()
+    {
+        string endpoint = File.ReadAllText(TestRepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets",
+            "Endpoints",
+            "MagicLinks",
+            "MagicLinkConfirmationCapabilityEndpoints.cs"));
+
+        endpoint.Split("private static IResult Denied()", StringSplitOptions.None).Length.ShouldBe(2);
+        endpoint.Split("Results.Problem(", StringSplitOptions.None).Length.ShouldBe(2);
     }
 }

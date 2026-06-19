@@ -1317,6 +1317,17 @@
         },
         "additionalProperties": false
       },
+      "MagicLinkInvalidLinkDenial": {
+        "type": "object",
+        "description": "Opaque external invalid-link denial copy. The same shape and text are used for malformed, unknown, expired, used, revoked, unauthorized, wrong-recipient, wrong-scope, repeated-attempt, and rate-limited failures.",
+        "required": [ "title", "detail", "recoveryPath" ],
+        "properties": {
+          "title": { "type": "string", "const": "This link is expired or unavailable." },
+          "detail": { "type": "string", "const": "Request a new confirmation link from the sender." },
+          "recoveryPath": { "type": "string", "const": "Request a new confirmation link from the sender." }
+        },
+        "additionalProperties": false
+      },
       "TimeEntryContributorConfirmationEvidence": {
         "type": "object",
         "description": "Contributor confirmation evidence exposed to authorized approvers. It is separate from approval evidence.",
@@ -1507,7 +1518,12 @@
               "application/json": { "schema": { "$ref": "#/components/schemas/MagicLinkConfirmationDisplayResponse" } }
             }
           },
-          "403": { "description": "Opaque invalid-link response" }
+          "403": {
+            "description": "Opaque invalid-link response. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "content": {
+              "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
+            }
+          }
         }
       }
     },
@@ -1525,7 +1541,12 @@
         },
         "responses": {
           "202": { "description": "Confirmation accepted" },
-          "403": { "description": "Opaque invalid-link response" }
+          "403": {
+            "description": "Opaque invalid-link response. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "content": {
+              "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
+            }
+          }
         }
       }
     },
@@ -1542,7 +1563,12 @@
               "application/json": { "schema": { "$ref": "#/components/schemas/MagicLinkAdjustmentDisplayResponse" } }
             }
           },
-          "403": { "description": "Opaque invalid-link response" }
+          "403": {
+            "description": "Opaque invalid-link response. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "content": {
+              "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
+            }
+          }
         }
       }
     },
@@ -1560,7 +1586,12 @@
         },
         "responses": {
           "202": { "description": "Adjustment accepted" },
-          "403": { "description": "Opaque invalid-link response" }
+          "403": {
+            "description": "Opaque invalid-link response. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "content": {
+              "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
+            }
+          }
         }
       }
     }

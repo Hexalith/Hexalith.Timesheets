@@ -367,6 +367,114 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
+    [Fact]
+    public async Task Invalid_magic_link_confirmation_and_adjustment_workflows_return_no_external_disclosure()
+    {
+        RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
+        MagicLinkConfirmationCapabilityCommandService service = CreateService(accessGuard, new DeterministicTokenGenerator());
+        ServerCapabilityState used = IssuedState();
+        used.Apply(new MagicLinkConfirmationCapabilityUsed(
+            CapabilityId(),
+            Context().Tenant!,
+            Contributor(),
+            TimeEntryId(),
+            ConfirmedAtUtc(),
+            new MagicLinkAuditMetadata("magic-link", "capability-1")));
+        ServerCapabilityState revokedAdjustment = IssuedState(MagicLinkAllowedAction.Adjust);
+        revokedAdjustment.Apply(new MagicLinkConfirmationCapabilityRevoked(
+            CapabilityId(),
+            Context().Tenant!,
+            Operator(),
+            RevokedAtUtc(),
+            new MagicLinkAuditMetadata("timesheets", "revoke-1")));
+
+        (string Token, ServerCapabilityState? Confirmation, ServerCapabilityState? Adjustment, TimeEntryState? TimeEntry, ActivityTypeCatalogReadModel Catalog, DateTimeOffset ObservedAt)[] cases =
+        [
+            ("", IssuedState(), IssuedState(MagicLinkAllowedAction.Adjust), RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("malformed-token", IssuedState(), IssuedState(MagicLinkAllowedAction.Adjust), RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("different-token", IssuedState(), IssuedState(MagicLinkAllowedAction.Adjust), RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", null, null, RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", used, revokedAdjustment, RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", IssuedState(tenant: new TenantReference("tenant-2")), IssuedState(MagicLinkAllowedAction.Adjust, tenant: new TenantReference("tenant-2")), RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", IssuedState(contributor: new PartyReference("party-2")), IssuedState(MagicLinkAllowedAction.Adjust, contributor: new PartyReference("party-2")), RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", IssuedState(), IssuedState(MagicLinkAllowedAction.Adjust), RecordedExternalState(new TimeEntryId("time-entry-2")), FreshCatalog(), ConfirmedAtUtc()),
+            ("opaque-once", IssuedState(expiresAtUtc: ConfirmedAtUtc()), IssuedState(MagicLinkAllowedAction.Adjust, expiresAtUtc: ConfirmedAtUtc()), RecordedExternalState(), FreshCatalog(), ConfirmedAtUtc())
+        ];
+
+        foreach ((string token, ServerCapabilityState? confirmation, ServerCapabilityState? adjustment, TimeEntryState? timeEntry, ActivityTypeCatalogReadModel catalog, DateTimeOffset observedAt) in cases)
+        {
+            MagicLinkConfirmationDisplayResponse? confirmationDisplay = await service.DescribeAsync(
+                Context(),
+                token,
+                confirmation,
+                timeEntry,
+                catalog,
+                observedAt,
+                TestContext.Current.CancellationToken);
+            MagicLinkConfirmationUseResult confirmationUse = await service.ConfirmAsync(
+                Context(),
+                token,
+                ConfirmCommand(),
+                confirmation,
+                timeEntry,
+                observedAt,
+                TestContext.Current.CancellationToken);
+            MagicLinkAdjustmentDisplayResponse? adjustmentDisplay = await service.DescribeAdjustmentAsync(
+                Context(),
+                token,
+                adjustment,
+                timeEntry,
+                catalog,
+                observedAt,
+                TestContext.Current.CancellationToken);
+            MagicLinkConfirmationUseResult adjustmentUse = await service.AdjustAsync(
+                Context(),
+                token,
+                AdjustCommand(),
+                adjustment,
+                timeEntry,
+                catalog,
+                observedAt,
+                TestContext.Current.CancellationToken);
+
+            confirmationDisplay.ShouldBeNull();
+            adjustmentDisplay.ShouldBeNull();
+            confirmationUse.WasDispatched.ShouldBeFalse();
+            confirmationUse.TimeEntryResult.ShouldBeNull();
+            adjustmentUse.WasDispatched.ShouldBeFalse();
+            adjustmentUse.AdjustmentResult.ShouldBeNull();
+        }
+
+        ActivityTypeCatalogReadModel staleCatalog = new([], ProjectionFreshnessMetadata.Stale());
+        (await service.DescribeAsync(
+            Context(),
+            "opaque-once",
+            IssuedState(),
+            RecordedExternalState(),
+            staleCatalog,
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await service.DescribeAdjustmentAsync(
+            Context(),
+            "opaque-once",
+            IssuedState(MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(),
+            staleCatalog,
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldBeNull();
+        MagicLinkConfirmationUseResult staleAdjustment = await service.AdjustAsync(
+            Context(),
+            "opaque-once",
+            AdjustCommand(),
+            IssuedState(MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(),
+            staleCatalog,
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+        staleAdjustment.WasDispatched.ShouldBeFalse();
+        staleAdjustment.AdjustmentResult.ShouldBeNull();
+    }
+
     private static IssueMagicLinkConfirmationCapability IssueCommand(
         MagicLinkAllowedAction allowedAction = MagicLinkAllowedAction.Confirm)
         => new(
@@ -395,15 +503,21 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             BillableState.NonBillable);
 
     private static TimeEntryState RecordedExternalState()
+        => RecordedExternalState(null);
+
+    private static TimeEntryState RecordedExternalState(TimeEntryId? timeEntryId)
     {
         TimeEntryState state = new();
-        state.Apply(RecordedExternalEvent());
+        state.Apply(RecordedExternalEvent(timeEntryId));
         return state;
     }
 
     private static TimeEntryRecorded RecordedExternalEvent()
+        => RecordedExternalEvent(null);
+
+    private static TimeEntryRecorded RecordedExternalEvent(TimeEntryId? timeEntryId)
         => new(
-            TimeEntryId(),
+            timeEntryId ?? TimeEntryId(),
             TimeEntryTargetReference.ForProject(Project()),
             Contributor(),
             ActivityId(),
@@ -417,6 +531,31 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
         {
             ExternalSource = new ExternalContributionSource("supplier-api", "request-1")
         };
+
+    private static ServerCapabilityState IssuedState(
+        MagicLinkAllowedAction allowedAction = MagicLinkAllowedAction.Confirm,
+        TenantReference? tenant = null,
+        PartyReference? contributor = null,
+        DateTimeOffset? expiresAtUtc = null)
+    {
+        ServerCapabilityState state = new();
+        state.Apply(new MagicLinkConfirmationCapabilityIssued(
+            CapabilityId(),
+            tenant ?? Context().Tenant!,
+            contributor ?? Contributor(),
+            TimeEntryTargetReference.ForProject(Project()),
+            ActivityId(),
+            TimeEntryId(),
+            MagicLinkTargetKind.ProposedTimeEntry,
+            allowedAction,
+            new MagicLinkTokenHash("hash-only"),
+            expiresAtUtc ?? ExpiresAtUtc(),
+            Operator(),
+            IssuedAtUtc(),
+            new MagicLinkAuditMetadata("timesheets", "issue-1"),
+            true));
+        return state;
+    }
 
     private static ActivityTypeCatalogReadModel FreshCatalog()
         => new(
@@ -532,8 +671,15 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
         }
 
         public MagicLinkTokenHash DeriveHash(string oneTimeToken)
-            => oneTimeToken == "opaque-once"
+        {
+            if (oneTimeToken == "malformed-token")
+            {
+                throw new ArgumentException("Malformed token.", nameof(oneTimeToken));
+            }
+
+            return oneTimeToken == "opaque-once"
                 ? new MagicLinkTokenHash("hash-only")
                 : new MagicLinkTokenHash("different-hash");
+        }
     }
 }

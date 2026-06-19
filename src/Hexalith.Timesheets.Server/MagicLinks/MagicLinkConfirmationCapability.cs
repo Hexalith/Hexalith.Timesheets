@@ -131,7 +131,7 @@ public static class MagicLinkConfirmationCapability
 
         if (errors.Count > 0)
         {
-            return Reject("Magic-link confirmation request was not accepted.", errors);
+            return Reject(MagicLinkInvalidLinkDenial.Default.Title, errors);
         }
 
         return TimesheetsDomainResult.Success([
@@ -169,7 +169,7 @@ public static class MagicLinkConfirmationCapability
 
         if (errors.Count > 0)
         {
-            return Reject("Magic-link adjustment request was not accepted.", errors);
+            return Reject(MagicLinkInvalidLinkDenial.Default.Title, errors);
         }
 
         return TimesheetsDomainResult.Success([
@@ -391,7 +391,7 @@ public static class MagicLinkConfirmationCapability
     }
 
     private static TimesheetsFieldError InvalidLink(string field)
-        => new(field, "invalid-link", "Magic-link confirmation request was not accepted.");
+        => new(field, "invalid-link", MagicLinkInvalidLinkDenial.Default.Title);
 
     private static TimesheetsDomainResult Reject(
         string message,
