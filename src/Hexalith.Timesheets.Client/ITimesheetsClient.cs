@@ -1,4 +1,4 @@
-using Hexalith.Timesheets.Contracts;
+using Hexalith.Timesheets.Contracts.Ui;
 
 namespace Hexalith.Timesheets.Client;
 

@@ -60,12 +60,12 @@ public sealed class ReferenceContractTests
     }
 
     [Fact]
-    public void Metadata_catalog_exposes_frontcomposer_and_eventstore_entry_points()
+    public void Metadata_catalog_exposes_capture_and_evidence_surface_descriptors()
     {
-        TimesheetsMetadataCatalog.Descriptors.Count.ShouldBe(2);
+        TimesheetsMetadataCatalog.Descriptors.Count.ShouldBe(3);
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
-            .ShouldContain("timesheets.frontcomposer.entry-points");
+            .ShouldContain("timesheets.command.record-time");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
-            .ShouldContain("timesheets.eventstore.domain-service");
+            .ShouldContain("timesheets.projection.time-entry-evidence");
     }
 }

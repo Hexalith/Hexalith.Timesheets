@@ -1,0 +1,110 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Hexalith Timesheets Capture Contracts",
+    "version": "1.0",
+    "summary": "Stable contract description for Timesheets time capture, Activity Type catalog, evidence reads, and metadata descriptors."
+  },
+  "x-hexalith-boundaries": {
+    "serverDerivedContext": [
+      "tenant",
+      "user",
+      "correlation",
+      "authorization"
+    ],
+    "nonOwnedState": [
+      "Party display and contact data",
+      "Project or Work names, hierarchy, planning, or lifecycle state",
+      "Tenant membership state",
+      "invoice, payroll, rate, tax, or revenue state"
+    ],
+    "notInCallerPayloads": [
+      "messageId",
+      "causationId",
+      "sequence",
+      "stream",
+      "aggregate internals",
+      "claims",
+      "jwt",
+      "token"
+    ]
+  },
+  "components": {
+    "schemas": {
+      "RecordTimeEntry": {
+        "type": "object",
+        "required": [
+          "timeEntryId",
+          "target",
+          "contributor",
+          "activityTypeId",
+          "serviceDate",
+          "durationMinutes",
+          "billableState",
+          "contributorCategory"
+        ],
+        "properties": {
+          "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
+          "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
+          "contributor": { "$ref": "#/components/schemas/PartyReference" },
+          "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "serviceDate": { "type": "string", "format": "date" },
+          "durationMinutes": { "type": "integer", "minimum": 1 },
+          "billableState": { "$ref": "#/components/schemas/BillableState" },
+          "contributorCategory": { "$ref": "#/components/schemas/ContributorCategory" },
+          "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" }
+        }
+      },
+      "TimeEntryTargetReference": {
+        "type": "object",
+        "required": [ "targetKind", "targetId" ],
+        "properties": {
+          "targetKind": {
+            "type": "string",
+            "enum": [ "Unknown", "Project", "Work" ]
+          },
+          "targetId": { "type": "string", "minLength": 1 }
+        }
+      },
+      "AiEffortMetrics": {
+        "type": "object",
+        "properties": {
+          "availability": {
+            "type": "string",
+            "enum": [ "Unknown", "Unavailable", "ProviderReported", "Estimated" ]
+          },
+          "wallClockDurationMilliseconds": { "type": [ "integer", "null" ] },
+          "modelRuntimeMilliseconds": { "type": [ "integer", "null" ] },
+          "billableEffortMinutes": { "type": [ "integer", "null" ] },
+          "providerInputTokenCount": { "type": [ "integer", "null" ] },
+          "providerOutputTokenCount": { "type": [ "integer", "null" ] },
+          "providerTotalTokenCount": { "type": [ "integer", "null" ] }
+        }
+      },
+      "ActivityTypeCatalogCommand": {
+        "type": "object",
+        "description": "Create, rename, update metadata, deactivate, or reactivate Activity Types at tenant or project scope. Project-scoped commands carry only a stable Project reference."
+      },
+      "TimeEntryEvidenceReadModel": {
+        "type": "object",
+        "description": "Evidence read model with stable references, approval/correction placeholders, optional AI metrics, and projection freshness metadata."
+      },
+      "TimesheetsMetadataDescriptor": {
+        "type": "object",
+        "description": "Runtime-neutral metadata for generated command forms, projection views, fields, actions, and state badges."
+      },
+      "TimeEntryId": { "type": "string", "minLength": 1 },
+      "ActivityTypeId": { "type": "string", "minLength": 1 },
+      "PartyReference": { "type": "string", "minLength": 1 },
+      "BillableState": {
+        "type": "string",
+        "enum": [ "Unknown", "NonBillable", "Billable" ]
+      },
+      "ContributorCategory": {
+        "type": "string",
+        "enum": [ "Unknown", "Employee", "ExternalContributor", "AutomatedAgent" ]
+      }
+    }
+  },
+  "paths": {}
+}

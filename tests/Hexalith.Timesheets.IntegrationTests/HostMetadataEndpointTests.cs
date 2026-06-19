@@ -13,7 +13,14 @@ public sealed class HostMetadataEndpointTests
         program.ShouldContain("/metadata/timesheets");
         program.ShouldContain("Results.Ok");
         program.ShouldContain("Module = \"Hexalith.Timesheets\"");
-        program.ShouldContain("EventStoreDomain = \"timesheets\"");
-        program.ShouldContain("RegistrationAssembly = \"Hexalith.Timesheets.Server\"");
+        program.ShouldContain("ContractVersion = \"1.0\"");
+        program.ShouldContain("Capabilities = TimesheetsMetadataCatalog.Descriptors");
+        program.ShouldContain("MetadataDescriptors = TimesheetsMetadataCatalog.Descriptors");
+        program.ShouldNotContain("TenantId");
+        program.ShouldNotContain("Token");
+        program.ShouldNotContain("TimeEntryId");
+        program.ShouldNotContain("PartyId");
+        program.ShouldNotContain("ProjectId");
+        program.ShouldNotContain("WorkId");
     }
 }

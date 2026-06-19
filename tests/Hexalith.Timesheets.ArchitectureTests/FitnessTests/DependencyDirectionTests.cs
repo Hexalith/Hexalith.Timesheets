@@ -49,6 +49,44 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
+    public void Public_command_and_query_contracts_do_not_expose_server_authority_or_envelope_fields()
+    {
+        string contractsRoot = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts");
+        string[] contractFiles =
+        [
+            .. Directory.GetFiles(Path.Combine(contractsRoot, "Commands"), "*.cs", SearchOption.AllDirectories),
+            .. Directory.GetFiles(Path.Combine(contractsRoot, "Queries"), "*.cs", SearchOption.AllDirectories)
+        ];
+
+        contractFiles.ShouldNotBeEmpty();
+
+        string[] forbiddenTerms =
+        [
+            "TenantId",
+            "UserId",
+            "CorrelationId",
+            "MessageId",
+            "CausationId",
+            "ClaimsPrincipal",
+            "Authorization",
+            "Jwt",
+            "Token",
+            "Stream",
+            "Sequence"
+        ];
+
+        foreach (string contractFile in contractFiles)
+        {
+            string source = File.ReadAllText(contractFile);
+
+            foreach (string forbiddenTerm in forbiddenTerms)
+            {
+                source.Contains(forbiddenTerm, StringComparison.Ordinal).ShouldBeFalse(contractFile);
+            }
+        }
+    }
+
+    [Fact]
     public void Kernel_projects_do_not_reference_runtime_hosting_ui_or_direct_persistence_packages()
     {
         string[] kernelProjects =

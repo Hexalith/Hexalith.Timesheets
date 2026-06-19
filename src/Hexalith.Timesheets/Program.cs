@@ -1,3 +1,4 @@
+using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.ServiceDefaults;
 
@@ -18,8 +19,14 @@ app.MapGet(
     static () => Results.Ok(new
     {
         Module = "Hexalith.Timesheets",
-        EventStoreDomain = "timesheets",
-        RegistrationAssembly = "Hexalith.Timesheets.Server"
+        ContractVersion = "1.0",
+        Capabilities = TimesheetsMetadataCatalog.Descriptors
+            .Select(static descriptor => descriptor.Capability)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray(),
+        MetadataDescriptors = TimesheetsMetadataCatalog.Descriptors
+            .Select(static descriptor => descriptor.Name)
+            .ToArray()
     }));
 
 await app.RunAsync().ConfigureAwait(false);
