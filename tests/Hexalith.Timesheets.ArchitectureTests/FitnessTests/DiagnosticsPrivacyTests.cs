@@ -101,6 +101,69 @@ public sealed class DiagnosticsPrivacyTests
         }
     }
 
+    [Fact]
+    public void Evidence_detail_contract_schemas_expose_no_envelope_or_identifier_fields()
+    {
+        string openApiPath = RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.Contracts",
+            "openapi",
+            "timesheets-capture-contracts.v1.json");
+
+        System.Text.Json.Nodes.JsonNode artifact =
+            System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(openApiPath))
+            ?? throw new InvalidOperationException("OpenAPI artifact could not be parsed.");
+
+        System.Text.Json.Nodes.JsonNode schemas =
+            artifact["components"]?["schemas"]
+            ?? throw new InvalidOperationException("OpenAPI schema components are missing.");
+
+        AssertClosedSchema(schemas, "TimeEntryEventLineageItem", ["eventName", "ordinal", "sourceAuthority"]);
+        AssertClosedSchema(schemas, "TimeEntryHydratedDisplayLabel", ["state", "label", "asOfUtc", "detail"]);
+        AssertClosedSchema(schemas, "TimeEntryDisplayHydration", ["contributor", "target", "activityType"]);
+    }
+
+    private static void AssertClosedSchema(
+        System.Text.Json.Nodes.JsonNode schemas,
+        string schemaName,
+        string[] allowedProperties)
+    {
+        System.Text.Json.Nodes.JsonNode schema = schemas[schemaName]
+            ?? throw new InvalidOperationException($"Schema '{schemaName}' is missing.");
+
+        bool additionalProperties = schema["additionalProperties"]?.GetValue<bool>()
+            ?? throw new InvalidOperationException($"Schema '{schemaName}' must declare additionalProperties:false.");
+        additionalProperties.ShouldBeFalse(schemaName);
+
+        System.Text.Json.Nodes.JsonObject properties = schema["properties"]?.AsObject()
+            ?? throw new InvalidOperationException($"Schema '{schemaName}' has no properties.");
+
+        foreach (KeyValuePair<string, System.Text.Json.Nodes.JsonNode?> property in properties)
+        {
+            allowedProperties.ShouldContain(property.Key, $"{schemaName}.{property.Key}");
+
+            foreach (string forbidden in ForbiddenContractPropertyFragments)
+            {
+                property.Key.ShouldNotContain(forbidden, Case.Insensitive, schemaName);
+            }
+        }
+    }
+
+    private static readonly string[] ForbiddenContractPropertyFragments =
+    [
+        "messageId",
+        "sequenceNumber",
+        "stream",
+        "envelope",
+        "tenant",
+        "correlation",
+        "causation",
+        "payload",
+        "token",
+        "secret",
+        "jwt"
+    ];
+
     private static void AssertNoFinanceOwnershipLanguage(string content)
     {
         foreach (string forbiddenWord in new[] { "invoice", "payroll", "rate", "tax", "revenue" })

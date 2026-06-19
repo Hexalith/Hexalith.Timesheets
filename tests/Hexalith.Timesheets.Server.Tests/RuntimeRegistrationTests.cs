@@ -33,6 +33,8 @@ public sealed class RuntimeRegistrationTests
             .ShouldNotBeNull();
         provider.GetRequiredService<TimeEntryCommandService>()
             .ShouldNotBeNull();
+        provider.GetRequiredService<TimeEntryEvidenceQueryService>()
+            .ShouldNotBeNull();
         provider.GetRequiredService<ITimesheetsTenantAccessValidator>()
             .ShouldBeOfType<DenyAllTimesheetsTenantAccessValidator>();
         provider.GetRequiredService<ITimesheetsPolicyEvaluator>()
@@ -45,6 +47,18 @@ public sealed class RuntimeRegistrationTests
             .ShouldBeOfType<DenyAllWorkReferenceValidator>();
         provider.GetRequiredService<IContributorPartyValidator>()
             .ShouldBeOfType<DenyAllContributorPartyValidator>();
+        provider.GetRequiredService<ITimeEntryEvidenceProjectionReader>()
+            .ShouldBeOfType<UnavailableTimeEntryEvidenceProjectionReader>();
+        provider.GetRequiredService<ITimeEntryDisplayHydrator>()
+            .ShouldBeOfType<UnavailableTimeEntryDisplayHydrator>();
+        provider.GetRequiredService<IPartyDisplayHydrationProvider>()
+            .ShouldBeOfType<UnavailableDisplayHydrationProvider>();
+        provider.GetRequiredService<IProjectDisplayHydrationProvider>()
+            .ShouldBeOfType<UnavailableDisplayHydrationProvider>();
+        provider.GetRequiredService<IWorkDisplayHydrationProvider>()
+            .ShouldBeOfType<UnavailableDisplayHydrationProvider>();
+        provider.GetRequiredService<IActivityTypeDisplayHydrationProvider>()
+            .ShouldBeOfType<UnavailableDisplayHydrationProvider>();
     }
 
     [Fact]

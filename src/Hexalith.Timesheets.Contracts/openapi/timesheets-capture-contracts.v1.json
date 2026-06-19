@@ -203,7 +203,7 @@
       },
       "TimeEntryEvidenceReadModel": {
         "type": "object",
-        "description": "Evidence read model with stable references, approval/correction placeholders, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata.",
+        "description": "Evidence read model with stable references, source authority, safe event lineage, read-time display hydration state, approval/correction placeholders, optional AI metrics, optional policy-aware comment metadata, and projection freshness metadata.",
         "required": [
           "timeEntryId",
           "target",
@@ -216,7 +216,10 @@
           "approvalState",
           "contributorCategory",
           "correctionState",
-          "projectionFreshness"
+          "projectionFreshness",
+          "sourceAuthority",
+          "eventLineage",
+          "displayHydration"
         ],
         "properties": {
           "timeEntryId": { "$ref": "#/components/schemas/TimeEntryId" },
@@ -232,8 +235,48 @@
           "aiMetrics": { "$ref": "#/components/schemas/AiEffortMetrics" },
           "correctionState": { "$ref": "#/components/schemas/TimeEntryCorrectionState" },
           "projectionFreshness": { "$ref": "#/components/schemas/ProjectionFreshnessMetadata" },
+          "sourceAuthority": { "$ref": "#/components/schemas/TimeEntryEvidenceSourceAuthority" },
+          "eventLineage": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/TimeEntryEventLineageItem" }
+          },
+          "displayHydration": { "$ref": "#/components/schemas/TimeEntryDisplayHydration" },
           "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
         }
+      },
+      "TimeEntryEventLineageItem": {
+        "type": "object",
+        "description": "Safe domain event summary for evidence lineage. It omits raw envelopes, stream names, message identifiers, tenant/user context, and payload bodies.",
+        "required": [ "eventName", "ordinal", "sourceAuthority" ],
+        "properties": {
+          "eventName": { "type": "string", "minLength": 1 },
+          "ordinal": { "type": "integer", "minimum": 0 },
+          "sourceAuthority": { "$ref": "#/components/schemas/TimeEntryEvidenceSourceAuthority" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryDisplayHydration": {
+        "type": "object",
+        "description": "Read-time display labels supplied by owning sources when available. Durable Timesheets evidence remains stable references only.",
+        "required": [ "contributor", "target", "activityType" ],
+        "properties": {
+          "contributor": { "$ref": "#/components/schemas/TimeEntryHydratedDisplayLabel" },
+          "target": { "$ref": "#/components/schemas/TimeEntryHydratedDisplayLabel" },
+          "activityType": { "$ref": "#/components/schemas/TimeEntryHydratedDisplayLabel" }
+        },
+        "additionalProperties": false
+      },
+      "TimeEntryHydratedDisplayLabel": {
+        "type": "object",
+        "description": "Optional read-time label with explicit fresh, stale, unavailable, denied, or unknown state.",
+        "required": [ "state" ],
+        "properties": {
+          "state": { "$ref": "#/components/schemas/DisplayHydrationState" },
+          "label": { "type": [ "string", "null" ] },
+          "asOfUtc": { "type": [ "string", "null" ], "format": "date-time" },
+          "detail": { "type": [ "string", "null" ] }
+        },
+        "additionalProperties": false
       },
       "ProjectionFreshnessMetadata": {
         "type": "object",
@@ -306,6 +349,14 @@
       "TimeEntryCorrectionState": {
         "type": "string",
         "enum": [ "Unknown", "None", "Corrected", "Superseded" ]
+      },
+      "TimeEntryEvidenceSourceAuthority": {
+        "type": "string",
+        "enum": [ "Unknown", "TimesheetsDomainEvents" ]
+      },
+      "DisplayHydrationState": {
+        "type": "string",
+        "enum": [ "Unknown", "Fresh", "Stale", "Unavailable", "Denied" ]
       },
       "TimesheetsEvidenceRetentionCategory": {
         "type": "string",

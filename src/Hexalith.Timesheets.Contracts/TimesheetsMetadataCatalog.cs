@@ -110,6 +110,9 @@ public static class TimesheetsMetadataCatalog
                 new("billableState", "Billable state", nameof(BillableState), true),
                 new("approvalState", "Approval state", nameof(TimeEntryApprovalState), true),
                 new("contributorCategory", "Contributor category", nameof(ContributorCategory), true),
+                new("sourceAuthority", "Source authority", nameof(TimeEntryEvidenceSourceAuthority), true, "Timesheets domain events are the evidence source."),
+                new("eventLineage", "Event lineage", nameof(TimeEntryEventLineageItem), true, "Safe event summaries for audit metadata."),
+                new("displayHydration", "Display hydration", nameof(TimeEntryDisplayHydration), true, "Read-time labels keep explicit hydration state."),
                 new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false),
                 new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
                 new("comment", "Comment", nameof(TimeEntryComment), false, "Comments may contain sensitive information."),
@@ -120,6 +123,11 @@ public static class TimesheetsMetadataCatalog
             ],
             [
                 new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState)),
+                new("source-authority", "Source authority", nameof(TimeEntryEvidenceSourceAuthority)),
+                new("hydration-state", "Hydration state", nameof(DisplayHydrationState)),
+                new("approval", "Approval", nameof(TimeEntryApprovalState)),
+                new("billable", "Billable", nameof(BillableState)),
+                new("contributor", "Contributor", nameof(ContributorCategory)),
                 new("correction", "Correction", nameof(TimeEntryCorrectionState)),
                 new("ai-metrics", "AI metric availability", nameof(AiMetricAvailability)),
                 new("comment-export", "Comment export", nameof(TimesheetsCommentPolicyDecision))

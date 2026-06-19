@@ -80,3 +80,20 @@ public enum TimeEntryCorrectionState
     Corrected = 2,
     Superseded = 3
 }
+
+[JsonConverter(typeof(JsonStringEnumConverter<TimeEntryEvidenceSourceAuthority>))]
+public enum TimeEntryEvidenceSourceAuthority
+{
+    Unknown = 0,
+    TimesheetsDomainEvents = 1
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<DisplayHydrationState>))]
+public enum DisplayHydrationState
+{
+    Unknown = 0,
+    Fresh = 1,
+    Stale = 2,
+    Unavailable = 3,
+    Denied = 4
+}

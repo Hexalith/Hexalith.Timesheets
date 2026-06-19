@@ -115,6 +115,55 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void Time_entry_evidence_read_model_round_trips_source_lineage_and_display_hydration_without_raw_envelope_fields()
+    {
+        TimeEntryEvidenceReadModel readModel = new(
+            new TimeEntryId("time-entry-789"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-789")),
+            new PartyReference("party-789"),
+            new ActivityTypeId("activity-type-789"),
+            ActivityTypeScope.Project,
+            new DateOnly(2026, 6, 19),
+            75,
+            BillableState.Billable,
+            TimeEntryApprovalState.Draft,
+            ContributorCategory.Employee,
+            AiEffortMetrics.Unavailable,
+            TimeEntryCorrectionState.None,
+            ProjectionFreshnessMetadata.Fresh)
+        {
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage =
+            [
+                new("TimeEntryRecorded", 7, TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents)
+            ],
+            DisplayHydration = new(
+                TimeEntryHydratedDisplayLabel.Fresh("Contributor label"),
+                TimeEntryHydratedDisplayLabel.Stale("Project label"),
+                TimeEntryHydratedDisplayLabel.Unavailable())
+        };
+
+        string json = JsonSerializer.Serialize(readModel, JsonOptions);
+
+        json.ShouldContain("\"sourceAuthority\":\"TimesheetsDomainEvents\"");
+        json.ShouldContain("\"eventLineage\"");
+        json.ShouldContain("\"eventName\":\"TimeEntryRecorded\"");
+        json.ShouldContain("\"ordinal\":7");
+        json.ShouldContain("\"displayHydration\"");
+        json.ShouldContain("\"state\":\"Stale\"");
+        AssertJsonOmitsCallerAuthority(json);
+        json.ShouldNotContain("\"payload\"", Case.Insensitive);
+        json.ShouldNotContain("\"envelope\"", Case.Insensitive);
+
+        TimeEntryEvidenceReadModel? roundTripped = JsonSerializer.Deserialize<TimeEntryEvidenceReadModel>(json, JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.SourceAuthority.ShouldBe(TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents);
+        roundTripped.EventLineage.ShouldHaveSingleItem().Ordinal.ShouldBe(7);
+        roundTripped.DisplayHydration.Target.State.ShouldBe(DisplayHydrationState.Stale);
+    }
+
+    [Fact]
     public void Rejection_contract_round_trips_policy_failures_without_disclosing_protected_context()
     {
         TimesheetsRejection rejection = new(
@@ -196,6 +245,8 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((ActivityTypeActiveState)0).ShouldBe("Unknown");
         Enum.GetName((ProjectionFreshnessState)0).ShouldBe("Unknown");
         Enum.GetName((AiMetricAvailability)0).ShouldBe("Unknown");
+        Enum.GetName((TimeEntryEvidenceSourceAuthority)0).ShouldBe("Unknown");
+        Enum.GetName((DisplayHydrationState)0).ShouldBe("Unknown");
     }
 
     [Fact]
@@ -283,6 +334,8 @@ public sealed class TimeCaptureContractTests
         badgeVocabularies.ShouldContain(nameof(ActivityTypeActiveState));
         badgeVocabularies.ShouldContain(nameof(TimeEntryCorrectionState));
         badgeVocabularies.ShouldContain(nameof(ProjectionFreshnessState));
+        badgeVocabularies.ShouldContain(nameof(TimeEntryEvidenceSourceAuthority));
+        badgeVocabularies.ShouldContain(nameof(DisplayHydrationState));
     }
 
     [Fact]
@@ -325,8 +378,13 @@ public sealed class TimeCaptureContractTests
 
         evidence.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
         evidence.Fields.Select(static field => field.Name).ShouldContain("correctionState");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("sourceAuthority");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("eventLineage");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("displayHydration");
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryCorrectionState));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryEvidenceSourceAuthority));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(DisplayHydrationState));
     }
 
     [Fact]

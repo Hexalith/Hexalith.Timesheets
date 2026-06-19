@@ -21,6 +21,7 @@ public sealed class TimeEntryEvidenceProjection
 
         TimeEntryEvidenceReadModel? model = null;
         HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
+        List<TimeEntryEventLineageItem> lineage = [];
 
         foreach (TimeEntryProjectionEvent projectionEvent in events
             .OrderBy(static projectionEvent => projectionEvent.SequenceNumber))
@@ -34,7 +35,8 @@ public sealed class TimeEntryEvidenceProjection
             if (projectionEvent.Payload is TimeEntryRecorded recorded
                 && recorded.TimeEntryId == timeEntryId)
             {
-                model = Apply(recorded, checkpoint);
+                lineage.Add(CreateLineageItem(projectionEvent));
+                model = Apply(recorded, checkpoint, lineage);
             }
         }
 
@@ -43,7 +45,8 @@ public sealed class TimeEntryEvidenceProjection
 
     private static TimeEntryEvidenceReadModel Apply(
         TimeEntryRecorded recorded,
-        TimesheetsProjectionCheckpoint checkpoint)
+        TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
         => new(
             recorded.TimeEntryId,
             recorded.Target,
@@ -59,8 +62,17 @@ public sealed class TimeEntryEvidenceProjection
             TimeEntryCorrectionState.None,
             ToFreshnessMetadata(checkpoint))
         {
-            Comment = recorded.Comment
+            Comment = recorded.Comment,
+            SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
+            EventLineage = [.. lineage],
+            DisplayHydration = TimeEntryDisplayHydration.Unavailable()
         };
+
+    private static TimeEntryEventLineageItem CreateLineageItem(TimeEntryProjectionEvent projectionEvent)
+        => new(
+            projectionEvent.Payload.GetType().Name,
+            projectionEvent.SequenceNumber,
+            TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents);
 
     private static ProjectionFreshnessMetadata ToFreshnessMetadata(TimesheetsProjectionCheckpoint checkpoint)
         => checkpoint.Freshness switch

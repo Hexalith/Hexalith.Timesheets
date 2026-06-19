@@ -31,6 +31,9 @@ public sealed class TimeEntryEvidenceProjectionTests
         model.CorrectionState.ShouldBe(TimeEntryCorrectionState.None);
         model.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
         model.ProjectionFreshness.Cursor.ShouldBe("1");
+        model.SourceAuthority.ShouldBe(TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents);
+        model.EventLineage.ShouldHaveSingleItem().EventName.ShouldBe(nameof(TimeEntryRecorded));
+        model.DisplayHydration.Target.State.ShouldBe(DisplayHydrationState.Unavailable);
     }
 
     [Fact]
@@ -45,7 +48,12 @@ public sealed class TimeEntryEvidenceProjectionTests
             [.. once, once[0]],
             FreshCheckpoint(1));
 
-        replayedDuplicates.ShouldBe(replayedOnce);
+        replayedOnce.ShouldNotBeNull();
+        replayedDuplicates.ShouldNotBeNull();
+        replayedDuplicates.DurationMinutes.ShouldBe(replayedOnce.DurationMinutes);
+        replayedDuplicates.EventLineage.Select(static item => item.EventName)
+            .ShouldBe(replayedOnce.EventLineage.Select(static item => item.EventName));
+        replayedDuplicates.EventLineage.Count.ShouldBe(1);
     }
 
     [Fact]
@@ -63,6 +71,7 @@ public sealed class TimeEntryEvidenceProjectionTests
 
         model.ShouldNotBeNull();
         model.DurationMinutes.ShouldBe(90);
+        model.EventLineage.Select(static item => item.Ordinal).ShouldBe([1, 3]);
     }
 
     [Theory]

@@ -19,4 +19,12 @@ public sealed record TimeEntryEvidenceReadModel(
     ProjectionFreshnessMetadata ProjectionFreshness)
 {
     public TimeEntryComment? Comment { get; init; }
+
+    public TimeEntryEvidenceSourceAuthority SourceAuthority { get; init; } =
+        TimeEntryEvidenceSourceAuthority.Unknown;
+
+    public IReadOnlyList<TimeEntryEventLineageItem> EventLineage { get; init; } = [];
+
+    public TimeEntryDisplayHydration DisplayHydration { get; init; } =
+        TimeEntryDisplayHydration.Unknown;
 }

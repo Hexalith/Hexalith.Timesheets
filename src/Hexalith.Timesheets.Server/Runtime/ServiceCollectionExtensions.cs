@@ -19,6 +19,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TenantActivityTypeCommandService>();
         services.TryAddSingleton<ProjectActivityTypeCommandService>();
         services.TryAddSingleton<TimeEntryCommandService>();
+        services.TryAddSingleton<TimeEntryEvidenceQueryService>();
         services.TryAddSingleton<ITimesheetsAuthorizationGate, DenyAllTimesheetsAuthorizationGate>();
         services.TryAddSingleton<ITimesheetsTenantAccessValidator, DenyAllTimesheetsTenantAccessValidator>();
         services.TryAddSingleton(TimesheetsEvidencePolicyOptions.FailClosedDefault);
@@ -26,6 +27,17 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IProjectReferenceValidator, DenyAllProjectReferenceValidator>();
         services.TryAddSingleton<IWorkReferenceValidator, DenyAllWorkReferenceValidator>();
         services.TryAddSingleton<IContributorPartyValidator, DenyAllContributorPartyValidator>();
+        services.TryAddSingleton<ITimeEntryEvidenceProjectionReader, UnavailableTimeEntryEvidenceProjectionReader>();
+        services.TryAddSingleton<UnavailableDisplayHydrationProvider>();
+        services.TryAddSingleton<IPartyDisplayHydrationProvider>(static provider =>
+            provider.GetRequiredService<UnavailableDisplayHydrationProvider>());
+        services.TryAddSingleton<IProjectDisplayHydrationProvider>(static provider =>
+            provider.GetRequiredService<UnavailableDisplayHydrationProvider>());
+        services.TryAddSingleton<IWorkDisplayHydrationProvider>(static provider =>
+            provider.GetRequiredService<UnavailableDisplayHydrationProvider>());
+        services.TryAddSingleton<IActivityTypeDisplayHydrationProvider>(static provider =>
+            provider.GetRequiredService<UnavailableDisplayHydrationProvider>());
+        services.TryAddSingleton<ITimeEntryDisplayHydrator, UnavailableTimeEntryDisplayHydrator>();
 
         return services;
     }
