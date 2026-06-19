@@ -396,6 +396,8 @@ Magic links are scoped capabilities, not login sessions. Baseline design:
 - Invalid, expired, used, or revoked links return the same no-disclosure response.
 - Token values and decoded capability material are never logged, projected, exported, or stored in comments.
 
+**Implementation status note (2026-06-19):** Epic 3 implemented the contracts, domain services, capability state, projection, endpoint routes, and service/workflow no-disclosure tests. The default registered `IMagicLinkConfirmationCapabilityStateLoader` is still `UnavailableMagicLinkConfirmationCapabilityStateLoader`, which fails closed by returning no capability, no Time Entry state, and an unavailable Activity Type catalog. Production-ready live host display/confirm/adjust requires a concrete EventStore-backed loader/token-hash lookup that folds capability state, folds the scoped Time Entry state, and loads a fresh Activity Type catalog without exposing token, tenant, contributor, target, or failure-reason material.
+
 **Data protection and secrets:**
 
 Use ASP.NET Core Data Protection only for purpose-bound protection where useful, not as the only source of revocation or single-use truth. Production deployments must use a shared persisted key ring where protected tokens/cursors need to survive restarts or multiple replicas.

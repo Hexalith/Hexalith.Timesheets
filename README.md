@@ -26,7 +26,9 @@ DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests
 ```
 
-The integration test project contains in-process workflow coverage for metadata endpoints, AI-assisted Time Entry capture, submission, approval authority, entry approval/rejection, rejected-entry correction, approved-entry correction, period submission, and period approval/rejection. Infrastructure and performance evidence tests remain isolated with explicit skips until EventStore, Dapr, Aspire, and realistic persisted-state fixtures are added.
+The integration test project contains in-process workflow coverage for metadata endpoints, AI-assisted Time Entry capture, submission, approval authority, entry approval/rejection, rejected-entry correction, approved-entry correction, period submission, period approval/rejection, external contribution submission/confirmation, and magic-link capability issue/revoke/confirm/adjust workflows. Infrastructure and performance evidence tests remain isolated with explicit skips until EventStore, Dapr, Aspire, and realistic persisted-state fixtures are added.
+
+Magic-link endpoint tests currently verify route shape, authority-field exclusion, and shared opaque denial copy through source assertions. The executable magic-link confirmation, adjustment, replay, and no-disclosure matrix coverage lives in service/workflow tests. The default registered `IMagicLinkConfirmationCapabilityStateLoader` is fail-closed and unavailable; live host display/confirm/adjust requires a concrete EventStore-backed loader.
 
 ## Boundary Summary
 
