@@ -109,7 +109,10 @@ public sealed class TimeEntryAggregateTests
                 -3,
                 -4,
                 -5,
-                -6),
+                -6,
+                AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-1"),
+                AiTokenMetricAvailability.ProviderReported),
+            ContributorCategory = ContributorCategory.AutomatedAgent,
             Comment = null
         };
 
@@ -121,6 +124,111 @@ public sealed class TimeEntryAggregateTests
         rejection.FieldErrors.ShouldContain(static error => error.Field == "aiMetrics.providerInputTokenCount");
         rejection.FieldErrors.ShouldContain(static error => error.Field == "aiMetrics.providerOutputTokenCount");
         rejection.FieldErrors.ShouldContain(static error => error.Field == "aiMetrics.providerTotalTokenCount");
+    }
+
+    [Fact]
+    public void Record_accepts_automated_agent_provider_metrics_and_keeps_duration_authoritative()
+    {
+        RecordTimeEntry command = ValidCommand() with
+        {
+            ContributorCategory = ContributorCategory.AutomatedAgent,
+            AiMetrics = ProviderReportedMetrics(billableEffortMinutes: 5),
+            DurationMinutes = 60
+        };
+
+        TimeEntryRecorded recorded = SingleSuccess<TimeEntryRecorded>(
+            TimeEntry.Handle(command, null, ActivityTypeScope.Tenant));
+
+        recorded.ContributorCategory.ShouldBe(ContributorCategory.AutomatedAgent);
+        recorded.DurationMinutes.ShouldBe(60);
+        recorded.AiMetrics.ShouldNotBeNull();
+        recorded.AiMetrics.BillableEffortMinutes.ShouldBe(5);
+        recorded.AiMetrics.Source.ShouldNotBeNull();
+        recorded.AiMetrics.Source.SourceCategory.ShouldBe(AiEffortMetricSourceCategory.Provider);
+        recorded.AiMetrics.TokenAvailability.ShouldBe(AiTokenMetricAvailability.ProviderReported);
+    }
+
+    [Theory]
+    [InlineData(ContributorCategory.Employee)]
+    [InlineData(ContributorCategory.ExternalContributor)]
+    public void Record_rejects_human_or_external_provider_reported_ai_metrics(
+        ContributorCategory category)
+    {
+        RecordTimeEntry command = ValidCommand() with
+        {
+            ContributorCategory = category,
+            AiMetrics = ProviderReportedMetrics()
+        };
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(command, null, ActivityTypeScope.Tenant));
+
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "aiMetrics" && error.Code == "automated-agent-required");
+    }
+
+    [Fact]
+    public void Record_rejects_unknown_ai_source_and_token_availability()
+    {
+        RecordTimeEntry command = ValidCommand() with
+        {
+            ContributorCategory = ContributorCategory.AutomatedAgent,
+            AiMetrics = new(
+                AiMetricAvailability.ProviderReported,
+                1,
+                1,
+                1,
+                null,
+                null,
+                null,
+                new(AiEffortMetricSourceCategory.Unknown, null, null, null),
+                AiTokenMetricAvailability.Unknown)
+        };
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(command, null, ActivityTypeScope.Tenant));
+
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "aiMetrics.source.sourceCategory" && error.Code == "unknown");
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "aiMetrics.tokenAvailability" && error.Code == "unknown");
+    }
+
+    [Fact]
+    public void Record_rejects_unavailable_token_metrics_when_counts_are_supplied()
+    {
+        RecordTimeEntry command = ValidCommand() with
+        {
+            ContributorCategory = ContributorCategory.AutomatedAgent,
+            AiMetrics = new(
+                AiMetricAvailability.ProviderReported,
+                1,
+                1,
+                1,
+                10,
+                null,
+                null,
+                AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-2"),
+                AiTokenMetricAvailability.NotReported)
+        };
+
+        TimesheetsRejection rejection = Rejection(TimeEntry.Handle(command, null, ActivityTypeScope.Tenant));
+
+        rejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "aiMetrics.providerTokenCounts" && error.Code == "must-be-null");
+    }
+
+    [Fact]
+    public void Record_accepts_unavailable_ai_placeholder_for_human_entries()
+    {
+        RecordTimeEntry command = ValidCommand() with
+        {
+            ContributorCategory = ContributorCategory.Employee,
+            AiMetrics = AiEffortMetrics.Unavailable
+        };
+
+        TimeEntryRecorded recorded = SingleSuccess<TimeEntryRecorded>(
+            TimeEntry.Handle(command, null, ActivityTypeScope.Tenant));
+
+        recorded.AiMetrics.ShouldBe(AiEffortMetrics.Unavailable);
     }
 
     [Fact]
@@ -145,6 +253,18 @@ public sealed class TimeEntryAggregateTests
             BillableState.Billable,
             ContributorCategory.Employee,
             AiEffortMetrics.Unavailable);
+
+    private static AiEffortMetrics ProviderReportedMetrics(int billableEffortMinutes = 2)
+        => new(
+            AiMetricAvailability.ProviderReported,
+            90000,
+            75000,
+            billableEffortMinutes,
+            1000,
+            250,
+            1250,
+            AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-1"),
+            AiTokenMetricAvailability.ProviderReported);
 
     private static TimeEntryComment Comment()
         => new(

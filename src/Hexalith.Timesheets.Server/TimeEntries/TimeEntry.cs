@@ -19,7 +19,7 @@ public static class TimeEntry
 
         List<TimesheetsFieldError> errors = [];
         ValidateRequiredFields(command, activityTypeScope, errors);
-        ValidateAiMetrics(command.AiMetrics, errors);
+        ValidateAiMetrics(command.AiMetrics, command.ContributorCategory, errors);
         ValidateComment(command.Comment, errors);
 
         if (state?.IsRecorded == true)
@@ -109,7 +109,10 @@ public static class TimeEntry
         }
     }
 
-    private static void ValidateAiMetrics(AiEffortMetrics? metrics, List<TimesheetsFieldError> errors)
+    private static void ValidateAiMetrics(
+        AiEffortMetrics? metrics,
+        ContributorCategory contributorCategory,
+        List<TimesheetsFieldError> errors)
     {
         if (metrics is null)
         {
@@ -121,12 +124,120 @@ public static class TimeEntry
             errors.Add(new("aiMetrics.availability", "unknown", "AI metric availability is required when metrics are supplied."));
         }
 
+        ValidateAiMetricSource(metrics, errors);
+        ValidateAiTokenAvailability(metrics, errors);
+        ValidateUnavailableMetricsCarryNoValues(metrics, errors);
+        ValidateAiContributorCategory(metrics, contributorCategory, errors);
+
         AddNonNegativeError(metrics.WallClockDurationMilliseconds, "aiMetrics.wallClockDurationMilliseconds", errors);
         AddNonNegativeError(metrics.ModelRuntimeMilliseconds, "aiMetrics.modelRuntimeMilliseconds", errors);
         AddNonNegativeError(metrics.BillableEffortMinutes, "aiMetrics.billableEffortMinutes", errors);
         AddNonNegativeError(metrics.ProviderInputTokenCount, "aiMetrics.providerInputTokenCount", errors);
         AddNonNegativeError(metrics.ProviderOutputTokenCount, "aiMetrics.providerOutputTokenCount", errors);
         AddNonNegativeError(metrics.ProviderTotalTokenCount, "aiMetrics.providerTotalTokenCount", errors);
+    }
+
+    private static void ValidateAiMetricSource(AiEffortMetrics metrics, List<TimesheetsFieldError> errors)
+    {
+        AiEffortMetricSourceMetadata? source = metrics.Source;
+        if (source is null)
+        {
+            errors.Add(new("aiMetrics.source", "required", "AI metric source metadata is required when metrics are supplied."));
+            return;
+        }
+
+        if (source.SourceCategory == AiEffortMetricSourceCategory.Unknown)
+        {
+            errors.Add(new("aiMetrics.source.sourceCategory", "unknown", "AI metric source category is required when metrics are supplied."));
+        }
+
+        if (metrics.Availability is AiMetricAvailability.ProviderReported or AiMetricAvailability.Estimated
+            && source.SourceCategory == AiEffortMetricSourceCategory.Unavailable)
+        {
+            errors.Add(new("aiMetrics.source.sourceCategory", "required", "Reported or estimated AI metrics require source metadata."));
+        }
+
+        if (source.SourceCategory == AiEffortMetricSourceCategory.Provider
+            && string.IsNullOrWhiteSpace(source.ProviderName))
+        {
+            errors.Add(new("aiMetrics.source.providerName", "required", "Provider source metadata requires a provider name."));
+        }
+
+        if (source.SourceCategory == AiEffortMetricSourceCategory.Tool
+            && string.IsNullOrWhiteSpace(source.ToolName))
+        {
+            errors.Add(new("aiMetrics.source.toolName", "required", "Tool source metadata requires a tool name."));
+        }
+
+        if (source.SourceCategory == AiEffortMetricSourceCategory.WorkExecution
+            && string.IsNullOrWhiteSpace(source.WorkExecutionId))
+        {
+            errors.Add(new("aiMetrics.source.workExecutionId", "required", "Work execution source metadata requires a work execution ID."));
+        }
+    }
+
+    private static void ValidateAiTokenAvailability(AiEffortMetrics metrics, List<TimesheetsFieldError> errors)
+    {
+        if (metrics.TokenAvailability == AiTokenMetricAvailability.Unknown)
+        {
+            errors.Add(new("aiMetrics.tokenAvailability", "unknown", "AI token metric availability is required when metrics are supplied."));
+            return;
+        }
+
+        bool anyTokenCountSupplied = metrics.ProviderInputTokenCount is not null
+            || metrics.ProviderOutputTokenCount is not null
+            || metrics.ProviderTotalTokenCount is not null;
+
+        if (metrics.TokenAvailability is AiTokenMetricAvailability.NotReported or AiTokenMetricAvailability.Unavailable
+            && anyTokenCountSupplied)
+        {
+            errors.Add(new("aiMetrics.providerTokenCounts", "must-be-null", "Provider token counts must be null when tokens were not reported."));
+        }
+
+        if (metrics.TokenAvailability == AiTokenMetricAvailability.ProviderReported
+            && (metrics.ProviderInputTokenCount is null
+                || metrics.ProviderOutputTokenCount is null
+                || metrics.ProviderTotalTokenCount is null))
+        {
+            errors.Add(new("aiMetrics.providerTokenCounts", "required", "Provider-reported token metrics require input, output, and total counts."));
+        }
+    }
+
+    private static void ValidateUnavailableMetricsCarryNoValues(AiEffortMetrics metrics, List<TimesheetsFieldError> errors)
+    {
+        if (metrics.Availability != AiMetricAvailability.Unavailable)
+        {
+            return;
+        }
+
+        bool anyValueSupplied = metrics.WallClockDurationMilliseconds is not null
+            || metrics.ModelRuntimeMilliseconds is not null
+            || metrics.BillableEffortMinutes is not null
+            || metrics.ProviderInputTokenCount is not null
+            || metrics.ProviderOutputTokenCount is not null
+            || metrics.ProviderTotalTokenCount is not null;
+
+        if (anyValueSupplied)
+        {
+            errors.Add(new("aiMetrics", "unavailable-values-must-be-null", "Unavailable AI metrics must not carry numeric values."));
+        }
+    }
+
+    private static void ValidateAiContributorCategory(
+        AiEffortMetrics metrics,
+        ContributorCategory contributorCategory,
+        List<TimesheetsFieldError> errors)
+    {
+        if (contributorCategory == ContributorCategory.AutomatedAgent)
+        {
+            return;
+        }
+
+        if (metrics.Availability is AiMetricAvailability.ProviderReported or AiMetricAvailability.Estimated
+            || metrics.TokenAvailability == AiTokenMetricAvailability.ProviderReported)
+        {
+            errors.Add(new("aiMetrics", "automated-agent-required", "Provider-reported or estimated AI metrics require an automated-agent contributor."));
+        }
     }
 
     private static void AddNonNegativeError(long? value, string field, List<TimesheetsFieldError> errors)

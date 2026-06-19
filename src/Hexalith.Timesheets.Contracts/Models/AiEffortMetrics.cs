@@ -9,7 +9,9 @@ public sealed record AiEffortMetrics(
     int? BillableEffortMinutes,
     long? ProviderInputTokenCount,
     long? ProviderOutputTokenCount,
-    long? ProviderTotalTokenCount)
+    long? ProviderTotalTokenCount,
+    AiEffortMetricSourceMetadata? Source = null,
+    AiTokenMetricAvailability TokenAvailability = AiTokenMetricAvailability.Unknown)
 {
     public static AiEffortMetrics Unavailable { get; } = new(
         AiMetricAvailability.Unavailable,
@@ -18,5 +20,7 @@ public sealed record AiEffortMetrics(
         null,
         null,
         null,
-        null);
+        null,
+        AiEffortMetricSourceMetadata.Unavailable,
+        AiTokenMetricAvailability.Unavailable);
 }

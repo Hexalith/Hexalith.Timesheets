@@ -57,6 +57,66 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void Projection_preserves_provider_reported_ai_metrics_through_duplicate_replay()
+    {
+        AiEffortMetrics metrics = new(
+            AiMetricAvailability.ProviderReported,
+            90000,
+            75000,
+            2,
+            0,
+            0,
+            0,
+            AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-1"),
+            AiTokenMetricAvailability.ProviderReported);
+        TimeEntryProjectionEvent[] once = [Event("m1", 1, Recorded("time-entry-1", 45, metrics))];
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [.. once, once[0]],
+            FreshCheckpoint(1));
+
+        model.ShouldNotBeNull();
+        model.ContributorCategory.ShouldBe(ContributorCategory.AutomatedAgent);
+        model.AiMetrics.ShouldBe(metrics);
+        AiEffortMetrics modelMetrics = model.AiMetrics.ShouldNotBeNull();
+        modelMetrics.ProviderInputTokenCount.ShouldBe(0);
+        modelMetrics.TokenAvailability.ShouldBe(AiTokenMetricAvailability.ProviderReported);
+        AiEffortMetricSourceMetadata source = modelMetrics.Source.ShouldNotBeNull();
+        source.ProviderName.ShouldBe("generic-provider");
+        model.EventLineage.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Projection_preserves_unreported_token_metrics_as_null()
+    {
+        AiEffortMetrics metrics = new(
+            AiMetricAvailability.ProviderReported,
+            90000,
+            75000,
+            2,
+            null,
+            null,
+            null,
+            AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-2"),
+            AiTokenMetricAvailability.NotReported);
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [Event("m1", 1, Recorded("time-entry-1", 45, metrics))],
+            FreshCheckpoint(1));
+
+        model.ShouldNotBeNull();
+        model.AiMetrics.ShouldNotBeNull();
+        model.AiMetrics.ProviderInputTokenCount.ShouldBeNull();
+        model.AiMetrics.ProviderOutputTokenCount.ShouldBeNull();
+        model.AiMetrics.ProviderTotalTokenCount.ShouldBeNull();
+        model.AiMetrics.TokenAvailability.ShouldBe(AiTokenMetricAvailability.NotReported);
+    }
+
+    [Fact]
     public void Projection_orders_events_by_sequence_number_and_ignores_other_entries()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
@@ -98,6 +158,9 @@ public sealed class TimeEntryEvidenceProjectionTests
         => new(messageId, sequenceNumber, payload);
 
     private static TimeEntryRecorded Recorded(string id, int durationMinutes)
+        => Recorded(id, durationMinutes, AiEffortMetrics.Unavailable);
+
+    private static TimeEntryRecorded Recorded(string id, int durationMinutes, AiEffortMetrics? metrics)
         => new(
             new TimeEntryId(id),
             TimeEntryTargetReference.ForProject(Project()),
@@ -108,8 +171,8 @@ public sealed class TimeEntryEvidenceProjectionTests
             durationMinutes,
             BillableState.Billable,
             TimeEntryApprovalState.Draft,
-            ContributorCategory.Employee,
-            AiEffortMetrics.Unavailable);
+            metrics == AiEffortMetrics.Unavailable ? ContributorCategory.Employee : ContributorCategory.AutomatedAgent,
+            metrics);
 
     private static TimesheetsProjectionCheckpoint FreshCheckpoint(long sequenceNumber)
         => new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, sequenceNumber, ProjectionFreshness.Fresh);

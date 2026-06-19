@@ -104,17 +104,65 @@
       },
       "AiEffortMetrics": {
         "type": "object",
+        "description": "AI effort evidence stored separately from authoritative human/external duration. Units are explicit and provider token metrics remain nullable when unavailable or not reported.",
         "properties": {
           "availability": {
+            "description": "Overall AI metric bundle availability.",
             "type": "string",
             "enum": [ "Unknown", "Unavailable", "ProviderReported", "Estimated" ]
           },
-          "wallClockDurationMilliseconds": { "type": [ "integer", "null" ] },
-          "modelRuntimeMilliseconds": { "type": [ "integer", "null" ] },
-          "billableEffortMinutes": { "type": [ "integer", "null" ] },
-          "providerInputTokenCount": { "type": [ "integer", "null" ] },
-          "providerOutputTokenCount": { "type": [ "integer", "null" ] },
-          "providerTotalTokenCount": { "type": [ "integer", "null" ] }
+          "wallClockDurationMilliseconds": {
+            "description": "AI wall-clock execution time in milliseconds.",
+            "type": [ "integer", "null" ],
+            "minimum": 0
+          },
+          "modelRuntimeMilliseconds": {
+            "description": "AI model or tool runtime in milliseconds.",
+            "type": [ "integer", "null" ],
+            "minimum": 0
+          },
+          "billableEffortMinutes": {
+            "description": "AI billable effort in whole minutes. This does not reinterpret durationMinutes and does not convert tokens or runtime into human hours.",
+            "type": [ "integer", "null" ],
+            "minimum": 0
+          },
+          "providerInputTokenCount": {
+            "description": "Provider-reported input token count. Provider token counts are nullable when not reported or unavailable; zero means the provider explicitly reported zero.",
+            "type": [ "integer", "null" ],
+            "minimum": 0
+          },
+          "providerOutputTokenCount": {
+            "description": "Provider-reported output token count. Provider token counts are nullable when not reported or unavailable; zero means the provider explicitly reported zero.",
+            "type": [ "integer", "null" ],
+            "minimum": 0
+          },
+          "providerTotalTokenCount": {
+            "description": "Provider-reported total token count. Provider token counts are nullable when not reported or unavailable; zero means the provider explicitly reported zero.",
+            "type": [ "integer", "null" ],
+            "minimum": 0
+          },
+          "source": { "$ref": "#/components/schemas/AiEffortMetricSourceMetadata" },
+          "tokenAvailability": { "$ref": "#/components/schemas/AiTokenMetricAvailability" }
+        }
+      },
+      "AiEffortMetricSourceMetadata": {
+        "type": "object",
+        "description": "Compact AI metric source metadata for audit. Does not carry prompts, responses, secrets, bearer tokens, raw request or response bodies, caller authority, or Party personal data.",
+        "additionalProperties": false,
+        "properties": {
+          "sourceCategory": { "$ref": "#/components/schemas/AiEffortMetricSourceCategory" },
+          "providerName": {
+            "description": "Generic provider identifier when provider-originated metrics are reported.",
+            "type": [ "string", "null" ]
+          },
+          "toolName": {
+            "description": "Generic tool identifier when tool-originated runtime metrics are reported.",
+            "type": [ "string", "null" ]
+          },
+          "workExecutionId": {
+            "description": "Stable work execution context identifier when supplied by the caller's work orchestration.",
+            "type": [ "string", "null" ]
+          }
         }
       },
       "ActivityTypeCatalogCommand": {
@@ -341,6 +389,15 @@
       "ContributorCategory": {
         "type": "string",
         "enum": [ "Unknown", "Employee", "ExternalContributor", "AutomatedAgent" ]
+      },
+      "AiEffortMetricSourceCategory": {
+        "type": "string",
+        "enum": [ "Unknown", "Unavailable", "Provider", "Tool", "WorkExecution" ]
+      },
+      "AiTokenMetricAvailability": {
+        "type": "string",
+        "description": "AiTokenMetricAvailability distinguishes provider-reported token counts from token metrics that were not reported or are unavailable.",
+        "enum": [ "Unknown", "NotReported", "Unavailable", "ProviderReported" ]
       },
       "TimeEntryApprovalState": {
         "type": "string",

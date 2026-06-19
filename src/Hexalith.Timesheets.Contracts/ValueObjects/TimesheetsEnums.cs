@@ -72,6 +72,25 @@ public enum AiMetricAvailability
     Estimated = 3
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<AiEffortMetricSourceCategory>))]
+public enum AiEffortMetricSourceCategory
+{
+    Unknown = 0,
+    Unavailable = 1,
+    Provider = 2,
+    Tool = 3,
+    WorkExecution = 4
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter<AiTokenMetricAvailability>))]
+public enum AiTokenMetricAvailability
+{
+    Unknown = 0,
+    NotReported = 1,
+    Unavailable = 2,
+    ProviderReported = 3
+}
+
 [JsonConverter(typeof(JsonStringEnumConverter<TimeEntryCorrectionState>))]
 public enum TimeEntryCorrectionState
 {

@@ -24,6 +24,11 @@ public static class TimesheetsMetadataCatalog
                 new("billableState", "Billable state", nameof(BillableState), true),
                 new("contributorCategory", "Contributor category", nameof(ContributorCategory), true),
                 new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false, "AI metrics keep runtime, effort, and token units explicit."),
+                new("aiWallClockDurationMilliseconds", "AI wall-clock execution", "Milliseconds", false, "AI wall-clock execution time is recorded in milliseconds and kept separate from Duration minutes."),
+                new("aiModelRuntimeMilliseconds", "AI model/tool runtime", "Milliseconds", false, "AI model or tool runtime is recorded in milliseconds."),
+                new("aiBillableEffortMinutes", "AI billable effort", "WholeMinutes", false, "AI billable effort is recorded in minutes without converting token counts or runtime."),
+                new("aiTokenAvailability", "AI token availability", nameof(AiTokenMetricAvailability), false, "Provider token counts use explicit text availability; unavailable counts stay null."),
+                new("aiMetricSource", "AI metric source", nameof(AiEffortMetricSourceMetadata), false, "Compact audit source metadata without prompts, responses, secrets, request bodies, or personal data."),
                 new("comment", "Comment", nameof(TimeEntryComment), false, "Comments may be excluded by policy.")
             ],
             [
@@ -36,6 +41,8 @@ public static class TimesheetsMetadataCatalog
                 new("billable", "Billable", nameof(BillableState)),
                 new("contributor", "Contributor", nameof(ContributorCategory)),
                 new("ai-metrics", "AI metric availability", nameof(AiMetricAvailability)),
+                new("ai-tokens", "AI token availability", nameof(AiTokenMetricAvailability)),
+                new("ai-source", "AI metric source category", nameof(AiEffortMetricSourceCategory)),
                 new("comment-retention", "Comment retention", nameof(TimesheetsEvidenceRetentionCategory))
             ]),
         new(
@@ -114,6 +121,11 @@ public static class TimesheetsMetadataCatalog
                 new("eventLineage", "Event lineage", nameof(TimeEntryEventLineageItem), true, "Safe event summaries for audit metadata."),
                 new("displayHydration", "Display hydration", nameof(TimeEntryDisplayHydration), true, "Read-time labels keep explicit hydration state."),
                 new("aiMetrics", "AI effort metrics", nameof(AiEffortMetrics), false),
+                new("aiWallClockDurationMilliseconds", "AI wall-clock execution", "Milliseconds", false, "AI wall-clock execution time is displayed separately from human/external duration."),
+                new("aiModelRuntimeMilliseconds", "AI model/tool runtime", "Milliseconds", false, "AI model or tool runtime is displayed in milliseconds."),
+                new("aiBillableEffortMinutes", "AI billable effort", "WholeMinutes", false, "AI billable effort is displayed in minutes without token-to-hours conversion."),
+                new("aiTokenAvailability", "AI token availability", nameof(AiTokenMetricAvailability), false, "Unavailable provider token metrics are shown with explicit text, not zero or silence."),
+                new("aiMetricSource", "AI metric source", nameof(AiEffortMetricSourceMetadata), false, "Compact audit source metadata for provider, tool, or work execution context."),
                 new("correctionState", "Correction state", nameof(TimeEntryCorrectionState), true),
                 new("comment", "Comment", nameof(TimeEntryComment), false, "Comments may contain sensitive information."),
                 new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true)
@@ -130,6 +142,8 @@ public static class TimesheetsMetadataCatalog
                 new("contributor", "Contributor", nameof(ContributorCategory)),
                 new("correction", "Correction", nameof(TimeEntryCorrectionState)),
                 new("ai-metrics", "AI metric availability", nameof(AiMetricAvailability)),
+                new("ai-tokens", "AI token availability", nameof(AiTokenMetricAvailability)),
+                new("ai-source", "AI metric source category", nameof(AiEffortMetricSourceCategory)),
                 new("comment-export", "Comment export", nameof(TimesheetsCommentPolicyDecision))
             ]),
         new(

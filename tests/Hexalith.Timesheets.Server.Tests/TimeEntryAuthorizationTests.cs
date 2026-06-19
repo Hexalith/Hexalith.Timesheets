@@ -156,6 +156,39 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
+    public async Task Ai_agent_capture_uses_existing_tenant_project_contributor_policy_and_catalog_gates()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.ProjectValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+
+        TimeEntryCommandResult result = await fixture.CreateService().RecordAsync(
+            Context(),
+            AiProjectCommand(),
+            null,
+            FreshCatalog(ActivityTypeScope.Tenant),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        TimeEntryRecorded recorded = result.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryRecorded>();
+        recorded.ContributorCategory.ShouldBe(ContributorCategory.AutomatedAgent);
+        recorded.AiMetrics.ShouldNotBeNull();
+        recorded.AiMetrics.TokenAvailability.ShouldBe(AiTokenMetricAvailability.ProviderReported);
+        await fixture.ProjectValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
+        await fixture.PartyValidator.Received(1)
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Contributor(), Arg.Any<CancellationToken>());
+        await fixture.PolicyEvaluator.Received(1)
+            .EvaluateAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Capture_policy_denial_fails_before_activity_type_selection_or_domain_dispatch()
     {
         Fixture fixture = AuthorizedFixture();
@@ -587,6 +620,22 @@ public sealed class TimeEntryAuthorizationTests
 
     private static RecordTimeEntry ProjectCommand()
         => Command(TimeEntryTargetReference.ForProject(Project()));
+
+    private static RecordTimeEntry AiProjectCommand()
+        => Command(TimeEntryTargetReference.ForProject(Project())) with
+        {
+            ContributorCategory = ContributorCategory.AutomatedAgent,
+            AiMetrics = new(
+                AiMetricAvailability.ProviderReported,
+                90000,
+                75000,
+                2,
+                1000,
+                250,
+                1250,
+                AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-1"),
+                AiTokenMetricAvailability.ProviderReported)
+        };
 
     private static RecordTimeEntry WorkCommand()
         => Command(TimeEntryTargetReference.ForWork(Work()));

@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
+    <ProjectReference Include="..\..\src\Hexalith.Timesheets.Projections\Hexalith.Timesheets.Projections.csproj" />
+    <ProjectReference Include="..\..\src\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

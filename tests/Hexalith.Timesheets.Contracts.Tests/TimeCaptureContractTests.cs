@@ -49,7 +49,7 @@ public sealed class TimeCaptureContractTests
             new DateOnly(2026, 6, 19),
             45,
             BillableState.Billable,
-            ContributorCategory.Employee,
+            ContributorCategory.AutomatedAgent,
             new(
                 AiMetricAvailability.ProviderReported,
                 90000,
@@ -57,7 +57,9 @@ public sealed class TimeCaptureContractTests
                 2,
                 1000,
                 250,
-                1250));
+                1250,
+                AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-123"),
+                AiTokenMetricAvailability.ProviderReported));
 
         string json = JsonSerializer.Serialize(command, JsonOptions);
 
@@ -76,6 +78,9 @@ public sealed class TimeCaptureContractTests
         roundTripped.Contributor.PartyId.ShouldBe("party-123");
         roundTripped.AiMetrics.ShouldNotBeNull();
         roundTripped.AiMetrics.ProviderTotalTokenCount.ShouldBe(1250);
+        roundTripped.AiMetrics.Source.ShouldNotBeNull();
+        roundTripped.AiMetrics.Source.SourceCategory.ShouldBe(AiEffortMetricSourceCategory.Provider);
+        roundTripped.AiMetrics.TokenAvailability.ShouldBe(AiTokenMetricAvailability.ProviderReported);
     }
 
     [Fact]
@@ -245,16 +250,20 @@ public sealed class TimeCaptureContractTests
         Enum.GetName((ActivityTypeActiveState)0).ShouldBe("Unknown");
         Enum.GetName((ProjectionFreshnessState)0).ShouldBe("Unknown");
         Enum.GetName((AiMetricAvailability)0).ShouldBe("Unknown");
+        Enum.GetName((AiEffortMetricSourceCategory)0).ShouldBe("Unknown");
+        Enum.GetName((AiTokenMetricAvailability)0).ShouldBe("Unknown");
         Enum.GetName((TimeEntryEvidenceSourceAuthority)0).ShouldBe("Unknown");
         Enum.GetName((DisplayHydrationState)0).ShouldBe("Unknown");
     }
 
     [Fact]
-    public void Ai_metrics_keep_units_explicit_and_unavailable_provider_counts_nullable()
+    public void Ai_metrics_keep_units_source_metadata_and_unavailable_provider_counts_explicit()
     {
         AiEffortMetrics unavailable = AiEffortMetrics.Unavailable;
 
         unavailable.Availability.ShouldBe(AiMetricAvailability.Unavailable);
+        unavailable.Source.ShouldBe(AiEffortMetricSourceMetadata.Unavailable);
+        unavailable.TokenAvailability.ShouldBe(AiTokenMetricAvailability.Unavailable);
         unavailable.WallClockDurationMilliseconds.ShouldBeNull();
         unavailable.ModelRuntimeMilliseconds.ShouldBeNull();
         unavailable.BillableEffortMinutes.ShouldBeNull();
@@ -264,6 +273,48 @@ public sealed class TimeCaptureContractTests
 
         typeof(AiEffortMetrics).GetProperty("Duration").ShouldBeNull();
         typeof(AiEffortMetrics).GetProperty("Tokens").ShouldBeNull();
+        typeof(AiEffortMetricSourceMetadata).GetProperty("Prompt").ShouldBeNull();
+        typeof(AiEffortMetricSourceMetadata).GetProperty("Response").ShouldBeNull();
+        typeof(AiEffortMetricSourceMetadata).GetProperty("Secret").ShouldBeNull();
+        typeof(AiEffortMetricSourceMetadata).GetProperty("BearerToken").ShouldBeNull();
+        typeof(AiEffortMetricSourceMetadata).GetProperty("RequestBody").ShouldBeNull();
+        typeof(AiEffortMetricSourceMetadata).GetProperty("ResponseBody").ShouldBeNull();
+        typeof(AiEffortMetricSourceMetadata).GetProperty("PartyDisplayName").ShouldBeNull();
+    }
+
+    [Fact]
+    public void Ai_metrics_distinguish_provider_reported_zero_tokens_from_unreported_tokens()
+    {
+        AiEffortMetrics reportedZeroTokens = new(
+            AiMetricAvailability.ProviderReported,
+            100,
+            90,
+            1,
+            0,
+            0,
+            0,
+            AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-456"),
+            AiTokenMetricAvailability.ProviderReported);
+        AiEffortMetrics notReportedTokens = new(
+            AiMetricAvailability.ProviderReported,
+            100,
+            90,
+            1,
+            null,
+            null,
+            null,
+            AiEffortMetricSourceMetadata.Provider("generic-provider", "capture-tool", "work-execution-789"),
+            AiTokenMetricAvailability.NotReported);
+
+        reportedZeroTokens.ProviderInputTokenCount.ShouldBe(0);
+        reportedZeroTokens.ProviderOutputTokenCount.ShouldBe(0);
+        reportedZeroTokens.ProviderTotalTokenCount.ShouldBe(0);
+        reportedZeroTokens.TokenAvailability.ShouldBe(AiTokenMetricAvailability.ProviderReported);
+
+        notReportedTokens.ProviderInputTokenCount.ShouldBeNull();
+        notReportedTokens.ProviderOutputTokenCount.ShouldBeNull();
+        notReportedTokens.ProviderTotalTokenCount.ShouldBeNull();
+        notReportedTokens.TokenAvailability.ShouldBe(AiTokenMetricAvailability.NotReported);
     }
 
     [Fact]
@@ -355,6 +406,11 @@ public sealed class TimeCaptureContractTests
             "billableState",
             "contributorCategory",
             "aiMetrics",
+            "aiWallClockDurationMilliseconds",
+            "aiModelRuntimeMilliseconds",
+            "aiBillableEffortMinutes",
+            "aiTokenAvailability",
+            "aiMetricSource",
             "comment"
         ]);
         command.Fields.Single(static field => field.Name == "durationMinutes")
@@ -373,18 +429,29 @@ public sealed class TimeCaptureContractTests
             nameof(BillableState),
             nameof(ContributorCategory),
             nameof(AiMetricAvailability),
+            nameof(AiTokenMetricAvailability),
+            nameof(AiEffortMetricSourceCategory),
             nameof(TimesheetsEvidenceRetentionCategory)
         ]);
 
+        command.Fields.Select(static field => field.Name).ShouldContain("aiMetricSource");
+        command.Fields.Select(static field => field.Name).ShouldContain("aiTokenAvailability");
         evidence.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
         evidence.Fields.Select(static field => field.Name).ShouldContain("correctionState");
         evidence.Fields.Select(static field => field.Name).ShouldContain("sourceAuthority");
         evidence.Fields.Select(static field => field.Name).ShouldContain("eventLineage");
         evidence.Fields.Select(static field => field.Name).ShouldContain("displayHydration");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("aiWallClockDurationMilliseconds");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("aiModelRuntimeMilliseconds");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("aiBillableEffortMinutes");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("aiTokenAvailability");
+        evidence.Fields.Select(static field => field.Name).ShouldContain("aiMetricSource");
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryCorrectionState));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimeEntryEvidenceSourceAuthority));
         evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(DisplayHydrationState));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiTokenMetricAvailability));
+        evidence.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(AiEffortMetricSourceCategory));
     }
 
     [Fact]
@@ -445,6 +512,7 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("RecordTimeEntry").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryTargetReference").ShouldBeTrue();
         schemas.ContainsKey("AiEffortMetrics").ShouldBeTrue();
+        schemas.ContainsKey("AiEffortMetricSourceMetadata").ShouldBeTrue();
         schemas.ContainsKey("ActivityTypeCatalogCommand").ShouldBeTrue();
         schemas.ContainsKey("CreateProjectActivityType").ShouldBeTrue();
         schemas.ContainsKey("RenameProjectActivityType").ShouldBeTrue();
@@ -456,6 +524,11 @@ public sealed class TimeCaptureContractTests
 
         string schemaJson = schemas.ToJsonString();
         AssertJsonOmitsCallerAuthority(schemaJson);
+        schemaJson.ShouldContain("wall-clock execution time in milliseconds");
+        schemaJson.ShouldContain("model or tool runtime in milliseconds");
+        schemaJson.ShouldContain("Provider token counts are nullable when not reported");
+        schemaJson.ShouldContain("AiTokenMetricAvailability");
+        schemaJson.ShouldContain("AiEffortMetricSourceMetadata");
         schemaJson.ShouldNotContain("EventStore");
         schemaJson.ShouldNotContain("invoice", Case.Insensitive);
         schemaJson.ShouldNotContain("payroll", Case.Insensitive);
