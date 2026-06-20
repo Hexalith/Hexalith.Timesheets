@@ -398,6 +398,8 @@ Magic links are scoped capabilities, not login sessions. Baseline design:
 
 **Implementation status note (2026-06-19):** Epic 3 implemented the contracts, domain services, capability state, projection, endpoint routes, and service/workflow no-disclosure tests. The default registered `IMagicLinkConfirmationCapabilityStateLoader` is still `UnavailableMagicLinkConfirmationCapabilityStateLoader`, which fails closed by returning no capability, no Time Entry state, and an unavailable Activity Type catalog. Production-ready live host display/confirm/adjust requires a concrete EventStore-backed loader/token-hash lookup that folds capability state, folds the scoped Time Entry state, and loads a fresh Activity Type catalog without exposing token, tenant, contributor, target, or failure-reason material.
 
+**Launch-readiness correction (added 2026-06-20):** Epic 5 promotes the concrete `IMagicLinkConfirmationCapabilityStateLoader` from documented caveat to implementation scope. The loader must resolve token hashes without token disclosure, fold capability state from EventStore-backed events, fold the scoped Time Entry state, load a fresh Activity Type catalog, and preserve the same no-disclosure response for malformed, unknown, expired, used, revoked, unauthorized, wrong-recipient, wrong-action, and replayed links.
+
 **Data protection and secrets:**
 
 Use ASP.NET Core Data Protection only for purpose-bound protection where useful, not as the only source of revocation or single-use truth. Production deployments must use a shared persisted key ring where protected tokens/cursors need to survive restarts or multiple replicas.
@@ -456,6 +458,8 @@ Use Dapr service invocation/pub-sub through existing Hexalith/EventStore pattern
 Use the existing Hexalith documentation/OpenAPI conventions for public HTTP surfaces. Do not create a separate OpenAPI contract for internal aggregate mechanics.
 
 Epic 4 implementation note: `PreviewApprovedTimeExport` is a contract shape, but current preview/readiness behavior is served by Approved-Time Ledger query output and by `GenerateApprovedTimeExport` results. A dedicated server preview handler requires an explicit later decision.
+
+**Launch-readiness correction (added 2026-06-20):** Epic 5 makes that decision explicit. If preview remains a public contract, a dedicated server handler must be implemented and tested; if preview remains ledger-query driven, the contract and metadata must state that behavior without implying a separate endpoint.
 
 **Version notes:**
 
@@ -970,7 +974,11 @@ Hexalith.Timesheets/
 
 **Reference-validation adapter maturity (added 2026-06-19):** `Hexalith.Projects` exposes a consumer query (`GetProjectAsync`) suitable for FR-2 Project validation. `Hexalith.Works` currently exposes no consumer-facing read/validate query (only an internal `WhatsNext` queue handler and an unimplemented `IExpectationResolver`); its `WorkItemEffort` (FR-17) and `ExecutorBinding` (FR-15/FR-20) Contracts are stable. The Works reference-validation adapter must therefore either consume a new Works-owned `GetWorkItem` query or read the Works EventStore projection via a Timesheets adapter. Epic 4 implemented planned-effort access behind `IWorkPlannedEffortProvider` with `UnavailableWorkPlannedEffortProvider` as the fail-closed default, so Work reports can disclose actuals while marking planned-effort state unavailable until the Works adapter is made concrete.
 
+**Launch-readiness correction (added 2026-06-20):** Epic 5 promotes the Works adapter decision to implementation scope. Launch claims that include Work validation or planned-vs-actual comparison require either a Works-owned consumer query or a Timesheets adapter over a Works EventStore projection, with fail-closed behavior when the adapter is unavailable, stale, cross-tenant, or unauthorized.
+
 **Export audit implementation note (added 2026-06-19):** accepted approved-time exports emit safe `ApprovedTimeExported` domain-event evidence through `IApprovedTimeExportAuditRecorder`. The audit evidence stores requester, tenant, filter snapshot, UTC request/generation instants, correlation ID, output scope, CSV format/version, projection freshness state, row count, and output content hash. It does not store CSV rows, comments, display labels, credential material, caller bodies, raw EventStore envelopes, or sibling-owned state.
+
+**Launch-readiness hardening (added 2026-06-20):** realistic performance evidence remains reserved until EventStore-backed persisted fixtures exist. Epic 5 must activate the performance lane for launch-scope command acknowledgements, report queries, export generation, and dashboard overview behavior without slowing the fast baseline.
 
 **Data Flow:**
 

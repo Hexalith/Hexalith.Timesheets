@@ -1,5 +1,5 @@
 # generated: 2026-06-18 23:50:36
-# last_updated: 2026-06-19 (epic 4 retrospective complete)
+# last_updated: 2026-06-20 (correct-course launch-readiness epic added)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-19 (epic 4 retrospective complete)
+last_updated: 2026-06-20 (correct-course launch-readiness epic added)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -86,3 +86,13 @@ development_status:
   4-6-verify-finance-export-evidence-and-audit-trail: done
   4-7-surface-timesheets-dashboard-overview: done
   epic-4-retrospective: done
+
+  # Epic 5: Launch Readiness & Integration Hardening
+  epic-5: backlog
+  5-1-implement-eventstore-backed-magic-link-state-loading: backlog
+  5-2-prove-magic-link-no-disclosure-at-the-http-boundary: backlog
+  5-3-implement-the-works-reference-and-planned-effort-adapter-path: backlog
+  5-4-implement-the-approved-export-preview-api-decision: backlog
+  5-5-activate-realistic-performance-evidence: backlog
+  5-6-final-launch-readiness-gate-and-documentation-sync: backlog
+  epic-5-retrospective: optional

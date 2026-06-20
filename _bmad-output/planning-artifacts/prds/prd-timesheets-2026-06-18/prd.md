@@ -413,8 +413,9 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Phase 2 — External-party surface.** Add API-only external submission and Magic-Link Confirmation with security/audit gates.
 - **Phase 3 — AI-agent evidence.** Add AI Effort Metrics capture and reporting tied to Works execution.
 - **Phase 4 — Finance evidence.** Harden Approved-Time Ledger export and reconciliation flows for downstream billing/accounting consumers.
+- **Phase 5 — Launch-readiness hardening.** Replace deferred fail-closed integration defaults with concrete launch-scope adapters and executable evidence: Magic-Link state loading, Works planned-effort/reference integration, export preview API handling, HTTP no-disclosure proof, and realistic performance fixtures.
 
-Launch readiness requires: passing tenant-isolation tests, approval/correction evidence tests, projection rebuild tests, export contract tests, privacy/logging scans, and a documented owns-vs-references boundary decision.
+Launch readiness requires: passing tenant-isolation tests, approval/correction evidence tests, projection rebuild tests, export contract tests, privacy/logging scans, a documented owns-vs-references boundary decision, concrete launch-scope integration adapters, and performance evidence for the stated command/report targets.
 
 ## 14. Open Questions
 
