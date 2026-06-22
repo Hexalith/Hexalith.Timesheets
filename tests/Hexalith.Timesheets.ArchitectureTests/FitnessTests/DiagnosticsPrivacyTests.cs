@@ -67,6 +67,42 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
+    public void Magic_link_invalid_outcome_category_stays_server_internal_and_off_the_external_contract()
+    {
+        string serverOutcomeCategory = File.ReadAllText(RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.Server",
+            "MagicLinks",
+            "MagicLinkInvalidLinkOutcomeCategory.cs"));
+        string denialContract = File.ReadAllText(RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.Contracts",
+            "Models",
+            "MagicLinks",
+            "MagicLinkInvalidLinkDenial.cs"));
+        string endpoint = File.ReadAllText(RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets",
+            "Endpoints",
+            "MagicLinks",
+            "MagicLinkConfirmationCapabilityEndpoints.cs"));
+        string[] contractFiles = Directory.GetFiles(
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts"),
+            "*.cs",
+            SearchOption.AllDirectories);
+
+        serverOutcomeCategory.ShouldContain("MagicLinkInvalidLinkOutcomeCategory");
+        denialContract.ShouldNotContain("MagicLinkInvalidLinkOutcomeCategory");
+        endpoint.ShouldContain("LogExternalLinkDenial");
+        endpoint.ShouldContain("MagicLinkInvalidLinkOutcomeCategory");
+
+        foreach (string contractFile in contractFiles)
+        {
+            File.ReadAllText(contractFile).ShouldNotContain("MagicLinkInvalidLinkOutcomeCategory", Case.Sensitive, contractFile);
+        }
+    }
+
+    [Fact]
     public void Works_reference_adapter_does_not_log_serialize_or_copy_works_owned_state()
     {
         string adapterRoot = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Works");

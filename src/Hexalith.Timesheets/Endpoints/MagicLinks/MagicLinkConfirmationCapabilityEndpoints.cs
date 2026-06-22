@@ -7,11 +7,13 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 
+using Microsoft.Extensions.Logging;
+
 using ServerMagicLinkCapabilityState = Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState;
 
 namespace Hexalith.Timesheets.Endpoints.MagicLinks;
 
-public static class MagicLinkConfirmationCapabilityEndpoints
+public static partial class MagicLinkConfirmationCapabilityEndpoints
 {
     public static IEndpointRouteBuilder MapTimesheetsMagicLinkConfirmationCapabilityEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -123,6 +125,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
             static async Task<IResult> (
                 string? t,
                 HttpContext httpContext,
+                ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
@@ -130,7 +133,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
             {
                 if (string.IsNullOrWhiteSpace(t))
                 {
-                    return Denied();
+                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
                 ClaimsPrincipal user = httpContext.User;
@@ -149,7 +152,9 @@ public static class MagicLinkConfirmationCapabilityEndpoints
                     timeProvider.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
-                return response is null ? Denied() : Results.Ok(response);
+                return response is null
+                    ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
+                    : Results.Ok(response);
             });
 
         endpoints.MapPost(
@@ -158,6 +163,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
                 string? t,
                 ConfirmTimeThroughMagicLink command,
                 HttpContext httpContext,
+                ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
@@ -165,7 +171,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
             {
                 if (string.IsNullOrWhiteSpace(t))
                 {
-                    return Denied();
+                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
                 ClaimsPrincipal user = httpContext.User;
@@ -184,7 +190,9 @@ public static class MagicLinkConfirmationCapabilityEndpoints
                     timeProvider.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
-                return result.WasDispatched ? Results.Accepted() : Denied();
+                return result.WasDispatched
+                    ? Results.Accepted()
+                    : DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
             });
 
         endpoints.MapGet(
@@ -192,6 +200,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
             static async Task<IResult> (
                 string? t,
                 HttpContext httpContext,
+                ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
@@ -199,7 +208,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
             {
                 if (string.IsNullOrWhiteSpace(t))
                 {
-                    return Denied();
+                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
                 ClaimsPrincipal user = httpContext.User;
@@ -218,7 +227,9 @@ public static class MagicLinkConfirmationCapabilityEndpoints
                     timeProvider.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
-                return response is null ? Denied() : Results.Ok(response);
+                return response is null
+                    ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
+                    : Results.Ok(response);
             });
 
         endpoints.MapPost(
@@ -227,6 +238,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
                 string? t,
                 AdjustTimeThroughMagicLink command,
                 HttpContext httpContext,
+                ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
@@ -234,7 +246,7 @@ public static class MagicLinkConfirmationCapabilityEndpoints
             {
                 if (string.IsNullOrWhiteSpace(t))
                 {
-                    return Denied();
+                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
                 ClaimsPrincipal user = httpContext.User;
@@ -254,7 +266,9 @@ public static class MagicLinkConfirmationCapabilityEndpoints
                     timeProvider.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
-                return result.WasDispatched ? Results.Accepted() : Denied();
+                return result.WasDispatched
+                    ? Results.Accepted()
+                    : DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
             });
 
         return endpoints;
@@ -265,6 +279,27 @@ public static class MagicLinkConfirmationCapabilityEndpoints
             title: MagicLinkInvalidLinkDenial.Default.Title,
             detail: MagicLinkInvalidLinkDenial.Default.Detail,
             statusCode: StatusCodes.Status403Forbidden);
+
+    private static IResult DeniedWithDiagnostics(
+        ILoggerFactory loggerFactory,
+        HttpContext httpContext,
+        DateTimeOffset timestampUtc,
+        MagicLinkInvalidLinkOutcomeCategory category)
+    {
+        ILogger logger = loggerFactory.CreateLogger("Hexalith.Timesheets.MagicLinkBoundary");
+        LogExternalLinkDenial(logger, httpContext.TraceIdentifier, timestampUtc, category);
+        return Denied();
+    }
+
+    [LoggerMessage(
+        EventId = 37001,
+        Level = LogLevel.Information,
+        Message = "External link denial emitted with category {Category} at {TimestampUtc} for correlation {CorrelationId}.")]
+    private static partial void LogExternalLinkDenial(
+        ILogger logger,
+        string correlationId,
+        DateTimeOffset timestampUtc,
+        MagicLinkInvalidLinkOutcomeCategory category);
 
     private static string? FirstClaimValue(ClaimsPrincipal user, params string[] claimTypes)
     {

@@ -8,6 +8,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Shouldly" />
@@ -16,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Hexalith.Timesheets\Hexalith.Timesheets.csproj" />
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Projections\Hexalith.Timesheets.Projections.csproj" />
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />

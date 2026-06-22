@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-22 (story 3.6 dev-story complete; status in-progress → review)
+last_updated: 2026-06-22 (story 3.7 dev-story complete; status in-progress → review)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -77,7 +77,7 @@ development_status:
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosure: done
   3-6-implement-eventstore-backed-magic-link-state-loading: done
-  3-7-prove-magic-link-no-disclosure-at-the-http-boundary: backlog
+  3-7-prove-magic-link-no-disclosure-at-the-http-boundary: review
   epic-3-retrospective: done
 
   # Epic 4: Approved Time Ledger, Reporting & Finance Export

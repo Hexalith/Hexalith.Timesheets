@@ -40,3 +40,11 @@ app.MapGet(
     }));
 
 await app.RunAsync().ConfigureAwait(false);
+
+/// <summary>
+/// Entry point class, made partial so in-process HTTP-boundary tests can reference it via
+/// <c>WebApplicationFactory&lt;Program&gt;</c>. This adds no runtime behavior.
+/// </summary>
+public partial class Program
+{
+}
