@@ -22,16 +22,23 @@ internal static class WorksQueryTestData
 
     public static WorkReference Work() => new(WorkIdValue);
 
-    public static WorkItemView FoundView(WorkItemStatus status, string tenant = TenantValue, long sourceSequence = 7)
+    public static WorkItemView FoundView(
+        WorkItemStatus status,
+        string tenant = TenantValue,
+        long sourceSequence = 7,
+        decimal? estimated = null,
+        decimal? done = null,
+        decimal? remaining = null,
+        string? unit = null)
         => new(
             new TenantId(tenant),
             new WorkItemId(WorkIdValue),
             true,
             status,
-            null,
-            null,
-            null,
-            null,
+            estimated,
+            done,
+            remaining,
+            unit is null ? null : new Unit(unit),
             null,
             sourceSequence);
 

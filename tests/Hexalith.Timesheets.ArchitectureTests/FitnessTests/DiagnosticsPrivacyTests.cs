@@ -114,11 +114,14 @@ public sealed class DiagnosticsPrivacyTests
 
         adapterFiles.ShouldNotBeEmpty();
 
-        // The adapter is an authority gate, not a data source. It must not log, must not serialize Works
-        // state (or the raw QueryResult payload) outward, and must not read or copy Works-owned effort or
-        // parent fields. It legitimately only deserializes the consumer view inbound and reads Found/
-        // Status/TenantId to decide the gate.
-        string[] forbiddenTokens =
+        // No adapter in this project may log, may serialize Works state (or the raw QueryResult payload)
+        // outward, or may copy Works internal roll-up structure (OwnEffort) or parent lineage (Parent).
+        // Both adapters only deserialize the consumer view inbound and return a typed read model. The Works
+        // effort fields (.Estimated/.Done/.Remaining/.Unit) are NOT forbidden project-wide because the
+        // planned-effort provider's legitimate payload IS the planned effort; those tokens are forbidden in
+        // the authority-gate validator file only (asserted below), and the provider is verified to surface
+        // effort exclusively through its typed read-model return.
+        string[] projectWideForbiddenTokens =
         [
             "ILogger",
             "logger",
@@ -130,23 +133,39 @@ public sealed class DiagnosticsPrivacyTests
             "JsonSerializer.Serialize",
             "SerializeToElement",
             "SerializeToUtf8Bytes",
-            ".Estimated",
-            ".Done",
-            ".Remaining",
             ".OwnEffort",
-            ".Parent",
-            ".Unit"
+            ".Parent"
         ];
 
         foreach (string adapterFile in adapterFiles)
         {
             string source = File.ReadAllText(adapterFile);
 
-            foreach (string forbidden in forbiddenTokens)
+            foreach (string forbidden in projectWideForbiddenTokens)
             {
                 source.ShouldNotContain(forbidden, Case.Sensitive, adapterFile);
             }
         }
+
+        // The reference validator is an authority gate, not a data source: it must never read or copy any
+        // Works effort field. These effort tokens stay forbidden in the validator file only — the
+        // planned-effort provider must read them to do its job.
+        string validatorFile = Path.Combine(adapterRoot, "WorksQueryWorkReferenceValidator.cs");
+        File.Exists(validatorFile).ShouldBeTrue(validatorFile);
+        string validatorSource = File.ReadAllText(validatorFile);
+        foreach (string effortToken in new[] { ".Estimated", ".Done", ".Remaining", ".Unit" })
+        {
+            validatorSource.ShouldNotContain(effortToken, Case.Sensitive, validatorFile);
+        }
+
+        // Positive assertion: the planned-effort provider exposes effort only through the typed,
+        // source-attributed WorkPlannedEffortReadModel return. It reads the consumer view's effort fields but
+        // (proven by the project-wide scan above) never logs them and never serializes Works state outward.
+        string providerFile = Path.Combine(adapterRoot, "WorksQueryWorkPlannedEffortProvider.cs");
+        File.Exists(providerFile).ShouldBeTrue(providerFile);
+        string providerSource = File.ReadAllText(providerFile);
+        providerSource.ShouldContain("IWorkPlannedEffortProvider", Case.Sensitive, providerFile);
+        providerSource.ShouldContain("ValueTask<WorkPlannedEffortReadModel>", Case.Sensitive, providerFile);
     }
 
     [Fact]
