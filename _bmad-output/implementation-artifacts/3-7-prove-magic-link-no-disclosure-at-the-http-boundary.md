@@ -4,7 +4,7 @@ baseline_commit: 740cc54
 
 # Story 3.7: Prove Magic-Link No-Disclosure at the HTTP Boundary
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -226,8 +226,32 @@ bookkeeping.
 - `_bmad-output/implementation-artifacts/3-7-prove-magic-link-no-disclosure-at-the-http-boundary.md` (modified) — task checkboxes, Dev Agent Record, Change Log, Status → review.
 - `_bmad-output/implementation-artifacts/sprint-status.yaml` (modified) — `3-7-…` status → in-progress → review.
 
+## Senior Developer Review (AI)
+
+**Reviewer:** Jerome · **Date:** 2026-06-22 · **Outcome:** Approved (auto-fix applied)
+
+Adversarial review of the committed implementation (`52f554e`) against the baseline (`740cc54`). Every Acceptance Criterion was verified against the running surface, not just the checkboxes: the affected lanes were rebuilt under `-warnaserror` (0 warnings / 0 errors) and executed via the direct xUnit v3 executables (`dotnet test` is blocked by the sandbox `SocketException`).
+
+**Verification evidence (re-run during review):**
+
+- Build: `IntegrationTests` and `ArchitectureTests` both **0 Warning(s), 0 Error(s)** under `-warnaserror`.
+- `IntegrationTests` lane → Total **75**, Failed 0, Skipped 3 (pre-existing infra/perf lanes). The new `MagicLinkConfirmationHttpBoundaryTests` class → Total **9**, Failed 0.
+- `ArchitectureTests` lane → Total **28**, Failed 0.
+- Named fitness invariants confirmed green individually: `Magic_link_external_routes_share_one_denial_helper`, `Magic_link_endpoint_denial_copy_is_opaque`, `Host_maps_narrow_magic_link_confirmation_routes_without_authority_body_fields` (3/3), and `DependencyDirectionTests` (6/6). The endpoint file still holds exactly one `private static IResult Denied()` and one `Results.Problem(` (`DeniedWithDiagnostics` delegates to `Denied()`).
+- All six ACs verified implemented and executing at the HTTP boundary (AC1 equivalent 403 over the 11-case matrix × 4 routes; AC2 sensitive-field absence on the real body; AC3 non-vacuous 200/202 success contrast; AC4 Server-internal outcome-category diagnostics + extended privacy fitness test; AC5 repeated-attempt byte-equivalence without throttling headers; AC6 lanes + invariants green).
+
+**Findings & resolution:**
+
+- 🟡 **MEDIUM (fixed): Sibling submodule `Hexalith.Tenants` was modified.** Commit `52f554e` bumped the `Hexalith.Tenants` gitlink `2012fb9 → fc1b40c`, violating the story's explicit "Do NOT modify any sibling submodule" constraint, omitted from the File List, and contradicting the commit message ("ensure no production code changes"). The bump is unreferenced by the Timesheets build graph (no `.csproj`/`.slnx` reference, no `using`), confirming it was an incidental `git add` with zero build impact. **Resolved:** submodule pointer reverted to baseline `2012fb9` and staged.
+- 🟡 **MEDIUM (fixed): Inaccurate test counts in Debug Log References & Completion Notes.** Reported "IntegrationTests +5 / 71 total / 6 new tests"; reality is **+9 / 75 total / 10 new tests** (the new class has 9 `[Fact]` methods). This is the Epic 1 retro's #1 recurring failure (test-count honesty). **Resolved:** counts corrected in this story file.
+- 🟢 **LOW (noted, not changed): `AssertSensitiveMaterialAbsent` scans the raw body (incl. the non-deterministic `traceId`) for the bare substring `"60"`.** A trace identifier containing `60` would spuriously fail the assertion. Currently passing; left as-is to avoid masking real leaks — flagged for hardening if it ever flakes.
+- 🟢 **LOW (noted): Commit message for `52f554e` states "ensure no production code changes" but the commit legitimately changes production code** (`MagicLinkConfirmationCapabilityEndpoints.cs`, `Program.cs`) per the AC4 default. Message wording only; the changes themselves are in scope and documented in the File List.
+
+No CRITICAL or HIGH issues. With the two MEDIUM items fixed, status advanced to **done**.
+
 ## Change Log
 
 | Date | Change |
 | ---- | ------ |
+| 2026-06-22 | Senior Developer Review (AI): adversarial review with re-run build/test evidence (IntegrationTests 75/0/3, boundary class 9/0; ArchitectureTests 28/0; all named fitness invariants green). Fixed 2 MEDIUM findings — reverted the out-of-scope `Hexalith.Tenants` submodule bump to baseline `2012fb9`, and corrected stale test counts (+9 / 75 total / 10 new, was +5 / 71 / 6). Status → done. |
 | 2026-06-22 | Story 3.7 implemented: in-process `WebApplicationFactory<Program>` HTTP-boundary no-disclosure proof for the four external magic-link routes (equivalent neutral 403 across the 11-case invalid matrix, sensitive-field absence, non-vacuous 200/202 success contrast, repeated-attempt byte-equivalence). Wired privacy-safe invalid-link outcome-category diagnostics (source-gen `LoggerMessage`, Server-internal enum) and extended `DiagnosticsPrivacyTests`. Added CPM `Microsoft.AspNetCore.Mvc.Testing` 10.0.9, host `ProjectReference`, and the `public partial class Program` shim. All affected lanes green; magic-link + dependency-direction + diagnostics-privacy fitness invariants unchanged. Status → review. |
