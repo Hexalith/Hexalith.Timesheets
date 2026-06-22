@@ -256,18 +256,18 @@ _Added 2026-06-19. All 15 NFRs trace to ≥1 story by acceptance-criteria substa
 
 | NFR | Theme | Primary | Also covered in |
 |-----|-------|---------|-----------------|
-| NFR1 | Tenant isolation (adversarial fail-closed) | 1.2 | 1.1, 1.7, 1.8, 2.2, 2.3, 2.6, 2.8, 3.1, 3.5, 4.1, 4.2, 4.4, 5.1, 5.2, 5.3 |
+| NFR1 | Tenant isolation (adversarial fail-closed) | 1.2 | 1.1, 1.7, 1.8, 1.10, 2.2, 2.3, 2.6, 2.8, 3.1, 3.5, 3.6, 3.7, 4.1, 4.2, 4.4, 4.8 |
 | NFR2 | Append-only, no silent overwrite | 2.5 | 1.3, 2.4, 2.6, 4.2 |
-| NFR3 | Store references only, no personal/sibling data | 1.7 | 1.2, 1.6, 1.8, 1.9, 3.1, 4.3, 5.3 |
+| NFR3 | Store references only, no personal/sibling data | 1.7 | 1.2, 1.6, 1.8, 1.9, 1.10, 3.1, 4.3, 4.8 |
 | NFR4 | Correction provenance | 2.6 | 2.4, 4.2 |
 | NFR5 | Export auditability | 4.6 | 4.5 |
-| NFR6 | Magic-link no-disclosure | 3.5 | 3.2, 3.3, 5.1, 5.2 |
-| NFR7 | Retention policy (launch gate) | 1.4 | 5.6 |
-| NFR8 | Tenant+resource gates on all paths | 1.2 | 1.5, 1.7, 2.3, 3.1, 4.1, 4.2, 4.5, 5.1, 5.3, 5.4 |
-| NFR9 | Projection at-least-once / replay / freshness | 1.8 | 2.6, 2.8, 4.1, 4.2, 4.3, 5.1, 5.3 |
-| NFR10 | Command ack <=500 ms p95 | 5.5 | 1.1 |
-| NFR11 | Report query <=2 s p95 | 5.5 | 1.1, 4.3 |
-| NFR12 | Privacy-safe logging | 1.4 | 1.1, 1.7, 1.9, 3.1, 3.4, 3.5, 5.2, 5.4 |
+| NFR6 | Magic-link no-disclosure | 3.5 | 3.2, 3.3, 3.6, 3.7 |
+| NFR7 | Retention policy (launch gate) | 1.4 | 5.1 |
+| NFR8 | Tenant+resource gates on all paths | 1.2 | 1.5, 1.7, 1.10, 2.3, 3.1, 3.6, 4.1, 4.2, 4.5, 4.8, 4.9 |
+| NFR9 | Projection at-least-once / replay / freshness | 1.8 | 2.6, 2.8, 3.6, 4.1, 4.2, 4.3, 4.8 |
+| NFR10 | Command ack <=500 ms p95 | 1.11 | 1.1 |
+| NFR11 | Report query <=2 s p95 | 4.10 | 1.1, 4.3 |
+| NFR12 | Privacy-safe logging | 1.4 | 1.1, 1.7, 1.9, 3.1, 3.4, 3.5, 3.7, 4.9 |
 | NFR13 | WCAG 2.2 AA / FrontComposer+Fluent UI | 4.7 | 1.5, 1.6, 1.7, 1.8, 2.1, 2.3, 2.4, 3.3, 3.4, 4.1–4.5 |
 | NFR14 | Additive, serialization-tolerant evolution | 1.3 | 1.9, 4.6 |
 | NFR15 | Time-zone / period policy (launch gate) | 2.7 | 4.6 |
@@ -304,14 +304,14 @@ _Added 2026-06-19. All 37 UX-DRs trace to ≥1 story._
 | UX-DR24 | Correction flow additive | 2.4 | 2.6 |
 | UX-DR25 | Approvals Queue / Period Detail | 2.8 | 2.3 |
 | UX-DR26 | Activity Type Catalog | 1.5 | 1.6 |
-| UX-DR27 | Operational Reports dimensions | 4.3 | — |
+| UX-DR27 | Operational Reports dimensions | 4.3 | 4.8 |
 | UX-DR28 | AI Effort Report separation | 4.4 | 1.9 |
 | UX-DR29 | Approved-Time Ledger + disable empty export | 4.2 | 4.5 |
-| UX-DR30 | Export Review Dialog, no finance language | 4.5 | 4.6 |
-| UX-DR31 | Magic-link validate-before-detail | 3.3 | 3.4 |
-| UX-DR32 | Magic-link no-disclosure failure | 3.5 | 3.2 |
+| UX-DR30 | Export Review Dialog, no finance language | 4.5 | 4.6, 4.9 |
+| UX-DR31 | Magic-link validate-before-detail | 3.3 | 3.4, 3.6 |
+| UX-DR32 | Magic-link no-disclosure failure | 3.5 | 3.2, 3.7 |
 | UX-DR33 | Factual, non-celebratory copy | 4.5 | 1.4, 4.7 |
-| UX-DR34 | Freshness visible + accessible status region | 4.1 | 4.2, 4.3, 4.7 |
+| UX-DR34 | Freshness visible + accessible status region | 4.1 | 4.2, 4.3, 4.7, 4.8, 4.10 |
 | UX-DR35 | Keyboard-reachable, no hover-only | 1.7 | 2.3, 3.3, 4.1 (all UI) |
 | UX-DR36 | Duration/AI units; missing tokens "Unavailable" | 1.9 | 1.7, 4.4 |
 | UX-DR37 | Responsive desktop/tablet/phone | 3.3 | 1.7, 3.4 |
@@ -342,11 +342,11 @@ Authorized users can query time entries, report actual time by Project and Work,
 
 **FRs covered:** FR16, FR17, FR18, FR19, FR20
 
-### Epic 5: Launch Readiness & Integration Hardening
+### Epic 5: Release Readiness Verification
 
-The completed module is hardened for launch by replacing deferred fail-closed integration defaults with concrete launch-scope adapters and executable quality evidence.
+The release owner verifies launch evidence, waivers, documentation consistency, and final gate status after feature-completion work has been implemented in the owning epics.
 
-**FRs covered:** FR2, FR14, FR17, FR18, FR19, FR21, FR22, FR23
+**FRs covered:** none directly. Epic 5 verifies evidence for FR/NFR coverage already delivered by Epics 1-4.
 
 ## Epic 1: Trusted Time Capture & Activity Governance
 
@@ -355,6 +355,8 @@ Users can record auditable time against Project or Work references for internal,
 ### Story 1.1: Set Up Initial Timesheets Project from Hexalith Module Scaffold
 
 **Requirements:** FR21, FR22, FR23
+
+> **Readiness repair (approved 2026-06-20):** Story 1.1 is scoped to scaffold/build/package/test foundation and fail-closed placeholders only. It does not prove future authorization, UI, logging, or performance behavior for paths introduced by later stories. Path-specific proof belongs to the story that introduces the path.
 
 As a Hexalith builder,
 I want a Timesheets module shell that follows Hexalith architecture, build, package, and test conventions,
@@ -377,10 +379,10 @@ So that all future time-capture stories can be implemented on a stable EventStor
 **Then** EventStore integration points are present for future command handling
 **And** no authoritative SQL, Redis, Dapr state, or broker-backed CRUD store is introduced.
 
-**Given** Timesheets must enforce tenant/resource security from the first executable slice
+**Given** Timesheets must fail closed from the first executable slice
 **When** initial authorization and reference-validation abstractions are added
-**Then** they fail closed by default
-**And** no command/query path accepts caller-supplied server-controlled tenant, user, or authorization context as authority.
+**Then** scaffold-level defaults fail closed
+**And** feature stories remain responsible for path-specific authorization tests when they introduce executable commands, queries, exports, confirmation routes, or UI actions.
 
 **Given** Timesheets references sibling modules
 **When** contracts and abstractions are created
@@ -389,18 +391,18 @@ So that all future time-capture stories can be implemented on a stable EventStor
 
 **Given** future UI stories will use FrontComposer and Fluent UI V5
 **When** initial UI/metadata entry points are scaffolded
-**Then** they are compatible with `FrontComposerShell` and generated command/projection surfaces
-**And** no parallel custom portal, custom theme, raw HTML-first component model, or Fluent UI V4 component dependency is introduced.
+**Then** they are compatibility placeholders for `FrontComposerShell` and generated command/projection surfaces
+**And** feature stories remain responsible for detailed UI fields, validation states, accessibility checks, and workflow-specific metadata.
 
-**Given** logs and telemetry are configured
+**Given** logs and telemetry are configured for scaffold behavior
 **When** the module shell emits diagnostics
 **Then** structured logs include correlation-safe metadata only
-**And** comments, command bodies, event payloads, personal data, secrets, and magic-link tokens are not logged.
+**And** later stories that introduce comments, exports, external confirmations, or AI metrics must add privacy-safe logging tests for those paths.
 
 **Given** command and query performance targets are launch-relevant
 **When** the initial test infrastructure is scaffolded
-**Then** it includes a place for performance evidence covering `500 ms p95` common command acknowledgements and `2s p95` common report queries
-**And** the harness is isolated so later stories can add realistic tenant/project/period data without slowing the fast unit baseline.
+**Then** it includes an isolated place for future performance evidence
+**And** measured NFR10/NFR11 evidence is owned by Story 1.11 for capture/governance commands and Story 4.10 for report/export/dashboard paths.
 
 **Given** the scaffold is complete
 **When** restore, build, and the initial architecture/unit test lane are run
@@ -417,10 +419,10 @@ So that every future Timesheets action fails closed from the first executable sl
 
 **Acceptance Criteria:**
 
-**Given** a Timesheets command, query, projection read, export request, or confirmation request enters the host
-**When** tenant, user, Project, Work, or Party authority cannot be resolved
+**Given** an executable Timesheets path exists in the current story scope
+**When** tenant, user, Project, Work, or Party authority cannot be resolved for that path
 **Then** the request fails closed before aggregate load, command dispatch, projection disclosure, export, or magic-link disclosure
-**And** the denial does not reveal protected tenant, contributor, target, period, or entry details.
+**And** every later story that introduces a new command, query, projection read, export, or confirmation path must add path-specific authorization tests for that path.
 
 **Given** a caller supplies tenant, user, or authorization context in a request body
 **When** authorization is evaluated
@@ -599,7 +601,7 @@ So that project-specific work can be categorized without copying Project state i
 
 **Requirements:** FR1, FR2, FR12, FR21
 
-> **Dependency (2026-06-19):** the Work-reference path requires a `Hexalith.Works` consumer read/validate query (see architecture "Reference-validation adapter maturity"). The Project path via `GetProjectAsync` is unblocked; the Work path is gated on the Works `GetWorkItem`-query vs. adapter-bridge decision.
+> **Launch-readiness dependency (updated 2026-06-20):** the Work-reference path requires Story 1.10, which must choose and implement a `Hexalith.Works` consumer read/validate query or approved adapter bridge. The Project path via `GetProjectAsync` is unblocked; the Work path is not launch-ready until Story 1.10 is complete or explicitly waived.
 
 As a contributor,
 I want to record draft time against exactly one Project or Work reference,
@@ -719,6 +721,61 @@ So that automation effort is visible without converting tokens or runtime into h
 **When** metrics are accepted or rejected
 **Then** logs do not include token values, prompts, responses, command bodies, comments, secrets, or personal data
 **And** only correlation-safe operational metadata is recorded.
+
+### Story 1.10: Implement Work Reference Validation Adapter
+
+**Requirements:** FR2, FR23, NFR1, NFR3, NFR8
+
+As a contributor or system integrator,
+I want Work references validated through a concrete Works-owned query or approved adapter bridge,
+So that trust-bearing Work capture does not depend on unavailable defaults.
+
+**Acceptance Criteria:**
+
+**Given** Timesheets validates a Work Reference for submitted, approved, corrected, exported, or magic-link-confirmed time
+**When** the Works validation adapter is configured
+**Then** validation uses either a Works-owned consumer query or a Timesheets adapter over a Works EventStore projection
+**And** Timesheets stores only stable Work references and source/freshness metadata.
+
+**Given** Works authority is unavailable, stale, cross-tenant, ambiguous, disabled, unauthorized, or missing
+**When** a trust-bearing Work write is evaluated
+**Then** the command fails closed according to Timesheets policy
+**And** no Work lifecycle state, names, descriptions, ownership details, or protected identifiers are copied or leaked.
+
+**Given** Work validation succeeds
+**When** Timesheets persists or projects Time Entry evidence
+**Then** durable Timesheets data remains reference-only
+**And** display hydration remains read-time, freshness-aware, and non-authoritative.
+
+**Given** Work validation tests run
+**When** they cover available, stale, unavailable, unauthorized, cross-tenant, ambiguous, disabled, missing, duplicate, and replayed Works states
+**Then** trust-bearing paths fail closed or succeed deterministically according to policy
+**And** the adapter behavior is documented before Story 1.7 is claimed launch-ready for Work references.
+
+### Story 1.11: Add Command Performance Evidence for Capture and Governance Paths
+
+**Requirements:** NFR10
+
+As a quality owner,
+I want command acknowledgement evidence for capture and governance paths,
+So that NFR10 is measured where hot command behavior is introduced rather than only at the final release gate.
+
+**Acceptance Criteria:**
+
+**Given** realistic tenant, Party, Project, Work, Activity Type, and Time Entry command fixtures exist
+**When** the isolated performance lane runs capture and governance command scenarios
+**Then** common command acknowledgements target `500 ms p95` in a warmed local service
+**And** deviations are recorded as explicit launch-readiness evidence.
+
+**Given** the fast unit and architecture baseline runs
+**When** performance fixtures are unavailable or intentionally skipped
+**Then** skipped performance tests remain isolated and do not slow or destabilize the fast baseline
+**And** docs explain how to run the performance lane.
+
+**Given** performance evidence is reviewed
+**When** capture/governance command results are compared with NFR10
+**Then** the result is marked pass, concern, fail, or waived
+**And** Epic 5 only aggregates this evidence instead of creating the first measurement path.
 
 ## Epic 2: Submission, Approval, Period Review & Corrections
 
@@ -1083,6 +1140,8 @@ So that an external contributor can confirm or adjust proposed time without broa
 
 **Requirements:** FR13, FR14
 
+> **Launch-readiness dependency (approved 2026-06-20):** live host confirmation requires Story 3.6. Before Story 3.6 is complete, service-layer behavior may be story-complete but external live endpoints remain fail-closed/unavailable by default.
+
 As an external contributor,
 I want to confirm a scoped proposed Time Entry from a magic link,
 So that my effort can be attributed and reviewed without internal account access.
@@ -1116,6 +1175,8 @@ So that my effort can be attributed and reviewed without internal account access
 ### Story 3.4: Adjust Time Through Magic Link
 
 **Requirements:** FR13, FR14
+
+> **Launch-readiness dependency (approved 2026-06-20):** live host adjustment requires Story 3.6. Before Story 3.6 is complete, service-layer behavior may be story-complete but external live endpoints remain fail-closed/unavailable by default.
 
 As an external contributor,
 I want to adjust allowed fields in a scoped magic-link confirmation,
@@ -1182,6 +1243,61 @@ So that external confirmation cannot be used to probe tenant, Project, Work, Par
 **When** test cases cover expired, used, revoked, unauthorized, malformed, unknown, cross-tenant, wrong-recipient, repeated-token, and enumeration attempts
 **Then** all cases produce equivalent external disclosure behavior
 **And** only authorized internal audit views can distinguish failure categories.
+
+### Story 3.6: Implement EventStore-Backed Magic-Link State Loading
+
+**Requirements:** FR14, FR21, FR22, NFR1, NFR6, NFR8, NFR9, NFR12
+
+As an external contributor,
+I want valid magic links to load scoped confirmation state in the live host,
+So that confirmation and adjustment work outside service-only tests without weakening no-disclosure behavior.
+
+**Acceptance Criteria:**
+
+**Given** a magic-link token is valid, unexpired, unused, tenant-scoped, and action-scoped
+**When** the live host describes, confirms, or adjusts through the magic-link endpoints
+**Then** `IMagicLinkConfirmationCapabilityStateLoader` resolves the token hash, folds EventStore-backed capability state, folds scoped Time Entry state, and loads a fresh Activity Type catalog
+**And** raw tokens, decoded material, tenant names, contributor details, target names, comments beyond policy, and failure reasons are not logged, projected, or returned.
+
+**Given** capability or Time Entry events are duplicated, replayed, or rebuilt
+**When** the loader folds state
+**Then** the resulting capability state, Time Entry state, and catalog trust state are deterministic and idempotent
+**And** projection freshness or unavailable states are represented explicitly.
+
+**Given** a token is malformed, unknown, expired, revoked, used, wrong-action, wrong-recipient, cross-tenant, replayed, or unresolved
+**When** any magic-link endpoint is called
+**Then** the same no-disclosure external failure state is returned
+**And** no Time Entry confirmation, adjustment, capability-use event, or protected detail is emitted.
+
+**Given** the loader cannot access required EventStore state, Time Entry state, or Activity Type catalog state
+**When** the request is evaluated
+**Then** the host fails closed with the same external no-disclosure response
+**And** internal diagnostics record only correlation-safe outcome categories.
+
+### Story 3.7: Prove Magic-Link No-Disclosure at the HTTP Boundary
+
+**Requirements:** FR14, NFR6, NFR12, NFR13
+
+As a security reviewer,
+I want executable HTTP-boundary tests for magic-link invalid states,
+So that service-level no-disclosure behavior is proven at the routes external contributors actually hit.
+
+**Acceptance Criteria:**
+
+**Given** malformed, unknown, expired, used, revoked, unauthorized, cross-tenant, wrong-recipient, wrong-action, stale-catalog, and repeated-token cases
+**When** GET and POST confirm/adjust routes are exercised through the in-process HTTP host
+**Then** status code, content type, ProblemDetails title/body shape, headers, and sensitive-field absence are equivalent
+**And** the response reveals no tenant, Project, Work, Party, Time Entry, duration, comment, Activity Type, approval state, token existence, expiry reason, or capability state.
+
+**Given** invalid-link telemetry or diagnostics are emitted
+**When** operators inspect authorized logs or audit records
+**Then** only correlation ID, timestamp, safe outcome category, and permitted scoped/hash references are present
+**And** token values, decoded material, comments, command bodies, personal data, target names, and raw EventStore envelopes are absent.
+
+**Given** abuse detection or rate limiting is configured
+**When** repeated invalid attempts occur
+**Then** rate-limited responses remain externally indistinguishable from other invalid-link responses
+**And** operational diagnostics remain privacy-safe.
 
 ## Epic 4: Approved Time Ledger, Reporting & Finance Export
 
@@ -1265,7 +1381,7 @@ So that approved effort can be used as trusted downstream evidence without becom
 
 **Requirements:** FR16, FR17
 
-> **Dependency (2026-06-19):** planned-vs-actual consumes `WorkItemEffort` from `Hexalith.Works`; actual read access depends on the Works consumer-query decision (see architecture "Reference-validation adapter maturity").
+> **Launch-readiness dependency (updated 2026-06-20):** planned-vs-actual consumes `WorkItemEffort` from `Hexalith.Works`; concrete planned-effort integration is owned by Story 4.8. Until Story 4.8 is complete or explicitly waived, Work reports must mark planned effort unavailable rather than imply live Works planned-effort integration.
 
 As a project or work reviewer,
 I want actual-time reports by Project and Work item,
@@ -1349,6 +1465,8 @@ So that automation cost and runtime are visible without implying all units are i
 ### Story 4.5: Generate Finance Export from Approved Ledger
 
 **Requirements:** FR18, FR19
+
+> **Launch-readiness dependency (approved 2026-06-20):** export preview semantics are owned by Story 4.9. Before Story 4.9 is complete, export generation may be story-complete, but public contracts, metadata, and UI copy must not imply a dedicated preview endpoint unless that endpoint is implemented.
 
 As a finance or accounting consumer,
 I want to export approved billable time with stable IDs and correction lineage,
@@ -1462,95 +1580,36 @@ So that I can start common capture, review, and finance workflows from one opera
 **Then** FrontComposer/Fluent UI V5 components, status badges with text, message bars, focus order, and WCAG 2.2 AA behavior are verified
 **And** hover-only controls or color-only statuses are not introduced.
 
-## Epic 5: Launch Readiness & Integration Hardening
+### Story 4.8: Implement Works Planned-Effort Reporting Adapter
 
-The completed module is hardened for launch by replacing deferred fail-closed integration defaults with concrete launch-scope adapters and executable quality evidence.
-
-### Story 5.1: Implement EventStore-Backed Magic-Link State Loading
-
-**Requirements:** FR14, FR21, FR22, NFR1, NFR6, NFR8, NFR9, NFR12
-
-As an external contributor,
-I want valid magic links to load scoped confirmation state in the live host,
-So that confirmation and adjustment work outside service-only tests without weakening no-disclosure behavior.
-
-**Acceptance Criteria:**
-
-**Given** a magic-link token is valid, unexpired, unused, tenant-scoped, and action-scoped
-**When** the live host describes, confirms, or adjusts through the magic-link endpoints
-**Then** `IMagicLinkConfirmationCapabilityStateLoader` resolves the token hash, folds EventStore-backed capability state, folds scoped Time Entry state, and loads a fresh Activity Type catalog
-**And** raw tokens, decoded material, tenant names, contributor details, target names, comments beyond policy, and failure reasons are not logged, projected, or returned.
-
-**Given** capability or Time Entry events are duplicated, replayed, or rebuilt
-**When** the loader folds state
-**Then** the resulting capability state, Time Entry state, and catalog trust state are deterministic and idempotent
-**And** projection freshness or unavailable states are represented explicitly.
-
-**Given** a token is malformed, unknown, expired, revoked, used, wrong-action, wrong-recipient, cross-tenant, replayed, or unresolved
-**When** any magic-link endpoint is called
-**Then** the same no-disclosure external failure state is returned
-**And** no Time Entry confirmation, adjustment, capability-use event, or protected detail is emitted.
-
-**Given** the loader cannot access required EventStore state, Time Entry state, or Activity Type catalog state
-**When** the request is evaluated
-**Then** the host fails closed with the same external no-disclosure response
-**And** internal diagnostics record only correlation-safe outcome categories.
-
-### Story 5.2: Prove Magic-Link No-Disclosure at the HTTP Boundary
-
-**Requirements:** FR14, NFR6, NFR12, NFR13
-
-As a security reviewer,
-I want executable HTTP-boundary tests for magic-link invalid states,
-So that service-level no-disclosure behavior is proven at the routes external contributors actually hit.
-
-**Acceptance Criteria:**
-
-**Given** malformed, unknown, expired, used, revoked, unauthorized, cross-tenant, wrong-recipient, wrong-action, stale-catalog, and repeated-token cases
-**When** GET and POST confirm/adjust routes are exercised through the in-process HTTP host
-**Then** status code, content type, ProblemDetails title/body shape, headers, and sensitive-field absence are equivalent
-**And** the response reveals no tenant, Project, Work, Party, Time Entry, duration, comment, Activity Type, approval state, token existence, expiry reason, or capability state.
-
-**Given** invalid-link telemetry or diagnostics are emitted
-**When** operators inspect authorized logs or audit records
-**Then** only correlation ID, timestamp, safe outcome category, and permitted scoped/hash references are present
-**And** token values, decoded material, comments, command bodies, personal data, target names, and raw EventStore envelopes are absent.
-
-**Given** abuse detection or rate limiting is configured
-**When** repeated invalid attempts occur
-**Then** rate-limited responses remain externally indistinguishable from other invalid-link responses
-**And** operational diagnostics remain privacy-safe.
-
-### Story 5.3: Implement the Works Reference and Planned-Effort Adapter Path
-
-**Requirements:** FR2, FR17, FR20, FR23, NFR1, NFR3, NFR8, NFR9
+**Requirements:** FR17, FR20, FR23, NFR1, NFR3, NFR8, NFR9
 
 As a work reviewer,
-I want Work validation and planned-effort comparison backed by a concrete Works adapter,
-So that Work reports and trust-bearing Work writes can launch without relying on unavailable defaults.
+I want planned-vs-actual comparison backed by a concrete Works adapter or explicit unavailable launch policy,
+So that Work reports do not imply planned-effort integration that does not exist.
 
 **Acceptance Criteria:**
 
-**Given** Timesheets validates a Work Reference for submitted, approved, corrected, exported, or magic-link-confirmed time
-**When** the Works adapter is configured
-**Then** validation uses either a Works-owned consumer query or a Timesheets adapter over a Works EventStore projection
-**And** Timesheets stores only stable Work references and source/freshness metadata.
-
-**Given** Works authority is unavailable, stale, cross-tenant, ambiguous, disabled, unauthorized, or missing
-**When** a trust-bearing Work write or report disclosure is evaluated
-**Then** the path fails closed or marks planned effort unavailable according to policy
-**And** no Work lifecycle state, names, descriptions, ownership details, or protected identifiers are copied or leaked.
-
-**Given** Work planned or estimated effort is available
+**Given** Work planned or estimated effort is available through a Works-owned query or approved adapter bridge
 **When** Work actual-time reports are queried
 **Then** `IWorkPlannedEffortProvider` returns source-attributed planned effort with freshness/reference-state metadata
 **And** planned-vs-actual comparisons identify Works as the source without converting AI token/runtime evidence into human duration.
+
+**Given** Works authority or planned-effort state is unavailable, stale, cross-tenant, ambiguous, disabled, unauthorized, or missing
+**When** a Work report is rendered
+**Then** planned effort is marked unavailable or the report fails closed according to policy
+**And** no Work lifecycle state, names, descriptions, ownership details, or protected identifiers are copied or leaked.
 
 **Given** the adapter receives duplicate, replayed, or rebuilt Works projection data
 **When** report queries and validation paths run
 **Then** outputs are deterministic, freshness-aware, and covered by negative-path tests.
 
-### Story 5.4: Implement the Approved Export Preview API Decision
+**Given** Work planned-effort reporting is not concrete at launch
+**When** documentation and UI are reviewed
+**Then** Work actuals remain available where authorized
+**And** planned-vs-actual claims are explicitly marked unavailable, waived, or post-v1.
+
+### Story 4.9: Resolve and Implement Approved Export Preview Behavior
 
 **Requirements:** FR18, FR19, FR22, NFR5, NFR8, NFR12
 
@@ -1577,31 +1636,36 @@ So that downstream users know whether preview is a first-class API operation or 
 **When** seeded ledger scenarios include no rows, stale rows, denied rows, comment-redacted rows, corrected/superseded rows, and billable filters
 **Then** readiness output is deterministic and consistent with export generation policy.
 
-### Story 5.5: Activate Realistic Performance Evidence
+### Story 4.10: Add Report, Export, and Dashboard Performance Evidence
 
-**Requirements:** NFR10, NFR11
+**Requirements:** NFR11
 
 As a quality owner,
-I want launch-scope performance evidence over realistic persisted fixtures,
-So that command and report latency claims are measured rather than reserved placeholders.
+I want launch-scope performance evidence over realistic report, export, and dashboard fixtures,
+So that query latency claims are measured where the report behavior is introduced rather than only at the final release gate.
 
 **Acceptance Criteria:**
 
 **Given** realistic tenant, contributor, Project, Work, Activity Type, period, approval, ledger, report, export, and dashboard fixtures exist
 **When** performance tests run in the isolated performance lane
-**Then** common command acknowledgements target 500 ms p95 and common report queries target 2 seconds p95
+**Then** common report queries target `2 seconds p95` for tenant, project, and period filters
 **And** deviations are recorded as explicit launch-readiness evidence.
+
+**Given** report, ledger, export, dashboard, and Works planned-effort paths are measured
+**When** results are produced
+**Then** evidence distinguishes functional correctness, infrastructure availability, data volume, p95 latency, and launch waiver status
+**And** skipped or unavailable lanes are visible rather than hidden in final release notes.
 
 **Given** the fast unit/architecture baseline runs
 **When** performance fixtures are unavailable or intentionally skipped
 **Then** skipped performance tests remain isolated and do not make the fast baseline slow or flaky
 **And** docs explain exactly how to run the performance lane.
 
-**Given** report, ledger, export, dashboard, and magic-link loader paths are measured
-**When** results are produced
-**Then** the evidence distinguishes functional correctness, infrastructure availability, data volume, p95 latency, and launch waiver status.
+## Epic 5: Release Readiness Verification
 
-### Story 5.6: Final Launch-Readiness Gate and Documentation Sync
+The release owner verifies launch evidence, waivers, documentation consistency, and final gate status after feature-completion work has been implemented in the owning epics.
+
+### Story 5.1: Final Launch-Readiness Gate and Documentation Sync
 
 **Requirements:** FR21, FR22, FR23, NFR7, NFR12, NFR13, NFR15
 

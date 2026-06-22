@@ -1,5 +1,5 @@
 # generated: 2026-06-18 23:50:36
-# last_updated: 2026-06-20 (correct-course launch-readiness epic added)
+# last_updated: 2026-06-20 (correct-course readiness repair applied)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-20 (correct-course launch-readiness epic added)
+last_updated: 2026-06-20 (correct-course readiness repair applied)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -43,7 +43,7 @@ story_location: _bmad-output/implementation-artifacts
 
 development_status:
   # Epic 1: Trusted Time Capture & Activity Governance
-  epic-1: done
+  epic-1: in-progress
   1-1-set-up-initial-timesheets-project-from-hexalith-module-scaffold: done
   1-2-enforce-tenant-and-resource-authorization-gates: done
   1-3-publish-time-capture-api-contracts-and-frontcomposer-metadata: done
@@ -53,6 +53,8 @@ development_status:
   1-7-record-draft-time-entry-against-project-or-work: done
   1-8-display-time-entry-evidence-from-read-models: done
   1-9-project-ai-assisted-time-capture-metrics: done
+  1-10-implement-work-reference-validation-adapter: backlog
+  1-11-add-command-performance-evidence-for-capture-and-governance-paths: backlog
   epic-1-retrospective: done
 
   # Epic 2: Submission, Approval, Period Review & Corrections
@@ -68,16 +70,18 @@ development_status:
   epic-2-retrospective: done
 
   # Epic 3: External Contributor Confirmation
-  epic-3: done
+  epic-3: in-progress
   3-1-expose-external-contributor-confirmation-api: done
   3-2-issue-scoped-magic-link-confirmation-capabilities: done
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosure: done
+  3-6-implement-eventstore-backed-magic-link-state-loading: backlog
+  3-7-prove-magic-link-no-disclosure-at-the-http-boundary: backlog
   epic-3-retrospective: done
 
   # Epic 4: Approved Time Ledger, Reporting & Finance Export
-  epic-4: done
+  epic-4: in-progress
   4-1-query-time-entries-from-rebuildable-read-models: done
   4-2-project-approved-time-ledger-from-domain-events: done
   4-3-produce-project-and-work-actual-time-reports: done
@@ -85,14 +89,12 @@ development_status:
   4-5-generate-finance-export-from-approved-ledger: done
   4-6-verify-finance-export-evidence-and-audit-trail: done
   4-7-surface-timesheets-dashboard-overview: done
+  4-8-implement-works-planned-effort-reporting-adapter: backlog
+  4-9-resolve-and-implement-approved-export-preview-behavior: backlog
+  4-10-add-report-export-and-dashboard-performance-evidence: backlog
   epic-4-retrospective: done
 
-  # Epic 5: Launch Readiness & Integration Hardening
+  # Epic 5: Release Readiness Verification
   epic-5: backlog
-  5-1-implement-eventstore-backed-magic-link-state-loading: backlog
-  5-2-prove-magic-link-no-disclosure-at-the-http-boundary: backlog
-  5-3-implement-the-works-reference-and-planned-effort-adapter-path: backlog
-  5-4-implement-the-approved-export-preview-api-decision: backlog
-  5-5-activate-realistic-performance-evidence: backlog
-  5-6-final-launch-readiness-gate-and-documentation-sync: backlog
+  5-1-final-launch-readiness-gate-and-documentation-sync: backlog
   epic-5-retrospective: optional
