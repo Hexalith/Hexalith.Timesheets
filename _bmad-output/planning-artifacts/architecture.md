@@ -459,9 +459,9 @@ Use Dapr service invocation/pub-sub through existing Hexalith/EventStore pattern
 
 Use the existing Hexalith documentation/OpenAPI conventions for public HTTP surfaces. Do not create a separate OpenAPI contract for internal aggregate mechanics.
 
-Epic 4 implementation note: `PreviewApprovedTimeExport` is a contract shape, but current preview/readiness behavior is served by Approved-Time Ledger query output and by `GenerateApprovedTimeExport` results. A dedicated server preview handler requires an explicit later decision.
+Epic 4 implementation note: `PreviewApprovedTimeExport` is a contract shape; the dedicated server preview handler was resolved in Story 4.9 (see the readiness-repair status note below) and is now served by `ApprovedTimeExportService.PreviewAsync` alongside Approved-Time Ledger query output and `GenerateApprovedTimeExport` results.
 
-**Readiness repair (approved 2026-06-20):** export preview behavior is owned by Epic 4 follow-up Story 4.9. If preview remains a public contract, a dedicated server handler must be implemented and tested before export launch claims; if preview remains ledger-query driven, the contract and metadata must state that behavior without implying a separate endpoint. Epic 5 verifies the selected evidence and documentation only.
+**Readiness repair (approved 2026-06-20; Story 4.9 completed 2026-06-22):** export preview behavior is owned by Epic 4 follow-up Story 4.9. _Status (2026-06-22):_ Story 4.9 is complete - `ApprovedTimeExportService.PreviewAsync` is a concrete, side-effect-free server preview path covered by service and integration tests; the resolved decision is a ledger/service-driven preview with **no dedicated HTTP route** - the `timesheets.query.approved-ledger-export-preview` capability is advertised in metadata only. Mapping a preview HTTP endpoint is recorded as **post-v1** in `docs/launch-readiness.md`. Epic 5 verifies this evidence and documentation only.
 
 **Version notes:**
 
@@ -842,15 +842,10 @@ Hexalith.Timesheets/
 |   |   |-- OperationalReports/
 |   |   |-- Replay/
 |   |   `-- Strategies/
-|   |-- Hexalith.Timesheets.UI/
-|   |   |-- Components/
-|   |   |   |-- Layout/
-|   |   |   |-- Pages/
-|   |   |   `-- Shared/
-|   |   |-- Composition/
-|   |   |-- Rendering/
-|   |   |-- Services/
-|   |   `-- wwwroot/
+|   |-- Hexalith.Timesheets.Works/
+|   |   |-- PlannedEffort/
+|   |   |-- ReferenceValidation/
+|   |   `-- Runtime/
 |   |-- Hexalith.Timesheets.Testing/
 |   |   |-- Builders/
 |   |   |-- Fakes/
@@ -868,16 +863,15 @@ Hexalith.Timesheets/
 `-- tests/
     |-- Hexalith.Timesheets.ArchitectureTests/
     |-- Hexalith.Timesheets.Contracts.Tests/
-    |-- Hexalith.Timesheets.UnitTests/
     |-- Hexalith.Timesheets.Server.Tests/
     |-- Hexalith.Timesheets.Projections.Tests/
-    |-- Hexalith.Timesheets.Security.Tests/
     |-- Hexalith.Timesheets.IntegrationTests/
     |   |-- SchemaEvolution/Golden/
     |   `-- Exports/Golden/
-    |-- Hexalith.Timesheets.PropertyTests/
-    `-- Hexalith.Timesheets.UI.Tests/
+    `-- Hexalith.Timesheets.Works.Tests/
 ```
+
+Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, `Security.Tests`, or `PropertyTests` project exists on disk. Security, tenant-isolation, property-like invariants, and architecture fitness coverage currently live in `ArchitectureTests`, `Server.Tests`, `IntegrationTests`, `Projections.Tests`, and `Works.Tests`. The UI projects remain deferred to the first UI-bearing story.
 
 ### Architectural Boundaries
 
@@ -918,27 +912,27 @@ Hexalith.Timesheets/
 - Contracts: `Contracts/Commands/TimeEntries`, `Contracts/Events/TimeEntries`, `Contracts/Queries/TimeEntries`
 - Domain: `Server/Aggregates/TimeEntries`
 - Reads: `Projections/OperationalReports`, `Projections/Models`
-- Tests: `UnitTests`, `Projections.Tests`, `PropertyTests`
+- Tests: `Server.Tests`, `Projections.Tests`, `IntegrationTests`
 
 **Submission, Approval, Rejection, And Locking:**
 
 - Contracts: `Contracts/Commands/TimesheetPeriods`, `Contracts/Events/TimesheetPeriods`, `Contracts/Events/Rejections`
 - Domain: `Server/Aggregates/TimesheetPeriods`, `Server/Policies`
-- Tests: `Server.Tests`, `Security.Tests`, `PropertyTests`
+- Tests: `Server.Tests`, `ArchitectureTests`, `IntegrationTests`
 
 **Activity Type Catalogs:**
 
 - Contracts: `Contracts/Commands/ActivityTypes`, `Contracts/Events/ActivityTypes`
 - Domain: `Server/Aggregates/ActivityTypes`
 - Reads: `Projections/Models`
-- Tests: `UnitTests`, `IntegrationTests`
+- Tests: `Server.Tests`, `IntegrationTests`
 
 **Actor-Neutral Contributors And Magic Links:**
 
 - Contracts: `Contracts/Commands/MagicLinks`, `Contracts/Events/MagicLinks`
 - Domain: `Server/MagicLinks`, `Server/ReferenceValidation`
 - Host: `Endpoints/MagicLinks`
-- Tests: `Security.Tests`, `IntegrationTests`, `Testing/MagicLinks`
+- Tests: `Server.Tests`, `IntegrationTests`, `ArchitectureTests`
 
 **Reporting, Approved-Time Ledger, And Exports:**
 
@@ -976,11 +970,11 @@ Hexalith.Timesheets/
 
 **Reference-validation adapter maturity (added 2026-06-19; corrected 2026-06-22):** `Hexalith.Projects` exposes a consumer query (`GetProjectAsync`) suitable for FR-2 Project validation. `Hexalith.Works` exposes a consumer-facing `get-work-item` query (`GetWorkItemQueryHandler`, domain `work`) returning a stable `WorkItemView`/`WorkItemStatus` from `Hexalith.Works.Contracts`, suitable for FR-2 Work validation; its `WorkItemEffort` (FR-17) and `ExecutorBinding` (FR-15/FR-20) Contracts are also stable. The Works reference-validation adapter therefore consumes that `get-work-item` query (or, as an alternative, a Works EventStore projection via a Timesheets adapter). Epic 4 implemented planned-effort access behind `IWorkPlannedEffortProvider` with `UnavailableWorkPlannedEffortProvider` as the fail-closed default, so Work reports can disclose actuals while marking planned-effort state unavailable until the Works adapter is made concrete. _Correction (2026-06-22, verified during Story 1.10):_ the original 2026-06-19 statement that "`Hexalith.Works` currently exposes no consumer-facing read/validate query" was stale — `GetWorkItemQueryHandler` (`get-work-item`) and `WorkItemView` ship today and are consumed by Story 1.10's `WorksQueryWorkReferenceValidator`.
 
-**Readiness repair (approved 2026-06-20; Story 1.10 completed 2026-06-22):** Work-reference validation is owned by Epic 1 follow-up Story 1.10, and planned-effort reporting is owned by Epic 4 follow-up Story 4.8. Launch claims that include Work validation or planned-vs-actual comparison require either a Works-owned consumer query or a Timesheets adapter over a Works EventStore projection, with fail-closed behavior when the adapter is unavailable, stale, cross-tenant, or unauthorized. Epic 5 verifies the evidence only after those owning stories are complete. _Status (2026-06-22):_ Story 1.10 is complete — the concrete `WorksQueryWorkReferenceValidator` (in `src/Hexalith.Timesheets.Works`) consumes the Works `get-work-item` query through the Timesheets-owned `IWorksQueryChannel` port, fails closed on unavailable/missing/cross-tenant/ambiguous/disabled states, and copies no Works-owned data. Story 4.8 (planned-effort) remains backlog and can reuse the same port. (Note: the adapter cannot detect Works projection staleness from `WorkItemView` alone — see the Story 1.10 behavior note.)
+**Readiness repair (approved 2026-06-20; Stories 1.10 and 4.8 completed 2026-06-22):** Work-reference validation is owned by Epic 1 follow-up Story 1.10, and planned-effort reporting is owned by Epic 4 follow-up Story 4.8. Launch claims that include Work validation or planned-vs-actual comparison require either a Works-owned consumer query or a Timesheets adapter over a Works EventStore projection, with fail-closed behavior when the adapter is unavailable, stale, cross-tenant, or unauthorized. Epic 5 verifies the evidence only after those owning stories are complete. _Status (2026-06-22):_ Story 1.10 is complete - the concrete `WorksQueryWorkReferenceValidator` (in `src/Hexalith.Timesheets.Works`) consumes the Works `get-work-item` query through the Timesheets-owned `IWorksQueryChannel` port, fails closed on unavailable/missing/cross-tenant/ambiguous/disabled states, and copies no Works-owned data. Story 4.8 is also complete - `WorksQueryWorkPlannedEffortProvider` reads Works effort context through the same port and keeps the host on `UnavailableWorkPlannedEffortProvider` unless the opt-in is called. (Note: the adapter cannot detect Works projection staleness from `WorkItemView` alone - see the Story 1.10 behavior note.)
 
 **Export audit implementation note (added 2026-06-19):** accepted approved-time exports emit safe `ApprovedTimeExported` domain-event evidence through `IApprovedTimeExportAuditRecorder`. The audit evidence stores requester, tenant, filter snapshot, UTC request/generation instants, correlation ID, output scope, CSV format/version, projection freshness state, row count, and output content hash. It does not store CSV rows, comments, display labels, credential material, caller bodies, raw EventStore envelopes, or sibling-owned state.
 
-**Readiness repair (approved 2026-06-20; Story 1.11 completed 2026-06-22):** realistic end-to-end performance evidence remains reserved until EventStore-backed persisted fixtures exist, but ownership moves to the feature paths that create the measured behavior. Epic 1 follow-up Story 1.11 covers capture/governance command evidence, Epic 4 follow-up Story 4.10 covers report/export/dashboard evidence, and Epic 5 only aggregates the final evidence or waivers. _Status (2026-06-22):_ Story 1.11 is complete — the opt-in `TIMESHEETS_PERF=1` lane measures the in-process composed capture/governance command path (11 scenarios, worst-case p95 ≈ 0.0056 ms vs the NFR10 500 ms target), **verdict pass** for the in-process command-decision path. The full EventStore-backed wire path is recorded **waived/deferred** (needs runtime fixtures) so Epic 5 aggregates rather than re-measures. See `docs/performance-evidence.md`. Epic 4 follow-up Story 4.10 (report/export/dashboard, NFR10/NFR11) remains backlog.
+**Readiness repair (approved 2026-06-20; Stories 1.11 and 4.10 completed 2026-06-22):** realistic end-to-end performance evidence remains reserved until EventStore-backed persisted fixtures exist, but ownership moves to the feature paths that create the measured behavior. Epic 1 follow-up Story 1.11 covers capture/governance command evidence, Epic 4 follow-up Story 4.10 covers report/export/dashboard evidence, and Epic 5 only aggregates the final evidence or waivers. _Status (2026-06-22):_ Story 1.11 is complete - the opt-in `TIMESHEETS_PERF=1` lane measures the in-process composed capture/governance command path (11 scenarios, worst-case p95 about 0.0056 ms vs the NFR10 500 ms target), **verdict pass** for the in-process command-decision path. Story 4.10 is complete - the same opt-in lane measures report/export/dashboard query paths (9 scenarios, worst-case p95 about 6.09 ms vs the NFR11 2s target), **verdict pass** for measured in-process reads. The full EventStore-backed wire path is recorded **waived/deferred** (needs runtime fixtures) so Epic 5 aggregates rather than re-measures. See `docs/performance-evidence.md`.
 
 **Data Flow:**
 

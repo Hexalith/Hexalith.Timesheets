@@ -33,4 +33,5 @@ Aggregates stay pure. Authorization, tenant lookup, sibling validation, HTTP cal
 
 - Project references are validated through the `Hexalith.Projects` `GetProjectAsync` consumer query.
 - Work references are validated through the `Hexalith.Works` `get-work-item` consumer query, consumed by `WorksQueryWorkReferenceValidator` (in `src/Hexalith.Timesheets.Works`) over the Timesheets-owned `IWorksQueryChannel` port (Story 1.10, 2026-06-22). The validator is fail-closed by default and copies no Works-owned state; the host opts in with `AddTimesheetsWorksReferenceValidation()`, otherwise the `DenyAllWorkReferenceValidator` default keeps Work writes closed.
-- Remaining trust-bearing surfaces still pending their owning stories (for example Works planned-effort for Story 4.8) keep their fail-closed defaults until those stories make the adapter concrete.
+- Works planned-effort reporting is concrete behind `WorksQueryWorkPlannedEffortProvider` (Story 4.8, 2026-06-22), but the default host keeps `UnavailableWorkPlannedEffortProvider` until a live Works channel is bound and `AddTimesheetsWorksPlannedEffortReporting()` is called.
+- Launch-readiness classifications, owner-named waivers, and the overall release-gate decision are recorded in `docs/launch-readiness.md`.
