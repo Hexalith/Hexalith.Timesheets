@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Description>Concrete Works reference-validation adapter that bridges the pure Timesheets kernel to the Hexalith.Works get-work-item consumer query. Fail-closed, references-only, reusable by Story 4.8.</Description>
+    <PackageTags>timesheets;works;reference-validation;eventsourcing;dotnet</PackageTags>
+    <!-- Not packaged: this is host-composed integration glue, not a shipped library. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Pure kernel seam (IWorkReferenceValidator, ReferenceValidationResult, request context). -->
+    <ProjectReference Include="..\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
+    <!-- Works consumer contract: WorkItemView, WorkItemStatus. Contracts only, never the Works server. -->
+    <ProjectReference Include="$(HexalithWorksRoot)\src\Hexalith.Works.Contracts\Hexalith.Works.Contracts.csproj" AdditionalProperties="NuGetAudit=false" />
+    <!-- EventStore consumer query CONTRACTS only: QueryEnvelope, QueryResult. The concrete
+         IDomainQueryInvoker (in the EventStore web host) is bound to IWorksQueryChannel at the
+         composed-host level so this domain adapter stays a light, conflict-free library. -->
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Contracts\Hexalith.EventStore.Contracts.csproj" AdditionalProperties="NuGetAudit=false" />
+  </ItemGroup>
+</Project>

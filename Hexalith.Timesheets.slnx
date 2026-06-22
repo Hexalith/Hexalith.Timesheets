@@ -7,6 +7,7 @@
     <Project Path="src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj" />
     <Project Path="src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj" />
     <Project Path="src/Hexalith.Timesheets.Testing/Hexalith.Timesheets.Testing.csproj" />
+    <Project Path="src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj" />
     <Project Path="src/Hexalith.Timesheets/Hexalith.Timesheets.csproj" />
   </Folder>
   <Folder Name="/tests/">
@@ -15,5 +16,6 @@
     <Project Path="tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj" />
     <Project Path="tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj" />
     <Project Path="tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj" />
+    <Project Path="tests/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.csproj" />
   </Folder>
 </Solution>

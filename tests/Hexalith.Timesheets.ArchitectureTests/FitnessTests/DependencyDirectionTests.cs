@@ -130,6 +130,37 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
+    public void Server_and_contracts_take_no_works_or_eventstore_reference()
+    {
+        // The pure kernel and contracts must never bind to Works or EventStore infrastructure; the
+        // concrete Works reference-validation adapter (Story 1.10) lives in Hexalith.Timesheets.Works.
+        string[] kernelBoundaryProjects =
+        [
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Server", "Hexalith.Timesheets.Server.csproj"),
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts", "Hexalith.Timesheets.Contracts.csproj")
+        ];
+
+        string[] forbiddenSiblingReferences =
+        [
+            "Hexalith.Works",
+            "Hexalith.EventStore"
+        ];
+
+        foreach (string projectPath in kernelBoundaryProjects)
+        {
+            XDocument project = XDocument.Load(projectPath);
+            string[] references = ReadIncludeValues(project).ToArray();
+
+            foreach (string forbidden in forbiddenSiblingReferences)
+            {
+                references.ShouldNotContain(
+                    reference => reference.Contains(forbidden, StringComparison.OrdinalIgnoreCase),
+                    projectPath);
+            }
+        }
+    }
+
+    [Fact]
     public void Sibling_modules_are_not_consumed_as_hexalith_nuget_packages()
     {
         string[] projectFiles = Directory.GetFiles(RepositoryRoot.Find().FullName, "*.csproj", SearchOption.AllDirectories)

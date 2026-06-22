@@ -55,9 +55,15 @@ public sealed class AuthorityBoundaryTests
             .ToArray();
 
         matchingFiles.ShouldNotBeEmpty();
-        matchingFiles.ShouldAllBe(file => file.Contains(
-            Path.Combine("src", "Hexalith.Timesheets.Server"),
-            StringComparison.Ordinal));
+
+        // The server authority context is owned by the Server kernel. Story 1.10 introduces the first
+        // concrete sibling reference-validation adapter (Hexalith.Timesheets.Works), which legitimately
+        // consumes the Server-owned IWorkReferenceValidator seam and therefore takes a
+        // TimesheetsRequestContext parameter. Public surfaces (Contracts/Client) are still forbidden the
+        // type by Public_contracts_and_client_do_not_expose_server_authority_context.
+        matchingFiles.ShouldAllBe(file =>
+            file.Contains(Path.Combine("src", "Hexalith.Timesheets.Server"), StringComparison.Ordinal)
+            || file.Contains(Path.Combine("src", "Hexalith.Timesheets.Works"), StringComparison.Ordinal));
     }
 
     private static string[] SourceFiles(string root)

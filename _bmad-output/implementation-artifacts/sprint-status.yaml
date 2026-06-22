@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-06-18 23:50:36
-last_updated: 2026-06-20 (correct-course readiness repair applied)
+last_updated: 2026-06-22 (story 1.10 reviewed - done)
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -53,7 +53,7 @@ development_status:
   1-7-record-draft-time-entry-against-project-or-work: done
   1-8-display-time-entry-evidence-from-read-models: done
   1-9-project-ai-assisted-time-capture-metrics: done
-  1-10-implement-work-reference-validation-adapter: backlog
+  1-10-implement-work-reference-validation-adapter: done
   1-11-add-command-performance-evidence-for-capture-and-governance-paths: backlog
   epic-1-retrospective: done
 

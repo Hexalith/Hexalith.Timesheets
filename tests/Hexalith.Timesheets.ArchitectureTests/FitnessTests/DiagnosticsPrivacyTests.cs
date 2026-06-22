@@ -67,6 +67,53 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
+    public void Works_reference_adapter_does_not_log_serialize_or_copy_works_owned_state()
+    {
+        string adapterRoot = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Works");
+        string[] adapterFiles = Directory.GetFiles(adapterRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(static path =>
+                !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .ToArray();
+
+        adapterFiles.ShouldNotBeEmpty();
+
+        // The adapter is an authority gate, not a data source. It must not log, must not serialize Works
+        // state (or the raw QueryResult payload) outward, and must not read or copy Works-owned effort or
+        // parent fields. It legitimately only deserializes the consumer view inbound and reads Found/
+        // Status/TenantId to decide the gate.
+        string[] forbiddenTokens =
+        [
+            "ILogger",
+            "logger",
+            "LogInformation",
+            "LogError",
+            "LogWarning",
+            "LogDebug",
+            "LogTrace",
+            "JsonSerializer.Serialize",
+            "SerializeToElement",
+            "SerializeToUtf8Bytes",
+            ".Estimated",
+            ".Done",
+            ".Remaining",
+            ".OwnEffort",
+            ".Parent",
+            ".Unit"
+        ];
+
+        foreach (string adapterFile in adapterFiles)
+        {
+            string source = File.ReadAllText(adapterFile);
+
+            foreach (string forbidden in forbiddenTokens)
+            {
+                source.ShouldNotContain(forbidden, Case.Sensitive, adapterFile);
+            }
+        }
+    }
+
+    [Fact]
     public void Host_metadata_endpoint_exposes_correlation_safe_module_metadata_only()
     {
         string hostProgram = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
