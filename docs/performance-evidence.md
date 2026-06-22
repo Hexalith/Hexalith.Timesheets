@@ -43,6 +43,43 @@ Worst-case command acknowledgement p95 across capture/governance: **0.0056 ms** 
 
 This lane measures the **in-process composed command-decision + authorization + result** path, not the full EventStore-backed persistence/Dapr wire path. "Warmed local service" here means a warmed in-process command pipeline with warm-up iterations discarded before measurement — a legitimate, reproducible NFR10 lower bound for the command-decision path, and the part Story 1.1 reserved as runnable now. The in-process number does **not** prove the EventStore-backed wire path; that path's verdict is recorded above as waived/deferred.
 
+## NFR11 — Report, export, and dashboard query latency evidence
+
+Story 4.10 makes NFR11 a measured launch-readiness lane so Epic 5 aggregates this evidence instead of creating the first report/export/dashboard measurement path. The measured lane drives the **real in-process composed read path** over seeded in-memory projection readers with an allow-all access guard: Project and Work actual-time reports, Approved-Time Ledger, approved-time export generation, side-effect-free export preview, and the Timesheets dashboard overview. Each measured iteration asserts the real disclosed result and row/readiness counts so a degenerate or no-op path cannot register as "fast".
+
+### Measured run
+
+- Test: `ReportExportDashboardQueryPerformanceLaneTests.Report_export_and_dashboard_query_latency_records_nfr11_p95_evidence` (`tests/Hexalith.Timesheets.IntegrationTests`).
+- Opt-in: `TIMESHEETS_PERF=1` (the lane is skipped by default; see "How to run the performance lane").
+- Iterations: 100 warm-up (discarded) + 500 measured per scenario; p95 via sorted nearest-rank.
+- Data volume: 60 approved current ledger rows over project/work targets and monthly tenant-local periods; export and preview use page size 25, forcing multi-page ledger traversal.
+- Machine / runtime: local Linux x64 runner (`DESKTOP-VIOG240`), .NET runtime 10.0.9, Debug build, single run on 2026-06-22.
+
+| Query scenario (path) | p95 (ms) | min (ms) | median (ms) | max (ms) | Verdict |
+|---|---:|---:|---:|---:|---|
+| Project actuals, tenant filter (report) | 4.7079 | 1.4205 | 1.5273 | 6.3151 | pass |
+| Project actuals, tenant + project filter (report) | 1.5967 | 1.4111 | 1.4768 | 2.5172 | pass |
+| Project actuals, tenant + period filter (report) | 1.7347 | 1.4321 | 1.5012 | 2.4860 | pass |
+| Project actuals, tenant + project + period filter (report) | 1.5867 | 1.3946 | 1.4762 | 2.1019 | pass |
+| Work actuals with supplied Works planned effort (report) | 1.7857 | 1.4028 | 1.4770 | 2.2315 | pass |
+| Approved-Time Ledger, multi-page source (ledger) | 0.8209 | 0.6871 | 0.7377 | 1.4867 | pass |
+| Approved-time CSV generation, full cursor (export) | 2.8227 | 2.2140 | 2.3350 | 3.5376 | pass |
+| Approved-time export readiness, full cursor (preview) | 2.6900 | 2.1190 | 2.2189 | 3.4025 | pass |
+| Dashboard overview composed read fan-out (dashboard) | 6.0908 | 5.2249 | 5.4186 | 13.8189 | pass |
+
+Worst-case report/export/dashboard query p95 across measured scenarios: **6.0908 ms** (dashboard overview composed read fan-out).
+
+### NFR11 comparison and verdict
+
+- In-process report/export/dashboard read path vs NFR11 `2s p95`: worst-case measured p95 is **6.0908 ms**, comfortably inside the target. **Verdict: pass** for the measured in-process Project report, Work report with supplied Works planned effort, Approved-Time Ledger, export generation, export preview, and dashboard overview paths.
+- Functional correctness: every warm-up and measured iteration asserts disclosure/readiness plus expected row counts. Report scenarios assert disclosed row counts, ledger asserts fresh export-ready page data, export and preview assert full 60-row scope, and dashboard asserts composed section counts.
+- Infrastructure availability: measured path is **in-process** only. Seeded projection readers and the static supplied Works planned-effort provider exercise the service composition that is runnable today without EventStore, Dapr, Aspire, or persisted fixtures.
+- EventStore-backed wire path: **Verdict: waived (deferred)**. Owner: Story 4.10 evidence, aggregated by Epic 5. Risk: the in-process p95 does not prove EventStore-backed persistence, Dapr transport, projection-host topology, or state-store latency. Revisit condition: run a runtime EventStore-backed report/export/dashboard lane when realistic persisted tenant, project, work, contributor, period, ledger, export, and dashboard fixtures exist.
+
+### Scope and honesty constraint
+
+This lane measures the warmed **in-process composed query/report/export/dashboard path**, not the full EventStore-backed wire path. It records timing aggregates and scenario names only; it does not emit report rows, ledger rows, CSV content, comments, contributor or target identifiers, tokens, payloads, or personal data. Skipped or unavailable infrastructure-dependent coverage remains visible through the `waived (deferred)` verdict above rather than being hidden in release notes.
+
 ## Reserved measurement still pending
 
 The performance lane keeps an explicit statically-skipped placeholder
@@ -74,6 +111,12 @@ TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test tests/Hexalit
 TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home \
   tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests \
   -class "Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests" \
+  -xml /tmp/perf-evidence.xml
+
+# NFR11 report/export/dashboard lane:
+TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home \
+  tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests \
+  -class "Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests" \
   -xml /tmp/perf-evidence.xml
 ```
 

@@ -73,6 +73,40 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
+    public void Performance_evidence_documents_report_export_dashboard_nfr11_verdicts()
+    {
+        string evidence = File.ReadAllText(RepositoryRoot.PathTo("docs", "performance-evidence.md"));
+
+        evidence.ShouldContain("NFR11");
+        evidence.ShouldContain("Report, export, and dashboard query latency evidence");
+        evidence.ShouldContain("report/export/dashboard");
+        evidence.ShouldContain("Verdict:");
+        evidence.ShouldContain("waived (deferred)");
+
+        string[] integrationTests = Directory.GetFiles(
+            RepositoryRoot.PathTo("tests", "Hexalith.Timesheets.IntegrationTests"),
+            "*.cs",
+            SearchOption.AllDirectories);
+
+        string combinedSource = string.Join(Environment.NewLine, integrationTests.Select(File.ReadAllText));
+        combinedSource.ShouldContain("ReportExportDashboardQueryPerformanceLaneTests");
+    }
+
+    [Fact]
+    public void Report_export_dashboard_performance_lane_stays_opt_in()
+    {
+        string source = File.ReadAllText(RepositoryRoot.PathTo(
+            "tests",
+            "Hexalith.Timesheets.IntegrationTests",
+            "ReportExportDashboardQueryPerformanceLaneTests.cs"));
+
+        source.ShouldContain("private const string OptInVariable = \"TIMESHEETS_PERF\";");
+        source.ShouldContain("Set {OptInVariable}=1 to run the report/export/dashboard performance lane.");
+        source.ShouldContain("Assert.Skip");
+        source.ShouldContain("Nfr11TargetMilliseconds = 2000.0");
+    }
+
+    [Fact]
     public void Performance_evidence_documents_how_to_run_the_opt_in_lane()
     {
         string evidence = File.ReadAllText(RepositoryRoot.PathTo("docs", "performance-evidence.md"));
@@ -82,5 +116,42 @@ public sealed class PerformanceEvidenceTests
         evidence.ShouldContain("How to run the performance lane");
         evidence.ShouldContain("TIMESHEETS_PERF=1");
         evidence.ShouldContain("skipped by default");
+    }
+
+    [Fact]
+    public void Report_export_dashboard_lane_emits_privacy_safe_nfr11_aggregates_only()
+    {
+        // AC5 / NFR12: the lane and its recorded evidence must surface timing aggregates and scenario
+        // names only - never report rows, ledger rows, CSV content, comments, identifiers, or PII.
+        // Guard the privacy commitment in the evidence doc so it cannot silently regress.
+        string evidence = File.ReadAllText(RepositoryRoot.PathTo("docs", "performance-evidence.md"));
+
+        evidence.ShouldContain("NFR12");
+        evidence.ShouldContain("does not emit report rows");
+        evidence.ShouldContain("personal data");
+
+        // The lane only ever emits the aggregate-shaped table header (scenario name + p95/min/median/max),
+        // so no per-row or payload content can reach ITestOutputHelper or the captured -xml report.
+        string laneSource = File.ReadAllText(RepositoryRoot.PathTo(
+            "tests",
+            "Hexalith.Timesheets.IntegrationTests",
+            "ReportExportDashboardQueryPerformanceLaneTests.cs"));
+
+        laneSource.ShouldContain("Scenario | p95 (ms) | min (ms) | median (ms) | max (ms)");
+    }
+
+    [Fact]
+    public void Report_export_dashboard_read_journey_has_fast_baseline_functional_coverage()
+    {
+        // AC3: the report/export/dashboard read paths the opt-in lane measures must also have
+        // fast-baseline functional coverage so their composed correctness is guarded in the default
+        // suite (not only behind TIMESHEETS_PERF=1) and cannot silently be deleted.
+        string[] integrationTests = Directory.GetFiles(
+            RepositoryRoot.PathTo("tests", "Hexalith.Timesheets.IntegrationTests"),
+            "*.cs",
+            SearchOption.AllDirectories);
+
+        string combinedSource = string.Join(Environment.NewLine, integrationTests.Select(File.ReadAllText));
+        combinedSource.ShouldContain("ReportExportDashboardReadJourneyE2ETests");
     }
 }
