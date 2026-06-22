@@ -24,3 +24,27 @@
 - Continue excluding known submodule pointer changes during story commits unless a story explicitly owns those submodules.
 - Prefer review prompts that ask Claude to finalize promptly after validation, because completed review TUIs often remain open at a prompt.
 - For reporting/export stories, require pagination, deterministic ordering, freshness, metadata privacy, and fail-closed authorization tests in the story checklist up front.
+
+## Run: 2026-06-22T22:27:03Z
+
+**Epic:** timesheets - Epic Breakdown
+**Stories:** 1.10, 1.11, 3.6, 3.7, 4.8, 4.9, 4.10, 5.1
+
+### Patterns Observed
+- Source-of-truth checks against `sprint-status.yaml`, story status, and generated artifacts were required after several child sessions completed but remained idle at a prompt.
+- Claude created strong review and retrospective output, but two dev attempts stalled without source progress; Codex fallback completed 4.10 and 5.1 dev work effectively.
+- Exact-count drift remained the most common review finding until Story 5.1, where QA and review both remeasured the built executable suites.
+
+### Code Review Insights
+- Common issues: stale suite counts, incomplete File Lists, stale architecture/doc status notes, and incorrect evidence paths.
+- Average cycles to clean: most resumed stories completed with one review cycle; Story 3.7 needed a second review cycle after stop-hook recovery.
+
+### Timing Estimates
+- create-story: quick for scoped repair stories, longer for 5.1 because it needed artifact synthesis across the project.
+- dev-story: variable; fallback is worthwhile after several minutes of no source-of-truth progress.
+- code-review: review cost is justified for documentation/evidence stories because it catches overstatement and traceability defects.
+
+### Recommendations for Future Runs
+- Keep Codex fallback available for stalled Claude dev sessions, especially documentation-heavy synthesis work.
+- Continue running direct xUnit v3 executables and recording exact counts from those executables.
+- Keep final launch readiness centralized in `docs/launch-readiness.md`, and update it whenever a waiver is resolved or formally accepted.
