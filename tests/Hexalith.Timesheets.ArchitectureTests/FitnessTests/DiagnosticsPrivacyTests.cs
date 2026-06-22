@@ -364,6 +364,39 @@ public sealed class DiagnosticsPrivacyTests
         schemaJson.ShouldNotContain("payload body", Case.Insensitive);
     }
 
+    [Fact]
+    public void Magic_link_state_loader_and_token_hash_index_persist_no_raw_token_or_decoded_material()
+    {
+        string indexReadModel = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexReadModel.cs"));
+        string indexProjection = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexProjection.cs"));
+        string loader = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Server", "MagicLinks", "EventStoreMagicLinkConfirmationCapabilityStateLoader.cs"));
+
+        // The rebuildable token-hash index is keyed on the persisted token hash only. It is built from
+        // Issued events and must never reference, derive from, store, or decode the raw one-time token.
+        foreach (string indexSource in new[] { indexReadModel, indexProjection })
+        {
+            indexSource.ShouldNotContain("oneTimeToken", Case.Insensitive);
+            indexSource.ShouldNotContain("rawToken", Case.Insensitive);
+            indexSource.ShouldNotContain("DeriveHash");
+            indexSource.ShouldNotContain("decoded", Case.Insensitive);
+        }
+
+        indexProjection.ShouldContain("TokenHash");
+
+        // The loader is a read-only candidate resolver: it never writes to the read-model store (so it
+        // cannot persist token material into the index) and never logs.
+        loader.ShouldNotContain("SaveAsync");
+        loader.ShouldNotContain("TrySaveAsync");
+        loader.ShouldNotContain("ILogger");
+        loader.ShouldNotContain("LogInformation");
+        loader.ShouldNotContain("LogWarning");
+        loader.ShouldNotContain("LogError");
+        loader.ShouldNotContain("decoded", Case.Insensitive);
+    }
+
     private static void AssertClosedSchema(
         System.Text.Json.Nodes.JsonNode schemas,
         string schemaName,

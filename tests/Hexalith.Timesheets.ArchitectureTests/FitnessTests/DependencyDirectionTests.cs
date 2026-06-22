@@ -130,34 +130,17 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void Server_and_contracts_take_no_works_or_eventstore_reference()
+    public void Contracts_take_no_works_or_eventstore_reference_and_server_takes_no_works_reference()
     {
-        // The pure kernel and contracts must never bind to Works or EventStore infrastructure; the
-        // concrete Works reference-validation adapter (Story 1.10) lives in Hexalith.Timesheets.Works.
-        string[] kernelBoundaryProjects =
-        [
-            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Server", "Hexalith.Timesheets.Server.csproj"),
-            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts", "Hexalith.Timesheets.Contracts.csproj")
-        ];
-
-        string[] forbiddenSiblingReferences =
-        [
+        // Contracts stay infrastructure-free. Server may reference the EventStore SDK for the owned
+        // Story 3.6 magic-link state loader, but Works remains isolated behind Hexalith.Timesheets.Works.
+        AssertNoReferences(
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts", "Hexalith.Timesheets.Contracts.csproj"),
             "Hexalith.Works",
-            "Hexalith.EventStore"
-        ];
-
-        foreach (string projectPath in kernelBoundaryProjects)
-        {
-            XDocument project = XDocument.Load(projectPath);
-            string[] references = ReadIncludeValues(project).ToArray();
-
-            foreach (string forbidden in forbiddenSiblingReferences)
-            {
-                references.ShouldNotContain(
-                    reference => reference.Contains(forbidden, StringComparison.OrdinalIgnoreCase),
-                    projectPath);
-            }
-        }
+            "Hexalith.EventStore");
+        AssertNoReferences(
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Server", "Hexalith.Timesheets.Server.csproj"),
+            "Hexalith.Works");
     }
 
     [Fact]
@@ -211,5 +194,18 @@ public sealed class DependencyDirectionTests
             .Select(static element => element.Attribute("Include")?.Value)
             .Where(static value => value is not null)
             .Cast<string>();
+    }
+
+    private static void AssertNoReferences(string projectPath, params string[] forbiddenReferences)
+    {
+        XDocument project = XDocument.Load(projectPath);
+        string[] references = ReadIncludeValues(project).ToArray();
+
+        foreach (string forbidden in forbiddenReferences)
+        {
+            references.ShouldNotContain(
+                reference => reference.Contains(forbidden, StringComparison.OrdinalIgnoreCase),
+                projectPath);
+        }
     }
 }

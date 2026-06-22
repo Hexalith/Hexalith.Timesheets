@@ -1,8 +1,11 @@
 using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Endpoints;
 using Hexalith.Timesheets.Endpoints.MagicLinks;
+using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.ServiceDefaults;
+
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -11,6 +14,8 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 // has its registration seams present from the first executable slice.
 builder.AddTimesheetsServiceDefaults();
 builder.Services.AddTimesheetsServerKernel();
+builder.Services.AddHttpContextAccessor();
+builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsTrustedContextAccessor, HttpContextTimesheetsTrustedContextAccessor>());
 builder.Services.AddSingleton(TimeProvider.System);
 
 WebApplication app = builder.Build();

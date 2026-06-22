@@ -11,6 +11,8 @@ using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.TimeEntries;
 using Hexalith.Timesheets.Server.TimesheetPeriods;
 
+using Hexalith.EventStore.Client.Registration;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -38,8 +40,11 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntrySubmissionCommandService>();
         services.TryAddSingleton(ExternalContributionPolicyOptions.Default);
         services.TryAddSingleton<ExternalContributionCommandService>();
+        services.TryAddSingleton<ITimesheetsTrustedContextAccessor, UnavailableTimesheetsTrustedContextAccessor>();
+        services.AddEventStoreGatewayClient();
+        services.AddEventStoreReadModelStore();
         services.TryAddSingleton<IMagicLinkTokenGenerator, CryptographicMagicLinkTokenGenerator>();
-        services.TryAddSingleton<IMagicLinkConfirmationCapabilityStateLoader, UnavailableMagicLinkConfirmationCapabilityStateLoader>();
+        services.TryAddScoped<IMagicLinkConfirmationCapabilityStateLoader, EventStoreMagicLinkConfirmationCapabilityStateLoader>();
         services.TryAddSingleton<MagicLinkConfirmationCapabilityCommandService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
