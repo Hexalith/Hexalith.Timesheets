@@ -7,5 +7,6 @@ public enum TimesheetsSurfaceKind
 {
     Unknown = 0,
     Command = 1,
-    Projection = 2
+    Projection = 2,
+    Query = 3
 }

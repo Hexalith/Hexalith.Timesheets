@@ -62,7 +62,7 @@ public sealed class ReferenceContractTests
     [Fact]
     public void Metadata_catalog_exposes_capture_and_evidence_surface_descriptors()
     {
-        TimesheetsMetadataCatalog.Descriptors.Count.ShouldBe(23);
+        TimesheetsMetadataCatalog.Descriptors.Count.ShouldBe(24);
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
             .ShouldContain("timesheets.command.record-time");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
@@ -89,6 +89,8 @@ public sealed class ReferenceContractTests
             .ShouldContain("timesheets.projection.approved-time-ledger");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
             .ShouldContain("timesheets.command.approved-ledger-export");
+        TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
+            .ShouldContain("timesheets.query.approved-ledger-export-preview");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
             .ShouldContain("timesheets.projection.project-actual-time-report");
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)

@@ -6,11 +6,14 @@ using Hexalith.Timesheets.Contracts.Commands.Exports;
 using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
+using Hexalith.Timesheets.Contracts.Queries.Exports;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
+using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 
 namespace Hexalith.Timesheets.Server.Exports;
 
@@ -21,11 +24,13 @@ public sealed class ApprovedTimeExportService
     private readonly ITimesheetsAccessGuard _accessGuard;
     private readonly IApprovedTimeExportAuditRecorder _auditRecorder;
     private readonly ApprovedTimeLedgerQueryService _ledgerQueryService;
+    private readonly TimesheetsEvidencePolicyOptions _evidencePolicyOptions;
 
     public ApprovedTimeExportService(
         ITimesheetsAccessGuard accessGuard,
         ApprovedTimeLedgerQueryService ledgerQueryService,
-        IApprovedTimeExportAuditRecorder? auditRecorder = null)
+        IApprovedTimeExportAuditRecorder? auditRecorder = null,
+        TimesheetsEvidencePolicyOptions? evidencePolicyOptions = null)
     {
         ArgumentNullException.ThrowIfNull(accessGuard);
         ArgumentNullException.ThrowIfNull(ledgerQueryService);
@@ -33,6 +38,7 @@ public sealed class ApprovedTimeExportService
         _accessGuard = accessGuard;
         _auditRecorder = auditRecorder ?? new DomainEventApprovedTimeExportAuditRecorder();
         _ledgerQueryService = ledgerQueryService;
+        _evidencePolicyOptions = evidencePolicyOptions ?? TimesheetsEvidencePolicyOptions.FailClosedDefault;
     }
 
     public async ValueTask<ApprovedTimeExportResult> GenerateAsync(
@@ -44,60 +50,51 @@ public sealed class ApprovedTimeExportService
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(command);
 
-        TimesheetsAuthorizationDecision exportDecision = await _accessGuard.AuthorizeAsync(
-            new(context, TimesheetsOperation.Export),
+        ExportEvaluation evaluation = await EvaluateAsync(
+            context,
+            command.LedgerQuery,
+            command.Format,
+            command.FormatVersion,
             cancellationToken).ConfigureAwait(false);
 
-        if (!exportDecision.IsAuthorized)
+        if (!evaluation.Authorization.IsAuthorized)
         {
-            return ApprovedTimeExportResult.NotFoundOrDenied(exportDecision);
+            return ApprovedTimeExportResult.NotFoundOrDenied(evaluation.Authorization);
         }
 
-        if (context.Tenant is null)
+        if (evaluation.Readiness == ApprovedTimeExportReadinessState.Blocked)
         {
-            return ApprovedTimeExportResult.NotFoundOrDenied(TimesheetsAuthorizationDecision.Denied(
-                TimesheetsDenialCategory.MissingTenant,
-                "Tenant context is required for approved-time export."));
-        }
-
-        string? contractBlock = ValidateContract(command);
-        if (contractBlock is not null)
-        {
-            ApprovedTimeExportReadModel blocked = CreateBlockedExport(
-                context,
-                command,
-                requestedAtUtc,
-                ProjectionFreshnessMetadata.Unavailable(contractBlock),
-                [],
-                contractBlock);
+            ApprovedTimeExportReadModel blocked = new(
+                ApprovedTimeExportReadinessState.Blocked,
+                evaluation.ReadinessDetail,
+                evaluation.Scope,
+                evaluation.Freshness,
+                Audit(
+                    context,
+                    command.LedgerQuery,
+                    command.Format,
+                    command.FormatVersion,
+                    requestedAtUtc,
+                    null,
+                    evaluation.Scope,
+                    evaluation.Freshness.State,
+                    0,
+                    evaluation.ReadinessDetail,
+                    null),
+                command.Format,
+                ResolveFormatVersion(command.FormatVersion),
+                []);
 
             return ApprovedTimeExportResult.Blocked(blocked);
         }
 
-        (ApprovedTimeLedgerReadModel? ledger, TimesheetsAuthorizationDecision? denial) =
-            await LoadDisclosedLedgerAsync(context, command.LedgerQuery, cancellationToken).ConfigureAwait(false);
-
-        if (ledger is null)
-        {
-            return ApprovedTimeExportResult.NotFoundOrDenied(denial!);
-        }
-
-        string? readinessBlock = ValidateReadiness(ledger);
-        if (readinessBlock is not null)
-        {
-            ApprovedTimeExportReadModel blocked = CreateBlockedExport(
-                context,
-                command,
-                requestedAtUtc,
-                ledger.ProjectionFreshness,
-                ledger.Items,
-                readinessBlock);
-
-            return ApprovedTimeExportResult.Blocked(blocked);
-        }
+        // EvaluateAsync only returns Ready after a non-null tenant check; capture it so the audit event
+        // (which requires a non-null tenant) keeps its nullable-flow guarantee after the extraction.
+        TenantReference tenant = context.Tenant
+            ?? throw new InvalidOperationException("A ready approved-time export requires a tenant context.");
 
         IReadOnlyList<ApprovedTimeExportRowReadModel> rows = ApplyExportOrdering(
-            ledger.Items.Select(ToExportRow),
+            evaluation.DisclosedItems.Select(ToExportRow),
             command.LedgerQuery);
 
         string csv = ApprovedTimeExportCsvWriter.Write(rows);
@@ -105,11 +102,13 @@ public sealed class ApprovedTimeExportService
         string outputContentHash = ComputeSha256(csv);
         ApprovedTimeExportAuditMetadata audit = Audit(
             context,
-            command,
+            command.LedgerQuery,
+            command.Format,
+            command.FormatVersion,
             requestedAtUtc,
             requestedAtUtc,
             scope,
-            ledger.ProjectionFreshness.State,
+            evaluation.Freshness.State,
             rows.Count,
             null,
             outputContentHash);
@@ -117,25 +116,25 @@ public sealed class ApprovedTimeExportService
             ApprovedTimeExportReadinessState.Ready,
             "Approved ledger rows are fresh enough for export.",
             scope,
-            ledger.ProjectionFreshness,
+            evaluation.Freshness,
             audit,
             command.Format,
-            ResolveFormatVersion(command),
+            ResolveFormatVersion(command.FormatVersion),
             rows)
         {
             CsvContent = csv
         };
         ApprovedTimeExported evidence = new(
             context.Actor,
-            context.Tenant,
+            tenant,
             command.LedgerQuery,
             requestedAtUtc,
             requestedAtUtc,
             context.CorrelationId,
             scope,
             command.Format,
-            ResolveFormatVersion(command),
-            ledger.ProjectionFreshness.State,
+            ResolveFormatVersion(command.FormatVersion),
+            evaluation.Freshness.State,
             rows.Count,
             outputContentHash);
         TimesheetsDomainResult auditResult = await _auditRecorder
@@ -145,19 +144,142 @@ public sealed class ApprovedTimeExportService
         return ApprovedTimeExportResult.Generated(export, auditResult);
     }
 
-    private static string? ValidateContract(GenerateApprovedTimeExport command)
+    /// <summary>
+    /// Evaluates approved-time export readiness over the requested ledger scope without producing any output or
+    /// emitting audit evidence. Mirrors generation gating exactly so preview and generation cannot drift.
+    /// </summary>
+    /// <param name="context">The authorization context for the preview request.</param>
+    /// <param name="query">The dedicated, side-effect-free export preview query.</param>
+    /// <param name="requestedAtUtc">The UTC instant the preview was requested.</param>
+    /// <param name="cancellationToken">A cancellation token.</param>
+    /// <returns>The disclosed readiness, or a fail-closed not-found-or-denied result.</returns>
+    public async ValueTask<ApprovedTimePreviewResult> PreviewAsync(
+        TimesheetsRequestContext context,
+        PreviewApprovedTimeExport query,
+        DateTimeOffset requestedAtUtc,
+        CancellationToken cancellationToken)
     {
-        if (command.Format != ApprovedTimeExportFormat.Csv)
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(query);
+
+        ExportEvaluation evaluation = await EvaluateAsync(
+            context,
+            query.LedgerQuery,
+            query.Format,
+            query.FormatVersion,
+            cancellationToken).ConfigureAwait(false);
+
+        if (!evaluation.Authorization.IsAuthorized)
+        {
+            return ApprovedTimePreviewResult.NotFoundOrDenied(evaluation.Authorization);
+        }
+
+        bool ready = evaluation.Readiness == ApprovedTimeExportReadinessState.Ready;
+
+        // Preview never produces a file and never records audit evidence: GeneratedAtUtc and the output content
+        // hash stay null, and _auditRecorder is never called. The audit row count mirrors generation's audit
+        // semantics — the count of rows in the (would-be) output, which is zero for a blocked result — so the
+        // shared readiness core cannot drift between preview and generation (AC3).
+        ApprovedTimeExportPreviewReadModel preview = new(
+            evaluation.Readiness,
+            evaluation.ReadinessDetail,
+            evaluation.Scope,
+            _evidencePolicyOptions.ExportCommentsAllowed
+                ? TimesheetsCommentPolicyDecision.Allowed
+                : TimesheetsCommentPolicyDecision.Excluded,
+            evaluation.Freshness,
+            Audit(
+                context,
+                query.LedgerQuery,
+                query.Format,
+                query.FormatVersion,
+                requestedAtUtc,
+                null,
+                evaluation.Scope,
+                evaluation.Freshness.State,
+                ready ? evaluation.Scope.RowCount : 0,
+                ready ? null : evaluation.ReadinessDetail,
+                null),
+            query.Format,
+            ResolveFormatVersion(query.FormatVersion));
+
+        return ApprovedTimePreviewResult.Evaluated(preview);
+    }
+
+    private async ValueTask<ExportEvaluation> EvaluateAsync(
+        TimesheetsRequestContext context,
+        QueryApprovedTimeLedger ledgerQuery,
+        ApprovedTimeExportFormat format,
+        string formatVersion,
+        CancellationToken cancellationToken)
+    {
+        TimesheetsAuthorizationDecision exportDecision = await _accessGuard.AuthorizeAsync(
+            new(context, TimesheetsOperation.Export),
+            cancellationToken).ConfigureAwait(false);
+
+        if (!exportDecision.IsAuthorized)
+        {
+            return ExportEvaluation.Denied(exportDecision, Scope(ledgerQuery, 0));
+        }
+
+        if (context.Tenant is null)
+        {
+            return ExportEvaluation.Denied(
+                TimesheetsAuthorizationDecision.Denied(
+                    TimesheetsDenialCategory.MissingTenant,
+                    "Tenant context is required for approved-time export."),
+                Scope(ledgerQuery, 0));
+        }
+
+        string? contractBlock = ValidateContract(format, formatVersion, ledgerQuery);
+        if (contractBlock is not null)
+        {
+            return ExportEvaluation.Blocked(
+                contractBlock,
+                ProjectionFreshnessMetadata.Unavailable(contractBlock),
+                Scope(ledgerQuery, 0));
+        }
+
+        (ApprovedTimeLedgerReadModel? ledger, TimesheetsAuthorizationDecision? denial) =
+            await LoadDisclosedLedgerAsync(context, ledgerQuery, cancellationToken).ConfigureAwait(false);
+
+        if (ledger is null)
+        {
+            return ExportEvaluation.Denied(denial!, Scope(ledgerQuery, 0));
+        }
+
+        string? readinessBlock = ValidateReadiness(ledger);
+        if (readinessBlock is not null)
+        {
+            return ExportEvaluation.Blocked(
+                readinessBlock,
+                ledger.ProjectionFreshness,
+                Scope(ledgerQuery, ledger.Items.Count));
+        }
+
+        return ExportEvaluation.Ready(
+            ledger.ExportReadinessDetail,
+            ledger.ProjectionFreshness,
+            Scope(ledgerQuery, ledger.Items.Count),
+            ledger.Items);
+    }
+
+    private static string? ValidateContract(
+        ApprovedTimeExportFormat format,
+        string formatVersion,
+        QueryApprovedTimeLedger ledgerQuery)
+    {
+        if (format != ApprovedTimeExportFormat.Csv)
         {
             return "Only CSV approved-ledger export format is supported.";
         }
 
-        if (!string.Equals(ResolveFormatVersion(command), DefaultFormatVersion, StringComparison.Ordinal))
+        if (!string.Equals(ResolveFormatVersion(formatVersion), DefaultFormatVersion, StringComparison.Ordinal))
         {
             return "Unsupported approved-ledger export format version.";
         }
 
-        return command.LedgerQuery.BillableState == BillableState.Billable
+        return ledgerQuery.BillableState == BillableState.Billable
             ? null
             : "Approved billable ledger evidence is required for export.";
     }
@@ -182,36 +304,6 @@ public sealed class ApprovedTimeExportService
         return ledger.Items.Any(static row => row.BillableState != BillableState.Billable)
             ? "Approved billable ledger evidence is required for export."
             : null;
-    }
-
-    private static ApprovedTimeExportReadModel CreateBlockedExport(
-        TimesheetsRequestContext context,
-        GenerateApprovedTimeExport command,
-        DateTimeOffset requestedAtUtc,
-        ProjectionFreshnessMetadata freshness,
-        IReadOnlyList<ApprovedTimeLedgerRowReadModel> sourceRows,
-        string reason)
-    {
-        ApprovedTimeExportScope scope = Scope(command.LedgerQuery, sourceRows.Count);
-
-        return new(
-            ApprovedTimeExportReadinessState.Blocked,
-            reason,
-            scope,
-            freshness,
-            Audit(
-                context,
-                command,
-                requestedAtUtc,
-                null,
-                scope,
-                freshness.State,
-                0,
-                reason,
-                null),
-            command.Format,
-            ResolveFormatVersion(command),
-            []);
     }
 
     private static ApprovedTimeExportRowReadModel ToExportRow(ApprovedTimeLedgerRowReadModel row)
@@ -337,7 +429,9 @@ public sealed class ApprovedTimeExportService
 
     private static ApprovedTimeExportAuditMetadata Audit(
         TimesheetsRequestContext context,
-        GenerateApprovedTimeExport command,
+        QueryApprovedTimeLedger ledgerQuery,
+        ApprovedTimeExportFormat format,
+        string formatVersion,
         DateTimeOffset requestedAtUtc,
         DateTimeOffset? generatedAtUtc,
         ApprovedTimeExportScope scope,
@@ -347,13 +441,13 @@ public sealed class ApprovedTimeExportService
         string? outputContentHashSha256)
         => new(
             context.Actor,
-            command.LedgerQuery,
+            ledgerQuery,
             requestedAtUtc,
             generatedAtUtc,
             context.CorrelationId,
             scope,
-            command.Format,
-            ResolveFormatVersion(command),
+            format,
+            ResolveFormatVersion(formatVersion),
             freshnessState,
             rowCount,
             blockedReason)
@@ -368,8 +462,53 @@ public sealed class ApprovedTimeExportService
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    private static string ResolveFormatVersion(GenerateApprovedTimeExport command)
-        => string.IsNullOrWhiteSpace(command.FormatVersion)
+    private static string ResolveFormatVersion(string? formatVersion)
+        => string.IsNullOrWhiteSpace(formatVersion)
             ? DefaultFormatVersion
-            : command.FormatVersion;
+            : formatVersion;
+
+    private sealed record ExportEvaluation(
+        TimesheetsAuthorizationDecision Authorization,
+        ApprovedTimeExportReadinessState Readiness,
+        string ReadinessDetail,
+        ProjectionFreshnessMetadata Freshness,
+        ApprovedTimeExportScope Scope,
+        IReadOnlyList<ApprovedTimeLedgerRowReadModel> DisclosedItems)
+    {
+        public static ExportEvaluation Denied(
+            TimesheetsAuthorizationDecision authorization,
+            ApprovedTimeExportScope scope)
+            => new(
+                authorization,
+                ApprovedTimeExportReadinessState.Unknown,
+                string.Empty,
+                ProjectionFreshnessMetadata.Unavailable("Approved-time export was not authorized."),
+                scope,
+                []);
+
+        public static ExportEvaluation Blocked(
+            string reason,
+            ProjectionFreshnessMetadata freshness,
+            ApprovedTimeExportScope scope)
+            => new(
+                TimesheetsAuthorizationDecision.Allowed(),
+                ApprovedTimeExportReadinessState.Blocked,
+                reason,
+                freshness,
+                scope,
+                []);
+
+        public static ExportEvaluation Ready(
+            string readinessDetail,
+            ProjectionFreshnessMetadata freshness,
+            ApprovedTimeExportScope scope,
+            IReadOnlyList<ApprovedTimeLedgerRowReadModel> disclosedItems)
+            => new(
+                TimesheetsAuthorizationDecision.Allowed(),
+                ApprovedTimeExportReadinessState.Ready,
+                readinessDetail,
+                freshness,
+                scope,
+                disclosedItems);
+    }
 }

@@ -251,6 +251,24 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
+    public void Approved_time_export_preview_read_model_is_structurally_rows_free()
+    {
+        // The export preview surface must never be able to carry export evidence rows or CSV output, so a
+        // preview can never be mistaken for, substituted for, or used to leak a generated file. The dedicated
+        // read model is the structural guarantee: it declares neither a CSV payload nor any per-row evidence.
+        string previewModel = File.ReadAllText(RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.Contracts",
+            "Models",
+            "ApprovedTimeExportPreviewReadModel.cs"));
+
+        previewModel.ShouldContain("ApprovedTimeExportPreviewReadModel");
+        previewModel.ShouldNotContain("CsvContent");
+        previewModel.ShouldNotContain("ApprovedTimeExportRowReadModel");
+        previewModel.ShouldNotContain("ApprovedTimeLedgerRowReadModel");
+    }
+
+    [Fact]
     public void Evidence_detail_contract_schemas_expose_no_envelope_or_identifier_fields()
     {
         string openApiPath = RepositoryRoot.PathTo(

@@ -1066,6 +1066,7 @@ public sealed class TimeCaptureContractTests
                 "timesheets.projection.time-entry-query",
                 "timesheets.projection.approved-time-ledger",
                 "timesheets.command.approved-ledger-export",
+                "timesheets.query.approved-ledger-export-preview",
                 "timesheets.projection.project-actual-time-report",
                 "timesheets.projection.work-actual-time-report",
                 "timesheets.projection.my-timesheet-period",

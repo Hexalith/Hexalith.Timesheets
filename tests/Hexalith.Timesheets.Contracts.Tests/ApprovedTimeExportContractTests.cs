@@ -108,6 +108,61 @@ public sealed class ApprovedTimeExportContractTests
     }
 
     [Fact]
+    public void Export_preview_read_model_round_trips_readiness_scope_comment_policy_and_audit_without_generated_fields()
+    {
+        ApprovedTimeExportPreviewReadModel model = new(
+            ApprovedTimeExportReadinessState.Ready,
+            "Approved ledger rows are fresh enough for export preview.",
+            new ApprovedTimeExportScope(Filters(), 2, true, false),
+            TimesheetsCommentPolicyDecision.Excluded,
+            ProjectionFreshnessMetadata.Fresh,
+            new ApprovedTimeExportAuditMetadata(
+                new PartyReference("operator-1"),
+                Filters(),
+                new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.Zero),
+                null,
+                "correlation-1",
+                new ApprovedTimeExportScope(Filters(), 2, true, false),
+                ApprovedTimeExportFormat.Csv,
+                "approved-time-export.csv.v1",
+                ProjectionFreshnessState.Fresh,
+                2,
+                null)
+            {
+                Tenant = new TenantReference("tenant-1"),
+                OutputContentHashSha256 = null
+            },
+            ApprovedTimeExportFormat.Csv,
+            "approved-time-export.csv.v1");
+
+        string json = JsonSerializer.Serialize(model, JsonOptions);
+
+        json.ShouldContain("\"readiness\":\"Ready\"");
+        json.ShouldContain("\"commentExportPolicy\":\"Excluded\"");
+        json.ShouldContain("\"format\":\"Csv\"");
+        json.ShouldContain("\"formatVersion\":\"approved-time-export.csv.v1\"");
+        json.ShouldContain("\"generatedAtUtc\":null");
+        // Preview is structurally rows-free: it can carry no CSV output and no evidence rows.
+        json.ShouldNotContain("csvContent", Case.Insensitive);
+        AssertNoFinanceOwnershipLanguage(json);
+
+        ApprovedTimeExportPreviewReadModel? roundTripped = JsonSerializer.Deserialize<ApprovedTimeExportPreviewReadModel>(
+            json,
+            JsonOptions);
+
+        roundTripped.ShouldNotBeNull();
+        roundTripped.IsReady.ShouldBeTrue();
+        roundTripped.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
+        roundTripped.Scope.RowCount.ShouldBe(2);
+        roundTripped.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        roundTripped.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        roundTripped.Audit.GeneratedAtUtc.ShouldBeNull();
+        roundTripped.Audit.OutputContentHashSha256.ShouldBeNull();
+        roundTripped.Audit.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        roundTripped.FormatVersion.ShouldBe("approved-time-export.csv.v1");
+    }
+
+    [Fact]
     public void Approved_time_exported_event_round_trips_safe_audit_evidence_without_output_payloads()
     {
         ApprovedTimeExported exported = new(

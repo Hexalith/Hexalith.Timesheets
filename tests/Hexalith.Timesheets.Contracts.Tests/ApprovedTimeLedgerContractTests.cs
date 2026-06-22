@@ -145,6 +145,41 @@ public sealed class ApprovedTimeLedgerContractTests
         AssertNoFinanceOwnershipLanguage(metadata);
     }
 
+    [Fact]
+    public void Approved_ledger_export_preview_metadata_binds_review_readiness_to_a_file_free_query()
+    {
+        TimesheetsMetadataDescriptor descriptor = TimesheetsMetadataCatalog.Descriptors
+            .Single(static descriptor => descriptor.Name == "timesheets.query.approved-ledger-export-preview");
+
+        descriptor.SurfaceKind.ShouldBe(TimesheetsSurfaceKind.Query);
+        descriptor.Pattern.ShouldBe(TimesheetsCompositionPattern.FrontComposerProjectionView);
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("ledgerQuery");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("outputScope");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("projectionFreshness");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("exportReadiness");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("commentPolicy");
+        descriptor.Fields.Select(static field => field.Name).ShouldContain("billableFilter");
+        descriptor.Fields.Select(static field => field.ContractType).ShouldContain(nameof(QueryApprovedTimeLedger));
+        descriptor.Fields.Select(static field => field.ContractType).ShouldContain(nameof(ApprovedTimeExportScope));
+        descriptor.Fields.Select(static field => field.ContractType).ShouldContain(nameof(ApprovedTimeExportReadinessState));
+        descriptor.Fields.Select(static field => field.ContractType).ShouldContain(nameof(TimesheetsCommentPolicyDecision));
+        descriptor.Fields.Select(static field => field.ContractType).ShouldContain(nameof(BillableState));
+
+        // The advertised review-export-readiness action is no longer a phantom: it maps to the real preview query.
+        descriptor.Actions.Select(static action => action.Intent).ShouldContain("Timesheets.ReviewExportReadiness");
+        descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ApprovedTimeExportReadinessState));
+        descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(ProjectionFreshnessState));
+        descriptor.StateBadges.Select(static badge => badge.StateVocabulary).ShouldContain(nameof(TimesheetsCommentPolicyDecision));
+
+        string metadata = JsonSerializer.Serialize(descriptor, JsonOptions);
+        // Preview returns readiness only — copy must imply no separate file-producing endpoint.
+        metadata.ShouldContain("without producing a file");
+        metadata.ShouldContain("no file");
+        metadata.ShouldNotContain("endpoint");
+        metadata.ShouldNotContain("EventStore");
+        AssertNoFinanceOwnershipLanguage(metadata);
+    }
+
     private static TimeEntryApprovalDecisionEvidence Approval()
         => new(
             new TimeEntryId("time-entry-1"),

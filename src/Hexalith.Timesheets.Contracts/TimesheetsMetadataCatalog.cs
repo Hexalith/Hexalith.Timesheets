@@ -525,6 +525,33 @@ public static class TimesheetsMetadataCatalog
                 new("export-format", "Export format", nameof(ApprovedTimeExportFormat))
             ]),
         new(
+            "timesheets.query.approved-ledger-export-preview",
+            "Preview approved ledger export",
+            "reporting",
+            TimesheetsSurfaceKind.Query,
+            TimesheetsCompositionPattern.FrontComposerProjectionView,
+            [
+                new("ledgerQuery", "Selected filters", nameof(QueryApprovedTimeLedger), true, "Reuses Approved-Time Ledger filters for Project, Work, Contributor, Activity Type, period, date range, billable flag, and row lineage options."),
+                new("outputScope", "Output scope", nameof(ApprovedTimeExportScope), true, "Previewed row count and row-state options; preview returns this scope without producing a file."),
+                new("projectionFreshness", "Projection freshness", nameof(ProjectionFreshnessState), true, "Freshness must be Fresh before the previewed scope is ready; stale, rebuilding, or unavailable projections preview as blocked."),
+                new("exportReadiness", "Export readiness", nameof(ApprovedTimeExportReadinessState), true, "Ready or Blocked readiness only; preview produces no file and records no audit evidence."),
+                new("commentPolicy", "Comment policy", nameof(TimesheetsCommentPolicyDecision), true, "Effective export comment-policy decision applied to the previewed scope."),
+                new("billableFilter", "Billable filter", nameof(BillableState), true, "Approved billable evidence is required; a non-billable filter previews as blocked."),
+                new("readinessDetail", "Readiness detail", "String", false, "Readiness explanation reusing export-generation vocabulary; no row, comment, or file content is disclosed."),
+                new("persistentBlock", "Persistent block", "FluentMessageBar", false, "Used for stale projection, no results, permission denial, or policy block before export."),
+                new("reviewDialog", "Review dialog", "FluentDialog", false, "Preview is the readiness step before the bounded export review dialog.")
+            ],
+            [
+                new("review-export-readiness", "Review export readiness", "Timesheets.ReviewExportReadiness")
+            ],
+            [
+                new("projection-freshness", "Projection freshness", nameof(ProjectionFreshnessState)),
+                new("comment-policy", "Comment policy", nameof(TimesheetsCommentPolicyDecision)),
+                new("export-readiness", "Export readiness", nameof(ApprovedTimeExportReadinessState)),
+                new("export-format", "Export format", nameof(ApprovedTimeExportFormat)),
+                new("billable", "Billable", nameof(BillableState))
+            ]),
+        new(
             "timesheets.projection.project-actual-time-report",
             "Project Actual-Time Report",
             "reporting",
