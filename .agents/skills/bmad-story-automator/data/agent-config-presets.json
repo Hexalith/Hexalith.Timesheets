@@ -1,20 +1,4 @@
 {
   "version": "1.0.0",
-  "presets": [
-    {
-      "name": "codex-dev-claude-review",
-      "createdAt": "2026-06-18T22:13:26Z",
-      "config": {
-        "complexityBased": false,
-        "defaultPrimary": "codex",
-        "defaultFallback": "claude",
-        "perTask": {
-          "review": {
-            "primary": "claude",
-            "fallback": "codex"
-          }
-        }
-      }
-    }
-  ]
+  "presets": []
 }
