@@ -45,3 +45,11 @@ dotnet_naming_style.async_suffix.capitalization = pascal_case
 
 [*.{csproj,props,targets,slnx,xml}]
 indent_size = 2
+
+# Hexalith.PolymorphicSerializations is a submodule whose code places using
+# directives inside the file-scoped namespace. Its own .editorconfig is
+# root = false and does not declare a placement rule, so without this override
+# its sources inherit the repository's outside_namespace rule above and fail the
+# build under TreatWarningsAsErrors. Match the submodule's actual style instead.
+[Hexalith.PolymorphicSerializations/**.cs]
+csharp_using_directive_placement = inside_namespace:silent
