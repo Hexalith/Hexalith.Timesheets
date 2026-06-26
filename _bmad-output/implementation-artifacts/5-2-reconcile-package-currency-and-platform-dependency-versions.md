@@ -4,7 +4,7 @@ baseline_commit: b0c41aaa3ad899ca13d49cd66e4f26f3b8e3ae5f
 
 # Story 5.2: Reconcile Package Currency and Platform Dependency Versions
 
-Status: in-progress
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -60,58 +60,62 @@ so that launch-readiness does not overstate dependency versions or hide transiti
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1 - Re-run and record the root package audits (AC: 1, 2, 3, 6, 7)**
-  - [ ] Run direct NuGet currency over the Timesheets solution:
+- [x] **Task 1 - Re-run and record the root package audits (AC: 1, 2, 3, 6, 7)**
+  - [x] Run direct NuGet currency over the Timesheets solution:
     `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --outdated`.
-  - [ ] Run vulnerability and deprecation checks:
+  - [x] Run vulnerability and deprecation checks:
     `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --vulnerable --include-transitive`
     and `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --deprecated`.
-  - [ ] Confirm root npm status from the Timesheets root only. Root-level `package.json`, lockfiles, `pnpm-lock.yaml`,
+  - [x] Confirm root npm status from the Timesheets root only. Root-level `package.json`, lockfiles, `pnpm-lock.yaml`,
     and `yarn.lock` are absent today; manifests under `Hexalith.*` are submodule-owned and out of scope.
-  - [ ] If a direct package update exists, update only `Directory.Packages.props`; never add `Version=` to `.csproj`.
-  - [ ] Record the direct NuGet, vulnerable/deprecated, and root npm verdicts in `docs/launch-readiness.md`.
+  - [x] If a direct package update exists, update only `Directory.Packages.props`; never add `Version=` to `.csproj`.
+  - [x] Record the direct NuGet, vulnerable/deprecated, and root npm verdicts in `docs/launch-readiness.md`.
 
-- [ ] **Task 2 - Review transitive drift without blind pinning (AC: 3, 6, 7)**
-  - [ ] Re-run transitive drift per affected project because the solution-level command currently fails under SDK
+- [x] **Task 2 - Review transitive drift without blind pinning (AC: 3, 6, 7)**
+  - [x] Re-run transitive drift per affected project because the solution-level command currently fails under SDK
     `10.0.301` with `error: Sequence contains no matching element`.
-  - [ ] Start with:
+  - [x] Start with:
     `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj package --outdated --include-transitive`.
-  - [ ] For each drift item, identify whether it is caused by a direct root package, a sibling project reference, a
+  - [x] For each drift item, identify whether it is caused by a direct root package, a sibling project reference, a
     test runner package, or an AppHost/platform dependency before adding any pin.
-  - [ ] Add an explicit `PackageVersion` pin only when there is a documented compatibility, security, or deterministic
+  - [x] Add an explicit `PackageVersion` pin only when there is a documented compatibility, security, or deterministic
     build reason. Prefer updating the closest direct package first when a package vulnerability exists.
-  - [ ] Document either the chosen pin rationale or the "reviewed, no pin" rationale in `docs/launch-readiness.md`.
+  - [x] Document either the chosen pin rationale or the "reviewed, no pin" rationale in `docs/launch-readiness.md`.
 
-- [ ] **Task 3 - Reconcile platform version claims (AC: 4, 5, 7)**
-  - [ ] Compare current root and platform pins:
+- [x] **Task 3 - Reconcile platform version claims (AC: 4, 5, 7)**
+  - [x] Compare current root and platform pins:
     `global.json`, `Directory.Packages.props`, `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj`,
     and `Hexalith.Builds/Props/Directory.Packages.props`.
-  - [ ] Resolve or explicitly waive the known divergence:
+  - [x] Resolve or explicitly waive the known divergence:
     architecture targets Dapr `1.18.4` and Fluent UI V5; `Hexalith.Builds` currently pins base `Dapr` `1.17.9`,
     `Dapr.AspNetCore`/Actors/Workflow `1.18.4`, `Aspire.Hosting` `13.4.6`, and `Microsoft.FluentUI.Components`
     `4.11.6`.
-  - [ ] Do not edit `Hexalith.Builds`, sibling package manifests, or submodule pointers unless Jerome explicitly
+  - [x] Do not edit `Hexalith.Builds`, sibling package manifests, or submodule pointers unless Jerome explicitly
     approves that scope during implementation.
-  - [ ] If the outcome is a waiver, include owner, risk, and revisit condition in `docs/launch-readiness.md`.
-  - [ ] If the outcome changes architecture wording, update `_bmad-output/planning-artifacts/architecture.md` so it
+  - [x] If the outcome is a waiver, include owner, risk, and revisit condition in `docs/launch-readiness.md`.
+  - [x] If the outcome changes architecture wording, update `_bmad-output/planning-artifacts/architecture.md` so it
     distinguishes intended platform policy from actual pinned package state.
 
-- [ ] **Task 4 - Add or update fitness coverage for package-currency evidence (AC: 1, 2, 3, 4, 7)**
-  - [ ] Extend `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs` or add a focused
+- [x] **Task 4 - Add or update fitness coverage for package-currency evidence (AC: 1, 2, 3, 4, 7)**
+  - [x] Extend `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs` or add a focused
     package-currency fitness test.
-  - [ ] Guard that `docs/launch-readiness.md` contains package-currency evidence for direct NuGet, root npm
+  - [x] Guard that `docs/launch-readiness.md` contains package-currency evidence for direct NuGet, root npm
     applicability, transitive drift, and platform/submodule alignment.
-  - [ ] Keep `BuildConfigurationTests.Project_files_do_not_use_inline_package_versions` green; do not weaken existing
+  - [x] Keep `BuildConfigurationTests.Project_files_do_not_use_inline_package_versions` green; do not weaken existing
     `.slnx`, Central Package Management, no-inline-version, or no-Hexalith-NuGet-package guards.
 
-- [ ] **Task 5 - Verify and report exact results (AC: 6, 7)**
-  - [ ] Run restore and build:
+- [x] **Task 5 - Verify and report exact results (AC: 6, 7)**
+  - [x] Run restore and build:
     `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false`
     and `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false`.
-  - [ ] Run ArchitectureTests after doc/fitness changes. If any package pin, AppHost SDK, or test-stack dependency
+  - [x] Run ArchitectureTests after doc/fitness changes. If any package pin, AppHost SDK, or test-stack dependency
     changes, run all affected built xUnit v3 executables and record exact counts.
-  - [ ] Re-run package audit commands after edits and copy the important verdicts into the Dev Agent Record.
-  - [ ] Generate the File List from `git diff --name-only`; do not include unrelated user/submodule changes.
+  - [x] Re-run package audit commands after edits and copy the important verdicts into the Dev Agent Record.
+  - [x] Generate the File List from `git diff --name-only`; do not include unrelated user/submodule changes.
+
+### Review Findings
+
+- [x] [Review][Patch] Remove unapproved submodule pointer changes and reconcile story record [Hexalith.Projects:1; Hexalith.Tenants:1]
 
 ## Dev Notes
 
@@ -255,10 +259,40 @@ shared-platform package upgrades.
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+GPT-5 Codex
 
 ### Debug Log References
 
+- 2026-06-26 - Red phase: added `Launch_readiness_record_captures_package_currency_verdict_dimensions`; ArchitectureTests failed as expected, 43 passed / 1 failed / 44 total, missing `Package-Currency Verdict`.
+- 2026-06-26 - Root audit: `dotnet list Hexalith.Timesheets.slnx package --outdated` passed; every Timesheets project reported no direct package updates.
+- 2026-06-26 - Root audit: `dotnet list Hexalith.Timesheets.slnx package --vulnerable --include-transitive` passed; no vulnerable packages reported.
+- 2026-06-26 - Root audit: `dotnet list Hexalith.Timesheets.slnx package --deprecated` passed; no deprecated packages reported.
+- 2026-06-26 - Root npm check: no root `package.json`, `package-lock.json`, `npm-shrinkwrap.json`, `pnpm-lock.yaml`, or `yarn.lock` found; sibling `Hexalith.*` manifests remain out of scope.
+- 2026-06-26 - Transitive audit: solution-level and AppHost `--outdated --include-transitive` commands still fail with `error: Sequence contains no matching element`.
+- 2026-06-26 - Project transitive audits classified drift as test-stack, ServiceDefaults/Polly, or sibling EventStore/Dapr related; no direct transitive pin was added.
+- 2026-06-26 - Restore/build validation passed: `dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false`; `dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` with 0 warnings and 0 errors.
+- 2026-06-26 - Full test validation passed: ArchitectureTests 44/44; Contracts.Tests 88/88; IntegrationTests 87 total / 83 passed / 4 skipped; Projections.Tests 77/77; Server.Tests 420/420; Works.Tests 76/76. Total 792, 788 passed, 4 skipped, 0 failed.
+- 2026-06-26 - Review fix: reverted accidental `Hexalith.Projects` and `Hexalith.Tenants` gitlink drift back to the story baseline commits (`339414e` and `cd6319e`) so unrelated sibling submodule changes are not bundled into the package-currency story. Revalidated with `git diff --check` clean, `dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false`, `dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` (0 warnings, 0 errors), and ArchitectureTests 44/44.
+
 ### Completion Notes List
 
+- Added launch-readiness package-currency evidence that separates direct NuGet currency, vulnerable/deprecated audit results, root npm applicability, transitive drift, and platform/submodule alignment.
+- Retained the final package-currency verdict as `CONCERNS / WAIVED`; direct packages are current, root npm is not applicable, transitive drift is reviewed with no pin, and platform/submodule version divergence remains explicitly waived with owner, risk, and revisit condition.
+- Updated architecture wording so Dapr `1.18.4` and Fluent UI V5 are clear Timesheets policy targets, not proof that every root/submodule package pin already matches that policy.
+- Added ArchitectureTests fitness coverage to keep package-currency evidence present in `docs/launch-readiness.md`.
+- No package pins, AppHost SDK changes, `Directory.Packages.props` edits, or sibling package manifest edits were made. Review removed the accidental sibling submodule pointer advances by rewinding `Hexalith.Projects` and `Hexalith.Tenants` to the story baseline commits.
+
 ### File List
+
+- `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+- `_bmad-output/implementation-artifacts/sprint-status.yaml`
+- `_bmad-output/planning-artifacts/architecture.md`
+- `docs/launch-readiness.md`
+- `Hexalith.Projects` (review fix: gitlink rewound to baseline `339414e`)
+- `Hexalith.Tenants` (review fix: gitlink rewound to baseline `cd6319e`)
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs`
+
+### Change Log
+
+- 2026-06-26 - Code review fixed the AC5/File List mismatch by reverting the accidental `Hexalith.Projects` and `Hexalith.Tenants` submodule gitlink drift from the story diff; status set to done.
+- 2026-06-26 - Implemented Story 5.2 package-currency evidence, platform-version waiver wording, fitness coverage, and verification record; status set to review.
