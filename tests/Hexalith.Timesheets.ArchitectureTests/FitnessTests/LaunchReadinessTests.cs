@@ -132,4 +132,22 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("no projection-host wiring"); // magic-link index not host-wired
         readiness.ShouldContain("no dedicated HTTP route"); // export preview has no HTTP endpoint
     }
+
+    [Fact]
+    public void Launch_readiness_record_captures_package_currency_verdict_dimensions()
+    {
+        // Story 5.2: package evidence must distinguish direct package currency, root npm applicability,
+        // transitive drift, and platform/submodule alignment so release readiness cannot overstate currency.
+        string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
+
+        readiness.ShouldContain("Package-Currency Verdict");
+        readiness.ShouldContain("Direct Timesheets NuGet package currency");
+        readiness.ShouldContain("Root npm applicability");
+        readiness.ShouldContain("Transitive drift");
+        readiness.ShouldContain("Platform and submodule alignment");
+        readiness.ShouldContain("no direct package updates");
+        readiness.ShouldContain("not applicable");
+        readiness.ShouldContain("reviewed, no pin");
+        readiness.ShouldContain("waived");
+    }
 }

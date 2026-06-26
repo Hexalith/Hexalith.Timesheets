@@ -305,7 +305,7 @@ Use public templates only for empty project shells. Use Hexalith sibling modules
 - Magic-Link Confirmation: scoped opaque capability, single-use/expiry-bound, audited, no-disclosure on invalid states.
 - API model: EventStore command/query pipeline, typed domain outcomes, ProblemDetails for HTTP transport errors.
 - Frontend component policy: Blazor Fluent UI V5 components only; V4 icons only if V5 icon source is unavailable.
-- Infrastructure: Aspire AppHost for local topology/orchestration, Dapr latest verified SDK line `1.18.4`, no direct DB/broker bypass.
+- Infrastructure: Aspire AppHost for local topology/orchestration, Dapr SDK policy target `1.18.4`, no direct DB/broker bypass.
 
 **Important Decisions (Shape Architecture):**
 
@@ -335,7 +335,7 @@ Timesheets domain state changes will persist through `Hexalith.EventStore`. The 
 **Version notes:**
 
 - .NET SDK: local target is .NET 10, current local SDK `10.0.301`.
-- Dapr SDK packages: target latest verified package line `1.18.4` for `Dapr.Client`, `Dapr.AspNetCore`, `Dapr.Actors`, and `Dapr.Actors.AspNetCore`, subject to scaffold compatibility validation.
+- Dapr SDK packages: target latest verified package line `1.18.4` for Timesheets-owned direct pins, subject to scaffold compatibility validation. Current Timesheets root package files do not directly pin Dapr SDK packages; Dapr arrives through sibling EventStore project references, and the submodule-owned `Hexalith.Builds` package props still keep base `Dapr` at `1.17.9` while Dapr ASP.NET Core/Actors/Workflow pins are `1.18.4`.
 - Aspire templates/packages: current `Aspire.ProjectTemplates` checked as `13.4.5`.
 
 **Aggregate boundaries:**
@@ -504,7 +504,7 @@ Icons may use the V4 Fluent UI icons package only when a V5 icon source is unava
 
 **Version note:**
 
-The current verified component package line includes V5 RC packages up to `5.0.0-rc.3-26138.1`; `Microsoft.FluentUI.AspNetCore.Components.Icons` is currently available in the V4 line up to `4.14.2`. The scaffold story must pin exact versions through Central Package Management.
+The intended Timesheets UI policy is Fluent UI V5 components only. Current Timesheets root package files do not directly pin Fluent UI because no Timesheets UI project exists yet. The submodule-owned `Hexalith.Builds` package props still carry `Microsoft.FluentUI.Components` `4.11.6`; this is retained as a platform waiver until a Timesheets-owned UI/package story adds direct V5 pins or the platform package policy is reconciled.
 
 **Component architecture:**
 
@@ -552,7 +552,7 @@ Aspire owns orchestration and observability wiring only; it does not define doma
 
 Use Dapr for service invocation, pub/sub, actors/state abstractions, and EventStore integration according to Hexalith patterns.
 
-Target Dapr SDK package line: latest verified `1.18.4`, subject to scaffold compatibility checks.
+Target Dapr SDK package line for Timesheets-owned direct pins: latest verified `1.18.4`, subject to scaffold compatibility checks. Current root package files do not directly pin Dapr SDK packages; see the launch-readiness package-currency waiver for the submodule-owned `Hexalith.Builds` base `Dapr` `1.17.9` divergence.
 
 **Deployment shape:**
 
@@ -1042,7 +1042,7 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
-The technology choices work together: .NET 10, Hexalith.EventStore, Dapr SDK `1.18.4`, Aspire AppHost orchestration, JWT/OIDC authentication, FrontComposer, and Blazor Fluent UI V5 each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns.
+The technology choices work together: .NET 10, Hexalith.EventStore, Dapr SDK policy target `1.18.4`, Aspire AppHost orchestration, JWT/OIDC authentication, FrontComposer, and Blazor Fluent UI V5 each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
 
 **Pattern Consistency:**
 Implementation patterns support the decisions. Commands, events, queries, projections, magic links, exports, and UI all have consistent naming, structure, error, freshness, and enforcement rules.
@@ -1064,7 +1064,7 @@ Security, tenant isolation, auditability, data minimization, projection reliabil
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
-Critical decisions are documented with versions where version-sensitive: Dapr SDK `1.18.4`, Blazor Fluent UI V5 component package line, V4 icons-only fallback, .NET 10, Aspire, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage.
+Critical decisions are documented with versions where version-sensitive: Dapr SDK policy target `1.18.4`, Blazor Fluent UI V5 component policy, V4 icons-only fallback, .NET 10, Aspire, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current root/submodule package-state divergence is intentionally recorded as launch-readiness package-currency evidence.
 
 **Structure Completeness:**
 The project tree is specific enough for implementation agents to scaffold consistently and maps requirements to concrete projects, folders, and tests.
@@ -1086,8 +1086,8 @@ Naming, structure, API format, data format, event communication, projection beha
 
 ### Validation Issues Addressed
 
-- Dapr version ambiguity resolved by selecting latest verified SDK package line `1.18.4`.
-- Fluent UI generation ambiguity resolved: V5 components only; V4 allowed only for icons when V5 icons are unavailable.
+- Dapr version policy ambiguity resolved by selecting latest verified SDK package line `1.18.4`; actual root/submodule package pins are separately tracked by launch-readiness package-currency evidence.
+- Fluent UI generation ambiguity resolved as a Timesheets policy: V5 components only and V4 allowed only for icons when V5 icons are unavailable; current package pins remain separate until a Timesheets UI package exists or platform build props are reconciled.
 - Persistence ambiguity resolved: EventStore is the sole authoritative persistence path.
 - Projection trust ambiguity resolved: projections are rebuildable read models and cannot authorize trust-bearing writes.
 
