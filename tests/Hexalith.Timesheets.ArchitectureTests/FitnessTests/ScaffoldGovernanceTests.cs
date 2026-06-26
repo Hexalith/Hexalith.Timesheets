@@ -48,6 +48,20 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
+    public void AppHost_initializes_security_through_eventstore_aspire_helper()
+    {
+        string program = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Program.cs"));
+        string project = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Hexalith.Timesheets.AppHost.csproj"));
+
+        program.ShouldContain("AddHexalithEventStoreSecurity(");
+        program.ShouldNotContain("AddKeycloak(");
+        project.ShouldContain("Aspire.AppHost.Sdk/13.4.6");
+        project.ShouldContain("Hexalith.EventStore.Aspire.csproj");
+        project.ShouldContain("IsAspireProjectResource=\"false\"");
+        File.Exists(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "KeycloakRealms", "hexalith-realm.json")).ShouldBeTrue();
+    }
+
+    [Fact]
     public void Nested_submodules_are_not_initialized_inside_root_level_submodules()
     {
         string gitmodules = File.ReadAllText(RepositoryRoot.PathTo(".gitmodules"));

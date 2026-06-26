@@ -1,0 +1,303 @@
+{
+  "realm": "hexalith",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": false,
+  "accessTokenLifespan": 3600,
+  "clients": [
+    {
+      "clientId": "hexalith-eventstore",
+      "name": "Hexalith EventStore",
+      "description": "EventStore API client for E2E security testing (D11)",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "protocolMappers": [
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "hexalith-eventstore",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenants-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenants",
+            "claim.name": "eventstore:tenant",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "aggregate.attrs": "true"
+          }
+        },
+        {
+          "name": "domains-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "domains",
+            "claim.name": "eventstore:domain",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "aggregate.attrs": "true"
+          }
+        },
+        {
+          "name": "permissions-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "permissions",
+            "claim.name": "eventstore:permission",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "aggregate.attrs": "true"
+          }
+        },
+        {
+          "name": "global-admin-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "global_admin",
+            "claim.name": "global_admin",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "hexalith-frontshell",
+      "name": "Hexalith FrontShell",
+      "description": "FrontShell SPA client (Authorization Code + PKCE)",
+      "enabled": true,
+      "publicClient": true,
+      "directAccessGrantsEnabled": false,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": ["http://localhost:*"],
+      "webOrigins": ["*"],
+      "protocolMappers": [
+        {
+          "name": "audience-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "hexalith-eventstore",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenants-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "tenants",
+            "claim.name": "eventstore:tenant",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "aggregate.attrs": "true"
+          }
+        },
+        {
+          "name": "domains-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "domains",
+            "claim.name": "eventstore:domain",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "aggregate.attrs": "true"
+          }
+        },
+        {
+          "name": "permissions-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "permissions",
+            "claim.name": "eventstore:permission",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "aggregate.attrs": "true"
+          }
+        },
+        {
+          "name": "global-admin-mapper",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "global_admin",
+            "claim.name": "global_admin",
+            "jsonType.label": "String",
+            "multivalued": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "admin-user",
+      "username": "admin-user",
+      "firstName": "Admin",
+      "lastName": "User",
+      "enabled": true,
+      "email": "admin@hexalith.io",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin-pass",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenants": ["tenant-a", "tenant-b", "system"],
+        "domains": ["orders", "inventory", "counter"],
+        "permissions": ["command:submit", "command:replay", "command:query"],
+        "global_admin": ["true"]
+      }
+    },
+    {
+      "id": "tenant-a-user",
+      "username": "tenant-a-user",
+      "firstName": "Tenant",
+      "lastName": "A",
+      "enabled": true,
+      "email": "tenant-a@hexalith.io",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tenant-a-pass",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenants": ["tenant-a"],
+        "domains": ["orders"],
+        "permissions": ["command:submit", "command:query"]
+      }
+    },
+    {
+      "id": "tenant-b-user",
+      "username": "tenant-b-user",
+      "firstName": "Tenant",
+      "lastName": "B",
+      "enabled": true,
+      "email": "tenant-b@hexalith.io",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "tenant-b-pass",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenants": ["tenant-b"],
+        "domains": ["inventory"],
+        "permissions": ["command:submit"]
+      }
+    },
+    {
+      "id": "readonly-user",
+      "username": "readonly-user",
+      "firstName": "Read",
+      "lastName": "Only",
+      "enabled": true,
+      "email": "readonly@hexalith.io",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "readonly-pass",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenants": ["tenant-a"],
+        "domains": ["orders"],
+        "permissions": ["command:query"]
+      }
+    },
+    {
+      "id": "no-tenant-user",
+      "username": "no-tenant-user",
+      "firstName": "No",
+      "lastName": "Tenant",
+      "enabled": true,
+      "email": "no-tenant@hexalith.io",
+      "emailVerified": true,
+      "requiredActions": [],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "no-tenant-pass",
+          "temporary": false
+        }
+      ],
+      "attributes": {
+        "tenants": [],
+        "domains": ["orders"],
+        "permissions": ["command:submit"]
+      }
+    }
+  ]
+}
