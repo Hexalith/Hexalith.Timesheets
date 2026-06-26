@@ -1687,3 +1687,48 @@ So that Timesheets does not ship with hidden unavailable defaults or overstated 
 **Given** final release gates run
 **When** build, tests, privacy scans, projection rebuild tests, export golden files, magic-link HTTP no-disclosure tests, and performance evidence are checked
 **Then** the release decision is PASS, CONCERNS, FAIL, or WAIVED with traceable evidence.
+
+### Story 5.2: Reconcile Package Currency and Platform Dependency Versions
+
+**Requirements:** FR21, FR22, FR23, NFR12
+
+As a release maintainer,
+I want Timesheets package currency and platform dependency alignment verified,
+So that launch-readiness does not overstate dependency versions or hide transitive/package drift.
+
+**Acceptance Criteria:**
+
+**Given** Timesheets root package versions are managed through Central Package Management
+**When** direct NuGet package currency is audited
+**Then** direct Timesheets package pins are updated only when compatible
+**And** no inline package versions or `.sln` files are introduced.
+
+**Given** the Timesheets root has no npm manifest today
+**When** package currency is recorded
+**Then** root npm status is documented as not applicable unless a root manifest is added
+**And** package-update evidence does not imply npm work that cannot be performed.
+
+**Given** transitive dependency drift is reported by package tooling
+**When** update options are evaluated
+**Then** explicit transitive pins are added only for compatibility, security, or deterministic build reasons
+**And** the rationale is documented before pinning.
+
+**Given** launch readiness records Dapr, Fluent UI, Aspire, or Hexalith.Builds version divergence
+**When** dependency alignment is reviewed
+**Then** the divergence is resolved or retained as an explicit waiver with owner, risk, and revisit condition
+**And** architecture, launch-readiness, and package files do not make contradictory version claims.
+
+**Given** sibling submodules have independent package manifests and repository state
+**When** package updates would touch submodules
+**Then** those updates are split into owned submodule changes unless explicitly approved for this Timesheets change
+**And** root submodule pointer changes are not mixed into unrelated package edits.
+
+**Given** package-currency changes are implemented
+**When** verification runs
+**Then** restore, build, architecture tests, and relevant affected tests pass with warnings as errors
+**And** any skipped or unavailable runtime evidence remains visible.
+
+**Given** the package-currency audit is complete
+**When** launch-readiness evidence is updated
+**Then** `docs/launch-readiness.md` records the final package-currency verdict
+**And** the verdict distinguishes direct package currency, root npm applicability, transitive drift, and platform/submodule alignment.

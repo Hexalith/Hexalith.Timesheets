@@ -1,7 +1,8 @@
 ---
 title: "Sprint Change Proposal - Package Currency and Platform Dependency Alignment"
-status: draft
+status: approved
 created: 2026-06-26
+approved: 2026-06-26
 project: timesheets
 change_trigger: "update packages"
 mode: incremental
@@ -274,6 +275,6 @@ Success criteria:
 - [x] 5.5 Handoff plan documented.
 - [x] 6.1 Checklist reviewed.
 - [x] 6.2 Proposal drafted.
-- [!] 6.3 User approval pending.
-- [!] 6.4 Sprint status update pending approval.
-- [!] 6.5 Final handoff pending approval.
+- [x] 6.3 User approval received.
+- [x] 6.4 Sprint status updated.
+- [x] 6.5 Final handoff documented.
