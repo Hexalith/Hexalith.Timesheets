@@ -5,7 +5,7 @@
 	path = Hexalith.AI.Tools
 	url = https://github.com/Hexalith/Hexalith.AI.Tools.git
 [submodule "Hexalith.Builds"]
-	path = Hexalith.Builds
+	path = references/Hexalith.Builds
 	url = https://github.com/Hexalith/Hexalith.Builds.git
 [submodule "Hexalith.Tenants"]
 	path = Hexalith.Tenants
