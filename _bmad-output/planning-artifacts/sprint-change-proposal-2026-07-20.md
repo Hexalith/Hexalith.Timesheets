@@ -1,7 +1,8 @@
 ---
 title: "Sprint Change Proposal — Consume the Umbrella-Owned Hexalith.Works Checkout"
-status: proposed
+status: approved-and-applied
 created: 2026-07-20
+approved: 2026-07-20
 project: timesheets
 mode: batch
 change_scope: moderate
@@ -420,6 +421,22 @@ scope, domain contracts, and runtime architecture remain unchanged.
 
 - [x] 6.1 Applicable checklist sections addressed.
 - [x] 6.2 Proposal checked against repository evidence.
-- [!] 6.3 Explicit user approval pending.
-- [!] 6.4 Add Story 5.3 to `sprint-status.yaml` after approval.
-- [!] 6.5 Confirm implementation handoff after approval.
+- [x] 6.3 Approved by Jerome on 2026-07-20 with `approve`.
+- [x] 6.4 Story 5.3 added to `sprint-status.yaml` as `backlog`.
+- [x] 6.5 Product Owner/Developer/Reviewer handoff confirmed below.
+
+## 7. Approval and Handoff Log
+
+- **Approval:** Jerome approved the proposal on 2026-07-20.
+- **Planning changes applied:** `epics.md` now contains the workspace ownership
+  requirement and Story 5.3; `architecture.md` contains the Works checkout and
+  `HexalithWorksRoot` invariants; `sprint-status.yaml` lists Story 5.3 as
+  `backlog`.
+- **Product scope:** unchanged; PRD and UX artifacts require no edits.
+- **Implementation route:** Product Owner / Developer, with review focused on
+  repository-boundary and dependency-resolution evidence.
+- **Developer next step:** create/implement Story 5.3, removing only the
+  Timesheets-owned Works declaration/gitlink while preserving the umbrella
+  `references/Hexalith.Works` checkout.
+- **Success gate:** architecture fitness tests, Works adapter tests, and the
+  warnings-as-errors solution build pass against the umbrella-owned checkout.

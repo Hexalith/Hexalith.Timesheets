@@ -80,6 +80,7 @@ Timesheets is constrained by existing Hexalith module rules:
 - FrontComposer and Blazor Fluent UI are the primary internal UI system.
 - External contributor UX is limited to API-only integration and scoped Magic-Link Confirmation; no full external portal in v1.
 - The module must follow Hexalith conventions: .NET 10, centralized package versions, warnings as errors, no recursive submodules, no copied sibling module state, no direct infrastructure persistence bypassing EventStore, and additive contract evolution.
+- The umbrella workspace owns the root-declared `references/Hexalith.Works` checkout. Timesheets consumes it through `HexalithWorksRoot`, defaulting to sibling `../Hexalith.Works`, and must not declare, initialize, track, or probe a Timesheets-root `Hexalith.Works` checkout. A caller-supplied `HexalithWorksRoot` remains valid for controlled standalone or CI builds and is treated as read-only dependency input.
 
 No epics or stories were loaded, so this architecture is PRD/UX-driven. Implementation slicing should not be inferred yet; the architecture should first settle domain boundaries, event contracts, projection ownership, and cross-module adapters.
 
@@ -254,9 +255,24 @@ Use sibling modules as architectural exemplars by concern, not as copy/paste sou
 - Aspire template output must be aligned to the currently pinned Aspire version in `Directory.Packages.props` / AppHost SDK, not accepted blindly.
 - The chosen sibling-module baseline should be explicit: `Hexalith.Conversations` for greenfield shape, with `Hexalith.Works` / `Hexalith.Projects` consulted for Project/Work integration patterns.
 - UI packages should not be scaffolded automatically unless an architecture decision confirms whether Timesheets needs a dedicated `UI`, generated FrontComposer metadata only, or both.
-- Root-level submodule rules are preserved; no recursive submodule initialization is introduced.
+- Umbrella root-declared submodule rules are preserved; no recursive or Timesheets-owned Works submodule initialization is introduced.
 - EventStore remains the only authoritative persistence path for domain state.
 - The API host does not become the place where domain logic or direct CRUD persistence lives.
+
+### Workspace Dependency Ownership
+
+`Hexalith.Timesheets.Works` references
+`$(HexalithWorksRoot)/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj`.
+`Directory.Build.props` preserves an explicitly supplied `HexalithWorksRoot`;
+otherwise it resolves only the umbrella sibling `../Hexalith.Works`. Build
+governance tests must reject a Timesheets-root Works path probe or a
+Timesheets-owned Works submodule declaration/gitlink.
+
+`Hexalith.Works/` is not part of the Timesheets repository tree. The default
+external dependency lives at `<workspace>/references/Hexalith.Works`, beside
+`<workspace>/references/Hexalith.Timesheets`. Timesheets never initializes or
+updates that checkout; the umbrella workspace owns its lifecycle and pinned
+commit.
 
 ### Failure Paths This Avoids
 
@@ -870,6 +886,10 @@ Hexalith.Timesheets/
     |   `-- Exports/Golden/
     `-- Hexalith.Timesheets.Works.Tests/
 ```
+
+Checkout ownership note: the tree intentionally contains no repository-root
+`Hexalith.Works/` gitlink. Works contracts resolve from the umbrella sibling or
+an explicit `HexalithWorksRoot` supplied by a controlled build.
 
 Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, `Security.Tests`, or `PropertyTests` project exists on disk. Security, tenant-isolation, property-like invariants, and architecture fitness coverage currently live in `ArchitectureTests`, `Server.Tests`, `IntegrationTests`, `Projections.Tests`, and `Works.Tests`. The UI projects remain deferred to the first UI-bearing story.
 

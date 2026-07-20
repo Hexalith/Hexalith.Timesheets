@@ -119,7 +119,7 @@ NFR15: Dates, periods, and approval cutoffs must be tenant-policy aware, with an
 - Make the first implementation story scaffold the module shell with `.slnx`, Central Package Management, Contracts, Client, Server, Projections, Testing, ServiceDefaults, AppHost, and architecture tests.
 - Normalize scaffolded projects to Hexalith conventions: `Directory.Packages.props`, `Directory.Build.props`, `.editorconfig`, no inline package versions, no `.sln`, warnings as errors, and module-local solution membership.
 - Use .NET 10, nullable enabled, implicit usings, file-scoped namespaces, centralized package versions, and `Hexalith.Timesheets.*` namespaces.
-- Preserve root-level submodule rules and never introduce recursive submodule initialization.
+- Preserve umbrella root-declared submodule rules and never introduce recursive submodule initialization. `Hexalith.Timesheets` must consume `Hexalith.Works` from the umbrella-owned `references/Hexalith.Works` checkout, exposed as sibling `../Hexalith.Works`, or from an explicitly supplied `HexalithWorksRoot`. Timesheets must not declare, initialize, track, or prefer a repository-root `Hexalith.Works` checkout.
 - Persist domain state changes only through Hexalith.EventStore; do not create direct SQL, Redis, Dapr state, or broker-backed authoritative CRUD storage.
 - Establish baseline aggregate boundaries for `TimeEntry`, `TimesheetPeriod`, and Activity Type/catalog governance.
 - Treat Magic-Link Confirmation, export audit, reference validation, and reporting as capabilities around domain events unless later decisions require separate aggregates.
@@ -248,7 +248,7 @@ FR19: Epic 4 - Approved Time Ledger, Reporting & Finance Export
 FR20: Epic 4 - Approved Time Ledger, Reporting & Finance Export
 FR21: Epic 1 - Trusted Time Capture & Activity Governance
 FR22: Epic 1 - Trusted Time Capture & Activity Governance
-FR23: Epic 1 - Trusted Time Capture & Activity Governance
+FR23: Epic 1 - Trusted Time Capture & Activity Governance; Epic 5 verifies dependency-checkout ownership
 
 ### NFR Coverage Map
 
@@ -346,7 +346,7 @@ Authorized users can query time entries, report actual time by Project and Work,
 
 The release owner verifies launch evidence, waivers, documentation consistency, and final gate status after feature-completion work has been implemented in the owning epics.
 
-**FRs covered:** none directly. Epic 5 verifies evidence for FR/NFR coverage already delivered by Epics 1-4.
+**FRs covered:** FR23 boundary verification only. Epic 5 otherwise verifies evidence for FR/NFR coverage already delivered by Epics 1-4.
 
 ## Epic 1: Trusted Time Capture & Activity Governance
 
@@ -1732,3 +1732,43 @@ So that launch-readiness does not overstate dependency versions or hide transiti
 **When** launch-readiness evidence is updated
 **Then** `docs/launch-readiness.md` records the final package-currency verdict
 **And** the verdict distinguishes direct package currency, root npm applicability, transitive drift, and platform/submodule alignment.
+
+### Story 5.3: Consume the Umbrella-Owned Hexalith.Works Checkout
+
+**Requirements:** FR23 and the workspace dependency-ownership requirement
+
+As a Hexalith build maintainer,
+I want Timesheets to consume the umbrella-owned Hexalith.Works checkout,
+So that one workspace-pinned Works source supplies validation and reporting contracts without nested submodule initialization or commit skew.
+
+**Acceptance Criteria:**
+
+**Given** the umbrella workspace declares `references/Hexalith.Works`
+**When** Timesheets repository metadata is inspected
+**Then** Timesheets `.gitmodules` does not declare `Hexalith.Works`
+**And** the Timesheets Git index has no `Hexalith.Works` gitlink.
+
+**Given** `HexalithWorksRoot` is not supplied explicitly
+**When** Timesheets projects are evaluated inside the umbrella workspace
+**Then** `HexalithWorksRoot` resolves to sibling `../Hexalith.Works`
+**And** no Timesheets-root `./Hexalith.Works` probe or fallback exists.
+
+**Given** a controlled standalone or CI build supplies `HexalithWorksRoot`
+**When** Timesheets projects are evaluated
+**Then** the supplied path is preserved
+**And** Timesheets does not initialize or mutate any Works checkout.
+
+**Given** checkout-governance fitness tests run
+**When** `.gitmodules` and `Directory.Build.props` are inspected
+**Then** tests fail if a Timesheets-owned Works declaration, gitlink assumption, or root-local path probe is reintroduced
+**And** tests confirm the explicit-property and umbrella-sibling resolution contract.
+
+**Given** the umbrella-owned Works checkout is available
+**When** restore, build, ArchitectureTests, and Works.Tests run
+**Then** the Works adapter and full Timesheets solution build with warnings as errors
+**And** Stories 1.10 and 4.8 behavior remains green without a nested Works checkout.
+
+**Given** boundary and build documentation is reviewed
+**When** Works setup guidance is read
+**Then** it identifies `<workspace>/references/Hexalith.Works` as the sole default checkout
+**And** it does not instruct users or agents to initialize `Hexalith.Timesheets/Hexalith.Works`.
