@@ -51,5 +51,5 @@ indent_size = 2
 # root = false and does not declare a placement rule, so without this override
 # its sources inherit the repository's outside_namespace rule above and fail the
 # build under TreatWarningsAsErrors. Match the submodule's actual style instead.
-[Hexalith.PolymorphicSerializations/**.cs]
+[references/Hexalith.PolymorphicSerializations/**.cs]
 csharp_using_directive_placement = inside_namespace:silent
