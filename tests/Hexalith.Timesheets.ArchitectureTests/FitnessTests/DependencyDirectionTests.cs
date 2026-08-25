@@ -146,9 +146,12 @@ public sealed class DependencyDirectionTests
     [Fact]
     public void Sibling_modules_are_not_consumed_as_hexalith_nuget_packages()
     {
-        string[] projectFiles = Directory.GetFiles(RepositoryRoot.Find().FullName, "*.csproj", SearchOption.AllDirectories)
-            .Where(static path => path.Contains("Hexalith.Timesheets", StringComparison.Ordinal))
-            .ToArray();
+        string repositoryRoot = RepositoryRoot.Find().FullName;
+        string[] projectFiles =
+        [
+            .. Directory.GetFiles(Path.Combine(repositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories),
+            .. Directory.GetFiles(Path.Combine(repositoryRoot, "tests"), "*.csproj", SearchOption.AllDirectories),
+        ];
 
         projectFiles.ShouldNotBeEmpty();
 

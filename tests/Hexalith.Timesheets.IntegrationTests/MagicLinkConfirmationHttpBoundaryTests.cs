@@ -588,6 +588,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 services.AddSingleton<ITimesheetsAccessGuard, ScriptedAccessGuard>();
 
                 services.RemoveAll<IReadModelStore>();
+                services.RemoveAll<DaprReadModelStore>();
                 services.AddSingleton<IReadModelStore, UnavailableReadModelStore>();
 
                 services.RemoveAll<TimeProvider>();
