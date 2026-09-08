@@ -29,7 +29,7 @@ Aggregates stay pure. Authorization, tenant lookup, sibling validation, HTTP cal
 
 ## Current Scaffold Note
 
-`Hexalith.Projects` and `Hexalith.Works` are present as root-level submodules in this workspace. Their contract surfaces are verified by the stories that perform trust-bearing integration with those modules.
+`Hexalith.Projects` and `Hexalith.Works` are present as `references/` submodules in this workspace (`references/Hexalith.Projects` and `references/Hexalith.Works`). A repository-root `Hexalith.Works` checkout is forbidden. Their contract surfaces are verified by the stories that perform trust-bearing integration with those modules.
 
 - Project references are validated through the `Hexalith.Projects` `GetProjectAsync` consumer query.
 - Work references are validated through the `Hexalith.Works` `get-work-item` consumer query, consumed by `WorksQueryWorkReferenceValidator` (in `src/Hexalith.Timesheets.Works`) over the Timesheets-owned `IWorksQueryChannel` port (Story 1.10, 2026-06-22). The validator is fail-closed by default and copies no Works-owned state; the host opts in with `AddTimesheetsWorksReferenceValidation()`, otherwise the `DenyAllWorkReferenceValidator` default keeps Work writes closed.

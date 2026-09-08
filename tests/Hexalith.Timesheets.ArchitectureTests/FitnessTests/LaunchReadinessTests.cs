@@ -85,6 +85,7 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Export golden files");
         readiness.ShouldContain("Magic-link HTTP no-disclosure");
         readiness.ShouldContain("Tenant-isolation/security");
+        readiness.ShouldContain("Works checkout ownership");
     }
 
     [Fact]
@@ -149,5 +150,22 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("not applicable");
         readiness.ShouldContain("reviewed, no pin");
         readiness.ShouldContain("waived");
+    }
+
+    [Fact]
+    public void Launch_readiness_record_captures_works_checkout_ownership_evidence()
+    {
+        // Story 5.3: checkout evidence must name the umbrella references/ pin, forbid a root
+        // gitlink, and stay honest that this is not live Works host integration.
+        string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
+
+        readiness.ShouldContain("Works Checkout Ownership");
+        readiness.ShouldContain("Default Works checkout");
+        readiness.ShouldContain("Repository-root Works gitlink or probe");
+        readiness.ShouldContain("references/Hexalith.Works");
+        readiness.ShouldContain("<workspace>/references/Hexalith.Works");
+        readiness.ShouldContain("forbidden");
+        readiness.ShouldContain("does not claim live Works host integration");
+        readiness.ShouldContain("Do not initialize `Hexalith.Timesheets/Hexalith.Works`");
     }
 }
