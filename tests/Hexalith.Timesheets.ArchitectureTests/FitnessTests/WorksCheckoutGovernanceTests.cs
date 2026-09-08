@@ -59,6 +59,9 @@ public sealed class WorksCheckoutGovernanceTests
 
         string supplied = Path.Combine(Path.GetTempPath(), "explicit-hexalith-works-root");
         EvaluateHexalithWorksRoot(supplied).ShouldBe(supplied);
+
+        string environmentSupplied = Path.Combine(Path.GetTempPath(), "explicit-hexalith-works-root-from-environment");
+        EvaluateHexalithWorksRoot(environmentSupplied, supplyViaEnvironment: true).ShouldBe(environmentSupplied);
     }
 
     [Fact]
@@ -92,7 +95,7 @@ public sealed class WorksCheckoutGovernanceTests
             .ShouldBeFalse("A repository-root Hexalith.Works checkout must not return.");
     }
 
-    private static string EvaluateHexalithWorksRoot(string? suppliedRoot = null)
+    private static string EvaluateHexalithWorksRoot(string? suppliedRoot = null, bool supplyViaEnvironment = false)
     {
         using Process process = new();
         process.StartInfo.FileName = "dotnet";
@@ -109,7 +112,14 @@ public sealed class WorksCheckoutGovernanceTests
         process.StartInfo.ArgumentList.Add("-getProperty:HexalithWorksRoot");
         if (suppliedRoot is not null)
         {
-            process.StartInfo.ArgumentList.Add("-p:HexalithWorksRoot=" + suppliedRoot);
+            if (supplyViaEnvironment)
+            {
+                process.StartInfo.Environment["HexalithWorksRoot"] = suppliedRoot;
+            }
+            else
+            {
+                process.StartInfo.ArgumentList.Add("-p:HexalithWorksRoot=" + suppliedRoot);
+            }
         }
 
         process.Start();

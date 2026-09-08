@@ -41,3 +41,19 @@
 - source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md`
   summary: Move-spec `DependencyDirectionTests` assertions miss some slash and quote forms of a root Exists probe.
   evidence: The added `Exists('$(MSBuildThisFileDirectory)Hexalith.` substring does not catch `/Hexalith.` or `\\Hexalith.` variants. Those assertions came from the parallel move-spec review.
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md`
+  summary: The managed bmad:context block is stale relative to the Story 5.3 Works checkout pin.
+  evidence: `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` never state the `references/Hexalith.Works` rule, still say README omits Works.Tests, and rewrote the shared-baseline sentence. Fixes that edit those agent-context files are deferred.
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md`
+  summary: Pinned SDK 10.0.302 still fails CS9057 when building Works.Contracts through the solution.
+  evidence: The PolymorphicSerializations analyzer references compiler 5.9.0; SDK 10.0.302 has 5.6.0. Focused Works.Tests rebuild needs SDK 10.0.400. This skew is pre-existing, not introduced by the checkout pin.
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md`
+  summary: The move-spec verification line uses vstest-style `-method` filters.
+  evidence: `spec-move-submodules-to-references.md` documents ArchitectureTests `-method` invocations; this repo’s xUnit v3 executable is Microsoft.Testing.Platform. That line belongs to the other spec.
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md`
+  summary: Move-spec ScaffoldGovernanceTests treat any path starting with `references/` as under references/.
+  evidence: `references/../Hexalith.Works` would pass `StartsWith("references/")`. That assertion is a parallel move-spec review edit, not this story’s Works checkout class.
