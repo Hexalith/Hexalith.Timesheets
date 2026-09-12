@@ -1,10 +1,11 @@
 ---
 baseline_commit: b0c41aaa3ad899ca13d49cd66e4f26f3b8e3ae5f
+reopened_baseline_commit: 72be616918e0ae80fadf56fa152dbd561955e22d
 ---
 
 # Story 5.2: Reconcile Package Currency and Platform Dependency Versions
 
-Status: done
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -296,3 +297,92 @@ GPT-5 Codex
 
 - 2026-06-26 - Code review fixed the AC5/File List mismatch by reverting the accidental `Hexalith.Projects` and `Hexalith.Tenants` submodule gitlink drift from the story diff; status set to done.
 - 2026-06-26 - Implemented Story 5.2 package-currency evidence, platform-version waiver wording, fitness coverage, and verification record; status set to review.
+
+## Reopened Story 5.2 Implementation Evidence (2026-09-12)
+
+The June implementation record above is retained as dated historical evidence. The approved reopened baseline was
+applied and verified separately on 2026-09-12 from worktree baseline
+`72be616918e0ae80fadf56fa152dbd561955e22d`.
+
+### Reopened implementation decisions
+
+- Updated the executable SDK source of truth from `10.0.400` to `10.0.401` while retaining
+  `rollForward: latestPatch`.
+- Updated the Timesheets-owned AppHost SDK from `13.4.6` to stable `13.5.3`. The first warnings-as-errors build
+  exposed `ASPIRE010`; per the Aspire 13.5 diagnostic guidance, the AppHost now sets
+  `<AspireUseCliBundle>true</AspireUseCliBundle>`. This changes orchestration-runtime dependency resolution from
+  SDK-supplied bundle assets to the version-aligned CLI bundle; the declared resource topology and domain/product
+  behavior are unchanged.
+- Added architecture fitness coverage for the exact SDK version, roll-forward policy, AppHost SDK, and Aspire CLI
+  bundle opt-in.
+- Left `Directory.Packages.props` unchanged. After the clean restore, all stable direct packages resolved at the
+  imported central-catalog versions and the direct outdated audit reported no direct package updates. No project
+  gained an inline `PackageReference` version.
+- Added no transitive pin. The solution/AppHost transitive-outdated tooling failure remains visible, the other 14
+  project fallbacks completed, and all reported drift is platform-transitive or test-stack drift without a
+  vulnerability, deprecation, compatibility, security, or deterministic-build reason to promote it into root
+  dependencies.
+- Reconciled architecture and launch-readiness claims to SDK `10.0.401`, Aspire/AppHost `13.5.3`, imported Dapr
+  `1.18.7`, and the actual Fluent UI V5 catalog entry. The platform-owned prerelease entries remain explicitly
+  waived: `Aspire.Hosting.Keycloak` `13.5.3-preview.1.26425.3`,
+  `CommunityToolkit.Aspire.Hosting.Dapr` `13.5.1-beta.751`, and Fluent UI V5
+  `5.0.0-rc.5-26219.1`. Owner: Hexalith.Builds / Hexalith.EventStore. Risk: AppHost platform integrations remain on
+  prerelease packages and can be misstated as stable direct Timesheets dependencies. Revisit condition: stable,
+  validated platform replacements ship or release ownership explicitly approves continued prerelease use.
+- Confirmed root npm remains not applicable: no root `package.json`, `package-lock.json`, `npm-shrinkwrap.json`,
+  `pnpm-lock.yaml`, or `yarn.lock` exists.
+- Preserved the dated Story 5.3 SDK `10.0.400` evidence and made no edit under `references/`, no gitlink change, and no
+  UI, declared resource-topology, persistence, or domain/product-behavior change. Orchestration-runtime dependency
+  resolution changed to the version-aligned CLI bundle as recorded above.
+
+### Reopened verification commands and results
+
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version` -> `10.0.401`.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false --force --no-cache`
+  -> success; restore assets regenerated for every solution project. With the CLI bundle enabled, the AppHost assets
+  no longer contain the prior SDK-supplied `Aspire.Dashboard.Sdk` or `Aspire.Hosting.Orchestration` bundle packages;
+  the remaining Aspire hosting packages resolve on the `13.5.3` line.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false`
+  -> final result: success, 0 warnings, 0 errors. The first run failed with `ASPIRE010`; after the documented
+  `AspireUseCliBundle=true` compatibility correction, the exact command passed.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --outdated --no-restore`
+  -> success; all 15 projects reported no direct package updates.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --vulnerable --include-transitive --no-restore`
+  -> success; all 15 projects reported no vulnerable packages from the current sources.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --deprecated --include-transitive --no-restore`
+  -> success; all 15 projects reported no deprecated packages from the current sources.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --outdated --include-transitive --no-restore`
+  -> failed exactly with `error: Sequence contains no matching element`; this lane is not reported clean.
+- Per-project `dotnet list <project> package --outdated --include-transitive --no-restore --format json` fallbacks
+  -> 14 succeeded and the AppHost fallback failed with the same exact error. Reported drift: `Google.Protobuf`
+  `3.35.0 -> 3.36.1`; gRPC packages `2.80.0 -> 2.83.0`; Polly packages `8.4.2 -> 8.7.0`; `Castle.Core`
+  `5.1.1 -> 5.2.1`; `DiffEngine` `11.3.0 -> 20.3.1`; `EmptyFiles` `4.4.0 -> 8.18.2`;
+  `Microsoft.Testing.*` `2.3.3 -> 2.4.0`; `Microsoft.ApplicationInsights` `2.23.0 -> 3.1.2`;
+  `Microsoft.Bcl.AsyncInterfaces` `6.0.0 -> 10.0.12`; `System.CodeDom` `6.0.0 -> 10.0.12`;
+  `System.Diagnostics.EventLog` `6.0.0 -> 10.0.12`; `System.Management` `6.0.1 -> 10.0.12`; and
+  `System.Threading.RateLimiting` `8.0.0 -> 10.0.12`.
+- Built xUnit v3 executable results: ArchitectureTests 52 total / 52 passed; Contracts.Tests 88 / 88;
+  IntegrationTests 87 total / 83 passed / 4 skipped; Projections.Tests 77 / 77; Server.Tests 420 / 420;
+  Works.Tests 76 / 76. Final total: 800 tests, 796 passed, 4 intentional skips, 0 failed.
+- The first IntegrationTests invocation had two `AssertSensitiveMaterialAbsent` failures because its broad forbidden
+  substring `60` collided with rendered diagnostic content. Both focused retries passed (2/2), then the complete
+  IntegrationTests executable rerun passed (87 total / 83 passed / 4 skipped). No unrelated test/runtime behavior
+  was changed; the intermittent substring collision remains visible as a test-quality risk.
+
+### Reopened Intended File List
+
+`git diff --name-only` after implementation reported the tracked entries below; the intended artifact list also
+includes the delivered untracked workflow spec:
+
+- `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+- `_bmad-output/implementation-artifacts/epic-5-context.md` (pre-existing reopened-story context change)
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (pre-existing reopened-story status change)
+- `_bmad-output/planning-artifacts/architecture.md`
+- `docs/launch-readiness.md`
+- `global.json`
+- `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj`
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs`
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs`
+- `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+  (delivered workflow spec; intentionally included even while untracked and therefore absent from
+  `git diff --name-only`)

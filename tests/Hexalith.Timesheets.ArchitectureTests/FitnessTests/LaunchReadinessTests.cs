@@ -1,4 +1,6 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 
 using Shouldly;
 
@@ -140,16 +142,56 @@ public sealed class LaunchReadinessTests
         // Story 5.2: package evidence must distinguish direct package currency, root npm applicability,
         // transitive drift, and platform/submodule alignment so release readiness cannot overstate currency.
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
+        string packageVerdict = ReadSection(readiness, "## Package-Currency Verdict", "## Works Checkout Ownership");
+        using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
+        JsonElement sdk = globalJson.RootElement.GetProperty("sdk");
+        string sdkVersion = sdk.GetProperty("version").GetString().ShouldNotBeNull();
+        string rollForward = sdk.GetProperty("rollForward").GetString().ShouldNotBeNull();
 
-        readiness.ShouldContain("Package-Currency Verdict");
-        readiness.ShouldContain("Direct Timesheets NuGet package currency");
-        readiness.ShouldContain("Root npm applicability");
-        readiness.ShouldContain("Transitive drift");
-        readiness.ShouldContain("Platform and submodule alignment");
-        readiness.ShouldContain("no direct package updates");
-        readiness.ShouldContain("not applicable");
-        readiness.ShouldContain("reviewed, no pin");
-        readiness.ShouldContain("waived");
+        XElement appHost = XDocument.Load(RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.AppHost",
+            "Hexalith.Timesheets.AppHost.csproj")).Root.ShouldNotBeNull();
+        string appHostSdk = appHost.Attribute("Sdk").ShouldNotBeNull().Value;
+        const string appHostSdkPrefix = "Aspire.AppHost.Sdk/";
+        appHostSdk.ShouldStartWith(appHostSdkPrefix);
+        string appHostVersion = appHostSdk[appHostSdkPrefix.Length..];
+
+        XDocument centralCatalog = XDocument.Load(RepositoryRoot.PathTo(
+            "references",
+            "Hexalith.Builds",
+            "Props",
+            "Directory.Packages.props"));
+        string aspireVersion = GetPackageVersion(centralCatalog, "Aspire.Hosting");
+        string daprVersion = GetPackageVersion(centralCatalog, "Dapr.Client");
+        string keycloakVersion = GetPackageVersion(centralCatalog, "Aspire.Hosting.Keycloak");
+        string communityToolkitDaprVersion = GetPackageVersion(centralCatalog, "CommunityToolkit.Aspire.Hosting.Dapr");
+        string fluentUiVersion = GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components");
+
+        packageVerdict.ShouldContain("Package-Currency Verdict");
+        packageVerdict.ShouldContain("Direct Timesheets NuGet package currency");
+        packageVerdict.ShouldContain("Root npm applicability");
+        packageVerdict.ShouldContain("Transitive drift");
+        packageVerdict.ShouldContain("Platform and submodule alignment");
+        packageVerdict.ShouldContain("no direct package updates");
+        packageVerdict.ShouldContain("not applicable");
+        packageVerdict.ShouldContain("reviewed, no pin");
+        packageVerdict.ShouldContain("waived");
+        packageVerdict.ShouldContain($"SDK `{sdkVersion}`");
+        packageVerdict.ShouldContain($"`rollForward: {rollForward}`");
+        packageVerdict.ShouldContain($"`Aspire.AppHost.Sdk` `{appHostVersion}`");
+        packageVerdict.ShouldContain($"Aspire packages at stable `{aspireVersion}`");
+        packageVerdict.ShouldContain($"Dapr family at stable `{daprVersion}`");
+        packageVerdict.ShouldContain($"`Aspire.Hosting.Keycloak` `{keycloakVersion}`");
+        packageVerdict.ShouldContain($"`CommunityToolkit.Aspire.Hosting.Dapr` `{communityToolkitDaprVersion}`");
+        packageVerdict.ShouldContain($"Fluent UI V5 policy-surface catalog entry is `{fluentUiVersion}`");
+        packageVerdict.ShouldContain("sprint-change-proposal-2026-09-12.md");
+        packageVerdict.ShouldContain("`aspire start`");
+        packageVerdict.ShouldContain("`security` resource reported `Healthy`");
+        packageVerdict.ShouldContain("`aspire stop`");
+        packageVerdict.ShouldContain("error: Sequence contains no matching element");
+        packageVerdict.ShouldContain("this lane is not reported clean");
+        packageVerdict.ShouldContain("without a compatibility, security, or deterministic-build reason");
     }
 
     [Fact]
@@ -167,5 +209,25 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("forbidden");
         readiness.ShouldContain("does not claim live Works host integration");
         readiness.ShouldContain("Do not initialize `Hexalith.Timesheets/Hexalith.Works`");
+    }
+
+    private static string GetPackageVersion(XDocument centralCatalog, string packageId)
+    {
+        return centralCatalog.Descendants("PackageVersion")
+            .Single(element => string.Equals(element.Attribute("Include")?.Value, packageId, StringComparison.Ordinal))
+            .Attribute("Version")
+            .ShouldNotBeNull()
+            .Value;
+    }
+
+    private static string ReadSection(string document, string heading, string nextHeading)
+    {
+        int start = document.IndexOf(heading, StringComparison.Ordinal);
+        start.ShouldBeGreaterThanOrEqualTo(0, $"Missing current section '{heading}'.");
+
+        int end = document.IndexOf(nextHeading, start + heading.Length, StringComparison.Ordinal);
+        end.ShouldBeGreaterThan(start, $"Missing section boundary '{nextHeading}'.");
+
+        return document[start..end];
     }
 }

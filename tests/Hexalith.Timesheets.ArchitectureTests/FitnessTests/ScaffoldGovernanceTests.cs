@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Xml.Linq;
+
 using Shouldly;
 
 namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
@@ -51,14 +54,39 @@ public sealed class ScaffoldGovernanceTests
     public void AppHost_initializes_security_through_eventstore_aspire_helper()
     {
         string program = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Program.cs"));
-        string project = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Hexalith.Timesheets.AppHost.csproj"));
+        string projectPath = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Hexalith.Timesheets.AppHost.csproj");
+        string projectText = File.ReadAllText(projectPath);
+        XElement project = XDocument.Load(projectPath).Root.ShouldNotBeNull();
+        XAttribute sdk = project.Attributes()
+            .Where(static attribute => attribute.Name.LocalName == "Sdk")
+            .ShouldHaveSingleItem("The AppHost must declare one local project SDK attribute.");
+        XElement cliBundle = project.Descendants()
+            .Where(static element => element.Name.LocalName == "AspireUseCliBundle")
+            .ShouldHaveSingleItem("The AppHost must declare one unambiguous CLI-bundle setting.");
 
         program.ShouldContain("AddHexalithEventStoreSecurity(");
         program.ShouldNotContain("AddKeycloak(");
-        project.ShouldContain("Aspire.AppHost.Sdk/13.4.6");
-        project.ShouldContain("Hexalith.EventStore.Aspire.csproj");
-        project.ShouldContain("IsAspireProjectResource=\"false\"");
+        project.Name.LocalName.ShouldBe("Project");
+        sdk.Value.ShouldBe("Aspire.AppHost.Sdk/13.5.3");
+        project.Elements().Where(static element => element.Name.LocalName == "Sdk").ShouldBeEmpty();
+        cliBundle.Value.Trim().ShouldBe("true");
+        cliBundle.AncestorsAndSelf()
+            .SelectMany(static element => element.Attributes())
+            .Where(static attribute => attribute.Name.LocalName == "Condition")
+            .ShouldBeEmpty("The required CLI-bundle setting must be unconditional.");
+        projectText.ShouldContain("Hexalith.EventStore.Aspire.csproj");
+        projectText.ShouldContain("IsAspireProjectResource=\"false\"");
         File.Exists(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "KeycloakRealms", "hexalith-realm.json")).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Repository_pins_approved_dotnet_sdk()
+    {
+        using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
+        JsonElement sdk = globalJson.RootElement.GetProperty("sdk");
+
+        sdk.GetProperty("version").GetString().ShouldBe("10.0.401");
+        sdk.GetProperty("rollForward").GetString().ShouldBe("latestPatch");
     }
 
     [Fact]
