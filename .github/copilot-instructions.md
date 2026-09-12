@@ -61,5 +61,48 @@ Before working in a Hexalith repository, locate, read, and follow
 - Keep `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md`
   synchronized as normalized text when intentionally updating this shared
   baseline.
-- Keep repository-specific instructions in repository documentation or
-  configuration, not in these universal entry points.
+- Keep repository-specific instructions in the managed `bmad:context` block
+  below, not in the shared baseline text above the markers.
+
+<!-- bmad:context -->
+<!-- Verified 2026-09-08 against e3ea9ce2629e01745d7b9cdb451e302fd5162f6c. Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
+
+## timesheets
+
+Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, approval, confirmation, reporting, and finance export. Persistence and hosting start from `hexalith-llm-instructions.md` and `hexalith-state-instructions.md`. Planning lives in `_bmad-output/planning-artifacts/`. Boundaries are in `docs/boundary-decision-record.md`; launch posture is `docs/launch-readiness.md` (CONCERNS, not PASS).
+
+## Policy
+
+- Never persist Timesheets domain state through SQL, EF, Redis, Dapr `SaveStateAsync`/`GetStateAsync`, local JSON, or direct projection mutation; add write paths through Hexalith.EventStore.
+- Store sibling Tenant, Party, Project, and Work identifiers only; never copy their owned data into events or read models.
+- Treat JWT claims and caller-submitted context as evidence; authorize through server-side gates.
+- Do not add a Timesheets UI project; future UI goes through FrontComposer and Fluent UI V5.
+- This repo ships `Hexalith.Timesheets.AppHost` and `Hexalith.Timesheets.ServiceDefaults` (architecture tests require them). Do not delete them, do not add topology or a second host, and change them only when a story names those projects.
+
+## Where things are
+
+- Aggregates and command services: `src/Hexalith.Timesheets.Server` (`src/Hexalith.Timesheets` is the HTTP host).
+- Works ports and opt-in DI: `src/Hexalith.Timesheets.Works`
+- Rebuildable projections: `src/Hexalith.Timesheets.Projections`
+- Launch waivers and deferred wiring: `docs/launch-readiness.md`
+- Perf measurements: `docs/performance-evidence.md`
+
+## Running and verifying
+
+- Use the SDK in `global.json` (`10.0.302`, `rollForward: latestPatch`); do not trust the machine SDK.
+- Restore and build `Hexalith.Timesheets.slnx`; test each project under `tests/` individually, including `Hexalith.Timesheets.Works.Tests` (README omits it). There is no `.github/workflows`.
+- In restricted environments, prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home`. If `dotnet test` fails on VSTest sockets, run the built `tests/<Project>/bin/Debug/net10.0/<Project>` executable.
+- Perf lanes stay skipped unless `TIMESHEETS_PERF=1` is set on the IntegrationTests invocation.
+
+## Conventions that differ from defaults
+
+- Leave `AddTimesheetsServerKernel` fail-closed (`DenyAll*` / `Unavailable*`). Bind Works validation or planned-effort only via `AddTimesheetsWorksReferenceValidation` / `AddTimesheetsWorksPlannedEffortReporting` after an `IWorksQueryChannel` is registered.
+- Keep aggregates pure (`Handle`/`Apply`); I/O stays in services and the host.
+
+## Known pitfalls
+
+- Do not stage `references/` submodule gitlinks unless the change owns that pointer.
+- Empty magic-link resolution is not a loader bug: `MagicLinkTokenHashCapabilityIndexProjection` has no projection-host wiring; valid links fail closed until a story wires it.
+
+<!-- /bmad:context -->
+

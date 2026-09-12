@@ -76,6 +76,9 @@ public sealed class ScaffoldGovernanceTests
 
         foreach (string submodulePath in submodulePaths)
         {
+            submodulePath.StartsWith("references/", StringComparison.Ordinal)
+                .ShouldBeTrue($"Submodule path '{submodulePath}' must be under references/.");
+
             string absolutePath = RepositoryRoot.PathTo(submodulePath);
             if (!Directory.Exists(absolutePath))
             {

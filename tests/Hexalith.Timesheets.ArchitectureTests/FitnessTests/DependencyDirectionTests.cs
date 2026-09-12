@@ -187,6 +187,9 @@ public sealed class DependencyDirectionTests
         {
             props.ShouldContain(propertyName);
         }
+
+        props.ShouldContain(@"references\Hexalith.");
+        props.ShouldNotContain("Exists('$(MSBuildThisFileDirectory)Hexalith.");
     }
 
     private static IEnumerable<string> ReadIncludeValues(XDocument project)
