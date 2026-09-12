@@ -150,7 +150,7 @@ This is not a generic web application starter problem. The right foundation is a
 
 Current starter/tooling checks performed during this step:
 
-- Local SDK observed during this architecture step: `dotnet --version` returned `10.0.301`; the current repository pin is `10.0.302`.
+- Local SDK observed during this architecture step: `dotnet --version` returned `10.0.301`; the repository pin was raised to `10.0.400` during the Story 5.3 review patch.
 - Local templates include `aspire-apphost`, `aspire-servicedefaults`, `aspire-starter`, `webapi`, `blazor`, `classlib`, `xunit`, and solution templates.
 - `dotnet new sln --name Hexalith.Timesheets` on the local .NET 10 SDK creates `Hexalith.Timesheets.slnx`.
 - NuGet lists `Aspire.ProjectTemplates` `13.4.5` as the current package version on 2026-06-18.
@@ -225,7 +225,7 @@ Initial project families should include `Contracts`, `Client`, host/domain servi
 
 **Development Experience:**
 
-Use Aspire AppHost for local topology and observability. Use root-level submodules only. Restore/build module `.slnx`; run tests by affected project or module lane according to the final Timesheets convention. AppHost changes require restarting `aspire run`.
+Use Aspire AppHost for local topology and observability. Use only root-declared submodules under `references/`; never initialize nested submodules. Restore/build module `.slnx`; run tests by affected project or module lane according to the final Timesheets convention. AppHost changes require restarting `aspire run`.
 
 ### Starter Guardrails
 
@@ -262,7 +262,7 @@ Use sibling modules as architectural exemplars by concern, not as copy/paste sou
 ### Workspace Dependency Ownership
 
 This Timesheets repository is the umbrella pin for Works. It owns
-`references/Hexalith.Works` as the sole default checkout. A repository-root
+`references/Hexalith.Works` (`<workspace>/references/Hexalith.Works`) as the sole default checkout. A repository-root
 `Hexalith.Works` path, gitlink, or `$(MSBuildThisFileDirectory)Hexalith.Works`
 probe is forbidden. Do not initialize `Hexalith.Timesheets/Hexalith.Works`.
 
@@ -354,7 +354,7 @@ Timesheets domain state changes will persist through `Hexalith.EventStore`. The 
 
 **Version notes:**
 
-- .NET SDK: local target is .NET 10, current local SDK `10.0.302`.
+- .NET SDK: local target is .NET 10, pinned to `10.0.400`.
 - Dapr SDK packages: target latest verified package line `1.18.4` for Timesheets-owned direct pins, subject to scaffold compatibility validation. Current Timesheets root package files do not directly pin Dapr SDK packages; Dapr arrives through sibling EventStore project references, and the submodule-owned `Hexalith.Builds` package props still keep base `Dapr` at `1.17.9` while Dapr ASP.NET Core/Actors/Workflow pins are `1.18.4`.
 - Aspire templates/packages: current `Aspire.ProjectTemplates` checked as `13.4.5`.
 

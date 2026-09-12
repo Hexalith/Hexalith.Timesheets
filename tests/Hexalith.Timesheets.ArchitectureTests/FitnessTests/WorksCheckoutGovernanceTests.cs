@@ -8,44 +8,52 @@ namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 
 public sealed class WorksCheckoutGovernanceTests
 {
-    private static readonly Regex RootLocalWorksProbe = new(
-        @"\$\(MSBuildThisFileDirectory\)(?:\.[\\/]|[\\/])?Hexalith\.Works\b",
-        RegexOptions.CultureInvariant | RegexOptions.Compiled);
+    private const string MsBuildThisFileDirectory = "$(MSBuildThisFileDirectory)";
+    private const string ReferencesWorksPath = "references/Hexalith.Works";
+    private const string SiblingWorksPath = "../Hexalith.Works";
+
+    private static readonly Regex MsBuildDirectoryWorksPath = new(
+        @"\$\(\s*MSBuildThisFileDirectory\s*\)(?<relative>[^'""<>\r\n)]*?Hexalith\.Works)\b",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly Regex SubmodulePath = new(
+        @"^\s*path\s*=\s*(?<path>.+?)\s*$",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.Multiline);
+
+    private static readonly TimeSpan ProcessTimeout = TimeSpan.FromMinutes(2);
 
     [Fact]
     public void Gitmodules_declares_works_only_under_references()
     {
-        string[] submodulePaths = File.ReadAllLines(RepositoryRoot.PathTo(".gitmodules"))
-            .Select(static line => line.Trim())
-            .Where(static line => line.StartsWith("path = ", StringComparison.Ordinal))
-            .Select(static line => line["path = ".Length..])
+        string gitmodules = File.ReadAllText(RepositoryRoot.PathTo(".gitmodules"));
+        string[] worksPaths = SubmodulePath.Matches(gitmodules)
+            .Select(match => NormalizeRepositoryPath(match.Groups["path"].Value))
+            .Where(IsWorksPath)
             .ToArray();
 
-        submodulePaths.ShouldContain("references/Hexalith.Works");
-        submodulePaths.ShouldNotContain("Hexalith.Works");
+        worksPaths.Length.ShouldBe(1, "Exactly one Hexalith.Works submodule must be declared.");
+        worksPaths[0].ShouldBe(ReferencesWorksPath);
     }
 
     [Fact]
-    public void Git_index_has_references_works_gitlink_and_no_repository_root_works_path()
+    public async Task Git_index_has_references_works_gitlink_and_no_other_works_gitlink()
     {
-        IReadOnlyList<(string Mode, string Path)> staged = ReadStagedPaths(
-            "Hexalith.Works",
-            "references/Hexalith.Works");
+        IReadOnlyList<(string Mode, string Path)> staged = await ReadStagedPathsAsync();
+        (string Mode, string Path)[] worksGitlinks = staged
+            .Where(static entry => string.Equals(entry.Mode, "160000", StringComparison.Ordinal))
+            .Select(entry => (entry.Mode, NormalizeRepositoryPath(entry.Path)))
+            .Where(entry => IsWorksPath(entry.Item2))
+            .ToArray();
 
-        staged.ShouldNotContain(entry => string.Equals(entry.Path, "Hexalith.Works", StringComparison.Ordinal));
-        staged.ShouldContain(entry =>
-            string.Equals(entry.Path, "references/Hexalith.Works", StringComparison.Ordinal)
-            && string.Equals(entry.Mode, "160000", StringComparison.Ordinal));
+        worksGitlinks.Length.ShouldBe(1, "Exactly one Hexalith.Works gitlink must be tracked.");
+        worksGitlinks[0].Mode.ShouldBe("160000");
+        worksGitlinks[0].Path.ShouldBe(ReferencesWorksPath);
     }
 
     [Fact]
-    public void Directory_build_props_preserves_caller_supplied_hexalith_works_root()
+    public async Task Directory_build_props_preserves_caller_supplied_hexalith_works_root()
     {
-        XElement[] worksRoots = XDocument.Load(RepositoryRoot.PathTo("Directory.Build.props"))
-            .Descendants("HexalithWorksRoot")
-            .ToArray();
-
-        worksRoots.ShouldNotBeEmpty();
+        XElement[] worksRoots = LoadWorksRootAssignments();
 
         foreach (XElement worksRoot in worksRoots)
         {
@@ -54,38 +62,86 @@ public sealed class WorksCheckoutGovernanceTests
             condition.ShouldContain("'$(HexalithWorksRoot)' == ''");
         }
 
-        string unset = EvaluateHexalithWorksRoot();
-        unset.Replace('\\', '/').ShouldContain("references/Hexalith.Works");
+        string unset = await EvaluateHexalithWorksRootAsync();
+        NormalizeFullPath(unset).ShouldBe(NormalizeFullPath(RepositoryRoot.PathTo("references", "Hexalith.Works")));
 
         string supplied = Path.Combine(Path.GetTempPath(), "explicit-hexalith-works-root");
-        EvaluateHexalithWorksRoot(supplied).ShouldBe(supplied);
+        (await EvaluateHexalithWorksRootAsync(supplied)).ShouldBe(supplied);
 
-        string environmentSupplied = Path.Combine(Path.GetTempPath(), "explicit-hexalith-works-root-from-environment");
-        EvaluateHexalithWorksRoot(environmentSupplied, supplyViaEnvironment: true).ShouldBe(environmentSupplied);
+        DirectoryInfo environmentSupplied = Directory.CreateTempSubdirectory("explicit-hexalith-works-root-");
+        try
+        {
+            (await EvaluateHexalithWorksRootAsync(environmentSupplied.FullName, supplyViaEnvironment: true))
+                .ShouldBe(environmentSupplied.FullName);
+        }
+        finally
+        {
+            environmentSupplied.Delete(recursive: true);
+        }
     }
 
     [Fact]
     public void Directory_build_props_resolves_references_then_sibling_and_rejects_root_local_probe()
     {
-        string props = File.ReadAllText(RepositoryRoot.PathTo("Directory.Build.props"));
+        string propsPath = RepositoryRoot.PathTo("Directory.Build.props");
+        string props = File.ReadAllText(propsPath);
+        XElement[] worksRoots = LoadWorksRootAssignments();
 
-        int referencesProbe = props.IndexOf(
-            @"$(MSBuildThisFileDirectory)references\Hexalith.Works",
-            StringComparison.Ordinal);
-        int siblingProbe = props.IndexOf(
-            @"$(MSBuildThisFileDirectory)..\Hexalith.Works",
-            StringComparison.Ordinal);
+        worksRoots.Length.ShouldBe(2, "Only the references/ default and sibling fallback may assign HexalithWorksRoot.");
+        NormalizeMsBuildPath(worksRoots[0].Value).ShouldBe(ReferencesWorksPath);
+        NormalizeMsBuildPath(worksRoots[1].Value).ShouldBe(SiblingWorksPath);
 
-        referencesProbe.ShouldBeGreaterThanOrEqualTo(0, "Default HexalithWorksRoot must probe references/Hexalith.Works.");
-        siblingProbe.ShouldBeGreaterThanOrEqualTo(0, "Fallback HexalithWorksRoot must probe ../Hexalith.Works.");
-        referencesProbe.ShouldBeLessThan(siblingProbe, "references/Hexalith.Works must be probed before ../Hexalith.Works.");
+        string[] worksPaths = FindMsBuildDirectoryWorksPaths(props).ToArray();
+        worksPaths.ShouldContain(ReferencesWorksPath);
+        worksPaths.ShouldContain(SiblingWorksPath);
+        worksPaths.ShouldNotContain("Hexalith.Works");
 
-        RootLocalWorksProbe.IsMatch("$(MSBuildThisFileDirectory)/Hexalith.Works").ShouldBeTrue();
-        RootLocalWorksProbe.IsMatch(@"$(MSBuildThisFileDirectory)\Hexalith.Works").ShouldBeTrue();
-        RootLocalWorksProbe.IsMatch(@"$(MSBuildThisFileDirectory)..\Hexalith.Works").ShouldBeFalse();
+        FindMsBuildDirectoryWorksPaths("$(MSBuildThisFileDirectory)/Hexalith.Works").Single()
+            .ShouldBe("Hexalith.Works");
+        FindMsBuildDirectoryWorksPaths(@"$(MSBuildThisFileDirectory)references\..\Hexalith.Works").Single()
+            .ShouldBe("Hexalith.Works");
+    }
 
-        RootLocalWorksProbe.IsMatch(props)
-            .ShouldBeFalse("Directory.Build.props must not restore a repository-root Hexalith.Works probe.");
+    [Fact]
+    public async Task Directory_build_props_resolves_sibling_then_prefers_references_when_both_exist()
+    {
+        string temporaryRoot = Path.Combine(
+            Path.GetTempPath(),
+            "timesheets-works-governance-" + Guid.NewGuid().ToString("N"));
+        string shadowRepository = Path.Combine(temporaryRoot, "Hexalith.Timesheets");
+        string projectPath = Path.Combine(shadowRepository, "WorksRootProbe.csproj");
+
+        try
+        {
+            Directory.CreateDirectory(shadowRepository);
+            Directory.CreateDirectory(Path.Combine(temporaryRoot, "Hexalith.Works", "src", "Hexalith.Works.Contracts"));
+            File.Copy(RepositoryRoot.PathTo("Directory.Build.props"), Path.Combine(shadowRepository, "Directory.Build.props"));
+            File.Copy(RepositoryRoot.PathTo("global.json"), Path.Combine(shadowRepository, "global.json"));
+            File.WriteAllText(projectPath, "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+
+            string evaluated = await EvaluateHexalithWorksRootAsync(shadowRepository, projectPath);
+            NormalizeFullPath(evaluated).ShouldBe(
+                NormalizeFullPath(Path.Combine(temporaryRoot, "Hexalith.Works")));
+
+            string referencesWorks = Path.Combine(
+                shadowRepository,
+                "references",
+                "Hexalith.Works",
+                "src",
+                "Hexalith.Works.Contracts");
+            Directory.CreateDirectory(referencesWorks);
+
+            string preferred = await EvaluateHexalithWorksRootAsync(shadowRepository, projectPath);
+            NormalizeFullPath(preferred).ShouldBe(
+                NormalizeFullPath(Path.Combine(shadowRepository, "references", "Hexalith.Works")));
+        }
+        finally
+        {
+            if (Directory.Exists(temporaryRoot))
+            {
+                Directory.Delete(temporaryRoot, recursive: true);
+            }
+        }
     }
 
     [Fact]
@@ -95,64 +151,114 @@ public sealed class WorksCheckoutGovernanceTests
             .ShouldBeFalse("A repository-root Hexalith.Works checkout must not return.");
     }
 
-    private static string EvaluateHexalithWorksRoot(string? suppliedRoot = null, bool supplyViaEnvironment = false)
+    private static async Task<string> EvaluateHexalithWorksRootAsync(
+        string? suppliedRoot = null,
+        bool supplyViaEnvironment = false)
     {
-        using Process process = new();
-        process.StartInfo.FileName = "dotnet";
-        process.StartInfo.WorkingDirectory = RepositoryRoot.Find().FullName;
-        process.StartInfo.RedirectStandardOutput = true;
-        process.StartInfo.RedirectStandardError = true;
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.CreateNoWindow = true;
-        process.StartInfo.Environment["DOTNET_CLI_HOME"] = "/tmp/dotnet-cli-home";
-        process.StartInfo.ArgumentList.Add("msbuild");
-        process.StartInfo.ArgumentList.Add(
-            Path.Combine("src", "Hexalith.Timesheets.Works", "Hexalith.Timesheets.Works.csproj"));
-        process.StartInfo.ArgumentList.Add("-nologo");
-        process.StartInfo.ArgumentList.Add("-getProperty:HexalithWorksRoot");
-        if (suppliedRoot is not null)
-        {
-            if (supplyViaEnvironment)
-            {
-                process.StartInfo.Environment["HexalithWorksRoot"] = suppliedRoot;
-            }
-            else
-            {
-                process.StartInfo.ArgumentList.Add("-p:HexalithWorksRoot=" + suppliedRoot);
-            }
-        }
+        string projectPath = Path.Combine(
+            RepositoryRoot.Find().FullName,
+            "src",
+            "Hexalith.Timesheets.Works",
+            "Hexalith.Timesheets.Works.csproj");
 
-        process.Start();
-        string output = process.StandardOutput.ReadToEnd();
-        string error = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-        process.ExitCode.ShouldBe(0, error);
+        return await EvaluateHexalithWorksRootAsync(
+            RepositoryRoot.Find().FullName,
+            projectPath,
+            suppliedRoot,
+            supplyViaEnvironment);
+    }
 
+    private static async Task<string> EvaluateHexalithWorksRootAsync(
+        string workingDirectory,
+        string projectPath,
+        string? suppliedRoot = null,
+        bool supplyViaEnvironment = false)
+    {
+        (int exitCode, string output, string error) = await RunProcessAsync(
+            "dotnet",
+            workingDirectory,
+            startInfo =>
+            {
+                startInfo.Environment["DOTNET_CLI_HOME"] = Path.Combine(Path.GetTempPath(), "dotnet-cli-home");
+                startInfo.Environment.Remove("HexalithWorksRoot");
+                startInfo.ArgumentList.Add("msbuild");
+                startInfo.ArgumentList.Add(projectPath);
+                startInfo.ArgumentList.Add("-nologo");
+                startInfo.ArgumentList.Add("-getProperty:HexalithWorksRoot");
+
+                if (suppliedRoot is null)
+                {
+                    return;
+                }
+
+                if (supplyViaEnvironment)
+                {
+                    startInfo.Environment["HexalithWorksRoot"] = suppliedRoot;
+                }
+                else
+                {
+                    startInfo.ArgumentList.Add("-p:HexalithWorksRoot=" + suppliedRoot);
+                }
+            });
+
+        exitCode.ShouldBe(0, error);
         return output.Trim();
     }
 
-    private static IReadOnlyList<(string Mode, string Path)> ReadStagedPaths(params string[] pathspecs)
+    private static IEnumerable<string> FindMsBuildDirectoryWorksPaths(string text)
     {
-        using Process process = new();
-        process.StartInfo.FileName = "git";
-        process.StartInfo.WorkingDirectory = RepositoryRoot.Find().FullName;
-        process.StartInfo.RedirectStandardOutput = true;
-        process.StartInfo.RedirectStandardError = true;
-        process.StartInfo.UseShellExecute = false;
-        process.StartInfo.CreateNoWindow = true;
-        process.StartInfo.ArgumentList.Add("ls-files");
-        process.StartInfo.ArgumentList.Add("--stage");
-        process.StartInfo.ArgumentList.Add("--");
-        foreach (string pathspec in pathspecs)
-        {
-            process.StartInfo.ArgumentList.Add(pathspec);
-        }
+        return MsBuildDirectoryWorksPath.Matches(text)
+            .Select(match => NormalizeRepositoryPath(match.Groups["relative"].Value.TrimStart('/', '\\')));
+    }
 
-        process.Start();
-        string output = process.StandardOutput.ReadToEnd();
-        string error = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-        process.ExitCode.ShouldBe(0, error);
+    private static bool IsWorksPath(string path)
+    {
+        return path.Split('/', StringSplitOptions.RemoveEmptyEntries)
+            .Any(static segment => string.Equals(segment, "Hexalith.Works", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static XElement[] LoadWorksRootAssignments()
+    {
+        return XDocument.Load(RepositoryRoot.PathTo("Directory.Build.props"))
+            .Descendants("HexalithWorksRoot")
+            .ToArray();
+    }
+
+    private static string NormalizeFullPath(string path)
+    {
+        return Path.GetFullPath(path.Replace('\\', Path.DirectorySeparatorChar))
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+    }
+
+    private static string NormalizeMsBuildPath(string path)
+    {
+        path.ShouldStartWith(MsBuildThisFileDirectory);
+        return NormalizeRepositoryPath(path[MsBuildThisFileDirectory.Length..]);
+    }
+
+    private static string NormalizeRepositoryPath(string path)
+    {
+        string trimmed = path.Trim().Trim('"', '\'');
+        string platformPath = trimmed
+            .Replace('\\', Path.DirectorySeparatorChar)
+            .Replace('/', Path.DirectorySeparatorChar);
+        string fullPath = Path.GetFullPath(Path.Combine(RepositoryRoot.Find().FullName, platformPath));
+
+        return Path.GetRelativePath(RepositoryRoot.Find().FullName, fullPath).Replace('\\', '/');
+    }
+
+    private static async Task<IReadOnlyList<(string Mode, string Path)>> ReadStagedPathsAsync()
+    {
+        (int exitCode, string output, string error) = await RunProcessAsync(
+            "git",
+            RepositoryRoot.Find().FullName,
+            static startInfo =>
+            {
+                startInfo.ArgumentList.Add("ls-files");
+                startInfo.ArgumentList.Add("--stage");
+            });
+
+        exitCode.ShouldBe(0, error);
 
         return output
             .Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -164,5 +270,42 @@ public sealed class WorksCheckoutGovernanceTests
                 return (mode, metadataAndPath[1]);
             })
             .ToArray();
+    }
+
+    private static async Task<(int ExitCode, string Output, string Error)> RunProcessAsync(
+        string fileName,
+        string workingDirectory,
+        Action<ProcessStartInfo> configure)
+    {
+        using Process process = new();
+        process.StartInfo.FileName = fileName;
+        process.StartInfo.WorkingDirectory = workingDirectory;
+        process.StartInfo.RedirectStandardOutput = true;
+        process.StartInfo.RedirectStandardError = true;
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.CreateNoWindow = true;
+        configure(process.StartInfo);
+
+        process.Start().ShouldBeTrue($"Could not start {fileName}.");
+        Task<string> output = process.StandardOutput.ReadToEndAsync();
+        Task<string> error = process.StandardError.ReadToEndAsync();
+        using CancellationTokenSource timeout = new(ProcessTimeout);
+
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            await process.WaitForExitAsync();
+            throw new TimeoutException($"{fileName} did not exit within {ProcessTimeout}.");
+        }
+
+        return (process.ExitCode, await output, await error);
     }
 }
