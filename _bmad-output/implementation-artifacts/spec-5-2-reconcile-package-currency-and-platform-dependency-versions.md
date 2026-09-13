@@ -2,7 +2,7 @@
 title: 'Story 5.2: Reconcile Package Currency and Platform Dependency Versions'
 type: 'chore'
 created: '2026-09-12'
-status: 'done'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: '72be616918e0ae80fadf56fa152dbd561955e22d'
@@ -65,6 +65,50 @@ context:
 - Given repository boundaries, when the final diff is inspected, then no sibling content/gitlink, inline version, legacy solution, UI, topology, or runtime behavior changed.
 - Given verification completes, when every test executable is run, then all non-skipped tests pass with warnings as errors and exact totals are recorded.
 
+
+### Review Findings
+
+Code review 2026-09-12 (layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor).
+
+**Decision needed**
+
+- [x] [Review][Decision] `AspireUseCliBundle=true` turns the Aspire CLI into a hard build prerequisite and drops the orchestration packages from restore — The ASPIRE010 fix chose the CLI bundle over the suppression path the diagnostic itself offers. `Aspire.Hosting.AppHost.targets:433` raises `<Error Code="ASPIRE009">` when the bundle cannot be resolved, inside targets gated on `AspireUseCliBundle == 'true'`; reproduced as `error ASPIRE009 ... Build FAILED` with `aspire` hidden from `PATH`. `src/Hexalith.Timesheets.AppHost/obj/project.assets.json` now holds only `Aspire.Hosting`, `Aspire.Hosting.AppHost`, `Aspire.Hosting.Redis`, `Aspire.Hosting.Keycloak` — `Aspire.Hosting.Orchestration` and `Aspire.Dashboard.Sdk` are gone, so restore + build is no longer self-contained. The recorded "0 warnings, 0 errors" holds only because this workstation has `aspire` `13.5.3` on `PATH`. Nothing in `README.md`, `docs/launch-readiness.md`, or a fitness test records the prerequisite, and the agent guidance explicitly targets restricted environments. `Aspire.Hosting.AppHost.targets:158` offers the alternative verbatim: "or suppress ASPIRE010 to continue without the bundle", which keeps the build self-contained. This also bears on the frozen AC4 ("no ... runtime behavior changed") and approved proposal §3 ("The only currently identified package edit is the Timesheets-owned AppHost SDK pin") — the CLI-bundle property is a second AppHost change that was reinterpreted in prose (Implementation Notes, triage EH5) rather than renegotiated. [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4]
+  **Resolved 2026-09-13 (Jerome): Option 2** — suppress `ASPIRE010` and keep NuGet-backed Aspire orchestration, matching the reviewed shape already adopted by `Hexalith.EventStore` (`AspireUseCliBundle=false` + `NoWarn=$(NoWarn);ASPIRE010`, guarded by `AppHostProjectExplicitlyRetainsNuGetOrchestrationAndSuppressesOnlyAspire010`). Rationale: `AddReferenceToDashboardAndDCP` (`Aspire.AppHost.Sdk/13.5.3/Sdk/Sdk.targets:76`) is byte-identical to 13.4.6 and re-adds `Aspire.Dashboard.Sdk.<RID>` + `Aspire.Hosting.Orchestration.<RID>`, so restore/build returns to being self-contained and AC4's "no runtime behavior changed" becomes literally true instead of reinterpreted. Converted to the first patch below.
+
+**Patch**
+
+- [ ] [Review][Patch] Revert to NuGet-backed Aspire orchestration: `AspireUseCliBundle=false` + `NoWarn=$(NoWarn);ASPIRE010`, flip the fitness guard, and correct the `ASPIRE010` narrative in architecture/launch-readiness/story record [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4]
+- [ ] [Review][Patch] Regenerated Epic 5 context outlaws the repository's own test-enforced Works checkout [_bmad-output/implementation-artifacts/epic-5-context.md:27]
+- [ ] [Review][Patch] Regenerating Epic 5 context dropped ratified constraints and prerequisite traceability [_bmad-output/implementation-artifacts/epic-5-context.md]
+- [ ] [Review][Patch] Classification vocabulary contradicts itself across two files changed in the same commit [docs/launch-readiness.md:36]
+- [ ] [Review][Patch] New doc guard hard-binds ArchitectureTests to submodule-owned catalog state by hardcoded path [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:159-169]
+- [ ] [Review][Patch] Section guard can pass on the wrong text, and one assertion can never fail [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:171]
+- [ ] [Review][Patch] Nondeterministic privacy assertion accepted with retry-to-green, no fix and no ledger entry [tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs:370]
+- [ ] [Review][Patch] `architecture.md` version claims remain the only unguarded ones [_bmad-output/planning-artifacts/architecture.md:357-362]
+- [ ] [Review][Patch] Launch-readiness preamble still scopes the whole record to the June baseline [docs/launch-readiness.md:3]
+- [ ] [Review][Patch] Story record's reopened file list is wrong three ways [_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md:372-388]
+- [ ] [Review][Patch] New deferred-work entry breaks ledger conventions and is filed under the wrong story [_bmad-output/implementation-artifacts/deferred-work.md:48]
+- [ ] [Review][Patch] A deferred-work entry this change resolves is left standing [_bmad-output/implementation-artifacts/deferred-work.md:45]
+- [ ] [Review][Patch] Nothing asserts the documented AppHost-SDK/catalog `13.5.3` alignment invariant [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:165]
+- [ ] [Review][Patch] Security-helper test now asserts three unrelated rules, with two conventions for one version [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs:54-80]
+- [ ] [Review][Patch] Architecture version note points "below" at content that is above it [_bmad-output/planning-artifacts/architecture.md:362]
+
+**Deferred**
+
+- [x] [Review][Defer] Agent entry points still pin SDK `10.0.302`, now two steps behind `global.json` [AGENTS.md:92, CLAUDE.md:92, .github/copilot-instructions.md:92] — deferred: fix edits agent-context files; the spec's Never clause assigns agent-guidance sync to Story 5.1, and existing ledger entries predate the approved baseline.
+- [x] [Review][Defer] Overall release decision stays `CONCERNS` while the approved correction and the new epic rule require `FAIL` [docs/launch-readiness.md:78] — deferred: final release classification belongs to Story 5.1; already ledgered by this change, though the same diff cites proposal §7 as waiver approval while not honoring §3/§4.
+- [x] [Review][Defer] AppHost CLI-bundle resolution has no executing test [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs:54-80] — deferred: an `Aspire.Hosting.Testing` lane pulls Docker/Keycloak into the default ArchitectureTests path; the existing ledger entry covers only the security topology and should be widened to CLI-bundle resolution.
+- [x] [Review][Defer] Commit message understates the change [commit ee76a92] — deferred: "build: align SDK and Aspire package baseline" while rewriting ~60 lines of Epic 5 governance text; fixing it requires history rewrite.
+- [x] [Review][Defer] Work was committed directly to `main` [commit ee76a92] — deferred: agent guidance says branch first; already committed, so the correction is procedural.
+
+**Rejected**
+
+- Spec frontmatter `status: 'done'` and `review_loop_iteration: 0` contradict `Status: review` in the story and `review` in sprint status (raised by all four layers) — real, but the fix edits the spec under review.
+- Spec Verification commands omit the `--force --no-cache` and `--no-restore`/`--include-transitive` flags actually used — real, but the fix edits the spec under review (the build's own triage rejected this as BH9 for the same reason).
+- `global.json` missing-key guards: `GetProperty("sdk"/"rollForward")` throws `KeyNotFoundException` — low; `global.json` is the artifact under guard and a malformed one should fail loudly, and the fix adds branches.
+- Multi-SDK `Sdk` attribute (`"Aspire.AppHost.Sdk/13.5.3;Microsoft.NET.Sdk"`) would corrupt the derived version — low and speculative; no such csproj exists and the fix adds parsing.
+- `AspireUseCliBundle` inside `Choose`/`Otherwise` or a `Target` escapes the unconditional check — low and speculative; the fix adds further assertions to a guard added in this change.
+- `Directory.Build.props` or `-p:` could override `AspireUseCliBundle` outside the csproj — low; detecting it needs an evaluated-property probe, and the substantive concern is carried by the decision-needed item above.
 ## Implementation Notes
 
 - The Aspire 13.5.3 update introduced warnings-as-errors diagnostic `ASPIRE010`. The AppHost now opts into the

@@ -5,7 +5,7 @@ reopened_baseline_commit: 72be616918e0ae80fadf56fa152dbd561955e22d
 
 # Story 5.2: Reconcile Package Currency and Platform Dependency Versions
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
