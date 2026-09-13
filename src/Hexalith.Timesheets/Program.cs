@@ -1,18 +1,21 @@
 using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Endpoints;
 using Hexalith.Timesheets.Endpoints.MagicLinks;
+using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Runtime;
-using Hexalith.Timesheets.ServiceDefaults;
+using Hexalith.EventStore.DomainService;
 
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
-// Wire observability/telemetry defaults and the fail-closed Timesheets server kernel
-// (authorization gate and reference validators) so future EventStore command handling
-// has its registration seams present from the first executable slice.
-builder.AddTimesheetsServiceDefaults();
+// The canonical EventStore domain-service registration owns shared observability,
+// health, service-discovery, and HTTP-resilience defaults for this host.
+builder.AddEventStoreDomainService(
+    TimesheetsEventStoreIntegration.RegistrationAssemblyMarker.Assembly,
+    typeof(TimesheetsProjectionsMarker).Assembly);
+// Keep the fail-closed Timesheets authorization and reference-validation seams.
 builder.Services.AddTimesheetsServerKernel();
 builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsTrustedContextAccessor, HttpContextTimesheetsTrustedContextAccessor>());
@@ -20,7 +23,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 
 WebApplication app = builder.Build();
 
-app.MapTimesheetsDefaultEndpoints();
+app.UseEventStoreDomainService();
 app.MapTimesheetsExternalContributionEndpoints();
 app.MapTimesheetsMagicLinkConfirmationCapabilityEndpoints();
 

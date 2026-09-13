@@ -5,8 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Hexalith.Timesheets.Projections\Hexalith.Timesheets.Projections.csproj" />
     <ProjectReference Include="..\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
     <ProjectReference Include="..\Hexalith.Timesheets.ServiceDefaults\Hexalith.Timesheets.ServiceDefaults.csproj" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.DomainService\Hexalith.EventStore.DomainService.csproj" AdditionalProperties="NuGetAudit=false" />
   </ItemGroup>
 
 </Project>

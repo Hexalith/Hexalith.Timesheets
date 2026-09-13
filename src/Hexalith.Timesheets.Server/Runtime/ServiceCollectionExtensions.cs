@@ -1,3 +1,5 @@
+using System.Globalization;
+
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
@@ -12,6 +14,7 @@ using Hexalith.Timesheets.Server.TimeEntries;
 using Hexalith.Timesheets.Server.TimesheetPeriods;
 
 using Hexalith.EventStore.Client.Registration;
+using Hexalith.EventStore.Client.Gateway;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -41,7 +44,14 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(ExternalContributionPolicyOptions.Default);
         services.TryAddSingleton<ExternalContributionCommandService>();
         services.TryAddSingleton<ITimesheetsTrustedContextAccessor, UnavailableTimesheetsTrustedContextAccessor>();
-        services.AddEventStoreGatewayClient();
+        if (!services.Any(static descriptor => descriptor.ServiceType == typeof(IEventStoreGatewayClient)))
+        {
+            services.AddEventStoreGatewayClient(options => options.BaseAddress = ResolveDaprHttpEndpoint())
+                .AddEventStoreDaprServiceInvocation(
+                    "eventstore",
+                    Environment.GetEnvironmentVariable("DAPR_API_TOKEN"));
+        }
+
         services.AddEventStoreReadModelStore();
         services.TryAddSingleton<IMagicLinkTokenGenerator, CryptographicMagicLinkTokenGenerator>();
         services.TryAddScoped<IMagicLinkConfirmationCapabilityStateLoader, EventStoreMagicLinkConfirmationCapabilityStateLoader>();
@@ -83,5 +93,25 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<ITimeEntryDisplayHydrator, UnavailableTimeEntryDisplayHydrator>();
 
         return services;
+    }
+
+    private static Uri ResolveDaprHttpEndpoint()
+    {
+        string? endpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
+        if (Uri.TryCreate(endpoint, UriKind.Absolute, out Uri? configured)
+            && (configured.Scheme == Uri.UriSchemeHttp || configured.Scheme == Uri.UriSchemeHttps)
+            && string.IsNullOrEmpty(configured.UserInfo)
+            && configured.AbsolutePath == "/"
+            && string.IsNullOrEmpty(configured.Query)
+            && string.IsNullOrEmpty(configured.Fragment))
+        {
+            return new Uri(configured.GetLeftPart(UriPartial.Authority), UriKind.Absolute);
+        }
+
+        string? portText = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
+        return int.TryParse(portText, NumberStyles.None, CultureInfo.InvariantCulture, out int port)
+            && port is > 0 and <= 65535
+                ? new UriBuilder(Uri.UriSchemeHttp, "localhost", port).Uri
+                : new Uri("http://localhost:3500", UriKind.Absolute);
     }
 }

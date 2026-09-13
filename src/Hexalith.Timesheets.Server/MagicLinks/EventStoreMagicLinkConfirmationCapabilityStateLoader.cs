@@ -3,13 +3,11 @@ using System.Text.Json;
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Streams;
-using Hexalith.Timesheets.Contracts.Events.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
-using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -125,11 +123,18 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            return index.Value?.Entries.TryGetValue(tokenHash.Value, out MagicLinkTokenHashCapabilityIndexEntry? candidate) == true
-                ? candidate
-                : null;
+            if (index.Value?.Entries is null
+                || !index.Value.Entries.TryGetValue(tokenHash.Value, out MagicLinkTokenHashCapabilityIndexEntry? candidate)
+                || candidate is null
+                || string.IsNullOrWhiteSpace(candidate.Tenant.TenantId)
+                || string.IsNullOrWhiteSpace(candidate.CapabilityId.Value))
+            {
+                return null;
+            }
+
+            return candidate;
         }
-        catch (Exception ex) when (IsFailClosedReadException(ex))
+        catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
             return null;
         }
@@ -158,6 +163,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                     typeof(MagicLinkConfirmationCapabilityRevoked),
                     typeof(MagicLinkConfirmationCapabilityExpired),
                     typeof(MagicLinkConfirmationCapabilityUsed));
+                if (payload is not null && !MatchesCapabilityIdentity(payload, tenant, capabilityId))
+                {
+                    throw new InvalidOperationException("A capability event does not match the requested stream identity.");
+                }
 
                 switch (payload)
                 {
@@ -178,7 +187,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
             return state.Exists ? state : null;
         }
-        catch (Exception ex) when (IsFailClosedReadException(ex))
+        catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
             return null;
         }
@@ -211,6 +220,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                     typeof(TimeEntryRejected),
                     typeof(TimeEntryCorrected),
                     typeof(TimeEntryApprovedCorrected));
+                if (payload is not null && !MatchesTimeEntryIdentity(payload, tenant, timeEntryId))
+                {
+                    throw new InvalidOperationException("A Time Entry event does not match the requested stream identity.");
+                }
 
                 switch (payload)
                 {
@@ -243,7 +256,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
             return state.IsRecorded ? state : null;
         }
-        catch (Exception ex) when (IsFailClosedReadException(ex))
+        catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
             return null;
         }
@@ -255,68 +268,31 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     {
         try
         {
-            StreamReadEvent[] events = await ReadAllEventsAsync(
-                tenant,
-                aggregateId: null,
-                cancellationToken).ConfigureAwait(false);
+            ReadModelEntry<ActivityTypeCatalogReadModel> entry = await _readModelStore
+                .GetAsync<ActivityTypeCatalogReadModel>(
+                    MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName,
+                    MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant),
+                    cancellationToken)
+                .ConfigureAwait(false);
 
-            ActivityTypeCatalogState state = new();
-            HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
-
-            foreach (StreamReadEvent streamEvent in OrderedDistinct(events, appliedMessageIds))
+            ActivityTypeCatalogReadModel? catalog = entry.Value;
+            if (catalog?.ProjectionFreshness.State != ProjectionFreshnessState.Fresh
+                || catalog.Items is null
+                || catalog.Items.Any(static item =>
+                    item.Scope != ActivityTypeScope.Tenant
+                    || item.Project is not null
+                    || string.IsNullOrWhiteSpace(item.ActivityTypeId.Value)
+                    || string.IsNullOrWhiteSpace(item.Label))
+                || catalog.Items
+                    .GroupBy(static item => item.ActivityTypeId.Value, StringComparer.Ordinal)
+                    .Any(static group => group.Count() != 1))
             {
-                object? payload = Deserialize(
-                    streamEvent,
-                    typeof(ActivityTypeCreated),
-                    typeof(ActivityTypeRenamed),
-                    typeof(ActivityTypeMetadataUpdated),
-                    typeof(ActivityTypeDeactivated),
-                    typeof(ActivityTypeReactivated));
-
-                switch (payload)
-                {
-                    case ActivityTypeCreated created when created.Scope == ActivityTypeScope.Tenant && created.Project is null:
-                        state.Apply(created);
-                        break;
-                    case ActivityTypeRenamed renamed:
-                        state.Apply(renamed);
-                        break;
-                    case ActivityTypeMetadataUpdated updated:
-                        state.Apply(updated);
-                        break;
-                    case ActivityTypeDeactivated deactivated:
-                        state.Apply(deactivated);
-                        break;
-                    case ActivityTypeReactivated reactivated:
-                        state.Apply(reactivated);
-                        break;
-                }
+                return UnavailableCatalog();
             }
 
-            return new ActivityTypeCatalogReadModel(
-                state.Items.Values
-                    .Select(static item => new ActivityTypeCatalogItem(
-                        item.ActivityTypeId,
-                        item.Scope,
-                        item.Project,
-                        item.Label,
-                        item.IsActive,
-                        item.DefaultBillableState))
-                    .OrderBy(static item => item.Label, StringComparer.Ordinal)
-                    .ThenBy(static item => item.ActivityTypeId.Value, StringComparer.Ordinal)
-                    .ToArray(),
-                new ProjectionFreshnessMetadata(
-                    ProjectionFreshnessState.Fresh,
-                    events.Length == 0
-                        ? "0"
-                        : events.Max(static @event => @event.SequenceNumber).ToString(System.Globalization.CultureInfo.InvariantCulture),
-                    // AsOfUtc is left null so the folded catalog is deterministic across reads (AC2):
-                    // the cursor (max sequence) already conveys freshness, matching the canonical
-                    // TenantActivityTypeCatalogProjection Fresh metadata. Avoids a direct system clock.
-                    null,
-                    null));
+            return catalog;
         }
-        catch (Exception ex) when (IsFailClosedReadException(ex))
+        catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
             return UnavailableCatalog();
         }
@@ -328,7 +304,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         CancellationToken cancellationToken)
     {
         List<StreamReadEvent> events = [];
-        ReplayContinuationToken? continuation = null;
+        long fromSequence = 0;
+        long latestSequence = 0;
+        bool hasMore;
 
         do
         {
@@ -338,17 +316,73 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                         tenant.TenantId,
                         TimesheetsEventStoreIntegration.DomainName,
                         aggregateId,
-                        ContinuationToken: continuation,
+                        FromSequence: fromSequence,
                         PageSize: StreamPageSize),
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            events.AddRange(page.Events);
-            continuation = page.Metadata.NextContinuationToken;
-        }
-        while (continuation is not null);
+            if (!string.Equals(page.Tenant, tenant.TenantId, StringComparison.Ordinal)
+                || !string.Equals(page.Domain, TimesheetsEventStoreIntegration.DomainName, StringComparison.Ordinal)
+                || !string.Equals(page.AggregateId, aggregateId, StringComparison.Ordinal)
+                || page.Metadata.FromSequence != fromSequence
+                || page.Metadata.ToSequence is not null
+                || page.Metadata.EventCount != page.Events.Count
+                || page.Events.Any(item => item.SequenceNumber <= fromSequence)
+                || (page.Events.Count > 0 && page.Metadata.LastSequenceReturned is null)
+                || (page.Metadata.LastSequenceReturned is { } reportedLast
+                    && (page.Events.Count == 0
+                        || reportedLast != page.Events.Max(static item => item.SequenceNumber)))
+                || page.Metadata.LatestSequence < latestSequence
+                || page.Metadata.LatestSequence < (page.Metadata.LastSequenceReturned ?? 0))
+            {
+                throw new InvalidOperationException("The EventStore stream response did not match the requested scope.");
+            }
 
-        return events.ToArray();
+            events.AddRange(page.Events);
+            latestSequence = Math.Max(latestSequence, page.Metadata.LatestSequence);
+            hasMore = page.Metadata.IsTruncated || fromSequence < latestSequence;
+            long? lastReturned = page.Metadata.LastSequenceReturned;
+            if (lastReturned is null || lastReturned <= fromSequence)
+            {
+                if (page.Metadata.IsTruncated || latestSequence > fromSequence)
+                {
+                    throw new InvalidOperationException("The EventStore stream page did not advance its exclusive sequence cursor.");
+                }
+
+                break;
+            }
+
+            fromSequence = lastReturned.Value;
+            hasMore = page.Metadata.IsTruncated || fromSequence < latestSequence;
+        }
+        while (hasMore);
+
+        long expectedSequence = 1;
+        HashSet<string> messageIds = new(StringComparer.Ordinal);
+        List<StreamReadEvent> normalized = [];
+        foreach (IGrouping<long, StreamReadEvent> group in events
+            .GroupBy(static item => item.SequenceNumber)
+            .OrderBy(static group => group.Key))
+        {
+            StreamReadEvent streamEvent = group.First();
+            if (streamEvent.SequenceNumber != expectedSequence++)
+            {
+                throw new InvalidOperationException("The EventStore stream history is incomplete.");
+            }
+
+            if (group.Any(item =>
+                    !string.Equals(item.EventTypeName, streamEvent.EventTypeName, StringComparison.Ordinal)
+                    || !string.Equals(item.SerializationFormat, streamEvent.SerializationFormat, StringComparison.OrdinalIgnoreCase)
+                    || !item.Payload.AsSpan().SequenceEqual(streamEvent.Payload))
+                || (!string.IsNullOrWhiteSpace(streamEvent.MessageId) && !messageIds.Add(streamEvent.MessageId)))
+            {
+                throw new InvalidOperationException("The EventStore stream history is ambiguous.");
+            }
+
+            normalized.Add(streamEvent);
+        }
+
+        return normalized.ToArray();
     }
 
     private static IEnumerable<StreamReadEvent> OrderedDistinct(
@@ -357,8 +391,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     {
         foreach (StreamReadEvent streamEvent in events.OrderBy(static @event => @event.SequenceNumber))
         {
-            if (string.IsNullOrWhiteSpace(streamEvent.MessageId)
-                || !appliedMessageIds.Add(streamEvent.MessageId))
+            if (!string.IsNullOrWhiteSpace(streamEvent.MessageId)
+                && !appliedMessageIds.Add(streamEvent.MessageId))
             {
                 continue;
             }
@@ -369,20 +403,60 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
     private static object? Deserialize(StreamReadEvent streamEvent, params Type[] eventTypes)
     {
+        string unqualifiedEventTypeName = streamEvent.EventTypeName.Split(',', 2)[0];
         Type? eventType = eventTypes.FirstOrDefault(type =>
-            string.Equals(streamEvent.EventTypeName, type.Name, StringComparison.Ordinal)
-            || streamEvent.EventTypeName.EndsWith(type.Name, StringComparison.Ordinal));
+            string.Equals(unqualifiedEventTypeName, type.Name, StringComparison.Ordinal)
+            || string.Equals(unqualifiedEventTypeName, type.FullName, StringComparison.Ordinal));
         if (eventType is null)
         {
             return null;
         }
 
-        using JsonDocument document = streamEvent.Payload is { Length: > 0 }
-            ? JsonDocument.Parse(streamEvent.Payload)
-            : JsonDocument.Parse("{}");
+        if (!string.Equals(streamEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("A recognized EventStore event does not use JSON serialization.");
+        }
 
-        return JsonSerializer.Deserialize(document.RootElement, eventType, JsonOptions);
+        if (streamEvent.Payload is not { Length: > 0 })
+        {
+            throw new InvalidOperationException("A recognized EventStore event has an empty payload.");
+        }
+
+        using JsonDocument document = JsonDocument.Parse(streamEvent.Payload);
+
+        return JsonSerializer.Deserialize(document.RootElement, eventType, JsonOptions)
+            ?? throw new InvalidOperationException("A recognized EventStore event has a null payload.");
     }
+
+    private static bool MatchesCapabilityIdentity(
+        object payload,
+        TenantReference tenant,
+        MagicLinkCapabilityId capabilityId)
+        => payload switch
+        {
+            MagicLinkConfirmationCapabilityIssued item => item.Tenant == tenant && item.CapabilityId == capabilityId,
+            MagicLinkConfirmationCapabilityRevoked item => item.Tenant == tenant && item.CapabilityId == capabilityId,
+            MagicLinkConfirmationCapabilityExpired item => item.Tenant == tenant && item.CapabilityId == capabilityId,
+            MagicLinkConfirmationCapabilityUsed item => item.Tenant == tenant && item.CapabilityId == capabilityId,
+            _ => false
+        };
+
+    private static bool MatchesTimeEntryIdentity(
+        object payload,
+        TenantReference tenant,
+        TimeEntryId timeEntryId)
+        => payload switch
+        {
+            TimeEntryRecorded item => item.TimeEntryId == timeEntryId,
+            TimeEntrySubmitted item => item.Tenant == tenant && item.TimeEntryId == timeEntryId,
+            TimeEntryContributorConfirmed item => item.Tenant == tenant && item.TimeEntryId == timeEntryId,
+            TimeEntryAdjustedThroughMagicLink item => item.Tenant == tenant && item.TimeEntryId == timeEntryId,
+            TimeEntryApproved item => item.Tenant == tenant && item.TimeEntryId == timeEntryId,
+            TimeEntryRejected item => item.Tenant == tenant && item.TimeEntryId == timeEntryId,
+            TimeEntryCorrected item => item.Tenant == tenant && item.TimeEntryId == timeEntryId,
+            TimeEntryApprovedCorrected item => item.Tenant == tenant && item.TimeEntryId == timeEntryId,
+            _ => false
+        };
 
     private static MagicLinkEndpointTokenState UnavailableTokenState()
         => new(null, null, UnavailableCatalog());
@@ -390,6 +464,6 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     private static ActivityTypeCatalogReadModel UnavailableCatalog()
         => new([], ProjectionFreshnessMetadata.Unavailable());
 
-    private static bool IsFailClosedReadException(Exception exception)
-        => exception is not OperationCanceledException;
+    private static bool IsFailClosedReadException(Exception exception, CancellationToken cancellationToken)
+        => exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested;
 }

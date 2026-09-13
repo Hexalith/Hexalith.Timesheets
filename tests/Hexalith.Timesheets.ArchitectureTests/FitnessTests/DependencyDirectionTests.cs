@@ -192,6 +192,43 @@ public sealed class DependencyDirectionTests
         props.ShouldNotContain("Exists('$(MSBuildThisFileDirectory)Hexalith.");
     }
 
+    [Fact]
+    public void Timesheets_host_discovers_projection_handlers_and_maps_canonical_sdk_routes()
+    {
+        string hostProject = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets", "Hexalith.Timesheets.csproj"));
+        string projectionsProject = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Projections", "Hexalith.Timesheets.Projections.csproj"));
+        string program = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
+        string indexHandler = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Projections", "MagicLinks", "MagicLinkTokenHashCapabilityIndexProjectionHandler.cs"));
+        string catalogHandler = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Projections", "ActivityTypes", "TenantActivityTypeCatalogProjectionHandler.cs"));
+
+        hostProject.ShouldContain("Hexalith.Timesheets.Projections");
+        projectionsProject.ShouldContain("Hexalith.Timesheets.Server");
+        projectionsProject.ShouldContain("Hexalith.EventStore.DomainService");
+        program.ShouldContain("AddEventStoreDomainService");
+        program.ShouldContain("TimesheetsProjectionsMarker");
+        program.ShouldContain("UseEventStoreDomainService");
+        indexHandler.ShouldContain("IAsyncDomainSharedProjectionRebuildHandler");
+        catalogHandler.ShouldContain("IAsyncDomainSharedProjectionRebuildHandler");
+        indexHandler.ShouldContain("ReadModelWritePolicy.UpdateAsync");
+        catalogHandler.ShouldContain("ReadModelWritePolicy.UpdateAsync");
+    }
+
+    [Fact]
+    public void Timesheets_host_delegates_shared_defaults_to_the_eventstore_sdk_once()
+    {
+        string hostProject = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets", "Hexalith.Timesheets.csproj"));
+        string program = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
+
+        program.Split("AddEventStoreDomainService(", StringSplitOptions.None).Length.ShouldBe(2);
+        program.ShouldNotContain("AddTimesheetsServiceDefaults");
+        hostProject.ShouldContain("Hexalith.Timesheets.ServiceDefaults");
+    }
+
     private static IEnumerable<string> ReadIncludeValues(XDocument project)
     {
         return project

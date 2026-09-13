@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 2026-09-12 (Story 5.3 accepted; approved correction reopened Stories 3.6, 5.1, and 5.2)
+# last_updated: 2026-09-13 (Story 3.6 implementation completed and moved to review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 09-13-2026 09:27
+last_updated: 09-13-2026 13:08
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
-  3-6-implement-eventstore-backed-magic-link-state-loading: ready-for-dev
+  3-6-implement-eventstore-backed-magic-link-state-loading: review
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: done
   epic-3-retrospective: done
 

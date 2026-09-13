@@ -4,8 +4,15 @@ using System.Security.Claims;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
+using Hexalith.EventStore.Contracts.Commands;
+using Hexalith.EventStore.Contracts.Projections;
+using Hexalith.EventStore.Contracts.Queries;
+using Hexalith.EventStore.Contracts.Streams;
+using Hexalith.EventStore.DomainService;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
+using Hexalith.Timesheets.Contracts.Events.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
@@ -13,6 +20,7 @@ using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Projections.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.TimeEntries;
@@ -23,6 +31,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using Shouldly;
 
@@ -104,6 +113,48 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             .ReadFromJsonAsync<MagicLinkAdjustmentDisplayResponse>(JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull();
         adjustment.EditableFields.ShouldContain("durationMinutes");
         adjustment.ReadOnlyFields.ShouldContain("tenant");
+    }
+
+    [Fact]
+    public async Task Concrete_loader_reaches_all_valid_http_routes_after_projection_delivery_without_index_seeding()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(
+            client,
+            ValidConfirmToken(),
+            MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-confirm"),
+            new TimeEntryId("time-entry-confirm"));
+        await factory.ProjectValidStateAsync(
+            client,
+            ValidAdjustToken(),
+            MagicLinkAllowedAction.Adjust,
+            new MagicLinkCapabilityId("capability-adjust"),
+            new TimeEntryId("time-entry-adjust"));
+
+        using HttpResponseMessage confirmDisplay = await client.GetAsync(
+            $"/api/timesheets/magic-links/confirm?t={ValidConfirmToken()}",
+            TestContext.Current.CancellationToken);
+        using HttpResponseMessage confirmSubmit = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(),
+            TestContext.Current.CancellationToken);
+        using HttpResponseMessage adjustDisplay = await client.GetAsync(
+            $"/api/timesheets/magic-links/adjust?t={ValidAdjustToken()}",
+            TestContext.Current.CancellationToken);
+        using HttpResponseMessage adjustSubmit = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
+            AdjustCommand(),
+            TestContext.Current.CancellationToken);
+
+        confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
+        confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        adjustDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
+        adjustSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Store.DirectIndexSeedCount.ShouldBe(0);
+        factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey).Entries.Count.ShouldBe(2);
     }
 
     [Fact]
@@ -532,6 +583,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             ],
             ProjectionFreshnessMetadata.Fresh);
 
+    private static ActivityTypeCreated ActivityCreated()
+        => new(
+            ActivityId(),
+            ActivityTypeScope.Tenant,
+            null,
+            "Delivery",
+            BillableState.Billable);
+
     private static ActivityTypeCatalogReadModel StaleCatalog()
         => new([], ProjectionFreshnessMetadata.Stale());
 
@@ -567,9 +626,120 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         string[] Headers,
         string RawBody);
 
-    private sealed class MagicLinkHttpBoundaryFactory : WebApplicationFactory<Program>
+    private sealed class MagicLinkHttpBoundaryFactory(bool useConcreteLoader = false) : WebApplicationFactory<Program>
     {
         public CapturingLoggerProvider Logs { get; } = new();
+
+        public ProjectionBackedReadModelStore Store { get; } = new();
+
+        public ScriptedEventStoreGateway Gateway { get; } = new();
+
+        public async Task ProjectValidStateAsync(
+            HttpClient client,
+            string token,
+            MagicLinkAllowedAction action,
+            MagicLinkCapabilityId capabilityId,
+            TimeEntryId timeEntryId)
+        {
+            MagicLinkConfirmationCapabilityIssued issued = new(
+                capabilityId,
+                Tenant(),
+                Contributor(),
+                TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(),
+                timeEntryId,
+                MagicLinkTargetKind.ProposedTimeEntry,
+                action,
+                new MagicLinkTokenHash(Hash(token)),
+                ObservedAtUtc.AddDays(1),
+                Operator(),
+                ObservedAtUtc.AddHours(-1),
+                new MagicLinkAuditMetadata("timesheets", "issue-1"),
+                true);
+            TimeEntryRecorded recorded = RecordedExternalState(timeEntryId: timeEntryId).IsRecorded
+                ? new TimeEntryRecorded(
+                    timeEntryId,
+                    TimeEntryTargetReference.ForProject(Project()),
+                    Contributor(),
+                    ActivityId(),
+                    ActivityTypeScope.Tenant,
+                    new DateOnly(2026, 6, 19),
+                    60,
+                    BillableState.Billable,
+                    TimeEntryApprovalState.Draft,
+                    ContributorCategory.ExternalContributor,
+                    null)
+                : throw new InvalidOperationException();
+
+            ProjectionEventDto issuedProjectionEvent = ProjectionEvent(1, issued);
+            using IServiceScope scope = Services.CreateScope();
+            DomainProjectionIdentityOptions projectionIdentity = scope.ServiceProvider
+                .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>()
+                .Value;
+            ProjectionDispatchRoute[] routes = scope.ServiceProvider
+                .GetServices<IAsyncDomainProjectionHandler>()
+                .Where(static handler => string.Equals(handler.Domain, "timesheets", StringComparison.Ordinal))
+                .Select(static handler => new ProjectionDispatchRoute(handler.Domain, handler.ProjectionType))
+                .ToArray();
+            string fingerprint = ProjectionRouteCatalogFingerprint.Compute(
+                projectionIdentity.AppId,
+                projectionIdentity.ServiceVersion,
+                routes);
+            await DispatchProjectionAsync(
+                client,
+                new ProjectionRequest(Tenant().TenantId, "timesheets", capabilityId.Value, [issuedProjectionEvent]),
+                MagicLinkTokenHashCapabilityIndexProjection.ProjectionName,
+                $"dispatch-{capabilityId.Value}",
+                fingerprint);
+
+            if (!Store.Contains(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())))
+            {
+                await DispatchProjectionAsync(
+                    client,
+                    new ProjectionRequest(
+                        Tenant().TenantId,
+                        "timesheets",
+                        ActivityId().Value,
+                        [ProjectionEvent(1, ActivityCreated())]),
+                    TenantActivityTypeCatalogProjection.ProjectionName,
+                    "dispatch-catalog-live",
+                    fingerprint);
+                Store.Get<ActivityTypeCatalogReadModel>(
+                        MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+                    .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Stale);
+
+                var catalogHandler = new TenantActivityTypeCatalogProjectionHandler(Store);
+                var rebuildIdentity = new DomainSharedProjectionRebuildIdentity(
+                    Tenant().TenantId,
+                    "timesheets",
+                    TenantActivityTypeCatalogProjection.ProjectionName,
+                    "catalog-rebuild-1",
+                    "catalog-1");
+                DomainSharedProjectionRebuildCandidate candidate = await catalogHandler.CreateEmptyCandidateAsync(
+                    rebuildIdentity,
+                    TestContext.Current.CancellationToken);
+                candidate = await catalogHandler.AccumulateAsync(
+                    rebuildIdentity,
+                    candidate,
+                    new ProjectionRequest(
+                        Tenant().TenantId,
+                        "timesheets",
+                        ActivityId().Value,
+                        [ProjectionEvent(1, ActivityCreated())]),
+                    TestContext.Current.CancellationToken);
+                DomainProjectionRebuildPlan plan = await catalogHandler.FinalizeAsync(
+                    rebuildIdentity,
+                    candidate,
+                    TestContext.Current.CancellationToken);
+                Store.Apply(plan);
+                Store.Get<ActivityTypeCatalogReadModel>(
+                        MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+                    .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+            }
+
+            Gateway.WithStream(Tenant().TenantId, capabilityId.Value, StreamEvent(1, issued));
+            Gateway.WithStream(Tenant().TenantId, timeEntryId.Value, StreamEvent(1, recorded));
+        }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -582,24 +752,86 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<IMagicLinkConfirmationCapabilityStateLoader>();
-                services.AddScoped<IMagicLinkConfirmationCapabilityStateLoader, ScriptedMagicLinkStateLoader>();
+                if (useConcreteLoader)
+                {
+                    services.AddScoped<IMagicLinkConfirmationCapabilityStateLoader, EventStoreMagicLinkConfirmationCapabilityStateLoader>();
+                }
+                else
+                {
+                    services.AddScoped<IMagicLinkConfirmationCapabilityStateLoader, ScriptedMagicLinkStateLoader>();
+                }
 
                 services.RemoveAll<ITimesheetsAccessGuard>();
                 services.AddSingleton<ITimesheetsAccessGuard, ScriptedAccessGuard>();
 
                 services.RemoveAll<IReadModelStore>();
                 services.RemoveAll<DaprReadModelStore>();
-                services.AddSingleton<IReadModelStore, UnavailableReadModelStore>();
+                services.AddSingleton<IReadModelStore>(useConcreteLoader ? Store : new UnavailableReadModelStore());
+
+                if (useConcreteLoader)
+                {
+                    services.RemoveAll<IEventStoreGatewayClient>();
+                    services.AddSingleton<IEventStoreGatewayClient>(Gateway);
+                }
 
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(new StaticTimeProvider(ObservedAtUtc));
 
-                services.AddSingleton<IStartupFilter>(new ClaimsStartupFilter());
+                services.AddSingleton<IStartupFilter>(new ClaimsStartupFilter(useConcreteLoader));
             });
         }
+
+        private static async Task DispatchProjectionAsync(
+            HttpClient client,
+            ProjectionRequest request,
+            string projectionType,
+            string dispatchId,
+            string fingerprint)
+        {
+            var dispatch = new ProjectionDispatchRequest(request, [projectionType], dispatchId, fingerprint);
+            using HttpResponseMessage projectionResponse = await client.PostAsJsonAsync(
+                "/project/v2",
+                dispatch,
+                JsonOptions,
+                TestContext.Current.CancellationToken);
+            projectionResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+            ProjectionDispatchOutcome outcome = (await projectionResponse.Content
+                    .ReadFromJsonAsync<ProjectionDispatchResponse>(JsonOptions, TestContext.Current.CancellationToken))
+                .ShouldNotBeNull()
+                .Outcomes
+                .ShouldHaveSingleItem();
+            outcome.ProjectionType.ShouldBe(projectionType);
+            outcome.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+            outcome.ReasonCode.ShouldBeNull();
+        }
+
+        private static ProjectionEventDto ProjectionEvent(long sequence, object payload)
+            => new(
+                payload.GetType().FullName!,
+                JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions),
+                "json",
+                sequence,
+                ObservedAtUtc,
+                "correlation-1",
+                $"projection-{sequence}",
+                Operator().PartyId,
+                sequence);
+
+        private static StreamReadEvent StreamEvent(long sequence, object payload)
+            => new(
+                sequence,
+                payload.GetType().FullName!,
+                JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions),
+                "json",
+                1,
+                $"stream-{sequence}",
+                "correlation-1",
+                null,
+                ObservedAtUtc,
+                Operator().PartyId);
     }
 
-    private sealed class ClaimsStartupFilter : IStartupFilter
+    private sealed class ClaimsStartupFilter(bool useMismatchedClaims) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
             => app =>
@@ -608,9 +840,11 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 {
                     context.User = new ClaimsPrincipal(new ClaimsIdentity(
                     [
-                        new Claim("tenant_id", Tenant().TenantId),
-                        new Claim("party_id", Contributor().PartyId),
-                        new Claim(ClaimTypes.NameIdentifier, Contributor().PartyId)
+                        new Claim("tenant_id", useMismatchedClaims ? OtherTenant().TenantId : Tenant().TenantId),
+                        new Claim("party_id", useMismatchedClaims ? OtherContributor().PartyId : Contributor().PartyId),
+                        new Claim(
+                            ClaimTypes.NameIdentifier,
+                            useMismatchedClaims ? OtherContributor().PartyId : Contributor().PartyId)
                     ], "TestAuth"));
 
                     await following(context).ConfigureAwait(false);
@@ -657,7 +891,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 "malformed" or "unknown" => null,
                 "stale-catalog" when route.Name == "confirm-submit" => null,
                 "expired" => IssuedState(token, action, expiresAtUtc: ObservedAtUtc),
-                "cross-tenant" => IssuedState(token, action, tenant: OtherTenant()),
+                // The concrete loader rejects a candidate/capability tenant mismatch before a
+                // capability state can reach the HTTP boundary.
+                "cross-tenant" => null,
                 "wrong-recipient" => IssuedState(token, action, contributor: OtherContributor()),
                 "unauthorized" => IssuedState(token, action, contributor: UnauthorizedContributor()),
                 _ => IssuedState(token, action)
@@ -730,6 +966,136 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     private sealed class StaticTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => utcNow;
+    }
+
+    private sealed class ProjectionBackedReadModelStore : IReadModelStore
+    {
+        private readonly Dictionary<string, object> _values = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _versions = new(StringComparer.Ordinal);
+
+        public int DirectIndexSeedCount { get; private set; }
+
+        public bool Contains(string key) => _values.ContainsKey(key);
+
+        public T Get<T>(string key)
+            where T : class
+            => (T)_values[key];
+
+        public void Apply(DomainProjectionRebuildPlan plan)
+        {
+            foreach (ReadModelBatchOperation operation in plan.Operations)
+            {
+                ActivityTypeCatalogReadModel catalog = JsonSerializer.Deserialize<ActivityTypeCatalogReadModel>(
+                    operation.CanonicalValue.Span,
+                    JsonOptions).ShouldNotBeNull();
+                _values[operation.Key] = catalog;
+                _versions[operation.Key] = _versions.GetValueOrDefault(operation.Key) + 1;
+            }
+        }
+
+        public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
+            string storeName,
+            string key,
+            CancellationToken cancellationToken = default)
+            where TValue : class
+            => Task.FromResult(new ReadModelEntry<TValue>(
+                _values.TryGetValue(key, out object? value) ? value as TValue : null,
+                _versions.TryGetValue(key, out int version)
+                    ? version.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    : null));
+
+        public Task SaveAsync<TValue>(
+            string storeName,
+            string key,
+            TValue value,
+            CancellationToken cancellationToken = default)
+            where TValue : class
+        {
+            if (typeof(TValue) == typeof(MagicLinkTokenHashCapabilityIndexReadModel))
+            {
+                DirectIndexSeedCount++;
+            }
+
+            _values[key] = value;
+            _versions[key] = _versions.GetValueOrDefault(key) + 1;
+            return Task.CompletedTask;
+        }
+
+        public Task<bool> TrySaveAsync<TValue>(
+            string storeName,
+            string key,
+            TValue value,
+            string etag,
+            CancellationToken cancellationToken = default)
+            where TValue : class
+        {
+            string currentEtag = _versions.TryGetValue(key, out int version)
+                ? version.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : string.Empty;
+            if (!string.Equals(currentEtag, etag, StringComparison.Ordinal))
+            {
+                return Task.FromResult(false);
+            }
+
+            _values[key] = value;
+            _versions[key] = version + 1;
+            return Task.FromResult(true);
+        }
+    }
+
+    private sealed class ScriptedEventStoreGateway : IEventStoreGatewayClient
+    {
+        private readonly Dictionary<(string Tenant, string Aggregate), StreamReadEvent[]> _streams = [];
+
+        public void WithStream(string tenant, string aggregate, params StreamReadEvent[] events)
+            => _streams[(tenant, aggregate)] = events;
+
+        public Task<SubmitCommandResponse> SubmitCommandAsync(
+            SubmitCommandRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<EventStoreQueryResult> SubmitQueryAsync(
+            SubmitQueryRequest request,
+            string? ifNoneMatch = null,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<EventStoreQueryResult<T>> SubmitQueryAsync<T>(
+            SubmitQueryRequest request,
+            string? ifNoneMatch = null,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<StreamReadPage> ReadStreamAsync(
+            StreamReadRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            StreamReadEvent[] all = request.AggregateId is not null
+                && _streams.TryGetValue((request.Tenant, request.AggregateId), out StreamReadEvent[]? stream)
+                    ? stream
+                    : [];
+            StreamReadEvent[] page = all
+                .Where(item => item.SequenceNumber > request.FromSequence)
+                .OrderBy(static item => item.SequenceNumber)
+                .Take(request.PageSize)
+                .ToArray();
+            long latest = all.Select(static item => item.SequenceNumber).DefaultIfEmpty(0).Max();
+            long? last = page.Length == 0 ? null : page[^1].SequenceNumber;
+            return Task.FromResult(new StreamReadPage(
+                request.Tenant,
+                request.Domain,
+                request.AggregateId,
+                page,
+                new StreamReadMetadata(
+                    request.FromSequence,
+                    request.ToSequence,
+                    last,
+                    latest,
+                    page.Length,
+                    last is not null && last < latest,
+                    null)));
+        }
     }
 
     private sealed class UnavailableReadModelStore : IReadModelStore

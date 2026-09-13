@@ -444,12 +444,16 @@ public sealed class DiagnosticsPrivacyTests
             "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexReadModel.cs"));
         string indexProjection = File.ReadAllText(RepositoryRoot.PathTo(
             "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexProjection.cs"));
+        string indexEntry = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexEntry.cs"));
+        string indexWriter = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Projections", "MagicLinks", "MagicLinkTokenHashCapabilityIndexProjectionHandler.cs"));
         string loader = File.ReadAllText(RepositoryRoot.PathTo(
             "src", "Hexalith.Timesheets.Server", "MagicLinks", "EventStoreMagicLinkConfirmationCapabilityStateLoader.cs"));
 
         // The rebuildable token-hash index is keyed on the persisted token hash only. It is built from
         // Issued events and must never reference, derive from, store, or decode the raw one-time token.
-        foreach (string indexSource in new[] { indexReadModel, indexProjection })
+        foreach (string indexSource in new[] { indexReadModel, indexEntry, indexProjection, indexWriter })
         {
             indexSource.ShouldNotContain("oneTimeToken", Case.Insensitive);
             indexSource.ShouldNotContain("rawToken", Case.Insensitive);

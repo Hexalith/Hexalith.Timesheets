@@ -136,14 +136,12 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
-                ClaimsPrincipal user = httpContext.User;
                 MagicLinkEndpointTokenState state = await stateLoader
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
                 MagicLinkConfirmationDisplayResponse? response = await service.DescribeAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                        state.CapabilityState,
                         httpContext.TraceIdentifier),
                     t,
                     state.CapabilityState,
@@ -174,14 +172,12 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
-                ClaimsPrincipal user = httpContext.User;
                 MagicLinkEndpointTokenState state = await stateLoader
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
                 MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                        state.CapabilityState,
                         httpContext.TraceIdentifier),
                     t,
                     command,
@@ -211,14 +207,12 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
-                ClaimsPrincipal user = httpContext.User;
                 MagicLinkEndpointTokenState state = await stateLoader
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
                 MagicLinkAdjustmentDisplayResponse? response = await service.DescribeAdjustmentAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                        state.CapabilityState,
                         httpContext.TraceIdentifier),
                     t,
                     state.CapabilityState,
@@ -249,14 +243,12 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                 }
 
-                ClaimsPrincipal user = httpContext.User;
                 MagicLinkEndpointTokenState state = await stateLoader
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
                 MagicLinkConfirmationUseResult result = await service.AdjustAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                        state.CapabilityState,
                         httpContext.TraceIdentifier),
                     t,
                     command,
