@@ -2,7 +2,7 @@
 title: 'Reach a Fresh Activity Type catalog in the live host'
 type: 'bugfix'
 created: '2026-09-14'
-status: 'in-progress'
+status: 'in-review'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: '19fc5b8e7cbc52616069cfcd28d3654cf04eedb4'
@@ -67,6 +67,25 @@ context:
 ## Spec Change Log
 
 ## Review Triage Log
+
+| Finding | Verdict | Route | Evidence |
+|---|---|---|---|
+| BH1 — promotion lacks a wire-level stream-head signal | false | rejected | The production orchestrator reads the aggregate from sequence zero with `GetEventsAsync(0)` before named dispatch, so a creation-only request is not emitted for a stream whose current history also contains deactivation. The frozen decision also explicitly accepts local contiguous `1..N` proof because `ProjectionRequest` has no head field. |
+| BH2 — an older replay can overwrite newer state for the same aggregate | false | rejected | Production delivery is serialized per aggregate and rereads the full current actor history from sequence zero; it does not admit an arbitrary older prefix as a live update. |
+| BH3 — rebuild finalization can combine older contents with a newer cursor | false | rejected | EventStore suppresses live projection delivery while an operator rebuild is active, so the claimed live advance between candidate creation and finalization is not admitted. A write after finalization reads current is additionally protected by the returned ETag match. |
+| BH4 — an unsupported Activity Type event can be skipped before promotion | false | rejected | Every Activity Type event currently emitted by this module is handled. The finding demonstrates no current producer or current event whose skipped semantics would make the catalog wrong; rejecting hypothetical future event types would also conflict with additive consumer tolerance. |
+| BH5 — unreadable live delivery has no projection-handler test | medium | patch | `ProjectionEventReader` rejects recognized events with malformed JSON or unsupported serialization, but the changed handler suite did not exercise that failure/no-write path required by the second acceptance criterion. |
+| BH6 — no HTTP test chains rejected delivery to opaque denial and no dispatch | medium | patch | Existing tests prove the projection and denial halves separately, but no concrete-loader boundary test starts with an incomplete/conflicting/unreadable `/project/v2` delivery and verifies the combined denial/no-command outcome. |
+| BH7 — cursor-floor verification covers only persisted-ahead ordering | medium | patch | With only persisted `42` and candidate `7`, an implementation that always chooses persisted would pass; both orderings are required to verify `max(persisted, candidate)`. |
+| BH8 — live promotion is not tested over an existing Stale catalog | medium | patch | The empty and already-Fresh arrangements do not prove an upgrade from the exact pre-change persisted `Stale` state. |
+| BH9 — verification omits unrelated repository test lanes and records one broad architecture failure | low | rejected | The story verification accurately records the broad pre-existing documentation mismatch and does not claim that lane passed; changing this build's spec to conceal or absorb the explicitly excluded launch-readiness issue is forbidden. The changed projects and their consumers were built and exercised. |
+| EC1 — one complete aggregate marks a wider non-Fresh catalog Fresh | false | rejected | The frozen decision explicitly redefines `Fresh` as every aggregate delivered to this host having been folded from creation, not tenant-complete inventory. The claimed consequence applies the rejected tenant-complete meaning. |
+| EC2 — live data can advance during candidate creation/finalization | false | rejected | EventStore checks for an active domain rebuild before live delivery and returns without dispatch while it is active; the stated trigger is excluded by the production caller. |
+| EC3 — missing freshness metadata causes an uncontrolled finalization failure | low | rejected | Rebuild candidates are created and accumulated by this handler with non-null metadata; malformed persisted/candidate state fails the internal rebuild rather than becoming loader-visible Fresh authority, so no external disclosure or unsafe write was demonstrated. |
+| EC4 — pre-creation mutations can precede creation in a promoted history | false | rejected | The authoritative aggregate cannot emit lifecycle events before its creation event, and production projection delivery replays that aggregate's full EventStore history. The reviewer demonstrated only an impossible direct-handler input. |
+| EC5 — a rejected delivery can leave usable Fresh data and still permit capability use | false | rejected | Rejection intentionally leaves previously proven catalog data unchanged. A token for the rejected, never-projected aggregate has no catalog item and fails validation; a token using unrelated retained authority is not invalidated by a failed sibling delivery. |
+| VG1 — existing Stale catalogs are not covered by live-promotion verification | medium | patch | Pre-verified gap: no repository test delivers complete history onto an existing `Stale` catalog, so a null-or-Fresh-only promotion defect would pass. |
+| VG2 — rebuild cursor selection verifies only the persisted-ahead arm | medium | patch | Pre-verified gap: no other catalog finalization test proves that a candidate cursor greater than persisted is retained. |
 
 ## Design Notes
 
