@@ -88,6 +88,12 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Magic-link HTTP no-disclosure");
         readiness.ShouldContain("Tenant-isolation/security");
         readiness.ShouldContain("Works checkout ownership");
+        readiness.ShouldContain("2026-09-14");
+        readiness.ShouldContain("ArchitectureTests 54 total / 54 pass");
+        readiness.ShouldContain("Projections.Tests 123 / 123 pass");
+        readiness.ShouldContain("Server.Tests 443 / 443 pass");
+        readiness.ShouldContain("Final total: 876 tests, 872 pass, 4 intentional skips, 0 failures");
+        readiness.ShouldNotContain("Final total: 800 tests");
     }
 
     [Fact]
@@ -122,18 +128,27 @@ public sealed class LaunchReadinessTests
     }
 
     [Fact]
-    public void Launch_readiness_record_keeps_deferred_integrations_marked_not_launch_active()
+    public void Launch_readiness_record_keeps_remaining_deferrals_honest_and_records_magic_link_wiring()
     {
-        // AC2: the record must not let the host be described as launch-active for integrations that are
-        // only story-complete. Guard the honest "not wired / not resolving / no route" caveats so a doc
-        // edit cannot overstate live Works, valid magic-link end-to-end, or an export-preview HTTP route.
+        // Remaining launch deferrals stay visible, while the Story 3.6 projection delivery and valid
+        // HTTP journey are no longer described by the obsolete unwired-index waiver.
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
 
         readiness.ShouldContain("Live Works reference validation in host");
         readiness.ShouldContain("Magic-link live end-to-end resolution");
         readiness.ShouldContain("Export preview");
-        readiness.ShouldContain("no projection-host wiring"); // magic-link index not host-wired
-        readiness.ShouldContain("no dedicated HTTP route"); // export preview has no HTTP endpoint
+        readiness.ShouldContain("canonical token-hash index and tenant Activity Type catalog projection handlers");
+        readiness.ShouldContain("all four valid confirm/adjust HTTP routes pass without direct index or catalog seeding");
+        readiness.ShouldNotContain("no projection-host wiring");
+        readiness.ShouldNotContain("Valid links do not resolve");
+        readiness.ShouldContain("no dedicated HTTP route");
+
+        string readme = File.ReadAllText(RepositoryRoot.PathTo("README.md"));
+        readme.ShouldContain("discovers the canonical token-hash index and tenant catalog projection handlers");
+        readme.ShouldContain("reaches all four confirm/adjust routes");
+        readme.ShouldContain("neither read model was seeded directly");
+        readme.ShouldNotContain("has no live projection-host wiring");
+        readme.ShouldNotContain("A valid magic link still does not resolve");
     }
 
     [Fact]

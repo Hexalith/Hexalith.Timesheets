@@ -75,8 +75,9 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             return DomainProjectionHandlerResult.Completed();
         }
-        catch (InvalidOperationException)
+        catch (Exception)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             return DomainProjectionHandlerResult.Retryable(ProjectionDispatchReasonCodes.DeliveryStateUnavailable);
         }
     }
@@ -170,7 +171,10 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
             object? payload = DeserializeActivityTypeEvent(projectionEvent);
             if (payload is not null)
             {
-                if (!string.Equals(ActivityTypeIdFor(payload).Value, request.AggregateId, StringComparison.Ordinal))
+                ActivityTypeId? activityTypeId = ActivityTypeIdFor(payload);
+                if (activityTypeId is null
+                    || string.IsNullOrWhiteSpace(activityTypeId.Value)
+                    || !string.Equals(activityTypeId.Value, request.AggregateId, StringComparison.Ordinal))
                 {
                     throw new InvalidOperationException("An Activity Type event does not match its aggregate identifier.");
                 }

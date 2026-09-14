@@ -106,6 +106,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         ActivityTypeCatalogReadModel catalog = await LoadActivityTypeCatalogAsync(
             candidate.Tenant,
             cancellationToken).ConfigureAwait(false);
+        if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+        {
+            return UnavailableTokenState();
+        }
 
         return new MagicLinkEndpointTokenState(capability, timeEntry, catalog);
     }

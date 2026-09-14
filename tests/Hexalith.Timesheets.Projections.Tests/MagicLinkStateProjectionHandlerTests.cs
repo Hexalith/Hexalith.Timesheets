@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Projections;
@@ -113,6 +114,156 @@ public sealed class MagicLinkStateProjectionHandlerTests
 
         result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
         result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+    }
+
+    [Fact]
+    public async Task Index_live_writer_rejects_identical_issuances_at_different_sequences_without_writing()
+    {
+        var store = new ScriptedReadModelStore();
+        string expectedState = SeedExistingState(store, "index");
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
+
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            new ProjectionRequest(
+                "tenant-1",
+                "timesheets",
+                "capability-1",
+                [Event(1, Issued()), Event(2, Issued())]),
+            "dispatch-twice-issued",
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+        ReadExistingStateSnapshot(store, "index").ShouldBe(expectedState);
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    [Theory]
+    [InlineData("catalog", "null-events")]
+    [InlineData("catalog", "null-event")]
+    [InlineData("catalog", "null-event-type")]
+    [InlineData("catalog", "blank-event-type")]
+    [InlineData("catalog", "missing-activity-type")]
+    [InlineData("catalog", "blank-activity-type")]
+    [InlineData("index", "null-events")]
+    [InlineData("index", "null-event")]
+    [InlineData("index", "null-event-type")]
+    [InlineData("index", "blank-event-type")]
+    [InlineData("index", "missing-tenant")]
+    [InlineData("index", "blank-tenant")]
+    [InlineData("index", "missing-capability")]
+    [InlineData("index", "blank-capability")]
+    [InlineData("index", "missing-token-hash")]
+    [InlineData("index", "blank-token-hash")]
+    public async Task Malformed_live_deliveries_fail_with_identity_conflict_without_writing(
+        string handlerName,
+        string scenario)
+    {
+        var store = new ScriptedReadModelStore();
+        string expectedState = SeedExistingState(store, handlerName);
+        ProjectionRequest request = MalformedRequest(handlerName, scenario);
+
+        DomainProjectionHandlerResult result = await ProjectAsync(
+            handlerName,
+            store,
+            request,
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+        ReadExistingStateSnapshot(store, handlerName).ShouldBe(expectedState);
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    [Theory]
+    [InlineData("catalog", "get")]
+    [InlineData("catalog", "save")]
+    [InlineData("index", "get")]
+    [InlineData("index", "save")]
+    public async Task Live_writer_uncancelled_store_failures_are_retryable_without_changing_state(
+        string handlerName,
+        string operation)
+    {
+        var store = new ScriptedReadModelStore();
+        string expectedState = SeedExistingState(store, handlerName);
+        if (operation == "get")
+        {
+            store.GetException = new HttpRequestException("Transport failed.");
+        }
+        else
+        {
+            store.TrySaveException = new JsonException("Save serialization failed.");
+        }
+
+        DomainProjectionHandlerResult result = await ProjectAsync(
+            handlerName,
+            store,
+            ValidRequest(handlerName),
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Retryable);
+        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryStateUnavailable);
+        ReadExistingStateSnapshot(store, handlerName).ShouldBe(expectedState);
+        store.TrySaveCount.ShouldBe(operation == "save" ? 1 : 0);
+    }
+
+    [Theory]
+    [InlineData("catalog", "get")]
+    [InlineData("catalog", "save")]
+    [InlineData("index", "get")]
+    [InlineData("index", "save")]
+    public async Task Live_writer_uncancelled_cancellation_exceptions_are_retryable_without_changing_state(
+        string handlerName,
+        string operation)
+    {
+        var store = new ScriptedReadModelStore();
+        string expectedState = SeedExistingState(store, handlerName);
+        if (operation == "get")
+        {
+            store.GetException = new OperationCanceledException("Store read timed out.");
+        }
+        else
+        {
+            store.TrySaveException = new OperationCanceledException("Store write timed out.");
+        }
+
+        DomainProjectionHandlerResult result = await ProjectAsync(
+            handlerName,
+            store,
+            ValidRequest(handlerName),
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Retryable);
+        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryStateUnavailable);
+        ReadExistingStateSnapshot(store, handlerName).ShouldBe(expectedState);
+        store.TrySaveCount.ShouldBe(operation == "save" ? 1 : 0);
+    }
+
+    [Theory]
+    [InlineData("catalog", "get")]
+    [InlineData("catalog", "save")]
+    [InlineData("index", "get")]
+    [InlineData("index", "save")]
+    public async Task Live_writer_propagates_requested_cancellation_without_changing_state(
+        string handlerName,
+        string operation)
+    {
+        using var cancellation = new CancellationTokenSource();
+        var store = new ScriptedReadModelStore
+        {
+            CancelBeforeGet = operation == "get" ? cancellation : null,
+            CancelBeforeTrySave = operation == "save" ? cancellation : null
+        };
+        string expectedState = SeedExistingState(store, handlerName);
+
+        _ = await Should.ThrowAsync<OperationCanceledException>(() => ProjectAsync(
+            handlerName,
+            store,
+            ValidRequest(handlerName),
+            cancellation.Token));
+
+        ReadExistingStateSnapshot(store, handlerName).ShouldBe(expectedState);
+        store.TrySaveCount.ShouldBe(operation == "save" ? 1 : 0);
     }
 
     [Fact]
@@ -476,6 +627,107 @@ public sealed class MagicLinkStateProjectionHandlerTests
             "operator-1",
             sequence);
 
+    private static ProjectionRequest MalformedRequest(string handlerName, string scenario)
+    {
+        string aggregateId = handlerName == "catalog" ? "activity-1" : "capability-1";
+        if (scenario == "null-events")
+        {
+            return new ProjectionRequest("tenant-1", "timesheets", aggregateId, null!);
+        }
+
+        object payload = handlerName == "catalog" ? ActivityCreated() : Issued();
+        if (scenario == "null-event")
+        {
+            return new ProjectionRequest("tenant-1", "timesheets", aggregateId, [null!]);
+        }
+
+        if (scenario is "null-event-type" or "blank-event-type")
+        {
+            ProjectionEventDto projectionEvent = Event(1, payload) with
+            {
+                EventTypeName = scenario == "null-event-type" ? null! : " "
+            };
+            return new ProjectionRequest("tenant-1", "timesheets", aggregateId, [projectionEvent]);
+        }
+
+        (string propertyName, string valuePropertyName) = scenario switch
+        {
+            "missing-activity-type" or "blank-activity-type" => ("activityTypeId", "value"),
+            "missing-tenant" or "blank-tenant" => ("tenant", "tenantId"),
+            "missing-capability" or "blank-capability" => ("capabilityId", "value"),
+            "missing-token-hash" or "blank-token-hash" => ("tokenHash", "value"),
+            _ => throw new InvalidOperationException($"Unknown malformed-delivery scenario '{scenario}'.")
+        };
+        JsonObject json = JsonSerializer.SerializeToNode(payload, s_jsonOptions)
+            .ShouldNotBeNull()
+            .AsObject();
+        if (scenario.StartsWith("missing-", StringComparison.Ordinal))
+        {
+            _ = json.Remove(propertyName);
+        }
+        else
+        {
+            json[propertyName] = new JsonObject { [valuePropertyName] = " " };
+        }
+
+        return new ProjectionRequest(
+            "tenant-1",
+            "timesheets",
+            aggregateId,
+            [Event(1, payload) with { Payload = JsonSerializer.SerializeToUtf8Bytes(json, s_jsonOptions) }]);
+    }
+
+    private static ProjectionRequest ValidRequest(string handlerName)
+        => handlerName == "catalog"
+            ? new ProjectionRequest("tenant-1", "timesheets", "activity-1", [Event(1, ActivityCreated())])
+            : new ProjectionRequest("tenant-1", "timesheets", "capability-1", [Event(1, Issued())]);
+
+    private static Task<DomainProjectionHandlerResult> ProjectAsync(
+        string handlerName,
+        IReadModelStore store,
+        ProjectionRequest request,
+        CancellationToken cancellationToken)
+        => handlerName == "catalog"
+            ? new TenantActivityTypeCatalogProjectionHandler(store).ProjectAsync(request, "dispatch-catalog", cancellationToken)
+            : new MagicLinkTokenHashCapabilityIndexProjectionHandler(store).ProjectAsync(request, "dispatch-index", cancellationToken);
+
+    private static string SeedExistingState(ScriptedReadModelStore store, string handlerName)
+    {
+        if (handlerName == "catalog")
+        {
+            var existing = new ActivityTypeCatalogReadModel(
+                [new ActivityTypeCatalogItem(
+                    new ActivityTypeId("activity-existing"),
+                    ActivityTypeScope.Tenant,
+                    null,
+                    "Existing",
+                    true,
+                    BillableState.Billable)],
+                new ProjectionFreshnessMetadata(ProjectionFreshnessState.Fresh, "8", null, null));
+            store.Set(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1")), existing);
+            return Snapshot(existing);
+        }
+
+        var index = new MagicLinkTokenHashCapabilityIndexReadModel(
+            new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>(StringComparer.Ordinal)
+            {
+                ["existing-hash"] = new(
+                    new TenantReference("tenant-1"),
+                    new MagicLinkCapabilityId("existing-capability"))
+            });
+        store.Set(MagicLinkTokenHashCapabilityIndexProjection.StateKey, index);
+        return Snapshot(index);
+    }
+
+    private static string ReadExistingStateSnapshot(ScriptedReadModelStore store, string handlerName)
+        => Snapshot(handlerName == "catalog"
+            ? store.Get<ActivityTypeCatalogReadModel>(
+                MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1")))
+            : store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey));
+
+    private static string Snapshot(object value)
+        => JsonSerializer.Serialize(value, value.GetType(), s_jsonOptions);
+
     private static MagicLinkConfirmationCapabilityIssued Issued(MagicLinkCapabilityId? capabilityId = null)
         => new(
             capabilityId ?? new MagicLinkCapabilityId("capability-1"),
@@ -508,6 +760,14 @@ public sealed class MagicLinkStateProjectionHandlerTests
 
         public int ConflictsRemaining { get; set; }
 
+        public CancellationTokenSource? CancelBeforeGet { get; set; }
+
+        public CancellationTokenSource? CancelBeforeTrySave { get; set; }
+
+        public Exception? GetException { get; set; }
+
+        public Exception? TrySaveException { get; set; }
+
         public int TrySaveCount { get; private set; }
 
         public T Get<T>(string key)
@@ -523,9 +783,22 @@ public sealed class MagicLinkStateProjectionHandlerTests
             string key,
             CancellationToken cancellationToken = default)
             where TValue : class
-            => Task.FromResult(new ReadModelEntry<TValue>(
+        {
+            if (CancelBeforeGet is not null)
+            {
+                CancelBeforeGet.Cancel();
+                return Task.FromCanceled<ReadModelEntry<TValue>>(cancellationToken);
+            }
+
+            if (GetException is not null)
+            {
+                return Task.FromException<ReadModelEntry<TValue>>(GetException);
+            }
+
+            return Task.FromResult(new ReadModelEntry<TValue>(
                 _values.TryGetValue(key, out object? value) ? value as TValue : null,
                 _values.ContainsKey(key) ? _version.ToString(System.Globalization.CultureInfo.InvariantCulture) : null));
+        }
 
         public Task SaveAsync<TValue>(
             string storeName,
@@ -548,6 +821,17 @@ public sealed class MagicLinkStateProjectionHandlerTests
             where TValue : class
         {
             TrySaveCount++;
+            if (CancelBeforeTrySave is not null)
+            {
+                CancelBeforeTrySave.Cancel();
+                return Task.FromCanceled<bool>(cancellationToken);
+            }
+
+            if (TrySaveException is not null)
+            {
+                return Task.FromException<bool>(TrySaveException);
+            }
+
             if (ConflictsRemaining-- > 0)
             {
                 return Task.FromResult(false);

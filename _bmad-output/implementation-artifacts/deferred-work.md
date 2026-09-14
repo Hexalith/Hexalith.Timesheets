@@ -101,3 +101,7 @@
 - source_spec: _bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md
   summary: The "Known pitfalls" entry in CLAUDE.md, AGENTS.md and .github/copilot-instructions.md is now false.
   evidence: All three still read "`MagicLinkTokenHashCapabilityIndexProjection` has no projection-host wiring; valid links fail closed until a story wires it". `Program.cs:15-17` now passes `typeof(TimesheetsProjectionsMarker).Assembly` to `AddEventStoreDomainService` and `MagicLinkTokenHashCapabilityIndexProjectionHandler` is the canonical writer, so the entry misdirects the next agent. Deferred because the fix edits agent-context files, which CLAUDE.md requires be kept synchronized as normalized text across all three entry points.
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-review-hardening.md`
+  summary: Synchronize stale agent and planning guidance that still says the magic-link token-hash projection is unwired.
+  evidence: `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, and the historical architecture status still contradict the canonical projection wiring now proven by the host and HTTP tests; this drift predates the current diff, and agent-context fixes require synchronized managed-baseline work.

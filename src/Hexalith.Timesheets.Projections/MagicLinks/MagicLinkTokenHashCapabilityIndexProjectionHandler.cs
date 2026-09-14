@@ -74,8 +74,9 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(IReadMode
         {
             return DomainProjectionHandlerResult.Failed(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
         }
-        catch (InvalidOperationException)
+        catch (Exception)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             return DomainProjectionHandlerResult.Retryable(ProjectionDispatchReasonCodes.DeliveryStateUnavailable);
         }
     }
@@ -169,21 +170,31 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(IReadMode
             .Select(ProjectionEventReader.Deserialize<MagicLinkConfirmationCapabilityIssued>)
             .Where(static item => item is not null)
             .Cast<MagicLinkConfirmationCapabilityIssued>()
-            .Distinct()
             .ToArray();
         if (issuances.Length == 0)
         {
             return null;
         }
 
-        if (issuances.Length != 1
-            || !string.Equals(issuances[0].Tenant.TenantId, request.TenantId, StringComparison.Ordinal)
-            || !string.Equals(issuances[0].CapabilityId.Value, request.AggregateId, StringComparison.Ordinal))
+        if (issuances.Length != 1)
         {
             throw new InvalidOperationException("The issuance event does not match its projection scope.");
         }
 
-        return issuances[0];
+        MagicLinkConfirmationCapabilityIssued issuance = issuances[0];
+        if (issuance.Tenant is null
+            || string.IsNullOrWhiteSpace(issuance.Tenant.TenantId)
+            || issuance.CapabilityId is null
+            || string.IsNullOrWhiteSpace(issuance.CapabilityId.Value)
+            || issuance.TokenHash is null
+            || string.IsNullOrWhiteSpace(issuance.TokenHash.Value)
+            || !string.Equals(issuance.Tenant.TenantId, request.TenantId, StringComparison.Ordinal)
+            || !string.Equals(issuance.CapabilityId.Value, request.AggregateId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The issuance event does not match its projection scope.");
+        }
+
+        return issuance;
     }
 
     private static IndexRebuildCandidate AddCandidate(

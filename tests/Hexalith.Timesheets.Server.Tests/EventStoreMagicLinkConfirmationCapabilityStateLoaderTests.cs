@@ -331,8 +331,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken)
             .ConfigureAwait(true);
 
-        state.ActivityTypeCatalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Unavailable);
-        state.ActivityTypeCatalog.Items.ShouldBeEmpty();
+        ShouldBeOpaqueFailClosed(state);
     }
 
     [Fact]
@@ -649,6 +648,75 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         ShouldBeOpaqueFailClosed(state);
     }
 
+    [Theory]
+    [InlineData("tenant")]
+    [InlineData("domain")]
+    [InlineData("aggregate")]
+    public async Task LoadTokenStateAsync_fails_closed_when_stream_page_scope_differs_from_request(string scopePart)
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
+            .WithPageTransform(
+                Tenant().TenantId,
+                CapabilityId().Value,
+                page => scopePart switch
+                {
+                    "tenant" => page with { Tenant = "tenant-2" },
+                    "domain" => page with { Domain = "other-domain" },
+                    "aggregate" => page with { AggregateId = "capability-2" },
+                    _ => throw new InvalidOperationException($"Unknown page-scope part '{scopePart}'.")
+                });
+
+        MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsync_fails_closed_for_conflicting_events_at_the_same_sequence()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(
+                Tenant().TenantId,
+                CapabilityId().Value,
+                Event(1, "capability-1", Issued()),
+                Event(1, "capability-conflict", Issued(hash: new MagicLinkTokenHash("conflicting-hash"))))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Theory]
+    [InlineData("project-scope")]
+    [InlineData("project-reference")]
+    [InlineData("duplicate-identifier")]
+    public async Task LoadTokenStateAsync_fails_closed_for_invalid_fresh_catalog_shape(string scenario)
+    {
+        ActivityTypeCatalogReadModel malformed = InvalidFreshCatalog(scenario);
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash()), malformed))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+
+        ActivityTypeCatalogReadModel adminCatalog = await CreateLoader(
+                new ScriptedGatewayClient(),
+                new InMemoryReadModelStore(IndexWith(Hash()), malformed))
+            .LoadActivityTypeCatalogAsync(TestContext.Current.CancellationToken);
+        adminCatalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Unavailable);
+        adminCatalog.Items.ShouldBeEmpty();
+    }
+
     [Fact]
     public async Task LoadCapabilityAsync_folds_terminal_state_for_admin_revoke_and_expire_paths()
     {
@@ -801,6 +869,50 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             Project(),
             "Project Work",
             BillableState.Billable);
+
+    private static ActivityTypeCatalogReadModel InvalidFreshCatalog(string scenario)
+    {
+        ActivityTypeCatalogItem first = scenario switch
+        {
+            "project-scope" => new ActivityTypeCatalogItem(
+                ProjectScopedActivityCreated().ActivityTypeId,
+                ActivityTypeScope.Project,
+                null,
+                "Project Work",
+                true,
+                BillableState.Billable),
+            "project-reference" => new ActivityTypeCatalogItem(
+                ActivityId(),
+                ActivityTypeScope.Tenant,
+                Project(),
+                "Delivery",
+                true,
+                BillableState.Billable),
+            "duplicate-identifier" => new ActivityTypeCatalogItem(
+                ActivityId(),
+                ActivityTypeScope.Tenant,
+                null,
+                "Delivery",
+                true,
+                BillableState.Billable),
+            _ => throw new InvalidOperationException($"Unknown invalid-catalog scenario '{scenario}'.")
+        };
+        ActivityTypeCatalogItem[] items = scenario == "duplicate-identifier"
+            ? [
+                first,
+                new ActivityTypeCatalogItem(
+                    ActivityId(),
+                    ActivityTypeScope.Tenant,
+                    null,
+                    SecondActivityCreated().Label,
+                    true,
+                    BillableState.Billable)
+            ]
+            : [first];
+        return new ActivityTypeCatalogReadModel(
+            items,
+            new ProjectionFreshnessMetadata(ProjectionFreshnessState.Fresh, "2", null, null));
+    }
 
     private static TenantReference Tenant() => new("tenant-1");
 

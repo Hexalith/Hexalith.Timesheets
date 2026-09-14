@@ -10,10 +10,24 @@ internal static class ProjectionEventReader
 
     internal static IReadOnlyList<ProjectionEventDto> Normalize(IEnumerable<ProjectionEventDto> events)
     {
-        ArgumentNullException.ThrowIfNull(events);
+        if (events is null)
+        {
+            throw new InvalidOperationException("The projection event collection is missing.");
+        }
+
+        List<ProjectionEventDto> received = [];
+        foreach (ProjectionEventDto? projectionEvent in events)
+        {
+            if (projectionEvent is null || string.IsNullOrWhiteSpace(projectionEvent.EventTypeName))
+            {
+                throw new InvalidOperationException("A projection event envelope is malformed.");
+            }
+
+            received.Add(projectionEvent);
+        }
 
         List<ProjectionEventDto> normalized = [];
-        foreach (IGrouping<long, ProjectionEventDto> group in events.GroupBy(static item => item.SequenceNumber))
+        foreach (IGrouping<long, ProjectionEventDto> group in received.GroupBy(static item => item.SequenceNumber))
         {
             ProjectionEventDto first = group.First();
             if (group.Any(item => !Equivalent(first, item)))
@@ -58,6 +72,10 @@ internal static class ProjectionEventReader
         catch (JsonException exception)
         {
             throw new InvalidOperationException("A recognized projection event has a malformed payload.", exception);
+        }
+        catch (ArgumentException exception)
+        {
+            throw new InvalidOperationException("A recognized projection event has an invalid payload.", exception);
         }
     }
 
