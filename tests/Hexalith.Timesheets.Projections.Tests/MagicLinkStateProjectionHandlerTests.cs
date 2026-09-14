@@ -219,7 +219,7 @@ public sealed class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Catalog_live_delivery_is_not_fresh_until_deterministic_shared_rebuild_finishes()
+    public async Task Catalog_first_complete_live_delivery_is_promoted_to_fresh()
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -237,9 +237,111 @@ public sealed class MagicLinkStateProjectionHandlerTests
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1")));
 
         delivery.Status.ShouldBe(ProjectionDispatchStatus.Completed);
-        live.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Stale);
+        live.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        live.ProjectionFreshness.Cursor.ShouldBe("2");
         live.Items.ShouldHaveSingleItem().Label.ShouldBe("Renamed");
+    }
 
+    [Fact]
+    public async Task Catalog_sibling_live_delivery_preserves_an_already_fresh_catalog()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"));
+        store.Set(
+            key,
+            new ActivityTypeCatalogReadModel(
+                [
+                    new ActivityTypeCatalogItem(
+                        new ActivityTypeId("activity-1"),
+                        ActivityTypeScope.Tenant,
+                        null,
+                        "Delivery",
+                        true,
+                        BillableState.Billable)
+                ],
+                new ProjectionFreshnessMetadata(ProjectionFreshnessState.Fresh, "10", null, null)));
+        ProjectionEventDto siblingCreated = Event(
+            1,
+            ActivityCreated(new ActivityTypeId("activity-2"), "Research")) with
+        {
+            GlobalPosition = 11
+        };
+
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            new ProjectionRequest(
+                "tenant-1",
+                "timesheets",
+                "activity-2",
+                [siblingCreated]),
+            "dispatch-activity-2",
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        ActivityTypeCatalogReadModel catalog = store.Get<ActivityTypeCatalogReadModel>(key);
+        catalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        catalog.ProjectionFreshness.Cursor.ShouldBe("11");
+        catalog.Items.Select(static item => item.ActivityTypeId.Value)
+            .ShouldBe(["activity-1", "activity-2"], ignoreOrder: true);
+    }
+
+    [Theory]
+    [InlineData("missing-sequence")]
+    [InlineData("missing-creation")]
+    [InlineData("identity-conflict")]
+    public async Task Catalog_incomplete_live_delivery_fails_without_changing_the_catalog(string scenario)
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"));
+        var existing = new ActivityTypeCatalogReadModel(
+            [
+                new ActivityTypeCatalogItem(
+                    new ActivityTypeId("activity-existing"),
+                    ActivityTypeScope.Tenant,
+                    null,
+                    "Existing",
+                    true,
+                    BillableState.Billable)
+            ],
+            new ProjectionFreshnessMetadata(ProjectionFreshnessState.Fresh, "8", null, null));
+        store.Set(key, existing);
+        ProjectionEventDto[] events = scenario switch
+        {
+            "missing-sequence" =>
+            [
+                Event(1, ActivityCreated()),
+                Event(3, new ActivityTypeRenamed(new ActivityTypeId("activity-1"), "Renamed"))
+            ],
+            "missing-creation" =>
+            [Event(1, new ActivityTypeRenamed(new ActivityTypeId("activity-1"), "Renamed"))],
+            "identity-conflict" =>
+            [Event(1, ActivityCreated(new ActivityTypeId("activity-2")))],
+            _ => throw new InvalidOperationException($"Unknown incomplete-history scenario '{scenario}'.")
+        };
+
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            new ProjectionRequest("tenant-1", "timesheets", "activity-1", events),
+            "dispatch-gap",
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+        store.Get<ActivityTypeCatalogReadModel>(key).ShouldBe(existing);
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Catalog_rebuild_finalize_never_moves_the_persisted_cursor_backwards()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"));
+        store.Set(
+            key,
+            new ActivityTypeCatalogReadModel(
+                [],
+                new ProjectionFreshnessMetadata(ProjectionFreshnessState.Fresh, "42", null, null)));
         var identity = new DomainSharedProjectionRebuildIdentity(
             "tenant-1",
             "timesheets",
@@ -249,11 +351,13 @@ public sealed class MagicLinkStateProjectionHandlerTests
         DomainSharedProjectionRebuildCandidate candidate = await handler.CreateEmptyCandidateAsync(
             identity,
             TestContext.Current.CancellationToken);
+        ProjectionEventDto created = Event(1, ActivityCreated()) with { GlobalPosition = 7 };
         candidate = await handler.AccumulateAsync(
             identity,
             candidate,
-            request,
+            new ProjectionRequest("tenant-1", "timesheets", "activity-1", [created]),
             TestContext.Current.CancellationToken);
+
         DomainProjectionRebuildPlan plan = await handler.FinalizeAsync(
             identity,
             candidate,
@@ -263,60 +367,8 @@ public sealed class MagicLinkStateProjectionHandlerTests
             s_jsonOptions).ShouldNotBeNull();
 
         rebuilt.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
-        rebuilt.Items.ShouldHaveSingleItem().Label.ShouldBe("Renamed");
-    }
-
-    [Fact]
-    public async Task Catalog_live_merge_preserves_a_sibling_activity_type_aggregate()
-    {
-        var store = new ScriptedReadModelStore();
-        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
-
-        DomainProjectionHandlerResult first = await handler.ProjectAsync(
-            new ProjectionRequest(
-                "tenant-1",
-                "timesheets",
-                "activity-1",
-                [Event(1, ActivityCreated(new ActivityTypeId("activity-1"), "Delivery"))]),
-            "dispatch-activity-1",
-            TestContext.Current.CancellationToken);
-        DomainProjectionHandlerResult second = await handler.ProjectAsync(
-            new ProjectionRequest(
-                "tenant-1",
-                "timesheets",
-                "activity-2",
-                [Event(1, ActivityCreated(new ActivityTypeId("activity-2"), "Research"))]),
-            "dispatch-activity-2",
-            TestContext.Current.CancellationToken);
-
-        first.Status.ShouldBe(ProjectionDispatchStatus.Completed);
-        second.Status.ShouldBe(ProjectionDispatchStatus.Completed);
-        ActivityTypeCatalogReadModel catalog = store.Get<ActivityTypeCatalogReadModel>(
-            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1")));
-        catalog.Items.Select(static item => item.ActivityTypeId.Value)
-            .ShouldBe(["activity-1", "activity-2"], ignoreOrder: true);
-    }
-
-    [Fact]
-    public async Task Catalog_live_delivery_rejects_a_missing_aggregate_sequence()
-    {
-        var store = new ScriptedReadModelStore();
-        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
-
-        DomainProjectionHandlerResult result = await handler.ProjectAsync(
-            new ProjectionRequest(
-                "tenant-1",
-                "timesheets",
-                "activity-1",
-                [
-                    Event(1, ActivityCreated()),
-                    Event(3, new ActivityTypeRenamed(new ActivityTypeId("activity-1"), "Renamed"))
-                ]),
-            "dispatch-gap",
-            TestContext.Current.CancellationToken);
-
-        result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
-        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+        rebuilt.ProjectionFreshness.Cursor.ShouldBe("42");
+        rebuilt.Items.ShouldHaveSingleItem().ActivityTypeId.ShouldBe(new ActivityTypeId("activity-1"));
     }
 
     [Fact]

@@ -71,7 +71,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
                 readModelStore,
                 RebuildStoreName,
                 MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant),
-                current => Merge(current, aggregate, request.AggregateId, preserveFreshness: true),
+                current => Merge(current, aggregate, request.AggregateId, promoteCompleteLiveHistory: true),
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             return DomainProjectionHandlerResult.Completed();
         }
@@ -119,7 +119,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
             FromCandidate(candidate),
             aggregate,
             aggregateHistory.AggregateId,
-            preserveFreshness: false);
+            promoteCompleteLiveHistory: false);
         return Task.FromResult(ToCandidate(merged));
     }
 
@@ -139,11 +139,15 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
             .GetAsync<ActivityTypeCatalogReadModel>(RebuildStoreName, key, cancellationToken)
             .ConfigureAwait(false);
         ActivityTypeCatalogReadModel candidateModel = FromCandidate(candidate);
+        string cursor = Math.Max(
+                ParseCursor(current.Value?.ProjectionFreshness.Cursor),
+                ParseCursor(candidateModel.ProjectionFreshness.Cursor))
+            .ToString(CultureInfo.InvariantCulture);
         ActivityTypeCatalogReadModel fresh = candidateModel with
         {
             ProjectionFreshness = new ProjectionFreshnessMetadata(
                 ProjectionFreshnessState.Fresh,
-                candidateModel.ProjectionFreshness.Cursor ?? "0",
+                cursor,
                 null,
                 null)
         };
@@ -234,7 +238,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
         ActivityTypeCatalogReadModel? current,
         ActivityTypeCatalogReadModel aggregate,
         string aggregateId,
-        bool preserveFreshness)
+        bool promoteCompleteLiveHistory)
     {
         Dictionary<string, ActivityTypeCatalogItem> items = (current?.Items ?? [])
             .Where(item => !string.Equals(item.ActivityTypeId.Value, aggregateId, StringComparison.Ordinal))
@@ -244,12 +248,9 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
             items[item.ActivityTypeId.Value] = item;
         }
 
-        ProjectionFreshnessState freshness = preserveFreshness
-            && current?.ProjectionFreshness.State == ProjectionFreshnessState.Fresh
-                ? ProjectionFreshnessState.Fresh
-                : preserveFreshness
-                    ? ProjectionFreshnessState.Stale
-                    : ProjectionFreshnessState.Rebuilding;
+        ProjectionFreshnessState freshness = promoteCompleteLiveHistory
+            ? ProjectionFreshnessState.Fresh
+            : ProjectionFreshnessState.Rebuilding;
         string cursor = Math.Max(
                 ParseCursor(current?.ProjectionFreshness.Cursor),
                 ParseCursor(aggregate.ProjectionFreshness.Cursor))

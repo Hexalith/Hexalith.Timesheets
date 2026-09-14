@@ -116,7 +116,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Concrete_loader_reaches_all_valid_http_routes_after_projection_delivery_without_index_seeding()
+    public async Task Concrete_loader_reaches_all_valid_http_routes_after_projection_delivery_without_read_model_seeding()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -153,8 +153,12 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         adjustDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
         adjustSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         factory.Store.DirectIndexSeedCount.ShouldBe(0);
+        factory.Store.DirectCatalogSeedCount.ShouldBe(0);
         factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
             MagicLinkTokenHashCapabilityIndexProjection.StateKey).Entries.Count.ShouldBe(2);
+        factory.Store.Get<ActivityTypeCatalogReadModel>(
+                MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+            .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
     }
 
     [Fact]
@@ -706,34 +710,6 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                     fingerprint);
                 Store.Get<ActivityTypeCatalogReadModel>(
                         MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
-                    .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Stale);
-
-                var catalogHandler = new TenantActivityTypeCatalogProjectionHandler(Store);
-                var rebuildIdentity = new DomainSharedProjectionRebuildIdentity(
-                    Tenant().TenantId,
-                    "timesheets",
-                    TenantActivityTypeCatalogProjection.ProjectionName,
-                    "catalog-rebuild-1",
-                    "catalog-1");
-                DomainSharedProjectionRebuildCandidate candidate = await catalogHandler.CreateEmptyCandidateAsync(
-                    rebuildIdentity,
-                    TestContext.Current.CancellationToken);
-                candidate = await catalogHandler.AccumulateAsync(
-                    rebuildIdentity,
-                    candidate,
-                    new ProjectionRequest(
-                        Tenant().TenantId,
-                        "timesheets",
-                        ActivityId().Value,
-                        [ProjectionEvent(1, ActivityCreated())]),
-                    TestContext.Current.CancellationToken);
-                DomainProjectionRebuildPlan plan = await catalogHandler.FinalizeAsync(
-                    rebuildIdentity,
-                    candidate,
-                    TestContext.Current.CancellationToken);
-                Store.Apply(plan);
-                Store.Get<ActivityTypeCatalogReadModel>(
-                        MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
                     .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
             }
 
@@ -973,6 +949,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         private readonly Dictionary<string, object> _values = new(StringComparer.Ordinal);
         private readonly Dictionary<string, int> _versions = new(StringComparer.Ordinal);
 
+        public int DirectCatalogSeedCount { get; private set; }
+
         public int DirectIndexSeedCount { get; private set; }
 
         public bool Contains(string key) => _values.ContainsKey(key);
@@ -980,18 +958,6 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         public T Get<T>(string key)
             where T : class
             => (T)_values[key];
-
-        public void Apply(DomainProjectionRebuildPlan plan)
-        {
-            foreach (ReadModelBatchOperation operation in plan.Operations)
-            {
-                ActivityTypeCatalogReadModel catalog = JsonSerializer.Deserialize<ActivityTypeCatalogReadModel>(
-                    operation.CanonicalValue.Span,
-                    JsonOptions).ShouldNotBeNull();
-                _values[operation.Key] = catalog;
-                _versions[operation.Key] = _versions.GetValueOrDefault(operation.Key) + 1;
-            }
-        }
 
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
             string storeName,
@@ -1014,6 +980,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             if (typeof(TValue) == typeof(MagicLinkTokenHashCapabilityIndexReadModel))
             {
                 DirectIndexSeedCount++;
+            }
+            else if (typeof(TValue) == typeof(ActivityTypeCatalogReadModel))
+            {
+                DirectCatalogSeedCount++;
             }
 
             _values[key] = value;

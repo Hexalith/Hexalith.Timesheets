@@ -2,9 +2,10 @@
 title: 'Reach a Fresh Activity Type catalog in the live host'
 type: 'bugfix'
 created: '2026-09-14'
-status: 'ready-for-dev'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
+baseline_commit: '19fc5b8e7cbc52616069cfcd28d3654cf04eedb4'
 context:
   - '_bmad-output/implementation-artifacts/epic-3-context.md'
   - '_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md'
@@ -49,15 +50,19 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] `src/Hexalith.Timesheets.Projections/ActivityTypes/TenantActivityTypeCatalogProjectionHandler.cs` -- promote the merged catalog to `Fresh` when the folded history is complete, and have `FinalizeAsync` publish `max(persisted, candidate)` -- so the host reaches `Fresh` on its own and a lagging rebuild cannot rewind the cursor.
-- [ ] `tests/Hexalith.Timesheets.Projections.Tests/MagicLinkStateProjectionHandlerTests.cs` -- replace the test at `:221` with the matrix rows: first delivery, sibling delivery onto an already-`Fresh` catalog, incomplete history, rebuild cursor floor -- the already-`Fresh` merge arm is uncovered today, so dropping it leaves every test green.
-- [ ] `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs` -- delete the in-process rebuild block and add a catalog anti-seeding counter to `ProjectionBackedReadModelStore`, asserted beside `DirectIndexSeedCount` -- so the valid journey proves the catalog the host produces, not one the fixture manufactures.
+- [x] `src/Hexalith.Timesheets.Projections/ActivityTypes/TenantActivityTypeCatalogProjectionHandler.cs` -- promote the merged catalog to `Fresh` when the folded history is complete, and have `FinalizeAsync` publish `max(persisted, candidate)` -- so the host reaches `Fresh` on its own and a lagging rebuild cannot rewind the cursor.
+- [x] `tests/Hexalith.Timesheets.Projections.Tests/MagicLinkStateProjectionHandlerTests.cs` -- replace the test at `:221` with the matrix rows: first delivery, sibling delivery onto an already-`Fresh` catalog, incomplete history, rebuild cursor floor -- the already-`Fresh` merge arm is uncovered today, so dropping it leaves every test green.
+- [x] `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs` -- delete the in-process rebuild block and add a catalog anti-seeding counter to `ProjectionBackedReadModelStore`, asserted beside `DirectIndexSeedCount` -- so the valid journey proves the catalog the host produces, not one the fixture manufactures.
 
 **Acceptance Criteria:**
 - Given a host whose read model has never been rebuilt, when an aggregate's complete history is delivered over `/project/v2` and a valid token is presented, then the four external routes resolve and dispatch as before, with no direct catalog or index write by the test.
 - Given any incomplete, identity-conflicting, or unreadable delivery, when token state is then requested, then the external response is the existing opaque denial and no capability-use event is emitted.
 
 ## Implementation Notes
+
+- Live promotion relies only on the handler's existing proof: `Normalize` accepts one contiguous `1..N` history and `FoldAggregate` requires the matching creation event before `Merge` can mark the catalog `Fresh`.
+- Shared rebuild finalization preserves the rebuilt items while publishing the greater of the persisted and candidate cursors.
+- The HTTP valid journey now obtains catalog freshness exclusively through the mapped `/project/v2` route; the fixture has no direct rebuild-plan application path and records zero direct catalog or index seeds.
 
 ## Spec Change Log
 
@@ -72,3 +77,8 @@ context:
 **Commands:**
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror` -- expected: zero warnings and errors.
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test tests/<P>/<P>.csproj --no-build` for `Hexalith.Timesheets.Projections.Tests`, `.IntegrationTests`, `.Server.Tests`, `.ArchitectureTests` -- expected: all pass, perf lanes skipped. If VSTest sockets are blocked, run `tests/<P>/bin/Debug/net10.0/<P>` directly per `README.md:20-28`.
+
+**Results (2026-09-14):**
+- Solution build with `-warnaserror -m:1 /nr:false` passed with 0 warnings and 0 errors.
+- `dotnet test --no-build` was blocked before discovery because Microsoft.Testing.Platform no longer supports the VSTest target under the .NET 10 SDK. Direct xUnit v3 executables passed: Projections 90/90; Integration 84/84 with 4 expected performance/infrastructure skips; Server 436/436.
+- Architecture broad lane: 53/54 passed. The one failure is the pre-existing package-currency mismatch between `docs/launch-readiness.md` (`CommunityToolkit.Aspire.Hosting.Dapr` `13.5.1-beta.751`) and the shared package catalog/test (`13.5.1-beta.752`); this spec explicitly excludes that document. Focused architecture evidence passed: DependencyDirection 8/8 and DiagnosticsPrivacy 12/12.
