@@ -250,6 +250,33 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
+    public async Task Confirm_submit_reports_stale_catalog_only_when_a_capability_resolved()
+    {
+        ExternalRoute route = ExternalRoutes().Single(static candidate => candidate.Name == "confirm-submit");
+
+        // A resolved capability behind a non-Fresh catalog is a genuine projection-freshness denial.
+        using (MagicLinkHttpBoundaryFactory staleFactory = new())
+        {
+            using HttpClient staleClient = staleFactory.CreateClient();
+            using HttpResponseMessage staleResponse = await SendAsync(staleClient, route, Token(route, "stale-catalog"));
+
+            staleResponse.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+            RenderedDiagnostics(staleFactory).ShouldContain("Category=StaleCatalog");
+        }
+
+        // An unresolved token yields the same unavailable catalog as a stale projection, so the category
+        // must not claim staleness — otherwise every loader failure is reported as a freshness problem.
+        using MagicLinkHttpBoundaryFactory unresolvedFactory = new();
+        using HttpClient unresolvedClient = unresolvedFactory.CreateClient();
+        using HttpResponseMessage unresolvedResponse = await SendAsync(unresolvedClient, route, Token(route, "unresolved"));
+
+        unresolvedResponse.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        string unresolvedDiagnostics = RenderedDiagnostics(unresolvedFactory);
+        unresolvedDiagnostics.ShouldContain("Category=Unknown");
+        unresolvedDiagnostics.ShouldNotContain("Category=StaleCatalog");
+    }
+
+    [Fact]
     public async Task Empty_or_missing_magic_link_token_is_indistinguishable_from_an_invalid_state_denial_on_every_route()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
@@ -369,6 +396,13 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             AssertSensitiveMaterialAbsent(rendered, string.Empty);
         }
     }
+
+    private static string RenderedDiagnostics(MagicLinkHttpBoundaryFactory factory)
+        => string.Join(
+            ' ',
+            factory.Logs.Records
+                .Where(static record => record.Category.StartsWith("Hexalith.Timesheets", StringComparison.Ordinal))
+                .Select(static record => string.Join(' ', record.State)));
 
     private static async Task<HttpResponseMessage> SendAsync(HttpClient client, ExternalRoute route, string token)
     {
@@ -619,6 +653,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     private static ActivityTypeCatalogReadModel StaleCatalog()
         => new([], ProjectionFreshnessMetadata.Stale());
+
+    // Mirrors the concrete loader's UnavailableTokenState(): no capability and no catalog.
+    private static ActivityTypeCatalogReadModel UnavailableCatalog()
+        => new([], ProjectionFreshnessMetadata.Unavailable());
 
     private static TenantReference Tenant() => new("tenant-1");
 
@@ -982,8 +1020,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
             ServerCapabilityState? state = caseName switch
             {
-                "malformed" or "unknown" => null,
-                "stale-catalog" when route.Name == "confirm-submit" => null,
+                "malformed" or "unknown" or "unresolved" => null,
                 "expired" => IssuedState(token, action, expiresAtUtc: ObservedAtUtc),
                 // The concrete loader rejects a candidate/capability tenant mismatch before a
                 // capability state can reach the HTTP boundary.
@@ -1017,7 +1054,12 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             return new(
                 state,
                 caseName == "wrong-recipient" ? RecordedExternalState() : RecordedExternalState(state?.Contributor),
-                caseName == "stale-catalog" ? StaleCatalog() : FreshCatalog());
+                caseName switch
+                {
+                    "stale-catalog" => StaleCatalog(),
+                    "unresolved" => UnavailableCatalog(),
+                    _ => FreshCatalog()
+                });
         }
     }
 

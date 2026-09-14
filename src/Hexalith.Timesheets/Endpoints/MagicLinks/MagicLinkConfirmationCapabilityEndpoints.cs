@@ -177,11 +177,15 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     .ConfigureAwait(false);
                 if (state.ActivityTypeCatalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
                 {
+                    // An unresolved token yields the same unavailable catalog as a genuinely stale
+                    // projection, so only report StaleCatalog when a capability actually resolved.
                     return DeniedWithDiagnostics(
                         loggerFactory,
                         httpContext,
                         timeProvider.GetUtcNow(),
-                        MagicLinkInvalidLinkOutcomeCategory.StaleCatalog);
+                        state.CapabilityState is null
+                            ? MagicLinkInvalidLinkOutcomeCategory.Unknown
+                            : MagicLinkInvalidLinkOutcomeCategory.StaleCatalog);
                 }
 
                 MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
