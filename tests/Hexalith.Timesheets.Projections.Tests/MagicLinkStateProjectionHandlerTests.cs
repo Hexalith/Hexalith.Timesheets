@@ -285,10 +285,55 @@ public sealed class MagicLinkStateProjectionHandlerTests
             .ShouldBe(["activity-1", "activity-2"], ignoreOrder: true);
     }
 
+    [Fact]
+    public async Task Catalog_complete_live_delivery_promotes_an_existing_stale_catalog()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"));
+        store.Set(
+            key,
+            new ActivityTypeCatalogReadModel(
+                [
+                    new ActivityTypeCatalogItem(
+                        new ActivityTypeId("activity-1"),
+                        ActivityTypeScope.Tenant,
+                        null,
+                        "Delivery",
+                        true,
+                        BillableState.Billable)
+                ],
+                new ProjectionFreshnessMetadata(ProjectionFreshnessState.Stale, "10", null, null)));
+        ProjectionEventDto siblingCreated = Event(
+            1,
+            ActivityCreated(new ActivityTypeId("activity-2"), "Research")) with
+        {
+            GlobalPosition = 11
+        };
+
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            new ProjectionRequest(
+                "tenant-1",
+                "timesheets",
+                "activity-2",
+                [siblingCreated]),
+            "dispatch-activity-2",
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        ActivityTypeCatalogReadModel catalog = store.Get<ActivityTypeCatalogReadModel>(key);
+        catalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        catalog.ProjectionFreshness.Cursor.ShouldBe("11");
+        catalog.Items.Select(static item => item.ActivityTypeId.Value)
+            .ShouldBe(["activity-1", "activity-2"], ignoreOrder: true);
+    }
+
     [Theory]
     [InlineData("missing-sequence")]
     [InlineData("missing-creation")]
     [InlineData("identity-conflict")]
+    [InlineData("malformed-json")]
+    [InlineData("unsupported-serialization")]
     public async Task Catalog_incomplete_live_delivery_fails_without_changing_the_catalog(string scenario)
     {
         var store = new ScriptedReadModelStore();
@@ -317,6 +362,22 @@ public sealed class MagicLinkStateProjectionHandlerTests
             [Event(1, new ActivityTypeRenamed(new ActivityTypeId("activity-1"), "Renamed"))],
             "identity-conflict" =>
             [Event(1, ActivityCreated(new ActivityTypeId("activity-2")))],
+            "malformed-json" =>
+            [
+                Event(1, ActivityCreated()),
+                Event(2, new ActivityTypeRenamed(new ActivityTypeId("activity-1"), "Renamed")) with
+                {
+                    Payload = "{"u8.ToArray()
+                }
+            ],
+            "unsupported-serialization" =>
+            [
+                Event(1, ActivityCreated()),
+                Event(2, new ActivityTypeRenamed(new ActivityTypeId("activity-1"), "Renamed")) with
+                {
+                    SerializationFormat = "application/octet-stream"
+                }
+            ],
             _ => throw new InvalidOperationException($"Unknown incomplete-history scenario '{scenario}'.")
         };
 
@@ -331,8 +392,10 @@ public sealed class MagicLinkStateProjectionHandlerTests
         store.TrySaveCount.ShouldBe(0);
     }
 
-    [Fact]
-    public async Task Catalog_rebuild_finalize_never_moves_the_persisted_cursor_backwards()
+    [Theory]
+    [InlineData(42, 7)]
+    [InlineData(7, 42)]
+    public async Task Catalog_rebuild_finalize_uses_the_greater_cursor(long persistedCursor, long candidateCursor)
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -341,7 +404,11 @@ public sealed class MagicLinkStateProjectionHandlerTests
             key,
             new ActivityTypeCatalogReadModel(
                 [],
-                new ProjectionFreshnessMetadata(ProjectionFreshnessState.Fresh, "42", null, null)));
+                new ProjectionFreshnessMetadata(
+                    ProjectionFreshnessState.Fresh,
+                    persistedCursor.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    null,
+                    null)));
         var identity = new DomainSharedProjectionRebuildIdentity(
             "tenant-1",
             "timesheets",
@@ -351,7 +418,7 @@ public sealed class MagicLinkStateProjectionHandlerTests
         DomainSharedProjectionRebuildCandidate candidate = await handler.CreateEmptyCandidateAsync(
             identity,
             TestContext.Current.CancellationToken);
-        ProjectionEventDto created = Event(1, ActivityCreated()) with { GlobalPosition = 7 };
+        ProjectionEventDto created = Event(1, ActivityCreated()) with { GlobalPosition = candidateCursor };
         candidate = await handler.AccumulateAsync(
             identity,
             candidate,

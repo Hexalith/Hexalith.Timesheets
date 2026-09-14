@@ -175,6 +175,15 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 MagicLinkEndpointTokenState state = await stateLoader
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
+                if (state.ActivityTypeCatalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+                {
+                    return DeniedWithDiagnostics(
+                        loggerFactory,
+                        httpContext,
+                        timeProvider.GetUtcNow(),
+                        MagicLinkInvalidLinkOutcomeCategory.StaleCatalog);
+                }
+
                 MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
                     MagicLinkExternalRequestContext.FromResolvedCapability(
                         state.CapabilityState,

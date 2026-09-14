@@ -161,6 +161,28 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
     }
 
+    [Theory]
+    [InlineData("missing-sequence")]
+    [InlineData("identity-conflict")]
+    [InlineData("unreadable")]
+    public async Task Rejected_catalog_delivery_keeps_confirm_submit_opaque_without_capability_use(string scenario)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        string token = $"rejected-catalog-{scenario}";
+        await factory.ProjectRejectedCatalogStateAsync(client, token, scenario);
+        int authorizationCount = factory.AccessGuard.AuthorizationCount;
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={token}",
+            new ConfirmTimeThroughMagicLink(),
+            TestContext.Current.CancellationToken);
+
+        _ = await CaptureFailureAsync(response, scenario, token);
+        factory.AccessGuard.AuthorizationCount.ShouldBe(authorizationCount);
+        factory.Store.Contains(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())).ShouldBeFalse();
+    }
+
     [Fact]
     public async Task Empty_magic_link_token_uses_the_same_opaque_boundary_denial()
     {
@@ -587,9 +609,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             ],
             ProjectionFreshnessMetadata.Fresh);
 
-    private static ActivityTypeCreated ActivityCreated()
+    private static ActivityTypeCreated ActivityCreated(ActivityTypeId? activityTypeId = null)
         => new(
-            ActivityId(),
+            activityTypeId ?? ActivityId(),
             ActivityTypeScope.Tenant,
             null,
             "Delivery",
@@ -632,6 +654,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     private sealed class MagicLinkHttpBoundaryFactory(bool useConcreteLoader = false) : WebApplicationFactory<Program>
     {
+        public ScriptedAccessGuard AccessGuard { get; } = new();
+
         public CapturingLoggerProvider Logs { get; } = new();
 
         public ProjectionBackedReadModelStore Store { get; } = new();
@@ -717,6 +741,97 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             Gateway.WithStream(Tenant().TenantId, timeEntryId.Value, StreamEvent(1, recorded));
         }
 
+        public async Task ProjectRejectedCatalogStateAsync(HttpClient client, string token, string scenario)
+        {
+            var capabilityId = new MagicLinkCapabilityId($"capability-{scenario}");
+            var timeEntryId = new TimeEntryId($"time-entry-{scenario}");
+            MagicLinkConfirmationCapabilityIssued issued = new(
+                capabilityId,
+                Tenant(),
+                Contributor(),
+                TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(),
+                timeEntryId,
+                MagicLinkTargetKind.ProposedTimeEntry,
+                MagicLinkAllowedAction.Confirm,
+                new MagicLinkTokenHash(Hash(token)),
+                ObservedAtUtc.AddDays(1),
+                Operator(),
+                ObservedAtUtc.AddHours(-1),
+                new MagicLinkAuditMetadata("timesheets", "issue-1"),
+                true);
+            var recorded = new TimeEntryRecorded(
+                timeEntryId,
+                TimeEntryTargetReference.ForProject(Project()),
+                Contributor(),
+                ActivityId(),
+                ActivityTypeScope.Tenant,
+                new DateOnly(2026, 6, 19),
+                60,
+                BillableState.Billable,
+                TimeEntryApprovalState.Draft,
+                ContributorCategory.ExternalContributor,
+                null);
+            ProjectionEventDto[] rejectedCatalogEvents = scenario switch
+            {
+                "missing-sequence" =>
+                [
+                    ProjectionEvent(1, ActivityCreated()),
+                    ProjectionEvent(3, new ActivityTypeRenamed(ActivityId(), "Renamed"))
+                ],
+                "identity-conflict" =>
+                [ProjectionEvent(1, ActivityCreated(new ActivityTypeId("activity-type-other")))],
+                "unreadable" =>
+                [
+                    ProjectionEvent(1, ActivityCreated()),
+                    ProjectionEvent(2, new ActivityTypeRenamed(ActivityId(), "Renamed")) with
+                    {
+                        Payload = "{"u8.ToArray()
+                    }
+                ],
+                _ => throw new InvalidOperationException($"Unknown rejected catalog scenario '{scenario}'.")
+            };
+
+            using IServiceScope scope = Services.CreateScope();
+            DomainProjectionIdentityOptions projectionIdentity = scope.ServiceProvider
+                .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>()
+                .Value;
+            ProjectionDispatchRoute[] routes = scope.ServiceProvider
+                .GetServices<IAsyncDomainProjectionHandler>()
+                .Where(static handler => string.Equals(handler.Domain, "timesheets", StringComparison.Ordinal))
+                .Select(static handler => new ProjectionDispatchRoute(handler.Domain, handler.ProjectionType))
+                .ToArray();
+            string fingerprint = ProjectionRouteCatalogFingerprint.Compute(
+                projectionIdentity.AppId,
+                projectionIdentity.ServiceVersion,
+                routes);
+            await DispatchProjectionAsync(
+                client,
+                new ProjectionRequest(
+                    Tenant().TenantId,
+                    "timesheets",
+                    capabilityId.Value,
+                    [ProjectionEvent(1, issued)]),
+                MagicLinkTokenHashCapabilityIndexProjection.ProjectionName,
+                $"dispatch-{capabilityId.Value}",
+                fingerprint);
+            await DispatchProjectionAsync(
+                client,
+                new ProjectionRequest(
+                    Tenant().TenantId,
+                    "timesheets",
+                    ActivityId().Value,
+                    rejectedCatalogEvents),
+                TenantActivityTypeCatalogProjection.ProjectionName,
+                $"dispatch-catalog-{scenario}",
+                fingerprint,
+                ProjectionDispatchStatus.Failed,
+                ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+
+            Gateway.WithStream(Tenant().TenantId, capabilityId.Value, StreamEvent(1, issued));
+            Gateway.WithStream(Tenant().TenantId, timeEntryId.Value, StreamEvent(1, recorded));
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureLogging(logging =>
@@ -738,7 +853,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 }
 
                 services.RemoveAll<ITimesheetsAccessGuard>();
-                services.AddSingleton<ITimesheetsAccessGuard, ScriptedAccessGuard>();
+                services.AddSingleton<ITimesheetsAccessGuard>(AccessGuard);
 
                 services.RemoveAll<IReadModelStore>();
                 services.RemoveAll<DaprReadModelStore>();
@@ -757,12 +872,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             });
         }
 
-        private static async Task DispatchProjectionAsync(
+        private static async Task<ProjectionDispatchOutcome> DispatchProjectionAsync(
             HttpClient client,
             ProjectionRequest request,
             string projectionType,
             string dispatchId,
-            string fingerprint)
+            string fingerprint,
+            ProjectionDispatchStatus expectedStatus = ProjectionDispatchStatus.Completed,
+            string? expectedReasonCode = null)
         {
             var dispatch = new ProjectionDispatchRequest(request, [projectionType], dispatchId, fingerprint);
             using HttpResponseMessage projectionResponse = await client.PostAsJsonAsync(
@@ -777,8 +894,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 .Outcomes
                 .ShouldHaveSingleItem();
             outcome.ProjectionType.ShouldBe(projectionType);
-            outcome.Status.ShouldBe(ProjectionDispatchStatus.Completed);
-            outcome.ReasonCode.ShouldBeNull();
+            outcome.Status.ShouldBe(expectedStatus);
+            outcome.ReasonCode.ShouldBe(expectedReasonCode);
+            return outcome;
         }
 
         private static ProjectionEventDto ProjectionEvent(long sequence, object payload)
@@ -905,10 +1023,17 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     private sealed class ScriptedAccessGuard : ITimesheetsAccessGuard
     {
+        private int _authorizationCount;
+
+        public int AuthorizationCount => Volatile.Read(ref _authorizationCount);
+
         public ValueTask<TimesheetsAuthorizationDecision> AuthorizeAsync(
             TimesheetsAuthorizationRequest request,
             CancellationToken cancellationToken)
-            => ValueTask.FromResult(Decision(request));
+        {
+            _ = Interlocked.Increment(ref _authorizationCount);
+            return ValueTask.FromResult(Decision(request));
+        }
 
         public async ValueTask<TimesheetsAuthorizationDecision> ExecuteIfAuthorizedAsync(
             TimesheetsAuthorizationRequest request,

@@ -2,7 +2,7 @@
 title: 'Reach a Fresh Activity Type catalog in the live host'
 type: 'bugfix'
 created: '2026-09-14'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: '19fc5b8e7cbc52616069cfcd28d3654cf04eedb4'
@@ -63,6 +63,7 @@ context:
 - Live promotion relies only on the handler's existing proof: `Normalize` accepts one contiguous `1..N` history and `FoldAggregate` requires the matching creation event before `Merge` can mark the catalog `Fresh`.
 - Shared rebuild finalization preserves the rebuilt items while publishing the greater of the persisted and candidate cursors.
 - The HTTP valid journey now obtains catalog freshness exclusively through the mapped `/project/v2` route; the fixture has no direct rebuild-plan application path and records zero direct catalog or index seeds.
+- Review hardening proves migration from a persisted `Stale` catalog, both cursor orderings, and malformed/non-JSON live histories. Rejected catalog delivery is chained through `/project/v2` to an opaque confirm-submit denial before the command service can produce capability-use evidence.
 
 ## Spec Change Log
 
@@ -86,6 +87,21 @@ context:
 | EC5 — a rejected delivery can leave usable Fresh data and still permit capability use | false | rejected | Rejection intentionally leaves previously proven catalog data unchanged. A token for the rejected, never-projected aggregate has no catalog item and fails validation; a token using unrelated retained authority is not invalidated by a failed sibling delivery. |
 | VG1 — existing Stale catalogs are not covered by live-promotion verification | medium | patch | Pre-verified gap: no repository test delivers complete history onto an existing `Stale` catalog, so a null-or-Fresh-only promotion defect would pass. |
 | VG2 — rebuild cursor selection verifies only the persisted-ahead arm | medium | patch | Pre-verified gap: no other catalog finalization test proves that a candidate cursor greater than persisted is retained. |
+| RBH1 — the spec is in review while triaged patches remain pending | false | rejected | `in-review` is the workflow state in which review findings are recorded and patched; the implementation tasks are complete, and presentation cannot occur until the patches pass verification. |
+| RBH2 — unreadable live delivery lacks handler coverage | medium | patch | carried — `ProjectionEventReader` rejects malformed JSON and unsupported serialization, but the handler failure/no-write path still requires direct coverage. |
+| RBH3 — rejected delivery is not chained to HTTP denial/no-dispatch | medium | patch | carried — the projection and denial halves are proven separately, but the required concrete-loader boundary chain is still missing. |
+| RBH4 — cursor maximum lacks candidate-ahead coverage | medium | patch | carried — persisted-ahead alone does not distinguish `Math.Max` from always choosing persisted. |
+| RBH5 — existing Stale catalog upgrade lacks coverage | medium | patch | carried — empty and already-Fresh arrangements do not prove migration of pre-change `Stale` state. |
+| RBH6 — changed tests do not replay the same complete live history | false | rejected | `ActivityTypeCatalogProjectionTests.Projection_is_idempotent_for_duplicate_delivery_and_replay_equivalent` already proves duplicate/replay determinism of the fold, while the handler uses the same normalized full history and deterministically replaces the same aggregate item. |
+| RBH7 — triage says every emitted Activity Type event is handled although project restriction events are intentionally ignored | low | rejected | `ProjectActivityTypeCatalogRestrictionConfigured` does not mutate an Activity Type catalog item and belongs to project-selection projection semantics; ignoring it in the tenant catalog handler causes no demonstrated incorrect catalog state. The proposed fix is also only an edit to this build's spec. |
+| RBH8 — null freshness metadata can throw during rebuild finalization | low | rejected | carried — handler-created rebuild candidates always contain freshness metadata, and malformed internal rebuild input fails rather than publishing unsafe Fresh authority. |
+| RBH9 — anti-seeding counters do not intercept direct `TrySaveAsync` calls | false | rejected | Repository search shows no fixture caller writes the catalog or index through `TrySaveAsync`; only the production projection path invokes it, while direct fixture seeding uses `SaveAsync` and is counted. |
+| RBH10 — EventStore and FrontComposer gitlink updates are unrelated | low | rejected | The pointers were committed and pushed externally while this workflow was active and are now user-owned `origin/main` state. The review identifies no Story 3.6 runtime defect, and removing them would overwrite unrelated user work. |
+| RVG1 — existing Stale catalog upgrade lacks verification | medium | patch | carried — repository-wide verification again found no complete live delivery onto persisted `Stale` state. |
+| RVG2 — cursor maximum covers only persisted-ahead ordering | medium | patch | carried — repository-wide verification again found no candidate-ahead finalization case. |
+| RVG3 — unreadable projection history lacks handler verification | medium | patch | carried — malformed JSON and unsupported serialization are covered only in the loader path, not in this handler's no-write path. |
+| RVG4 — confirm-submit can consume a capability when the loader returns an unavailable catalog | medium | patch | The endpoint passes capability and Time Entry state to `ConfirmAsync` without checking `state.ActivityTypeCatalog`; with a valid token and failed catalog delivery, the service can dispatch confirmation and capability use. The frozen acceptance criterion uniquely requires the existing opaque denial and no use event, so the smallest fix is an endpoint Fresh gate plus boundary coverage. |
+| REC1 — a rejected delivery can leave retained Fresh authority usable | false | rejected | carried — the matrix explicitly requires the catalog remain unchanged. A rejected aggregate has no new trusted item, while unrelated previously proven items remain valid authority. |
 
 ## Design Notes
 
@@ -99,5 +115,5 @@ context:
 
 **Results (2026-09-14):**
 - Solution build with `-warnaserror -m:1 /nr:false` passed with 0 warnings and 0 errors.
-- `dotnet test --no-build` was blocked before discovery because Microsoft.Testing.Platform no longer supports the VSTest target under the .NET 10 SDK. Direct xUnit v3 executables passed: Projections 90/90; Integration 84/84 with 4 expected performance/infrastructure skips; Server 436/436.
+- `dotnet test --no-build` was blocked before discovery because Microsoft.Testing.Platform no longer supports the VSTest target under the .NET 10 SDK. Direct xUnit v3 executables passed: Projections 94/94; Integration 87/87 with 4 expected performance/infrastructure skips; Server 436/436; Contracts 88/88; Works 76/76.
 - Architecture broad lane: 53/54 passed. The one failure is the pre-existing package-currency mismatch between `docs/launch-readiness.md` (`CommunityToolkit.Aspire.Hosting.Dapr` `13.5.1-beta.751`) and the shared package catalog/test (`13.5.1-beta.752`); this spec explicitly excludes that document. Focused architecture evidence passed: DependencyDirection 8/8 and DiagnosticsPrivacy 12/12.
