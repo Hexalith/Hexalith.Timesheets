@@ -1,6 +1,8 @@
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
+using Hexalith.EventStore.Client.Attributes;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.DomainService;
@@ -693,6 +695,174 @@ public sealed class MagicLinkStateProjectionHandlerTests
         exhausted.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryStateUnavailable);
     }
 
+    [Theory]
+    [InlineData("catalog", "absent")]
+    [InlineData("catalog", "etag")]
+    [InlineData("catalog", "unreadable-value")]
+    [InlineData("catalog", "null-etag")]
+    [InlineData("catalog", "empty-etag")]
+    [InlineData("index", "absent")]
+    [InlineData("index", "etag")]
+    [InlineData("index", "unreadable-value")]
+    [InlineData("index", "null-etag")]
+    [InlineData("index", "empty-etag")]
+    public async Task Rebuild_finalize_chooses_write_concurrency_from_row_existence_not_from_the_value(
+        string handlerName,
+        string rowState)
+    {
+        // CreateOnly is accepted only while the key is absent, so selecting it for a row that already
+        // exists strands the rebuild write permanently. Each row state needs its own arm, and neither
+        // half of the entry alone identifies existence: an ETag-only ternary collapses "exists without
+        // an ETag" onto the create-only arm, while a value-only one collapses "exists but its bytes
+        // materialize as null" onto it. No assertion on the plan's canonical value alone sees either.
+        var store = new ScriptedReadModelStore();
+        string key = RebuildStateKey(handlerName);
+        if (rowState == "unreadable-value")
+        {
+            // The shipped stores return an existing row as Deserialize<TValue>(bytes) paired with its
+            // ETag, so an empty, JSON-null or otherwise-shaped payload yields a null value under a live
+            // ETag. The key - and its ETag - are still there, so the plan must heal the row.
+            store.Set(key, new UnreadableRow());
+        }
+        else if (rowState != "absent")
+        {
+            _ = SeedExistingState(store, handlerName);
+        }
+
+        store.SuppressETag = rowState is "null-etag" or "empty-etag";
+        store.ETagWhenSuppressed = rowState == "empty-etag" ? string.Empty : null;
+        ReadModelBatchConcurrency expected = rowState switch
+        {
+            "absent" => ReadModelBatchConcurrency.CreateOnly,
+            "etag" or "unreadable-value" => ReadModelBatchConcurrency.Match(store.ETagFor(key)),
+            _ => ReadModelBatchConcurrency.LastWrite
+        };
+
+        DomainProjectionRebuildPlan plan = await RebuildAsync(
+            handlerName,
+            store,
+            TestContext.Current.CancellationToken);
+
+        plan.StoreName.ShouldBe(RebuildStoreName(handlerName));
+        ReadModelBatchOperation operation = plan.Operations.ShouldHaveSingleItem();
+        operation.Key.ShouldBe(key);
+        operation.Kind.ShouldBe(ReadModelBatchOperationKind.Write);
+        operation.Concurrency.ShouldBe(expected, $"{handlerName}/{rowState}");
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    [Fact]
+    public void Both_projection_handlers_are_discovered_as_the_timesheets_telemetry_domain()
+    {
+        // Mirrors the SDK's handler-domain scan: an [EventStoreDomain] attribute short-circuits it,
+        // and without one the type must expose a parameterless constructor to be instantiated and
+        // asked. Both handlers take an injected read-model store, so dropping the attribute makes them
+        // silently invisible and the host registers no Timesheets domain telemetry.
+        Type[] handlerTypes = typeof(MagicLinkTokenHashCapabilityIndexProjectionHandler).Assembly
+            .GetTypes()
+            .Where(static type => type is { IsClass: true, IsAbstract: false }
+                && typeof(IAsyncDomainProjectionHandler).IsAssignableFrom(type))
+            .ToArray();
+
+        handlerTypes.ShouldContain(typeof(MagicLinkTokenHashCapabilityIndexProjectionHandler));
+        handlerTypes.ShouldContain(typeof(TenantActivityTypeCatalogProjectionHandler));
+        foreach (Type handlerType in handlerTypes)
+        {
+            DiscoverDomainName(handlerType).ShouldBe("timesheets", handlerType.FullName);
+        }
+    }
+
+    [Fact]
+    public async Task Catalog_live_delivery_onto_a_null_persisted_freshness_fails_without_writing()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"));
+        var persisted = new ActivityTypeCatalogReadModel([], null!);
+        store.Set(key, persisted);
+
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            ValidRequest("catalog"),
+            "dispatch-null-freshness",
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.HandlerFailure);
+        store.Get<ActivityTypeCatalogReadModel>(key).ShouldBeSameAs(persisted);
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Catalog_rebuild_accumulate_maps_a_null_candidate_freshness_to_a_declared_fold_failure()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        DomainSharedProjectionRebuildIdentity identity = RebuildIdentity("catalog");
+
+        ProjectionFoldException thrown = await Should.ThrowAsync<ProjectionFoldException>(async () =>
+            await handler.AccumulateAsync(
+                identity,
+                NullFreshnessCandidate(),
+                new ProjectionRequest("tenant-1", "timesheets", "activity-1", [Event(1, ActivityCreated())]),
+                TestContext.Current.CancellationToken));
+
+        thrown.InnerException.ShouldBeOfType<NullReferenceException>();
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    [Theory]
+    [InlineData("persisted")]
+    [InlineData("candidate")]
+    public async Task Catalog_rebuild_finalize_maps_a_null_freshness_to_a_declared_fold_failure(string source)
+    {
+        // A persisted read model or a persisted rebuild candidate can deserialize with a JSON-null
+        // ProjectionFreshness. Both cursor reads dereference it, so without the guarded mapping the
+        // rebuild fails with an unhandled NullReferenceException instead of this handler's declared
+        // deterministic fold failure.
+        var store = new ScriptedReadModelStore();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"));
+        DomainSharedProjectionRebuildIdentity identity = RebuildIdentity("catalog");
+        DomainSharedProjectionRebuildCandidate candidate;
+        if (source == "persisted")
+        {
+            store.Set(key, new ActivityTypeCatalogReadModel([], null!));
+            candidate = await handler.CreateEmptyCandidateAsync(identity, TestContext.Current.CancellationToken);
+            candidate = await handler.AccumulateAsync(
+                identity,
+                candidate,
+                new ProjectionRequest("tenant-1", "timesheets", "activity-1", [Event(1, ActivityCreated())]),
+                TestContext.Current.CancellationToken);
+        }
+        else
+        {
+            candidate = NullFreshnessCandidate();
+        }
+
+        ProjectionFoldException thrown = await Should.ThrowAsync<ProjectionFoldException>(async () =>
+            await handler.FinalizeAsync(identity, candidate, TestContext.Current.CancellationToken));
+
+        thrown.InnerException.ShouldBeOfType<NullReferenceException>();
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void Projection_event_reader_treats_an_absent_event_type_name_as_an_unknown_event(string? eventTypeName)
+    {
+        // ProjectionEventDto declares the member non-nullable, but a wire payload carrying JSON null
+        // deserializes it to null anyway. Only call ordering - Normalize running first - keeps the
+        // reader safe today, and nothing in the type enforces that ordering.
+        ProjectionEventDto projectionEvent = Event(1, ActivityCreated()) with
+        {
+            EventTypeName = eventTypeName!
+        };
+
+        ProjectionEventReader.Deserialize<ActivityTypeCreated>(projectionEvent).ShouldBeNull();
+    }
+
     private static ProjectionEventDto Event(long sequence, object payload)
         => new(
             payload.GetType().FullName!,
@@ -806,6 +976,63 @@ public sealed class MagicLinkStateProjectionHandlerTests
     private static string Snapshot(object value)
         => JsonSerializer.Serialize(value, value.GetType(), s_jsonOptions);
 
+    /// <summary>A persisted row that materializes as null for every read-model type under test.</summary>
+    private sealed record UnreadableRow;
+
+    private static string? DiscoverDomainName(Type handlerType)
+    {
+        EventStoreDomainAttribute? attribute = handlerType.GetCustomAttribute<EventStoreDomainAttribute>();
+        return attribute is not null
+            ? attribute.DomainName
+            : handlerType.GetConstructor(Type.EmptyTypes) is null
+                ? null
+                : (Activator.CreateInstance(handlerType) as IAsyncDomainProjectionHandler)?.Domain;
+    }
+
+    private static DomainSharedProjectionRebuildIdentity RebuildIdentity(string handlerName)
+        => new(
+            "tenant-1",
+            "timesheets",
+            handlerName == "catalog"
+                ? TenantActivityTypeCatalogProjection.ProjectionName
+                : MagicLinkTokenHashCapabilityIndexProjection.ProjectionName,
+            "operation-1",
+            "catalog-1");
+
+    private static string RebuildStateKey(string handlerName)
+        => handlerName == "catalog"
+            ? MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"))
+            : MagicLinkTokenHashCapabilityIndexProjection.StateKey;
+
+    private static string RebuildStoreName(string handlerName)
+        => handlerName == "catalog"
+            ? MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName
+            : MagicLinkTokenHashCapabilityIndexProjection.StateStoreName;
+
+    private static DomainSharedProjectionRebuildCandidate NullFreshnessCandidate()
+        => new(System.Text.Encoding.UTF8.GetBytes("""
+            {"items":[],"projectionFreshness":null}
+            """));
+
+    private static async Task<DomainProjectionRebuildPlan> RebuildAsync(
+        string handlerName,
+        ScriptedReadModelStore store,
+        CancellationToken cancellationToken)
+    {
+        DomainSharedProjectionRebuildIdentity identity = RebuildIdentity(handlerName);
+        IAsyncDomainSharedProjectionRebuildHandler handler = handlerName == "catalog"
+            ? new TenantActivityTypeCatalogProjectionHandler(store)
+            : new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
+        ProjectionRequest history = handlerName == "catalog"
+            ? new ProjectionRequest("tenant-1", "timesheets", "activity-1", [Event(1, ActivityCreated())])
+            : new ProjectionRequest("tenant-1", "timesheets", "capability-1", [Event(1, Issued())]);
+        DomainSharedProjectionRebuildCandidate candidate = await handler.CreateEmptyCandidateAsync(
+            identity,
+            cancellationToken);
+        candidate = await handler.AccumulateAsync(identity, candidate, history, cancellationToken);
+        return await handler.FinalizeAsync(identity, candidate, cancellationToken);
+    }
+
     private static MagicLinkConfirmationCapabilityIssued Issued(MagicLinkCapabilityId? capabilityId = null)
         => new(
             capabilityId ?? new MagicLinkCapabilityId("capability-1"),
@@ -834,7 +1061,10 @@ public sealed class MagicLinkStateProjectionHandlerTests
     private sealed class ScriptedReadModelStore : IReadModelStore
     {
         private readonly Dictionary<string, object> _values = new(StringComparer.Ordinal);
-        private int _version;
+
+        // Per key, not one global counter: a shared version would let a plan that read some other
+        // key's ETag still satisfy an expected-ETag assertion, so the match case would not be real.
+        private readonly Dictionary<string, int> _versions = new(StringComparer.Ordinal);
 
         public int ConflictsRemaining { get; set; }
 
@@ -848,15 +1078,27 @@ public sealed class MagicLinkStateProjectionHandlerTests
 
         public int TrySaveCount { get; private set; }
 
+        /// <summary>
+        /// When set, a key the store holds is read back with <see cref="ETagWhenSuppressed"/> instead
+        /// of its per-key version, modelling a store that returns an existing row without an ETag.
+        /// </summary>
+        public bool SuppressETag { get; set; }
+
+        /// <summary>The ETag an existing row is read back with while <see cref="SuppressETag"/> is set.</summary>
+        public string? ETagWhenSuppressed { get; set; }
+
         public T Get<T>(string key)
             where T : class
             => (T)_values[key];
 
         public bool Contains(string key) => _values.ContainsKey(key);
 
+        public string ETagFor(string key)
+            => $"{key}#{_versions[key].ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+
         public void Set<T>(string key, T value)
             where T : class
-            => _values[key] = value;
+            => Commit(key, value);
 
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
             string storeName,
@@ -875,9 +1117,14 @@ public sealed class MagicLinkStateProjectionHandlerTests
                 return Task.FromException<ReadModelEntry<TValue>>(GetException);
             }
 
+            if (!_values.TryGetValue(key, out object? value))
+            {
+                return Task.FromResult(new ReadModelEntry<TValue>(null, null));
+            }
+
             return Task.FromResult(new ReadModelEntry<TValue>(
-                _values.TryGetValue(key, out object? value) ? value as TValue : null,
-                _values.ContainsKey(key) ? _version.ToString(System.Globalization.CultureInfo.InvariantCulture) : null));
+                value as TValue,
+                SuppressETag ? ETagWhenSuppressed : ETagFor(key)));
         }
 
         public Task SaveAsync<TValue>(
@@ -887,8 +1134,7 @@ public sealed class MagicLinkStateProjectionHandlerTests
             CancellationToken cancellationToken = default)
             where TValue : class
         {
-            _values[key] = value;
-            _version++;
+            Commit(key, value);
             return Task.CompletedTask;
         }
 
@@ -917,9 +1163,14 @@ public sealed class MagicLinkStateProjectionHandlerTests
                 return Task.FromResult(false);
             }
 
-            _values[key] = value;
-            _version++;
+            Commit(key, value);
             return Task.FromResult(true);
+        }
+
+        private void Commit(string key, object value)
+        {
+            _values[key] = value;
+            _versions[key] = _versions.TryGetValue(key, out int version) ? version + 1 : 1;
         }
     }
 }

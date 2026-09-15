@@ -89,8 +89,16 @@ internal static class ProjectionEventReader
             && string.Equals(left.UserId, right.UserId, StringComparison.Ordinal)
             && left.GlobalPosition == right.GlobalPosition;
 
-    private static bool Matches<T>(string eventTypeName)
+    private static bool Matches<T>(string? eventTypeName)
     {
+        // The DTO declares this member non-nullable, but a wire payload carrying JSON null deserializes
+        // it to null anyway. An absent type name identifies no event, so it reads as an unknown event
+        // here rather than relying on Normalize having rejected the envelope first.
+        if (string.IsNullOrWhiteSpace(eventTypeName))
+        {
+            return false;
+        }
+
         string unqualified = eventTypeName.Split(',', 2)[0];
         return string.Equals(unqualified, typeof(T).Name, StringComparison.Ordinal)
             || string.Equals(unqualified, typeof(T).FullName, StringComparison.Ordinal);

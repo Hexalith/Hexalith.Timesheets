@@ -9,6 +9,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The projection event reader and the deterministic fold-failure marker stay internal to this
+         assembly; the projection test project asserts their guards directly. -->
+    <InternalsVisibleTo Include="Hexalith.Timesheets.Projections.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
     <ProjectReference Include="..\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
     <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" AdditionalProperties="NuGetAudit=false" />

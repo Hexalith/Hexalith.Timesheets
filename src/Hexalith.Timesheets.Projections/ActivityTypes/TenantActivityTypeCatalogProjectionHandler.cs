@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 
+using Hexalith.EventStore.Client.Attributes;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.DomainService;
@@ -16,6 +17,12 @@ using Microsoft.Extensions.Logging;
 namespace Hexalith.Timesheets.Projections.ActivityTypes;
 
 /// <summary>Persists and rebuilds the tenant Activity Type catalog used by magic-link validation.</summary>
+/// <remarks>
+/// The explicit domain attribute is what makes this handler discoverable by the SDK's domain-telemetry
+/// scan: that scan only instantiates handlers exposing a parameterless constructor, which this
+/// store-injected handler deliberately does not.
+/// </remarks>
+[EventStoreDomain(TimesheetsEventStoreIntegration.DomainName)]
 public sealed class TenantActivityTypeCatalogProjectionHandler(
     IReadModelStore readModelStore,
     ILogger<TenantActivityTypeCatalogProjectionHandler>? logger = null) :
@@ -132,11 +139,14 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             return Task.FromResult(candidate);
         }
 
-        ActivityTypeCatalogReadModel merged = Merge(
+        // Guarded because a persisted candidate can deserialize with a JSON-null ProjectionFreshness,
+        // which Merge dereferences. Without the mapping that escapes as an unhandled
+        // NullReferenceException instead of this handler's declared deterministic fold failure.
+        ActivityTypeCatalogReadModel merged = Guarded(() => Merge(
             FromCandidate(candidate),
             aggregate,
             aggregateHistory.AggregateId,
-            promoteCompleteLiveHistory: false);
+            promoteCompleteLiveHistory: false));
         return Task.FromResult(ToCandidate(merged));
     }
 
@@ -155,26 +165,29 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         ReadModelEntry<ActivityTypeCatalogReadModel> current = await readModelStore
             .GetAsync<ActivityTypeCatalogReadModel>(RebuildStoreName, key, cancellationToken)
             .ConfigureAwait(false);
-        ActivityTypeCatalogReadModel candidateModel = FromCandidate(candidate);
-        string cursor = Math.Max(
-                ParseCursor(current.Value?.ProjectionFreshness.Cursor),
-                ParseCursor(candidateModel.ProjectionFreshness.Cursor))
-            .ToString(CultureInfo.InvariantCulture);
-        ActivityTypeCatalogReadModel fresh = candidateModel with
+        // Guarded because either the persisted read model or the rebuild candidate can deserialize with
+        // a JSON-null ProjectionFreshness, which both cursor reads dereference. Without the mapping that
+        // escapes as an unhandled NullReferenceException instead of a declared deterministic failure.
+        ActivityTypeCatalogReadModel fresh = Guarded(() =>
         {
-            ProjectionFreshness = new ProjectionFreshnessMetadata(
-                ProjectionFreshnessState.Fresh,
-                cursor,
-                null,
-                null)
-        };
-        ReadModelBatchConcurrency concurrency = current.ETag is { Length: > 0 } etag
-            ? ReadModelBatchConcurrency.Match(etag)
-            : ReadModelBatchConcurrency.CreateOnly;
+            ActivityTypeCatalogReadModel candidateModel = FromCandidate(candidate);
+            string cursor = Math.Max(
+                    ParseCursor(current.Value?.ProjectionFreshness.Cursor),
+                    ParseCursor(candidateModel.ProjectionFreshness.Cursor))
+                .ToString(CultureInfo.InvariantCulture);
+            return candidateModel with
+            {
+                ProjectionFreshness = new ProjectionFreshnessMetadata(
+                    ProjectionFreshnessState.Fresh,
+                    cursor,
+                    null,
+                    null)
+            };
+        });
 
         return new DomainProjectionRebuildPlan(
             RebuildStoreName,
-            [ReadModelBatchOperation.Write(key, fresh, concurrency)]);
+            [ReadModelBatchOperation.Write(key, fresh, ReadModelRebuildConcurrency.For(current))]);
     }
 
     private static ActivityTypeCatalogReadModel? FoldAggregate(ProjectionRequest request)
@@ -294,7 +307,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             new ProjectionFreshnessMetadata(freshness, cursor, null, null));
     }
 
-    private static ActivityTypeCatalogReadModel Guarded(Func<ActivityTypeCatalogReadModel> merge)
+    private static TResult Guarded<TResult>(Func<TResult> merge)
     {
         try
         {

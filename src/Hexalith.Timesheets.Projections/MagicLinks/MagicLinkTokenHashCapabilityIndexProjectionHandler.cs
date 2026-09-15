@@ -1,5 +1,6 @@
 using System.Text.Json;
 
+using Hexalith.EventStore.Client.Attributes;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.DomainService;
@@ -12,12 +13,21 @@ using Microsoft.Extensions.Logging;
 namespace Hexalith.Timesheets.Projections.MagicLinks;
 
 /// <summary>Persists and rebuilds the non-authoritative magic-link token-hash candidate index.</summary>
+/// <remarks>
+/// The explicit domain attribute is what makes this handler discoverable by the SDK's domain-telemetry
+/// scan: that scan only instantiates handlers exposing a parameterless constructor, which this
+/// store-injected handler deliberately does not.
+/// </remarks>
+[EventStoreDomain(TimesheetsEventStoreIntegration.DomainName)]
 public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     IReadModelStore readModelStore,
     ILoggerFactory? loggerFactory = null) :
     IAsyncDomainSharedProjectionRebuildHandler,
     IDeclaresProjectionReadModelSlots
 {
+    /// <summary>The logical read-model slot this handler is the canonical writer for.</summary>
+    public const string SlotName = "index";
+
     // An explicit category rather than ILogger<T>: this type's own name carries the word the
     // DiagnosticsPrivacyTests source scan forbids on any logging line, and that guard is worth
     // keeping strict. Nothing token-derived is ever logged; the category is a fixed literal.
@@ -33,7 +43,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
         new(
             TimesheetsEventStoreIntegration.DomainName,
             MagicLinkTokenHashCapabilityIndexProjection.ProjectionName,
-            "index",
+            SlotName,
             ProjectionReadModelSlotKind.Shared,
             declaresCanonicalWriter: true)
     ];
@@ -78,7 +88,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
                 RebuildStoreName,
                 MagicLinkTokenHashCapabilityIndexProjection.StateKey,
                 current => Guarded(() => ApplyChecked(current, issued)),
-                new ReadModelWriteContext("index", ProjectionType).WithEventDiagnostics(request.Events),
+                new ReadModelWriteContext(SlotName, ProjectionType).WithEventDiagnostics(request.Events),
                 _logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             return DomainProjectionHandlerResult.Completed();
@@ -158,16 +168,13 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
             current.Value,
             identity.TenantId,
             ToLoaderVisibleIndex(FromCandidate(candidate), identity.TenantId));
-        ReadModelBatchConcurrency concurrency = current.ETag is { Length: > 0 } etag
-            ? ReadModelBatchConcurrency.Match(etag)
-            : ReadModelBatchConcurrency.CreateOnly;
 
         return new DomainProjectionRebuildPlan(
             RebuildStoreName,
             [ReadModelBatchOperation.Write(
                 MagicLinkTokenHashCapabilityIndexProjection.StateKey,
                 merged,
-                concurrency)]);
+                ReadModelRebuildConcurrency.For(current))]);
     }
 
     private static MagicLinkTokenHashCapabilityIndexReadModel ApplyChecked(
