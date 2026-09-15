@@ -157,3 +157,29 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
   summary: Reconcile the two rebuild handlers' malformed-candidate exception types.
   evidence: Deferred from that spec's review. Bringing the catalog rebuild path under `Guarded` reclassifies a malformed-candidate `InvalidOperationException` from `FromCandidate` as the internal `ProjectionFoldException`, while `MagicLinkTokenHashCapabilityIndexProjectionHandler.FromCandidate` still raises `InvalidOperationException` for the same condition -- asserted as such at `MagicLinkStateProjectionHandlerTests.cs:378`. Two handlers on one `IAsyncDomainSharedProjectionRebuildHandler` contract now report the same condition with two types. No caller depends on either today; `DomainSharedProjectionRebuildDispatcher` catches `Exception` and returns `Indeterminate`/`HandlerFailure` for both.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Decide how loaders should treat unknown future events in authority streams.
+  evidence: `EventStoreMagicLinkConfirmationCapabilityStateLoader.Deserialize` returns null for an unrecognized event and folding continues, so a future revocation-like event after otherwise valid state could be ignored. Every current capability and Time Entry event type is recognized; a current producer or planned event with authorization-changing semantics would settle this maybe-false risk.
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Add a total read budget if realistic aggregate history can amplify one magic-link request.
+  evidence: `ReadAllEventsAsync` pages until the pinned latest sequence is reached and has no total page or event cap. EventStore limits each page and current domain flows keep these aggregates bounded; evidence of a realistically oversized or continuously advancing stream causing request amplification would settle the risk.
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Prove or close the stale-snapshot authorization risk across the loader's separate reads.
+  evidence: Capability, Time Entry, and catalog state are loaded separately, so a concurrent mutation can occur between snapshots. The default topology is not live and the downstream append/concurrency behavior is outside this chunk; the decisive evidence is whether dispatch can commit based on stale loader state without EventStore optimistic revalidation.
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Wire and prove an EventStore resource in the default live AppHost topology.
+  evidence: `Hexalith.Timesheets.AppHost/Program.cs` deliberately declares no EventStore resource, so a valid link cannot complete AC1 in the default live topology. `docs/launch-readiness.md` already records this High gap as an infrastructure-owned waiver, and repository policy prevents this chunk from changing topology.
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Preserve explicit non-Fresh catalog state only when the no-disclosure bundle can represent it safely.
+  evidence: The loader collapses stale, rebuilding, degraded, unknown, absent, and malformed catalogs into the same unavailable bundle even though AC2 names the states explicitly. The story and code already defer this Medium gap because exposing an honest category requires revisiting the approved indistinguishable-response design.
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Correct the launch-readiness UI revisit condition to match the FrontComposer policy.
+  evidence: `docs/launch-readiness.md:54` says a future UI-bearing story should scaffold `Hexalith.Timesheets.UI` and `.UI.Tests`, while current repository guidance forbids a Timesheets UI project and assigns future UI to FrontComposer. This is a pre-existing Story 5.1 documentation issue outside the loader-core chunk.

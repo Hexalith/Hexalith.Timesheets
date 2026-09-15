@@ -193,6 +193,53 @@ Scope reviewed: `c2f68e5^..HEAD` (40 files, +3526/-217). Four layers: blind-hunt
 - `dotnet build Hexalith.Timesheets.slnx -warnaserror` — succeeded, 0 warnings. It did **not** succeed before these patches; see the gitlink decision above.
 - ArchitectureTests 54/54, Contracts.Tests 88/88, Projections.Tests 125/125, Server.Tests 444/444, Works.Tests 76/76, IntegrationTests 103 total / 99 pass / 4 intentional skips. Final total: 890 tests, 886 pass, 4 skips, 0 failures.
 
+### Review Findings — loader-core chunk (2026-09-15)
+
+Scope reviewed: the Story 3.6 loader-core chunk (5 files, +1949/-18), including the loader-fold-integrity spec and tests. Four independent layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor.
+
+**Decisions needed**
+
+- [x] [Review][Decision] Project-scoped Activity Types are unreachable through the live magic-link catalog — the loader rejects every `Fresh` catalog item whose scope is not `Tenant`, while issuance and adjustment explicitly accept and validate project-scoped Activity Types and Story 3.4 requires the same Activity Type rules as capture. A correct patch needs a product/architecture choice between project-aware catalog loading and an explicit tenant-only v1 constraint. [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:284] **Resolved (tenant-only v1):** magic links may still target Project time entries, but their Activity Type must be tenant-scoped. Project-owned Activity Types require a separately owned project-aware catalog projection; the existing `ProjectForProject(...)` rules are not backed by a production project-addressed writer, so adding that architecture inside this loader review would over-engineer the v1 correction. The implementation must reject project-scoped types consistently during issuance and adjustment, fail closed for such existing capabilities, align the Story 3.4/3.6 contract and tests, and first verify whether any deployed environment contains affected capabilities.
+- [x] [Review][Decision] Invalid-link stages remain timing-distinguishable — blank tokens return before any store access, unknown hashes stop after the index, and later failures read the capability, Time Entry, and catalog. The external body stays opaque, but the work profile violates the story's timing-sensitive no-disclosure constraint. The blank-token tests also count only gateway reads, not `IReadModelStore` calls, so their “no read” claim is only partially enforced. Fixing this requires choosing between accepting/documenting the entropy-mitigated risk and designing equal-work or padded handling. [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:61] **Resolved (accept and bound the v1 risk):** v1 guarantees indistinguishable external HTTP status, headers, content type, body shape/length, and protected-field absence; it does not promise constant backend work or latency across distributed dependencies. Preserve cheap early exits and exclude dummy reads or response padding: both amplify anonymous traffic while caches, stream sizes, and dependency variance remain distinguishable. The implementation must make the zero-I/O blank-token path explicit by asserting both EventStore and read-model calls, avoid flaky latency tests, and record a launch-readiness risk with a revisit trigger for public exposure without suitable abuse controls, weaker token entropy, or evidence that known invalid tokens can be practically classified. A future requirement for that threat model belongs in a separate security story for a single bounded validation operation.
+
+**Patches**
+
+- [ ] [Review][Patch] Reject a capability whose `ActivityTypeId` disagrees with the loaded Time Entry — the loader compares tenant, entry, contributor, and target but omits the activity type, while description combines the capability's label with the Time Entry's date and duration. [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:97]
+- [ ] [Review][Patch] Add an opaque-denial regression test for an index read-model exception; the catch exists, but no test would catch a refactor that leaks the failure as a 500. [tests/Hexalith.Timesheets.Server.Tests/EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs:96]
+- [ ] [Review][Patch] Exercise `TimeEntrySubmitted` through the loader fold; removing that case could make a submitted entry appear `Draft` and wrongly admit adjustment. [tests/Hexalith.Timesheets.Server.Tests/EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs:28]
+- [ ] [Review][Patch] Falsify the `EventCount` page-integrity guard with a metadata mismatch test. [tests/Hexalith.Timesheets.Server.Tests/EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs:632]
+
+**Deferred**
+
+- [x] [Review][Defer] Unknown future authority-stream events can be ignored after a valid state [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:409] — deferred: every current capability and Time Entry event type is recognized; a current producer or planned event whose semantics can invalidate authorization would settle this maybe-false risk.
+- [x] [Review][Defer] The paging loop has no total stream-read budget [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:307] — deferred: EventStore caps each page and no reachable oversized or ever-advancing aggregate was demonstrated; evidence of realistic request amplification would settle this maybe-false risk.
+- [x] [Review][Defer] Capability, Time Entry, and catalog are separately read snapshots and may be stale relative to one another [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:84] — deferred: the default topology is not live and the downstream append/concurrency behavior is outside this chunk; demonstrate that dispatch can commit from stale loader state without EventStore optimistic revalidation.
+- [x] [Review][Defer] The default AppHost has no EventStore resource, so AC1 is not satisfied in a live topology [src/Hexalith.Timesheets.AppHost/Program.cs:22] — deferred: this real High gap is already an explicit infrastructure-owned waiver in `docs/launch-readiness.md`, and this loader-core chunk must preserve topology.
+- [x] [Review][Defer] Non-`Fresh` projection states collapse to one unavailable bundle instead of preserving the AC2 vocabulary [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:109] — deferred: this real Medium gap is explicitly acknowledged in the story and code; preserving explicit state requires revisiting the approved no-disclosure bundle design.
+- [x] [Review][Defer] The launch-readiness UI revisit condition conflicts with current repository policy [docs/launch-readiness.md:54] — deferred: this is a pre-existing Story 5.1 documentation issue outside the loader-core chunk; current agent guidance requires future UI through FrontComposer and forbids a Timesheets UI project.
+
+**Rejected**
+
+- `false` — [blind-hunter] a second issuance can reopen a terminal capability: the command aggregate rejects issuance once the capability exists, so no valid producer emits that history.
+- `false` — [blind-hunter] a second `TimeEntryRecorded` or impossible lifecycle can reset Time Entry state: the aggregate rejects duplicate recording and invalid transitions before persistence.
+- `false` — [blind-hunter] confirmation must require the capability's selected Activity Type to remain active/present: confirmation does not choose or change the historical Activity Type; the approved design deliberately requires only a `Fresh` catalog.
+- `false` — [blind-hunter] singleton envelope metadata or protection metadata is accepted without validation: EventStore enforces readable payloads and current metadata v1, while null protection metadata is a documented legacy representation.
+- `false` — [blind-hunter] the broad loader catch hides defects without diagnostics: it deliberately preserves no-disclosure, rethrows genuine caller cancellation, and the endpoint emits a correlation-safe `Unknown` diagnostic.
+- `low` — [blind-hunter] the revoke/expire test name exercises only revocation: expiry folding is covered separately through the token path, leaving only a cosmetic naming issue.
+- `low` — [blind-hunter] the paged fixture's default `LatestSequence` is page-local: the test still exercises the truncation cursor, and a separate regression pins the latest-sequence path.
+- `false` — [blind-hunter] sprint-status keys are truncated: 64 characters is the intentional convention and the sprint-plan validator reports the current file valid with no problems.
+- `false` — [blind-hunter] the loader-fold sub-spec is `done` while the parent story is `review`: the sub-spec is a distinct completed remediation slice, not the parent story's status.
+- `false` — [blind-hunter] the Epic 5 retrospective is `done` while the epic is unfinished: `done` records that the retrospective ran, not that the epic completed.
+- `false` — [blind-hunter] cross-tenant HTTP evidence is absent: that integration-test file is intentionally assigned to the next review chunk, not omitted from the Story 3.6 implementation.
+- `low` — [blind-hunter] launch-readiness still names an old June baseline: later evidence is explicitly dated, so the older baseline is historical context rather than the asserted current verification.
+- `false` — [edge-case-hunter] a non-`ArgumentException` token-generator failure should be converted to denial: the production generator uses argument exceptions for invalid tokens; resource and programming failures should not be silently reclassified.
+- `false` — [edge-case-hunter] a second issuance reopens a terminal capability: duplicate of the invalid-history claim; the capability aggregate rejects the producer command.
+- `false` — [edge-case-hunter] impossible Time Entry lifecycle histories are silently folded: duplicate of the invalid-history claim; the aggregate prevents their production.
+- `false` — [edge-case-hunter] unsupported singleton `MetadataVersion` is accepted: current persisted events use version 1 and EventStore validates readable envelopes before returning them.
+- `false` — [edge-case-hunter] sprint-status keys are accidentally truncated: duplicate of the validated 64-character convention claim.
+- `false` — [acceptance-auditor] the same `MessageId` at different sequences should be de-duplicated: that is contradictory stream identity, not an exact replay; exact same-sequence duplicate envelopes are already accepted.
+
+
 ## Dev Notes
 
 ### Source Documents Loaded
