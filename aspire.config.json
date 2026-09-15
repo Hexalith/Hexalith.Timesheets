@@ -1,0 +1,5 @@
+{
+  "appHost": {
+    "path": "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj"
+  }
+}

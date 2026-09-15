@@ -11,7 +11,7 @@ Story 5.3 review-patch evidence was rerun on 2026-09-12 from the worktree based 
 
 ## Package-Currency Verdict
 
-Current package-currency verdict (Story 5.2 reopened evidence, 2026-09-12): **CONCERNS**. The Timesheets-owned baseline is aligned at .NET SDK `10.0.401` (`rollForward: latestPatch`) and `Aspire.AppHost.Sdk` `13.5.3`; stable direct packages are current, root npm work is not applicable, and vulnerable/deprecated audits are clean. The solution/AppHost transitive-outdated tooling failure remains visible, all other project fallbacks were reviewed with no pin, and the platform-owned prereleases observed in the Timesheets restored packages plus the Fluent UI V5 policy surface remain an explicit waiver rather than a hidden stable-package claim. Approval evidence is the approved 2026-09-12 course correction in `_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md` §7. Review-time AppHost smoke evidence also passed: `aspire start` completed, the `security` resource reported `Healthy`, and `aspire stop` completed successfully.
+Current package-currency verdict (Story 5.2 reopened evidence, 2026-09-12): **CONCERNS**. The Timesheets-owned baseline is aligned at .NET SDK `10.0.401` (`rollForward: latestPatch`) and `Aspire.AppHost.Sdk` `13.5.3`; stable direct packages are current, root npm work is not applicable, and vulnerable/deprecated audits are clean. The solution/AppHost transitive-outdated tooling failure remains visible, all other project fallbacks were reviewed with no pin, and the platform-owned prereleases observed in the Timesheets restored packages plus the Fluent UI V5 policy surface remain an explicit waiver rather than a hidden stable-package claim. Approval evidence is the approved 2026-09-12 course correction in `_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md` §7. Review-time AppHost smoke evidence also passed: `aspire start` completed, the `security` resource reported `Healthy`, and `aspire stop` completed successfully. Re-verified on 2026-09-15 after the AppHost gained the Timesheets project and its public/internal endpoint split: every resource reported `Healthy` and `aspire stop` completed cleanly.
 
 | Dimension | Verdict | Evidence | Rationale |
 |---|---|---|---|
@@ -83,6 +83,16 @@ Evidence: `tests/Hexalith.Timesheets.IntegrationTests/InternalSurfaceGuardTests.
 protected routes are refused when nothing is configured, and that the public magic-link and metadata
 routes stay reachable. `MagicLinkConfirmationHttpBoundaryTests` opts in explicitly via
 `AllowOnAnyPort`, because `TestServer` has no listener and reports `Connection.LocalPort` as `0`.
+
+**Live `aspire start` evidence (2026-09-15), against real Kestrel listeners rather than TestServer.**
+All resources reported `Healthy` (`aspire-dashboard`, `security`, both `security-*` parameters, and
+the `timesheets` project on its `public` and `internal` endpoints); `aspire stop` completed cleanly.
+Observed on the public listener (`:8080`): `GET /metadata/timesheets` → `200`; `GET` magic-link
+confirm → `403` (the opaque denial, fail-closed with no EventStore resource); `POST /process`,
+`/replay-state`, `/query`, `/project`, `/project/v2`, `/admin/operational-index-metadata` → `404`
+on every one. On the internal listener (`:8081`): `POST /admin/operational-index-metadata` → `200`
+and `POST /project/v2` → `400` (the SDK's own envelope validation), i.e. reachable. The split is
+therefore verified end to end and not inferred from the in-process suite.
 
 **Residual risk:** the guard matches by path prefix, so an SDK route added outside those prefixes
 would not be covered; and `AllowOnAnyPort` republishes the surface if ever set in a deployed host.

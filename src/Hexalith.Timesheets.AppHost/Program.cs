@@ -21,12 +21,19 @@ _ = builder.AddHexalithEventStoreSecurity();
 //
 // This host has no EventStore resource to reach yet (that is the deferred infrastructure story), so
 // under `aspire start` it comes up and fails closed rather than serving magic links.
+const int PublicPort = 8080;
 const int InternalPort = 8081;
 
+// Both endpoints are declared explicitly. This project ships no launchSettings.json, so AddProject
+// contributes no endpoint of its own — declaring only the internal one would leave the magic-link
+// routes unpublished rather than merely unauthenticated.
 _ = builder
     .AddProject<Projects.Hexalith_Timesheets>("timesheets")
+    .WithHttpEndpoint(name: "public", port: PublicPort, isProxied: false)
     .WithHttpEndpoint(name: "internal", port: InternalPort, isProxied: false)
-    .WithEnvironment("Timesheets__InternalSurface__Port", InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture));
+    .WithEnvironment(
+        "Timesheets__InternalSurface__Port",
+        InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
 await builder
     .Build()
