@@ -206,7 +206,9 @@ public sealed class DependencyDirectionTests
             "src", "Hexalith.Timesheets.Projections", "ActivityTypes", "TenantActivityTypeCatalogProjectionHandler.cs"));
 
         hostProject.ShouldContain("Hexalith.Timesheets.Projections");
-        projectionsProject.ShouldContain("Hexalith.Timesheets.Server");
+        // Deliberately not asserted: the Projections -> Server project reference. It is the layering
+        // inversion decision 3 resolves by moving the four shared shapes to Contracts, so pinning it
+        // here would make that follow-up start by deleting this assertion.
         projectionsProject.ShouldContain("Hexalith.EventStore.DomainService");
         program.ShouldContain("AddEventStoreDomainService");
         program.ShouldContain("TimesheetsProjectionsMarker");
@@ -226,7 +228,9 @@ public sealed class DependencyDirectionTests
 
         program.Split("AddEventStoreDomainService(", StringSplitOptions.None).Length.ShouldBe(2);
         program.ShouldNotContain("AddTimesheetsServiceDefaults");
-        hostProject.ShouldContain("Hexalith.Timesheets.ServiceDefaults");
+        // Deliberately not asserted: that the host still carries the ServiceDefaults project
+        // reference. It is orphaned by this host composition and decision 5 owns its disposition,
+        // so cementing the orphan here would make that follow-up start by deleting this assertion.
     }
 
     private static IEnumerable<string> ReadIncludeValues(XDocument project)

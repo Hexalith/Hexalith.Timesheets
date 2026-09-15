@@ -108,6 +108,12 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             cancellationToken).ConfigureAwait(false);
         if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
         {
+            // LoadActivityTypeCatalogAsync collapses every non-Fresh condition — stale, rebuilding,
+            // degraded, absent, unreadable, invalid shape — into one Unavailable catalog, so nothing
+            // here can tell a lagging projection from an unreadable one. The whole bundle is
+            // therefore discarded rather than leaking a resolved capability on an unknown condition.
+            // Distinguishing them is the deferred AC2 item, and it is the prerequisite for any
+            // honest StaleCatalog diagnostic at the endpoint.
             return UnavailableTokenState();
         }
 
@@ -344,7 +350,6 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
             events.AddRange(page.Events);
             latestSequence = Math.Max(latestSequence, page.Metadata.LatestSequence);
-            hasMore = page.Metadata.IsTruncated || fromSequence < latestSequence;
             long? lastReturned = page.Metadata.LastSequenceReturned;
             if (lastReturned is null || lastReturned <= fromSequence)
             {

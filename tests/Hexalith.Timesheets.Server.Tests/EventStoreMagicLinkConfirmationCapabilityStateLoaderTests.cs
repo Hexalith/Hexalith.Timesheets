@@ -973,6 +973,12 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         {
             if (typeof(TValue) == typeof(ActivityTypeCatalogReadModel))
             {
+                // Verify the addressing, not just the type. Dispatching on typeof(TValue) alone let
+                // the loader read any store and any key and still pass, so the tenant-scoped catalog
+                // key and its state-store component were never actually asserted by these tests.
+                storeName.ShouldBe(MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName);
+                key.ShouldBe(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()));
+
                 if (throwCatalogRead)
                 {
                     throw new InvalidOperationException("Catalog read failed.");
@@ -990,6 +996,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 return Task.FromResult(new ReadModelEntry<TValue>(value as TValue, "etag-catalog"));
             }
 
+            storeName.ShouldBe(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName);
+            key.ShouldBe(MagicLinkTokenHashCapabilityIndexProjection.StateKey);
             return Task.FromResult(new ReadModelEntry<TValue>(index as TValue, "etag-index"));
         }
 
@@ -1013,6 +1021,13 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
     private sealed class ScriptedGatewayClient : IEventStoreGatewayClient
     {
+
+        // The magic-link loader never queries command status; this member exists only to satisfy
+        // IEventStoreGatewayClient.
+        public Task<CommandStatusQueryResponse?> GetCommandStatusAsync(
+            string messageId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
         private readonly Dictionary<(string Tenant, string? AggregateId), StreamReadEvent[]> _streams = [];
 
         private readonly Dictionary<(string Tenant, string? AggregateId), StreamReadEvent[][]> _pagedStreams = [];

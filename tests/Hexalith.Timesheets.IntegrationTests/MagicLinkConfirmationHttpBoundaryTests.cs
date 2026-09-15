@@ -250,22 +250,26 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Confirm_submit_reports_stale_catalog_only_when_a_capability_resolved()
+    public async Task Confirm_submit_reports_one_indistinguishable_category_for_every_non_fresh_catalog()
     {
         ExternalRoute route = ExternalRoutes().Single(static candidate => candidate.Name == "confirm-submit");
 
-        // A resolved capability behind a non-Fresh catalog is a genuine projection-freshness denial.
+        // A non-Fresh catalog behind an otherwise resolvable token, and a token that never resolved,
+        // must be reported identically. The loader collapses stale, rebuilding, degraded, absent and
+        // unreadable catalogs into one Unavailable state and discards the bundle with it, so no code
+        // can tell those apart — a StaleCatalog category here would assert a distinction that does
+        // not exist, and previously read as reachable only because a scripted loader could fake it.
         using (MagicLinkHttpBoundaryFactory staleFactory = new())
         {
             using HttpClient staleClient = staleFactory.CreateClient();
             using HttpResponseMessage staleResponse = await SendAsync(staleClient, route, Token(route, "stale-catalog"));
 
             staleResponse.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-            RenderedDiagnostics(staleFactory).ShouldContain("Category=StaleCatalog");
+            string staleDiagnostics = RenderedDiagnostics(staleFactory);
+            staleDiagnostics.ShouldContain("Category=Unknown");
+            staleDiagnostics.ShouldNotContain("Category=StaleCatalog");
         }
 
-        // An unresolved token yields the same unavailable catalog as a stale projection, so the category
-        // must not claim staleness — otherwise every loader failure is reported as a freshness problem.
         using MagicLinkHttpBoundaryFactory unresolvedFactory = new();
         using HttpClient unresolvedClient = unresolvedFactory.CreateClient();
         using HttpResponseMessage unresolvedResponse = await SendAsync(unresolvedClient, route, Token(route, "unresolved"));
@@ -1137,6 +1141,11 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                     ? version.ToString(System.Globalization.CultureInfo.InvariantCulture)
                     : null));
 
+        // Direct, unconditional seeding is refused outright rather than merely counted. The counters
+        // alone could never fail: every production write reaches this store through TrySaveAsync, so
+        // a ShouldBe(0) assertion on them passed by construction and would not have caught the direct
+        // seed it was added to catch. Throwing makes the journey prove itself through the projection
+        // route, because a fixture that tried to shortcut it would fail loudly here.
         public Task SaveAsync<TValue>(
             string storeName,
             string key,
@@ -1147,10 +1156,15 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             if (typeof(TValue) == typeof(MagicLinkTokenHashCapabilityIndexReadModel))
             {
                 DirectIndexSeedCount++;
+                throw new InvalidOperationException(
+                    "The magic-link candidate index must be established through the projection route, not seeded directly.");
             }
-            else if (typeof(TValue) == typeof(ActivityTypeCatalogReadModel))
+
+            if (typeof(TValue) == typeof(ActivityTypeCatalogReadModel))
             {
                 DirectCatalogSeedCount++;
+                throw new InvalidOperationException(
+                    "The Activity Type catalog must be established through the projection route, not seeded directly.");
             }
 
             _values[key] = value;
@@ -1182,6 +1196,13 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     private sealed class ScriptedEventStoreGateway : IEventStoreGatewayClient
     {
+
+        // The magic-link loader never queries command status; this member exists only to satisfy
+        // IEventStoreGatewayClient.
+        public Task<CommandStatusQueryResponse?> GetCommandStatusAsync(
+            string messageId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
         private readonly Dictionary<(string Tenant, string Aggregate), StreamReadEvent[]> _streams = [];
 
         public void WithStream(string tenant, string aggregate, params StreamReadEvent[] events)

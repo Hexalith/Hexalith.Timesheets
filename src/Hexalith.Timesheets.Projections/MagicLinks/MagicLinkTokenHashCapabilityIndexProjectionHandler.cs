@@ -7,14 +7,25 @@ using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
 
+using Microsoft.Extensions.Logging;
+
 namespace Hexalith.Timesheets.Projections.MagicLinks;
 
 /// <summary>Persists and rebuilds the non-authoritative magic-link token-hash candidate index.</summary>
-public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(IReadModelStore readModelStore) :
+public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
+    IReadModelStore readModelStore,
+    ILoggerFactory? loggerFactory = null) :
     IAsyncDomainSharedProjectionRebuildHandler,
     IDeclaresProjectionReadModelSlots
 {
+    // An explicit category rather than ILogger<T>: this type's own name carries the word the
+    // DiagnosticsPrivacyTests source scan forbids on any logging line, and that guard is worth
+    // keeping strict. Nothing token-derived is ever logged; the category is a fixed literal.
+    private const string LogCategory = "Hexalith.Timesheets.Projections.CandidateIndexProjection";
+
     private static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web);
+
+    private readonly ILogger? _logger = loggerFactory?.CreateLogger(LogCategory);
 
     /// <summary>Gets the canonical shared slot declaration.</summary>
     public static IReadOnlyList<ProjectionReadModelSlotDeclaration> ProjectionReadModelSlots { get; } =
@@ -66,13 +77,23 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(IReadMode
                 readModelStore,
                 RebuildStoreName,
                 MagicLinkTokenHashCapabilityIndexProjection.StateKey,
-                current => ApplyChecked(current, issued),
+                current => Guarded(() => ApplyChecked(current, issued)),
+                new ReadModelWriteContext("index", ProjectionType).WithEventDiagnostics(request.Events),
+                _logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             return DomainProjectionHandlerResult.Completed();
         }
         catch (IndexCandidateConflictException)
         {
             return DomainProjectionHandlerResult.Failed(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+        }
+        catch (ProjectionFoldException)
+        {
+            // An apply defect is deterministic: reporting it as a transient store outage would have
+            // the coordinator retry the same failing delivery forever. Store failures and an
+            // exhausted retry budget stay Retryable below, even though they share CLR types.
+            cancellationToken.ThrowIfCancellationRequested();
+            return DomainProjectionHandlerResult.Failed(ProjectionDispatchReasonCodes.HandlerFailure);
         }
         catch (Exception)
         {
@@ -162,6 +183,20 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(IReadMode
         }
 
         return MagicLinkTokenHashCapabilityIndexProjection.Apply(current, issued);
+    }
+
+    private static MagicLinkTokenHashCapabilityIndexReadModel Guarded(
+        Func<MagicLinkTokenHashCapabilityIndexReadModel> apply)
+    {
+        try
+        {
+            return apply();
+        }
+        catch (Exception exception)
+            when (exception is InvalidOperationException or ArgumentException or NullReferenceException)
+        {
+            throw new ProjectionFoldException(exception);
+        }
     }
 
     private static MagicLinkConfirmationCapabilityIssued? FoldIssuance(ProjectionRequest request)

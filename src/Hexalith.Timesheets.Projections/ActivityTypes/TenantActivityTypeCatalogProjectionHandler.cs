@@ -11,10 +11,14 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
 
+using Microsoft.Extensions.Logging;
+
 namespace Hexalith.Timesheets.Projections.ActivityTypes;
 
 /// <summary>Persists and rebuilds the tenant Activity Type catalog used by magic-link validation.</summary>
-public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore readModelStore) :
+public sealed class TenantActivityTypeCatalogProjectionHandler(
+    IReadModelStore readModelStore,
+    ILogger<TenantActivityTypeCatalogProjectionHandler>? logger = null) :
     IAsyncDomainSharedProjectionRebuildHandler,
     IDeclaresProjectionReadModelSlots
 {
@@ -71,9 +75,21 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
                 readModelStore,
                 RebuildStoreName,
                 MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant),
-                current => Merge(current, aggregate, request.AggregateId, promoteCompleteLiveHistory: true),
+                current => Guarded(() => Merge(current, aggregate, request.AggregateId, promoteCompleteLiveHistory: true)),
+                new ReadModelWriteContext(
+                    MagicLinkActivityTypeCatalogReadModelAddress.SlotName,
+                    ProjectionType).WithEventDiagnostics(request.Events),
+                logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
             return DomainProjectionHandlerResult.Completed();
+        }
+        catch (ProjectionFoldException)
+        {
+            // A merge defect is deterministic: reporting it as a transient store outage would have
+            // the coordinator retry the same failing delivery forever. Store failures and an
+            // exhausted retry budget stay Retryable below, even though they share CLR types.
+            cancellationToken.ThrowIfCancellationRequested();
+            return DomainProjectionHandlerResult.Failed(ProjectionDispatchReasonCodes.HandlerFailure);
         }
         catch (Exception)
         {
@@ -217,7 +233,10 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
             throw new InvalidOperationException("The Activity Type history does not match its aggregate scope.");
         }
 
-        return model;
+        // A project-scoped Activity Type folds to no tenant-catalog item. Writing that empty model
+        // would publish — and, on a first delivery, mark Fresh — a catalog this aggregate never
+        // belonged to, so it contributes nothing instead.
+        return model.Items.Count == 0 ? null : model;
     }
 
     private static object? DeserializeActivityTypeEvent(ProjectionEventDto projectionEvent)
@@ -252,8 +271,16 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
             items[item.ActivityTypeId.Value] = item;
         }
 
+        // A live delivery carries one aggregate's complete history, which establishes nothing about
+        // whether the *tenant* catalog is complete. It may therefore keep an absent or already-Fresh
+        // catalog Fresh, but must never raise a catalog the writer has explicitly marked behind —
+        // only FinalizeAsync, which replays the whole tenant, may promote one of those to Fresh.
         ProjectionFreshnessState freshness = promoteCompleteLiveHistory
-            ? ProjectionFreshnessState.Fresh
+            ? current?.ProjectionFreshness.State switch
+            {
+                null or ProjectionFreshnessState.Fresh => ProjectionFreshnessState.Fresh,
+                { } persisted => persisted
+            }
             : ProjectionFreshnessState.Rebuilding;
         string cursor = Math.Max(
                 ParseCursor(current?.ProjectionFreshness.Cursor),
@@ -265,6 +292,19 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(IReadModelStore r
                 .ThenBy(static item => item.ActivityTypeId.Value, StringComparer.Ordinal)
                 .ToArray(),
             new ProjectionFreshnessMetadata(freshness, cursor, null, null));
+    }
+
+    private static ActivityTypeCatalogReadModel Guarded(Func<ActivityTypeCatalogReadModel> merge)
+    {
+        try
+        {
+            return merge();
+        }
+        catch (Exception exception)
+            when (exception is InvalidOperationException or ArgumentException or NullReferenceException)
+        {
+            throw new ProjectionFoldException(exception);
+        }
     }
 
     private static long ParseCursor(string? cursor)

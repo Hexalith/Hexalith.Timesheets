@@ -81,6 +81,34 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
+    public void Server_kernel_falls_back_to_the_dapr_http_port_when_no_endpoint_is_configured()
+    {
+        string? previousEndpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
+        string? previousPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
+        try
+        {
+            // Without this, deleting the DAPR_HTTP_PORT branch entirely would keep every test green,
+            // because the only other case expects http://localhost:3500 — byte-identical to the
+            // hard-coded fallback. In a sidecar that publishes only the port variable on a non-default
+            // port, that silently sends every gateway call to the wrong place, and the loader's
+            // fail-closed read makes the result indistinguishable from an invalid magic link.
+            Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", null);
+            Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", "3501");
+            IServiceCollection services = new ServiceCollection();
+            services.AddTimesheetsServerKernel();
+
+            using ServiceProvider provider = services.BuildServiceProvider();
+            provider.GetRequiredService<IOptions<EventStoreGatewayClientOptions>>()
+                .Value.BaseAddress.ShouldBe(new Uri("http://localhost:3501"));
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", previousEndpoint);
+            Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", previousPort);
+        }
+    }
+
+    [Fact]
     public void Server_kernel_rejects_non_origin_endpoints_and_non_numeric_ports()
     {
         string? previousEndpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
@@ -96,7 +124,10 @@ public sealed class RuntimeRegistrationTests
             foreach (string invalidEndpoint in invalidEndpoints)
             {
                 Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", invalidEndpoint);
-                Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", "3500@off-host.example");
+                // Deliberately not "3500...": the fallback is http://localhost:3500, so a rejected
+                // port that happens to read 3500 makes the assertion below unable to tell "parsed
+                // and rejected" from "no port branch at all".
+                Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", "3501@off-host.example");
                 IServiceCollection services = new ServiceCollection();
                 services.AddTimesheetsServerKernel();
 

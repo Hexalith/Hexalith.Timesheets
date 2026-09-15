@@ -307,6 +307,80 @@ public sealed class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
+    public async Task Index_rebuild_drops_a_hash_another_tenant_already_owns()
+    {
+        // ReplaceTenant removes an entry whose hash collides with another tenant's persisted slice
+        // rather than letting either side win. Index_rebuild_replaces_only_target_tenant_slice never
+        // reaches that branch: its replacement key does not collide, so TryAdd always succeeds and
+        // the collision handling could be deleted with every assertion still green. Shipped, that
+        // would let a tenant-1 rebuild hijack — or be shadowed by — tenant-2's hash mapping, and the
+        // loader would resolve a candidate in the wrong tenant's stream.
+        var store = new ScriptedReadModelStore();
+        store.Set(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey,
+            new MagicLinkTokenHashCapabilityIndexReadModel(new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>
+            {
+                ["hash-only"] = new(new TenantReference("tenant-2"), new MagicLinkCapabilityId("other-capability"))
+            }));
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
+        var identity = new DomainSharedProjectionRebuildIdentity(
+            "tenant-1",
+            "timesheets",
+            MagicLinkTokenHashCapabilityIndexProjection.ProjectionName,
+            "operation-1",
+            "catalog-1");
+        DomainSharedProjectionRebuildCandidate candidate = await handler.CreateEmptyCandidateAsync(
+            identity,
+            TestContext.Current.CancellationToken);
+        candidate = await handler.AccumulateAsync(
+            identity,
+            candidate,
+            new ProjectionRequest("tenant-1", "timesheets", "capability-1", [Event(1, Issued())]),
+            TestContext.Current.CancellationToken);
+
+        DomainProjectionRebuildPlan plan = await handler.FinalizeAsync(
+            identity,
+            candidate,
+            TestContext.Current.CancellationToken);
+        MagicLinkTokenHashCapabilityIndexReadModel rebuilt = JsonSerializer.Deserialize<MagicLinkTokenHashCapabilityIndexReadModel>(
+            plan.Operations.ShouldHaveSingleItem().CanonicalValue.Span,
+            s_jsonOptions).ShouldNotBeNull();
+
+        rebuilt.Entries.ShouldNotContainKey("hash-only");
+    }
+
+    [Fact]
+    public async Task Index_rebuild_rejects_a_candidate_carrying_another_tenants_entry()
+    {
+        // ToLoaderVisibleIndex is the last tenant-isolation check before the shared index write, and
+        // no test could reach it: every candidate in this file comes from AccumulateAsync, which
+        // already forces identity.TenantId == aggregateHistory.TenantId. A candidate blob that
+        // crossed the rebuild coordinator's persistence boundary carrying a foreign entry would be
+        // merged in, and ReplaceTenant only strips entries belonging to the rebuild tenant — so the
+        // injected one would survive. The candidate is built from raw bytes because
+        // IndexRebuildCandidate is internal.
+        var store = new ScriptedReadModelStore();
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
+        var identity = new DomainSharedProjectionRebuildIdentity(
+            "tenant-1",
+            "timesheets",
+            MagicLinkTokenHashCapabilityIndexProjection.ProjectionName,
+            "operation-1",
+            "catalog-1");
+        DomainSharedProjectionRebuildCandidate foreign = new(
+            System.Text.Encoding.UTF8.GetBytes(
+                """
+                {"entries":[{"tokenHash":"hash-only","candidate":{"tenant":{"tenantId":"tenant-2"},"capabilityId":{"value":"capability-2"}}}]}
+                """));
+
+        _ = await Should.ThrowAsync<InvalidOperationException>(async () => await handler.FinalizeAsync(
+            identity,
+            foreign,
+            TestContext.Current.CancellationToken));
+        store.Contains(MagicLinkTokenHashCapabilityIndexProjection.StateKey).ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Index_rebuild_omits_ambiguous_hash_deterministically_in_both_delivery_orders()
     {
         var store = new ScriptedReadModelStore();
@@ -437,7 +511,7 @@ public sealed class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Catalog_complete_live_delivery_promotes_an_existing_stale_catalog()
+    public async Task Catalog_complete_live_delivery_preserves_an_existing_stale_catalog()
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -473,7 +547,11 @@ public sealed class MagicLinkStateProjectionHandlerTests
 
         result.Status.ShouldBe(ProjectionDispatchStatus.Completed);
         ActivityTypeCatalogReadModel catalog = store.Get<ActivityTypeCatalogReadModel>(key);
-        catalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+
+        // One aggregate's complete history says nothing about whether the tenant catalog is
+        // complete, so a catalog the writer marked Stale stays Stale. Only FinalizeAsync, which
+        // replays the whole tenant, may promote it. The delivered item and cursor still land.
+        catalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Stale);
         catalog.ProjectionFreshness.Cursor.ShouldBe("11");
         catalog.Items.Select(static item => item.ActivityTypeId.Value)
             .ShouldBe(["activity-1", "activity-2"], ignoreOrder: true);
@@ -773,6 +851,8 @@ public sealed class MagicLinkStateProjectionHandlerTests
         public T Get<T>(string key)
             where T : class
             => (T)_values[key];
+
+        public bool Contains(string key) => _values.ContainsKey(key);
 
         public void Set<T>(string key, T value)
             where T : class
