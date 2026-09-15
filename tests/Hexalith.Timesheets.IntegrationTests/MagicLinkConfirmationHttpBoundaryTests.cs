@@ -21,6 +21,7 @@ using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections.ActivityTypes;
+using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.TimeEntries;
@@ -884,6 +885,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
             builder.ConfigureServices(services =>
             {
+                // TestServer has no listener, so Connection.LocalPort is always 0 and the port split
+                // cannot be expressed here. These tests exercise the projection route deliberately,
+                // so they opt in explicitly rather than the guard defaulting open in production.
+                services.Configure<InternalSurfaceOptions>(static options => options.AllowOnAnyPort = true);
                 services.RemoveAll<IMagicLinkConfirmationCapabilityStateLoader>();
                 if (useConcreteLoader)
                 {

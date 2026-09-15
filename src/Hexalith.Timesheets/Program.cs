@@ -21,8 +21,15 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsTrustedContextAccessor, HttpContextTimesheetsTrustedContextAccessor>());
 builder.Services.AddSingleton(TimeProvider.System);
 
+// The EventStore domain-service routes carry no authorization of their own and this host also
+// publishes the deliberately anonymous magic-link routes, so the two surfaces are kept apart by
+// port. Fail-closed: unconfigured means unreachable, never public.
+builder.Services.Configure<InternalSurfaceOptions>(
+    builder.Configuration.GetSection(InternalSurfaceOptions.SectionName));
+
 WebApplication app = builder.Build();
 
+app.UseTimesheetsInternalSurfaceGuard();
 app.UseEventStoreDomainService();
 app.MapTimesheetsExternalContributionEndpoints();
 app.MapTimesheetsMagicLinkConfirmationCapabilityEndpoints();

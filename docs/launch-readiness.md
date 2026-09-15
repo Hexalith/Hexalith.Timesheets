@@ -60,29 +60,39 @@ Classification vocabulary: `implemented`, `waived`, `post-v1`.
 
 ## Release-Gate Decision Table
 
-### Stated control for the unauthenticated domain-service route group
+### Control for the domain-service route group
 
 `src/Hexalith.Timesheets/Program.cs` calls `UseEventStoreDomainService()`, which maps the canonical
 EventStore SDK routes — `POST /process`, `/replay-state`, `/query`, `/project`, `/project/v2`,
-`/project/v2/reconcile`, `/project/rebuild/{v1,stage,commit,abort,verify}`, `/project/rebuild/shared/v1`,
-`/admin/operational-index-metadata` — plus the `/health`, `/alive`, `/ready` endpoints from
-`MapDefaultEndpoints()`. None of them carries `RequireAuthorization`, and the same host deliberately
-serves the anonymous magic-link confirm/adjust routes. An anonymous `POST /project/v2` therefore writes
-the cross-tenant token-hash index and the trust-bearing Activity Type catalog.
+`/project/v2/reconcile`, `/project/rebuild/{v1,stage,commit,abort,verify}`, `/project/rebuild/shared/v1`
+and `/admin/operational-index-metadata`. None carries `RequireAuthorization`, and the same host
+deliberately serves the anonymous magic-link confirm and adjust routes, so an anonymous
+`POST /project/v2` would otherwise write the cross-tenant token-hash index and the trust-bearing
+Activity Type catalog, and `/process` would dispatch domain commands.
 
-**Stated control:** sidecar/network isolation. These routes are the Dapr-sidecar-to-application
-surface and are expected to be reachable only from the sidecar on the pod-local network, never from
-the ingress that publishes the magic-link routes. This is a deployment-topology control, not an
-application-level one: nothing in this repository enforces it, and `Hexalith.Timesheets.AppHost`
-does not yet express the split.
+**Control: an enforced port split.** `InternalSurfaceGuard` runs ahead of routing and refuses the
+domain-service path prefixes on any port but the configured internal one, answering `404` rather
+than `403` so a refusal does not confirm the route exists. It is fail-closed: with
+`Timesheets:InternalSurface:Port` unset the surface is refused everywhere, so a deployment that
+forgets to configure the split loses projection delivery instead of publishing a write surface.
+`src/Hexalith.Timesheets.AppHost/Program.cs` declares the split — a public `http` endpoint and a
+non-proxied `internal` endpoint on port 8081 — and passes that port to the host, which is what makes
+this a wired control rather than an assumption about deployment topology.
 
-**Risk:** if the host is ever published on a single ingress without that split, the projection and
-rebuild write surface — and `/process`, which dispatches domain commands — is anonymous.
+Evidence: `tests/Hexalith.Timesheets.IntegrationTests/InternalSurfaceGuardTests.cs` proves all nine
+protected routes are refused when nothing is configured, and that the public magic-link and metadata
+routes stay reachable. `MagicLinkConfirmationHttpBoundaryTests` opts in explicitly via
+`AllowOnAnyPort`, because `TestServer` has no listener and reports `Connection.LocalPort` as `0`.
 
-**Revisit condition:** a deployment story binds the SDK route group to a non-public port or behind
-authorization, and `AppHost` expresses the split so the control is verifiable rather than assumed.
-Note that `/health` was previously gated behind `IsDevelopment()` by the now-uncalled
-`MapTimesheetsDefaultEndpoints`; it is unconditional under the SDK defaults.
+**Residual risk:** the guard matches by path prefix, so an SDK route added outside those prefixes
+would not be covered; and `AllowOnAnyPort` republishes the surface if ever set in a deployed host.
+`/health`, `/alive` and `/ready` remain unconditional under the SDK defaults, where the now-uncalled
+`MapTimesheetsDefaultEndpoints` gated `/health` behind `IsDevelopment()`.
+
+**Revisit condition:** the infrastructure story that adds the EventStore resource and DAPR sidecars
+replaces or reinforces the port split with a DAPR access-control (Configuration CRD) policy via
+`AddEventStoreDomainModule(daprConfigPath:)`, which scopes inbound invocation by caller identity
+rather than by port.
 
 Verdict vocabulary: `PASS`, `CONCERNS`, `FAIL`, `WAIVED`.
 
@@ -90,7 +100,7 @@ Verdict vocabulary: `PASS`, `CONCERNS`, `FAIL`, `WAIVED`.
 |---|---|---|---|
 | Build | PASS | `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false --force --no-cache`; `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false`; review-time `aspire start` / `security` Healthy / `aspire stop` smoke check. | Reopened Story 5.2 evidence on 2026-09-12: forced/no-cache restore and the final warnings-as-errors build passed under SDK `10.0.401` with 0 warnings and 0 errors. Aspire `13.5.3` required `<AspireUseCliBundle>true</AspireUseCliBundle>`; the initial build exposed `ASPIRE010`, and the project opted into the version-aligned CLI bundle, changing orchestration-runtime dependency resolution while leaving declared resource topology and domain/product behavior unchanged. The rerun and review-time runtime smoke check passed. The dated Story 5.3 SDK `10.0.400` evidence above remains historical. |
 | Package currency | CONCERNS | Reopened Story 5.2 SDK `10.0.401` restore and package audits on 2026-09-12. | Direct NuGet, vulnerable, and deprecated audits are clean; root npm is not applicable; transitive drift is reviewed with no pin while the solution/AppHost tooling failure remains visible; platform prerelease entries are waived with owner, risk, and revisit condition. |
-| Tests (full suite) | PASS | Verified xUnit v3 test inventory on 2026-09-14 under SDK `10.0.401`, re-verified after the Story 3.6 code review: ArchitectureTests 54 total / 54 pass; Contracts.Tests 88 / 88 pass; IntegrationTests 92 total / 88 pass / 4 skipped; Projections.Tests 125 / 125 pass; Server.Tests 444 / 444 pass; Works.Tests 76 / 76 pass. | Final total: 879 tests, 875 pass, 4 intentional skips, 0 failures. |
+| Tests (full suite) | PASS | Verified xUnit v3 test inventory on 2026-09-14 under SDK `10.0.401`, re-verified after the Story 3.6 code review: ArchitectureTests 54 total / 54 pass; Contracts.Tests 88 / 88 pass; IntegrationTests 103 total / 99 pass / 4 skipped; Projections.Tests 125 / 125 pass; Server.Tests 444 / 444 pass; Works.Tests 76 / 76 pass. | Final total: 890 tests, 886 pass, 4 intentional skips, 0 failures. |
 | Privacy/logging scans | PASS | `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DiagnosticsPrivacyTests.cs`; ArchitectureTests 54 / 54 pass. | Covered by the 2026-09-14 ArchitectureTests verification. |
 | Projection rebuild/idempotency | PASS | `tests/Hexalith.Timesheets.Projections.Tests/*ProjectionTests.cs`; Projections.Tests 125 / 125 pass, including the code-review tenant-isolation rebuild cases. | Projection coverage passed with 0 skips. |
 | Export golden files | PASS | `tests/Hexalith.Timesheets.IntegrationTests/ApprovedTimeExportIntegrationTests.cs`; `tests/Hexalith.Timesheets.IntegrationTests/Exports/Golden/approved-time-export-v1-project-work-boundaries.csv`; IntegrationTests 92 total / 88 pass / 4 skipped. | Golden-file coverage passed in the default integration executable. |
