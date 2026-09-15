@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 2026-09-14 (Story 3.6 code review round 3: 6 decisions resolved and applied, 5 patches applied, 3 deferred; 24 review items from rounds 1-2 still open, so the story returns to in-progress)
+# last_updated: 2026-09-15 (Story 3.6 loader-fold integrity slice verified and ready for review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 09-14-2026 16:15
+last_updated: 09-15-2026 09:34
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
-  3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
+  3-6-implement-eventstore-backed-magic-link-state-loading: review
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: done
   epic-3-retrospective: done
 

@@ -162,6 +162,54 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
     }
 
+    [Fact]
+    public async Task Concrete_loader_cross_tenant_candidate_is_indistinguishable_from_an_unknown_token_on_every_route()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        ExternalRoute baselineRoute = ExternalRoutes()[0];
+        string unknownToken = $"{baselineRoute.Name}-concrete-unknown";
+        using HttpResponseMessage unknownResponse = await SendAsync(client, baselineRoute, unknownToken);
+        CapturedFailure baseline = await CaptureFailureAsync(
+            unknownResponse,
+            "baseline:concrete-unknown",
+            unknownToken);
+        int trustedWorkExecutionCount = factory.AccessGuard.TrustedWorkExecutionCount;
+
+        foreach (ExternalRoute route in ExternalRoutes())
+        {
+            string token = $"{route.Name}-concrete-cross-tenant";
+            await factory.ProjectCrossTenantCandidateAsync(
+                client,
+                token,
+                route.Action,
+                new MagicLinkCapabilityId($"capability-{route.Name}-cross-tenant"),
+                new TimeEntryId($"time-entry-{route.Name}-cross-tenant"));
+            MagicLinkTokenHashCapabilityIndexEntry candidate = factory.Store
+                .Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+                .Entries[Hash(token)];
+            candidate.Tenant.ShouldBe(Tenant());
+            int gatewayRequestCount = factory.Gateway.Requests.Count;
+
+            using HttpResponseMessage response = await SendAsync(client, route, token);
+            CapturedFailure failure = await CaptureFailureAsync(response, route.Name, token);
+            StreamReadRequest request = factory.Gateway.Requests
+                .Skip(gatewayRequestCount)
+                .ShouldHaveSingleItem();
+
+            failure.StatusCode.ShouldBe(baseline.StatusCode, failure.Name);
+            failure.ContentType.ShouldBe(baseline.ContentType, failure.Name);
+            failure.NormalizedBody.ShouldBe(baseline.NormalizedBody, failure.Name);
+            failure.Headers.ShouldBe(baseline.Headers, failure.Name);
+            request.Tenant.ShouldBe(Tenant().TenantId);
+            request.AggregateId.ShouldBe(candidate.CapabilityId.Value);
+        }
+
+        factory.AccessGuard.TrustedWorkExecutionCount.ShouldBe(trustedWorkExecutionCount);
+        factory.Store.DirectIndexSeedCount.ShouldBe(0);
+        factory.Store.DirectCatalogSeedCount.ShouldBe(0);
+    }
+
     [Theory]
     [InlineData("missing-sequence")]
     [InlineData("identity-conflict")]
@@ -784,6 +832,32 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             Gateway.WithStream(Tenant().TenantId, timeEntryId.Value, StreamEvent(1, recorded));
         }
 
+        public async Task ProjectCrossTenantCandidateAsync(
+            HttpClient client,
+            string token,
+            MagicLinkAllowedAction action,
+            MagicLinkCapabilityId capabilityId,
+            TimeEntryId timeEntryId)
+        {
+            await ProjectValidStateAsync(client, token, action, capabilityId, timeEntryId);
+            var mismatched = new MagicLinkConfirmationCapabilityIssued(
+                capabilityId,
+                OtherTenant(),
+                Contributor(),
+                TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(),
+                timeEntryId,
+                MagicLinkTargetKind.ProposedTimeEntry,
+                action,
+                new MagicLinkTokenHash(Hash(token)),
+                ObservedAtUtc.AddDays(1),
+                Operator(),
+                ObservedAtUtc.AddHours(-1),
+                new MagicLinkAuditMetadata("timesheets", "issue-1"),
+                true);
+            Gateway.WithStream(Tenant().TenantId, capabilityId.Value, StreamEvent(1, mismatched));
+        }
+
         public async Task ProjectRejectedCatalogStateAsync(HttpClient client, string token, string scenario)
         {
             var capabilityId = new MagicLinkCapabilityId($"capability-{scenario}");
@@ -1075,8 +1149,11 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     private sealed class ScriptedAccessGuard : ITimesheetsAccessGuard
     {
         private int _authorizationCount;
+        private int _trustedWorkExecutionCount;
 
         public int AuthorizationCount => Volatile.Read(ref _authorizationCount);
+
+        public int TrustedWorkExecutionCount => Volatile.Read(ref _trustedWorkExecutionCount);
 
         public ValueTask<TimesheetsAuthorizationDecision> AuthorizeAsync(
             TimesheetsAuthorizationRequest request,
@@ -1094,6 +1171,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             TimesheetsAuthorizationDecision decision = Decision(request);
             if (decision.IsAuthorized)
             {
+                _ = Interlocked.Increment(ref _trustedWorkExecutionCount);
                 await trustedWork(cancellationToken).ConfigureAwait(false);
             }
 
@@ -1210,6 +1288,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             => throw new NotSupportedException();
         private readonly Dictionary<(string Tenant, string Aggregate), StreamReadEvent[]> _streams = [];
 
+        public List<StreamReadRequest> Requests { get; } = [];
+
         public void WithStream(string tenant, string aggregate, params StreamReadEvent[] events)
             => _streams[(tenant, aggregate)] = events;
 
@@ -1234,6 +1314,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             StreamReadRequest request,
             CancellationToken cancellationToken = default)
         {
+            Requests.Add(request);
             StreamReadEvent[] all = request.AggregateId is not null
                 && _streams.TryGetValue((request.Tenant, request.AggregateId), out StreamReadEvent[]? stream)
                     ? stream

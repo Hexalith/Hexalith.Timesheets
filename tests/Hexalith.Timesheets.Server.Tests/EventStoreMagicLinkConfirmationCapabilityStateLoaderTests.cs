@@ -4,6 +4,7 @@ using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Queries;
+using Hexalith.EventStore.Contracts.Security;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.Events.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -674,15 +675,116 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         ShouldBeOpaqueFailClosed(state);
     }
 
+    [Theory]
+    [InlineData("event-type")]
+    [InlineData("payload")]
+    [InlineData("serialization-format")]
+    [InlineData("metadata-version")]
+    [InlineData("message-id")]
+    [InlineData("correlation-id")]
+    [InlineData("causation-id")]
+    [InlineData("timestamp")]
+    [InlineData("user-id")]
+    [InlineData("protection-metadata")]
+    public async Task LoadTokenStateAsync_fails_closed_for_same_sequence_events_with_conflicting_envelope(
+        string conflict)
+    {
+        StreamReadEvent first = Event(1, "capability-1", Issued());
+        if (conflict == "protection-metadata")
+        {
+            first = first with
+            {
+                ProtectionMetadata = ProtectionMetadata("first")
+            };
+        }
+
+        StreamReadEvent conflicting = conflict switch
+        {
+            "event-type" => first with { EventTypeName = typeof(MagicLinkConfirmationCapabilityUsed).Name },
+            "payload" => first with
+            {
+                Payload = JsonSerializer.SerializeToUtf8Bytes(
+                    Issued(hash: new MagicLinkTokenHash("conflicting-hash")),
+                    new JsonSerializerOptions(JsonSerializerDefaults.Web))
+            },
+            "serialization-format" => first with { SerializationFormat = "xml" },
+            "metadata-version" => first with { MetadataVersion = 2 },
+            "message-id" => first with { MessageId = "capability-conflict" },
+            "correlation-id" => first with { CorrelationId = "correlation-2" },
+            "causation-id" => first with { CausationId = "causation-2" },
+            "timestamp" => first with { Timestamp = first.Timestamp.AddMinutes(1) },
+            "user-id" => first with { UserId = "operator-2" },
+            "protection-metadata" => first with
+            {
+                ProtectionMetadata = ProtectionMetadata("second")
+            },
+            _ => throw new InvalidOperationException($"Unknown envelope conflict '{conflict}'.")
+        };
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(
+                Tenant().TenantId,
+                CapabilityId().Value,
+                first,
+                conflicting)
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_for_conflicting_events_at_the_same_sequence()
+    public async Task LoadTokenStateAsync_accepts_same_sequence_duplicates_with_equivalent_protection_metadata()
+    {
+        StreamReadEvent first = Event(1, "capability-1", Issued()) with
+        {
+            ProtectionMetadata = ProtectionMetadata("same-reason")
+        };
+        StreamReadEvent duplicate = first with
+        {
+            Payload = first.Payload.ToArray(),
+            ProtectionMetadata = ProtectionMetadata("same-reason")
+        };
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, first, duplicate)
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        state.CapabilityState.ShouldNotBeNull().CapabilityId.ShouldBe(CapabilityId());
+        state.TimeEntryState.ShouldNotBeNull().TimeEntryId.ShouldBe(TimeEntryId());
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task LoadTokenStateAsync_fails_closed_for_blank_event_message_id(string? messageId)
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(
                 Tenant().TenantId,
                 CapabilityId().Value,
-                Event(1, "capability-1", Issued()),
-                Event(1, "capability-conflict", Issued(hash: new MagicLinkTokenHash("conflicting-hash"))))
+                Event(1, "capability-1", Issued()) with { MessageId = messageId! })
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsync_fails_closed_when_one_message_id_appears_at_different_sequences()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(
+                Tenant().TenantId,
+                CapabilityId().Value,
+                Event(1, "repeated-message", Issued()),
+                Event(2, "repeated-message", Used()))
             .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
 
         MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
@@ -784,6 +886,18 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             null,
             new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
             "operator-1");
+
+    private static EventStorePayloadProtectionMetadata ProtectionMetadata(string compatibilityValue)
+        => new(
+            PayloadProtectionState.Unprotected,
+            EventStorePayloadProtectionMetadata.CurrentMetadataVersion,
+            null,
+            null,
+            "application/json",
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["compatibility"] = compatibilityValue
+            });
 
     private static MagicLinkConfirmationCapabilityIssued Issued(
         MagicLinkCapabilityId? capabilityId = null,

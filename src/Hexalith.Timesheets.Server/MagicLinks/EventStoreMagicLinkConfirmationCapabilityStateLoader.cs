@@ -163,9 +163,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 cancellationToken).ConfigureAwait(false);
 
             MagicLinkCapabilityState state = new();
-            HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
-
-            foreach (StreamReadEvent streamEvent in OrderedDistinct(events, appliedMessageIds))
+            foreach (StreamReadEvent streamEvent in events)
             {
                 object? payload = Deserialize(
                     streamEvent,
@@ -216,9 +214,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 cancellationToken).ConfigureAwait(false);
 
             TimeEntryState state = new();
-            HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
-
-            foreach (StreamReadEvent streamEvent in OrderedDistinct(events, appliedMessageIds))
+            foreach (StreamReadEvent streamEvent in events)
             {
                 object? payload = Deserialize(
                     streamEvent,
@@ -379,11 +375,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 throw new InvalidOperationException("The EventStore stream history is incomplete.");
             }
 
-            if (group.Any(item =>
-                    !string.Equals(item.EventTypeName, streamEvent.EventTypeName, StringComparison.Ordinal)
-                    || !string.Equals(item.SerializationFormat, streamEvent.SerializationFormat, StringComparison.OrdinalIgnoreCase)
-                    || !item.Payload.AsSpan().SequenceEqual(streamEvent.Payload))
-                || (!string.IsNullOrWhiteSpace(streamEvent.MessageId) && !messageIds.Add(streamEvent.MessageId)))
+            if (group.Any(item => !Equivalent(item, streamEvent))
+                || string.IsNullOrWhiteSpace(streamEvent.MessageId)
+                || !messageIds.Add(streamEvent.MessageId))
             {
                 throw new InvalidOperationException("The EventStore stream history is ambiguous.");
             }
@@ -394,21 +388,23 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         return normalized.ToArray();
     }
 
-    private static IEnumerable<StreamReadEvent> OrderedDistinct(
-        IEnumerable<StreamReadEvent> events,
-        HashSet<string> appliedMessageIds)
-    {
-        foreach (StreamReadEvent streamEvent in events.OrderBy(static @event => @event.SequenceNumber))
-        {
-            if (!string.IsNullOrWhiteSpace(streamEvent.MessageId)
-                && !appliedMessageIds.Add(streamEvent.MessageId))
-            {
-                continue;
-            }
+    private static bool Equivalent(StreamReadEvent left, StreamReadEvent right)
+        => left.SequenceNumber == right.SequenceNumber
+            && string.Equals(left.EventTypeName, right.EventTypeName, StringComparison.Ordinal)
+            && PayloadsEqual(left.Payload, right.Payload)
+            && string.Equals(left.SerializationFormat, right.SerializationFormat, StringComparison.OrdinalIgnoreCase)
+            && left.MetadataVersion == right.MetadataVersion
+            && string.Equals(left.MessageId, right.MessageId, StringComparison.Ordinal)
+            && string.Equals(left.CorrelationId, right.CorrelationId, StringComparison.Ordinal)
+            && string.Equals(left.CausationId, right.CausationId, StringComparison.Ordinal)
+            && left.Timestamp == right.Timestamp
+            && string.Equals(left.UserId, right.UserId, StringComparison.Ordinal)
+            && Equals(left.ProtectionMetadata, right.ProtectionMetadata);
 
-            yield return streamEvent;
-        }
-    }
+    private static bool PayloadsEqual(byte[]? left, byte[]? right)
+        => left is null
+            ? right is null
+            : right is not null && left.AsSpan().SequenceEqual(right);
 
     private static object? Deserialize(StreamReadEvent streamEvent, params Type[] eventTypes)
     {
