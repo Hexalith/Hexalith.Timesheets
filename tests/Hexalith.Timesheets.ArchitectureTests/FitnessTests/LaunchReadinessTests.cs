@@ -168,12 +168,15 @@ public sealed class LaunchReadinessTests
         ownership[4].ShouldContain("reissuable");
         ownership[4].ShouldContain("only after an authorized correction");
         ownership[4].ShouldContain("followed by capability revocation and reissuance");
-        ownership[4].ShouldContain("legacy scope-less cross-scope correction");
-        ownership[4].ShouldContain("reissuing a link alone");
+        ownership[4].ShouldContain("legacy scope-less Project-to-Tenant correction can retain Project scope");
+        ownership[4].ShouldContain("legacy scope-less Tenant-to-Project correction can retain Tenant scope");
+        ownership[4].ShouldContain("project-owned Activity Type ID absent from the tenant catalog");
+        ownership[4].ShouldContain("token reissue alone");
         ownership[5].ShouldContain("Before rollout");
         ownership[5].ShouldContain("inventories deployed capability and TimeEntry histories");
         ownership[5].ShouldContain("authorizes correction");
         ownership[5].ShouldContain("then revokes and reissues");
+        ownership[5].ShouldContain("both legacy scope/Activity-Type mismatch shapes");
 
         string[] timing = ReadClassificationRow(readiness, "Magic-link invalid-token timing");
         timing[2].ShouldBe("implemented / waived");

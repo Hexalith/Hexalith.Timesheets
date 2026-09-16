@@ -615,6 +615,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             "wrong-recipient",
             "wrong-action",
             "stale-catalog",
+            "project-owned",
             "repeated-token"
         ];
 

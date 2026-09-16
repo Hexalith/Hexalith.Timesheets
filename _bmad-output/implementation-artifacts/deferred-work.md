@@ -189,3 +189,17 @@
 - Unknown future capability or Time Entry authority events are silently ignored after otherwise valid state. Every event emitted by current producers is recognized; a current or planned authorization-changing event would settle whether unknown-event tolerance can make a stale link usable.
 - Capability, Time Entry, and catalog are read as separate snapshots without a final capability revision check. Establish whether downstream EventStore dispatch can commit from this stale loaded state without optimistic revalidation; the default topology does not currently provide that live path.
 - Non-`Fresh` catalog states collapse to one `Unavailable` bundle instead of preserving the AC2 freshness vocabulary. This real Medium gap remains deferred because preserving individual states requires changing the approved no-disclosure bundle contract.
+
+## Deferred from: build review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-2 (2026-09-16)
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+  summary: Decide whether contributor confirmation remains valid after a Time Entry has already been approved or corrected.
+  evidence: `ValidateConfirmationScope` and `TimeEntry.ValidateExternalConfirmation` accept an otherwise-valid recorded contribution without excluding approved or corrected lifecycle state. The stories say confirmation must not itself approve, lock, or correct the entry, but do not define whether those prior transitions disqualify confirmation. An explicit product policy for confirmation relative to approval and correction would settle the risk.
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+  summary: Determine whether capability folds must reject illegal transition sequences found in EventStore history.
+  evidence: `MagicLinkCapabilityState.Apply` accepts a later issuance event after a used, revoked, or expired terminal event and thereby reopens the folded capability. Sanctioned writers do not emit that transition. Evidence that the EventStore command boundary can admit such a sequence, or an inventory of one in deployed streams, would establish a reachable integrity defect.
+
+- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+  summary: Determine whether Time Entry folds must reject lifecycle events in illegal orders found in EventStore history.
+  evidence: `TimeEntryState.Apply` can fold sequences such as a correction while Draft or another Recorded event after recording, although sanctioned writers reject those transitions before emission. Evidence that the EventStore command boundary can admit such sequences, or an inventory of one in deployed streams, would establish a reachable integrity defect.

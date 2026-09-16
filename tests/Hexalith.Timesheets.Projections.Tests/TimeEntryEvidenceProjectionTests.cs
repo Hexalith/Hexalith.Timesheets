@@ -443,6 +443,55 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void ProjectionAndQueryRowPreserveExplicitRejectedCorrectionScopeLineage()
+    {
+        var projectActivityTypeId = new ActivityTypeId("project-activity-type");
+        var tenantActivityTypeId = new ActivityTypeId("tenant-activity-type");
+        TimeEntryCorrected corrected = Corrected("time-entry-1", 75) with
+        {
+            PreviousValues = CorrectionValues(45, "Original evidence.") with
+            {
+                ActivityTypeId = projectActivityTypeId,
+                ActivityTypeScope = ActivityTypeScope.Project
+            },
+            CorrectedValues = CorrectionValues(75, "Corrected after rejection.") with
+            {
+                ActivityTypeId = tenantActivityTypeId,
+                ActivityTypeScope = ActivityTypeScope.Tenant
+            }
+        };
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded("time-entry-1", 45) with
+            {
+                ActivityTypeId = projectActivityTypeId,
+                ActivityTypeScope = ActivityTypeScope.Project
+            }),
+            Event("m2", 2, Submitted("time-entry-1")),
+            Event("m3", 3, Rejected("time-entry-1")),
+            Event("m4", 4, corrected)
+        ];
+
+        TimeEntryEvidenceReadModel model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            events,
+            FreshCheckpoint(4)).ShouldNotBeNull();
+        TimeEntryQueryRowReadModel row = ListProjector().Project(
+            "tenant-1",
+            events,
+            FreshCheckpoint(4),
+            new QueryTimeEntries()).Items.ShouldHaveSingleItem();
+
+        model.ActivityTypeId.ShouldBe(tenantActivityTypeId);
+        model.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        model.Correction.ShouldNotBeNull().PreviousValues.ActivityTypeId.ShouldBe(projectActivityTypeId);
+        model.Correction.PreviousValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        row.ActivityTypeId.ShouldBe(tenantActivityTypeId);
+        row.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+    }
+
+    [Fact]
     public void LegacyApprovedCorrectionRetainsPriorScopeInCurrentAndSupersededLedgerRows()
     {
         TimeEntryEvidenceReadModel model = Projector().Project(

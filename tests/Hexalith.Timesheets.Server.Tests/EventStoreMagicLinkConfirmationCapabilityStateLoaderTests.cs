@@ -945,6 +945,30 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
+    public async Task LoadTokenStateAsyncFailsClosedWhenFreshTenantCatalogHasNoMatchingActivityType()
+    {
+        var nonMatchingCatalog = new ActivityTypeCatalogReadModel(
+            [new ActivityTypeCatalogItem(
+                new ActivityTypeId("activity-type-2"),
+                ActivityTypeScope.Tenant,
+                null,
+                "Research",
+                true,
+                BillableState.Billable)],
+            ProjectionFreshnessMetadata.Fresh);
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash()), nonMatchingCatalog))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
     public async Task LoadCapabilityAsync_folds_terminal_state_for_admin_revoke_and_expire_paths()
     {
         // The admin revoke/expire endpoints load existing capability state through LoadCapabilityAsync. Prior

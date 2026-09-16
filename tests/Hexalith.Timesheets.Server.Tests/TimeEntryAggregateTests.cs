@@ -1015,6 +1015,54 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
+    public void LegacyRejectedCorrectionRetainsPriorScopeAndSameCrossScopeRetryIsNoOp()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = RejectedState(command, ActivityTypeScope.Project);
+        var tenantActivityTypeId = new ActivityTypeId("activity-type-tenant");
+        CorrectRejectedTimeEntry correction = CorrectCommand(command.TimeEntryId) with
+        {
+            ActivityTypeId = tenantActivityTypeId
+        };
+        state.Apply(new TimeEntryCorrected(
+            command.TimeEntryId,
+            correction.TimeEntryCorrectionId,
+            new TenantReference("tenant-1"),
+            new PartyReference("operator-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            CorrectionValues(command),
+            new TimeEntryCorrectionValues(
+                correction.Target,
+                correction.Contributor,
+                correction.ActivityTypeId,
+                correction.ServiceDate,
+                correction.DurationMinutes,
+                correction.BillableState,
+                correction.ContributorCategory,
+                correction.AiMetrics)
+            {
+                Comment = correction.Comment
+            },
+            new TimeEntryRejectionReason("Needs customer PO evidence."),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Corrected));
+
+        state.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        state.ActivityTypeId.ShouldBe(tenantActivityTypeId);
+        state.CorrectedValues.ShouldNotBeNull().ActivityTypeScope.ShouldBeNull();
+
+        TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 35, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant).IsNoOp.ShouldBeTrue();
+    }
+
+    [Fact]
     public void Correct_approved_rejects_same_id_different_values_missing_reason_and_non_utc_timestamp()
     {
         RecordTimeEntry command = ValidCommand();

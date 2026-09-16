@@ -2,7 +2,7 @@
 title: 'Close Story 3.6 loader policy and evidence gaps'
 type: 'bugfix'
 created: '2026-09-16'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 2
 baseline_commit: 'ab4b48f8c11f8f239f0da923cd21824c5f2083a9'
@@ -112,6 +112,26 @@ context:
 | R2-VG-02 | medium | patch (moot pending loopback) | Pre-verified gap: no test replays a legacy scope-less `TimeEntryApprovedCorrected`, retries the same approved correction, and asserts a no-op. Add the approved legacy idempotency proof. |
 | R2-VG-03 | medium | patch (moot pending loopback) | Pre-verified gap: no ledger test proves that a Project-scoped approved entry followed by a legacy scope-less approved correction leaves both current and superseded rows Project-scoped. |
 | R2-VG-04 | low | patch (moot pending loopback) | Pre-verified gap: the OpenAPI test checks only property presence and optionality, not that `anyOf` contains exactly the `ActivityTypeScope` reference and `null`. Strengthen the schema assertion. |
+| R3-VG-01 | medium | patch | Pre-verified gap: the shared legacy duplicate matcher now accepts an omitted recorded scope, but only the approved-correction path proves that behavior. Add a rejected legacy cross-scope replay-and-retry no-op test. |
+| R3-VG-02 | medium | patch | Pre-verified gap: rejected Project-to-Tenant correction projection coverage does not explicitly prove that the current query row becomes Tenant-scoped while superseded evidence retains Project scope. |
+| R3-VG-03 | medium | patch | Pre-verified gap: loader tests do not cover a fresh, structurally valid tenant catalog whose single item has a different Activity Type ID from the capability and Time Entry. |
+| R3-BH-01 | medium | defer (carried) | Carried from BH-01 and R2-EC-01: a matching inactive catalog item still creates display/confirm availability asymmetry. The code and claim are unchanged, so no duplicate deferred-work entry is added. |
+| R3-BH-02 | medium | defer (carried) | Carried from BH-02 and R2-BH-04: the tenant catalog still does not represent Project-specific restrictions. The code and claim are unchanged, so no duplicate deferred-work entry is added. |
+| R3-BH-03 | maybe-false | defer | Confirmation currently permits an already approved or corrected otherwise-valid Time Entry. The stories forbid confirmation itself from approving, locking, or correcting but do not state whether prior lifecycle state disqualifies contributor confirmation; an explicit product policy for confirmation relative to approval and correction would settle the claim. |
+| R3-BH-04 | medium | defer (carried) | Carried from R2-BH-06: unrecognized future authority-stream events are still ignored. The code and claim are unchanged, so no duplicate deferred-work entry is added. |
+| R3-BH-05 | maybe-false | defer | Capability folding would accept a second issuance event after a terminal event, but sanctioned writers do not emit that transition. Evidence that the EventStore command boundary can admit such a sequence, or an inventory of one in deployed streams, would establish a reachable integrity defect. |
+| R3-BH-06 | maybe-false | defer | Time Entry folding can apply lifecycle events in sequences that sanctioned writers reject, including correction while Draft or repeated Recorded events. Evidence that the EventStore command boundary can admit such sequences, or an inventory of one in deployed streams, would establish a reachable integrity defect. |
+| R3-BH-07 | low | reject (carried) | Carried from R2-BH-07: adjustment writers mirror the authoritative top-level scope into the nested snapshot, so a mismatch still requires malformed external history. |
+| R3-BH-08 | low | reject | New writers emit complete, mutually consistent previous/current correction snapshots, while legacy writers omit both scope properties. A partial or contradictory `PreviousValues` payload requires malformed external history, and adding broader fold validation is disproportionate to that unlikely case. |
+| R3-BH-09 | medium | patch | The launch inventory names only legacy cross-scope history that retained Project scope. The reverse Tenant-retained/project-owned-ID history also fails closed against the tenant catalog and cannot be repaired by token reissue, so readiness evidence must inventory both directions. |
+| R3-BH-10 | false | reject | Work is a supported target once its opt-in validation adapter is registered; the repository guidance and readiness document separately state that the default host remains fail-closed with `DenyAll*`. The success test's explicit validator is therefore the intended supported configuration, not a contradiction. |
+| R3-BH-11 | maybe-false | defer (carried) | Carried from BH-15: this repository still lacks deployed EventStore access and the release evidence location needed to prove the inventory instruction is operationally reproducible. The claim and settling evidence are unchanged, so no duplicate deferred-work entry is added. |
+| R3-BH-12 | false | reject | The tenant-isolation row reports the tested authorization gates, while the document's overall release posture remains `CONCERNS` and separately lists ownership, catalog-availability, and restriction waivers. Those unresolved product/inventory items do not make the tenant-isolation evidence false. |
+| R3-BH-13 | medium | defer (carried) | Carried from R2-BH-11: the baseline includes four pre-existing gitlink changes committed before this clean worktree run. The implementation did not create them, and reverting user-owned commits remains outside scope. |
+| R3-EC-01 | medium | defer (carried) | Carried from BH-01 and R2-EC-01: inactive catalog evidence still creates display/confirm asymmetry. The code and claim are unchanged, so no duplicate deferred-work entry is added. |
+| R3-EC-02 | low | reject (carried) | Carried from R2-EC-03: one-sided scope properties require malformed external correction history because sanctioned new writers emit both and legacy writers omit both. |
+| R3-EC-03 | medium | patch | The HTTP opacity test contains a `project-owned` setup branch but `InvalidCaseNames()` never yields that name, so the four-route theory never executes this negative case. |
+| R3-EC-04 | medium | defer (carried) | Carried from R2-BH-06: unknown future authority events remain ignored, with no changed code or evidence to warrant another deferred-work entry. |
 
 ## Design Notes
 
