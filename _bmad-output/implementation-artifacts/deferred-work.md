@@ -183,3 +183,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Correct the launch-readiness UI revisit condition to match the FrontComposer policy.
   evidence: `docs/launch-readiness.md:54` says a future UI-bearing story should scaffold `Hexalith.Timesheets.UI` and `.UI.Tests`, while current repository guidance forbids a Timesheets UI project and assigns future UI to FrontComposer. This is a pre-existing Story 5.1 documentation issue outside the loader-core chunk.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading rerun (2026-09-15)
+
+- Unknown future capability or Time Entry authority events are silently ignored after otherwise valid state. Every event emitted by current producers is recognized; a current or planned authorization-changing event would settle whether unknown-event tolerance can make a stale link usable.
+- Capability, Time Entry, and catalog are read as separate snapshots without a final capability revision check. Establish whether downstream EventStore dispatch can commit from this stale loaded state without optimistic revalidation; the default topology does not currently provide that live path.
+- Non-`Fresh` catalog states collapse to one `Unavailable` bundle instead of preserving the AC2 freshness vocabulary. This real Medium gap remains deferred because preserving individual states requires changing the approved no-disclosure bundle contract.
