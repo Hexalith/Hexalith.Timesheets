@@ -96,8 +96,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     public async Task LoadTokenStateAsync_fails_closed_when_index_has_no_hash()
     {
         var gateway = new ScriptedGatewayClient();
-        var loader = CreateLoader(gateway, new InMemoryReadModelStore(new MagicLinkTokenHashCapabilityIndexReadModel(
-            new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>(StringComparer.Ordinal))));
+        var readModels = new InMemoryReadModelStore(new MagicLinkTokenHashCapabilityIndexReadModel(
+            new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>(StringComparer.Ordinal)));
+        var loader = CreateLoader(gateway, readModels);
 
         MagicLinkEndpointTokenState state = await loader
             .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken)
@@ -107,6 +108,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         state.TimeEntryState.ShouldBeNull();
         state.ActivityTypeCatalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Unavailable);
         gateway.Requests.ShouldBeEmpty();
+        readModels.ReadCount.ShouldBe(1);
     }
 
     [Fact]
@@ -213,6 +215,107 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             .ConfigureAwait(true);
 
         ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncRejectsMismatchedActivityTypeIds()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded(activityTypeId: new ActivityTypeId("activity-type-2"))));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncAcceptsNewCorrectionFromProjectToTenantScope()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded(activityTypeScope: ActivityTypeScope.Project)),
+                Event(2, "time-2", Corrected(ActivityTypeScope.Tenant)));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        state.CapabilityState.ShouldNotBeNull();
+        state.TimeEntryState.ShouldNotBeNull().ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        state.ActivityTypeCatalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncRejectsLegacyCorrectionThatRetainsProjectScope()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded(activityTypeScope: ActivityTypeScope.Project)),
+                Event(2, "time-2", Corrected(null)));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncFoldsSubmittedStateAndRejectsLaterWrongTenantEvent()
+    {
+        var validGateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded()),
+                Event(2, "time-2", Submitted(Tenant())));
+        var invalidGateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded()),
+                Event(2, "time-2", Submitted(new TenantReference("tenant-2"))));
+
+        MagicLinkEndpointTokenState valid = await CreateLoader(
+                validGateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+        MagicLinkEndpointTokenState invalid = await CreateLoader(
+                invalidGateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        valid.TimeEntryState.ShouldNotBeNull().ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        ShouldBeOpaqueFailClosed(invalid);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncFailsClosedWhenIndexReadThrows()
+    {
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()), throwIndexRead: true);
+
+        MagicLinkEndpointTokenState state = await CreateLoader(new ScriptedGatewayClient(), readModels)
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+        readModels.ReadCount.ShouldBe(1);
     }
 
     [Fact]
@@ -454,7 +557,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         // EventStore read — no resolution work, no observable difference from any other failure.
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()));
-        var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
+        var loader = CreateLoader(gateway, readModels);
 
         MagicLinkEndpointTokenState state = await loader
             .LoadTokenStateAsync(blankToken, TestContext.Current.CancellationToken)
@@ -462,6 +566,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
         ShouldBeOpaqueFailClosed(state);
         gateway.Requests.ShouldBeEmpty();
+        readModels.ReadCount.ShouldBe(0);
     }
 
     [Fact]
@@ -471,9 +576,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         // touching the index or EventStore — identical opaque outcome, no disclosure of the reason.
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()));
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
         var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(
             gateway,
-            new InMemoryReadModelStore(IndexWith(Hash())),
+            readModels,
             new ThrowingTokenGenerator(),
             new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"));
 
@@ -483,6 +589,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
         ShouldBeOpaqueFailClosed(state);
         gateway.Requests.ShouldBeEmpty();
+        readModels.ReadCount.ShouldBe(0);
     }
 
     [Fact]
@@ -670,6 +777,24 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 });
 
         MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncFailsClosedWhenPageEventCountDisagreesWithEvents()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithPageTransform(
+                Tenant().TenantId,
+                CapabilityId().Value,
+                page => page with { Metadata = page.Metadata with { EventCount = page.Events.Count + 1 } });
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
             .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
 
         ShouldBeOpaqueFailClosed(state);
@@ -943,13 +1068,16 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero),
             new MagicLinkAuditMetadata("magic-link", "capability-1"));
 
-    private static TimeEntryRecorded Recorded(TimeEntryId? timeEntryId = null)
+    private static TimeEntryRecorded Recorded(
+        TimeEntryId? timeEntryId = null,
+        ActivityTypeId? activityTypeId = null,
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
         => new(
             timeEntryId ?? TimeEntryId(),
             TimeEntryTargetReference.ForProject(Project()),
             Contributor(),
-            ActivityId(),
-            ActivityTypeScope.Tenant,
+            activityTypeId ?? ActivityId(),
+            activityTypeScope,
             new DateOnly(2026, 6, 19),
             60,
             BillableState.Billable,
@@ -959,6 +1087,49 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         {
             ExternalSource = new ExternalContributionSource("external", "source-1")
         };
+
+    private static TimeEntrySubmitted Submitted(TenantReference tenant)
+        => new(
+            TimeEntryId(),
+            Operator(),
+            tenant,
+            new DateTimeOffset(2026, 6, 19, 12, 30, 0, TimeSpan.Zero),
+            new TimeEntrySubmissionId("submission-1"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted);
+
+    private static TimeEntryCorrected Corrected(ActivityTypeScope? correctedScope)
+    {
+        TimeEntryCorrectionValues previous = new(
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            ContributorCategory.ExternalContributor,
+            null)
+        {
+            ActivityTypeScope = correctedScope is null ? null : ActivityTypeScope.Project
+        };
+        TimeEntryCorrectionValues corrected = previous with
+        {
+            ActivityTypeScope = correctedScope,
+            DurationMinutes = 75
+        };
+        return new(
+            TimeEntryId(),
+            new TimeEntryCorrectionId("correction-1"),
+            Tenant(),
+            Operator(),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            previous,
+            corrected,
+            new TimeEntryRejectionReason("Rejected."),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Corrected);
+    }
 
     private static ActivityTypeCreated ActivityCreated()
         => new(
@@ -1077,14 +1248,19 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     private sealed class InMemoryReadModelStore(
         MagicLinkTokenHashCapabilityIndexReadModel? index,
         ActivityTypeCatalogReadModel? catalog = null,
-        bool throwCatalogRead = false) : IReadModelStore
+        bool throwCatalogRead = false,
+        bool throwIndexRead = false) : IReadModelStore
     {
+        public int ReadCount { get; private set; }
+
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
             string storeName,
             string key,
             CancellationToken cancellationToken = default)
             where TValue : class
         {
+            ReadCount++;
+
             if (typeof(TValue) == typeof(ActivityTypeCatalogReadModel))
             {
                 // Verify the addressing, not just the type. Dispatching on typeof(TValue) alone let
@@ -1112,6 +1288,11 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
             storeName.ShouldBe(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName);
             key.ShouldBe(MagicLinkTokenHashCapabilityIndexProjection.StateKey);
+            if (throwIndexRead)
+            {
+                throw new InvalidOperationException("Index read failed.");
+            }
+
             return Task.FromResult(new ReadModelEntry<TValue>(index as TValue, "etag-index"));
         }
 

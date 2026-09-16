@@ -719,6 +719,54 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
+    public void TimeEntryCorrectionValuesPreservesEightValueConstructionAndDeconstruction()
+    {
+        TimeEntryCorrectionValues values = CorrectionValues(60);
+
+        (
+            TimeEntryTargetReference target,
+            PartyReference contributor,
+            ActivityTypeId activityTypeId,
+            DateOnly serviceDate,
+            int durationMinutes,
+            BillableState billableState,
+            ContributorCategory contributorCategory,
+            AiEffortMetrics? aiMetrics) = values;
+
+        target.ShouldBe(values.Target);
+        contributor.ShouldBe(values.Contributor);
+        activityTypeId.ShouldBe(values.ActivityTypeId);
+        serviceDate.ShouldBe(values.ServiceDate);
+        durationMinutes.ShouldBe(values.DurationMinutes);
+        billableState.ShouldBe(values.BillableState);
+        contributorCategory.ShouldBe(values.ContributorCategory);
+        aiMetrics.ShouldBe(values.AiMetrics);
+        typeof(TimeEntryCorrectionValues).GetConstructors()
+            .ShouldContain(static constructor => constructor.GetParameters().Length == 8);
+        typeof(TimeEntryCorrectionValues).GetMethods()
+            .Where(static method => method.Name == "Deconstruct")
+            .ShouldHaveSingleItem()
+            .GetParameters().Length.ShouldBe(8);
+    }
+
+    [Fact]
+    public void TimeEntryCorrectionValuesSerializesScopeAdditivelyAndOmitsLegacyNull()
+    {
+        TimeEntryCorrectionValues legacy = CorrectionValues(60);
+        TimeEntryCorrectionValues scoped = legacy with { ActivityTypeScope = ActivityTypeScope.Tenant };
+
+        string legacyJson = JsonSerializer.Serialize(legacy, JsonOptions);
+        string scopedJson = JsonSerializer.Serialize(scoped, JsonOptions);
+
+        legacyJson.ShouldNotContain("activityTypeScope");
+        scopedJson.ShouldContain("\"activityTypeScope\":\"Tenant\"");
+        JsonSerializer.Deserialize<TimeEntryCorrectionValues>(legacyJson, JsonOptions)
+            .ShouldNotBeNull().ActivityTypeScope.ShouldBeNull();
+        JsonSerializer.Deserialize<TimeEntryCorrectionValues>(scopedJson, JsonOptions)
+            .ShouldNotBeNull().ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+    }
+
+    [Fact]
     public void Time_entry_evidence_read_model_round_trips_source_lineage_and_display_hydration_without_raw_envelope_fields()
     {
         TimeEntryEvidenceReadModel readModel = new(
@@ -1390,6 +1438,18 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("ActivityTypeCatalogReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimeEntryEvidenceReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimesheetsMetadataDescriptor").ShouldBeTrue();
+
+        JsonObject correctionValues = schemas["TimeEntryCorrectionValues"].ShouldNotBeNull().AsObject();
+        JsonObject correctionProperties = correctionValues["properties"].ShouldNotBeNull().AsObject();
+        JsonArray activityTypeScopeShape = correctionProperties["activityTypeScope"].ShouldNotBeNull()["anyOf"]
+            .ShouldNotBeNull().AsArray();
+        activityTypeScopeShape.Count.ShouldBe(2);
+        activityTypeScopeShape.Count(node =>
+            node?["$ref"]?.GetValue<string>() == "#/components/schemas/ActivityTypeScope").ShouldBe(1);
+        activityTypeScopeShape.Count(node => node?["type"]?.GetValue<string>() == "null").ShouldBe(1);
+        correctionValues["required"].ShouldNotBeNull().AsArray()
+            .Select(static node => node.ShouldNotBeNull().GetValue<string>())
+            .ShouldNotContain("activityTypeScope");
 
         string schemaJson = schemas.ToJsonString();
         AssertJsonOmitsCallerAuthority(schemaJson, allowTenantId: true);

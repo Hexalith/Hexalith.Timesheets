@@ -85,7 +85,7 @@ public sealed record ApprovedTimeLedgerRowReadModel(
             priorValues.ServiceDate,
             priorValues.DurationMinutes,
             priorValues.ActivityTypeId,
-            evidence.ActivityTypeScope,
+            priorValues.ActivityTypeScope ?? evidence.ActivityTypeScope,
             priorValues.BillableState,
             priorValues.ContributorCategory,
             evidence.ApprovalDecision,

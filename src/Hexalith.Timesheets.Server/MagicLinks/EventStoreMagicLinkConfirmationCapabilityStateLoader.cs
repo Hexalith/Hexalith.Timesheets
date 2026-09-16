@@ -13,6 +13,14 @@ using Hexalith.Timesheets.Server.TimeEntries;
 
 namespace Hexalith.Timesheets.Server.MagicLinks;
 
+/// <summary>
+/// Loads authoritative magic-link and Time Entry state from EventStore and combines it with the
+/// rebuildable token-hash index and tenant Activity Type catalog.
+/// </summary>
+/// <param name="eventStore">The EventStore gateway used to replay authoritative streams.</param>
+/// <param name="readModelStore">The read-model store used for non-authoritative index and catalog lookup.</param>
+/// <param name="tokenGenerator">The canonical token hash derivation service.</param>
+/// <param name="contextAccessor">The trusted ambient context used by administrator paths.</param>
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     IEventStoreGatewayClient eventStore,
     IReadModelStore readModelStore,
@@ -21,13 +29,14 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 {
     private const int StreamPageSize = 500;
 
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IEventStoreGatewayClient _eventStore = eventStore ?? throw new ArgumentNullException(nameof(eventStore));
     private readonly IReadModelStore _readModelStore = readModelStore ?? throw new ArgumentNullException(nameof(readModelStore));
     private readonly IMagicLinkTokenGenerator _tokenGenerator = tokenGenerator ?? throw new ArgumentNullException(nameof(tokenGenerator));
     private readonly ITimesheetsTrustedContextAccessor _contextAccessor = contextAccessor ?? throw new ArgumentNullException(nameof(contextAccessor));
 
+    /// <inheritdoc/>
     public async ValueTask<ActivityTypeCatalogReadModel> LoadActivityTypeCatalogAsync(CancellationToken cancellationToken)
     {
         TenantReference? tenant = _contextAccessor.CurrentTenant;
@@ -39,6 +48,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         return await LoadActivityTypeCatalogAsync(tenant, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async ValueTask<MagicLinkCapabilityState?> LoadCapabilityAsync(
         MagicLinkCapabilityId capabilityId,
         CancellationToken cancellationToken)
@@ -54,6 +64,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         return await LoadCapabilityAsync(tenant, capabilityId, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <inheritdoc/>
     public async ValueTask<MagicLinkEndpointTokenState> LoadTokenStateAsync(
         string oneTimeToken,
         CancellationToken cancellationToken)
@@ -98,7 +109,11 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             candidate.Tenant,
             capability.TimeEntryId,
             cancellationToken).ConfigureAwait(false);
-        if (timeEntry is null || !timeEntry.IsRecorded)
+        if (timeEntry is null
+            || !timeEntry.IsRecorded
+            || capability.ActivityTypeId is null
+            || timeEntry.ActivityTypeId != capability.ActivityTypeId
+            || timeEntry.ActivityTypeScope != ActivityTypeScope.Tenant)
         {
             return UnavailableTokenState();
         }
@@ -114,6 +129,17 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             // therefore discarded rather than leaking a resolved capability on an unknown condition.
             // Distinguishing them is the deferred AC2 item, and it is the prerequisite for any
             // honest StaleCatalog diagnostic at the endpoint.
+            return UnavailableTokenState();
+        }
+
+        ActivityTypeCatalogItem[] matchingActivityTypes = catalog.Items
+            .Where(item => item.ActivityTypeId == capability.ActivityTypeId)
+            .Take(2)
+            .ToArray();
+        if (matchingActivityTypes.Length != 1
+            || matchingActivityTypes[0].Scope != ActivityTypeScope.Tenant
+            || matchingActivityTypes[0].Project is not null)
+        {
             return UnavailableTokenState();
         }
 
@@ -429,7 +455,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
         using JsonDocument document = JsonDocument.Parse(streamEvent.Payload);
 
-        return JsonSerializer.Deserialize(document.RootElement, eventType, JsonOptions)
+        return JsonSerializer.Deserialize(document.RootElement, eventType, _jsonOptions)
             ?? throw new InvalidOperationException("A recognized EventStore event has a null payload.");
     }
 

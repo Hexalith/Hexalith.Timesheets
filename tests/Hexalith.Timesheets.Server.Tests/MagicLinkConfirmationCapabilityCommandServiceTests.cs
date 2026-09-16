@@ -445,12 +445,140 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         adjusted.AdjustedValues.BillableState.ShouldBe(command.BillableState);
         adjusted.AdjustedValues.Target.ShouldBe(TimeEntryTargetReference.ForProject(Project()));
         adjusted.AdjustedValues.Contributor.ShouldBe(Contributor());
+        adjusted.PreviousValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        adjusted.AdjustedValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
         adjusted.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
 
         MagicLinkConfirmationCapabilityUsed used = result.CapabilityResult.ShouldNotBeNull()
             .Events.ShouldHaveSingleItem()
             .ShouldBeOfType<MagicLinkConfirmationCapabilityUsed>();
         used.OutcomeCategory.ShouldBe("adjusted");
+    }
+
+    [Fact]
+    public async Task ProjectOwnedActivityTypeIsRejectedAcrossIssueDisplayConfirmAndAdjust()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        MagicLinkConfirmationCapabilityCommandService service = fixture.CreateService();
+        var projectCatalog = new ActivityTypeCatalogReadModel(
+            [new ActivityTypeCatalogItem(
+                ActivityId(),
+                ActivityTypeScope.Project,
+                Project(),
+                "Project delivery",
+                true,
+                BillableState.Billable)],
+            ProjectionFreshnessMetadata.Fresh);
+        TimeEntryState projectScopedEntry = RecordedExternalState(activityTypeScope: ActivityTypeScope.Project);
+
+        MagicLinkCapabilityCommandResult issuance = await service.IssueAsync(
+            Context(),
+            IssueCommand(),
+            null,
+            projectCatalog,
+            IssuedAtUtc(),
+            TestContext.Current.CancellationToken);
+        MagicLinkConfirmationDisplayResponse? display = await service.DescribeAsync(
+            Context(),
+            "opaque-once",
+            IssuedState(),
+            projectScopedEntry,
+            projectCatalog,
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult confirmation = await service.ConfirmAsync(
+            Context(),
+            "opaque-once",
+            ConfirmCommand(),
+            IssuedState(),
+            projectScopedEntry,
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult adjustment = await service.AdjustAsync(
+            Context(),
+            "opaque-once",
+            AdjustCommand(),
+            IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(),
+            projectCatalog,
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        issuance.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        issuance.IssueResponse.ShouldBeNull();
+        fixture.TokenGenerator.GenerateCount.ShouldBe(0);
+        display.ShouldBeNull();
+        confirmation.WasDispatched.ShouldBeFalse();
+        confirmation.TimeEntryResult.ShouldBeNull();
+        adjustment.WasDispatched.ShouldBeFalse();
+        adjustment.AdjustmentResult.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task TenantOwnedActivityTypeRemainsValidForWorkTargetMagicLinkPaths()
+    {
+        Fixture fixture = AuthorizedWorkFixture();
+        MagicLinkConfirmationCapabilityCommandService service = fixture.CreateService();
+        TimeEntryTargetReference workTarget = TimeEntryTargetReference.ForWork(new WorkReference("work-1"));
+        TimeEntryState workEntry = RecordedExternalState(target: workTarget);
+
+        MagicLinkCapabilityCommandResult issuance = await service.IssueAsync(
+            Context(),
+            IssueWorkCommand(),
+            null,
+            FreshCatalog(),
+            IssuedAtUtc(),
+            TestContext.Current.CancellationToken);
+        MagicLinkConfirmationCapabilityIssued issued = issuance.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem().ShouldBeOfType<MagicLinkConfirmationCapabilityIssued>();
+        MagicLinkConfirmationDisplayResponse? display = await service.DescribeAsync(
+            Context(),
+            "opaque-once",
+            IssuedState(target: workTarget),
+            workEntry,
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult confirmation = await service.ConfirmAsync(
+            Context(),
+            "opaque-once",
+            ConfirmCommand(),
+            IssuedState(target: workTarget),
+            workEntry,
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+        MagicLinkAdjustmentDisplayResponse? adjustmentDisplay = await service.DescribeAdjustmentAsync(
+            Context(),
+            "opaque-once",
+            IssuedState(target: workTarget, allowedAction: MagicLinkAllowedAction.Adjust),
+            workEntry,
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult adjustment = await service.AdjustAsync(
+            Context(),
+            "opaque-once",
+            AdjustCommand(),
+            IssuedState(target: workTarget, allowedAction: MagicLinkAllowedAction.Adjust),
+            workEntry,
+            FreshCatalog(),
+            ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        issuance.WasDispatched.ShouldBeTrue();
+        issuance.IssueResponse.ShouldNotBeNull();
+        issued.Target.ShouldBe(workTarget);
+        display.ShouldNotBeNull().TargetContext.ShouldBe(TimeEntryTargetKind.Work.ToString());
+        confirmation.WasDispatched.ShouldBeTrue();
+        confirmation.TimeEntryResult.ShouldNotBeNull().DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem().ShouldBeOfType<TimeEntryContributorConfirmed>();
+        adjustmentDisplay.ShouldNotBeNull().TargetContext.ShouldBe(TimeEntryTargetKind.Work.ToString());
+        adjustment.WasDispatched.ShouldBeTrue();
+        TimeEntryAdjustedThroughMagicLink adjusted = adjustment.AdjustmentResult.ShouldNotBeNull()
+            .DomainResult.ShouldNotBeNull().Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryAdjustedThroughMagicLink>();
+        adjusted.AdjustedValues.Target.ShouldBe(workTarget);
+        adjusted.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
     }
 
     [Fact]
@@ -1150,7 +1278,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     private static TimeEntryState RecordedExternalState(
         TimeEntryId? timeEntryId = null,
         TimeEntryTargetReference? target = null,
-        PartyReference? contributor = null)
+        PartyReference? contributor = null,
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
     {
         TimeEntryState state = new();
         state.Apply(new TimeEntryRecorded(
@@ -1158,7 +1287,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             target ?? TimeEntryTargetReference.ForProject(Project()),
             contributor ?? Contributor(),
             ActivityId(),
-            ActivityTypeScope.Tenant,
+            activityTypeScope,
             new DateOnly(2026, 6, 19),
             60,
             BillableState.Billable,
@@ -1222,6 +1351,18 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
             .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<ProjectReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        fixture.PartyValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())
+            .Returns(ReferenceValidationResult.Valid());
+        return fixture;
+    }
+
+    private static Fixture AuthorizedWorkFixture()
+    {
+        Fixture fixture = AuthorizedFixture();
+        fixture.WorkValidator
+            .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<WorkReference>(), Arg.Any<CancellationToken>())
             .Returns(ReferenceValidationResult.Valid());
         fixture.PartyValidator
             .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<PartyReference>(), Arg.Any<CancellationToken>())

@@ -200,6 +200,7 @@ public sealed class TimeEntryState
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
         ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
+        ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? ActivityTypeScope;
         ServiceDate = corrected.CorrectedValues.ServiceDate;
         DurationMinutes = corrected.CorrectedValues.DurationMinutes;
         BillableState = corrected.CorrectedValues.BillableState;
@@ -224,6 +225,7 @@ public sealed class TimeEntryState
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
         ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
+        ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? ActivityTypeScope;
         ServiceDate = corrected.CorrectedValues.ServiceDate;
         DurationMinutes = corrected.CorrectedValues.DurationMinutes;
         BillableState = corrected.CorrectedValues.BillableState;

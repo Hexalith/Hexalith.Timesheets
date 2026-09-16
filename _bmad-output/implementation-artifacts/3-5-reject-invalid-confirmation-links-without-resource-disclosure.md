@@ -274,3 +274,7 @@ The no-disclosure design is sound and well-tested at the service boundary. `Desc
 - AC1, AC3: Implemented — single opaque 403 (`Denied()`) with neutral copy and one recovery path; no reason/state/target/duration/comment/approval material in the response.
 - AC2, AC4: Partially implemented — external response is fully non-disclosing and nothing unsafe is logged, but no telemetry actually records outcome categories yet (follow-up #3). Acceptable for v1 scope.
 - AC5: Implemented at the service boundary across all listed categories with passing equivalence tests; HTTP-boundary proof deferred (follow-up #2).
+
+## 2026-09-16 Loader and Timing Clarification
+
+The concrete EventStore-backed loader and in-process HTTP-boundary matrix now resolve the historical loader and HTTP-test follow-ups above. Project-owned Activity Type evidence joins the invalid matrix on all four external routes, which assert equivalent status, content type, headers, normalized body, and raw UTF-8 response length. This is representation equivalence, not constant-time processing: blank or hash-derivation-rejected tokens perform zero read-model and EventStore I/O, while an unknown well-formed hash necessarily performs one token-index lookup. The bounded residual timing risk and revisit triggers are recorded in `docs/launch-readiness.md`.

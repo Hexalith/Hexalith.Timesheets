@@ -76,6 +76,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             failure.ContentType.ShouldBe(baseline.ContentType, failure.Name);
             failure.NormalizedBody.ShouldBe(baseline.NormalizedBody, failure.Name);
             failure.Headers.ShouldBe(baseline.Headers, failure.Name);
+            System.Text.Encoding.UTF8.GetByteCount(failure.RawBody)
+                .ShouldBe(System.Text.Encoding.UTF8.GetByteCount(baseline.RawBody), failure.Name);
         }
     }
 
@@ -201,6 +203,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             failure.ContentType.ShouldBe(baseline.ContentType, failure.Name);
             failure.NormalizedBody.ShouldBe(baseline.NormalizedBody, failure.Name);
             failure.Headers.ShouldBe(baseline.Headers, failure.Name);
+            System.Text.Encoding.UTF8.GetByteCount(failure.RawBody)
+                .ShouldBe(System.Text.Encoding.UTF8.GetByteCount(baseline.RawBody), failure.Name);
             request.Tenant.ShouldBe(Tenant().TenantId);
             request.AggregateId.ShouldBe(candidate.CapabilityId.Value);
         }
@@ -360,6 +364,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             failure.ContentType.ShouldBe(baseline.ContentType, failure.Name);
             failure.NormalizedBody.ShouldBe(baseline.NormalizedBody, failure.Name);
             failure.Headers.ShouldBe(baseline.Headers, failure.Name);
+            System.Text.Encoding.UTF8.GetByteCount(failure.RawBody)
+                .ShouldBe(System.Text.Encoding.UTF8.GetByteCount(baseline.RawBody), failure.Name);
         }
     }
 
@@ -541,6 +547,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             "wrong-recipient",
             "wrong-action",
             "stale-catalog",
+            "project-owned",
             "repeated-token"
         ];
 
@@ -661,7 +668,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         return state;
     }
 
-    private static TimeEntryState RecordedExternalState(PartyReference? contributor = null, TimeEntryId? timeEntryId = null)
+    private static TimeEntryState RecordedExternalState(
+        PartyReference? contributor = null,
+        TimeEntryId? timeEntryId = null,
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
     {
         TimeEntryState state = new();
         state.Apply(new TimeEntryRecorded(
@@ -669,7 +679,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             TimeEntryTargetReference.ForProject(Project()),
             contributor ?? Contributor(),
             ActivityId(),
-            ActivityTypeScope.Tenant,
+            activityTypeScope,
             new DateOnly(2026, 6, 19),
             60,
             BillableState.Billable,
@@ -1136,7 +1146,12 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
             return new(
                 state,
-                caseName == "wrong-recipient" ? RecordedExternalState() : RecordedExternalState(state?.Contributor),
+                caseName switch
+                {
+                    "wrong-recipient" => RecordedExternalState(),
+                    "project-owned" => RecordedExternalState(state?.Contributor, activityTypeScope: ActivityTypeScope.Project),
+                    _ => RecordedExternalState(state?.Contributor)
+                },
                 caseName switch
                 {
                     "stale-catalog" => StaleCatalog(),

@@ -861,6 +861,12 @@
           "target": { "$ref": "#/components/schemas/TimeEntryTargetReference" },
           "contributor": { "$ref": "#/components/schemas/PartyReference" },
           "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
+          "activityTypeScope": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/ActivityTypeScope" },
+              { "type": "null" }
+            ]
+          },
           "serviceDate": { "type": "string", "format": "date" },
           "durationMinutes": { "type": "integer", "minimum": 1 },
           "billableState": { "$ref": "#/components/schemas/BillableState" },

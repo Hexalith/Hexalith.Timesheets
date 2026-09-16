@@ -155,6 +155,39 @@ public sealed class LaunchReadinessTests
     }
 
     [Fact]
+    public void LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers()
+    {
+        string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
+
+        readiness.ShouldContain("compound labels such as `implemented / waived`");
+
+        string[] ownership = ReadClassificationRow(readiness, "Magic-link Activity Type ownership inventory");
+        ownership[2].ShouldBe("implemented / waived");
+        ownership[3].ShouldBe("Story 3.6 / release owner");
+        ownership[4].ShouldContain("project-owned capability");
+        ownership[4].ShouldContain("reissuable");
+        ownership[4].ShouldContain("only after an authorized correction");
+        ownership[4].ShouldContain("followed by capability revocation and reissuance");
+        ownership[4].ShouldContain("legacy scope-less cross-scope correction");
+        ownership[4].ShouldContain("reissuing a link alone");
+        ownership[5].ShouldContain("Before rollout");
+        ownership[5].ShouldContain("inventories deployed capability and TimeEntry histories");
+        ownership[5].ShouldContain("authorizes correction");
+        ownership[5].ShouldContain("then revokes and reissues");
+
+        string[] timing = ReadClassificationRow(readiness, "Magic-link invalid-token timing");
+        timing[2].ShouldBe("implemented / waived");
+        timing[3].ShouldBe("Story 3.6 / security");
+        timing[1].ShouldContain("raw UTF-8 response length");
+        timing[1].ShouldContain("zero read-model and EventStore I/O");
+        timing[1].ShouldContain("one token-index lookup");
+        timing[4].ShouldContain("not constant");
+        timing[5].ShouldContain("public exposure without suitable abuse controls");
+        timing[5].ShouldContain("token entropy is weakened");
+        timing[5].ShouldContain("practically classified by timing");
+    }
+
+    [Fact]
     public void Launch_readiness_record_captures_package_currency_verdict_dimensions()
     {
         // Story 5.2: package evidence must distinguish direct package currency, root npm applicability,
@@ -247,5 +280,16 @@ public sealed class LaunchReadinessTests
         end.ShouldBeGreaterThan(start, $"Missing section boundary '{nextHeading}'.");
 
         return document[start..end];
+    }
+
+    private static string[] ReadClassificationRow(string document, string item)
+    {
+        string row = document.Split('\n')
+            .Single(line => line.StartsWith($"| {item} |", StringComparison.Ordinal));
+        string[] cells = row.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        cells.Length.ShouldBe(7, $"The '{item}' classification must retain every structured column.");
+        cells[0].ShouldBe(item);
+        return cells;
     }
 }

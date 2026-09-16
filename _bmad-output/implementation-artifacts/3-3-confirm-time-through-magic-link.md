@@ -298,3 +298,7 @@ Reviewer: Jérôme Piquot (adversarial auto-fix review) on 2026-06-19.
 - [ ] [AI-Review][Medium] Wire the EventStore capability + Time-Entry load/fold seam into `MagicLinkConfirmationCapabilityEndpoints` so confirm/display function end-to-end (replace the `null`/`UnavailableCatalog()` stubs) [src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs].
 - [ ] [AI-Review][Low] The "endpoint/integration" tests assert source text (`File.ReadAllText` + `ShouldContain`) rather than exercising the routes; promote to in-process host tests once the seam above exists [tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs].
 - [ ] [AI-Review][Low] Confirm the sibling submodule pointer changes (`Hexalith.FrontComposer`, `Hexalith.Tenants`) are intentional before committing; the story scope forbids modifying sibling submodules.
+
+## 2026-09-16 Activity Type Ownership Clarification
+
+Existing-link display and confirmation now require the capability and folded Time Entry to reference the same Activity Type ID, the folded Time Entry scope to be `Tenant`, and the current tenant catalog to resolve exactly one tenant-owned item with no Project owner. Display additionally retains its existing active/available check. This supersedes any broader ownership reading in this historical record. Project and Work targets remain valid when they use a tenant-owned Activity Type; project-owned or inconsistent evidence returns the canonical opaque denial without protected work.

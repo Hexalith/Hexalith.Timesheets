@@ -892,6 +892,129 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
+    public void RejectedCorrectionRecordsAndAppliesServerResolvedScopeChange()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = RejectedState(command, ActivityTypeScope.Tenant);
+        CorrectRejectedTimeEntry correction = CorrectCommand(command.TimeEntryId);
+
+        TimeEntryCorrected corrected = SingleSuccess<TimeEntryCorrected>(TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            ActivityTypeScope.Project));
+
+        corrected.PreviousValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        corrected.CorrectedValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        state.Apply(corrected);
+        state.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 35, 0, TimeSpan.Zero),
+            ActivityTypeScope.Project).IsNoOp.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void ApprovedCorrectionRecordsAndAppliesServerResolvedScopeChange()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = ApprovedState(command, ActivityTypeScope.Project);
+        var tenantActivityTypeId = new ActivityTypeId("activity-type-tenant");
+        CorrectApprovedTimeEntry correction = ApprovedCorrectionCommand(command.TimeEntryId) with
+        {
+            ActivityTypeId = tenantActivityTypeId
+        };
+
+        TimeEntryApprovedCorrected corrected = SingleSuccess<TimeEntryApprovedCorrected>(TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant));
+
+        corrected.PreviousValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        corrected.CorrectedValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        state.Apply(corrected);
+        state.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 35, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant).IsNoOp.ShouldBeTrue();
+        TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 40, 0, TimeSpan.Zero),
+            ActivityTypeScope.Project).IsRejection.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void LegacyApprovedCorrectionRetainsPriorScopeAndSameRetryIsNoOp()
+    {
+        RecordTimeEntry command = ValidCommand();
+        TimeEntryState state = ApprovedState(command, ActivityTypeScope.Project);
+        var tenantActivityTypeId = new ActivityTypeId("activity-type-tenant");
+        CorrectApprovedTimeEntry correction = ApprovedCorrectionCommand(command.TimeEntryId) with
+        {
+            ActivityTypeId = tenantActivityTypeId
+        };
+        state.Apply(new TimeEntryApprovedCorrected(
+            command.TimeEntryId,
+            correction.TimeEntryCorrectionId,
+            new TenantReference("tenant-1"),
+            new PartyReference("operator-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
+            CorrectionValues(command),
+            new TimeEntryCorrectionValues(
+                correction.Target,
+                correction.Contributor,
+                correction.ActivityTypeId,
+                correction.ServiceDate,
+                correction.DurationMinutes,
+                correction.BillableState,
+                correction.ContributorCategory,
+                correction.AiMetrics)
+            {
+                Comment = correction.Comment
+            },
+            correction.Reason,
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalScope.IndividualEntry,
+            TimeEntryApprovalState.Approved,
+            TimeEntryCorrectionState.Corrected));
+
+        state.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        state.ActivityTypeId.ShouldBe(tenantActivityTypeId);
+        state.CorrectedValues.ShouldNotBeNull().ActivityTypeScope.ShouldBeNull();
+
+        TimesheetsDomainResult retry = TimeEntry.Handle(
+            correction,
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 35, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant);
+
+        retry.IsNoOp.ShouldBeTrue();
+    }
+
+    [Fact]
     public void Correct_approved_rejects_same_id_different_values_missing_reason_and_non_utc_timestamp()
     {
         RecordTimeEntry command = ValidCommand();
@@ -1081,7 +1204,9 @@ public sealed class TimeEntryAggregateTests
             [timeEntryId],
             TimeEntrySubmissionScope.SelectedEntries);
 
-    private static TimeEntryState RecordedState(RecordTimeEntry command)
+    private static TimeEntryState RecordedState(
+        RecordTimeEntry command,
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
     {
         TimeEntryState state = new();
         state.Apply(new TimeEntryRecorded(
@@ -1089,7 +1214,7 @@ public sealed class TimeEntryAggregateTests
             command.Target,
             command.Contributor,
             command.ActivityTypeId,
-            ActivityTypeScope.Tenant,
+            activityTypeScope,
             command.ServiceDate,
             command.DurationMinutes,
             command.BillableState,
@@ -1102,9 +1227,11 @@ public sealed class TimeEntryAggregateTests
         return state;
     }
 
-    private static TimeEntryState ApprovedState(RecordTimeEntry command)
+    private static TimeEntryState ApprovedState(
+        RecordTimeEntry command,
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
     {
-        TimeEntryState state = SubmittedState(command);
+        TimeEntryState state = SubmittedState(command, activityTypeScope);
         state.Apply(new TimeEntryApproved(
             command.TimeEntryId,
             new PartyReference("approver-1"),
@@ -1117,9 +1244,11 @@ public sealed class TimeEntryAggregateTests
         return state;
     }
 
-    private static TimeEntryState SubmittedState(RecordTimeEntry command)
+    private static TimeEntryState SubmittedState(
+        RecordTimeEntry command,
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
     {
-        TimeEntryState state = RecordedState(command);
+        TimeEntryState state = RecordedState(command, activityTypeScope);
         state.Apply(new TimeEntrySubmitted(
             command.TimeEntryId,
             new PartyReference("submitter-1"),
@@ -1131,9 +1260,11 @@ public sealed class TimeEntryAggregateTests
         return state;
     }
 
-    private static TimeEntryState RejectedState(RecordTimeEntry command)
+    private static TimeEntryState RejectedState(
+        RecordTimeEntry command,
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
     {
-        TimeEntryState state = SubmittedState(command);
+        TimeEntryState state = SubmittedState(command, activityTypeScope);
         state.Apply(new TimeEntryRejected(
             command.TimeEntryId,
             new PartyReference("approver-1"),

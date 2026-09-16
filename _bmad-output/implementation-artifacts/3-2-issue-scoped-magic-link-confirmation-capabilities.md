@@ -318,3 +318,7 @@ Implementation faithfully delivers all five acceptance criteria. Tasks marked co
 
 - `dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false`: succeeded, 0 warnings, 0 errors.
 - Direct xUnit v3 executables (VSTest socket fallback): Contracts 63, Server 309, Projections 44, Architecture 20, Integration 37 (2 skipped) — 0 failed.
+
+## 2026-09-16 Activity Type Ownership Clarification
+
+The v1 issuance boundary now permits only an active tenant-owned Activity Type with no Project owner. This supersedes any broader ownership reading in this historical record. Project and Work remain supported capability targets; the restriction concerns Activity Type ownership, not target kind. Project-owned Activity Types fail closed before token generation. Repairable deployed project-owned Time Entry evidence first requires an authorized correction to a tenant-owned Activity Type, after which affected capabilities are revoked and reissued; legacy scope-less cross-scope histories cannot be repaired by reissue alone. The inventory and waiver are recorded in `docs/launch-readiness.md`.

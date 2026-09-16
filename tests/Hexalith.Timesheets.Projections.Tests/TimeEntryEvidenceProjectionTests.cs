@@ -410,6 +410,61 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void ProjectionAndLedgerPreserveExplicitApprovedCorrectionScopeLineage()
+    {
+        TimeEntryApprovedCorrected corrected = ApprovedCorrected("time-entry-1", 75) with
+        {
+            PreviousValues = CorrectionValues(45, "Original evidence.") with
+            {
+                ActivityTypeScope = ActivityTypeScope.Project
+            },
+            CorrectedValues = CorrectionValues(75, "Approved correction evidence.") with
+            {
+                ActivityTypeScope = ActivityTypeScope.Tenant
+            }
+        };
+
+        TimeEntryEvidenceReadModel model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45) with { ActivityTypeScope = ActivityTypeScope.Project }),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Approved("time-entry-1")),
+                Event("m4", 4, corrected)
+            ],
+            FreshCheckpoint(4)).ShouldNotBeNull();
+
+        model.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        ApprovedTimeLedgerRowReadModel.CurrentFromEvidence(model).ActivityTypeScope
+            .ShouldBe(ActivityTypeScope.Tenant);
+        ApprovedTimeLedgerRowReadModel.SupersededFromApprovedCorrection(model)
+            .ShouldNotBeNull().ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+    }
+
+    [Fact]
+    public void LegacyApprovedCorrectionRetainsPriorScopeInCurrentAndSupersededLedgerRows()
+    {
+        TimeEntryEvidenceReadModel model = Projector().Project(
+            "tenant-1",
+            TimeEntryId(),
+            [
+                Event("m1", 1, Recorded("time-entry-1", 45) with { ActivityTypeScope = ActivityTypeScope.Project }),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Approved("time-entry-1")),
+                Event("m4", 4, ApprovedCorrected("time-entry-1", 75))
+            ],
+            FreshCheckpoint(4)).ShouldNotBeNull();
+
+        model.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        model.ApprovedCorrection.ShouldNotBeNull().CorrectedValues.ActivityTypeScope.ShouldBeNull();
+        ApprovedTimeLedgerRowReadModel.CurrentFromEvidence(model).ActivityTypeScope
+            .ShouldBe(ActivityTypeScope.Project);
+        ApprovedTimeLedgerRowReadModel.SupersededFromApprovedCorrection(model)
+            .ShouldNotBeNull().ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+    }
+
+    [Fact]
     public void Projection_ignores_approved_correction_before_approval_until_replayed_in_supported_order()
     {
         TimeEntryEvidenceReadModel? blocked = Projector().Project(
@@ -520,6 +575,8 @@ public sealed class TimeEntryEvidenceProjectionTests
         model.ExternalAdjustment.ShouldNotBeNull();
         model.ExternalAdjustment.PreviousValues.DurationMinutes.ShouldBe(45);
         model.ExternalAdjustment.AdjustedValues.DurationMinutes.ShouldBe(75);
+        model.ExternalAdjustment.PreviousValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        model.ExternalAdjustment.AdjustedValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
         model.ExternalAdjustment.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
         model.EventLineage.Select(static item => item.EventName)
             .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntryAdjustedThroughMagicLink)]);
@@ -792,8 +849,14 @@ public sealed class TimeEntryEvidenceProjectionTests
             Contributor(),
             new DateTimeOffset(2026, 6, 19, 12, 45, 0, TimeSpan.Zero),
             ActivityTypeScope.Tenant,
-            ExternalAdjustmentValues(45, new DateOnly(2026, 6, 19), BillableState.Billable),
-            ExternalAdjustmentValues(durationMinutes, new DateOnly(2026, 6, 20), BillableState.NonBillable),
+            ExternalAdjustmentValues(45, new DateOnly(2026, 6, 19), BillableState.Billable) with
+            {
+                ActivityTypeScope = ActivityTypeScope.Tenant
+            },
+            ExternalAdjustmentValues(durationMinutes, new DateOnly(2026, 6, 20), BillableState.NonBillable) with
+            {
+                ActivityTypeScope = ActivityTypeScope.Tenant
+            },
             new ExternalContributionSource("magic-link", "capability-1"));
 
     private static TimeEntryCorrectionValues ExternalAdjustmentValues(

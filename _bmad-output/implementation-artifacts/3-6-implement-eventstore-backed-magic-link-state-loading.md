@@ -4,7 +4,7 @@ baseline_commit: 24a37c1c50c9c3b3504a03a7a939caf2720b45b0
 
 # Story 3.6: Implement EventStore-Backed Magic-Link State Loading
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -518,3 +518,15 @@ Adversarial review of the full File List against the four ACs and the git workin
 - The token-hash index ships as a pure rebuildable fold (`Rebuild`/`Apply`) + `IReadModelStore` read seam but has no live `IDomainProjectionHandler` wiring that populates the read model in the running topology — so the live host still resolves an empty index until that wiring lands. This is explicitly deferred in the Completion Notes and matches every other Timesheets projection, which today ships its pure fold + read seam only.
 - The loader deserializes event payloads with `JsonSerializerDefaults.Web` and matches event types by simple/`EndsWith` name, ignoring `SerializationFormat`; tests are self-consistent (same options round-trip), so production payload-format fidelity should be confirmed when the projection-host wiring is built. The reviewed value objects (`MagicLinkTokenHash`, `TenantReference`, …) round-trip correctly under STJ Web.
 - Performance: the catalog fold and admin reads use a domain-wide (`aggregateId: null`) replay, and the index is a single global read-model document; acceptable for the v1 candidate-resolver but worth revisiting under runtime load.
+
+## 2026-09-16 Supersession and Policy Clarification
+
+This notice supersedes the stale implementation observations above without rewriting the historical review record:
+
+- The canonical token-hash index and tenant Activity Type catalog now have live projection handlers discovered by the host; the four confirm/adjust HTTP routes are exercised after projection delivery without direct read-model seeding.
+- Event decoding now accepts only the exact full or simple supported event type name and JSON serialization format; suffix matching and format-agnostic deserialization are no longer used.
+- Activity Type loading reads the persisted canonical tenant catalog projection rather than replaying Activity Type domain streams in the loader. Capability and Time Entry streams remain authoritative folds; the token index remains only a candidate locator.
+- Existing-link bundles require matching capability/Time Entry Activity Type IDs, folded tenant scope, and exactly one current tenant-owned catalog item. Issue and adjustment selection enforce the same tenant-only ownership policy while Project and Work targets remain supported.
+- `TimeEntryCorrectionValues` now carries an optional, null-omitted, non-positional server-derived scope. New correction and adjustment writers record it; aggregate, evidence projection, and ledger folds preserve it. Legacy scope-less corrections retain the preceding scope deterministically and are never inferred from the current catalog.
+
+The original loader story is ready for review together with the 2026-09-16 remediation specification and synchronized sprint tracking.

@@ -174,7 +174,7 @@ public static class TimeEntry
                 adjustedAtUtc.ToUniversalTime(),
                 activityTypeScope,
                 ToCorrectionValues(state!),
-                ToAdjustmentValues(command, state!, target!, contributor!),
+                ToAdjustmentValues(command, state!, target!, contributor!, activityTypeScope),
                 source!)
         ]);
     }
@@ -310,7 +310,7 @@ public static class TimeEntry
 
         if (state?.CorrectionState == TimeEntryCorrectionState.Corrected
             && state.TimeEntryCorrectionId == command.TimeEntryCorrectionId
-            && state.CorrectedValues == ToCorrectionValues(command))
+            && MatchesCorrectionValues(state, ToCorrectionValues(command, activityTypeScope)))
         {
             return TimesheetsDomainResult.NoOp();
         }
@@ -336,7 +336,7 @@ public static class TimeEntry
                 correctedBy!,
                 correctedAtUtc.ToUniversalTime(),
                 ToCorrectionValues(state!),
-                ToCorrectionValues(command),
+                ToCorrectionValues(command, activityTypeScope),
                 state!.RejectionReason!,
                 state!.RejectionDecisionId ?? state.TimeEntryApprovalDecisionId!,
                 TimeEntryApprovalState.Draft,
@@ -358,7 +358,7 @@ public static class TimeEntry
 
         if (state?.CorrectionState == TimeEntryCorrectionState.Corrected
             && state.TimeEntryCorrectionId == command.TimeEntryCorrectionId
-            && state.CorrectedValues == ToCorrectionValues(command)
+            && MatchesCorrectionValues(state, ToCorrectionValues(command, activityTypeScope))
             && state.CorrectionReason == command.Reason)
         {
             return TimesheetsDomainResult.NoOp();
@@ -386,7 +386,7 @@ public static class TimeEntry
                 correctedBy!,
                 correctedAtUtc.ToUniversalTime(),
                 ToCorrectionValues(state!),
-                ToCorrectionValues(command),
+                ToCorrectionValues(command, activityTypeScope),
                 command.Reason,
                 state!.TimeEntryApprovalDecisionId!,
                 state.ApprovalScope,
@@ -1330,10 +1330,13 @@ public static class TimeEntry
             state.ContributorCategory,
             state.AiMetrics)
         {
+            ActivityTypeScope = state.ActivityTypeScope,
             Comment = state.Comment
         };
 
-    private static TimeEntryCorrectionValues ToCorrectionValues(CorrectRejectedTimeEntry command)
+    private static TimeEntryCorrectionValues ToCorrectionValues(
+        CorrectRejectedTimeEntry command,
+        ActivityTypeScope activityTypeScope)
         => new(
             command.Target,
             command.Contributor,
@@ -1344,10 +1347,13 @@ public static class TimeEntry
             command.ContributorCategory,
             command.AiMetrics)
         {
+            ActivityTypeScope = activityTypeScope,
             Comment = command.Comment
         };
 
-    private static TimeEntryCorrectionValues ToCorrectionValues(CorrectApprovedTimeEntry command)
+    private static TimeEntryCorrectionValues ToCorrectionValues(
+        CorrectApprovedTimeEntry command,
+        ActivityTypeScope activityTypeScope)
         => new(
             command.Target,
             command.Contributor,
@@ -1358,6 +1364,7 @@ public static class TimeEntry
             command.ContributorCategory,
             command.AiMetrics)
         {
+            ActivityTypeScope = activityTypeScope,
             Comment = command.Comment
         };
 
@@ -1365,7 +1372,8 @@ public static class TimeEntry
         AdjustTimeThroughMagicLink command,
         TimeEntryState state,
         TimeEntryTargetReference target,
-        PartyReference contributor)
+        PartyReference contributor,
+        ActivityTypeScope activityTypeScope)
         => new(
             target,
             contributor,
@@ -1376,8 +1384,25 @@ public static class TimeEntry
             ContributorCategory.ExternalContributor,
             state.AiMetrics)
         {
+            ActivityTypeScope = activityTypeScope,
             Comment = command.Comment
         };
+
+    private static bool MatchesCorrectionValues(
+        TimeEntryState state,
+        TimeEntryCorrectionValues expected)
+    {
+        TimeEntryCorrectionValues? recorded = state.CorrectedValues;
+        if (recorded is null
+            || (recorded.ActivityTypeScope is { } recordedScope
+                && recordedScope != expected.ActivityTypeScope))
+        {
+            return false;
+        }
+
+        return recorded with { ActivityTypeScope = null }
+            == expected with { ActivityTypeScope = null };
+    }
 
     private static string EntryFieldPrefix(TimeEntryId timeEntryId)
         => $"entries[{timeEntryId.Value}]";

@@ -2,9 +2,9 @@
 title: 'Close Story 3.6 loader policy and evidence gaps'
 type: 'bugfix'
 created: '2026-09-16'
-status: 'ready-for-dev'
+status: 'in-review'
 route: 'dispatch'
-review_loop_iteration: 1
+review_loop_iteration: 2
 baseline_commit: 'ab4b48f8c11f8f239f0da923cd21824c5f2083a9'
 context:
   - '_bmad-output/implementation-artifacts/epic-3-context.md'
@@ -41,21 +41,21 @@ context:
 
 ## Code Map
 
-- `src/Hexalith.Timesheets.Contracts/Models/TimeEntryCorrectionValues.cs` and `openapi/timesheets-capture-contracts.v1.json` -- add optional nullable scope; absent means legacy, never caller authority.
+- `src/Hexalith.Timesheets.Contracts/Models/TimeEntryCorrectionValues.cs` and `openapi/timesheets-capture-contracts.v1.json` -- add scope as a nullable, null-omitted init-only property so the existing eight-argument constructor and eight-value `Deconstruct` binary API remain intact; absent means legacy, never caller authority.
 - `src/Hexalith.Timesheets.Server/TimeEntries/TimeEntry.cs` and `TimeEntryState.cs` -- emit/apply resolved scopes and preserve legacy duplicate no-op semantics.
 - `src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceProjection.cs` and `src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeLedgerRowReadModel.cs` -- keep current and superseded scopes aligned with their snapshots.
 - `src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs` -- validate bundle ID/scope/catalog resolution; keep folds authoritative and apply XML/naming conventions.
 - `src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapabilityCommandService.cs` -- enforce tenant ownership across issue/display/confirm/adjust while retaining Project/Work targets.
-- `tests/Hexalith.Timesheets.{Contracts,Server,Projections,Integration}Tests` -- cover additive JSON, correction replay/idempotency, ledger lineage, loader integrity, Work success, four-route opacity, and zero I/O.
+- `tests/Hexalith.Timesheets.{Contracts,Server,Projections,Integration}Tests` -- cover the preserved constructor/deconstruction API, exact nullable OpenAPI shape, additive legacy JSON, rejected and approved cross-scope writers/folds/idempotency, legacy approved ledger lineage, loader integrity, Work success, four-route opacity, and zero I/O.
 - `docs/launch-readiness.md`, its architecture fitness test, Story 3.2–3.6 append-only clarifications, and `sprint-status.yaml` -- record bounded timing, legacy inventory limits, resolved follow-ups, and coherent tracking.
 
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] Correction contracts/folds -- add optional server-derived scope, compatible legacy idempotency, projection parity, superseded-ledger scope, optional OpenAPI shape, and focused contract/aggregate/projection/export proofs.
-- [ ] Loader and command service -- enforce matching tenant-owned evidence, complete read/page/fold guards, public-code conventions, and positive Project/Work behavior.
-- [ ] Loader/service/HTTP tests -- cover every matrix row, correction-to-tenant success, legacy correction denial, raw response length, zero I/O/dispatch, privacy, and genuine cancellation.
-- [ ] Readiness and historical artifacts -- pin structured waiver rows, distinguish reissuable vs legacy-unrepairable state, supersede stale observations/follow-ups, and synchronize Story 3.6 status.
+- [x] Correction contracts/folds -- add an optional server-derived scope without changing the existing constructor/deconstruction ABI; prove exact nullable OpenAPI shape, rejected and approved cross-scope writers/folds, compatible legacy idempotency, projection parity, and current/superseded ledger scope including legacy approved corrections.
+- [x] Loader and command service -- enforce matching tenant-owned evidence, complete read/page/fold guards, public-code conventions, and positive Project/Work behavior.
+- [x] Loader/service/HTTP tests -- cover every matrix row, correction-to-tenant success, legacy correction denial, raw response length, zero I/O/dispatch, privacy, and genuine cancellation; keep readiness wording precise that unknown hashes perform the necessary index lookup while blank/hash-rejected inputs perform zero I/O.
+- [x] Readiness and historical artifacts -- pin structured waiver rows, distinguish reissuable vs legacy-unrepairable state, supersede stale observations/follow-ups, and synchronize Story 3.6 status.
 
 **Acceptance Criteria:**
 - Given a newly authorized correction or magic-link adjustment changes the Activity Type scope, when its event is serialized and replayed, then the optional snapshot scope is emitted from server-resolved authority and the aggregate, evidence projection, and current/superseded ledger rows preserve the corresponding scopes.
@@ -69,6 +69,7 @@ context:
 
 - 2026-09-16: Review loop 1 reverted the implementation and paused for human resolution of the corrected-Time-Entry scope intent gap recorded below.
 - 2026-09-16: Human resolution permits one optional, backward-compatible correction-snapshot scope field while forbidding history rewrites and migration tooling. Planning now covers aggregate/projection/ledger parity, legacy idempotency, and the KEEP requirements from the first implementation: tenant-only magic links, opaque denials, zero-I/O early exits, and complete loader integrity evidence.
+- 2026-09-16: Review loop 2 reverted the implementation after the positional scope parameter broke the former constructor and `Deconstruct` ABI. The plan now requires a null-omitted init-only property, explicit API/OpenAPI compatibility assertions, approved-path cross-scope and legacy-idempotency proofs, and legacy approved-ledger fallback coverage. KEEP: server-derived scope emission; deterministic legacy replay; aggregate/projection/ledger parity; tenant-only loader and command-service guards; successful Project/Work targets; opaque four-route denials; zero-I/O blank/hash-rejection exits; structured readiness/history updates; and every previously corrected review item.
 
 ## Review Triage Log
 
@@ -92,10 +93,29 @@ context:
 | BH-16 | low | reject | The verification totals omit the exact direct-executable filters, but the proposed fix edits this build's spec; review policy rejects findings whose fix is to edit the current spec. Repository test guidance still identifies the executable fallback. |
 | VG-01 | medium | patch (moot pending loopback) | Pre-verified gap: `TenantOwnedActivityTypeRemainsValidForWorkTargetMagicLinkPaths` asserts only `WasDispatched`, which is also true for an authorized rejection; its later states are independently constructed. It must assert success, a non-null issue response, and the emitted Work-target issuance event. |
 | EC-01 | medium | intent_gap | `TimeEntryCorrected` and `TimeEntryApprovedCorrected` can change `ActivityTypeId` after the correction service resolves a tenant scope, but their contracts carry no scope and `TimeEntryState.Apply` retains the old scope. The new tenant-scope guard therefore rejects a reachable corrected entry and makes reissue alone insufficient. Fixing this requires a human choice among additive event evolution, legacy-state remediation, or an explicit fail-closed waiver, conflicting with the frozen no-persistence/schema-migration boundary. |
+| R2-EC-01 | medium | defer (carried; moot pending loopback) | Carried from BH-01: the loader still accepts a matching inactive catalog item, while display rejects it and confirm has no later availability check. The code still reads as the prior row describes. |
+| R2-EC-02 | medium | bad_spec | Adding `ActivityTypeScope` as a ninth positional-record parameter removes the former eight-argument constructor and eight-value `Deconstruct` methods from the compiled public API. Optional call syntax does not preserve binary consumers; the non-frozen plan must require an init-only property or equivalent compatibility surface. |
+| R2-EC-03 | low | reject | A mixed correction payload can mislabel a superseded ledger row, but sanctioned writers emit both scopes and legacy payloads omit both. Reaching this outcome requires malformed external history, and adding a new partial-payload guard is disproportionate to that unlikely case. |
+| R2-BH-01 | medium | bad_spec | The positional scope parameter is binary-incompatible for already compiled contract consumers. This is the same root cause as R2-EC-02 and requires the plan to preserve the original constructor/deconstruction API. |
+| R2-BH-02 | medium | bad_spec | The contract tests prove JSON omission and round-trip only, so they cannot catch the constructor/deconstruction ABI break. The re-derived plan must include an explicit public API compatibility assertion. |
+| R2-BH-03 | medium | defer (carried; moot pending loopback) | Carried from BH-01: inactive/unavailable catalog evidence can still produce display/confirm asymmetry, and that behavior predates this remediation. |
+| R2-BH-04 | medium | defer (carried; moot pending loopback) | Carried from BH-02: the tenant catalog does not apply Project-specific restrictions, so a restricted tenant-owned type can remain selectable for a Project. The code still reads as the prior row describes. |
+| R2-BH-05 | low | patch (moot pending loopback) | The readiness row overstates issuance by saying all paths agree across capability, folded Time Entry, and catalog, while issuance loads only the catalog and existing capability. Re-derived documentation must distinguish issue-time ownership checks from existing-link bundle checks. |
+| R2-BH-06 | medium | defer (moot pending loopback) | A later unrecognized capability or Time Entry stream event is ignored and can leave the preceding state authorized. This loader behavior was already committed before the resumed remediation; a separate integrity change should decide whether unknown future events fail closed or are explicitly harmless. |
+| R2-BH-07 | low | reject | The top-level adjustment scope is explicitly authoritative and every sanctioned writer mirrors it into the nested snapshot. A mismatch requires malformed external history; adding another fold guard is disproportionate to an outcome not produced by repository code. |
+| R2-BH-08 | false | reject | The compared normalized bodies are identical and the only removed variable is the framework trace identifier, which is ASCII and fixed-length in these tests. Therefore equal string lengths also imply equal UTF-8 byte lengths for the actual denial payloads under test. |
+| R2-BH-09 | low | patch (moot pending loopback) | The readiness row incorrectly says unknown hashes perform no read-model work, but resolving an unknown hash necessarily performs one token-index read. Only blank or hash-derivation-rejected tokens are zero-I/O exits. |
+| R2-BH-10 | medium | patch (moot pending loopback) | A legacy `TimeEntryCorrected` already traverses the production serializer/loader with the new member omitted, so the broad claim is partly false. Approved legacy correction writer/fold/retry and ledger fallback coverage is still missing and is added to the re-derived verification plan. |
+| R2-BH-11 | medium | defer (moot pending loopback) | The four gitlink changes are real in the baseline diff but were already committed in `e2e0755` and `1752397` before this resumed run; the initially clean worktree did not modify them. Reverting those user-owned commits is outside this implementation loop. |
+| R2-BH-12 | false | reject | The existing triage rows are an append-only audit trail of the prior loop, not current-state assertions; the change log records their loopback context. The proposed fix would also edit this build's spec, which review policy rejects. |
+| R2-VG-01 | medium | patch (moot pending loopback) | Pre-verified gap: no test starts from an approved Project-scoped state, invokes the approved correction writer with a resolved Tenant scope, and applies the emitted event. Add that writer-and-fold proof. |
+| R2-VG-02 | medium | patch (moot pending loopback) | Pre-verified gap: no test replays a legacy scope-less `TimeEntryApprovedCorrected`, retries the same approved correction, and asserts a no-op. Add the approved legacy idempotency proof. |
+| R2-VG-03 | medium | patch (moot pending loopback) | Pre-verified gap: no ledger test proves that a Project-scoped approved entry followed by a legacy scope-less approved correction leaves both current and superseded rows Project-scoped. |
+| R2-VG-04 | low | patch (moot pending loopback) | Pre-verified gap: the OpenAPI test checks only property presence and optionality, not that `anyOf` contains exactly the `ActivityTypeScope` reference and `null`. Strengthen the schema assertion. |
 
 ## Design Notes
 
-`TimeEntryCorrectionValues.ActivityTypeScope` is nullable and omitted when null: null alone means a legacy event never recorded scope; explicit `Unknown` remains invalid evidence. New writers populate previous and corrected snapshots from authoritative server state/resolution. Folds use `CorrectedValues.ActivityTypeScope ?? currentScope`; the superseded ledger uses `PreviousValues.ActivityTypeScope ?? currentScope`. Duplicate comparison treats legacy null as compatible only when every previously recorded value agrees. Existing `TimeEntryAdjustedThroughMagicLink.ActivityTypeScope` remains authoritative and its new nested snapshot mirrors it.
+`TimeEntryCorrectionValues.ActivityTypeScope` is a non-positional init-only property, nullable and omitted when null. This preserves the existing eight-argument constructor and eight-value `Deconstruct` ABI. Null alone means a legacy event never recorded scope; explicit `Unknown` remains invalid evidence. New writers populate previous and corrected snapshots from authoritative server state/resolution. Folds use `CorrectedValues.ActivityTypeScope ?? currentScope`; the superseded ledger uses `PreviousValues.ActivityTypeScope ?? currentScope`. Duplicate comparison treats legacy null as compatible only when every previously recorded value agrees. Existing `TimeEntryAdjustedThroughMagicLink.ActivityTypeScope` remains authoritative and its new nested snapshot mirrors it.
 
 ## Verification
 

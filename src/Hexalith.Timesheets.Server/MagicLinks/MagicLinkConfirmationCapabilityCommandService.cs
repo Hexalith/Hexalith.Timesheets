@@ -473,6 +473,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         return timeEntryState.TimeEntryId == capabilityState.TimeEntryId
             && timeEntryState.Contributor == capabilityState.Contributor
             && timeEntryState.Target == capabilityState.Target
+            && timeEntryState.ActivityTypeId == capabilityState.ActivityTypeId
+            && timeEntryState.ActivityTypeScope == ActivityTypeScope.Tenant
             ? TimesheetsDomainResult.NoOp()
             : InvalidLinkRejection();
     }
@@ -489,6 +491,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         return timeEntryState.TimeEntryId == capabilityState.TimeEntryId
             && timeEntryState.Contributor == capabilityState.Contributor
             && timeEntryState.Target == capabilityState.Target
+            && timeEntryState.ActivityTypeId == capabilityState.ActivityTypeId
+            && timeEntryState.ActivityTypeScope == ActivityTypeScope.Tenant
             && timeEntryState.ApprovalState == TimeEntryApprovalState.Draft
             && timeEntryState.ContributorCategory == ContributorCategory.ExternalContributor
             && !timeEntryState.IsLockedFromDirectEdit
@@ -517,7 +521,11 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             .Take(2)
             .ToArray();
 
-        if (matches.Length != 1 || !matches[0].IsActive || !matches[0].IsAvailableForCapture)
+        if (matches.Length != 1
+            || matches[0].Scope != ActivityTypeScope.Tenant
+            || matches[0].Project is not null
+            || !matches[0].IsActive
+            || !matches[0].IsAvailableForCapture)
         {
             return false;
         }
@@ -599,26 +607,13 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return false;
         }
 
-        if (command.Scope.Target.TargetKind == TimeEntryTargetKind.Project
-            && selected.Scope == ActivityTypeScope.Project
-            && selected.Project != new ProjectReference(command.Scope.Target.TargetId))
+        if (selected.Scope != ActivityTypeScope.Tenant || selected.Project is not null)
         {
             rejection = Reject(
                 TimesheetsRejectionCode.ActivityTypeScopeMismatch,
-                "Project Activity Type does not belong to the magic-link target Project.",
+                "Magic-link Activity Type must be tenant-scoped.",
                 "activityTypeId",
                 "scope-mismatch");
-            return false;
-        }
-
-        if (command.Scope.Target.TargetKind == TimeEntryTargetKind.Work
-            && selected.Scope == ActivityTypeScope.Project)
-        {
-            rejection = Reject(
-                TimesheetsRejectionCode.AuthorityCannotBeResolved,
-                "Work Activity Type selection requires a governing Project adapter.",
-                "target",
-                "work-project-unresolved");
             return false;
         }
 
@@ -679,30 +674,17 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return false;
         }
 
-        if (capabilityState.Target.TargetKind == TimeEntryTargetKind.Project
-            && selected.Scope == ActivityTypeScope.Project
-            && selected.Project != new ProjectReference(capabilityState.Target.TargetId))
+        if (selected.Scope != ActivityTypeScope.Tenant || selected.Project is not null)
         {
             rejection = Reject(
                 TimesheetsRejectionCode.ActivityTypeScopeMismatch,
-                "Project Activity Type does not belong to the magic-link target Project.",
+                "Magic-link Activity Type must be tenant-scoped.",
                 "activityTypeId",
                 "scope-mismatch");
             return false;
         }
 
-        if (capabilityState.Target.TargetKind == TimeEntryTargetKind.Work
-            && selected.Scope == ActivityTypeScope.Project)
-        {
-            rejection = Reject(
-                TimesheetsRejectionCode.AuthorityCannotBeResolved,
-                "Work Activity Type selection requires a governing Project adapter.",
-                "target",
-                "work-project-unresolved");
-            return false;
-        }
-
-        activityTypeScope = selected.Scope;
+        activityTypeScope = ActivityTypeScope.Tenant;
         return true;
     }
 
