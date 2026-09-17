@@ -13,8 +13,10 @@ using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
+using Hexalith.Timesheets.Server.TimeEntries;
 
 using Shouldly;
 
@@ -273,6 +275,99 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
 
         ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncPreservesSerializedApprovedCorrectionScopeLineage()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded(activityTypeScope: ActivityTypeScope.Project)),
+                Event(2, "time-2", Submitted(Tenant())),
+                Event(3, "time-3", Approved()),
+                Event(4, "time-4", ApprovedCorrected()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        TimeEntryState timeEntry = state.TimeEntryState.ShouldNotBeNull();
+        timeEntry.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        timeEntry.PreviousValues.ShouldNotBeNull().ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        timeEntry.CorrectedValues.ShouldNotBeNull().ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncPreservesSerializedAdjustmentScopeAgreement()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded()),
+                Event(2, "time-2", Adjusted()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        TimeEntryState timeEntry = state.TimeEntryState.ShouldNotBeNull();
+        timeEntry.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        timeEntry.ExternalAdjustment.ShouldNotBeNull().AdjustedValues.ActivityTypeScope
+            .ShouldBe(timeEntry.ActivityTypeScope);
+        timeEntry.ExternalAdjustment.PreviousValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+
+        var legacyGateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(
+                Tenant().TenantId,
+                TimeEntryId().Value,
+                Event(1, "time-1", Recorded()),
+                Event(2, "time-2", Adjusted(null, null)));
+
+        MagicLinkEndpointTokenState legacyState = await CreateLoader(
+                legacyGateway,
+                new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        TimeEntryState legacyTimeEntry = legacyState.TimeEntryState.ShouldNotBeNull();
+        legacyTimeEntry.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        legacyTimeEntry.ExternalAdjustment.ShouldNotBeNull().PreviousValues.ActivityTypeScope.ShouldBeNull();
+        legacyTimeEntry.ExternalAdjustment.AdjustedValues.ActivityTypeScope.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsyncRejectsSerializedAdjustmentScopeDisagreement()
+    {
+        (ActivityTypeScope? PreviousScope, ActivityTypeScope? AdjustedScope)[] disagreements =
+        [
+            (ActivityTypeScope.Project, ActivityTypeScope.Tenant),
+            (ActivityTypeScope.Tenant, ActivityTypeScope.Project)
+        ];
+
+        foreach ((ActivityTypeScope? previousScope, ActivityTypeScope? adjustedScope) in disagreements)
+        {
+            var gateway = new ScriptedGatewayClient()
+                .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+                .WithStream(
+                    Tenant().TenantId,
+                    TimeEntryId().Value,
+                    Event(1, "time-1", Recorded()),
+                    Event(2, "time-2", Adjusted(previousScope, adjustedScope)));
+
+            MagicLinkEndpointTokenState state = await CreateLoader(
+                    gateway,
+                    new InMemoryReadModelStore(IndexWith(Hash())))
+                .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+            ShouldBeOpaqueFailClosed(state);
+        }
     }
 
     [Fact]
@@ -1122,6 +1217,23 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             TimeEntrySubmissionScope.SelectedEntries,
             TimeEntryApprovalState.Submitted);
 
+    private static TimeEntryApproved Approved()
+        => new(
+            TimeEntryId(),
+            Operator(),
+            Tenant(),
+            new DateTimeOffset(2026, 6, 19, 12, 45, 0, TimeSpan.Zero),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Approved,
+            new ApprovalAuthoritySourceAttribution(
+                ApprovalAuthorityAction.EntryApproval,
+                ApprovalAuthoritySource.ProjectApprover,
+                ApprovalAuthorityDecisionState.Allowed,
+                TimesheetsApprovalAuthorityPolicyOptions.DefaultPolicyKey,
+                "v2",
+                ProjectionFreshnessMetadata.Fresh),
+            TimeEntryApprovalScope.IndividualEntry);
+
     private static TimeEntryCorrected Corrected(ActivityTypeScope? correctedScope)
     {
         TimeEntryCorrectionValues previous = new(
@@ -1154,6 +1266,67 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             TimeEntryApprovalState.Draft,
             TimeEntryCorrectionState.Corrected);
     }
+
+    private static TimeEntryApprovedCorrected ApprovedCorrected()
+    {
+        TimeEntryCorrectionValues previous = CorrectionValues(ActivityTypeScope.Project);
+        TimeEntryCorrectionValues corrected = previous with
+        {
+            ActivityTypeScope = ActivityTypeScope.Tenant,
+            DurationMinutes = 75
+        };
+        return new(
+            TimeEntryId(),
+            new TimeEntryCorrectionId("correction-1"),
+            Tenant(),
+            Operator(),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            previous,
+            corrected,
+            new TimeEntryCorrectionReason("Approved correction."),
+            new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalScope.IndividualEntry,
+            TimeEntryApprovalState.Approved,
+            TimeEntryCorrectionState.Corrected);
+    }
+
+    private static TimeEntryAdjustedThroughMagicLink Adjusted(
+        ActivityTypeScope? previousScope = ActivityTypeScope.Tenant,
+        ActivityTypeScope? adjustedScope = ActivityTypeScope.Tenant)
+    {
+        TimeEntryCorrectionValues previous = CorrectionValues(ActivityTypeScope.Tenant) with
+        {
+            ActivityTypeScope = previousScope
+        };
+        TimeEntryCorrectionValues adjusted = previous with
+        {
+            ActivityTypeScope = adjustedScope,
+            DurationMinutes = 75
+        };
+        return new(
+            TimeEntryId(),
+            Tenant(),
+            Contributor(),
+            new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant,
+            previous,
+            adjusted,
+            new ExternalContributionSource("magic-link", "capability-1"));
+    }
+
+    private static TimeEntryCorrectionValues CorrectionValues(ActivityTypeScope activityTypeScope)
+        => new(
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            ContributorCategory.ExternalContributor,
+            null)
+        {
+            ActivityTypeScope = activityTypeScope
+        };
 
     private static ActivityTypeCreated ActivityCreated()
         => new(

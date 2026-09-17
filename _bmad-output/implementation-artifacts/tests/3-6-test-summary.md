@@ -1,5 +1,18 @@
 # Test Automation Summary — Story 3.6 (EventStore-Backed Magic-Link State Loading)
 
+> **Superseded on 2026-09-17.** The 2026-06-22 generation record below is retained as historical
+> evidence only. Its framework versions, server count, and claims that HTTP/projection-host coverage
+> did not exist no longer describe the repository.
+
+## Current Verification
+
+- SDK: .NET `10.0.401` (`rollForward: latestPatch`).
+- Restore: `dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` passed.
+- Build: `dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` passed with zero warnings and errors.
+- Direct xUnit v3 executables: ArchitectureTests 55/55; Contracts.Tests 90/90; IntegrationTests 104 total, 100 pass, 4 declared skips; Projections.Tests 146/146; Server.Tests 474/474; Works.Tests 76/76.
+- Final inventory: 945 tests, 941 passed, 4 declared infrastructure/performance skips, 0 failures.
+- Current Story 3.6 evidence includes the concrete loader, canonical projection delivery, four-route HTTP no-disclosure coverage, exact server-derived correction-scope contract metadata, serialized approved/adjusted scope replay, legacy mismatched-retry rejection, and launch-readiness ownership guidance.
+
 **Workflow:** `bmad-qa-generate-e2e-tests`
 **Date:** 2026-06-22
 **Engineer:** QA automation (generation only — no code review)

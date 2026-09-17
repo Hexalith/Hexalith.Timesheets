@@ -862,6 +862,8 @@
           "contributor": { "$ref": "#/components/schemas/PartyReference" },
           "activityTypeId": { "$ref": "#/components/schemas/ActivityTypeId" },
           "activityTypeScope": {
+            "description": "Server-derived Activity Type ownership scope recorded in correction evidence. This field is read-only; it is never caller authority, and omission denotes legacy evidence whose preceding scope is retained.",
+            "readOnly": true,
             "anyOf": [
               { "$ref": "#/components/schemas/ActivityTypeScope" },
               { "type": "null" }

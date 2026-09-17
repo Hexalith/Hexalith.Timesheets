@@ -1441,7 +1441,12 @@ public sealed class TimeCaptureContractTests
 
         JsonObject correctionValues = schemas["TimeEntryCorrectionValues"].ShouldNotBeNull().AsObject();
         JsonObject correctionProperties = correctionValues["properties"].ShouldNotBeNull().AsObject();
-        JsonArray activityTypeScopeShape = correctionProperties["activityTypeScope"].ShouldNotBeNull()["anyOf"]
+        JsonObject activityTypeScope = correctionProperties["activityTypeScope"].ShouldNotBeNull().AsObject();
+        activityTypeScope.Count.ShouldBe(3);
+        activityTypeScope["readOnly"].ShouldNotBeNull().GetValue<bool>().ShouldBeTrue();
+        activityTypeScope["description"].ShouldNotBeNull().GetValue<string>().ShouldBe(
+            "Server-derived Activity Type ownership scope recorded in correction evidence. This field is read-only; it is never caller authority, and omission denotes legacy evidence whose preceding scope is retained.");
+        JsonArray activityTypeScopeShape = activityTypeScope["anyOf"]
             .ShouldNotBeNull().AsArray();
         activityTypeScopeShape.Count.ShouldBe(2);
         activityTypeScopeShape.Count(node =>

@@ -136,6 +136,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             .Where(item => item.ActivityTypeId == capability.ActivityTypeId)
             .Take(2)
             .ToArray();
+        // A matching catalog item is required to prove that the capability's Activity Type is still
+        // present. The canonical catalog loader above already rejects duplicate, non-tenant, and
+        // project-owned items, so only those ownership-shape checks are defence in depth. The
+        // authoritative use-time ownership gate is the folded Time Entry scope check above.
         if (matchingActivityTypes.Length != 1
             || matchingActivityTypes[0].Scope != ActivityTypeScope.Tenant
             || matchingActivityTypes[0].Project is not null)
@@ -269,6 +273,15 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                         state.Apply(confirmed);
                         break;
                     case TimeEntryAdjustedThroughMagicLink adjusted:
+                        if ((adjusted.PreviousValues.ActivityTypeScope is { } previousScope
+                                && previousScope != state.ActivityTypeScope)
+                            || (adjusted.AdjustedValues.ActivityTypeScope is { } adjustedScope
+                                && adjustedScope != adjusted.ActivityTypeScope))
+                        {
+                            throw new InvalidOperationException(
+                                "A Time Entry adjustment's explicit nested scopes do not match its authoritative scope lineage.");
+                        }
+
                         state.Apply(adjusted);
                         break;
                     case TimeEntryApproved approved:

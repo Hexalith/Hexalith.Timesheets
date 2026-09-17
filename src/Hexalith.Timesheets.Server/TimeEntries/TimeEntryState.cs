@@ -200,6 +200,8 @@ public sealed class TimeEntryState
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
         ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
+        // A missing scope is legacy evidence: preserve the preceding folded scope deterministically
+        // instead of inferring ownership from a current catalog.
         ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? ActivityTypeScope;
         ServiceDate = corrected.CorrectedValues.ServiceDate;
         DurationMinutes = corrected.CorrectedValues.DurationMinutes;
@@ -225,6 +227,8 @@ public sealed class TimeEntryState
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
         ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
+        // A missing scope is legacy evidence: preserve the preceding folded scope deterministically
+        // instead of inferring ownership from a current catalog.
         ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? ActivityTypeScope;
         ServiceDate = corrected.CorrectedValues.ServiceDate;
         DurationMinutes = corrected.CorrectedValues.DurationMinutes;

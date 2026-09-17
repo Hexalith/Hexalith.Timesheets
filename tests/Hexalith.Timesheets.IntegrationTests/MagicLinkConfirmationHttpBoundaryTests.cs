@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -76,8 +77,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             failure.ContentType.ShouldBe(baseline.ContentType, failure.Name);
             failure.NormalizedBody.ShouldBe(baseline.NormalizedBody, failure.Name);
             failure.Headers.ShouldBe(baseline.Headers, failure.Name);
-            System.Text.Encoding.UTF8.GetByteCount(failure.RawBody)
-                .ShouldBe(System.Text.Encoding.UTF8.GetByteCount(baseline.RawBody), failure.Name);
+            RawByteLength(failure.RawBody).ShouldBe(RawByteLength(baseline.RawBody), failure.Name);
         }
     }
 
@@ -203,8 +203,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             failure.ContentType.ShouldBe(baseline.ContentType, failure.Name);
             failure.NormalizedBody.ShouldBe(baseline.NormalizedBody, failure.Name);
             failure.Headers.ShouldBe(baseline.Headers, failure.Name);
-            System.Text.Encoding.UTF8.GetByteCount(failure.RawBody)
-                .ShouldBe(System.Text.Encoding.UTF8.GetByteCount(baseline.RawBody), failure.Name);
+            RawByteLength(failure.RawBody).ShouldBe(RawByteLength(baseline.RawBody), failure.Name);
             request.Tenant.ShouldBe(Tenant().TenantId);
             request.AggregateId.ShouldBe(candidate.CapabilityId.Value);
         }
@@ -364,8 +363,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             failure.ContentType.ShouldBe(baseline.ContentType, failure.Name);
             failure.NormalizedBody.ShouldBe(baseline.NormalizedBody, failure.Name);
             failure.Headers.ShouldBe(baseline.Headers, failure.Name);
-            System.Text.Encoding.UTF8.GetByteCount(failure.RawBody)
-                .ShouldBe(System.Text.Encoding.UTF8.GetByteCount(baseline.RawBody), failure.Name);
+            RawByteLength(failure.RawBody).ShouldBe(RawByteLength(baseline.RawBody), failure.Name);
         }
     }
 
@@ -572,6 +570,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         return normalized.ToJsonString(JsonOptions);
     }
+
+    // Raw bodies retain traceId. These TestServer responses use fixed-width W3C Activity identifiers;
+    // revisit this assertion if the host falls back to variable-width HttpContext.TraceIdentifier values.
+    private static int RawByteLength(string body) => Encoding.UTF8.GetByteCount(body);
 
     private static string[] HeaderSet(HttpResponseMessage response)
         => response.Headers

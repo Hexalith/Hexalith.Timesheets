@@ -2,7 +2,7 @@
 title: 'Close Story 3.6 review evidence and tracking gaps'
 type: 'bugfix'
 created: '2026-09-17'
-status: 'ready-for-dev'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: 'b0f4ee12a46d0db1d7454d54ebc37b2837200b93'
@@ -52,11 +52,11 @@ context:
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] Clarify loader/fold intent in comments and OpenAPI; extend exact contract assertions without changing runtime policy.
-- [ ] Add falsifying server tests for rejection identity, scope agreement, serialized replay, and rejected-correction mismatch behavior.
-- [ ] Harden HTTP/readiness test helpers so body-length and structured-table claims fail for the intended reason.
-- [ ] Run the complete six-project verification lane, then update release counts and Story 3.6 evidence from those results only.
-- [ ] Reconcile the canonical story File List, deferred source paths, current test-summary supersession, and sprint timestamp/status.
+- [x] Clarify loader/fold intent in comments and OpenAPI; extend exact contract assertions without changing runtime policy.
+- [x] Add falsifying server tests for rejection identity, scope agreement, serialized replay, and rejected-correction mismatch behavior.
+- [x] Harden HTTP/readiness test helpers so body-length and structured-table claims fail for the intended reason.
+- [x] Run the complete six-project verification lane, then update release counts and Story 3.6 evidence from those results only.
+- [x] Reconcile the canonical story File List, deferred source paths, current test-summary supersession, and sprint timestamp/status.
 
 **Acceptance Criteria:**
 - Given correction scope is server-derived, when consumers inspect OpenAPI, then the optional field is read-only, documented, and absent from required input while the eight-value CLR API remains unchanged.
@@ -65,14 +65,42 @@ context:
 
 ## Implementation Notes
 
+- Marked correction scope as read-only and server-derived in OpenAPI while preserving the existing optional field and eight-value CLR constructor/deconstruction surface. Exact contract assertions now pin the metadata and nullable shape.
+- Documented the legacy null-scope fallback in aggregate and projection folds, and documented which loader ownership checks are canonical versus defence in depth. Runtime policy is unchanged.
+- Added regression evidence for the typed Work/project-owned issuance rejection, top-level/nested adjustment scope agreement, production-deserialized approved-correction and magic-link-adjustment replay, and rejection of a mismatched legacy rejected-correction retry.
+- Centralized raw UTF-8 denial length measurement with its fixed-width W3C trace-id assumption, and made readiness table parsing preserve empty structured cells.
+- Refreshed launch ownership/correction risk guidance, platform-catalog evidence, full-suite counts, the canonical Story 3.6 inventory, deferred source paths, test-summary supersession, and sprint timestamp. Lifecycle remains `in-progress` pending review.
+
 ## Spec Change Log
 
+- 2026-09-17: Implemented and reviewed the evidence increment, then reran the complete six-project verification lane: 945 total, 941 passed, 4 declared skips, 0 failures.
+
 ## Review Triage Log
+
+- **BH-01 — medium / patch.** The thirteen accepted remediation patches at `3-6-implement-eventstore-backed-magic-link-state-loading.md:285-297` are implemented by this increment but remain unchecked, which can send later maintainers back through completed work. Mark those thirteen rows complete after the review fixes land.
+- **BH-02 — false / reject.** `in-review` is the build spec's transient workflow state; the canonical story and sprint entry intentionally remain `in-progress` until this independent review succeeds. The presentation step owns the final lifecycle transition.
+- **BH-03 — medium / patch.** A serialized adjustment with top-level `Tenant` scope and nested `Project` scope reaches `TimeEntryState.Apply`, passes the loader's tenant gate, and leaves contradictory lineage. Reject explicit nested/top-level or nested/prior-scope disagreement during authoritative loader folding while preserving legacy null nested scopes.
+- **BH-04 — medium / patch.** The new approved-correction replay test uses `Recorded -> TimeEntryApprovedCorrected`, so its claimed happy-path evidence is an illegal lifecycle. Build a legal submitted-and-approved stream in that test; the separate pre-existing illegal-history acceptance remains deferred.
+- **BH-05 — low / reject.** The issuance scope guard is target-kind independent, the required Work-target rejection is now pinned exactly, and other issuance tests retain Project-target coverage. Adding a second identical rejection branch test would be redundant and has negligible maintenance value.
+- **BH-06 — low / patch.** The loader comment can read as though the whole `Length != 1` arm is defence in depth, but the zero-match catalog-presence check is essential. Clarify that only duplicate/ownership-shape arms are defensive.
+- **BH-07 — false / reject.** The requirement is exact external raw UTF-8 length equivalence. A variable-width trace identifier would be externally observable and should fail the assertion; the helper centralizes the measurement and its W3C fixed-width assumption is explicitly documented.
+- **BH-08 — medium / patch.** An unused A-scoped link becomes admissible again after an A-to-B-to-A correction because the loader compares only current identity/scope. Launch guidance must require revocation at the first Activity-Type change and disclose that ID reuse can otherwise revalidate an old link.
+- **BH-09 — high / patch.** The readiness row proves projection/route wiring but omits that successful POST results are not durably submitted and cannot prevent concurrent reuse. Add an explicit unfinished durable-persistence gate and do not describe substituted journeys as persistence proof.
+- **BH-10 — high / patch.** The approved course correction requires `FAIL` while Stories 3.6, 5.2, and final 5.1 reconciliation remain open; all are still open in sprint tracking, and durable magic-link writes are unfinished. Restore the overall `FAIL` verdict and remove the story-complete claim.
+- **BH-11 — medium / patch.** The Builds catalog moved after the dated 2026-09-12 package audits, yet current readiness text carries the old clean audit forward while updating resolved package versions. Re-run the current vulnerable/deprecated/outdated evidence and report its actual result.
+- **BH-12 — false / reject.** The three gitlink moves were already committed at the run's starting HEAD and the prior Story 3.6 decision explicitly owns accepted pointer history; this increment introduced no new `references/` movement. The preserved older baseline makes that accepted history visible but does not violate the current spec's prohibition on adding sibling changes.
+- **BH-13 — medium / defer.** All three managed agent-context files still state that the index is unwired, so future agents receive a false security-path fact. This predates the increment and its fix edits agent-context files, which review policy routes to deferred work.
+- **BH-14 — medium / defer.** `docs/launch-readiness.md` still directs a future story to create forbidden Timesheets UI projects. The stale instruction predates this increment and belongs to the final Story 5.1 documentation reconciliation.
+- **VG-01 — high / defer.** Pre-verified: the accepted Builds pointer changes Aspire/Keycloak resolution while existing tests only inspect AppHost source and no automated runtime smoke starts the topology. Adding an Aspire testing lane changes package/topology scope excluded by this intent; retain it as an infrastructure-owned launch risk.
+- **VG-02 — low / defer.** The current Builds catalog and every restored test asset resolve `Microsoft.NET.Test.Sdk` `18.10.1`, while readiness still says `18.10.0`. This is pre-existing package-evidence drift owned by the reopened package/readiness work.
+- **EC-01 — medium / patch.** Independent tracing confirms BH-03: explicit serialized adjustment-scope disagreement is accepted and leaves contradictory evidence. Add the authoritative loader guard and a falsifying replay test.
+- **EC-02 — medium / defer.** `LoadTimeEntryAsync` accepts `TimeEntryApprovedCorrected` without a preceding approval transition. The fold behavior predates this increment and is already represented by the illegal-transition integrity risk; a separate state-machine decision is needed beyond correcting this increment's test fixture.
+- **EC-03 — maybe-false / reject.** A legacy exact retry with an `Unknown` resolved scope would no-op before validation, but no canonical catalog path producing `Unknown` was demonstrated; canonical writers resolve Tenant or Project. Evidence of a reachable malformed catalog would settle the claim, and the undemonstrated outcome would be low impact because no event or state mutation occurs.
 
 ## Verification
 
 **Commands:**
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` -- restore succeeds under the pinned SDK.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` -- build succeeds with zero warnings/errors.
-- Run each built xUnit v3 executable under `tests/*/bin/Debug/net10.0/`, including Works.Tests; keep performance skips unless `TIMESHEETS_PERF=1` is explicitly set -- all default lanes pass and only declared skips remain.
-- `git diff --check` -- no whitespace errors.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` -- passed under SDK `10.0.401`.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` -- passed with zero warnings and errors.
+- Built xUnit v3 executables -- ArchitectureTests 55/55; Contracts.Tests 90/90; IntegrationTests 104 total, 100 pass, 4 declared skips; Projections.Tests 146/146; Server.Tests 474/474; Works.Tests 76/76. Final post-review run: 945 total, 941 pass, 4 declared skips, 0 failures.
+- `git diff --check` -- passed.

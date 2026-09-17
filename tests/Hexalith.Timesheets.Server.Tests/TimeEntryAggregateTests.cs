@@ -1060,6 +1060,19 @@ public sealed class TimeEntryAggregateTests
             new TenantReference("tenant-1"),
             new DateTimeOffset(2026, 6, 20, 9, 35, 0, TimeSpan.Zero),
             ActivityTypeScope.Tenant).IsNoOp.ShouldBeTrue();
+
+        TimesheetsDomainResult mismatchedRetry = TimeEntry.Handle(
+            correction with { DurationMinutes = correction.DurationMinutes + 1 },
+            command.TimeEntryId,
+            state,
+            new PartyReference("operator-1"),
+            new TenantReference("tenant-1"),
+            new DateTimeOffset(2026, 6, 20, 9, 40, 0, TimeSpan.Zero),
+            ActivityTypeScope.Tenant);
+
+        mismatchedRetry.IsRejection.ShouldBeTrue();
+        mismatchedRetry.Events.ShouldNotContain(static @event => @event is TimeEntryCorrected);
+        state.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
     }
 
     [Fact]

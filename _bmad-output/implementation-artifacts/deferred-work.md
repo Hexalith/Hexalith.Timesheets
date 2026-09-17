@@ -192,15 +192,15 @@
 
 ## Deferred from: build review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-2 (2026-09-16)
 
-- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Decide whether contributor confirmation remains valid after a Time Entry has already been approved or corrected.
   evidence: `ValidateConfirmationScope` and `TimeEntry.ValidateExternalConfirmation` accept an otherwise-valid recorded contribution without excluding approved or corrected lifecycle state. The stories say confirmation must not itself approve, lock, or correct the entry, but do not define whether those prior transitions disqualify confirmation. An explicit product policy for confirmation relative to approval and correction would settle the risk.
 
-- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Determine whether capability folds must reject illegal transition sequences found in EventStore history.
   evidence: `MagicLinkCapabilityState.Apply` accepts a later issuance event after a used, revoked, or expired terminal event and thereby reopens the folded capability. Sanctioned writers do not emit that transition. Evidence that the EventStore command boundary can admit such a sequence, or an inventory of one in deployed streams, would establish a reachable integrity defect.
 
-- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Determine whether Time Entry folds must reject lifecycle events in illegal orders found in EventStore history.
   evidence: `TimeEntryState.Apply` can fold sequences such as a correction while Draft or another Recorded event after recording, although sanctioned writers reject those transitions before emission. Evidence that the EventStore command boundary can admit such sequences, or an inventory of one in deployed streams, would establish a reachable integrity defect.
 
@@ -223,3 +223,25 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Implement durable, atomic magic-link confirmation and adjustment persistence for unfinished Story 3.3/3.4 behavior.
   evidence: The live POST endpoints return `202 Accepted` from in-memory domain results without calling `IEventStoreGatewayClient.SubmitCommandAsync`, so neither the Time Entry event nor capability-use event is persisted and concurrent reuse is not prevented. The current EventStore gateway accepts one aggregate per submission and exposes no atomic multi-aggregate API; sequential submissions would violate the approved atomicity requirement. A dedicated high-priority remediation must choose a platform coordination or aggregate-boundary design and prove persisted end state, concurrency, replay rejection, and partial-failure safety.
+
+## Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Refresh the managed agent-context files that still describe the magic-link token-hash index as unwired.
+  evidence: `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` still load a false security-path fact into every agent session even though projection-host delivery is implemented. The issue predates this increment, and review policy routes agent-context changes to deferred work.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Remove the launch-readiness instruction to scaffold forbidden Timesheets UI projects.
+  evidence: The NFR13 revisit condition still directs a future story to create `Hexalith.Timesheets.UI` and `.UI.Tests`, contrary to repository policy assigning future UI to FrontComposer. This is pre-existing Story 5.1 documentation drift rather than a change caused by the review-evidence increment.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Add automated AppHost runtime smoke evidence for the resolved Aspire and Keycloak package graph.
+  evidence: Existing fitness tests inspect AppHost source and project text but do not start the topology, so an Aspire SDK/package incompatibility can compile while `security` or `timesheets` fails at runtime. An automated Aspire testing lane changes package and topology scope excluded by this increment and remains infrastructure-owned.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Reconcile the stale Microsoft.NET.Test.Sdk resolved-version claim in package-readiness evidence.
+  evidence: The selected Builds catalog and all six restored test-project assets resolve `Microsoft.NET.Test.Sdk` `18.10.1`, while the dated direct-package inventory still says `18.10.0`. This pre-existing package-evidence drift belongs to the reopened package/readiness work.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Decide whether authoritative Time Entry folds must reject approved-correction events without a preceding approval transition.
+  evidence: `LoadTimeEntryAsync` accepts `TimeEntryApprovedCorrected` after only `TimeEntryRecorded`; sanctioned writers do not emit that sequence, but malformed EventStore history can be folded as approved correction evidence. The behavior predates this increment and needs the broader illegal-transition state-machine decision already identified for Time Entry history.

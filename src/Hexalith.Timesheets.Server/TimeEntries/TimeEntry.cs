@@ -1393,6 +1393,9 @@ public static class TimeEntry
         TimeEntryCorrectionValues expected)
     {
         TimeEntryCorrectionValues? recorded = state.CorrectedValues;
+        // Legacy corrections did not record scope. Treat that absence as compatible when every
+        // recorded value matches so a retry remains a no-op; never infer or repair historical scope
+        // from the caller's current server-resolved value.
         if (recorded is null
             || (recorded.ActivityTypeScope is { } recordedScope
                 && recordedScope != expected.ActivityTypeScope))

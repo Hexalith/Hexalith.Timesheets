@@ -48,14 +48,15 @@ public sealed class LaunchReadinessTests
     }
 
     [Fact]
-    public void Launch_readiness_record_distinguishes_story_complete_from_launch_complete()
+    public void Launch_readiness_record_keeps_open_story_and_launch_work_explicit()
     {
-        // AC1/AC2: the record's reason for being is to separate "the feature story is done" from
-        // "the system is launch-ready". Guard the framing so an edit cannot collapse the two.
+        // AC1/AC2: incomplete story work cannot be reframed as a launch waiver.
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
 
-        readiness.ShouldContain("story-complete");
-        readiness.ShouldContain("launch-complete");
+        readiness.ShouldContain("neither story-complete nor launch-complete");
+        readiness.ShouldContain("Story 3.6 remains in progress");
+        readiness.ShouldContain("Story 5.2 remains in progress");
+        readiness.ShouldContain("final Story 5.1 reconciliation remains ready for development");
     }
 
     [Fact]
@@ -102,21 +103,25 @@ public sealed class LaunchReadinessTests
     [Fact]
     public void Launch_readiness_overall_decision_is_an_honest_verdict_not_a_vanity_pass()
     {
-        // The project's #1 recurring failure is overstatement. The whole point of Story 5.1 is to render
-        // the honest verdict: with real launch-scope items waived, the overall decision MUST be CONCERNS
-        // (or WAIVED if formally accepted) and must never silently flip to a vanity PASS.
+        // Open core stories and unfinished atomic magic-link persistence require FAIL, not a waiver.
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
 
         int decisionStart = readiness.LastIndexOf("Overall release decision", StringComparison.Ordinal);
         decisionStart.ShouldBeGreaterThanOrEqualTo(0, "Launch-readiness record must declare an overall release decision.");
 
         string overall = readiness[decisionStart..];
-        (overall.Contains("CONCERNS") || overall.Contains("WAIVED"))
-            .ShouldBeTrue("Overall launch-readiness decision must be the honest CONCERNS/WAIVED verdict.");
+        overall.ShouldContain("Overall release decision: **FAIL**");
+        overall.ShouldContain("Story 3.6 and Story 5.2 remain in progress");
+        overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
+        overall.ShouldContain("durable atomic magic-link confirm/adjust submission is unfinished");
         overall.ShouldNotContain("decision: **PASS**");
         overall.ShouldNotContain("decision: PASS");
-        overall.ShouldNotContain("decision: **FAIL**");
-        overall.ShouldNotContain("decision: FAIL");
+
+        string[] persistenceGate = ReadReleaseGateRow(readiness, "Magic-link durable confirm/adjust persistence");
+        persistenceGate[1].ShouldBe("FAIL");
+        persistenceGate[2].ShouldContain("not submitted to EventStore");
+        persistenceGate[2].ShouldContain("do not prove durable capability use or Time Entry writes");
+        persistenceGate[3].ShouldContain("concurrent requests can reuse the same unpersisted capability state");
     }
 
     [Fact]
@@ -141,7 +146,9 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Magic-link live end-to-end resolution");
         readiness.ShouldContain("Export preview");
         readiness.ShouldContain("canonical token-hash index and tenant Activity Type catalog projection handlers");
-        readiness.ShouldContain("all four valid confirm/adjust HTTP routes pass without direct index or catalog seeding");
+        readiness.ShouldContain("all four valid confirm/adjust HTTP routes reach their expected in-process responses without direct index or catalog seeding");
+        readiness.ShouldContain("Successful confirm/adjust POST results are not durably submitted to EventStore");
+        readiness.ShouldContain("they are not persistence or single-use evidence");
         readiness.ShouldNotContain("no projection-host wiring");
         readiness.ShouldNotContain("Valid links do not resolve");
         readiness.ShouldContain("no dedicated HTTP route");
@@ -162,12 +169,21 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("compound labels such as `implemented / waived`");
 
         string[] ownership = ReadClassificationRow(readiness, "Magic-link Activity Type ownership inventory");
+        ownership[1].ShouldContain("issuance validates the catalog-selected tenant ownership");
+        ownership[1].ShouldContain("does not pre-load the target Time Entry");
+        ownership[1].ShouldContain("folded Time Entry scope is the authoritative use-time ownership gate");
+        ownership[1].ShouldContain("duplicate and ownership-shape catalog checks are defence in depth");
+        ownership[1].ShouldContain("zero-match presence gate remains required");
         ownership[2].ShouldBe("implemented / waived");
         ownership[3].ShouldBe("Story 3.6 / release owner");
         ownership[4].ShouldContain("project-owned capability");
         ownership[4].ShouldContain("reissuable");
         ownership[4].ShouldContain("only after an authorized correction");
         ownership[4].ShouldContain("followed by capability revocation and reissuance");
+        ownership[4].ShouldContain("An Activity-Type-changing correction");
+        ownership[4].ShouldContain("without revocation at the first Activity-Type change");
+        ownership[4].ShouldContain("A-to-B-to-A");
+        ownership[4].ShouldContain("ID reuse can revalidate an unused old link");
         ownership[4].ShouldContain("legacy scope-less Project-to-Tenant correction can retain Project scope");
         ownership[4].ShouldContain("legacy scope-less Tenant-to-Project correction can retain Tenant scope");
         ownership[4].ShouldContain("project-owned Activity Type ID absent from the tenant catalog");
@@ -176,6 +192,8 @@ public sealed class LaunchReadinessTests
         ownership[5].ShouldContain("inventories deployed capability and TimeEntry histories");
         ownership[5].ShouldContain("authorizes correction");
         ownership[5].ShouldContain("then revokes and reissues");
+        ownership[5].ShouldContain("revokes affected capabilities at the first Activity-Type change");
+        ownership[5].ShouldContain("before any later ID reuse can revalidate an old link");
         ownership[5].ShouldContain("both legacy scope/Activity-Type mismatch shapes");
 
         string[] timing = ReadClassificationRow(readiness, "Magic-link invalid-token timing");
@@ -188,6 +206,13 @@ public sealed class LaunchReadinessTests
         timing[5].ShouldContain("public exposure without suitable abuse controls");
         timing[5].ShouldContain("token entropy is weakened");
         timing[5].ShouldContain("practically classified by timing");
+
+        string[] liveResolution = ReadClassificationRow(readiness, "Magic-link live end-to-end resolution");
+        liveResolution[1].ShouldContain("Successful confirm/adjust POST results are not durably submitted to EventStore");
+        liveResolution[1].ShouldContain("not persistence or single-use evidence");
+        liveResolution[4].ShouldContain("concurrent requests can reuse the same unpersisted capability state");
+        liveResolution[5].ShouldContain("atomically submits capability-use and Time Entry events through EventStore");
+        liveResolution[5].ShouldContain("concurrent reuse is rejected from authoritative persisted state");
     }
 
     [Fact]
@@ -289,10 +314,27 @@ public sealed class LaunchReadinessTests
     {
         string row = document.Split('\n')
             .Single(line => line.StartsWith($"| {item} |", StringComparison.Ordinal));
-        string[] cells = row.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string[] delimitedCells = row.Split('|', StringSplitOptions.TrimEntries);
+        delimitedCells[0].ShouldBeEmpty($"The '{item}' classification row must start with a table delimiter.");
+        delimitedCells[^1].ShouldBeEmpty($"The '{item}' classification row must end with a table delimiter.");
+        string[] cells = delimitedCells[1..^1];
 
-        cells.Length.ShouldBe(7, $"The '{item}' classification must retain every structured column.");
+        cells.Length.ShouldBe(7, $"The '{item}' classification must contain exactly seven structured columns, including empty cells.");
         cells[0].ShouldBe(item);
+        return cells;
+    }
+
+    private static string[] ReadReleaseGateRow(string document, string gate)
+    {
+        string row = document.Split('\n')
+            .Single(line => line.StartsWith($"| {gate} |", StringComparison.Ordinal));
+        string[] delimitedCells = row.Split('|', StringSplitOptions.TrimEntries);
+        delimitedCells[0].ShouldBeEmpty($"The '{gate}' release-gate row must start with a table delimiter.");
+        delimitedCells[^1].ShouldBeEmpty($"The '{gate}' release-gate row must end with a table delimiter.");
+        string[] cells = delimitedCells[1..^1];
+
+        cells.Length.ShouldBe(4, $"The '{gate}' release gate must contain exactly four structured columns.");
+        cells[0].ShouldBe(gate);
         return cells;
     }
 }

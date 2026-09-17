@@ -258,6 +258,8 @@ public sealed class TimeEntryEvidenceProjection
             Target = corrected.CorrectedValues.Target,
             Contributor = corrected.CorrectedValues.Contributor,
             ActivityTypeId = corrected.CorrectedValues.ActivityTypeId,
+            // Legacy corrections omitted scope; projection replay must retain the preceding scope
+            // rather than infer historical ownership from today's catalog.
             ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? current.ActivityTypeScope,
             ServiceDate = corrected.CorrectedValues.ServiceDate,
             DurationMinutes = corrected.CorrectedValues.DurationMinutes,
@@ -299,6 +301,8 @@ public sealed class TimeEntryEvidenceProjection
             Target = corrected.CorrectedValues.Target,
             Contributor = corrected.CorrectedValues.Contributor,
             ActivityTypeId = corrected.CorrectedValues.ActivityTypeId,
+            // Legacy corrections omitted scope; projection replay must retain the preceding scope
+            // rather than infer historical ownership from today's catalog.
             ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? current.ActivityTypeScope,
             ServiceDate = corrected.CorrectedValues.ServiceDate,
             DurationMinutes = corrected.CorrectedValues.DurationMinutes,

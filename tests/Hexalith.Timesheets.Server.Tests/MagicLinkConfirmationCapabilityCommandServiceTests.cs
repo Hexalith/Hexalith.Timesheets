@@ -447,6 +447,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         adjusted.AdjustedValues.Contributor.ShouldBe(Contributor());
         adjusted.PreviousValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
         adjusted.AdjustedValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        adjusted.ActivityTypeScope.ShouldBe(adjusted.AdjustedValues.ActivityTypeScope!.Value);
         adjusted.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
 
         MagicLinkConfirmationCapabilityUsed used = result.CapabilityResult.ShouldNotBeNull()
@@ -459,6 +460,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     public async Task ProjectOwnedActivityTypeIsRejectedAcrossIssueDisplayConfirmAndAdjust()
     {
         Fixture fixture = AuthorizedProjectFixture();
+        Fixture workFixture = AuthorizedWorkFixture();
         MagicLinkConfirmationCapabilityCommandService service = fixture.CreateService();
         var projectCatalog = new ActivityTypeCatalogReadModel(
             [new ActivityTypeCatalogItem(
@@ -471,9 +473,9 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             ProjectionFreshnessMetadata.Fresh);
         TimeEntryState projectScopedEntry = RecordedExternalState(activityTypeScope: ActivityTypeScope.Project);
 
-        MagicLinkCapabilityCommandResult issuance = await service.IssueAsync(
+        MagicLinkCapabilityCommandResult issuance = await workFixture.CreateService().IssueAsync(
             Context(),
-            IssueCommand(),
+            IssueWorkCommand(),
             null,
             projectCatalog,
             IssuedAtUtc(),
@@ -504,9 +506,14 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             ConfirmedAtUtc(),
             TestContext.Current.CancellationToken);
 
-        issuance.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        TimesheetsRejection issuanceRejection = issuance.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimesheetsRejection>();
+        issuanceRejection.Code.ShouldBe(TimesheetsRejectionCode.ActivityTypeScopeMismatch);
+        issuanceRejection.FieldErrors.ShouldContain(static error =>
+            error.Field == "activityTypeId" && error.Code == "scope-mismatch");
         issuance.IssueResponse.ShouldBeNull();
-        fixture.TokenGenerator.GenerateCount.ShouldBe(0);
+        workFixture.TokenGenerator.GenerateCount.ShouldBe(0);
         display.ShouldBeNull();
         confirmation.WasDispatched.ShouldBeFalse();
         confirmation.TimeEntryResult.ShouldBeNull();
