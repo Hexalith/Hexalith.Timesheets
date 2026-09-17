@@ -101,8 +101,10 @@ context:
 
 Independent review of `b0f4ee1...HEAD` (2026-09-17). Layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor.
 
-- [ ] [Review][Decision] This increment moves sibling submodule pointers that spec-3 forbids — `references/Hexalith.Builds` `000abf8`→`04d9617`, `Hexalith.FrontComposer` `1e9348e`→`f20a1fc`, and `Hexalith.Works` `06d64b0`→`3c042f9` sit inside `b0f4ee1...HEAD`. Spec-3 Never bans sibling changes; spec-3 BH-12 rejected that claim; the Story 3.6 File List now lists those pointers as owned. Options: revert the three gitlinks and restatement of catalog 13.5.4 evidence, or keep them as an owned Never exception.
-- [ ] [Review][Decision] Story and sprint lifecycle still disagree — story file `in-progress` plus verification text claiming sprint is `in-progress`, while `sprint-status.yaml` is `review`. Spec-3 BH-02 said both stay `in-progress` until this review succeeds. Options: restore sprint to `in-progress`; align story and notes to `review`; or keep the split.
+- [x] [Review][Decision] This increment moves sibling submodule pointers that spec-3 forbids. **Resolved 2026-09-17 — option B.** Keep the three pointers and record this increment as owning the moves.
+- [x] [Review][Decision] Story and sprint lifecycle still disagree. **Resolved 2026-09-17 — option A.** Restore sprint to `in-progress` until presentation, matching spec-3 BH-02.
+- [ ] [Review][Patch] [From decision B] Record this increment as owning the `Hexalith.Builds`, `Hexalith.FrontComposer`, and `Hexalith.Works` pointer moves, as an explicit exception to Never [references/Hexalith.Builds]
+- [ ] [Review][Patch] [From decision A] Restore `sprint-status.yaml` to `in-progress` until presentation so story, sprint, and the 2026-09-17 verification note agree [_bmad-output/implementation-artifacts/sprint-status.yaml]
 - [ ] [Review][Patch] Deferred-work VG-02 still says the dated package inventory claims `Microsoft.NET.Test.Sdk` `18.10.0` after this increment wrote `18.10.1` [_bmad-output/implementation-artifacts/deferred-work.md:243]
 - [ ] [Review][Patch] Package-currency and Build-gate prose still present the 2026-09-15 AppHost smoke as current after the Builds catalog moved Aspire/Keycloak to `13.5.4` [docs/launch-readiness.md:14]
 - [ ] [Review][Patch] The catalog-freshness-round patch that launch-readiness still describes live magic-link resolution as unwired remains unchecked [_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md:133]
