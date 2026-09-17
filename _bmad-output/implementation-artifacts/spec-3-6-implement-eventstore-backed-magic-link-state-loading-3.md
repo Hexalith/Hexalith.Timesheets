@@ -97,6 +97,20 @@ context:
 - **EC-02 — medium / defer.** `LoadTimeEntryAsync` accepts `TimeEntryApprovedCorrected` without a preceding approval transition. The fold behavior predates this increment and is already represented by the illegal-transition integrity risk; a separate state-machine decision is needed beyond correcting this increment's test fixture.
 - **EC-03 — maybe-false / reject.** A legacy exact retry with an `Unknown` resolved scope would no-op before validation, but no canonical catalog path producing `Unknown` was demonstrated; canonical writers resolve Tenant or Project. Evidence of a reachable malformed catalog would settle the claim, and the undemonstrated outcome would be low impact because no event or state mutation occurs.
 
+### Review Findings
+
+Independent review of `b0f4ee1...HEAD` (2026-09-17). Layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor.
+
+- [ ] [Review][Decision] This increment moves sibling submodule pointers that spec-3 forbids — `references/Hexalith.Builds` `000abf8`→`04d9617`, `Hexalith.FrontComposer` `1e9348e`→`f20a1fc`, and `Hexalith.Works` `06d64b0`→`3c042f9` sit inside `b0f4ee1...HEAD`. Spec-3 Never bans sibling changes; spec-3 BH-12 rejected that claim; the Story 3.6 File List now lists those pointers as owned. Options: revert the three gitlinks and restatement of catalog 13.5.4 evidence, or keep them as an owned Never exception.
+- [ ] [Review][Decision] Story and sprint lifecycle still disagree — story file `in-progress` plus verification text claiming sprint is `in-progress`, while `sprint-status.yaml` is `review`. Spec-3 BH-02 said both stay `in-progress` until this review succeeds. Options: restore sprint to `in-progress`; align story and notes to `review`; or keep the split.
+- [ ] [Review][Patch] Deferred-work VG-02 still says the dated package inventory claims `Microsoft.NET.Test.Sdk` `18.10.0` after this increment wrote `18.10.1` [_bmad-output/implementation-artifacts/deferred-work.md:243]
+- [ ] [Review][Patch] Package-currency and Build-gate prose still present the 2026-09-15 AppHost smoke as current after the Builds catalog moved Aspire/Keycloak to `13.5.4` [docs/launch-readiness.md:14]
+- [ ] [Review][Patch] The catalog-freshness-round patch that launch-readiness still describes live magic-link resolution as unwired remains unchecked [_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md:133]
+- [ ] [Review][Patch] The token-hash-unwired agent-context item is ledgered twice instead of pointing at the existing 2026-09-16 entry [_bmad-output/implementation-artifacts/deferred-work.md:230]
+- [x] [Review][Defer] AppHost Keycloak/Aspire catalog bump is untested at runtime [docs/launch-readiness.md:22] — deferred: already ledgered; an automated smoke lane is package/topology work this spec must not absorb.
+- [x] [Review][Defer] Nested adjustment-scope disagreement still folds in `TimeEntryState.Apply` and `TimeEntryEvidenceProjection.Apply` [src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryState.cs:145] — deferred: pre-existing; spec-3 forbids changing those folds.
+- [x] [Review][Defer] `LoadTimeEntryAsync` applies correction events whose `PreviousValues.ActivityTypeScope` disagrees with folded state [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:293] — deferred: pre-existing malformed-history case; spec-2 rejected this guard.
+
 ## Verification
 
 **Commands:**

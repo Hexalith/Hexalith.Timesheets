@@ -245,3 +245,17 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Decide whether authoritative Time Entry folds must reject approved-correction events without a preceding approval transition.
   evidence: `LoadTimeEntryAsync` accepts `TimeEntryApprovedCorrected` after only `TimeEntryRecorded`; sanctioned writers do not emit that sequence, but malformed EventStore history can be folded as approved correction evidence. The behavior predates this increment and needs the broader illegal-transition state-machine decision already identified for Time Entry history.
+
+## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Add automated AppHost runtime smoke evidence for the resolved Aspire and Keycloak package graph.
+  evidence: Independent review reconfirmed the build-review VG-01 gap: `references/Hexalith.Builds` now resolves Aspire `13.5.4` and `Aspire.Hosting.Keycloak` `13.5.4-preview.1.26464.4` while Timesheets tests only inspect AppHost source and require the 2026-09-15 `aspire start` / `security` Healthy sentences in markdown. Already recorded above under this spec's build review; not a second work item.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Decide whether Time Entry aggregate and evidence-projection folds must reject nested adjustment-scope disagreement the way the magic-link loader now does.
+  evidence: `EventStoreMagicLinkConfirmationCapabilityStateLoader.LoadTimeEntryAsync` throws when explicit nested adjustment scopes disagree with authoritative lineage, then fail-closes. `TimeEntryState.Apply(TimeEntryAdjustedThroughMagicLink)` and `TimeEntryEvidenceProjection` still take top-level `ActivityTypeScope` and store nested snapshots as-is, so malformed history can publish contradictory evidence. Spec-3 forbade changing those folds; a later integrity story would have to own the fold-level guard.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Decide whether magic-link Time Entry folding must reject correction `PreviousValues` whose recorded scope disagrees with folded state.
+  evidence: `LoadTimeEntryAsync` applies `TimeEntryCorrected` and `TimeEntryApprovedCorrected` with no previous-scope check, while the new adjustment guard covers only `TimeEntryAdjustedThroughMagicLink`. Sanctioned writers emit both snapshots or omit both. Spec-2 rejected adding this guard as malformed-history-only; settling it needs the same illegal-history state-machine decision already ledgered for Time Entry folds.
