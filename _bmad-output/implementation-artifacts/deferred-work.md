@@ -203,3 +203,17 @@
 - source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Determine whether Time Entry folds must reject lifecycle events in illegal orders found in EventStore history.
   evidence: `TimeEntryState.Apply` can fold sequences such as a correction while Draft or another Recorded event after recording, although sanctioned writers reject those transitions before emission. Evidence that the EventStore command boundary can admit such sequences, or an inventory of one in deployed streams, would establish a reachable integrity defect.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-16)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+  summary: Decide whether contributor confirmation must check Activity Type availability the way the display path does.
+  evidence: `DescribeAsync` gates on `TryResolveDisplayLabel`, which requires `IsActive && IsAvailableForCapture`, while `ConfirmAsync` receives no `ActivityTypeCatalogReadModel` at all, so `ValidateConfirmationScope` cannot see availability. An Activity Type deactivated after issuance therefore yields GET 403 / POST 200 and confirmation still emits its event. The 2026-09-16 remediation tightened display, confirm, and adjust symmetrically for tenant ownership but left availability asymmetric. Carried as BH-01 / R2-EC-01 / R3-BH-01 / R3-EC-01 across four review loops, each citing a prior ledger entry that did not exist; this is the first entry.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+  summary: Decide whether the tenant Activity Type catalog must represent per-Project restriction rules for magic-link selection.
+  evidence: The magic-link path consumes the tenant catalog, while project restriction availability is computed only by `TenantActivityTypeCatalogProjection.ProjectForProject`. A tenant-owned Activity Type that is restricted for a given Project can therefore still be selected for a Project target through issuance and adjustment. Carried as BH-02 / R2-BH-04 / R3-BH-02 across three review loops, each citing a prior ledger entry that did not exist; this is the first entry.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+  summary: Refresh the agent-context files that still describe the token-hash index as unwired.
+  evidence: `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` each still state that `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". The shipped projection handlers, this story's 2026-09-16 supersession notice, and the new `LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers` fitness test (which asserts the readiness document must not contain "no projection-host wiring") all contradict it. The fix edits agent-context files, which is outside a code review's remit. Already recorded on 2026-09-13 and still open; every agent session loads this as fact about a security-relevant path.
