@@ -98,17 +98,11 @@
   summary: The kernel-reference fitness rule cannot observe what Hexalith.Timesheets.Projections pulls in transitively.
   evidence: `DependencyDirectionTests.cs:111-130` reads only direct `Include` attribute values via `ReadIncludeValues`, so the new `Hexalith.EventStore.DomainService` project reference — which carries `FrameworkReference Microsoft.AspNetCore.App` and `PackageReference Dapr.AspNetCore` — enters the kernel closure with `Kernel_projects_do_not_reference_runtime_hosting_ui_or_direct_persistence_packages` still green. Ledger decision 3 (move the four shared shapes to `Hexalith.Timesheets.Contracts` and drop the `Projections`→`Server` reference) removes the leak and is the better fix than adding transitive-closure checks to the rule.
 
-- source_spec: _bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md
-  summary: The "Known pitfalls" entry in CLAUDE.md, AGENTS.md and .github/copilot-instructions.md is now false.
-  evidence: All three still read "`MagicLinkTokenHashCapabilityIndexProjection` has no projection-host wiring; valid links fail closed until a story wires it". `Program.cs:15-17` now passes `typeof(TimesheetsProjectionsMarker).Assembly` to `AddEventStoreDomainService` and `MagicLinkTokenHashCapabilityIndexProjectionHandler` is the canonical writer, so the entry misdirects the next agent. Deferred because the fix edits agent-context files, which CLAUDE.md requires be kept synchronized as normalized text across all three entry points.
-
-- source_spec: `/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-review-hardening.md`
-  summary: Synchronize stale agent and planning guidance that still says the magic-link token-hash projection is unwired.
-  evidence: `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, and the historical architecture status still contradict the canonical projection wiring now proven by the host and HTTP tests; this drift predates the current diff, and agent-context fixes require synchronized managed-baseline work.
+The repeated 2026-09-14 agent-context findings are consolidated into the canonical open 2026-09-16 Story 3.6 entry below; they do not create additional work items.
 
 ## Deferred from: code review of story-3.6 (2026-09-14)
 
-- **CLAUDE.md known-pitfall entry is now false.** It states `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". `src/Hexalith.Timesheets/Program.cs:15-17` now registers the Projections assembly with `AddEventStoreDomainService`, so the pitfall actively misdirects the next agent. Deferred because the fix edits an agent-context file (CLAUDE.md, and the synchronized AGENTS.md / .github/copilot-instructions.md entry points).
+- The repeated agent-context finding is consolidated into the canonical open 2026-09-16 Story 3.6 entry below.
 - **Sprint-status header count disagrees with the story.** `_bmad-output/implementation-artifacts/sprint-status.yaml:2` records "2 decisions resolved and applied, 5 patch action items open, 3 deferred" while `3-6-implement-eventstore-backed-magic-link-state-loading.md` carries 24 unchecked `[ ]` review items across rounds. Deferred because the fix edits other spec/tracking artifacts.
 - **`RuntimeRegistrationTests` mutate process-wide environment variables.** `tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs:45-112` sets `DAPR_HTTP_ENDPOINT`, `DAPR_HTTP_PORT` and `DAPR_API_TOKEN` process-wide while xUnit runs test classes in parallel, adding two more writers to a coupling already recorded here. `DAPR_API_TOKEN` is additionally read once at registration time, so a rotated token never takes effect. Deferred because the existing `IConfiguration`-binding ledger item owns the real fix.
 
@@ -216,7 +210,7 @@
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Refresh the agent-context files that still describe the token-hash index as unwired.
-  evidence: `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` each still state that `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". The shipped projection handlers, this story's 2026-09-16 supersession notice, and the new `LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers` fitness test (which asserts the readiness document must not contain "no projection-host wiring") all contradict it. The fix edits agent-context files, which is outside a code review's remit. Already recorded on 2026-09-13 and still open; every agent session loads this as fact about a security-relevant path.
+  evidence: `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` each still state that `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". The shipped projection handlers, this story's 2026-09-16 supersession notice, and the new `LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers` fitness test (which asserts the readiness document must not contain "no projection-host wiring") all contradict it. The fix edits agent-context files, which is outside a code review's remit. Consolidated here from repeated findings since 2026-09-13; every agent session loads this as fact about a security-relevant path.
 
 ## Deferred from: build planning for Story 3.6 (2026-09-17)
 
@@ -226,9 +220,7 @@
 
 ## Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-  summary: Refresh the managed agent-context files that still describe the magic-link token-hash index as unwired.
-  evidence: `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` still load a false security-path fact into every agent session even though projection-host delivery is implemented. The issue predates this increment, and review policy routes agent-context changes to deferred work.
+The managed agent-context drift found again in this review points to the canonical open 2026-09-16 Story 3.6 entry above; no duplicate work item is added here.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Remove the launch-readiness instruction to scaffold forbidden Timesheets UI projects.
@@ -238,9 +230,7 @@
   summary: Add automated AppHost runtime smoke evidence for the resolved Aspire and Keycloak package graph.
   evidence: Existing fitness tests inspect AppHost source and project text but do not start the topology, so an Aspire SDK/package incompatibility can compile while `security` or `timesheets` fails at runtime. An automated Aspire testing lane changes package and topology scope excluded by this increment and remains infrastructure-owned.
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-  summary: Reconcile the stale Microsoft.NET.Test.Sdk resolved-version claim in package-readiness evidence.
-  evidence: The selected Builds catalog and all six restored test-project assets resolve `Microsoft.NET.Test.Sdk` `18.10.1`, while the dated direct-package inventory still says `18.10.0`. This pre-existing package-evidence drift belongs to the reopened package/readiness work.
+VG-02 is resolved rather than deferred: the current package-readiness inventory records `Microsoft.NET.Test.Sdk` `18.10.1`; the `18.10.0` occurrences remain only in dated historical planning and review records.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Decide whether authoritative Time Entry folds must reject approved-correction events without a preceding approval transition.

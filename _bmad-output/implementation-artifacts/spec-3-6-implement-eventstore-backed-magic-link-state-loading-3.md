@@ -70,6 +70,7 @@ context:
 - Added regression evidence for the typed Work/project-owned issuance rejection, top-level/nested adjustment scope agreement, production-deserialized approved-correction and magic-link-adjustment replay, and rejection of a mismatched legacy rejected-correction retry.
 - Centralized raw UTF-8 denial length measurement with its fixed-width W3C trace-id assumption, and made readiness table parsing preserve empty structured cells.
 - Refreshed launch ownership/correction risk guidance, platform-catalog evidence, full-suite counts, the canonical Story 3.6 inventory, deferred source paths, test-summary supersession, and sprint timestamp. Lifecycle remains `in-progress` pending review.
+- Accepted review decision B creates one explicit exception to this spec's sibling-change prohibition: this increment owns the already-committed `Hexalith.Builds` `000abf8`→`04d9617`, `Hexalith.FrontComposer` `1e9348e`→`f20a1fc`, and `Hexalith.Works` `06d64b0`→`28724f2` pointer history through current HEAD. This tracking patch does not move any gitlink.
 
 ## Spec Change Log
 
@@ -103,12 +104,12 @@ Independent review of `b0f4ee1...HEAD` (2026-09-17). Layers: blind-hunter, edge-
 
 - [x] [Review][Decision] This increment moves sibling submodule pointers that spec-3 forbids. **Resolved 2026-09-17 — option B.** Keep the three pointers and record this increment as owning the moves.
 - [x] [Review][Decision] Story and sprint lifecycle still disagree. **Resolved 2026-09-17 — option A.** Restore sprint to `in-progress` until presentation, matching spec-3 BH-02.
-- [ ] [Review][Patch] [From decision B] Record this increment as owning the `Hexalith.Builds`, `Hexalith.FrontComposer`, and `Hexalith.Works` pointer moves, as an explicit exception to Never [references/Hexalith.Builds]
-- [ ] [Review][Patch] [From decision A] Restore `sprint-status.yaml` to `in-progress` until presentation so story, sprint, and the 2026-09-17 verification note agree [_bmad-output/implementation-artifacts/sprint-status.yaml]
-- [ ] [Review][Patch] Deferred-work VG-02 still says the dated package inventory claims `Microsoft.NET.Test.Sdk` `18.10.0` after this increment wrote `18.10.1` [_bmad-output/implementation-artifacts/deferred-work.md:243]
-- [ ] [Review][Patch] Package-currency and Build-gate prose still present the 2026-09-15 AppHost smoke as current after the Builds catalog moved Aspire/Keycloak to `13.5.4` [docs/launch-readiness.md:14]
-- [ ] [Review][Patch] The catalog-freshness-round patch that launch-readiness still describes live magic-link resolution as unwired remains unchecked [_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md:133]
-- [ ] [Review][Patch] The token-hash-unwired agent-context item is ledgered twice instead of pointing at the existing 2026-09-16 entry [_bmad-output/implementation-artifacts/deferred-work.md:230]
+- [x] [Review][Patch] [From decision B] Record this increment as owning the `Hexalith.Builds`, `Hexalith.FrontComposer`, and `Hexalith.Works` pointer moves, as an explicit exception to Never [references/Hexalith.Builds]
+- [x] [Review][Patch] [From decision A] Restore `sprint-status.yaml` to `in-progress` until presentation so story, sprint, and the 2026-09-17 verification note agree [_bmad-output/implementation-artifacts/sprint-status.yaml]
+- [x] [Review][Patch] Deferred-work VG-02 still says the dated package inventory claims `Microsoft.NET.Test.Sdk` `18.10.0` after this increment wrote `18.10.1` [_bmad-output/implementation-artifacts/deferred-work.md:243]
+- [x] [Review][Patch] Package-currency and Build-gate prose still present the 2026-09-15 AppHost smoke as current after the Builds catalog moved Aspire/Keycloak to `13.5.4` [docs/launch-readiness.md:14]
+- [x] [Review][Patch] The catalog-freshness-round patch that launch-readiness still describes live magic-link resolution as unwired remains unchecked [_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md:133]
+- [x] [Review][Patch] The token-hash-unwired agent-context item is ledgered twice instead of pointing at the existing 2026-09-16 entry [_bmad-output/implementation-artifacts/deferred-work.md:230]
 - [x] [Review][Defer] AppHost Keycloak/Aspire catalog bump is untested at runtime [docs/launch-readiness.md:22] — deferred: already ledgered; an automated smoke lane is package/topology work this spec must not absorb.
 - [x] [Review][Defer] Nested adjustment-scope disagreement still folds in `TimeEntryState.Apply` and `TimeEntryEvidenceProjection.Apply` [src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryState.cs:145] — deferred: pre-existing; spec-3 forbids changing those folds.
 - [x] [Review][Defer] `LoadTimeEntryAsync` applies correction events whose `PreviousValues.ActivityTypeScope` disagrees with folded state [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:293] — deferred: pre-existing malformed-history case; spec-2 rejected this guard.

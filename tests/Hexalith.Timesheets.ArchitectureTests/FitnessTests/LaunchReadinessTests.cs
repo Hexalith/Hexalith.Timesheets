@@ -54,7 +54,7 @@ public sealed class LaunchReadinessTests
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
 
         readiness.ShouldContain("neither story-complete nor launch-complete");
-        readiness.ShouldContain("Story 3.6 remains in progress");
+        readiness.ShouldContain("Story 3.6 is in review");
         readiness.ShouldContain("Story 5.2 remains in progress");
         readiness.ShouldContain("final Story 5.1 reconciliation remains ready for development");
     }
@@ -111,7 +111,7 @@ public sealed class LaunchReadinessTests
 
         string overall = readiness[decisionStart..];
         overall.ShouldContain("Overall release decision: **FAIL**");
-        overall.ShouldContain("Story 3.6 and Story 5.2 remain in progress");
+        overall.ShouldContain("Story 3.6 is in review, Story 5.2 remains in progress");
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
         overall.ShouldContain("durable atomic magic-link confirm/adjust submission is unfinished");
         overall.ShouldNotContain("decision: **PASS**");
@@ -265,12 +265,19 @@ public sealed class LaunchReadinessTests
         packageVerdict.ShouldContain($"`CommunityToolkit.Aspire.Hosting.Dapr` `{communityToolkitDaprVersion}`");
         packageVerdict.ShouldContain($"Fluent UI V5 policy-surface catalog entry is `{fluentUiVersion}`");
         packageVerdict.ShouldContain("sprint-change-proposal-2026-09-12.md");
-        packageVerdict.ShouldContain("`aspire start`");
-        packageVerdict.ShouldContain("`security` resource reported `Healthy`");
-        packageVerdict.ShouldContain("`aspire stop`");
+        packageVerdict.ShouldContain("Historical AppHost smoke evidence last passed on 2026-09-15");
+        packageVerdict.ShouldContain("it does not validate the current restored graph");
+        packageVerdict.ShouldContain("Current runtime-smoke evidence remains deferred");
         packageVerdict.ShouldContain("error: Sequence contains no matching element");
         packageVerdict.ShouldContain("this lane is not reported clean");
         packageVerdict.ShouldContain("without a compatibility, security, or deterministic-build reason");
+
+        string[] buildGate = ReadReleaseGateRow(readiness, "Build");
+        buildGate[1].ShouldBe("PASS");
+        buildGate[2].ShouldContain("the changed worktree based on");
+        buildGate[2].ShouldContain("0 warnings and 0 errors");
+        buildGate[3].ShouldContain("not current-graph runtime evidence");
+        buildGate[3].ShouldContain("current automated AppHost smoke remains deferred");
     }
 
     [Fact]
