@@ -217,3 +217,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Refresh the agent-context files that still describe the token-hash index as unwired.
   evidence: `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` each still state that `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". The shipped projection handlers, this story's 2026-09-16 supersession notice, and the new `LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers` fitness test (which asserts the readiness document must not contain "no projection-host wiring") all contradict it. The fix edits agent-context files, which is outside a code review's remit. Already recorded on 2026-09-13 and still open; every agent session loads this as fact about a security-relevant path.
+
+## Deferred from: build planning for Story 3.6 (2026-09-17)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+  summary: Implement durable, atomic magic-link confirmation and adjustment persistence for unfinished Story 3.3/3.4 behavior.
+  evidence: The live POST endpoints return `202 Accepted` from in-memory domain results without calling `IEventStoreGatewayClient.SubmitCommandAsync`, so neither the Time Entry event nor capability-use event is persisted and concurrent reuse is not prevented. The current EventStore gateway accepts one aggregate per submission and exposes no atomic multi-aggregate API; sequential submissions would violate the approved atomicity requirement. A dedicated high-priority remediation must choose a platform coordination or aggregate-boundary design and prove persisted end state, concurrency, replay rejection, and partial-failure safety.
