@@ -4,7 +4,7 @@ baseline_commit: 24a37c1c50c9c3b3504a03a7a939caf2720b45b0
 
 # Story 3.6: Implement EventStore-Backed Magic-Link State Loading
 
-Status: review
+Status: in-progress
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
@@ -529,6 +529,7 @@ Current cumulative Story 3.6 inventory, including its accepted review increments
 
 | Date | Change |
 |------|--------|
+| 2026-09-18 | Implementation File List chunk review: decided confirm-as-is after Activity Type deactivation; left four patches as action items. Status → in-progress. |
 | 2026-09-18 | Closed the five terminal-review follow-up patches, repaired evidence provenance and ledger references, tightened the launch-readiness fitness assertions, and completed the presentation transition. Status → review. |
 | 2026-09-17 | Closed the six terminal review patches, reran current-worktree build/test/package evidence, and completed the independent one-shot review. Status → review. |
 | 2026-09-17 | Closed the accepted review-evidence gaps: documented server-derived correction scope and legacy fallback intent, pinned issuance and scope-lineage regressions including serialized approved/adjusted replay, hardened HTTP/readiness helpers, reconciled release ownership guidance and file tracking, and verified 945 tests (941 pass, 4 declared skips, 0 failures) under SDK `10.0.401`. Status remains in-progress pending review. |
