@@ -41,3 +41,33 @@ context:
 - **low / patch:** Historical smoke prose used the ungrammatical “therefore was verified”; corrected to “was therefore verified.”
 - **medium / patch:** The package fitness test did not inspect the structured Build row, allowing current/historical smoke wording to drift; it now asserts current compile evidence and the deferred current-graph runtime gap.
 - **medium / patch:** The Build gate cited only older build/runtime evidence despite the current worktree run; it now records the dated base commit, current restore/build result, and historical-only runtime smoke scope.
+
+### Review Findings
+
+Independent review of `16219dee...26d53c0` (2026-09-17). Layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor.
+
+**Decision needed**
+
+- [x] [Review][Decision] Story and sprint lifecycle advanced to `review` while frozen intent still requires `in-progress` until presentation — spec-4 Approach and spec-3 Decision A require keeping story and sprint at `in-progress` until the presentation step. This increment checks Decision A as done, sets story Status, `sprint-status.yaml` 3-6, `docs/launch-readiness.md`, and `LaunchReadinessTests` to `review`, and leaves the 2026-09-17 verification paragraph plus spec-3 Implementation Notes saying `in-progress` pending review. Fitness tests now lock `Story 3.6 is in review`, so the next correction cannot proceed without choosing which lifecycle is authoritative. **Resolved 2026-09-17 — option 1.** Restore `in-progress` until this review's presentation: revert story Status, sprint 3-6, launch-readiness, and `LaunchReadinessTests` pins.
+
+**Patch**
+
+- [ ] [Review][Patch] [From decision 1] Restore Story 3.6 and sprint to `in-progress` until presentation, and retarget launch-readiness plus `LaunchReadinessTests` off `Story 3.6 is in review` [_bmad-output/implementation-artifacts/sprint-status.yaml:79]
+- [ ] [Review][Patch] Historical endpoint-split prose reads "The split is was therefore verified" [docs/launch-readiness.md:96]
+- [ ] [Review][Patch] VG-01 ledger evidence still says ArchitectureTests require the retired 2026-09-15 `aspire start` / `security` Healthy sentences, and closed-patch citations still point at `deferred-work.md:243` / `:230` after those rows moved [_bmad-output/implementation-artifacts/deferred-work.md:243]
+- [ ] [Review][Patch] InternalSurfaceGuard live-smoke rewrite is unpinned: `Launch_readiness_record_captures_package_currency_verdict_dimensions` never reads that paragraph, so restoring current-tense verification there stays green [docs/launch-readiness.md:89]
+- [ ] [Review][Patch] Build-gate evidence cites `16219de4d26e6c191fa1c016d476eb3eb624e1eb`, which is not a git object; HEAD's parent is `16219dee5162420e976b65f755e0eca2cf43715a` [docs/launch-readiness.md:113]
+
+**Deferred**
+
+- [x] [Review][Defer] Completion Notes and the 2026-06-22 senior-review carry-forward still say the token-hash index has no live `IDomainProjectionHandler` wiring [_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md:514] — deferred: pre-existing; the 2026-09-16 supersession already records live handlers, and this increment did not rewrite historical completion notes.
+
+**Rejected**
+
+- `false` — no dedicated AppHost runtime-smoke row in the release-gate table: Build notes and the package-currency paragraph already state current-graph smoke is deferred, overall FAIL still names live-topology, and spec-4 did not require a new gate.
+- rejected per rule — spec-4 frozen `context` omits the files this oneshot changes: the fix would edit the spec under review.
+- `low` — `_bmad-output/implementation-artifacts/tests/3-6-test-summary.md` Current Verification omits the historical-vs-current smoke reclassification: everyday maintainers use launch-readiness and the story changelog; the summary already records the 945-test inventory, and expanding it is extra documentation.
+- `false` — spec-3 Implementation Notes skip intermediate Works pointer `3c042f9`: the story Decision line records `06d64b0`→`3c042f9`→`28724f2`; start→HEAD in the notes is not a contradictory ownership claim.
+- `false` — `review` overstates closure because earlier-round `[ ]` patches remain: `review` is the sprint workflow state for this increment, not a claim that historical ledger items are this increment's work.
+- `false` — Dev Agent Record Debug Log still lists ArchitectureTests 27 / Server.Tests 395: that block is the original implementation record; later 2026-09-17 verification sections carry the current 945-test evidence.
+- `false` — a prior-round rejected note still describes tests pinning “Story 3.6 remains in progress”: that paragraph documents a previous rejection; it is not the live fitness contract.

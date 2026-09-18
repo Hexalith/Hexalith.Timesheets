@@ -249,3 +249,9 @@ VG-02 is resolved rather than deferred: the current package-readiness inventory 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Decide whether magic-link Time Entry folding must reject correction `PreviousValues` whose recorded scope disagrees with folded state.
   evidence: `LoadTimeEntryAsync` applies `TimeEntryCorrected` and `TimeEntryApprovedCorrected` with no previous-scope check, while the new adjustment guard covers only `TimeEntryAdjustedThroughMagicLink`. Sanctioned writers emit both snapshots or omit both. Spec-2 rejected adding this guard as malformed-history-only; settling it needs the same illegal-history state-machine decision already ledgered for Time Entry folds.
+
+## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md (2026-09-17)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md`
+  summary: Rewrite historical Story 3.6 Completion Notes that still describe the token-hash index as unwired.
+  evidence: Completion Notes and the 2026-06-22 senior-review carry-forward still say there is no live `IDomainProjectionHandler` wiring, which contradicts host discovery and the 2026-09-16 supersession in the same file. Pre-existing; this terminal-patches increment did not rewrite historical completion notes.
