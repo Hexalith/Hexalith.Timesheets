@@ -633,3 +633,44 @@ Code review of `16219dee...26d53c0` (`origin/main...HEAD`). Layers: blind-hunter
 - `false` — `review` overstates closure because earlier-round `[ ]` patches remain: `review` is the sprint workflow state for this increment, not a claim that historical ledger items are this increment's work.
 - `false` — Dev Agent Record Debug Log still lists ArchitectureTests 27 / Server.Tests 395: that block is the original implementation record; later 2026-09-17 verification sections carry the current 945-test evidence.
 - `false` — a prior-round rejected note still describes tests pinning “Story 3.6 remains in progress”: that paragraph documents a previous rejection; it is not the live fitness contract.
+
+### Review Findings — implementation File List chunk (2026-09-18)
+
+Code review of `24a37c1c...307b2d7` restricted to the story File List implementation paths (36 files: runtime/hosting, contracts, server, projections). Layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor.
+
+**Decision needed**
+
+- [x] [Review][Decision] Describe can deny a token that Confirm would accept after Activity Type deactivation — `LoadTokenStateAsync` admits a Fresh catalog match without `IsActive`/`IsAvailableForCapture`; `TryResolveDisplayLabel` (describe/adjust display) requires both flags; `ConfirmAsync` takes no catalog. After a later deactivation the same token yields GET 403 and POST Accepted and still emits the confirmation event. **Resolved 2026-09-18 — option 2 (confirm-as-is).** Confirm describe may show the recorded type after deactivation; issue and adjust keep the availability gate. Do not put availability in the loader. [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:143]
+
+**Patch**
+
+- [ ] [Review][Patch] [From decision 2] Confirm describe must resolve a label without `IsActive`/`IsAvailableForCapture`; adjust describe must keep those flags so adjust GET does not succeed then POST 403. Leave the loader unchanged. [src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapabilityCommandService.cs:507]
+- [ ] [Review][Patch] The configured-port allow path for the EventStore domain-service surface is never executed: tests only cover unconfigured 404s and `AllowOnAnyPort`, so omitting `Timesheets__InternalSurface__Port` would 404 live `/project/v2` delivery while every current test stayed green [src/Hexalith.Timesheets/Runtime/InternalSurfaceGuard.cs:57]
+- [ ] [Review][Patch] The kernel's default `IMagicLinkConfirmationCapabilityStateLoader` type is never resolved: `RuntimeRegistrationTests` does not ask for it, and HTTP factories replace the registration, so restoring `UnavailableMagicLinkConfirmationCapabilityStateLoader` would leave every existing test green [src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:57]
+- [ ] [Review][Patch] `HttpContextTimesheetsTrustedContextAccessor` is never run: admin catalog/capability loads take tenant only from that accessor, and no test maps HTTP `tenant_id`/`party_id` claims through the host `Replace` [src/Hexalith.Timesheets/Runtime/HttpContextTimesheetsTrustedContextAccessor.cs:13]
+
+**Deferred**
+
+- [x] [Review][Defer] Shipped kernel `DenyAll*` validators still deny valid magic-link confirm/adjust/describe and admin issue/revoke after the loader resolves — deferred: pre-existing fail-closed policy per CLAUDE.md; already ledgered. HTTP valid-journey tests substitute `ITimesheetsAccessGuard`. [src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:72]
+- [x] [Review][Defer] AppHost still declares no EventStore resource, so `aspire start` cannot complete the EventStore-backed valid journey — deferred: pre-existing; already ledgered; topology/EventStore resource remains infrastructure-owned. [src/Hexalith.Timesheets.AppHost/Program.cs:22]
+- [x] [Review][Defer] Loader collapses every non-`Fresh` catalog into `UnavailableTokenState`, so AC2's explicit freshness vocabulary never leaves the loader and HTTP `StaleCatalog` is unreachable with the concrete loader — deferred: pre-existing; already ledgered as the deferred AC2 item that is the prerequisite for an honest category. [src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:124]
+- [x] [Review][Defer] `Hexalith.Timesheets.Projections` still project-references `Hexalith.Timesheets.Server` and `Hexalith.EventStore.DomainService` — deferred: pre-existing; decision 3 already chose moving the four shapes to Contracts; already ledgered as an independently shippable goal. [src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj:19]
+- [x] [Review][Defer] Kernel EventStore gateway registration is skipped whenever any `IEventStoreGatewayClient` is already present, and the kernel still does not register `DaprClient` required by `AddEventStoreReadModelStore` — deferred: pre-existing; already ledgered with the IConfiguration/gateway-independence goal. [src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:47]
+- [x] [Review][Defer] AppHost comments claim the internal listener is "declared non-external so it is not published off the pod network", but `WithHttpEndpoint(name: "internal", …)` does not pass `isExternal: false` — deferred: unverified medium; InternalSurfaceGuard is the in-process control; settle by confirming Aspire 13.5.3 publish/K8s default for unspecified `isExternal` on a second HTTP endpoint. [src/Hexalith.Timesheets.AppHost/Program.cs:16]
+
+**Rejected**
+
+- `false` — live catalog `Merge(..., promoteCompleteLiveHistory: true)` marking a first delivery Fresh is the approved narrowed contract: absent or already-`Fresh` stays `Fresh`; a writer-marked non-`Fresh` catalog is preserved; the loader still requires a matching tenant-scoped item.
+- `false` — live delivery cannot promote an already non-`Fresh` catalog: this handler never publishes `Stale`; preserving `Rebuilding` during an in-flight shared rebuild is the intended fail-closed window until `FinalizeAsync`.
+- `false` — AppHost/internal-surface split violates frozen "no topology" Never clauses: the user authorized AppHost changes; `InternalSurfaceGuard` is the wired control.
+- `false` — index live write vs rebuild hash-conflict semantics (throw vs drop vs last-wins `Apply`): SHA-256 cross-tenant collision and illegal double issuance were not shown reachable; live `ApplyChecked` fail-closed vs rebuild omit is fail-closed, not a reusable mapping.
+- `false` — token-hash index has no freshness so a half-replaced index can be used: the index is non-authoritative by spec; fold mismatch or missing candidate already returns `UnavailableTokenState()`.
+- `false` — shared-rebuild `AccumulateAsync` lets `InvalidOperationException` escape unhandled: `DomainSharedProjectionRebuildDispatcher` catches `Exception` and returns `HandlerFailure`/`Indeterminate`.
+- `false` — `AllowOnAnyPort` republishes the write surface and the host has no InternalSurface binding: `Program.cs` binds `Timesheets:InternalSurface`; unset `Port` fail-closed is intended; the switch is a documented in-process test hatch.
+- `false` — admin JWT `FirstClaimValue` can diverge from `ITimesheetsTrustedContextAccessor`: both read `tenant_id`/`tenant` and `party_id`/`NameIdentifier` from the same request user.
+- `false` — `TimesheetsMetadataCatalog` omitted `ActivityTypeScope` on correction surfaces: those surfaces describe nested `TimeEntryCorrectionValues`; capture OpenAPI added the read-only field on that schema.
+- `false` — this chunk adds loader/handlers/AppHost with no tests or README build step: tests were scoped to a later File List chunk; `README.md` already restore+builds before `--no-build` test lines.
+- `false` — public magic-link port serving `/`, `/health`, `/alive`, `/ready` is the unauthenticated write surface: those paths are not in `ProtectedPrefixes`; the guard targets `/process`, `/replay-state`, `/query`, `/project`, `/admin`.
+- `false` — `ApprovedTimeLedgerRowReadModel.SupersededFromApprovedCorrection` `?? evidence.ActivityTypeScope` inverts retain-preceding: sanctioned writers emit both snapshots or omit both; when both omit, post-apply `evidence.ActivityTypeScope` is the retained preceding scope. Mixed snapshots are already ledgered as malformed-history.
+- `low` — AppHost comment names the public ingress `"http"` while the code registers `name: "public"`: nothing in-repo looks up the `"http"` endpoint name; both listeners are explicit. Comment-only fix is not everyday harm.
+- `low` — `aspire.config.json` missing a trailing newline: cosmetic; no runtime effect.

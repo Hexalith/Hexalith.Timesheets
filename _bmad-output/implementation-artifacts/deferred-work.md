@@ -253,3 +253,11 @@ The independent review reconfirmed the single AppHost runtime-smoke VG-01 item r
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md`
   summary: Rewrite historical Story 3.6 Completion Notes that still describe the token-hash index as unwired.
   evidence: Completion Notes and the 2026-06-22 senior-review carry-forward still say there is no live `IDomainProjectionHandler` wiring, which contradicts host discovery and the 2026-09-16 supersession in the same file. Pre-existing; this terminal-patches increment did not rewrite historical completion notes.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-18)
+
+Implementation File List chunk (`24a37c1c...307b2d7`, 36 runtime/contracts/server/projection files). Re-verified and not re-filed: DenyAll live-host valid-journey, missing AppHost EventStore resource, loader AC2 freshness collapse, Projections→Server layering move, and kernel gateway/`DaprClient` composition.
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Confirm whether Aspire publishes the Timesheets internal HTTP endpoint off the pod network when `isExternal` is omitted.
+  evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:16` comments that the internal listener is "Declared non-external so it is not published off the pod network", but `:33` calls `WithHttpEndpoint(name: "internal", port: 8081, isProxied: false)` with no `isExternal: false`. `InternalSurfaceGuard` still refuses domain-service paths on any port but the configured one. What would settle it: Aspire 13.5.3 publish/Kubernetes default for an unspecified `isExternal` on a second HTTP endpoint. Unverified medium if that default is external.
