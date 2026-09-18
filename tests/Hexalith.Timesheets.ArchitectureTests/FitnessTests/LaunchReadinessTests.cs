@@ -52,11 +52,13 @@ public sealed class LaunchReadinessTests
     {
         // AC1/AC2: incomplete story work cannot be reframed as a launch waiver.
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
+        string opening = ReadSection(readiness, "# Launch Readiness Record", "Related evidence:");
 
-        readiness.ShouldContain("neither story-complete nor launch-complete");
-        readiness.ShouldContain("Story 3.6 is in review");
-        readiness.ShouldContain("Story 5.2 remains in progress");
-        readiness.ShouldContain("final Story 5.1 reconciliation remains ready for development");
+        opening.ShouldContain("neither story-complete nor launch-complete");
+        opening.ShouldContain("Story 3.6 is in review");
+        opening.ShouldContain("Story 5.2 remains in progress");
+        opening.ShouldContain("final Story 5.1 reconciliation remains ready for development");
+        opening.ShouldNotContain("Story 3.6 remains in progress");
     }
 
     [Fact]
@@ -114,6 +116,7 @@ public sealed class LaunchReadinessTests
         overall.ShouldContain("Story 3.6 is in review, Story 5.2 remains in progress");
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
         overall.ShouldContain("durable atomic magic-link confirm/adjust submission is unfinished");
+        overall.ShouldNotContain("Story 3.6 remains in progress");
         overall.ShouldNotContain("decision: **PASS**");
         overall.ShouldNotContain("decision: PASS");
 
@@ -272,9 +275,18 @@ public sealed class LaunchReadinessTests
         packageVerdict.ShouldContain("this lane is not reported clean");
         packageVerdict.ShouldContain("without a compatibility, security, or deterministic-build reason");
 
+        string historicalSmoke = ReadSection(
+            readiness,
+            "**Historical live `aspire start` evidence",
+            "**Residual risk:**");
+        historicalSmoke.ShouldContain("predates the current Builds catalog");
+        historicalSmoke.ShouldContain("The split\nwas therefore verified end to end for that dependency graph");
+        historicalSmoke.ShouldContain("not current Aspire/Keycloak runtime compatibility evidence");
+
         string[] buildGate = ReadReleaseGateRow(readiness, "Build");
         buildGate[1].ShouldBe("PASS");
         buildGate[2].ShouldContain("the changed worktree based on");
+        buildGate[2].ShouldContain("16219dee5162420e976b65f755e0eca2cf43715a");
         buildGate[2].ShouldContain("0 warnings and 0 errors");
         buildGate[3].ShouldContain("not current-graph runtime evidence");
         buildGate[3].ShouldContain("current automated AppHost smoke remains deferred");

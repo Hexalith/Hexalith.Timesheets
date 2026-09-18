@@ -27,7 +27,7 @@ context:
 - Recorded the human-approved submodule-pointer exception through current HEAD without moving any gitlink, and reconciled the two already-completed checklist items.
 - Retired the resolved Test SDK deferral, replaced the duplicate agent-context entry with a pointer to its original open item, and retained every independent deferred product or infrastructure risk.
 - Relabeled the 2026-09-15 AppHost run as historical because it predates the current Builds catalog, then changed the fitness assertion to require the current-graph evidence gap instead of stale success wording.
-- Verified the changed worktree based on `16219de4d26e6c191fa1c016d476eb3eb624e1eb` with restore, a warnings-as-errors solution build (0 warnings/errors), and all six direct xUnit v3 executables: 945 total, 941 passed, 4 declared integration/performance skips, 0 failures. Current direct-package, vulnerable, and deprecated audits also passed for all 15 Timesheets projects.
+- Verified the changed worktree based on `16219dee5162420e976b65f755e0eca2cf43715a` with restore, a warnings-as-errors solution build (0 warnings/errors), and all six direct xUnit v3 executables: 945 total, 941 passed, 4 declared integration/performance skips, 0 failures. Current direct-package, vulnerable, and deprecated audits also passed for all 15 Timesheets projects.
 - Patched every verified Blind Hunter finding, then rebuilt and reran ArchitectureTests (55/55) after strengthening the structured Build-gate assertion.
 
 ## Review Triage Log
@@ -52,11 +52,11 @@ Independent review of `16219dee...26d53c0` (2026-09-17). Layers: blind-hunter, e
 
 **Patch**
 
-- [ ] [Review][Patch] [From decision 1] Restore Story 3.6 and sprint to `in-progress` until presentation, and retarget launch-readiness plus `LaunchReadinessTests` off `Story 3.6 is in review` [_bmad-output/implementation-artifacts/sprint-status.yaml:79]
-- [ ] [Review][Patch] Historical endpoint-split prose reads "The split is was therefore verified" [docs/launch-readiness.md:96]
-- [ ] [Review][Patch] VG-01 ledger evidence still says ArchitectureTests require the retired 2026-09-15 `aspire start` / `security` Healthy sentences, and closed-patch citations still point at `deferred-work.md:243` / `:230` after those rows moved [_bmad-output/implementation-artifacts/deferred-work.md:243]
-- [ ] [Review][Patch] InternalSurfaceGuard live-smoke rewrite is unpinned: `Launch_readiness_record_captures_package_currency_verdict_dimensions` never reads that paragraph, so restoring current-tense verification there stays green [docs/launch-readiness.md:89]
-- [ ] [Review][Patch] Build-gate evidence cites `16219de4d26e6c191fa1c016d476eb3eb624e1eb`, which is not a git object; HEAD's parent is `16219dee5162420e976b65f755e0eca2cf43715a` [docs/launch-readiness.md:113]
+- [x] [Review][Patch] [From decision 1] Restore Story 3.6 and sprint to `in-progress` until presentation, and retarget launch-readiness plus `LaunchReadinessTests` off `Story 3.6 is in review` [_bmad-output/implementation-artifacts/sprint-status.yaml:79] — story, sprint, readiness, and fitness evidence now agree for the active review run.
+- [x] [Review][Patch] Historical endpoint-split prose reads "The split is was therefore verified" [docs/launch-readiness.md:96] — corrected to "The split was therefore verified."
+- [x] [Review][Patch] VG-01 ledger evidence still says ArchitectureTests require the retired 2026-09-15 `aspire start` / `security` Healthy sentences, and closed-patch citations still point at `deferred-work.md:243` / `:230` after those rows moved [_bmad-output/implementation-artifacts/deferred-work.md:243] — corrected the VG-01 evidence and retargeted the closed citations to `:233` / `:223`.
+- [x] [Review][Patch] InternalSurfaceGuard live-smoke rewrite is unpinned: `Launch_readiness_record_captures_package_currency_verdict_dimensions` never reads that paragraph, so restoring current-tense verification there stays green [docs/launch-readiness.md:89] — the fitness test now asserts the historical dependency-graph scope and current-runtime disclaimer directly.
+- [x] [Review][Patch] Build-gate evidence cites `16219de4d26e6c191fa1c016d476eb3eb624e1eb`, which is not a git object; HEAD's parent is `16219dee5162420e976b65f755e0eca2cf43715a` [docs/launch-readiness.md:113] — readiness and its structured test now pin the valid canonical commit.
 
 **Deferred**
 

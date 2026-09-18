@@ -238,9 +238,7 @@ VG-02 is resolved rather than deferred: the current package-readiness inventory 
 
 ## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-  summary: Add automated AppHost runtime smoke evidence for the resolved Aspire and Keycloak package graph.
-  evidence: Independent review reconfirmed the build-review VG-01 gap: `references/Hexalith.Builds` now resolves Aspire `13.5.4` and `Aspire.Hosting.Keycloak` `13.5.4-preview.1.26464.4` while Timesheets tests only inspect AppHost source and require the 2026-09-15 `aspire start` / `security` Healthy sentences in markdown. Already recorded above under this spec's build review; not a second work item.
+The independent review reconfirmed the single AppHost runtime-smoke VG-01 item recorded above: `references/Hexalith.Builds` resolves Aspire `13.5.4` and `Aspire.Hosting.Keycloak` `13.5.4-preview.1.26464.4`; Timesheets fitness tests require the readiness record to distinguish the historical 2026-09-15 smoke from the unverified current graph, but no automated test starts the topology. No duplicate work item is added here.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Decide whether Time Entry aggregate and evidence-projection folds must reject nested adjustment-scope disagreement the way the magic-link loader now does.

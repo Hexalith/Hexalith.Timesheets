@@ -93,7 +93,7 @@ Observed on the public listener (`:8080`): `GET /metadata/timesheets` → `200`;
 confirm → `403` (the opaque denial, fail-closed with no EventStore resource); `POST /process`,
 `/replay-state`, `/query`, `/project`, `/project/v2`, `/admin/operational-index-metadata` → `404`
 on every one. On the internal listener (`:8081`): `POST /admin/operational-index-metadata` → `200`
-and `POST /project/v2` → `400` (the SDK's own envelope validation), i.e. reachable. The split is
+and `POST /project/v2` → `400` (the SDK's own envelope validation), i.e. reachable. The split
 was therefore verified end to end for that dependency graph and was not inferred from the in-process suite. This remains useful endpoint-split evidence, but it is not current Aspire/Keycloak runtime compatibility evidence after the Builds pointer change.
 
 **Residual risk:** the guard matches by path prefix, so an SDK route added outside those prefixes
@@ -110,7 +110,7 @@ Verdict vocabulary: `PASS`, `CONCERNS`, `FAIL`, `WAIVED`.
 
 | Gate | Verdict | Evidence | Notes |
 |---|---|---|---|
-| Build | PASS | On 2026-09-17, the changed worktree based on `16219de4d26e6c191fa1c016d476eb3eb624e1eb` passed `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` and `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` with 0 warnings and 0 errors; the endpoint-split smoke evidence remains historical. | The current compile gate is verified. The 2026-09-15 runtime smoke passed before the Builds catalog advanced and is not current-graph runtime evidence; current automated AppHost smoke remains deferred. The dated Story 5.3 SDK `10.0.400` evidence above remains historical. |
+| Build | PASS | On 2026-09-17, the changed worktree based on `16219dee5162420e976b65f755e0eca2cf43715a` passed `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` and `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` with 0 warnings and 0 errors; the endpoint-split smoke evidence remains historical. | The current compile gate is verified. The 2026-09-15 runtime smoke passed before the Builds catalog advanced and is not current-graph runtime evidence; current automated AppHost smoke remains deferred. The dated Story 5.3 SDK `10.0.400` evidence above remains historical. |
 | Package currency | CONCERNS | Current restored-graph package listing and audits on 2026-09-17 under SDK `10.0.401`. | Direct NuGet, vulnerable, and deprecated audits are clean; root npm is not applicable; transitive drift is reviewed with no pin while the solution/AppHost tooling failure remains visible; platform prerelease entries are waived with owner, risk, and revisit condition. |
 | Tests (full suite) | PASS | Verified the complete xUnit v3 inventory on 2026-09-17 under SDK `10.0.401` after the Story 3.6 review fixes: ArchitectureTests 55 total / 55 pass; Contracts.Tests 90 / 90 pass; IntegrationTests 104 total / 100 pass / 4 skipped; Projections.Tests 146 / 146 pass; Server.Tests 474 / 474 pass; Works.Tests 76 / 76 pass. | Final total: 945 tests, 941 pass, 4 intentional skips, 0 failures. |
 | Privacy/logging scans | PASS | `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DiagnosticsPrivacyTests.cs`; ArchitectureTests 55 / 55 pass. | Covered by the 2026-09-17 ArchitectureTests verification. |
