@@ -27,6 +27,9 @@ date: '2026-06-18'
 
 # Architecture Decision Document
 
+**Approved McpCli course correction (2026-09-27):** `Hexalith.McpCli` is the target Hexalith-owned CLI/MCP surface for Timesheets operations that pass contract enrollment and authorization. Any proprietary module CLI, MCP host, plug-in, or planned adapter described below is an obsolete migration source or historical design, not a new target. The module retains its domain, UI, and security semantics; replacement or approved withdrawal and parity evidence precede retirement. External development CLIs are unaffected.
+
+
 _This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
 
 ## Project Context Analysis
@@ -1109,7 +1112,7 @@ Naming, structure, API format, data format, event communication, projection beha
 **Nice-To-Have Gaps:**
 
 - Exact Dapr component manifest names can be refined during AppHost implementation.
-- Optional MCP/CLI helper packages remain deferred until a concrete requirement appears.
+- No Timesheets-owned MCP/CLI helper package is planned. A future concrete machine-access requirement enrolls eligible Timesheets Contracts in `Hexalith.McpCli`.
 - **UI project timing (decided 2026-06-19):** `Hexalith.Timesheets.UI` and `Hexalith.Timesheets.UI.Tests` are part of the target project tree but are scaffolded with the **first UI-bearing story, not in scaffold Story 1.1** (which creates host/Contracts/Client/Server/Projections/Testing/ServiceDefaults/AppHost only). When added, UI must follow the documented `UI/` structure and the Fluent UI V5-only rule.
 
 ### Validation Issues Addressed
@@ -1165,7 +1168,7 @@ Naming, structure, API format, data format, event communication, projection beha
 
 **Areas for Future Enhancement:**
 
-- Add MCP/CLI package architecture only if product requirements demand them.
+- Use `Hexalith.McpCli` for future Hexalith-owned MCP/CLI access if product requirements demand it; do not add a Timesheets-owned MCP/CLI package.
 - Expand export format details when the first export story is written.
 - Add deployment-specific manifests after the target deployment environment is selected.
 
