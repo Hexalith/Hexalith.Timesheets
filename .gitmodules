@@ -31,3 +31,9 @@
 [submodule "Hexalith.Parties"]
 	path = references/Hexalith.Parties
 	url = https://github.com/Hexalith/Hexalith.Parties.git
+[submodule "Hexalith.McpCli"]
+	path = references/Hexalith.McpCli
+	url = https://github.com/Hexalith/Hexalith.McpCli.git
+[submodule "Hexalith.Platform"]
+	path = references/Hexalith.Platform
+	url = https://github.com/Hexalith/Hexalith.Platform.git
