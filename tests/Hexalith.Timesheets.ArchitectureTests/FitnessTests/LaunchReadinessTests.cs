@@ -286,8 +286,10 @@ public sealed class LaunchReadinessTests
         string[] buildGate = ReadReleaseGateRow(readiness, "Build");
         buildGate[1].ShouldBe("PASS");
         buildGate[2].ShouldContain("the changed worktree based on");
-        buildGate[2].ShouldContain("16219dee5162420e976b65f755e0eca2cf43715a");
+        buildGate[2].ShouldContain("3f602aa285ee31ff936bc38ac8177cd2f563c6c7");
+        buildGate[2].ShouldContain("--configuration Debug --no-restore -p:UseHexalithProjectReferences=true");
         buildGate[2].ShouldContain("0 warnings and 0 errors");
+        buildGate[3].ShouldContain("HXW0002");
         buildGate[3].ShouldContain("not current-graph runtime evidence");
         buildGate[3].ShouldContain("current automated AppHost smoke remains deferred");
     }

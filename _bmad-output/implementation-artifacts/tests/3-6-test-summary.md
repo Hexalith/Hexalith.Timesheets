@@ -6,12 +6,16 @@
 
 ## Current Verification
 
+- Date / build baseline: 2026-10-03, `3f602aa285ee31ff936bc38ac8177cd2f563c6c7`.
 - SDK: .NET `10.0.401` (`rollForward: latestPatch`).
-- Restore: `dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` passed.
-- Build: `dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` passed with zero warnings and errors.
-- Direct xUnit v3 executables: ArchitectureTests 55/55; Contracts.Tests 90/90; IntegrationTests 104 total, 100 pass, 4 declared skips; Projections.Tests 146/146; Server.Tests 474/474; Works.Tests 76/76.
-- Final inventory: 945 tests, 941 passed, 4 declared infrastructure/performance skips, 0 failures.
-- Current Story 3.6 evidence includes the concrete loader, canonical projection delivery, four-route HTTP no-disclosure coverage, exact server-derived correction-scope contract metadata, serialized approved/adjusted scope replay, legacy mismatched-retry rejection, and launch-readiness ownership guidance.
+- Restore: `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false` passed.
+- Build: `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` passed with zero warnings and errors.
+- The documented bare solution build and its explicit-Debug retry failed with `HXW0002` and missing Works serialization references (176 errors): solution traversal removes the external project's Configuration, requiring the supported source-reference option. The first source-reference build hit `NETSDK1064` for unrestored Roslynator.Analyzers 4.15.0; restoring with the same source-reference mode resolved it. No package pins or submodule pointers changed.
+- Direct xUnit v3 executables, each invoked individually as `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/<Project>/bin/Debug/net10.0/<Project>`: ArchitectureTests 55/55; Contracts.Tests 90/90; IntegrationTests 109 total, 105 pass, 4 declared skips; Projections.Tests 146/146; Server.Tests 478/478; Works.Tests 76/76.
+- Final inventory: 954 tests, 950 passed, 4 declared infrastructure/performance skips, 0 failures. The existing performance lanes were left disabled.
+- New coverage: three server availability combinations, default loader resolution, canonical deactivation delivery plus all four external HTTP routes, configured-port projection delivery with persisted index/catalog assertions, public-port refusal of a dispatch proven to persist internally, all four public routes after internal delivery, and two HTTP claim-scoped administrator flows for new and existing capabilities through the actual host accessor and authorization request context. Existing opaque-denial coverage remains passing.
+- The configured-port tests simulate `Connection.LocalPort` before the production guard in TestServer and bind the setting through `IWebHostBuilder.UseSetting`. They prove host configuration/middleware behavior, not a real listener, network isolation, durable command submission, or concurrent single-use consumption. Adding an in-memory configuration source at the deferred minimal-host callback initially failed with a disposed ConfigurationManager; the setting-based fixture passed.
+- Runtime smoke: the first Aspire start timed out during restore. A subsequent no-build start succeeded, but `aspire wait timesheets --timeout 30 --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive` exited 18 because Timesheets failed to start; describe showed Timesheets Finished and security Unhealthy. `aspire stop` completed cleanup. No passing current-topology evidence is claimed.
 
 **Workflow:** `bmad-qa-generate-e2e-tests`
 **Date:** 2026-06-22

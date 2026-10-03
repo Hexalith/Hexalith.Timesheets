@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 
 using Hexalith.EventStore.Client.Gateway;
+using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
@@ -9,6 +10,7 @@ using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Dashboard;
+using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.OperationalReports;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
@@ -27,6 +29,22 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class RuntimeRegistrationTests
 {
+    /// <summary>Resolves the kernel's default loader with supplied EventStore read seams.</summary>
+    [Fact]
+    public void ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride()
+    {
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton(Substitute.For<IEventStoreGatewayClient>());
+        services.AddSingleton(Substitute.For<IReadModelStore>());
+        services.AddTimesheetsServerKernel();
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+
+        scope.ServiceProvider.GetRequiredService<IMagicLinkConfirmationCapabilityStateLoader>()
+            .ShouldBeOfType<EventStoreMagicLinkConfirmationCapabilityStateLoader>();
+    }
+
     [Fact]
     public void Server_kernel_preserves_a_pre_registered_event_store_gateway_override()
     {

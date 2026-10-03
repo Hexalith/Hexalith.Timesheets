@@ -25,6 +25,7 @@ using Hexalith.Timesheets.Projections.ActivityTypes;
 using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.AspNetCore.Builder;
@@ -162,6 +163,186 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         factory.Store.Get<ActivityTypeCatalogReadModel>(
                 MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
             .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+    }
+
+    /// <summary>Exercises the deactivation decision through projection delivery and all four HTTP routes.</summary>
+    [Fact]
+    public async Task DeactivatedRecordedTypeCanBeDisplayedAndConfirmedWhileAdjustmentStaysDenied()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-confirm-inactive"), new TimeEntryId("time-entry-confirm-inactive"),
+            deactivateActivityType: true);
+        await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust,
+            new MagicLinkCapabilityId("capability-adjust-inactive"), new TimeEntryId("time-entry-adjust-inactive"));
+        ActivityTypeCatalogItem item = factory.Store
+            .Get<ActivityTypeCatalogReadModel>(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+            .Items.ShouldHaveSingleItem();
+        item.IsActive.ShouldBeFalse();
+        item.IsAvailableForCapture.ShouldBeFalse();
+
+        using HttpResponseMessage confirmDisplay = await client.GetAsync(
+            $"/api/timesheets/magic-links/confirm?t={ValidConfirmToken()}", TestContext.Current.CancellationToken);
+        using HttpResponseMessage confirmSubmit = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        using HttpResponseMessage adjustDisplay = await client.GetAsync(
+            $"/api/timesheets/magic-links/adjust?t={ValidAdjustToken()}", TestContext.Current.CancellationToken);
+        using HttpResponseMessage adjustSubmit = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
+            AdjustCommand(), TestContext.Current.CancellationToken);
+
+        confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await confirmDisplay.Content.ReadFromJsonAsync<MagicLinkConfirmationDisplayResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull().ActivityTypeLabel.ShouldBe("Delivery");
+        confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        CapturedFailure displayDenial = await CaptureFailureAsync(adjustDisplay, "inactive-adjust-display", ValidAdjustToken());
+        CapturedFailure submitDenial = await CaptureFailureAsync(adjustSubmit, "inactive-adjust-submit", ValidAdjustToken());
+        displayDenial.NormalizedBody.ShouldBe(submitDenial.NormalizedBody);
+    }
+
+    /// <summary>Proves configuration-bound internal delivery persists the loader's read models.</summary>
+    [Fact]
+    public async Task ConfiguredInternalPortDeliversProjectionsAndResolvesAValidLink()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081);
+        using HttpClient client = factory.CreateClient();
+        factory.Services.GetRequiredService<IOptions<InternalSurfaceOptions>>().Value.AllowOnAnyPort.ShouldBeFalse();
+        factory.Services.GetRequiredService<IOptions<InternalSurfaceOptions>>().Value.Port.ShouldBe(8081);
+
+        var capabilityId = new MagicLinkCapabilityId("capability-internal-port");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, new TimeEntryId("time-entry-internal-port"));
+        await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust,
+            new MagicLinkCapabilityId("capability-adjust-public-port"), new TimeEntryId("time-entry-adjust-public-port"));
+
+        MagicLinkTokenHashCapabilityIndexEntry candidate = factory.Store
+            .Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+            .Entries[Hash(ValidConfirmToken())];
+        candidate.CapabilityId.ShouldBe(capabilityId);
+        candidate.Tenant.ShouldBe(Tenant());
+        factory.Store.Get<ActivityTypeCatalogReadModel>(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+            .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        factory.LocalPort = 8080;
+        foreach (ExternalRoute route in ExternalRoutes())
+        {
+            string token = route.Action == MagicLinkAllowedAction.Confirm ? ValidConfirmToken() : ValidAdjustToken();
+            using HttpResponseMessage response = await SendAsync(client, route, token);
+            response.StatusCode.ShouldBe(route.Method == HttpMethod.Get ? HttpStatusCode.OK : HttpStatusCode.Accepted);
+        }
+    }
+
+    /// <summary>Proves the configured port denies projection writes arriving on the public port.</summary>
+    [Fact]
+    public async Task ConfiguredInternalPortRefusesProjectionWritesOnThePublicPort()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-internal-seed"), new TimeEntryId("time-entry-internal-seed"));
+        ProjectionDispatchRequest admitted = factory.LastIndexDispatch.ShouldNotBeNull();
+        ProjectionEventDto admittedEvent = admitted.Request.Events.ShouldHaveSingleItem();
+        MagicLinkConfirmationCapabilityIssued issued = JsonSerializer.Deserialize<MagicLinkConfirmationCapabilityIssued>(
+            admittedEvent.Payload, JsonOptions).ShouldNotBeNull() with
+        {
+            CapabilityId = new MagicLinkCapabilityId("capability-refused"),
+            TokenHash = new MagicLinkTokenHash(Hash("refused-token"))
+        };
+        ProjectionDispatchRequest dispatch = admitted with
+        {
+            DispatchId = "dispatch-refused",
+            Request = admitted.Request with
+            {
+                AggregateId = issued.CapabilityId.Value,
+                Events = [admittedEvent with
+                {
+                    Payload = JsonSerializer.SerializeToUtf8Bytes(issued, JsonOptions),
+                    MessageId = "projection-refused"
+                }]
+            }
+        };
+        string indexBefore = JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions);
+        string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
+            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
+        factory.LocalPort = 8080;
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            "/project/v2", dispatch, JsonOptions, TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions).ShouldBe(indexBefore);
+        JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
+            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
+
+        factory.LocalPort = 8081;
+        using HttpResponseMessage admittedResponse = await client.PostAsJsonAsync(
+            "/project/v2", dispatch, JsonOptions, TestContext.Current.CancellationToken);
+        admittedResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await admittedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+            .Entries[issued.TokenHash.Value].CapabilityId.ShouldBe(issued.CapabilityId);
+    }
+
+    /// <summary>Exercises the host's registered accessor through tenant-scoped administrator loads.</summary>
+    /// <param name="useMismatchedClaims">Whether HTTP claims name a tenant without the projected catalog.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AdminStateLoadsUseTheHostsHttpClaimsAccessor(bool useMismatchedClaims)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: useMismatchedClaims);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-existing"), new TimeEntryId("time-entry-existing"));
+        factory.Store.ReadKeys.Clear();
+        factory.Gateway.Requests.Clear();
+        var capabilityId = new MagicLinkCapabilityId("capability-admin-new");
+        var command = new IssueMagicLinkConfirmationCapability(
+            capabilityId,
+            new MagicLinkConfirmationScope(Contributor(), TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(), new TimeEntryId("time-entry-admin-new"), MagicLinkTargetKind.ProposedTimeEntry),
+            MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1), new MagicLinkAuditMetadata("timesheets", "admin-issue"));
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            "/api/timesheets/magic-links/confirmation-capabilities", command, JsonOptions, TestContext.Current.CancellationToken);
+
+        TenantReference expectedTenant = useMismatchedClaims ? OtherTenant() : Tenant();
+        PartyReference expectedActor = useMismatchedClaims ? OtherContributor() : Contributor();
+        factory.ObservedTrustedContext.Tenant.ShouldBe(expectedTenant);
+        factory.ObservedTrustedContext.Actor.ShouldBe(expectedActor);
+        factory.ObservedTrustedContext.CorrelationId.ShouldNotBeNullOrWhiteSpace();
+        TimesheetsRequestContext authorizedContext = factory.AccessGuard.LastAuthorizationRequest.ShouldNotBeNull().Context;
+        authorizedContext.Tenant.ShouldBe(expectedTenant);
+        authorizedContext.Actor.ShouldBe(expectedActor);
+        authorizedContext.CorrelationId.ShouldBe(factory.ObservedTrustedContext.CorrelationId);
+        factory.Store.ReadKeys.ShouldHaveSingleItem().ShouldBe(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(expectedTenant));
+        StreamReadRequest request = factory.Gateway.Requests.ShouldHaveSingleItem();
+        request.Tenant.ShouldBe(expectedTenant.TenantId);
+        request.AggregateId.ShouldBe(capabilityId.Value);
+        response.StatusCode.ShouldBe(useMismatchedClaims ? HttpStatusCode.Forbidden : HttpStatusCode.Accepted);
+
+        // Revoking an existing capability requires the authoritative stream to be folded, whereas
+        // issuance of a new id correctly succeeds when that stream is absent.
+        factory.Gateway.Requests.Clear();
+        factory.Store.ReadKeys.Clear();
+        var existingId = new MagicLinkCapabilityId("capability-existing");
+        using HttpResponseMessage revocation = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirmation-capabilities/{existingId.Value}/revoke",
+            new RevokeMagicLinkConfirmationCapability(existingId, new MagicLinkAuditMetadata("timesheets", "admin-revoke")),
+            JsonOptions, TestContext.Current.CancellationToken);
+        revocation.StatusCode.ShouldBe(useMismatchedClaims ? HttpStatusCode.Forbidden : HttpStatusCode.Accepted);
+        StreamReadRequest existingRequest = factory.Gateway.Requests.ShouldHaveSingleItem();
+        existingRequest.Tenant.ShouldBe(expectedTenant.TenantId);
+        existingRequest.AggregateId.ShouldBe(existingId.Value);
+        factory.Store.ReadKeys.ShouldBeEmpty();
+        TimesheetsRequestContext revocationContext = factory.AccessGuard.LastAuthorizationRequest.ShouldNotBeNull().Context;
+        revocationContext.Tenant.ShouldBe(expectedTenant);
+        revocationContext.Actor.ShouldBe(expectedActor);
+        revocationContext.CorrelationId.ShouldBe(factory.ObservedTrustedContext.CorrelationId);
     }
 
     [Fact]
@@ -756,7 +937,11 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         string[] Headers,
         string RawBody);
 
-    private sealed class MagicLinkHttpBoundaryFactory(bool useConcreteLoader = false) : WebApplicationFactory<Program>
+    private sealed class MagicLinkHttpBoundaryFactory(
+        bool useConcreteLoader = false,
+        int? internalPort = null,
+        int? localPort = null,
+        bool? useMismatchedClaims = null) : WebApplicationFactory<Program>
     {
         public ScriptedAccessGuard AccessGuard { get; } = new();
 
@@ -766,12 +951,22 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         public ScriptedEventStoreGateway Gateway { get; } = new();
 
+        /// <summary>Gets the context observed from the actual host accessor during the latest request.</summary>
+        public (TenantReference? Tenant, PartyReference? Actor, string? CorrelationId) ObservedTrustedContext { get; private set; }
+
+        /// <summary>Gets or sets the simulated local port for subsequent requests to this host.</summary>
+        public int? LocalPort { get; set; } = localPort;
+
+        /// <summary>Gets the latest index dispatch using the host's admitted route fingerprint.</summary>
+        public ProjectionDispatchRequest? LastIndexDispatch { get; private set; }
+
         public async Task ProjectValidStateAsync(
             HttpClient client,
             string token,
             MagicLinkAllowedAction action,
             MagicLinkCapabilityId capabilityId,
-            TimeEntryId timeEntryId)
+            TimeEntryId timeEntryId,
+            bool deactivateActivityType = false)
         {
             MagicLinkConfirmationCapabilityIssued issued = new(
                 capabilityId,
@@ -832,7 +1027,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                         Tenant().TenantId,
                         "timesheets",
                         ActivityId().Value,
-                        [ProjectionEvent(1, ActivityCreated())]),
+                        deactivateActivityType
+                            ? [ProjectionEvent(1, ActivityCreated()), ProjectionEvent(2, new ActivityTypeDeactivated(ActivityId()))]
+                            : [ProjectionEvent(1, ActivityCreated())]),
                     TenantActivityTypeCatalogProjection.ProjectionName,
                     "dispatch-catalog-live",
                     fingerprint);
@@ -964,6 +1161,11 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            if (internalPort is { } port)
+            {
+                builder.UseSetting($"{InternalSurfaceOptions.SectionName}:Port", port.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+
             builder.ConfigureLogging(logging =>
             {
                 logging.ClearProviders();
@@ -972,17 +1174,12 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
             builder.ConfigureServices(services =>
             {
-                // TestServer has no listener, so Connection.LocalPort is always 0 and the port split
-                // cannot be expressed here. These tests exercise the projection route deliberately,
-                // so they opt in explicitly rather than the guard defaulting open in production.
-                services.Configure<InternalSurfaceOptions>(static options => options.AllowOnAnyPort = true);
-                services.RemoveAll<IMagicLinkConfirmationCapabilityStateLoader>();
-                if (useConcreteLoader)
+                // Port-specific tests set Connection.LocalPort before the guard; other in-process
+                // journeys explicitly open the projection route without claiming listener coverage.
+                services.Configure<InternalSurfaceOptions>(options => options.AllowOnAnyPort = internalPort is null);
+                if (!useConcreteLoader)
                 {
-                    services.AddScoped<IMagicLinkConfirmationCapabilityStateLoader, EventStoreMagicLinkConfirmationCapabilityStateLoader>();
-                }
-                else
-                {
+                    services.RemoveAll<IMagicLinkConfirmationCapabilityStateLoader>();
                     services.AddScoped<IMagicLinkConfirmationCapabilityStateLoader, ScriptedMagicLinkStateLoader>();
                 }
 
@@ -1002,11 +1199,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(new StaticTimeProvider(ObservedAtUtc));
 
-                services.AddSingleton<IStartupFilter>(new ClaimsStartupFilter(useConcreteLoader));
+                services.AddSingleton<IStartupFilter>(new ClaimsStartupFilter(
+                    useMismatchedClaims ?? useConcreteLoader,
+                    () => LocalPort,
+                    accessor => ObservedTrustedContext = (accessor.CurrentTenant, accessor.CurrentActor, accessor.CurrentCorrelationId)));
             });
         }
 
-        private static async Task<ProjectionDispatchOutcome> DispatchProjectionAsync(
+        private async Task<ProjectionDispatchOutcome> DispatchProjectionAsync(
             HttpClient client,
             ProjectionRequest request,
             string projectionType,
@@ -1016,6 +1216,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             string? expectedReasonCode = null)
         {
             var dispatch = new ProjectionDispatchRequest(request, [projectionType], dispatchId, fingerprint);
+            if (projectionType == MagicLinkTokenHashCapabilityIndexProjection.ProjectionName)
+            {
+                LastIndexDispatch = dispatch;
+            }
             using HttpResponseMessage projectionResponse = await client.PostAsJsonAsync(
                 "/project/v2",
                 dispatch,
@@ -1059,13 +1263,21 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 Operator().PartyId);
     }
 
-    private sealed class ClaimsStartupFilter(bool useMismatchedClaims) : IStartupFilter
+    private sealed class ClaimsStartupFilter(
+        bool useMismatchedClaims,
+        Func<int?> localPort,
+        Action<ITimesheetsTrustedContextAccessor> captureContext) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
             => app =>
             {
                 app.Use(async (context, following) =>
                 {
+                    if (localPort() is { } port)
+                    {
+                        context.Connection.LocalPort = port;
+                    }
+
                     context.User = new ClaimsPrincipal(new ClaimsIdentity(
                     [
                         new Claim("tenant_id", useMismatchedClaims ? OtherTenant().TenantId : Tenant().TenantId),
@@ -1074,6 +1286,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                             ClaimTypes.NameIdentifier,
                             useMismatchedClaims ? OtherContributor().PartyId : Contributor().PartyId)
                     ], "TestAuth"));
+
+                    captureContext(context.RequestServices.GetRequiredService<ITimesheetsTrustedContextAccessor>());
 
                     await following(context).ConfigureAwait(false);
                 });
@@ -1173,11 +1387,15 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         public int TrustedWorkExecutionCount => Volatile.Read(ref _trustedWorkExecutionCount);
 
+        /// <summary>Gets the last request passed to the service's authorization boundary.</summary>
+        public TimesheetsAuthorizationRequest? LastAuthorizationRequest { get; private set; }
+
         public ValueTask<TimesheetsAuthorizationDecision> AuthorizeAsync(
             TimesheetsAuthorizationRequest request,
             CancellationToken cancellationToken)
         {
             _ = Interlocked.Increment(ref _authorizationCount);
+            LastAuthorizationRequest = request;
             return ValueTask.FromResult(Decision(request));
         }
 
@@ -1225,6 +1443,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         public int DirectIndexSeedCount { get; private set; }
 
+        /// <summary>Gets the read-model keys requested through the loader's store seam.</summary>
+        public List<string> ReadKeys { get; } = [];
+
         public bool Contains(string key) => _values.ContainsKey(key);
 
         public T Get<T>(string key)
@@ -1236,11 +1457,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             string key,
             CancellationToken cancellationToken = default)
             where TValue : class
-            => Task.FromResult(new ReadModelEntry<TValue>(
+        {
+            ReadKeys.Add(key);
+            return Task.FromResult(new ReadModelEntry<TValue>(
                 _values.TryGetValue(key, out object? value) ? value as TValue : null,
                 _versions.TryGetValue(key, out int version)
                     ? version.ToString(System.Globalization.CultureInfo.InvariantCulture)
                     : null));
+        }
 
         // Direct, unconditional seeding is refused outright rather than merely counted. The counters
         // alone could never fail: every production write reaches this store through TrySaveAsync, so

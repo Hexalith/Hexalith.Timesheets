@@ -1073,6 +1073,50 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         json.ShouldNotContain("tenant", Case.Insensitive);
     }
 
+    /// <summary>Preserves confirmation of recorded evidence when capture availability changes.</summary>
+    /// <param name="isActive">Whether the recorded Activity Type is active.</param>
+    /// <param name="isAvailableForCapture">Whether the type permits new capture.</param>
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task RecordedActivityTypeRemainsConfirmableWhenUnavailableForCapture(bool isActive, bool isAvailableForCapture)
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        MagicLinkConfirmationCapabilityCommandService service = fixture.CreateService();
+        ActivityTypeCatalogReadModel catalog = FreshCatalog() with
+        {
+            Items = [FreshCatalog().Items[0] with
+            {
+                IsActive = isActive,
+                IsAvailableForCapture = isAvailableForCapture
+            }]
+        };
+
+        MagicLinkConfirmationDisplayResponse? display = await service.DescribeAsync(
+            Context(), "opaque-once", IssuedState(), RecordedExternalState(), catalog,
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult confirmation = await service.ConfirmAsync(
+            Context(), "opaque-once", ConfirmCommand(), IssuedState(), RecordedExternalState(),
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        MagicLinkAdjustmentDisplayResponse? adjustmentDisplay = await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(), catalog, ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult adjustment = await service.AdjustAsync(
+            Context(), "opaque-once", AdjustCommand(), IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(), catalog, ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        MagicLinkCapabilityCommandResult issuance = await service.IssueAsync(
+            Context(), IssueCommand(), null, catalog, IssuedAtUtc(), TestContext.Current.CancellationToken);
+
+        display.ShouldNotBeNull().ActivityTypeLabel.ShouldBe("Delivery");
+        confirmation.WasDispatched.ShouldBeTrue();
+        adjustmentDisplay.ShouldBeNull();
+        adjustment.WasDispatched.ShouldBeFalse();
+        adjustment.AdjustmentResult.ShouldBeNull();
+        issuance.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        issuance.IssueResponse.ShouldBeNull();
+    }
+
     [Fact]
     public async Task Describe_magic_link_fails_closed_for_invalid_used_expired_wrong_scope_or_unfresh_states()
     {

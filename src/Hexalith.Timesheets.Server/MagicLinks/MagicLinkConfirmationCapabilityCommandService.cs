@@ -327,7 +327,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return null;
         }
 
-        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, out string? activityTypeLabel)
+        // Confirmation displays the recorded type even after capture availability changes.
+        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, requireCaptureAvailability: false, out string? activityTypeLabel)
             ? new MagicLinkConfirmationDisplayResponse(
                 timeEntryState!.ServiceDate,
                 timeEntryState.DurationMinutes,
@@ -376,7 +377,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return null;
         }
 
-        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, out string? activityTypeLabel)
+        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, requireCaptureAvailability: true, out string? activityTypeLabel)
             ? new MagicLinkAdjustmentDisplayResponse(
                 timeEntryState!.ServiceDate,
                 timeEntryState.DurationMinutes,
@@ -507,6 +508,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
     private static bool TryResolveDisplayLabel(
         MagicLinkCapabilityState state,
         ActivityTypeCatalogReadModel catalog,
+        bool requireCaptureAvailability,
         out string? label)
     {
         label = null;
@@ -524,8 +526,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         if (matches.Length != 1
             || matches[0].Scope != ActivityTypeScope.Tenant
             || matches[0].Project is not null
-            || !matches[0].IsActive
-            || !matches[0].IsAvailableForCapture)
+            || (requireCaptureAvailability && (!matches[0].IsActive || !matches[0].IsAvailableForCapture)))
         {
             return false;
         }
