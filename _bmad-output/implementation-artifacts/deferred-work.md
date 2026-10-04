@@ -314,3 +314,15 @@ Increment `887db47..c00c2be` (build guidance and verification evidence patches).
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
   summary: Resolve the fixed Timesheets AppHost public port 8080 colliding with other Hexalith AppHosts.
   evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:24` declares `PublicPort = 8080` with `isProxied: false`. The EventStore, Parties and FrontComposer AppHosts also use 8080. `Hexalith.EventStore.Aspire` reserves 8080 as `KeycloakFastStartPorts.ReservedEventStoreAppPort`. At review time `127.0.0.1:8080` was held by another AppHost's `dcp`. The 2026-10-04 smoke recorded exit 134 with `Failed to bind to address http://127.0.0.1:8080: address already in use`. The existing AppHost-smoke entry ("Capture the cause of the 2026-10-03 AppHost smoke…") is not annotated with this captured cause. The new endpoint fitness test pins 8080/8081, so any port change must update both the AppHost and the test. Pre-existing since `fe82c7d`; AppHost ports and topology are infrastructure-owned.
+
+## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md (2026-10-04)
+
+Increment `c825bff..4c538c8` (configuration fitness and contributor guidance patches).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md`
+  summary: Bring test method names in line with the baseline PascalCase rule.
+  evidence: `hexalith-llm-instructions.md` (Testing Standards) requires PascalCase test method names. About 653 test methods under `tests/` use underscores, including `Host_maps_narrow_magic_link_confirmation_routes_without_authority_body_fields`, `Magic_link_endpoint_denial_copy_is_opaque` and `Magic_link_external_routes_share_one_denial_helper` in `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs`, next to the PascalCase method renamed in `4c538c8`. Pre-existing. The spec-7 review patch renamed only the new method, and a repository-wide rename is a separate mechanical change.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md`
+  summary: Make the AppHost endpoint comment use the declared endpoint name.
+  evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:11` describes the public ingress as `"http"`, while line 32 declares `.WithHttpEndpoint(name: "public", ...)`. Aspire and `aspire describe` show the endpoint as `public`. Pre-existing in Story 3.6 history. CLAUDE.md allows AppHost changes only when a story names the project.
