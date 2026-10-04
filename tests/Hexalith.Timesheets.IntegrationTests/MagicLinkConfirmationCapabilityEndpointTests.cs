@@ -23,6 +23,8 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         host.ShouldNotContain("AllowOnAnyPort", Case.Insensitive);
 
         InternalSurfaceOptions.SectionName.ShouldBe("Timesheets:InternalSurface");
+        new InternalSurfaceOptions().AllowOnAnyPort.ShouldBeFalse();
+        new InternalSurfaceOptions().Port.ShouldBeNull();
         string environmentKey = InternalSurfaceOptions.SectionName.Replace(":", "__", StringComparison.Ordinal) + "__Port";
         environmentKey.ShouldBe("Timesheets__InternalSurface__Port");
 

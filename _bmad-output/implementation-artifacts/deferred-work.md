@@ -286,6 +286,7 @@ Increment `887db47^..887db47` (confirmation display and host verification patche
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
   summary: Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items before the story is marked done.
   evidence: Earlier review rounds in `3-6-implement-eventstore-backed-magic-link-state-loading.md` (lines 75-94, 129-132, 207-212, 248-255) remain `[ ]`. Several were implemented by later increments (catalog `Fresh` promotion, capability/Time Entry `ActivityTypeId` agreement). Others became ledgered deferrals (moving the shapes to Contracts, `IConfiguration` gateway binding). Each needs a tick, or a conversion to Defer with its ledger reference.
+  resolution_note: Resolved on 2026-10-04. The evidence above is historical; the reconciliation recorded all 37 dispositions in the Story 3.6 file: 28 implemented or superseded and nine deferred. This dated entry is retained for traceability; acceptance and release gates remain open.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
   summary: Refresh the agent-context SDK version and build instruction.
@@ -327,7 +328,7 @@ Increment `c825bff..4c538c8` (configuration fitness and contributor guidance pat
   summary: Make the AppHost endpoint comment use the declared endpoint name.
   evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:11` describes the public ingress as `"http"`, while line 32 declares `.WithHttpEndpoint(name: "public", ...)`. Aspire and `aspire describe` show the endpoint as `public`. Pre-existing in Story 3.6 history. CLAUDE.md allows AppHost changes only when a story names the project.
 
-## Deferred from alternate-configuration and literal-parsing patches for Story 3.6 (2026-10-04)
+## Deferred from: alternate-configuration and literal-parsing patches for Story 3.6 (2026-10-04)
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-9.md`
   summary: Semantic analysis of escaped or computed configuration keys and escaped C# property identifiers remains outside the bounded source fitness check.
@@ -339,7 +340,7 @@ Increment `c825bff..4c538c8` (configuration fitness and contributor guidance pat
   summary: Perform the deployed magic-link Activity Type ownership inventory and approved remediation before rollout.
   evidence: The tenant-only issuance, adjustment and loader policy is implemented, but no deployed capability or TimeEntry history access was available during this build. `docs/launch-readiness.md` retains the release owner’s obligation to inventory affected histories, obtain authorization for correction, revoke/reissue affected capabilities, and explicitly accept or separately remediate legacy shapes. The original historical review item is now marked Defer for this remaining deployment work; no migration-free claim is made.
 
-Reconciliation note: the earlier “Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items…” follow-up is satisfied by this increment’s per-item dispositions and focused full-bundle determinism regression. Historical ledger observations remain dated evidence; the eight deferred dispositions continue to point to their existing follow-ups or the inventory entry above. This does not close infrastructure, durable-write or release gates.
+Reconciliation note: the earlier “Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items…” follow-up is satisfied by this increment’s per-item dispositions and focused full-bundle determinism regression. Historical ledger observations remain dated evidence; the nine deferred dispositions continue to point to their existing follow-ups or the inventory entry above. This does not close infrastructure, durable-write or release gates.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
   summary: Record correlation-safe projection transport-failure outcomes without logging exception payloads or protected material.
@@ -352,5 +353,3 @@ Reconciliation note: the earlier “Reconcile the 37 unchecked Story 3.6 `[Revie
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
   summary: Complete store-component isolation and optimistic-concurrency enforcement in the projection and HTTP read-model doubles.
   evidence: ScriptedReadModelStore in MagicLinkStateProjectionHandlerTests still keys by read-model key without storeName and its TrySaveAsync simulates conflicts without checking the supplied ETag. ProjectionBackedReadModelStore in MagicLinkConfirmationHttpBoundaryTests also keys reads/writes without storeName, although its TrySaveAsync already enforces per-key ETags. Per-key ETags, explicit rebuild-plan StoreName/Kind/Concurrency assertions, real cross-tenant HTTP coverage and loader store/key assertions are already implemented. This annotation isolates the remaining test-double semantics from the historical mixed test-hardening ledger entries.
-
-Post-review reconciliation correction: the final disposition count is 28 implemented/superseded and nine deferred. The extra deferred disposition preserves the partially resolved transport-diagnostics finding; the 37-item tracking reconciliation itself is complete, with acceptance and release gates still open.

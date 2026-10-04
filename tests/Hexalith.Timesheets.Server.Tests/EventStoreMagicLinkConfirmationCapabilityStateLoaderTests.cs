@@ -655,17 +655,17 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         MagicLinkConfirmationCapabilityUsed used = Used() with { UsedAtUtc = adjusted.AdjustedAtUtc };
         StreamReadEvent[] capabilityHistory =
         [
-            Event(1, "capability-1", issued),
-            Event(2, "capability-2", used)
+            Event(1, "capability-z", issued),
+            Event(2, "capability-a", used)
         ];
         StreamReadEvent[] timeEntryHistory =
         [
-            Event(1, "time-1", recorded),
-            Event(2, "time-2", adjusted),
-            Event(3, "time-3", confirmed),
-            Event(4, "time-4", submitted),
-            Event(5, "time-5", approved),
-            Event(6, "time-6", correction)
+            Event(1, "time-f", recorded),
+            Event(2, "time-a", adjusted),
+            Event(3, "time-e", confirmed),
+            Event(4, "time-b", submitted),
+            Event(5, "time-d", approved),
+            Event(6, "time-c", correction)
         ];
         (string Name, StreamReadEvent[] Events)[] capabilityVariants =
         [

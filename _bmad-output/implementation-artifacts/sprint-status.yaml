@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-05-2026 00:40 (Story 3.6 code review of 4c538c8..f31a8b1: one decision resolved, eight patches open; status in-progress)
+# last_updated: 10-05-2026 00:52 (Story 3.6 eight review patches resolved; acceptance and release gaps remain; status review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-05-2026 00:40
+last_updated: 10-05-2026 00:52
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
-  3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
+  3-6-implement-eventstore-backed-magic-link-state-loading: review
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: done
   epic-3-retrospective: done
 
