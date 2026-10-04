@@ -11,7 +11,7 @@ DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
 ```
 
-Use the same source-reference mode for restore and build. The bare solution build currently loses the external Works project's configuration and fails with `HXW0002`; the owned follow-up is [the build-guidance entry in the deferred-work ledger](_bmad-output/implementation-artifacts/deferred-work.md#deferred-from-build-guidance-review-patches-for-story-36-2026-10-04).
+Use the same source-reference mode for restore and build. The bare solution build currently loses the external Works project's configuration and fails with `HXW0002`; the owned follow-up is in `_bmad-output/implementation-artifacts/deferred-work.md`, under "Deferred from: build guidance review patches for Story 3.6 (2026-10-04)".
 
 After building, run each test project through its xUnit v3 executable. With the pinned SDK `10.0.401`, the current `dotnet test ... --no-build` configuration fails with "Testing with VSTest target is no longer supported by Microsoft.Testing.Platform on .NET 10 SDK and later." The verified executable commands also work in environments where VSTest sockets are blocked:
 

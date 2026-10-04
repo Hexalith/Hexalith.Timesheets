@@ -9,20 +9,25 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class MagicLinkConfirmationCapabilityEndpointTests
 {
     [Fact]
-    public void AppHost_exports_the_internal_listener_port_to_the_host_options_section()
+    public void AppHostExportsTheInternalListenerPortToTheHostOptionsSection()
     {
         string appHost = File.ReadAllText(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Program.cs"));
         string host = File.ReadAllText(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
         // Commented-out wiring must not satisfy the source fitness assertions.
-        appHost = Regex.Replace(appHost, @"(?m)^\s*//[^\r\n]*|/\*[\s\S]*?\*/", string.Empty);
-        host = Regex.Replace(host, @"(?m)^\s*//[^\r\n]*|/\*[\s\S]*?\*/", string.Empty);
+        appHost = RemoveComments(appHost);
+        host = RemoveComments(host);
+
+        // Extra settings could override the port restriction on the public listener.
+        Regex.Matches(appHost, Regex.Escape("Timesheets__InternalSurface__"), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.ShouldBe(1);
+        appHost.ShouldNotContain("AllowOnAnyPort", Case.Insensitive);
 
         InternalSurfaceOptions.SectionName.ShouldBe("Timesheets:InternalSurface");
         string environmentKey = InternalSurfaceOptions.SectionName.Replace(":", "__", StringComparison.Ordinal) + "__Port";
         environmentKey.ShouldBe("Timesheets__InternalSurface__Port");
 
         // Keep the listener values aligned with the configured-port HTTP fixture.
-        appHost.ShouldNotMatch(@"(?m)^\s*#(?:if|elif|else|endif)\b");
+        appHost.ShouldNotMatch(@"(?m)^\s*#\s*(?:if|elif|else|endif)\b");
+        host.ShouldNotMatch(@"(?m)^\s*#\s*(?:if|elif|else|endif)\b");
         appHost.ShouldMatch(@"(?m)^\s*const\s+int\s+PublicPort\s*=\s*8080\s*;");
         appHost.ShouldMatch(@"(?m)^\s*const\s+int\s+InternalPort\s*=\s*8081\s*;");
         Match resource = Regex.Match(appHost, @"\.AddProject<Projects\.Hexalith_Timesheets>\s*\(\s*""timesheets""\s*\)(?<chain>[^;]*);");
@@ -107,5 +112,16 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
 
         endpoint.Split("private static IResult Denied()", StringSplitOptions.None).Length.ShouldBe(2);
         endpoint.Split("Results.Problem(", StringSplitOptions.None).Length.ShouldBe(2);
+    }
+
+    private static string RemoveComments(string source)
+    {
+        // Match literals first so URLs and comment markers inside them remain source text.
+        return Regex.Replace(
+            source,
+            @"(?<raw>""{3,})[\s\S]*?\k<raw>|@""(?:""""|[^""])*""|""(?:\\.|[^""\\])*""|'(?:\\.|[^'\\])'|//[^\r\n]*|/\*[\s\S]*?\*/",
+            static match => match.Value.StartsWith("//", StringComparison.Ordinal) || match.Value.StartsWith("/*", StringComparison.Ordinal)
+                ? string.Empty
+                : match.Value);
     }
 }

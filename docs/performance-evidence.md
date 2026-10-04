@@ -101,23 +101,23 @@ Evidence should be collected in the integration/performance lane and should dist
 The lane is **skipped by default** so it never enters the fast unit baseline. Opt in with `TIMESHEETS_PERF=1`:
 
 ```bash
-# Build first (the lane lives in the infra-free IntegrationTests project).
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror
+# Restore and build in the same source-reference mode as the README.
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
 
-# Opt-in run via dotnet test (set the env var on the same invocation):
-TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-build
-
-# If dotnet test is blocked by local VSTest socket permissions, run the built xUnit v3 executable directly:
+# Opt-in NFR10 capture/governance lane through its xUnit v3 executable:
 TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home \
   tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests \
   -class "Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests" \
-  -xml /tmp/perf-evidence.xml
+  -xml /tmp/timesheets-nfr10-performance.xml
 
 # NFR11 report/export/dashboard lane:
 TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home \
   tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests \
   -class "Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests" \
-  -xml /tmp/perf-evidence.xml
+  -xml /tmp/timesheets-nfr11-performance.xml
 ```
 
-Without `TIMESHEETS_PERF=1` the test dynamically skips (`Assert.Skip`) and the fast baseline is unaffected. The per-scenario p95/min/median/max are emitted via `ITestOutputHelper` (timing aggregates and scenario names only — no command bodies, payloads, comments, or personal data, per NFR12); the `-xml` report above captures that output for copy-pasting into this document.
+Use the direct executables for the current SDK `10.0.401`: the repository's `dotnet test` configuration fails with the unsupported Microsoft.Testing.Platform VSTest-target error. Keep `TIMESHEETS_PERF=1` on the executable invocation that runs the selected lane.
+
+Without `TIMESHEETS_PERF=1` the test dynamically skips (`Assert.Skip`) and the fast baseline is unaffected. The per-scenario p95/min/median/max are emitted via `ITestOutputHelper` (timing aggregates and scenario names only — no command bodies, payloads, comments, or personal data, per NFR12); the two distinct `-xml` reports above capture that output for copy-pasting into this document.
