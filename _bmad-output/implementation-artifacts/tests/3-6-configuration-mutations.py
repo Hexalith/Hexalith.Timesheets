@@ -25,7 +25,8 @@ def main():
         InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture));'''
     binding = '''builder.Services.Configure<InternalSurfaceOptions>(
     builder.Configuration.GetSection(InternalSurfaceOptions.SectionName));'''
-    if app_source.count(export) != 1 or host_source.count(binding) != 1:
+    internal_endpoint = '    .WithHttpEndpoint(name: "internal", port: InternalPort, isProxied: false)'
+    if app_source.count(internal_endpoint + '\n' + export) != 1 or host_source.count(binding) != 1:
         raise RuntimeError('Production wiring changed; update the mutation anchors before running.')
     executable = root / 'tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests'
     command = [str(executable), '-method', 'Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationCapabilityEndpointTests.AppHostExportsTheInternalListenerPortToTheHostOptionsSection']
@@ -44,23 +45,40 @@ def main():
     mutations = [
         ('AllowOnAnyPort export', apphost, append_settings('    .WithEnvironment("Timesheets__InternalSurface__AllowOnAnyPort", "true")')),
         ('later public Port override', apphost, append_settings('    .WithEnvironment("Timesheets__InternalSurface__Port", "8080")')),
-        ('inline-comment export substitute', apphost, app_source.replace(export, '// .WithEnvironment("Timesheets__InternalSurface__Port", InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture));')),
-        ('block-comment export substitute', apphost, app_source.replace(export, '/*\n' + export + '\n*/')),
-        ('spaced AppHost conditional', apphost, app_source.replace(export, '# if false\n' + export + '\n# endif')),
-        ('AppHost conditional', apphost, app_source.replace(export, '#if false\n' + export + '\n#endif')),
+        ('colon-key public Port override', apphost, append_settings('    .WithEnvironment("Timesheets:InternalSurface:Port", "8080")')),
+        ('command-line public Port override', apphost, append_settings('    .WithArgs("--Timesheets:InternalSurface:Port=8080")')),
+        ('inline-comment export substitute', apphost, app_source.replace(internal_endpoint + '\n' + export, internal_endpoint + ' // .WithEnvironment("Timesheets__InternalSurface__Port", InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture))\n    ;')),
+        ('block-comment export substitute', apphost, app_source.replace(export, '/*\n' + export[:-1] + '\n*/\n    ;')),
+        ('spaced AppHost conditional', apphost, app_source.replace(export, '# if false\n' + export[:-1] + '\n# endif\n    ;')),
+        ('AppHost conditional', apphost, app_source.replace(export, '#if false\n' + export[:-1] + '\n#endif\n    ;')),
         ('spaced host conditional', host, host_source.replace(binding, '# if false\n' + binding + '\n# endif')),
         ('inline-comment host binding substitute', host, host_source.replace(binding, 'builder.Services.AddSingleton(TimeProvider.System); // .Configure<InternalSurfaceOptions>(builder.Configuration.GetSection(InternalSurfaceOptions.SectionName));')),
+        ('host Configure bypass', host, host_source.replace(binding, binding + '\nbuilder.Services.Configure<InternalSurfaceOptions>(o => o.AllowOnAnyPort = true);')),
+        ('host in-memory configuration bypass', host, host_source.replace(binding, binding + '\nbuilder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["Timesheets:InternalSurface:AllowOnAnyPort"] = "true" });')),
         ('lowercase bypass export', apphost, append_settings('    .WithEnvironment("timesheets__internalsurface__allowonanyport", "true")')),
         ('mixed-case Port override', apphost, append_settings('    .WithEnvironment("timesheets__InternalSurface__port", "8080")')),
     ]
-    literals = ['"https://example.invalid"', '@"https://example.invalid"', '"""https://example.invalid"""']
-    for label, literal in zip(['ordinary', 'verbatim', 'raw'], literals):
+    literals = [
+        ('ordinary', '"https://example.invalid"'),
+        ('verbatim', '@"https://example.invalid"'),
+        ('raw', '"""https://example.invalid"""'),
+        ('interpolated verbatim @$', r'@$"C:\x\" + "http://a"'),
+        ('interpolated verbatim $@', r'$@"C:\x\" + "http://a"'),
+        ('interpolated verbatim @$ with hole and doubled quotes', '@$"https://{PublicPort}/""segment""/*literal*/"'),
+        ('interpolated verbatim $@ with hole and doubled quotes', '$@"https://{PublicPort}/""segment""/*literal*/"'),
+    ]
+    for label, literal in literals:
         settings = '    .WithEnvironment("Endpoint", ' + literal + ').WithEnvironment("Timesheets__InternalSurface__Port", "8080")'
         mutations.append((label + ' URL before Port override', apphost, append_settings(settings)))
 
     try:
         check('baseline', False)
-        for label, literal in zip(['ordinary', 'verbatim', 'raw'], literals):
+        try:
+            apphost.write_bytes(append_settings('    .WithEnvironment("Endpoint", "https://internalsurface.example.invalid")').encode())
+            check('harmless InternalSurface URL', False)
+        finally:
+            apphost.write_bytes(originals[apphost])
+        for label, literal in literals:
             try:
                 apphost.write_bytes(append_settings('    .WithEnvironment("Endpoint", ' + literal + ')').encode())
                 check(label + ' harmless URL literal', False)

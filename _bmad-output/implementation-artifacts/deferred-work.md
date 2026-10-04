@@ -326,3 +326,9 @@ Increment `c825bff..4c538c8` (configuration fitness and contributor guidance pat
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md`
   summary: Make the AppHost endpoint comment use the declared endpoint name.
   evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:11` describes the public ingress as `"http"`, while line 32 declares `.WithHttpEndpoint(name: "public", ...)`. Aspire and `aspire describe` show the endpoint as `public`. Pre-existing in Story 3.6 history. CLAUDE.md allows AppHost changes only when a story names the project.
+
+## Deferred from alternate-configuration and literal-parsing patches for Story 3.6 (2026-10-04)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-9.md`
+  summary: Semantic analysis of escaped or computed configuration keys and escaped C# property identifiers remains outside the bounded source fitness check.
+  evidence: Verified medium developer-verification gap: the selected AppHostExportsTheInternalListenerPortToTheHostOptionsSection test passes when the canonical AppHost export is followed by `.WithArgs("--Timesheets:Internal\u0053urface:Port=8080")` or `.WithArgs("--Timesheets:Internal" + "Surface:Port=8080")`, or when the host binding is followed by `builder.Services.Configure<InternalSurfaceOptions>(o => o.AllowOnAny\u0050ort = true);`. Each reproduction ran exactly one test with zero failures and restored production bytes. These forms resolve to an overriding setting/property in C# but escape raw-source matching; the HTTP fixtures overwrite the Configure value. The current production sources contain none of these forms. Owner: infrastructure/configuration-verification follow-up; resolve through syntax-aware or effective-configuration validation rather than expanding the four accepted literal-wiring patches into a parser.

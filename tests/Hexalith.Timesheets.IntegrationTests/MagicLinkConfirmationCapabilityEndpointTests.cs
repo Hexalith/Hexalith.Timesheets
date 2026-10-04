@@ -17,9 +17,10 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         appHost = RemoveComments(appHost);
         host = RemoveComments(host);
 
-        // Extra settings could override the port restriction on the public listener.
-        Regex.Matches(appHost, Regex.Escape("Timesheets__InternalSurface__"), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.ShouldBe(1);
+        // Count configuration-key prefixes across separators and command-line arguments.
+        Regex.Matches(appHost, @"Timesheets(?:__|:)InternalSurface(?:__|:)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.ShouldBe(1);
         appHost.ShouldNotContain("AllowOnAnyPort", Case.Insensitive);
+        host.ShouldNotContain("AllowOnAnyPort", Case.Insensitive);
 
         InternalSurfaceOptions.SectionName.ShouldBe("Timesheets:InternalSurface");
         string environmentKey = InternalSurfaceOptions.SectionName.Replace(":", "__", StringComparison.Ordinal) + "__Port";
@@ -119,7 +120,7 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         // Match literals first so URLs and comment markers inside them remain source text.
         return Regex.Replace(
             source,
-            @"(?<raw>""{3,})[\s\S]*?\k<raw>|@""(?:""""|[^""])*""|""(?:\\.|[^""\\])*""|'(?:\\.|[^'\\])'|//[^\r\n]*|/\*[\s\S]*?\*/",
+            @"(?<raw>""{3,})[\s\S]*?\k<raw>|@\$*""(?:""""|[^""])*""|""(?:\\.|[^""\\])*""|'(?:\\.|[^'\\])'|//[^\r\n]*|/\*[\s\S]*?\*/",
             static match => match.Value.StartsWith("//", StringComparison.Ordinal) || match.Value.StartsWith("/*", StringComparison.Ordinal)
                 ? string.Empty
                 : match.Value);

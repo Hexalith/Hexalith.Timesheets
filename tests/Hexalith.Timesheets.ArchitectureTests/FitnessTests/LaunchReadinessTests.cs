@@ -311,12 +311,50 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Do not initialize `Hexalith.Timesheets/Hexalith.Works`");
     }
 
+    /// <summary>
+    /// Verifies that catalog defaults are resolved without selecting conditional overrides.
+    /// </summary>
+    [Fact]
+    public void PackageCatalogReaderUsesUnconditionalDefaultsWithConditionalOverrides()
+    {
+        XDocument catalog = XDocument.Parse(
+            """
+            <Project>
+              <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Other'">
+                <SharedVersion>9.0.0</SharedVersion>
+              </PropertyGroup>
+              <PropertyGroup>
+                <SharedVersion>1.2.3</SharedVersion>
+                <SharedVersion Condition="'$(MSBuildProjectName)' == 'Other'">8.0.0</SharedVersion>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageVersion Include="Shared" Version="$(SharedVersion)" />
+                <PackageVersion Include="Literal" Version="4.5.6" />
+              </ItemGroup>
+            </Project>
+            """);
+
+        GetPackageVersion(catalog, "Shared").ShouldBe("1.2.3");
+        GetPackageVersion(catalog, "Literal").ShouldBe("4.5.6");
+    }
+
     private static string GetPackageVersion(XDocument centralCatalog, string packageId)
     {
-        return centralCatalog.Descendants("PackageVersion")
+        string version = centralCatalog.Descendants("PackageVersion")
             .Single(element => string.Equals(element.Attribute("Include")?.Value, packageId, StringComparison.Ordinal))
             .Attribute("Version")
             .ShouldNotBeNull()
+            .Value;
+
+        Match propertyReference = Regex.Match(version, @"^\$\((?<name>[^)]+)\)$");
+        if (!propertyReference.Success)
+        {
+            return version;
+        }
+
+        // Read the shared default; the catalog's conditional Folders override does not apply to Timesheets.
+        return centralCatalog.Descendants(propertyReference.Groups["name"].Value)
+            .Single(element => element.AncestorsAndSelf().All(ancestor => ancestor.Attribute("Condition") is null))
             .Value;
     }
 
