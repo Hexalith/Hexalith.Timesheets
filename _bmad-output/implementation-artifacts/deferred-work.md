@@ -261,3 +261,31 @@ Implementation File List chunk (`24a37c1c...307b2d7`, 36 runtime/contracts/serve
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Confirm whether Aspire publishes the Timesheets internal HTTP endpoint off the pod network when `isExternal` is omitted.
   evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:16` comments that the internal listener is "Declared non-external so it is not published off the pod network", but `:33` calls `WithHttpEndpoint(name: "internal", port: 8081, isProxied: false)` with no `isExternal: false`. `InternalSurfaceGuard` still refuses domain-service paths on any port but the configured one. What would settle it: Aspire 13.5.3 publish/Kubernetes default for an unspecified `isExternal` on a second HTTP endpoint. Unverified medium if that default is external.
+
+## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)
+
+Increment `887db47^..887db47` (confirmation display and host verification patches).
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+  summary: Decide whether a magic-link adjustment may move a Time Entry off a retired recorded Activity Type.
+  evidence: `DescribeAdjustmentAsync` passes `requireCaptureAvailability: true` for the recorded `capabilityState.ActivityTypeId`. `AdjustAsync` (`MagicLinkConfirmationCapabilityCommandService.cs:246`) checks only the requested `command.ActivityTypeId`, and `ValidateAdjustmentScope` does not tie the two together. After deactivation the adjust GET returns the opaque 403, while a POST naming another active tenant type returns 202. Pre-existing: `887db47` changed only confirmation display.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+  summary: Reconcile the launch-readiness package waiver rows with the current imported catalog, and scope the fitness pin to those rows.
+  evidence: The 2026-10-03 observation paragraph supplies the strings `LaunchReadinessTests` pins (Aspire `13.6.0`, Dapr `1.18.10`, Keycloak and CommunityToolkit `13.6.0-preview`, Fluent UI `5.0.0`). The alignment waiver row (`docs/launch-readiness.md:26`) and the prerelease exception (`:64`) still list Aspire `13.5.4`, Dapr `1.18.7`, Keycloak `13.5.4-preview.1.26464.4`, CommunityToolkit `13.5.1-beta.752` and Fluent UI `5.0.0-rc.5`. The current previews have no waiver row, and `ShouldContain` over the whole section accepts the observation paragraph. Owner: Story 5.2's package-currency refresh.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+  summary: Capture the cause of the 2026-10-03 AppHost smoke in which the Timesheets resource did not stay up.
+  evidence: `aspire wait timesheets` exited 18; `aspire describe` showed Timesheets `Finished` and security `Unhealthy`. No console log, exit code or exception was recorded. `src/Hexalith.Timesheets.AppHost/Program.cs:22` still states that the host "comes up and fails closed". This extends the existing AppHost runtime-smoke entry (2026-09-18 section, "Add automated AppHost runtime smoke evidence…") and does not replace it.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+  summary: Register an authentication scheme so the host's trusted-context accessor can receive tenant and actor claims in a deployment.
+  evidence: Neither `src/Hexalith.Timesheets/Program.cs` nor `AddEventStoreDomainService` calls `AddAuthentication`/`UseAuthentication`. `HttpContextTimesheetsTrustedContextAccessor` therefore reads an anonymous principal, and administrator issue/revoke fail closed in a deployment. The 2026-10-03 HTTP tests inject claims through a test `IStartupFilter`. The concern pairs with the upstream route-group authorization entry above.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+  summary: Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items before the story is marked done.
+  evidence: Earlier review rounds in `3-6-implement-eventstore-backed-magic-link-state-loading.md` (lines 75-94, 129-132, 207-212, 248-255) remain `[ ]`. Several were implemented by later increments (catalog `Fresh` promotion, capability/Time Entry `ActivityTypeId` agreement). Others became ledgered deferrals (moving the shapes to Contracts, `IConfiguration` gateway binding). Each needs a tick, or a conversion to Defer with its ledger reference.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+  summary: Refresh the agent-context SDK version and build instruction.
+  evidence: `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` state SDK `10.0.302`, while `global.json` is `10.0.401`. They also direct a bare `Hexalith.Timesheets.slnx` restore/build, which currently fails with `HXW0002` (176 errors). The wording depends on the 2026-10-03 Build-gate decision.
