@@ -1163,7 +1163,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         {
             if (internalPort is { } port)
             {
-                builder.UseSetting($"{InternalSurfaceOptions.SectionName}:Port", port.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                builder.UseSetting("Timesheets:InternalSurface:Port", port.ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
 
             builder.ConfigureLogging(logging =>
