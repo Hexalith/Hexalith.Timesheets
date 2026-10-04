@@ -601,6 +601,158 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
+    public async Task LoadTokenStateAsyncPreservesCompleteFoldedBundleAcrossOrderingAndDuplicateVariants()
+    {
+        var recordedComment = new TimeEntryComment(
+            "Recorded confirmation evidence.",
+            Hexalith.Timesheets.Contracts.Policies.TimeEntryCommentPolicy.SensitiveDefault);
+        var adjustedComment = new TimeEntryComment(
+            "Adjusted confirmation evidence.",
+            Hexalith.Timesheets.Contracts.Policies.TimeEntryCommentPolicy.SensitiveDefault);
+        var correctedComment = new TimeEntryComment(
+            "Corrected confirmation evidence.",
+            Hexalith.Timesheets.Contracts.Policies.TimeEntryCommentPolicy.SensitiveDefault);
+        TimeEntryRecorded recorded = Recorded() with
+        {
+            Comment = recordedComment,
+            AiMetrics = AiEffortMetrics.Unavailable
+        };
+        TimeEntryCorrectionValues previous = CorrectionValues(ActivityTypeScope.Tenant) with
+        {
+            DurationMinutes = 75,
+            Comment = adjustedComment
+        };
+        TimeEntryAdjustedThroughMagicLink adjusted = Adjusted() with
+        {
+            AdjustedAtUtc = new DateTimeOffset(2026, 6, 19, 12, 10, 0, TimeSpan.Zero),
+            PreviousValues = CorrectionValues(ActivityTypeScope.Tenant) with
+            {
+                Comment = recordedComment,
+                AiMetrics = recorded.AiMetrics
+            },
+            AdjustedValues = previous
+        };
+        var confirmed = new TimeEntryContributorConfirmed(
+            TimeEntryId(),
+            Contributor(),
+            Tenant(),
+            new DateTimeOffset(2026, 6, 19, 12, 20, 0, TimeSpan.Zero),
+            new ExternalContributionSource("external", "confirmation-1"));
+        TimeEntrySubmitted submitted = Submitted(Tenant()) with { Submitter = new PartyReference("submitter-2") };
+        TimeEntryApproved approved = Approved() with { Approver = new PartyReference("approver-3") };
+        TimeEntryApprovedCorrected correction = ApprovedCorrected() with
+        {
+            CorrectedBy = new PartyReference("corrector-4"),
+            PreviousValues = previous,
+            CorrectedValues = previous with
+            {
+                DurationMinutes = 90,
+                Comment = correctedComment,
+                AiMetrics = AiEffortMetrics.Unavailable
+            }
+        };
+        MagicLinkConfirmationCapabilityIssued issued = Issued();
+        MagicLinkConfirmationCapabilityUsed used = Used() with { UsedAtUtc = adjusted.AdjustedAtUtc };
+        StreamReadEvent[] capabilityHistory =
+        [
+            Event(1, "capability-1", issued),
+            Event(2, "capability-2", used)
+        ];
+        StreamReadEvent[] timeEntryHistory =
+        [
+            Event(1, "time-1", recorded),
+            Event(2, "time-2", adjusted),
+            Event(3, "time-3", confirmed),
+            Event(4, "time-4", submitted),
+            Event(5, "time-5", approved),
+            Event(6, "time-6", correction)
+        ];
+        (string Name, StreamReadEvent[] Events)[] capabilityVariants =
+        [
+            ("ascending", capabilityHistory),
+            ("reversed", capabilityHistory.Reverse().ToArray()),
+            ("shuffled-with-duplicates", [capabilityHistory[1], capabilityHistory[0], capabilityHistory[1], capabilityHistory[0]])
+        ];
+        (string Name, StreamReadEvent[] Events)[] timeEntryVariants =
+        [
+            ("ascending", timeEntryHistory),
+            ("reversed", timeEntryHistory.Reverse().ToArray()),
+            ("shuffled-with-duplicates", [timeEntryHistory[5], timeEntryHistory[2], timeEntryHistory[0], timeEntryHistory[3],
+                timeEntryHistory[1], timeEntryHistory[4], timeEntryHistory[2], timeEntryHistory[5]])
+        ];
+        var catalog = new ActivityTypeCatalogReadModel(
+            [new ActivityTypeCatalogItem(ActivityId(), ActivityTypeScope.Tenant, null, "Development", true, BillableState.Billable)],
+            ProjectionFreshnessMetadata.Fresh with
+            {
+                Cursor = "catalog-head",
+                AsOfUtc = new DateTimeOffset(2026, 6, 19, 13, 0, 0, TimeSpan.Zero)
+            });
+        var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        string? expectedSnapshot = null;
+
+        foreach (var capabilityVariant in capabilityVariants)
+        {
+            foreach (var timeEntryVariant in timeEntryVariants)
+            {
+                string variantName = $"Capability: {capabilityVariant.Name}; Time Entry: {timeEntryVariant.Name}";
+                var gateway = new ScriptedGatewayClient()
+                    .WithStream(Tenant().TenantId, CapabilityId().Value, capabilityVariant.Events)
+                    .WithStream(Tenant().TenantId, TimeEntryId().Value, timeEntryVariant.Events);
+                MagicLinkEndpointTokenState state = await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash()), catalog))
+                    .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+                state.CapabilityState.ShouldNotBeNull(variantName).State.ShouldBe(CapabilityState.Used, variantName);
+                state.CapabilityState.UsedAtUtc.ShouldBe(used.UsedAtUtc, variantName);
+                state.CapabilityState.UseMetadata.ShouldBe(used.Source, variantName);
+                TimeEntryState entry = state.TimeEntryState.ShouldNotBeNull(variantName);
+                entry.DurationMinutes.ShouldBe(correction.CorrectedValues.DurationMinutes, variantName);
+                entry.ActivityTypeScope.ShouldBe(correction.CorrectedValues.ActivityTypeScope!.Value, variantName);
+                TimeEntryExternalAdjustmentEvidence adjustment = entry.ExternalAdjustment.ShouldNotBeNull(variantName);
+                adjustment.AdjustedAtUtc.ShouldBe(adjusted.AdjustedAtUtc, variantName);
+                adjustment.PreviousValues.ShouldBe(adjusted.PreviousValues, variantName);
+                adjustment.AdjustedValues.ShouldBe(adjusted.AdjustedValues, variantName);
+                adjustment.Source.ShouldBe(adjusted.Source, variantName);
+                entry.ConfirmedContributor.ShouldBe(confirmed.Contributor, variantName);
+                entry.ConfirmationTenant.ShouldBe(confirmed.Tenant, variantName);
+                entry.ConfirmedAtUtc.ShouldBe(confirmed.ConfirmedAtUtc, variantName);
+                entry.ContributorConfirmationSource.ShouldBe(confirmed.Source, variantName);
+                entry.TimeEntrySubmissionId.ShouldBe(submitted.TimeEntrySubmissionId, variantName);
+                entry.Submitter.ShouldBe(submitted.Submitter, variantName);
+                entry.SubmissionTenant.ShouldBe(submitted.Tenant, variantName);
+                entry.SubmittedAtUtc.ShouldBe(submitted.SubmittedAtUtc, variantName);
+                entry.SubmissionScope.ShouldBe(submitted.SubmissionScope, variantName);
+                entry.ApprovalState.ShouldBe(approved.ApprovalState, variantName);
+                entry.TimeEntryApprovalDecisionId.ShouldBe(approved.TimeEntryApprovalDecisionId, variantName);
+                entry.Approver.ShouldBe(approved.Approver, variantName);
+                entry.ApprovalTenant.ShouldBe(approved.Tenant, variantName);
+                entry.DecidedAtUtc.ShouldBe(approved.DecidedAtUtc, variantName);
+                entry.ApprovalAuthoritySource.ShouldBe(approved.AuthoritySource, variantName);
+                entry.ApprovalScope.ShouldBe(approved.ApprovalScope, variantName);
+                entry.TimeEntryCorrectionId.ShouldBe(correction.TimeEntryCorrectionId, variantName);
+                entry.CorrectedBy.ShouldBe(correction.CorrectedBy, variantName);
+                entry.CorrectionTenant.ShouldBe(correction.Tenant, variantName);
+                entry.CorrectedAtUtc.ShouldBe(correction.CorrectedAtUtc, variantName);
+                entry.PreviousValues.ShouldBe(correction.PreviousValues, variantName);
+                entry.CorrectedValues.ShouldBe(correction.CorrectedValues, variantName);
+                entry.CorrectionReason.ShouldBe(correction.Reason, variantName);
+                entry.SourceApprovalDecisionId.ShouldBe(correction.SourceApprovalDecisionId, variantName);
+                entry.SourceApprovalScope.ShouldBe(correction.SourceApprovalScope, variantName);
+                entry.CorrectionState.ShouldBe(correction.CorrectionState, variantName);
+                entry.Comment.ShouldBe(correctedComment, variantName);
+                entry.AiMetrics.ShouldBe(correction.CorrectedValues.AiMetrics, variantName);
+                entry.IsLockedFromDirectEdit.ShouldBeTrue(variantName);
+                state.ActivityTypeCatalog.ShouldBe(catalog, variantName);
+
+                // Serialize the whole public bundle so fields beyond the transition assertions above
+                // also have to survive ordering and duplicate delivery unchanged.
+                string snapshot = JsonSerializer.Serialize(state, jsonOptions);
+                expectedSnapshot ??= snapshot;
+                snapshot.ShouldBe(expectedSnapshot, variantName);
+            }
+        }
+    }
+
+    [Fact]
     public async Task LoadCapabilityAsync_returns_null_when_capability_aggregate_is_missing()
     {
         var gateway = new ScriptedGatewayClient();
