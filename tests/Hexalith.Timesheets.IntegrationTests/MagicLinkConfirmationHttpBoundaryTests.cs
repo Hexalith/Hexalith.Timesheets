@@ -234,8 +234,11 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     }
 
     /// <summary>Proves the configured port denies projection writes arriving on the public port.</summary>
-    [Fact]
-    public async Task ConfiguredInternalPortRefusesProjectionWritesOnThePublicPort()
+    /// <param name="projectionPath">The projection route spelling used on the public listener.</param>
+    [Theory]
+    [InlineData("/project/v2")]
+    [InlineData("/PROJECT/v2")]
+    public async Task ConfiguredInternalPortRefusesProjectionWritesOnThePublicPort(string projectionPath)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081);
         using HttpClient client = factory.CreateClient();
@@ -268,7 +271,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
         factory.LocalPort = 8080;
         using HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/project/v2", dispatch, JsonOptions, TestContext.Current.CancellationToken);
+            projectionPath, dispatch, JsonOptions, TestContext.Current.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
@@ -278,7 +281,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         factory.LocalPort = 8081;
         using HttpResponseMessage admittedResponse = await client.PostAsJsonAsync(
-            "/project/v2", dispatch, JsonOptions, TestContext.Current.CancellationToken);
+            projectionPath, dispatch, JsonOptions, TestContext.Current.CancellationToken);
         admittedResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await admittedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
@@ -289,12 +292,31 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     /// <summary>Exercises the host's registered accessor through tenant-scoped administrator loads.</summary>
     /// <param name="useMismatchedClaims">Whether HTTP claims name a tenant without the projected catalog.</param>
+    /// <param name="claimVariant">The prioritized or fallback claim set to exercise.</param>
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task AdminStateLoadsUseTheHostsHttpClaimsAccessor(bool useMismatchedClaims)
+    [InlineData(false, "standard")]
+    [InlineData(true, "standard")]
+    [InlineData(false, "tenant-fallback")]
+    [InlineData(false, "actor-fallback")]
+    [InlineData(false, "conflicting")]
+    public async Task AdminStateLoadsUseTheHostsHttpClaimsAccessor(bool useMismatchedClaims, string claimVariant)
     {
-        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: useMismatchedClaims);
+        Claim[]? claims = claimVariant switch
+        {
+            "standard" => null,
+            "tenant-fallback" => [new Claim("tenant", Tenant().TenantId), new Claim("party_id", Contributor().PartyId)],
+            "actor-fallback" => [new Claim("tenant_id", Tenant().TenantId), new Claim(ClaimTypes.NameIdentifier, Contributor().PartyId)],
+            "conflicting" =>
+            [
+                new Claim("tenant", OtherTenant().TenantId),
+                new Claim("tenant_id", Tenant().TenantId),
+                new Claim(ClaimTypes.NameIdentifier, OtherContributor().PartyId),
+                new Claim("party_id", Contributor().PartyId)
+            ],
+            _ => throw new InvalidOperationException($"Unknown claim variant '{claimVariant}'.")
+        };
+        using MagicLinkHttpBoundaryFactory factory = new(
+            useConcreteLoader: true, useMismatchedClaims: useMismatchedClaims, claims: claims);
         using HttpClient client = factory.CreateClient();
         await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
             new MagicLinkCapabilityId("capability-existing"), new TimeEntryId("time-entry-existing"));
@@ -343,6 +365,65 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         revocationContext.Tenant.ShouldBe(expectedTenant);
         revocationContext.Actor.ShouldBe(expectedActor);
         revocationContext.CorrelationId.ShouldBe(factory.ObservedTrustedContext.CorrelationId);
+    }
+
+    /// <summary>Refuses missing issuance identifiers before loading state, authorizing or generating material.</summary>
+    /// <param name="omitIdentifier">Whether the identifier is omitted rather than explicitly JSON-null.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork(bool omitIdentifier)
+    {
+        var generator = new CountingMagicLinkTokenGenerator();
+        using MagicLinkHttpBoundaryFactory factory = new(
+            useConcreteLoader: true, useMismatchedClaims: false, tokenGenerator: generator);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-existing"), new TimeEntryId("time-entry-existing"));
+        var command = new IssueMagicLinkConfirmationCapability(
+            new MagicLinkCapabilityId("capability-admin-new"),
+            new MagicLinkConfirmationScope(Contributor(), TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(), new TimeEntryId("time-entry-admin-new"), MagicLinkTargetKind.ProposedTimeEntry),
+            MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1), new MagicLinkAuditMetadata("timesheets", "admin-issue"));
+        using HttpResponseMessage valid = await client.PostAsJsonAsync(
+            "/api/timesheets/magic-links/confirmation-capabilities", command, JsonOptions, TestContext.Current.CancellationToken);
+        valid.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        generator.GenerationCount.ShouldBe(1);
+        factory.ObservedTrustedContext.Tenant.ShouldBe(Tenant());
+        factory.ObservedTrustedContext.Actor.ShouldBe(Contributor());
+        factory.Store.ReadKeys.Clear();
+        factory.Gateway.Requests.Clear();
+        int authorizationBefore = factory.AccessGuard.AuthorizationCount;
+        int trustedWorkBefore = factory.AccessGuard.TrustedWorkExecutionCount;
+        string indexBefore = JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions);
+        string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
+            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
+        JsonObject body = JsonSerializer.SerializeToNode(command, JsonOptions).ShouldNotBeNull().AsObject();
+        if (omitIdentifier)
+        {
+            body.Remove("capabilityId").ShouldBeTrue();
+        }
+        else
+        {
+            body["capabilityId"] = null;
+        }
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            "/api/timesheets/magic-links/confirmation-capabilities", body, JsonOptions, TestContext.Current.CancellationToken);
+
+        CapturedFailure failure = await CaptureFailureAsync(response, omitIdentifier ? "missing-id" : "null-id", string.Empty);
+        failure.RawBody.ShouldNotContain("oneTimeToken", Case.Insensitive);
+        failure.RawBody.ShouldNotContain("capabilityId", Case.Insensitive);
+        factory.Store.ReadKeys.ShouldBeEmpty();
+        factory.Gateway.Requests.ShouldBeEmpty();
+        factory.AccessGuard.AuthorizationCount.ShouldBe(authorizationBefore);
+        factory.AccessGuard.TrustedWorkExecutionCount.ShouldBe(trustedWorkBefore);
+        generator.GenerationCount.ShouldBe(1);
+        JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions).ShouldBe(indexBefore);
+        JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
+            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
     }
 
     [Fact]
@@ -461,16 +542,20 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
-        string token = Token(ExternalRoutes()[0], "unknown");
+        List<string> tokens = [];
+        foreach (ExternalRoute route in ExternalRoutes())
+        {
+            string invalidToken = Token(route, "unknown");
+            string validToken = route.Action == MagicLinkAllowedAction.Confirm ? ValidConfirmToken() : ValidAdjustToken();
+            tokens.Add(invalidToken);
+            tokens.Add(validToken);
+            using HttpResponseMessage denial = await SendAsync(client, route, invalidToken);
+            denial.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+            using HttpResponseMessage success = await SendAsync(client, route, validToken);
+            success.StatusCode.ShouldBe(route.Method == HttpMethod.Get ? HttpStatusCode.OK : HttpStatusCode.Accepted);
+        }
 
-        using HttpResponseMessage response = await client
-            .GetAsync($"/api/timesheets/magic-links/confirm?t={token}", TestContext.Current.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-
-        LogRecord[] records = factory.Logs.Records
-            .Where(static record => record.Category.StartsWith("Hexalith.Timesheets", StringComparison.Ordinal))
-            .ToArray();
+        LogRecord[] records = factory.Logs.Records.ToArray();
 
         records.ShouldNotBeEmpty();
         string.Join(' ', records.Select(static record => string.Join(' ', record.State))).ShouldContain("Category=Unknown");
@@ -478,7 +563,57 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         foreach (LogRecord record in records)
         {
             string rendered = $"{record.Category} {record.Message} {string.Join(' ', record.State)}";
-            AssertSensitiveMaterialAbsent(rendered, token);
+            foreach (string token in tokens)
+            {
+                AssertSensitiveMaterialAbsent(rendered, token);
+            }
+        }
+    }
+
+    /// <summary>Proves the host suppresses query-bearing Information request logs while retaining warnings.</summary>
+    [Fact]
+    public void HostingDiagnosticsFilterSuppressesInformationAndKeepsWarnings()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new();
+        using HttpClient client = factory.CreateClient();
+        ILogger logger = factory.Services.GetRequiredService<ILoggerFactory>()
+            .CreateLogger("Microsoft.AspNetCore.Hosting.Diagnostics");
+
+        logger.IsEnabled(LogLevel.Information).ShouldBeFalse();
+        logger.IsEnabled(LogLevel.Warning).ShouldBeTrue();
+        logger.LogInformation("hosting-filter-information-probe");
+        logger.LogWarning("hosting-filter-warning-probe");
+        factory.Logs.Records.ShouldNotContain(record => record.Message.Contains("hosting-filter-information-probe", StringComparison.Ordinal));
+        factory.Logs.Records.ShouldContain(record => record.Category == "Microsoft.AspNetCore.Hosting.Diagnostics"
+            && record.Message == "hosting-filter-warning-probe");
+    }
+
+    /// <summary>Enforces request-log privacy through provider overrides while retaining unrelated log levels.</summary>
+    /// <param name="configuredCategory">The provider default or hosting category configured at Information.</param>
+    [Theory]
+    [InlineData("Default")]
+    [InlineData("Microsoft.AspNetCore.Hosting.Diagnostics")]
+    public async Task HostingDiagnosticsFilterSurvivesProviderSpecificInformationConfiguration(string configuredCategory)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(providerLoggingCategory: configuredCategory);
+        using HttpClient client = factory.CreateClient();
+        ILoggerFactory loggers = factory.Services.GetRequiredService<ILoggerFactory>();
+        ILogger hosting = loggers.CreateLogger("Microsoft.AspNetCore.Hosting.Diagnostics");
+        ILogger unrelated = loggers.CreateLogger("Hexalith.Timesheets.Tests.LoggingProbe");
+        hosting.IsEnabled(LogLevel.Information).ShouldBeFalse();
+        hosting.IsEnabled(LogLevel.Warning).ShouldBeTrue();
+        unrelated.IsEnabled(LogLevel.Debug).ShouldBeTrue();
+        unrelated.LogDebug("unrelated-logging-probe");
+        factory.Logs.Records.ShouldContain(record => record.Message == "unrelated-logging-probe");
+        foreach (ExternalRoute route in ExternalRoutes())
+        {
+            string token = Token(route, "unknown");
+            using HttpResponseMessage response = await SendAsync(client, route, token);
+            response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+            foreach (LogRecord record in factory.Logs.Records)
+            {
+                AssertSensitiveMaterialAbsent($"{record.Category} {record.Message} {string.Join(' ', record.State)}", token);
+            }
         }
     }
 
@@ -619,9 +754,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
-        LogRecord[] records = factory.Logs.Records
-            .Where(static record => record.Category.StartsWith("Hexalith.Timesheets", StringComparison.Ordinal))
-            .ToArray();
+        LogRecord[] records = factory.Logs.Records.ToArray();
 
         // The blank-token boundary records the distinct Malformed outcome category (vs Unknown for a resolved
         // but-rejected token) while staying privacy-safe — proving every emitted category is internal-only.
@@ -941,7 +1074,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         bool useConcreteLoader = false,
         int? internalPort = null,
         int? localPort = null,
-        bool? useMismatchedClaims = null) : WebApplicationFactory<Program>
+        bool? useMismatchedClaims = null,
+        Claim[]? claims = null,
+        string? providerLoggingCategory = null,
+        IMagicLinkTokenGenerator? tokenGenerator = null) : WebApplicationFactory<Program>
     {
         public ScriptedAccessGuard AccessGuard { get; } = new();
 
@@ -1161,6 +1297,13 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            if (providerLoggingCategory is not null)
+            {
+                string providerName = typeof(CapturingLoggerProvider).FullName!;
+                builder.UseSetting($"Logging:{providerName}:LogLevel:{providerLoggingCategory}", "Information");
+                builder.UseSetting($"Logging:{providerName}:LogLevel:Hexalith.Timesheets.Tests.LoggingProbe", "Debug");
+            }
+
             if (internalPort is { } port)
             {
                 builder.UseSetting("Timesheets:InternalSurface:Port", port.ToString(System.Globalization.CultureInfo.InvariantCulture));
@@ -1186,6 +1329,12 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 services.RemoveAll<ITimesheetsAccessGuard>();
                 services.AddSingleton<ITimesheetsAccessGuard>(AccessGuard);
 
+                if (tokenGenerator is not null)
+                {
+                    services.RemoveAll<IMagicLinkTokenGenerator>();
+                    services.AddSingleton<IMagicLinkTokenGenerator>(tokenGenerator);
+                }
+
                 services.RemoveAll<IReadModelStore>();
                 services.RemoveAll<DaprReadModelStore>();
                 services.AddSingleton<IReadModelStore>(useConcreteLoader ? Store : new UnavailableReadModelStore());
@@ -1202,7 +1351,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 services.AddSingleton<IStartupFilter>(new ClaimsStartupFilter(
                     useMismatchedClaims ?? useConcreteLoader,
                     () => LocalPort,
-                    accessor => ObservedTrustedContext = (accessor.CurrentTenant, accessor.CurrentActor, accessor.CurrentCorrelationId)));
+                    accessor => ObservedTrustedContext = (accessor.CurrentTenant, accessor.CurrentActor, accessor.CurrentCorrelationId),
+                    claims));
             });
         }
 
@@ -1266,7 +1416,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     private sealed class ClaimsStartupFilter(
         bool useMismatchedClaims,
         Func<int?> localPort,
-        Action<ITimesheetsTrustedContextAccessor> captureContext) : IStartupFilter
+        Action<ITimesheetsTrustedContextAccessor> captureContext,
+        Claim[]? claims) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
             => app =>
@@ -1278,7 +1429,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                         context.Connection.LocalPort = port;
                     }
 
-                    context.User = new ClaimsPrincipal(new ClaimsIdentity(
+                    context.User = new ClaimsPrincipal(new ClaimsIdentity(claims ??
                     [
                         new Claim("tenant_id", useMismatchedClaims ? OtherTenant().TenantId : Tenant().TenantId),
                         new Claim("party_id", useMismatchedClaims ? OtherContributor().PartyId : Contributor().PartyId),

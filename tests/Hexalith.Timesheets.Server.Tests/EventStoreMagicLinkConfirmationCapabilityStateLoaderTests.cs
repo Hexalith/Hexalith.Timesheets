@@ -18,6 +18,8 @@ using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
+using NSubstitute;
+
 using Shouldly;
 
 using CapabilityState = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState;
@@ -126,6 +128,25 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
         state.ShouldNotBeNull().Tenant.ShouldBe(Tenant());
         gateway.Requests.ShouldHaveSingleItem().Tenant.ShouldBe(Tenant().TenantId);
+    }
+
+    /// <summary>Rejects a missing capability identifier before request-context access or persistence I/O.</summary>
+    [Fact]
+    public async Task LoadCapabilityAsyncReturnsNullWithoutIoForNullIdentifier()
+    {
+        var gateway = new ScriptedGatewayClient();
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
+        ITimesheetsTrustedContextAccessor context = Substitute.For<ITimesheetsTrustedContextAccessor>();
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(
+            gateway, readModels, new DeterministicTokenGenerator(), context);
+
+        Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState? state = await loader
+            .LoadCapabilityAsync(null!, TestContext.Current.CancellationToken);
+
+        state.ShouldBeNull();
+        context.ReceivedCalls().ShouldBeEmpty();
+        gateway.Requests.ShouldBeEmpty();
+        readModels.ReadCount.ShouldBe(0);
     }
 
     [Fact]
@@ -939,6 +960,43 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             .Where(static request => request.AggregateId == "capability-1")
             .Select(static request => request.FromSequence)
             .ShouldBe([0, 1]);
+    }
+
+    /// <summary>Refuses an issuance prefix when continuation leads to a page with no cursor progress.</summary>
+    /// <param name="isTruncated">Whether truncation, rather than the advertised head, requires continuation.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LoadTokenStateAsyncFailsClosedWhenContinuationStalls(bool isTruncated)
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithPagedStream(
+                Tenant().TenantId,
+                CapabilityId().Value,
+                [Event(1, "capability-1", Issued())],
+                [Event(2, "capability-2", Revoked())])
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
+            .WithPageTransform(Tenant().TenantId, CapabilityId().Value, page => page with
+            {
+                // Transform a real terminal-event page: the fixture skips literal empty pages.
+                Events = page.Metadata.FromSequence == 0 ? page.Events : [],
+                Metadata = page.Metadata with
+                {
+                    LatestSequence = isTruncated ? 1 : 2,
+                    IsTruncated = isTruncated,
+                    NextContinuationToken = isTruncated ? new ReplayContinuationToken("next") : null,
+                    LastSequenceReturned = page.Metadata.FromSequence == 0 ? 1 : null,
+                    EventCount = page.Metadata.FromSequence == 0 ? 1 : 0
+                }
+            });
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(gateway, readModels)
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+        gateway.Requests.Where(request => request.AggregateId == CapabilityId().Value)
+            .Select(static request => request.FromSequence).ShouldBe([0, 1]);
     }
 
     [Fact]

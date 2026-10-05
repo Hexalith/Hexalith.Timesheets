@@ -30,7 +30,10 @@ public sealed class InternalSurfaceGuardTests
             "/project/v2/reconcile",
             "/project/rebuild/v1",
             "/project/rebuild/shared/v1",
-            "/admin/operational-index-metadata"
+            "/admin/operational-index-metadata",
+            "/PROJECT/v2",
+            "/Process",
+            "/Admin/operational-index-metadata"
         })
         {
             data.Add(route);

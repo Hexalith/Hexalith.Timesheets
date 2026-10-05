@@ -720,8 +720,8 @@ public sealed class MagicLinkStateProjectionHandlerTests
         if (rowState == "unreadable-value")
         {
             // The shipped stores return an existing row as Deserialize<TValue>(bytes) paired with its
-            // ETag, so an empty, JSON-null or otherwise-shaped payload yields a null value under a live
-            // ETag. The key - and its ETag - are still there, so the plan must heal the row.
+            // ETag. This double models a JSON-null payload with a live ETag; malformed JSON throws
+            // before concurrency selection. The key and its ETag remain, so the plan can heal the row.
             store.Set(key, new UnreadableRow());
         }
         else if (rowState != "absent")
@@ -790,6 +790,61 @@ public sealed class MagicLinkStateProjectionHandlerTests
         result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.HandlerFailure);
         store.Get<ActivityTypeCatalogReadModel>(key).ShouldBeSameAs(persisted);
         store.TrySaveCount.ShouldBe(0);
+    }
+
+    /// <summary>Maps a malformed persisted index to a deterministic failure without replacing it.</summary>
+    [Fact]
+    public async Task IndexLiveDeliveryOntoNullEntriesFailsWithoutWriting()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
+        string key = MagicLinkTokenHashCapabilityIndexProjection.StateKey;
+        var persisted = new MagicLinkTokenHashCapabilityIndexReadModel(null!);
+        store.Set(key, persisted);
+        string before = Snapshot(persisted);
+        string etagBefore = store.ETagFor(key);
+
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            ValidRequest("index"), "dispatch-null-entries", TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.HandlerFailure);
+        store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(key).ShouldBeSameAs(persisted);
+        Snapshot(store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(key)).ShouldBe(before);
+        store.ETagFor(key).ShouldBe(etagBefore);
+        store.TrySaveCount.ShouldBe(0);
+    }
+
+    /// <summary>Leaves the tenant catalog untouched when delivery contains a project-owned Activity Type.</summary>
+    /// <param name="catalogExists">Whether a tenant catalog already exists before delivery.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProjectScopedActivityTypeDeliveryDoesNotWriteTenantCatalog(bool catalogExists)
+    {
+        var store = new ScriptedReadModelStore();
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(new TenantReference("tenant-1"));
+        string? before = catalogExists ? SeedExistingState(store, "catalog") : null;
+        string? etagBefore = catalogExists ? store.ETagFor(key) : null;
+        var handler = new TenantActivityTypeCatalogProjectionHandler(store);
+        ActivityTypeCreated created = ActivityCreated(new ActivityTypeId("project-activity")) with
+        {
+            Scope = ActivityTypeScope.Project,
+            Project = new ProjectReference("project-1")
+        };
+
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            new ProjectionRequest("tenant-1", "timesheets", created.ActivityTypeId.Value, [Event(1, created)]),
+            "dispatch-project-activity", TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.AlreadyCompleted);
+        store.TrySaveCount.ShouldBe(0);
+        store.Contains(key).ShouldBe(catalogExists);
+        if (catalogExists)
+        {
+            ReadExistingStateSnapshot(store, "catalog").ShouldBe(before);
+            store.ETagFor(key).ShouldBe(etagBefore);
+        }
     }
 
     [Fact]

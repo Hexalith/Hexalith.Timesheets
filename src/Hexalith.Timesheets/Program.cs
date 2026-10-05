@@ -10,6 +10,26 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+// Request-start and request-finish messages include sensitive query values.
+builder.Logging.AddFilter("Microsoft.AspNetCore.Hosting.Diagnostics", LogLevel.Warning);
+// Provider-specific configuration takes precedence over category-only rules. Apply the minimum
+// after configuration while retaining each rule's behavior for every other category.
+builder.Services.PostConfigure<LoggerFilterOptions>(static options =>
+{
+    for (int index = 0; index < options.Rules.Count; index++)
+    {
+        LoggerFilterRule rule = options.Rules[index];
+        options.Rules[index] = new LoggerFilterRule(
+            rule.ProviderName,
+            rule.CategoryName,
+            rule.LogLevel,
+            (provider, category, level) =>
+                (level >= LogLevel.Warning
+                    || category?.StartsWith("Microsoft.AspNetCore.Hosting.Diagnostics", StringComparison.OrdinalIgnoreCase) != true)
+                && (rule.Filter?.Invoke(provider, category, level) ?? true));
+    }
+});
+
 // The canonical EventStore domain-service registration owns shared observability,
 // health, service-discovery, and HTTP-resilience defaults for this host.
 builder.AddEventStoreDomainService(

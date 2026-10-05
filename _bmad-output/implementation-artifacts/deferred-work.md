@@ -405,3 +405,18 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Redact query-string values from request logs in the shared EventStore ServiceDefaults.
   evidence: Code-review decision (2026-10-05), option a — the Timesheets host now filters `Microsoft.AspNetCore.Hosting.Diagnostics` to `Warning` as the interim control. ASP.NET Core 10.0.12 logs `Request starting/finished … {Path}{QueryString}` at Information. `AddEventStoreDomainService` wires JSON console and OpenTelemetry logging with `IncludeFormattedMessage = true` and no category filter, so any module that carries a secret in a query string (Timesheets magic links use `?t=`) logs it unless that module filters the hosting category itself. The fix belongs in `references/Hexalith.EventStore` (`Hexalith.EventStore.ServiceDefaults`), outside this repository.
+
+
+### Deferred from: Story 3.6 spec-14 independent review (2026-10-05)
+
+- source_spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+  summary: Reject null capability identifiers on revoke and expire before dereferencing them.
+  evidence: Both unchanged management endpoints dereference command.CapabilityId.Value before the loader; otherwise-valid in-process null-id requests reproduce HTTP 500. This predates the current loader hardening.
+
+- source_spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+  summary: Capture exported log scopes and exception text in the HTTP privacy test harness.
+  evidence: CapturingLogger.BeginScope returns NullScope and LogRecord omits Exception; sentinel probes in these fields disappear from assertions while EventStore ServiceDefaults enables IncludeScopes. The test harness predates this increment.
+
+- source_spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+  summary: Verify malformed-body and exception-path diagnostics cannot disclose query values (unverified, medium if confirmed).
+  evidence: Existing malformed-body HTTP coverage checks response bodies only. No Warning/Error leak was demonstrated; capture scopes and exceptions, send query sentinels through malformed and throwing request paths, and compare emitted diagnostics to settle the claim.

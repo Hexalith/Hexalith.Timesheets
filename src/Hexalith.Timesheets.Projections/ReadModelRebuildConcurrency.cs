@@ -14,9 +14,9 @@ namespace Hexalith.Timesheets.Projections;
 /// </para>
 /// <para>
 /// A non-empty ETag is proof the row exists: the shipped stores return an existing row as its
-/// deserialized value paired with its ETag, and a value that deserializes to null - an empty or
-/// JSON-null payload, or a payload of another shape - still leaves the key, and its ETag, in place.
-/// That state takes <see cref="ReadModelBatchConcurrency.Match(string)"/> and heals the row.
+/// deserialized value paired with its ETag. A JSON-null payload still leaves the key and its ETag
+/// in place, so that state takes <see cref="ReadModelBatchConcurrency.Match(string)"/> and heals
+/// the row. Malformed JSON throws during the store read before this policy can be selected.
 /// </para>
 /// <para>
 /// Only an entry carrying nothing that indicates an existing row takes

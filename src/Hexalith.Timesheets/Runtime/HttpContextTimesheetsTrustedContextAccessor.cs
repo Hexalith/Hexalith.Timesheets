@@ -5,11 +5,15 @@ using Hexalith.Timesheets.Server.Runtime;
 
 namespace Hexalith.Timesheets.Runtime;
 
+/// <summary>Reads request claims and correlation context for the host's server-side authorization gates.</summary>
+/// <remarks>Claim-derived identifiers are evidence and do not grant tenant or resource authority.</remarks>
+/// <param name="httpContextAccessor">The accessor for the current server-established HTTP context.</param>
 public sealed class HttpContextTimesheetsTrustedContextAccessor(
     IHttpContextAccessor httpContextAccessor) : ITimesheetsTrustedContextAccessor
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
 
+    /// <inheritdoc/>
     public TenantReference? CurrentTenant
     {
         get
@@ -19,6 +23,7 @@ public sealed class HttpContextTimesheetsTrustedContextAccessor(
         }
     }
 
+    /// <inheritdoc/>
     public PartyReference? CurrentActor
     {
         get
@@ -28,6 +33,7 @@ public sealed class HttpContextTimesheetsTrustedContextAccessor(
         }
     }
 
+    /// <inheritdoc/>
     public string? CurrentCorrelationId => _httpContextAccessor.HttpContext?.TraceIdentifier;
 
     private string? FirstClaimValue(params string[] claimTypes)

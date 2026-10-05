@@ -31,6 +31,11 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
+                if (command.CapabilityId is null)
+                {
+                    return Denied();
+                }
+
                 ClaimsPrincipal user = httpContext.User;
                 ActivityTypeCatalogReadModel catalog = await stateLoader
                     .LoadActivityTypeCatalogAsync(cancellationToken)

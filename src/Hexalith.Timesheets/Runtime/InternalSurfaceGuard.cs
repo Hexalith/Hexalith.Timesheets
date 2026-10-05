@@ -9,7 +9,7 @@ namespace Hexalith.Timesheets.Runtime;
 public static class InternalSurfaceGuard
 {
     /// <summary>The domain-service path prefixes this host must not publish externally.</summary>
-    public static readonly string[] ProtectedPrefixes =
+    private static readonly string[] _protectedPrefixes =
     [
         "/process",
         "/replay-state",
@@ -19,7 +19,7 @@ public static class InternalSurfaceGuard
     ];
 
     /// <summary>
-    /// Adds the guard ahead of routing, so a refused request never reaches an SDK endpoint.
+    /// Adds the guard before endpoint execution, so a refused request never executes an SDK endpoint.
     /// </summary>
     /// <param name="app">The application to guard.</param>
     /// <returns>The application for chaining.</returns>
@@ -52,7 +52,7 @@ public static class InternalSurfaceGuard
     /// <param name="path">The request path.</param>
     /// <returns><see langword="true"/> when the path is part of the protected surface.</returns>
     public static bool IsProtectedPath(PathString path)
-        => ProtectedPrefixes.Any(prefix => path.StartsWithSegments(prefix, StringComparison.OrdinalIgnoreCase));
+        => _protectedPrefixes.Any(prefix => path.StartsWithSegments(prefix, StringComparison.OrdinalIgnoreCase));
 
     private static bool IsInternal(HttpContext context, InternalSurfaceOptions options)
         => options.AllowOnAnyPort

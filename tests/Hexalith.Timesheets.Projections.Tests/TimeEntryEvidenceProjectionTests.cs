@@ -513,6 +513,31 @@ public sealed class TimeEntryEvidenceProjectionTests
             .ShouldNotBeNull().ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
     }
 
+    /// <summary>Preserves project ownership when a legacy rejected correction carries no scope.</summary>
+    [Fact]
+    public void LegacyRejectedCorrectionRetainsPriorScopeInEvidenceAndQueryRow()
+    {
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded("time-entry-1", 45) with { ActivityTypeScope = ActivityTypeScope.Project }),
+            Event("m2", 2, Submitted("time-entry-1")),
+            Event("m3", 3, Rejected("time-entry-1")),
+            Event("m4", 4, Corrected("time-entry-1", 75))
+        ];
+        TimeEntryEvidenceReadModel model = Projector().Project(
+            "tenant-1", TimeEntryId(), events, FreshCheckpoint(4)).ShouldNotBeNull();
+        TimeEntryQueryRowReadModel row = ListProjector().Project(
+            "tenant-1", events, FreshCheckpoint(4), new QueryTimeEntries()).Items.ShouldHaveSingleItem();
+
+        model.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        model.DurationMinutes.ShouldBe(75);
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        model.Correction.ShouldNotBeNull().PreviousValues.ActivityTypeScope.ShouldBeNull();
+        model.Correction.CorrectedValues.ActivityTypeScope.ShouldBeNull();
+        row.ActivityTypeScope.ShouldBe(ActivityTypeScope.Project);
+        row.DurationMinutes.ShouldBe(75);
+    }
+
     [Fact]
     public void Projection_ignores_approved_correction_before_approval_until_replayed_in_supported_order()
     {

@@ -8,7 +8,7 @@ _ = builder.AddHexalithEventStoreSecurity();
 
 // The Timesheets host publishes two HTTP surfaces that must not share a listener:
 //
-//   "http"     — the public ingress. It carries the deliberately anonymous magic-link confirm and
+//   "public"   — the public ingress. It carries the deliberately anonymous magic-link confirm and
 //                adjust routes, so it is reachable by external contributors by design.
 //   "internal" — the EventStore domain-service routes (/process, /replay-state, /query, /project*,
 //                /admin/*). They carry no authorization of their own and can write the cross-tenant

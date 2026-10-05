@@ -53,7 +53,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         MagicLinkCapabilityId capabilityId,
         CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(capabilityId);
+        if (capabilityId is null)
+        {
+            return null;
+        }
 
         TenantReference? tenant = _contextAccessor.CurrentTenant;
         if (tenant is null)
