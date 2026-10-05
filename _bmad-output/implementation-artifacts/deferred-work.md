@@ -361,3 +361,11 @@ Increment `aab64cf..09e11a7` (review-patch commit, reworded in review as `bb3ec0
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: State the status intent of future build specs as "in-progress until finalization" so reviews stop re-raising the settled finalization question.
   evidence: The 2026-10-05 review of `15d085c..aab64cf` rejected, as already resolved (option a), three layers' finding that finalization moved the story to `review` although the frozen intent said to keep it `in-progress`. That rejection names the wording fix, but only inside a rejected bullet (the record-correction review's first rejected bullet, under `### Review Findings — record-correction increment (2026-10-05)`). `spec-3-6-close-current-review-patches.md:19` and `spec-3-6-implement-eventstore-backed-magic-link-state-loading-11.md:19` use the "Keep the story … in-progress" wording that triggers it; spec-10 already says "Keep the story in review". Pre-existing; the fix belongs to how future build specs are written, not to this story's files.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)
+
+Increment `07a7411..1b83d19` (record-reference closure).
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Replace the drifted `docs/launch-readiness.md` line pointers in the spec-6 waiver-reconciliation entry with the row names.
+  evidence: The 2026-10-03 entry "Reconcile the launch-readiness package waiver rows with the current imported catalog" cites the alignment waiver row as `docs/launch-readiness.md:26` and the prerelease exception as `:64`. At `1b83d19` those rows are at `:28` and `:66`; `:26` is the root npm applicability row and `:64` is external stakeholder acceptance. The entry still applies (the prerelease exception still lists Aspire `13.5.4` and Dapr `1.18.7`) and names both rows, so a sweep can locate them by name. Older entries citing `:21`, `:78` and `:54` describe claims that no longer hold and belong to a ledger sweep. Pre-existing; the `07a7411..1b83d19` range does not touch those entries or launch readiness.
