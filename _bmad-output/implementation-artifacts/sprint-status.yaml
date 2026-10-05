@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-05-2026 10:16 (Story 3.6 code review of 15d085c..aab64cf: three record patches applied; acceptance and release gaps remain; status review)
+# last_updated: 10-05-2026 10:39 (Story 3.6 code review of aab64cf..09e11a7: two record patches applied, 09e11a7 reworded as bb3ec0e; acceptance and release gaps remain; status review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-05-2026 10:16
+last_updated: 10-05-2026 10:39
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system

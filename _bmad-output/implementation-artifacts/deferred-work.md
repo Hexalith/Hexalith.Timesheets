@@ -353,3 +353,11 @@ Reconciliation note: the earlier “Reconcile the 37 unchecked Story 3.6 `[Revie
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
   summary: Complete store-component isolation and optimistic-concurrency enforcement in the projection and HTTP read-model doubles.
   evidence: ScriptedReadModelStore in MagicLinkStateProjectionHandlerTests still keys by read-model key without storeName and its TrySaveAsync simulates conflicts without checking the supplied ETag. ProjectionBackedReadModelStore in MagicLinkConfirmationHttpBoundaryTests also keys reads/writes without storeName, although its TrySaveAsync already enforces per-key ETags. Per-key ETags, explicit rebuild-plan StoreName/Kind/Concurrency assertions, real cross-tenant HTTP coverage and loader store/key assertions are already implemented. This annotation isolates the remaining test-double semantics from the historical mixed test-hardening ledger entries.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)
+
+Increment `aab64cf..09e11a7` (review-patch commit, reworded in review as `bb3ec0e`).
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: State the status intent of future build specs as "in-progress until finalization" so reviews stop re-raising the settled finalization question.
+  evidence: The 2026-10-05 review of `15d085c..aab64cf` rejected, as already resolved (option a), three layers' finding that finalization moved the story to `review` although the frozen intent said to keep it `in-progress`. That rejection names the wording fix, but only inside a rejected bullet (story line 893). `spec-3-6-close-current-review-patches.md:19` and `spec-3-6-implement-eventstore-backed-magic-link-state-loading-11.md:19` use the "Keep the story … in-progress" wording that triggers it; spec-10 already says "Keep the story in review". Pre-existing; the fix belongs to how future build specs are written, not to this story's files.
