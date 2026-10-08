@@ -420,3 +420,13 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Verify malformed-body and exception-path diagnostics cannot disclose query values (unverified, medium if confirmed).
   evidence: Existing malformed-body HTTP coverage checks response bodies only. No Warning/Error leak was demonstrated; capture scopes and exceptions, send query sentinels through malformed and throwing request paths, and compare emitted diagnostics to settle the claim.
+
+## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md (2026-10-08)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+  summary: Require the capability id, contributor, Time Entry id and audit source in magic-link issuance validation.
+  evidence: `ValidateIssue` (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapability.cs:245`) checks scope, target, target kind, action, expiry and token hash, but not `CapabilityId`, `Scope.Contributor`, `Scope.TimeEntryId` or `Source`. `TimesheetsAccessGuard.cs:159` treats a null contributor as optional. An authorized issuance body that omits the contributor, Time Entry id or source returns 202 with a one-time token, and `HandleIssue` emits `MagicLinkConfirmationCapabilityIssued` with null members. The HTTP route persists nothing until durable submission lands. Pre-existing; the `8f89a6e` endpoint guard covers only `CapabilityId`. Medium once issuance is durable.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+  summary: Refresh the CLAUDE.md `timesheets` block's SDK pin.
+  evidence: The block says `global.json` pins `10.0.302` with `rollForward: latestPatch`, but `global.json` pins `10.0.401`, and `latestPatch` does not roll across feature bands. Agent-context file; refresh it through the project-context workflow.
