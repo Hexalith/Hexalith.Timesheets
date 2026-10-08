@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-09-2026 01:42 (Story 3.6 code review of aba488b..73429a5: 1 decision resolved (option 1, live-host 401 regression deferred to EventStore contract and to be recorded), 12 patches left as action items, 1 deferral, 12 rejected; status in-progress)
+# last_updated: 10-09-2026 01:56 (Story 3.6 spec-16: 12 patches closed; independent review 8 fixes / 1 pre-existing deferral; 420/420 helper cases pass; 1396 total / 1349 pass / 43 fail / 4 skip. Since da172a8effe484be96c17aaef1c007e1ecb8f27c every external magic-link request and /metadata/timesheets returns 401, regressing live-host AC1/AC3; EventStore route contract fix deferred; status review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-09-2026 01:42
+last_updated: 10-09-2026 01:56
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
-  3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
+  3-6-implement-eventstore-backed-magic-link-state-loading: review
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: done
   epic-3-retrospective: done
 

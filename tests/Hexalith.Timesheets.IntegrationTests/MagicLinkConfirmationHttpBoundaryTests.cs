@@ -47,6 +47,148 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     private static readonly DateTimeOffset ObservedAtUtc = new(2026, 6, 19, 13, 30, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
+    /// <summary>
+    /// Exercises privacy assertions without HTTP authorization or a running host.
+    /// </summary>
+    /// <param name="category">The synthetic logger category.</param>
+    /// <param name="message">The rendered message or response body.</param>
+    /// <param name="state">The rendered structured logger state.</param>
+    /// <param name="token">The request token whose material must remain private.</param>
+    /// <param name="isResponse">Whether to exercise response-body exclusions.</param>
+    /// <param name="shouldReject">Whether the assertion must reject the supplied material.</param>
+    [Theory]
+    [MemberData(nameof(PrivacyAssertionCases))]
+    public void PrivacyAssertionsRespectCategoryAndResponseScope(
+        string category,
+        string message,
+        string[] state,
+        string token,
+        bool isResponse,
+        bool shouldReject)
+    {
+        Action assertion = isResponse
+            ? () => AssertSensitiveMaterialAbsent(message, token)
+            : () => AssertSensitiveDiagnosticsAbsent(new LogRecord(category, message, state), token);
+
+        if (shouldReject)
+        {
+            Should.Throw<ShouldAssertException>(assertion);
+        }
+        else
+        {
+            assertion();
+        }
+    }
+
+    /// <summary>
+    /// Supplies independent positive and negative privacy cases for every captured field.
+    /// </summary>
+    /// <returns>Logger and response cases with their expected assertion outcome.</returns>
+    public static IEnumerable<object[]> PrivacyAssertionCases()
+    {
+        const string ProbeToken = "query-secret-probe";
+        string[] categories =
+        [
+            "Microsoft.Hosting.Lifetime",
+            "Microsoft.AspNetCore.Hosting.Diagnostics",
+            "ThirdParty.Diagnostics",
+            "Hexalith.Timesheets.Tests"
+        ];
+        string[] genericTerms =
+        [
+            "comment", "token", "Delivery", "durationMinutes", "60", "Draft", "RecoveryPath",
+            "revoked", "used", "unauthorized", "cross-tenant", "wrong-recipient", "wrong-action",
+            "stale-catalog", "project-owned", "repeated-token"
+        ];
+        string contentRootMessage = $"Content root path: /tmp/{string.Join('-', genericTerms)}";
+
+        foreach (string category in categories[..3])
+        {
+            foreach (string token in new[] { ProbeToken, string.Empty, "   " })
+            {
+                yield return [category, contentRootMessage, Array.Empty<string>(), token, false, false];
+                yield return [$"{category}.{string.Join('.', genericTerms)}", "safe", Array.Empty<string>(), token, false, false];
+                yield return [category, "safe", new[] { $"ContentRoot={contentRootMessage}" }, token, false, false];
+            }
+        }
+
+        string[] protectedValues =
+        [
+            ProbeToken, Hash(ProbeToken), "party-1", "party-2", "project-1", "work-1",
+            "time-entry-1", "time-entry-2", "sensitive customer comment"
+        ];
+        foreach (string protectedValue in protectedValues)
+        {
+            // Uppercase probes also pin the case-insensitive exclusions.
+            string material = protectedValue.ToUpperInvariant();
+            foreach (string category in categories)
+            {
+                yield return [$"{category}.{material}", "safe", Array.Empty<string>(), ProbeToken, false, true];
+                yield return [category, material, Array.Empty<string>(), ProbeToken, false, true];
+                yield return [category, "safe", new[] { $"Value={material}" }, ProbeToken, false, true];
+            }
+
+            yield return ["ResponseBody", material, Array.Empty<string>(), ProbeToken, true, true];
+        }
+
+        foreach (string token in new[] { string.Empty, "   " })
+        {
+            foreach (string protectedValue in protectedValues[2..])
+            {
+                foreach (string category in categories)
+                {
+                    yield return [$"{category}.{protectedValue}", "safe", Array.Empty<string>(), token, false, true];
+                    yield return [category, protectedValue, Array.Empty<string>(), token, false, true];
+                    yield return [category, "safe", new[] { $"Value={protectedValue}" }, token, false, true];
+                }
+
+                yield return ["ResponseBody", protectedValue, Array.Empty<string>(), token, true, true];
+            }
+        }
+
+        const string SecondToken = "separate-query-secret";
+        foreach (string material in new[] { SecondToken, Hash(SecondToken) })
+        {
+            foreach (string category in categories)
+            {
+                yield return [$"{category}.{material}", "safe", Array.Empty<string>(), SecondToken, false, true];
+                yield return [category, material, Array.Empty<string>(), SecondToken, false, true];
+                yield return [category, "safe", new[] { $"Value={material}" }, SecondToken, false, true];
+            }
+
+            yield return ["ResponseBody", material, Array.Empty<string>(), SecondToken, true, true];
+        }
+
+        foreach (string genericTerm in genericTerms)
+        {
+            string material = genericTerm.ToUpperInvariant();
+            yield return [$"Hexalith.Timesheets.Tests.{material}", "safe", Array.Empty<string>(), ProbeToken, false, true];
+            yield return ["Hexalith.Timesheets.Tests", material, Array.Empty<string>(), ProbeToken, false, true];
+            yield return ["Hexalith.Timesheets.Tests", "safe", new[] { $"Value={material}" }, ProbeToken, false, true];
+            yield return ["ResponseBody", material, Array.Empty<string>(), ProbeToken, true, true];
+        }
+
+        foreach (string tenant in new[] { "tenant-1", "tenant-2" })
+        {
+            yield return ["ResponseBody", tenant, Array.Empty<string>(), ProbeToken, true, true];
+        }
+
+        yield return
+        [
+            "Hexalith.Timesheets.MagicLinkBoundary",
+            "External link denial emitted with category Unknown at 2026-06-19T13:30:00+00:00 for correlation request-1.",
+            new[] { "Category=Unknown", "TimestampUtc=2026-06-19T13:30:00+00:00", "CorrelationId=request-1" },
+            ProbeToken, false, false
+        ];
+        string denialBody = JsonSerializer.Serialize(new Microsoft.AspNetCore.Mvc.ProblemDetails
+        {
+            Title = MagicLinkInvalidLinkDenial.Default.Title,
+            Detail = MagicLinkInvalidLinkDenial.Default.Detail,
+            Status = (int)HttpStatusCode.Forbidden
+        }, JsonOptions);
+        yield return ["ResponseBody", denialBody, Array.Empty<string>(), ProbeToken, true, false];
+    }
+
     [Fact]
     public async Task Invalid_magic_link_http_boundary_responses_are_equivalent_and_opaque()
     {
@@ -852,7 +994,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             "project-1",
             "work-1",
             "time-entry-1",
-            "time-entry-2"
+            "time-entry-2",
+            "sensitive customer comment"
         ];
 
         foreach (string forbiddenTerm in forbiddenTerms.Where(static value => !string.IsNullOrWhiteSpace(value)))
@@ -866,6 +1009,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         AssertProtectedMaterialAbsent(content, token);
         string[] forbiddenTerms =
         [
+            "tenant-1",
+            "tenant-2",
             "comment",
             "token",
             "Delivery",
