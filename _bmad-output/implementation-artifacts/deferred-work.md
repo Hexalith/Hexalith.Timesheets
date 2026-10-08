@@ -406,18 +406,17 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
   summary: Redact query-string values from request logs in the shared EventStore ServiceDefaults.
   evidence: Code-review decision (2026-10-05), option a — the Timesheets host now filters `Microsoft.AspNetCore.Hosting.Diagnostics` to `Warning` as the interim control. ASP.NET Core 10.0.12 logs `Request starting/finished … {Path}{QueryString}` at Information. `AddEventStoreDomainService` wires JSON console and OpenTelemetry logging with `IncludeFormattedMessage = true` and no category filter, so any module that carries a secret in a query string (Timesheets magic links use `?t=`) logs it unless that module filters the hosting category itself. The fix belongs in `references/Hexalith.EventStore` (`Hexalith.EventStore.ServiceDefaults`), outside this repository.
 
+## Deferred from: Story 3.6 spec-14 independent review (2026-10-05)
 
-### Deferred from: Story 3.6 spec-14 independent review (2026-10-05)
-
-- source_spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Reject null capability identifiers on revoke and expire before dereferencing them.
   evidence: Both unchanged management endpoints dereference command.CapabilityId.Value before the loader; otherwise-valid in-process null-id requests reproduce HTTP 500. This predates the current loader hardening.
 
-- source_spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Capture exported log scopes and exception text in the HTTP privacy test harness.
   evidence: CapturingLogger.BeginScope returns NullScope and LogRecord omits Exception; sentinel probes in these fields disappear from assertions while EventStore ServiceDefaults enables IncludeScopes. The test harness predates this increment.
 
-- source_spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Verify malformed-body and exception-path diagnostics cannot disclose query values (unverified, medium if confirmed).
   evidence: Existing malformed-body HTTP coverage checks response bodies only. No Warning/Error leak was demonstrated; capture scopes and exceptions, send query sentinels through malformed and throwing request paths, and compare emitted diagnostics to settle the claim.
 
@@ -430,3 +429,13 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Refresh the CLAUDE.md `timesheets` block's SDK pin.
   evidence: The block says `global.json` pins `10.0.302` with `rollForward: latestPatch`, but `global.json` pins `10.0.401`, and `latestPatch` does not roll across feature bands. Agent-context file; refresh it through the project-context workflow.
+
+## Deferred from: Story 3.6 spec-15 verification and review (2026-10-08)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
+  summary: Integrate Timesheets public capability routes and authenticated internal HTTP fixtures with the current EventStore domain-service security contract.
+  evidence: The prior dependency update `da172a8effe484be96c17aaef1c007e1ecb8f27c` enables workload fallback authorization; rebuilding this increment yields 42 unexpected-401 IntegrationTests failures (28 magic-link boundary cases, 14 internal-guard cases), all before the changed assertion helpers. EventStoreDomainServiceEndpointInventory allows anonymous metadata only on health probes, so adding AllowAnonymous to public capability routes would fail the SDK contract. Owner: Timesheets/platform integration. Establish the supported capability-route contract with EventStore, preserve server-side capability authorization, and migrate internal projection fixtures to configured app-channel credentials and signed workload assertions. Current AppHost startup also requires APP_API_TOKEN and JWT Authority/SigningKey configuration; no passing live-topology proof exists.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
+  summary: Refresh Story 5.2 launch-readiness catalog observations after the prior Builds update.
+  evidence: The current ArchitectureTests executable fails Launch_readiness_record_captures_package_currency_verdict_dimensions because the imported catalog now supplies Aspire 13.6.1 while the dated 2026-10-03 verdict records 13.6.0. The same prior dependency update moves the Keycloak catalog entry to 13.6.1-preview.1.26506.6. Owner: Story 5.2 package-readiness reconciliation. Record new dated observations and audits without rewriting historical results or claiming they apply to the new graph; this increment does not change dependency pins.

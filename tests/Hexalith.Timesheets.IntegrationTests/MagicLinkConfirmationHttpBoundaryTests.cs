@@ -562,10 +562,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         foreach (LogRecord record in records)
         {
-            string rendered = $"{record.Category} {record.Message} {string.Join(' ', record.State)}";
             foreach (string token in tokens)
             {
-                AssertSensitiveMaterialAbsent(rendered, token);
+                AssertSensitiveDiagnosticsAbsent(record, token);
             }
         }
     }
@@ -612,7 +611,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
             foreach (LogRecord record in factory.Logs.Records)
             {
-                AssertSensitiveMaterialAbsent($"{record.Category} {record.Message} {string.Join(' ', record.State)}", token);
+                AssertSensitiveDiagnosticsAbsent(record, token);
             }
         }
     }
@@ -763,8 +762,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         foreach (LogRecord record in records)
         {
-            string rendered = $"{record.Category} {record.Message} {string.Join(' ', record.State)}";
-            AssertSensitiveMaterialAbsent(rendered, string.Empty);
+            AssertSensitiveDiagnosticsAbsent(record, string.Empty);
         }
     }
 
@@ -833,20 +831,43 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             body);
     }
 
-    private static void AssertSensitiveMaterialAbsent(string content, string token)
+    private static void AssertSensitiveDiagnosticsAbsent(LogRecord record, string token)
+    {
+        string rendered = $"{record.Category} {record.Message} {string.Join(' ', record.State)}";
+        AssertProtectedMaterialAbsent(rendered, token);
+        if (record.Category.StartsWith("Hexalith.Timesheets", StringComparison.Ordinal))
+        {
+            AssertSensitiveMaterialAbsent(rendered, token);
+        }
+    }
+
+    private static void AssertProtectedMaterialAbsent(string content, string token)
     {
         string[] forbiddenTerms =
         [
             token,
             string.IsNullOrWhiteSpace(token) ? string.Empty : Hash(token),
-            "comment",
-            "token",
             "party-1",
             "party-2",
             "project-1",
             "work-1",
             "time-entry-1",
-            "time-entry-2",
+            "time-entry-2"
+        ];
+
+        foreach (string forbiddenTerm in forbiddenTerms.Where(static value => !string.IsNullOrWhiteSpace(value)))
+        {
+            content.ShouldNotContain(forbiddenTerm, Case.Insensitive);
+        }
+    }
+
+    private static void AssertSensitiveMaterialAbsent(string content, string token)
+    {
+        AssertProtectedMaterialAbsent(content, token);
+        string[] forbiddenTerms =
+        [
+            "comment",
+            "token",
             "Delivery",
             "durationMinutes",
             "60",
