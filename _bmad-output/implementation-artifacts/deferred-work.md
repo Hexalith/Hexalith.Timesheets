@@ -439,3 +439,9 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
   summary: Refresh Story 5.2 launch-readiness catalog observations after the prior Builds update.
   evidence: The current ArchitectureTests executable fails Launch_readiness_record_captures_package_currency_verdict_dimensions because the imported catalog now supplies Aspire 13.6.1 while the dated 2026-10-03 verdict records 13.6.0. The same prior dependency update moves the Keycloak catalog entry to 13.6.1-preview.1.26506.6. Owner: Story 5.2 package-readiness reconciliation. Record new dated observations and audits without rewriting historical results or claiming they apply to the new graph; this increment does not change dependency pins.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-08)
+
+- source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+  summary: Make the launch-readiness full-suite fitness assertion check current evidence instead of a historical zero-failure sentence.
+  evidence: `Launch_readiness_record_publishes_a_per_gate_release_decision_table` (`tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:102`) matches `Final total: \d+ tests, \d+ pass, \d+ intentional skips, 0 failures`. Since spec-15 set the Tests (full suite) gate to FAIL, only the historical spec-14 clause in that row (`docs/launch-readiness.md:147`) satisfies it, so the test no longer checks current evidence, and it fails whenever the history is reworded (spec-15 hit this). The test comment says it asserts the evidence's shape, not its arithmetic. Pre-existing test design exposed by the `da172a8` regression. Owner: launch-readiness fitness (Story 5.2 reconciliation).
