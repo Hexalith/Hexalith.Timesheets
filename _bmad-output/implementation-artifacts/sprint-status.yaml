@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-09-2026 18:58 (Story 3.6 public-route review patches: SDK GET-only inventory, credentialed port guard, and current records repaired; integrated EventStore commit bd976eff and separate Timesheets gitlink commit 298899b created locally; source-reference build, 482/482 HTTP classes, 4/4 scratch cases, and six lanes run; remote reachability, live topology, durable writes, acceptance and release remain open)
+# last_updated: 10-09-2026 19:35 (Story 3.6 review guard: local EventStore f87affae closes weak explicit GET-only authorization; separate Timesheets gitlink commit 61dc18b pins it. SDK focused 22/22, HTTP 482/482, scratch 4/4, and six lanes ran. The new pointer is not in local EventStore origin/main and was not pushed. Live topology, durable writes, acceptance and release remain open.)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-09-2026 18:58
+last_updated: 10-09-2026 19:35
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system

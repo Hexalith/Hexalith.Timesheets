@@ -59,6 +59,7 @@ public sealed class LaunchReadinessTests
         opening.ShouldContain("Story 5.2 remains in progress");
         opening.ShouldContain("final Story 5.1 reconciliation remains ready for development");
         opening.ShouldNotContain("Story 3.6 is complete");
+        opening.ShouldNotContain("Story 3.6 is in review");
     }
 
     [Fact]
@@ -122,6 +123,7 @@ public sealed class LaunchReadinessTests
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
         overall.ShouldContain("durable atomic magic-link confirm/adjust submission is unfinished");
         overall.ShouldNotContain("Story 3.6 is complete");
+        overall.ShouldNotContain("Story 3.6 is in review");
         overall.ShouldNotContain("decision: **PASS**");
         overall.ShouldNotContain("decision: PASS");
 

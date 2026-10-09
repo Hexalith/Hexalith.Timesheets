@@ -490,3 +490,9 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
   summary: Set cache and referrer controls on public token-bearing magic-link responses.
   evidence: The four pre-existing routes accept `?t=` and return sensitive valid display data, but set neither `Cache-Control: no-store` nor a restrictive `Referrer-Policy`. Add controls and verify them for successful and opaque-denial responses before public exposure.
+
+## Deferred from: Story 3.6 public-route review reconciliation (2026-10-09)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-18.md`
+  summary: Refresh the managed repository agent context for the current launch posture and magic-link projection wiring.
+  evidence: `AGENTS.md` still describes launch readiness as `CONCERNS` and says the token-hash projection lacks host wiring, while current launch readiness is `FAIL` and the in-process host discovers the projection handler. This can misdirect future agent work. Agent-context files require their own managed refresh and synchronized entry points.
