@@ -1632,10 +1632,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             {
                 Content = JsonContent.Create(dispatch, options: JsonOptions)
             };
-            if (internalPort is null || LocalPort == internalPort)
-            {
-                await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject);
-            }
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject);
 
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
         }

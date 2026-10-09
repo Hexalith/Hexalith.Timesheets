@@ -2,9 +2,10 @@
 title: 'Close current Story 3.6 public-route review patches'
 type: 'bugfix'
 created: '2026-10-09'
-status: 'ready-for-dev'
+status: 'in-progress'
 route: 'dispatch'
 review_loop_iteration: 0
+baseline_commit: 'a59575113470d37d8dac4086dda6509562790e46'
 context:
   - '_bmad-output/implementation-artifacts/epic-3-context.md'
   - '_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md'
