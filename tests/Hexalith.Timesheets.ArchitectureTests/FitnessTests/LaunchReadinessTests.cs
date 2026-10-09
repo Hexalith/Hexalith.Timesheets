@@ -55,10 +55,10 @@ public sealed class LaunchReadinessTests
         string opening = ReadSection(readiness, "# Launch Readiness Record", "Related evidence:");
 
         opening.ShouldContain("neither story-complete nor launch-complete");
-        opening.ShouldContain("Story 3.6 is in review");
+        opening.ShouldContain("Story 3.6 remains in progress");
         opening.ShouldContain("Story 5.2 remains in progress");
         opening.ShouldContain("final Story 5.1 reconciliation remains ready for development");
-        opening.ShouldNotContain("Story 3.6 remains in progress");
+        opening.ShouldNotContain("Story 3.6 is complete");
     }
 
     [Fact]
@@ -118,10 +118,10 @@ public sealed class LaunchReadinessTests
 
         string overall = readiness[decisionStart..];
         overall.ShouldContain("Overall release decision: **FAIL**");
-        overall.ShouldContain("Story 3.6 is in review, Story 5.2 remains in progress");
+        overall.ShouldContain("Story 3.6 remains in progress, Story 5.2 remains in progress");
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
         overall.ShouldContain("durable atomic magic-link confirm/adjust submission is unfinished");
-        overall.ShouldNotContain("Story 3.6 remains in progress");
+        overall.ShouldNotContain("Story 3.6 is complete");
         overall.ShouldNotContain("decision: **PASS**");
         overall.ShouldNotContain("decision: PASS");
 

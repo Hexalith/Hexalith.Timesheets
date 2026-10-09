@@ -422,8 +422,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions);
         string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
+        string assertion = await factory.IssueAssertionAsync(EventStoreWorkloadOperations.DomainServiceProject);
         factory.LocalPort = 8080;
-        using HttpResponseMessage response = await factory.PostProjectionAsync(client, projectionPath, dispatch);
+        using HttpResponseMessage response = await factory.PostProjectionAsync(client, projectionPath, dispatch, assertion);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
@@ -432,7 +433,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
 
         factory.LocalPort = 8081;
-        using HttpResponseMessage admittedResponse = await factory.PostProjectionAsync(client, projectionPath, dispatch);
+        using HttpResponseMessage admittedResponse = await factory.PostProjectionAsync(client, projectionPath, dispatch, assertion);
         admittedResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await admittedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
@@ -1626,13 +1627,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         public async Task<HttpResponseMessage> PostProjectionAsync(
             HttpClient client,
             string route,
-            ProjectionDispatchRequest dispatch)
+            ProjectionDispatchRequest dispatch,
+            string? assertion = null)
         {
             using HttpRequestMessage request = new(HttpMethod.Post, route)
             {
                 Content = JsonContent.Create(dispatch, options: JsonOptions)
             };
-            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject);
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject, assertion);
 
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
         }
@@ -1647,9 +1649,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
         }
 
-        private async Task AddWorkloadHeadersAsync(HttpRequestMessage request, string operation)
+        private async Task AddWorkloadHeadersAsync(HttpRequestMessage request, string operation, string? assertion = null)
         {
-            string assertion = await IssueAssertionAsync(operation);
+            assertion ??= await IssueAssertionAsync(operation);
             request.Headers.Add(DaprAppChannelToken.HeaderName, ChannelToken);
             request.Headers.Add(EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName, assertion);
         }

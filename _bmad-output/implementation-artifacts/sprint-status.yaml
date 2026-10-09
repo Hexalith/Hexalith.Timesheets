@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-09-2026 18:32 (Story 3.6 code review of c75de3c..d6b337b: 1 decision resolved (option 1: rebase the unpushed EventStore SDK commit upstream, then repoint the gitlink), 7 patches left as action items (high: SDK integration/repoint; medium: stale 401-regression records, SDK non-POST canonical-route startup check), 0 deferrals, 14 rejected; in-process route fix verified 482/482; status in-progress, acceptance and release incomplete)
+# last_updated: 10-09-2026 18:58 (Story 3.6 public-route review patches: SDK GET-only inventory, credentialed port guard, and current records repaired; integrated EventStore commit bd976eff and separate Timesheets gitlink commit 298899b created locally; source-reference build, 482/482 HTTP classes, 4/4 scratch cases, and six lanes run; remote reachability, live topology, durable writes, acceptance and release remain open)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-09-2026 18:32
+last_updated: 10-09-2026 18:58
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
