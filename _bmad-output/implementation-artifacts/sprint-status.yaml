@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-09-2026 15:08 (Story 3.6 spec-17 closed all five review patches; privacy helper 432/432 and six lanes 1408 total / 1361 pass / 43 existing failures / 4 skips. Live-host 401 regression of AC1/AC3/AC4 remains deferred to the EventStore contract; status review, acceptance and release incomplete.)
+# last_updated: 10-09-2026 18:32 (Story 3.6 code review of c75de3c..d6b337b: 1 decision resolved (option 1: rebase the unpushed EventStore SDK commit upstream, then repoint the gitlink), 7 patches left as action items (high: SDK integration/repoint; medium: stale 401-regression records, SDK non-POST canonical-route startup check), 0 deferrals, 14 rejected; in-process route fix verified 482/482; status in-progress, acceptance and release incomplete)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-09-2026 15:08
+last_updated: 10-09-2026 18:32
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
-  3-6-implement-eventstore-backed-magic-link-state-loading: review
+  3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: done
   epic-3-retrospective: done
 
