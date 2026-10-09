@@ -12,6 +12,7 @@ using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.Contracts.Queries;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.EventStore.DomainService;
+using Hexalith.EventStore.ServiceDefaults.Authentication;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -29,8 +30,11 @@ using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -419,8 +423,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
         factory.LocalPort = 8080;
-        using HttpResponseMessage response = await client.PostAsJsonAsync(
-            projectionPath, dispatch, JsonOptions, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await factory.PostProjectionAsync(client, projectionPath, dispatch);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
@@ -429,14 +432,52 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
 
         factory.LocalPort = 8081;
-        using HttpResponseMessage admittedResponse = await client.PostAsJsonAsync(
-            projectionPath, dispatch, JsonOptions, TestContext.Current.CancellationToken);
+        using HttpResponseMessage admittedResponse = await factory.PostProjectionAsync(client, projectionPath, dispatch);
         admittedResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await admittedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
             .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
         factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
             .Entries[issued.TokenHash.Value].CapabilityId.ShouldBe(issued.CapabilityId);
+    }
+
+    /// <summary>Projection delivery on the internal port still requires both configured credentials.</summary>
+    [Fact]
+    public async Task InternalProjectionRouteRejectsMissingAndForgedCredentials()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage missing = await client.PostAsJsonAsync(
+            "/project/v2", new { }, JsonOptions, TestContext.Current.CancellationToken);
+        using HttpRequestMessage forgedRequest = new(HttpMethod.Post, "/project/v2")
+        {
+            Content = JsonContent.Create(new { }, options: JsonOptions)
+        };
+        forgedRequest.Headers.Add(DaprAppChannelToken.HeaderName, "timesheets-test-app-channel-token");
+        forgedRequest.Headers.Add(EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName, "forged-assertion");
+        using HttpResponseMessage forged = await client.SendAsync(forgedRequest, TestContext.Current.CancellationToken);
+        string validAssertion = await factory.IssueAssertionAsync(EventStoreWorkloadOperations.DomainServiceProject);
+        using HttpRequestMessage missingChannelRequest = new(HttpMethod.Post, "/project/v2")
+        {
+            Content = JsonContent.Create(new { }, options: JsonOptions)
+        };
+        missingChannelRequest.Headers.Add(EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName, validAssertion);
+        using HttpResponseMessage missingChannel = await client.SendAsync(missingChannelRequest, TestContext.Current.CancellationToken);
+        using HttpRequestMessage wrongOperationRequest = new(HttpMethod.Post, "/project/v2")
+        {
+            Content = JsonContent.Create(new { }, options: JsonOptions)
+        };
+        wrongOperationRequest.Headers.Add(DaprAppChannelToken.HeaderName, "timesheets-test-app-channel-token");
+        wrongOperationRequest.Headers.Add(
+            EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName,
+            await factory.IssueAssertionAsync(EventStoreWorkloadOperations.DomainServiceQuery));
+        using HttpResponseMessage wrongOperation = await client.SendAsync(wrongOperationRequest, TestContext.Current.CancellationToken);
+
+        missing.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        forged.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        missingChannel.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        wrongOperation.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        factory.Store.Contains(MagicLinkTokenHashCapabilityIndexProjection.StateKey).ShouldBeFalse();
     }
 
     /// <summary>Exercises the host's registered accessor through tenant-scoped administrator loads.</summary>
@@ -478,8 +519,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 ActivityId(), new TimeEntryId("time-entry-admin-new"), MagicLinkTargetKind.ProposedTimeEntry),
             MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1), new MagicLinkAuditMetadata("timesheets", "admin-issue"));
 
-        using HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/timesheets/magic-links/confirmation-capabilities", command, JsonOptions, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/magic-links/confirmation-capabilities", command);
 
         TenantReference expectedTenant = useMismatchedClaims ? OtherTenant() : Tenant();
         PartyReference expectedActor = useMismatchedClaims ? OtherContributor() : Contributor();
@@ -501,10 +542,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         factory.Gateway.Requests.Clear();
         factory.Store.ReadKeys.Clear();
         var existingId = new MagicLinkCapabilityId("capability-existing");
-        using HttpResponseMessage revocation = await client.PostAsJsonAsync(
+        using HttpResponseMessage revocation = await factory.PostProtectedManagementAsync(
+            client,
             $"/api/timesheets/magic-links/confirmation-capabilities/{existingId.Value}/revoke",
-            new RevokeMagicLinkConfirmationCapability(existingId, new MagicLinkAuditMetadata("timesheets", "admin-revoke")),
-            JsonOptions, TestContext.Current.CancellationToken);
+            new RevokeMagicLinkConfirmationCapability(existingId, new MagicLinkAuditMetadata("timesheets", "admin-revoke")));
         revocation.StatusCode.ShouldBe(useMismatchedClaims ? HttpStatusCode.Forbidden : HttpStatusCode.Accepted);
         StreamReadRequest existingRequest = factory.Gateway.Requests.ShouldHaveSingleItem();
         existingRequest.Tenant.ShouldBe(expectedTenant.TenantId);
@@ -534,8 +575,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             new MagicLinkConfirmationScope(Contributor(), TimeEntryTargetReference.ForProject(Project()),
                 ActivityId(), new TimeEntryId("time-entry-admin-new"), MagicLinkTargetKind.ProposedTimeEntry),
             MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1), new MagicLinkAuditMetadata("timesheets", "admin-issue"));
-        using HttpResponseMessage valid = await client.PostAsJsonAsync(
-            "/api/timesheets/magic-links/confirmation-capabilities", command, JsonOptions, TestContext.Current.CancellationToken);
+        using HttpResponseMessage valid = await factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/magic-links/confirmation-capabilities", command);
         valid.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         generator.GenerationCount.ShouldBe(1);
         factory.ObservedTrustedContext.Tenant.ShouldBe(Tenant());
@@ -558,8 +599,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             body["capabilityId"] = null;
         }
 
-        using HttpResponseMessage response = await client.PostAsJsonAsync(
-            "/api/timesheets/magic-links/confirmation-capabilities", body, JsonOptions, TestContext.Current.CancellationToken);
+        using HttpResponseMessage response = await factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/magic-links/confirmation-capabilities", body);
 
         CapturedFailure failure = await CaptureFailureAsync(response, omitIdentifier ? "missing-id" : "null-id", string.Empty);
         failure.RawBody.ShouldNotContain("oneTimeToken", Case.Insensitive);
@@ -1257,6 +1298,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         string? providerLoggingCategory = null,
         IMagicLinkTokenGenerator? tokenGenerator = null) : WebApplicationFactory<Program>
     {
+        private const string ChannelToken = "timesheets-test-app-channel-token";
+
         public ScriptedAccessGuard AccessGuard { get; } = new();
 
         public CapturingLoggerProvider Logs { get; } = new();
@@ -1475,6 +1518,15 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.UseSetting(DaprAppChannelToken.ConfigurationKey, ChannelToken);
+            builder.UseSetting("EventStore:DomainService:AppId", "timesheets");
+            builder.UseSetting("Authentication:JwtBearer:Issuer", "timesheets-test-issuer");
+            builder.UseSetting("Authentication:JwtBearer:Audience", "hexalith-eventstore");
+            builder.UseSetting("Authentication:JwtBearer:SigningKey", Convert.ToBase64String(Encoding.UTF8.GetBytes(new string('k', 32))));
+            builder.UseSetting("Authentication:JwtBearer:AllowedAlgorithms:0", SecurityAlgorithms.HmacSha256);
+            builder.UseSetting("Authentication:JwtBearer:RequireHttpsMetadata", "false");
+            builder.UseSetting("Authentication:WorkloadIssuer:Workload", "eventstore");
+
             if (providerLoggingCategory is not null)
             {
                 string providerName = typeof(CapturingLoggerProvider).FullName!;
@@ -1526,6 +1578,16 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(new StaticTimeProvider(ObservedAtUtc));
 
+                Claim[] adminClaims = claims ??
+                [
+                    new Claim("tenant_id", (useMismatchedClaims ?? useConcreteLoader) ? OtherTenant().TenantId : Tenant().TenantId),
+                    new Claim("party_id", (useMismatchedClaims ?? useConcreteLoader) ? OtherContributor().PartyId : Contributor().PartyId),
+                    new Claim(ClaimTypes.NameIdentifier,
+                        (useMismatchedClaims ?? useConcreteLoader) ? OtherContributor().PartyId : Contributor().PartyId)
+                ];
+                services.AddSingleton<IClaimsTransformation>(provider =>
+                    new MagicLinkFixtureClaimsTransformation(provider.GetRequiredService<IHttpContextAccessor>(), adminClaims));
+
                 services.AddSingleton<IStartupFilter>(new ClaimsStartupFilter(
                     useMismatchedClaims ?? useConcreteLoader,
                     () => LocalPort,
@@ -1548,11 +1610,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             {
                 LastIndexDispatch = dispatch;
             }
-            using HttpResponseMessage projectionResponse = await client.PostAsJsonAsync(
-                "/project/v2",
-                dispatch,
-                JsonOptions,
-                TestContext.Current.CancellationToken);
+            using HttpResponseMessage projectionResponse = await PostProjectionAsync(client, "/project/v2", dispatch);
             projectionResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
             ProjectionDispatchOutcome outcome = (await projectionResponse.Content
                     .ReadFromJsonAsync<ProjectionDispatchResponse>(JsonOptions, TestContext.Current.CancellationToken))
@@ -1563,6 +1621,50 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             outcome.Status.ShouldBe(expectedStatus);
             outcome.ReasonCode.ShouldBe(expectedReasonCode);
             return outcome;
+        }
+
+        public async Task<HttpResponseMessage> PostProjectionAsync(
+            HttpClient client,
+            string route,
+            ProjectionDispatchRequest dispatch)
+        {
+            using HttpRequestMessage request = new(HttpMethod.Post, route)
+            {
+                Content = JsonContent.Create(dispatch, options: JsonOptions)
+            };
+            if (internalPort is null || LocalPort == internalPort)
+            {
+                await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject);
+            }
+
+            return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
+        public async Task<HttpResponseMessage> PostProtectedManagementAsync<T>(HttpClient client, string route, T body)
+        {
+            using HttpRequestMessage request = new(HttpMethod.Post, route)
+            {
+                Content = JsonContent.Create(body, options: JsonOptions)
+            };
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess);
+            return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
+        private async Task AddWorkloadHeadersAsync(HttpRequestMessage request, string operation)
+        {
+            string assertion = await IssueAssertionAsync(operation);
+            request.Headers.Add(DaprAppChannelToken.HeaderName, ChannelToken);
+            request.Headers.Add(EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName, assertion);
+        }
+
+        public async Task<string> IssueAssertionAsync(string operation)
+        {
+            DomainProjectionIdentityOptions identity = Services
+                .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>()
+                .Value;
+            return (await Services.GetRequiredService<IWorkloadAssertionIssuer>()
+                .IssueAsync(new WorkloadAssertionRequest(identity.AppId, operation),
+                    TestContext.Current.CancellationToken)).ShouldNotBeNull();
         }
 
         private static ProjectionEventDto ProjectionEvent(long sequence, object payload)

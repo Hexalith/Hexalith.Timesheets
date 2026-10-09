@@ -1,5 +1,7 @@
 using System.Security.Claims;
 
+using Hexalith.EventStore.DomainService;
+
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
@@ -158,7 +160,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 return response is null
                     ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
                     : Results.Ok(response);
-            });
+            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm");
 
         endpoints.MapPost(
             "/api/timesheets/magic-links/confirm/submit",
@@ -213,7 +215,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 return result.WasDispatched
                     ? Results.Accepted()
                     : DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
-            });
+            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm/submit");
 
         endpoints.MapGet(
             "/api/timesheets/magic-links/adjust",
@@ -248,7 +250,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 return response is null
                     ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
                     : Results.Ok(response);
-            });
+            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust");
 
         endpoints.MapPost(
             "/api/timesheets/magic-links/adjust/submit",
@@ -285,7 +287,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 return result.WasDispatched
                     ? Results.Accepted()
                     : DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
-            });
+            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust/submit");
 
         return endpoints;
     }

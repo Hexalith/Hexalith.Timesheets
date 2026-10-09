@@ -41,15 +41,17 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsTrustedContextAccessor, HttpContextTimesheetsTrustedContextAccessor>());
 builder.Services.AddSingleton(TimeProvider.System);
 
-// The EventStore domain-service routes carry no authorization of their own and this host also
-// publishes the deliberately anonymous magic-link routes, so the two surfaces are kept apart by
-// port. Fail-closed: unconfigured means unreachable, never public.
+// Keep the SDK's protected routes on the internal listener. Fail-closed: unconfigured means
+// unreachable, never public.
 builder.Services.Configure<InternalSurfaceOptions>(
     builder.Configuration.GetSection(InternalSurfaceOptions.SectionName));
 
 WebApplication app = builder.Build();
 
+app.UseRouting();
 app.UseTimesheetsInternalSurfaceGuard();
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseEventStoreDomainService();
 app.MapTimesheetsExternalContributionEndpoints();
 app.MapTimesheetsMagicLinkConfirmationCapabilityEndpoints();
@@ -67,7 +69,7 @@ app.MapGet(
         MetadataDescriptors = TimesheetsMetadataCatalog.Descriptors
             .Select(static descriptor => descriptor.Name)
             .ToArray()
-    }));
+    })).AllowEventStorePublicEndpoint("/metadata/timesheets");
 
 await app.RunAsync().ConfigureAwait(false);
 

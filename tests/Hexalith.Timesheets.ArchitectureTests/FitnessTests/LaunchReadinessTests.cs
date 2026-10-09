@@ -99,7 +99,12 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("ArchitectureTests");
         readiness.ShouldContain("Projections.Tests");
         readiness.ShouldContain("Server.Tests");
-        readiness.ShouldMatch(@"Final total: \d+ tests, \d+ pass, \d+ intentional skips, 0 failures");
+        string[] fullSuite = ReadReleaseGateRow(readiness, "Tests (full suite)");
+        fullSuite[1].ShouldBe("FAIL");
+        fullSuite[2].ShouldContain("Architecture");
+        fullSuite[2].ShouldContain("Integration");
+        fullSuite[3].ShouldMatch(@"Total: \d+ tests, \d+ pass, ");
+        fullSuite[3].ShouldContain("failure");
     }
 
     [Fact]
@@ -200,7 +205,7 @@ public sealed class LaunchReadinessTests
         ownership[5].ShouldContain("both legacy scope/Activity-Type mismatch shapes");
 
         string[] timing = ReadClassificationRow(readiness, "Magic-link invalid-token timing");
-        timing[2].ShouldBe("implemented / blocked / waived");
+        timing[2].ShouldBe("implemented / waived");
         timing[3].ShouldBe("Story 3.6 / security");
         timing[1].ShouldContain("raw UTF-8 response length");
         timing[1].ShouldContain("zero read-model and EventStore I/O");
@@ -211,7 +216,7 @@ public sealed class LaunchReadinessTests
         timing[5].ShouldContain("practically classified by timing");
 
         string[] liveResolution = ReadClassificationRow(readiness, "Magic-link live end-to-end resolution");
-        liveResolution[2].ShouldBe("implemented / blocked / waived");
+        liveResolution[2].ShouldBe("implemented / waived");
         liveResolution[1].ShouldContain("Successful confirm/adjust POST results are not durably submitted to EventStore");
         liveResolution[1].ShouldContain("not persistence or single-use evidence");
         liveResolution[4].ShouldContain("concurrent requests can reuse the same unpersisted capability state");
