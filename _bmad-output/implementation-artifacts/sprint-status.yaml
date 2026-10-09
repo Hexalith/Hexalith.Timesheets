@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-09-2026 01:56 (Story 3.6 spec-16: 12 patches closed; independent review 8 fixes / 1 pre-existing deferral; 420/420 helper cases pass; 1396 total / 1349 pass / 43 fail / 4 skip. Since da172a8effe484be96c17aaef1c007e1ecb8f27c every external magic-link request and /metadata/timesheets returns 401, regressing live-host AC1/AC3; EventStore route contract fix deferred; status review)
+# last_updated: 10-09-2026 14:57 (Story 3.6 code review of bb7fe1f..1199085: 0 decisions, 5 patches left as action items (1 medium: tenant exclusions also reject Timesheets diagnostics), 1 deferral, 17 rejected; live-host 401 regression of AC1/AC3 remains deferred to the EventStore contract; status in-progress)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-09-2026 01:56
+last_updated: 10-09-2026 14:57
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
-  3-6-implement-eventstore-backed-magic-link-state-loading: review
+  3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: done
   epic-3-retrospective: done
 
