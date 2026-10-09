@@ -67,7 +67,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         bool shouldReject)
     {
         Action assertion = isResponse
-            ? () => AssertSensitiveMaterialAbsent(message, token)
+            ? () => AssertSensitiveResponseMaterialAbsent(message, token)
             : () => AssertSensitiveDiagnosticsAbsent(new LogRecord(category, message, state), token);
 
         if (shouldReject)
@@ -170,7 +170,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         foreach (string tenant in new[] { "tenant-1", "tenant-2" })
         {
-            yield return ["ResponseBody", tenant, Array.Empty<string>(), ProbeToken, true, true];
+            // Pin both literal and case-insensitive response exclusions without increasing the case count.
+            yield return ["ResponseBody", tenant == "tenant-2" ? tenant.ToUpperInvariant() : tenant, Array.Empty<string>(), ProbeToken, true, true];
+            foreach (string category in new[] { "Hexalith.Timesheets.Tests", "Microsoft.Hosting.Lifetime" })
+            {
+                yield return [$"{category}.{tenant}", "safe", Array.Empty<string>(), ProbeToken, false, false];
+                yield return [category, tenant, Array.Empty<string>(), ProbeToken, false, false];
+                yield return [category, "safe", new[] { $"StateKey={tenant}" }, ProbeToken, false, false];
+            }
         }
 
         yield return
@@ -962,7 +969,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         problem.ContainsKey("recoveryPath").ShouldBeFalse(name);
         problem.ContainsKey("RecoveryPath").ShouldBeFalse(name);
 
-        AssertSensitiveMaterialAbsent(body, token);
+        AssertSensitiveResponseMaterialAbsent(body, token);
 
         return new CapturedFailure(
             name,
@@ -1009,8 +1016,6 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         AssertProtectedMaterialAbsent(content, token);
         string[] forbiddenTerms =
         [
-            "tenant-1",
-            "tenant-2",
             "comment",
             "token",
             "Delivery",
@@ -1033,6 +1038,13 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         {
             content.ShouldNotContain(forbiddenTerm, Case.Insensitive);
         }
+    }
+
+    private static void AssertSensitiveResponseMaterialAbsent(string content, string token)
+    {
+        AssertSensitiveMaterialAbsent(content, token);
+        content.ShouldNotContain("tenant-1", Case.Insensitive);
+        content.ShouldNotContain("tenant-2", Case.Insensitive);
     }
 
     private static string NormalizeProblemJson(JsonObject problem)
