@@ -2,7 +2,7 @@
 title: 'Close current Story 3.6 public-route review patches'
 type: 'bugfix'
 created: '2026-10-09'
-status: 'draft'
+status: 'ready-for-dev'
 route: 'dispatch'
 review_loop_iteration: 0
 context:
