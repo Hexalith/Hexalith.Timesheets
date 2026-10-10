@@ -48,9 +48,9 @@ public sealed class AiAssistedTimeCaptureMetricsE2ETests
             "tenant-1",
             TimeEntryId(),
             [
-                new("message-2", 2, RecordedOtherEntry()),
-                new("message-1", 1, recorded),
-                new("message-1", 1, recorded)
+                new("message-2", 2, RecordedOtherEntry(), "tenant-1"),
+                new("message-1", 1, recorded, "tenant-1"),
+                new("message-1", 1, recorded, "tenant-1")
             ],
             new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, 2, ProjectionFreshness.Fresh))
             .ShouldNotBeNull();

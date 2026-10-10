@@ -524,7 +524,7 @@ public sealed class ActualTimeReportProjectionTests
     private static ActualTimeReportProjection Projector() => new();
 
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
-        => new(messageId, sequenceNumber, payload);
+        => new(messageId, sequenceNumber, payload, "tenant-1");
 
     private static TimeEntryRecorded Recorded(
         string id,

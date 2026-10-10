@@ -1359,7 +1359,7 @@ public sealed class TimeCaptureContractTests
     [Theory]
     [InlineData("/api/timesheets/magic-links/confirm/submit")]
     [InlineData("/api/timesheets/magic-links/adjust/submit")]
-    public void OpenapiMagicLinkSubmitRoutesOnlyAdvertiseOpaqueDenial(string path)
+    public void OpenapiMagicLinkSubmitRoutesAdvertiseVerifiedAcceptanceAndOpaqueDenial(string path)
     {
         string artifactPath = RepositoryPath(
             "src",
@@ -1371,7 +1371,9 @@ public sealed class TimeCaptureContractTests
 
         JsonObject responses = artifact["paths"]?[path]?["post"]?["responses"]?.AsObject()
             ?? throw new InvalidOperationException("Magic-link submit responses are missing.");
-        responses.Select(static response => response.Key).ShouldBe(["403"]);
+        responses.Select(static response => response.Key).ShouldBe(["202", "400", "403"]);
+        responses["202"]?["description"]?.GetValue<string>().ShouldContain("exact stored event batch");
+        responses["400"]?["description"]?.GetValue<string>().ShouldContain("Malformed JSON");
         responses["403"]?["content"]?["application/problem+json"]?["schema"]?["$ref"]
             ?.GetValue<string>().ShouldBe("#/components/schemas/MagicLinkInvalidLinkDenial");
     }

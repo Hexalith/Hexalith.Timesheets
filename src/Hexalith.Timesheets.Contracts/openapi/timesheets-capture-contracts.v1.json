@@ -1548,8 +1548,14 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Confirmation accepted after EventStore reports Completed and the exact stored event batch is read back."
+          },
+          "400": {
+            "description": "Malformed JSON request body."
+          },
           "403": {
-            "description": "Opaque denial while durable submission is unavailable or the link is invalid. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "description": "Opaque denial for an invalid link or an unverified durable submission. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
             "content": {
               "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
             }
@@ -1592,8 +1598,14 @@
           }
         },
         "responses": {
+          "202": {
+            "description": "Adjustment accepted after EventStore reports Completed and the exact stored event batch is read back."
+          },
+          "400": {
+            "description": "Malformed JSON request body."
+          },
           "403": {
-            "description": "Opaque denial while durable submission is unavailable or the link is invalid. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "description": "Opaque denial for an invalid link or an unverified durable submission. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
             "content": {
               "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
             }

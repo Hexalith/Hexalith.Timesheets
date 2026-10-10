@@ -1,8 +1,10 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
+using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
@@ -19,6 +21,7 @@ using Hexalith.Timesheets.Server.TimeEntries;
 using Hexalith.Timesheets.Server.TimesheetPeriods;
 
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 
@@ -29,6 +32,35 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class RuntimeRegistrationTests
 {
+    [Fact]
+    public void Polling_options_bind_from_configuration_and_invalid_values_fail_startup_validation()
+    {
+        using (ServiceProvider valid = BuildPollingProvider("00:00:02", "00:00:00.025"))
+        {
+            valid.GetRequiredService<IStartupValidator>().Validate();
+            MagicLinkSubmissionPollingOptions options = valid
+                .GetRequiredService<IOptions<MagicLinkSubmissionPollingOptions>>().Value;
+            options.Timeout.ShouldBe(TimeSpan.FromSeconds(2));
+            options.PollInterval.ShouldBe(TimeSpan.FromMilliseconds(25));
+        }
+
+        using ServiceProvider invalid = BuildPollingProvider("00:00:02", "00:00:00.001");
+        Should.Throw<OptionsValidationException>(() => invalid.GetRequiredService<IStartupValidator>().Validate());
+    }
+
+    private static ServiceProvider BuildPollingProvider(string timeout, string interval)
+    {
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Timesheets:MagicLinks:SubmissionPolling:Timeout"] = timeout,
+                ["Timesheets:MagicLinks:SubmissionPolling:PollInterval"] = interval
+            }).Build());
+        services.AddTimesheetsServerKernel();
+        return services.BuildServiceProvider();
+    }
+
     /// <summary>Resolves the kernel's default loader with supplied EventStore read seams.</summary>
     [Fact]
     public void ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride()
@@ -96,6 +128,45 @@ public sealed class RuntimeRegistrationTests
             Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", previousPort);
             Environment.SetEnvironmentVariable("DAPR_API_TOKEN", previousToken);
         }
+    }
+
+    [Fact]
+    public async Task Server_kernel_workload_gateway_uses_signed_routes_for_submit_status_and_read()
+    {
+        var recorder = new RecordingHandler();
+        IEventStoreGatewayWorkloadAssertionSource assertions = Substitute.For<IEventStoreGatewayWorkloadAssertionSource>();
+        assertions.IssueAsync(Arg.Any<string>(), "tenant-1", Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<string?>("signed-assertion"));
+        IServiceCollection services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(assertions);
+        services.AddTimesheetsServerKernel();
+        services.Configure<HttpClientFactoryOptions>(nameof(IEventStoreGatewayClient),
+            options => options.HttpMessageHandlerBuilderActions.Add(builder => builder.PrimaryHandler = recorder));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventStoreGatewayClient gateway = provider.GetRequiredService<IEventStoreGatewayClient>();
+
+        _ = await gateway.ReadWorkloadStreamAsync(
+            new StreamReadRequest("tenant-1", "timesheets", "capability-1"), TestContext.Current.CancellationToken);
+        _ = await gateway.GetWorkloadCommandStatusAsync(
+            "tenant-1", "message", TestContext.Current.CancellationToken);
+        _ = await gateway.SubmitWorkloadCommandAsync(new SubmitCommandRequest(
+            "message", "tenant-1", "timesheets", "capability-1", "test.command",
+            JsonSerializer.SerializeToElement(new { value = 1 }), CorrelationId: "message"),
+            TestContext.Current.CancellationToken);
+
+        recorder.Routes.ShouldBe([
+            "/api/v1/streams/read/workload",
+            "/api/v1/commands/status/workload/tenant-1/message",
+            "/api/v1/commands/workload"
+        ]);
+        recorder.Assertions.ShouldBe(["signed-assertion", "signed-assertion", "signed-assertion"]);
+        await assertions.Received(1).IssueAsync(EventStoreGatewayWorkloadOperations.StreamRead,
+            "tenant-1", Arg.Any<CancellationToken>());
+        await assertions.Received(1).IssueAsync(EventStoreGatewayWorkloadOperations.CommandStatus,
+            "tenant-1", Arg.Any<CancellationToken>());
+        await assertions.Received(1).IssueAsync(EventStoreGatewayWorkloadOperations.CommandSubmit,
+            "tenant-1", Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -278,6 +349,9 @@ public sealed class RuntimeRegistrationTests
 
     private sealed class RecordingHandler : HttpMessageHandler
     {
+        public List<string> Routes { get; } = [];
+
+        public List<string?> Assertions { get; } = [];
         public Uri? RequestUri { get; private set; }
 
         public string? AppId { get; private set; }
@@ -289,12 +363,28 @@ public sealed class RuntimeRegistrationTests
             CancellationToken cancellationToken)
         {
             RequestUri = request.RequestUri;
+            Routes.Add(request.RequestUri?.AbsolutePath ?? string.Empty);
+            Assertions.Add(request.Headers.TryGetValues("X-Hexalith-Workload-Assertion", out IEnumerable<string>? values)
+                ? values.Single() : null);
             AppId = request.Headers.TryGetValues("dapr-app-id", out IEnumerable<string>? appIds)
                 ? appIds.Single()
                 : null;
             ApiToken = request.Headers.TryGetValues("dapr-api-token", out IEnumerable<string>? apiTokens)
                 ? apiTokens.Single()
                 : null;
+            if (request.RequestUri?.AbsolutePath.Contains("/commands/status/workload/", StringComparison.Ordinal) == true)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
+            }
+
+            if (request.RequestUri?.AbsolutePath.EndsWith("/commands/workload", StringComparison.Ordinal) == true)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = JsonContent.Create(new SubmitCommandResponse("message", MessageId: "message"))
+                });
+            }
+
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = JsonContent.Create(new StreamReadPage(

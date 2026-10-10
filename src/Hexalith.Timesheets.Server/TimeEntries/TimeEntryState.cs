@@ -133,6 +133,10 @@ public sealed class TimeEntryState
     /// <summary>Applies an EventStore recording payload.</summary>
     public void Apply(StoredTimeEntryRecorded recorded) => Apply(recorded.Event);
 
+    /// <summary>Ignores a rejected command retained in the EventStore stream.</summary>
+    public void Apply(MagicLinkCommitRejected rejected)
+        => ArgumentNullException.ThrowIfNull(rejected);
+
     private void RecordTerminalCapability(MagicLinkCapabilityId capabilityId)
     {
         if (!TerminalMagicLinkCapabilityIds.Add(capabilityId.Value))

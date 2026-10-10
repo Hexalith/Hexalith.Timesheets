@@ -73,9 +73,9 @@ public sealed class SubmitTimeEntriesForApprovalE2ETests
             tenant.TenantId,
             TimeEntryId(),
             [
-                new("message-2", 2, submitted),
-                new("message-1", 1, recorded),
-                new("message-2", 2, submitted)
+                new("message-2", 2, submitted, tenant.TenantId),
+                new("message-1", 1, recorded, tenant.TenantId),
+                new("message-2", 2, submitted, tenant.TenantId)
             ],
             new(tenant.TenantId, TimeEntryEvidenceProjection.ProjectionName, 2, ProjectionFreshness.Fresh))
             .ShouldNotBeNull();

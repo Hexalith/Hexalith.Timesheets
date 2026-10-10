@@ -268,12 +268,12 @@ public sealed class CorrectRejectedTimeEntriesForResubmissionE2ETests
             Tenant().TenantId,
             TimeEntryId(),
             [
-                new("message-5", 5, resubmission),
-                new("message-2", 2, firstSubmission),
-                new("message-4", 4, corrected),
-                new("message-3", 3, rejected),
-                new("message-1", 1, recorded),
-                new("message-4", 4, corrected)
+                new("message-5", 5, resubmission, Tenant().TenantId),
+                new("message-2", 2, firstSubmission, Tenant().TenantId),
+                new("message-4", 4, corrected, Tenant().TenantId),
+                new("message-3", 3, rejected, Tenant().TenantId),
+                new("message-1", 1, recorded, Tenant().TenantId),
+                new("message-4", 4, corrected, Tenant().TenantId)
             ],
             new(Tenant().TenantId, TimeEntryEvidenceProjection.ProjectionName, 5, ProjectionFreshness.Fresh))
             .ShouldNotBeNull();

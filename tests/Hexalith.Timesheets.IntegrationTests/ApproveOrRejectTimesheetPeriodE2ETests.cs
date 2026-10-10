@@ -240,7 +240,7 @@ public sealed class ApproveOrRejectTimesheetPeriodE2ETests
     }
 
     private static TimesheetPeriodProjectionEvent Event(string messageId, long sequence, object payload)
-        => new(messageId, sequence, payload);
+        => new(messageId, sequence, payload, "tenant-1");
 
     private static TimeEntryRecorded Recorded(TimeEntryId timeEntryId)
         => new(

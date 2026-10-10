@@ -317,10 +317,10 @@ public sealed class ApproveOrRejectSubmittedTimeEntriesE2ETests
             Tenant().TenantId,
             TimeEntryId(),
             [
-                new("message-3", 3, approvalDecision),
-                new("message-2", 2, Submitted()),
-                new("message-1", 1, Recorded()),
-                new("message-3", 3, approvalDecision)
+                new("message-3", 3, approvalDecision, Tenant().TenantId),
+                new("message-2", 2, Submitted(), Tenant().TenantId),
+                new("message-1", 1, Recorded(), Tenant().TenantId),
+                new("message-3", 3, approvalDecision, Tenant().TenantId)
             ],
             new(Tenant().TenantId, TimeEntryEvidenceProjection.ProjectionName, 3, ProjectionFreshness.Fresh))
             .ShouldNotBeNull();

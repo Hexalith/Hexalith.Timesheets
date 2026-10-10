@@ -15,6 +15,15 @@ namespace Hexalith.Timesheets.Projections.Tests;
 public sealed class ApprovedTimeLedgerProjectionTests
 {
     [Fact]
+    public void Ledger_rejects_unscoped_recording()
+    {
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1",
+            [Event("m1", 1, Recorded("time-entry-1", 45)) with { TenantId = null }],
+            FreshCheckpoint(1), new QueryApprovedTimeLedger()));
+    }
+
+    [Fact]
     public void Ledger_accepts_independent_owner_streams_with_the_same_local_sequences()
     {
         TimeEntryProjectionEvent[] events =
@@ -286,7 +295,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     private static ApprovedTimeLedgerProjection Projector() => new();
 
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
-        => new(messageId, sequenceNumber, payload);
+        => new(messageId, sequenceNumber, payload, "tenant-1");
 
     private static TimeEntryRecorded Recorded(
         string id,

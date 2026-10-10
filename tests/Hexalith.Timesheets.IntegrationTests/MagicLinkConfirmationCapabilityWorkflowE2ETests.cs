@@ -206,9 +206,9 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
             "tenant-1",
             TimeEntryId(),
             [
-                new("time-message-1", 1, recorded),
-                new("time-message-2", 2, adjusted),
-                new("time-message-2", 2, adjusted)
+                new("time-message-1", 1, recorded, "tenant-1"),
+                new("time-message-2", 2, adjusted, "tenant-1"),
+                new("time-message-2", 2, adjusted, "tenant-1")
             ],
             new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, 2, ProjectionFreshness.Fresh))
             .ShouldNotBeNull();

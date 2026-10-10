@@ -40,6 +40,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 
 using Shouldly;
@@ -274,7 +275,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             denial.Headers.ShouldBe(invalidDenial.Headers);
             RawByteLength(denial.RawBody).ShouldBe(RawByteLength(invalidDenial.RawBody));
         }
-        factory.Gateway.SubmissionCount.ShouldBe(0);
+        factory.Gateway.SubmissionCount.ShouldBe(2);
 
         MagicLinkConfirmationDisplayResponse confirmation = (await confirmDisplay.Content
             .ReadFromJsonAsync<MagicLinkConfirmationDisplayResponse>(JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull();
@@ -1322,7 +1323,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         bool? useMismatchedClaims = null,
         Claim[]? claims = null,
         string? providerLoggingCategory = null,
-        IMagicLinkTokenGenerator? tokenGenerator = null) : WebApplicationFactory<Program>
+        IMagicLinkTokenGenerator? tokenGenerator = null,
+        IWorkloadAssertionIssuer? workloadAssertionIssuer = null,
+        HttpMessageHandler? workloadGatewayHandler = null) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
@@ -1597,10 +1600,22 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 services.RemoveAll<DaprReadModelStore>();
                 services.AddSingleton<IReadModelStore>(useConcreteLoader ? Store : new UnavailableReadModelStore());
 
-                if (useConcreteLoader)
+                if (workloadGatewayHandler is null)
                 {
                     services.RemoveAll<IEventStoreGatewayClient>();
                     services.AddSingleton<IEventStoreGatewayClient>(Gateway);
+                }
+                else
+                {
+                    services.Configure<HttpClientFactoryOptions>(nameof(IEventStoreGatewayClient),
+                        options => options.HttpMessageHandlerBuilderActions.Add(
+                            handlerBuilder => handlerBuilder.PrimaryHandler = workloadGatewayHandler));
+                }
+
+                if (workloadAssertionIssuer is not null)
+                {
+                    services.RemoveAll<IWorkloadAssertionIssuer>();
+                    services.AddSingleton(workloadAssertionIssuer);
                 }
 
                 services.RemoveAll<TimeProvider>();
@@ -1995,17 +2010,18 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         public CommandStatus? OverrideSuccessfulStatus { get; set; }
 
+        public int CompletedStatusReadsToDelay { get; set; }
+
+        public Func<CommandStatusQueryResponse, CommandStatusQueryResponse>? StatusTransform { get; set; }
+
+        public Func<string, string>? AcceptedMessageIdTransform { get; set; }
+
         public Func<object, object>? StoredPayloadTransform { get; set; }
 
         public Task<CommandStatusQueryResponse?> GetCommandStatusAsync(
             string messageId,
             CancellationToken cancellationToken = default)
-        {
-            lock (_stateGate)
-            {
-                return Task.FromResult(_statuses.GetValueOrDefault(messageId));
-            }
-        }
+            => throw new InvalidOperationException("Magic-link submissions must use the workload status route.");
 
         public Task<CommandStatusQueryResponse?> GetWorkloadCommandStatusAsync(
             string tenant,
@@ -2015,7 +2031,18 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             lock (_stateGate)
             {
                 CommandStatusQueryResponse? status = _statuses.GetValueOrDefault(messageId);
-                return Task.FromResult(status?.TenantId == tenant ? status : null);
+                if (status?.Status == nameof(CommandStatus.Completed) && CompletedStatusReadsToDelay > 0)
+                {
+                    CompletedStatusReadsToDelay--;
+                    status = status with
+                    {
+                        Status = nameof(CommandStatus.Processing),
+                        StatusCode = (int)CommandStatus.Processing
+                    };
+                }
+                return Task.FromResult(status?.TenantId == tenant
+                    ? StatusTransform?.Invoke(status) ?? status
+                    : null);
             }
         }
 
@@ -2050,7 +2077,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
         }
 
-        public async Task<SubmitCommandResponse> SubmitCommandAsync(
+        public Task<SubmitCommandResponse> SubmitCommandAsync(
+            SubmitCommandRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("Magic-link submissions must use the workload command route.");
+
+        private async Task<SubmitCommandResponse> SubmitScriptedCommandAsync(
             SubmitCommandRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -2093,7 +2125,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 var result = await processor.ProcessAsync(envelope, currentState, cancellationToken);
                 var key = (request.Tenant, request.AggregateId);
                 StreamReadEvent[] before = StoredEvents(request.Tenant, request.AggregateId);
-                if (result.IsSuccess && OverrideSuccessfulStatus is null)
+                CommandStatus status = result.IsSuccess
+                    ? OverrideSuccessfulStatus ?? CommandStatus.Completed
+                    : CommandStatus.Rejected;
+                bool eventsStored = result.IsRejection
+                    || (result.IsSuccess && status is CommandStatus.Completed or CommandStatus.EventsStored or CommandStatus.PublishFailed);
+                if (eventsStored)
                 {
                     List<StreamReadEvent> stored = [.. before];
                     for (int index = 0; index < result.Events.Count; index++)
@@ -2118,9 +2155,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     }
                 }
 
-                CommandStatus status = result.IsSuccess
-                    ? OverrideSuccessfulStatus ?? CommandStatus.Completed
-                    : CommandStatus.Rejected;
                 CommandStatusQueryResponse commandStatus = new(
                     request.CorrelationId ?? request.MessageId,
                     status.ToString(),
@@ -2128,8 +2162,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     result.IsRejection ? result.Events[0].GetType().FullName : null,
                     request.MessageId)
                 {
-                    CommittedEventSequence = status == CommandStatus.Completed ? before.Length + result.Events.Count : null,
-                    EventCount = status == CommandStatus.Completed ? result.Events.Count : 0,
+                    CommittedEventSequence = eventsStored
+                        ? before.Length + result.Events.Count : null,
+                    EventCount = eventsStored
+                        ? result.Events.Count : 0,
                     TenantId = request.Tenant,
                     Domain = request.Domain,
                     AggregateId = request.AggregateId
@@ -2138,7 +2174,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 {
                     _statuses[request.MessageId] = commandStatus;
                 }
-                return new SubmitCommandResponse(request.CorrelationId ?? request.MessageId, MessageId: request.MessageId);
+                return new SubmitCommandResponse(request.CorrelationId ?? request.MessageId,
+                    MessageId: AcceptedMessageIdTransform?.Invoke(request.MessageId) ?? request.MessageId);
             }
             finally
             {
@@ -2149,7 +2186,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         public Task<SubmitCommandResponse> SubmitWorkloadCommandAsync(
             SubmitCommandRequest request,
             CancellationToken cancellationToken = default)
-            => SubmitCommandAsync(request, cancellationToken);
+            => SubmitScriptedCommandAsync(request, cancellationToken);
 
         private object? CurrentState(SubmitCommandRequest request)
         {
@@ -2185,6 +2222,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             => throw new NotSupportedException();
 
         public Task<StreamReadPage> ReadStreamAsync(
+            StreamReadRequest request,
+            CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("Magic-link reads must use the workload stream route.");
+
+        private Task<StreamReadPage> ReadScriptedStreamAsync(
             StreamReadRequest request,
             CancellationToken cancellationToken = default)
         {
@@ -2234,7 +2276,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 }
             }
 
-            return ReadStreamAsync(request, cancellationToken);
+            return ReadScriptedStreamAsync(request, cancellationToken);
         }
     }
 

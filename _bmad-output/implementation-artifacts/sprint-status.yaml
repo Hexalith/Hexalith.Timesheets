@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-10-2026 19:11 (Story 3.6 code review of 61d6fc7..0169765 plus owned EventStore 281b0b8e: 1 decision resolved, 14 patches left as action items including a high rejection-replay defect, 3 deferred; Story 3.6 back to in-progress. Story 3.7 and release remain open.)
+# last_updated: 10-10-2026 (Story 3.6 rejection replay, bounded polling, projection tenant scope, and in-process HTTP acceptance verified; Story 3.6 and 3.7 remain in progress pending live topology and release gates.)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system

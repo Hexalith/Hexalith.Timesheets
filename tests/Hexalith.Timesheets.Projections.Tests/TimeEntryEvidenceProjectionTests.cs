@@ -1,5 +1,7 @@
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
@@ -13,6 +15,59 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class TimeEntryEvidenceProjectionTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("tenant-2")]
+    public void Recording_without_matching_delivery_scope_is_rejected(string? deliveryTenant)
+    {
+        TimeEntryProjectionEvent recording = Event("m1", 1, Recorded("time-entry-1", 45))
+            with { TenantId = deliveryTenant };
+
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", TimeEntryId(), [recording], FreshCheckpoint(1)));
+        Should.Throw<InvalidOperationException>(() => ListProjector().Project(
+            "tenant-1", [recording], FreshCheckpoint(1), new QueryTimeEntries()));
+    }
+
+    [Fact]
+    public void Cross_tenant_magic_link_terminal_is_rejected()
+    {
+        var used = new MagicLinkConfirmationCapabilityUsed(
+            new MagicLinkCapabilityId("capability-1"), new TenantReference("tenant-2"),
+            Contributor(), TimeEntryId(), DateTimeOffset.UtcNow,
+            new MagicLinkAuditMetadata("magic-link", "capability-1"));
+
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", TimeEntryId(),
+            [Event("m1", 1, Recorded("time-entry-1", 45)), Event("m2", 2, new StoredMagicLinkUsed(used))],
+            FreshCheckpoint(2)));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Cross_tenant_revoke_or_expire_payload_is_rejected_by_evidence_and_list(bool expire)
+    {
+        var capabilityId = new MagicLinkCapabilityId("capability-1");
+        var otherTenant = new TenantReference("tenant-2");
+        var source = new MagicLinkAuditMetadata("timesheets", "terminal");
+        object terminal = expire
+            ? new MagicLinkConfirmationCapabilityExpired(capabilityId, otherTenant, DateTimeOffset.UtcNow, source)
+                { TimeEntryId = TimeEntryId() }
+            : new MagicLinkConfirmationCapabilityRevoked(capabilityId, otherTenant, Contributor(), DateTimeOffset.UtcNow, source)
+                { TimeEntryId = TimeEntryId() };
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded("time-entry-1", 45)),
+            Event("m2", 2, terminal)
+        ];
+
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", TimeEntryId(), events, FreshCheckpoint(2)));
+        Should.Throw<InvalidOperationException>(() => ListProjector().Project(
+            "tenant-1", events, FreshCheckpoint(2), new QueryTimeEntries()));
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -927,7 +982,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     private static TimeEntryEvidenceListProjection ListProjector() => new();
 
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
-        => new(messageId, sequenceNumber, payload);
+        => new(messageId, sequenceNumber, payload, "tenant-1");
 
     private static TimeEntryRecorded Recorded(string id, int durationMinutes)
         => Recorded(id, durationMinutes, AiEffortMetrics.Unavailable);

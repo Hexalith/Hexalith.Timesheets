@@ -19,6 +19,10 @@ public sealed class MagicLinkCapabilityState
     /// <summary>Applies an EventStore expiry payload.</summary>
     public void Apply(StoredMagicLinkExpired expired) => Apply(expired.Event);
 
+    /// <summary>Ignores a rejected command retained in the EventStore stream.</summary>
+    public void Apply(MagicLinkCommitRejected rejected)
+        => ArgumentNullException.ThrowIfNull(rejected);
+
     public bool Exists { get; private set; }
 
     public MagicLinkCapabilityId? CapabilityId { get; private set; }

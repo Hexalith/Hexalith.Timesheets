@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
@@ -12,14 +13,23 @@ using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.Runtime;
+using Microsoft.Extensions.Options;
 
 namespace Hexalith.Timesheets.Server.MagicLinks;
 
 /// <summary>Submits one Time Entry command and verifies its terminal status and event batch.</summary>
-public sealed class MagicLinkDurableSubmissionService(IEventStoreGatewayClient gateway)
+public sealed class MagicLinkDurableSubmissionService(
+    IEventStoreGatewayClient gateway,
+    IOptions<MagicLinkSubmissionPollingOptions> pollingOptions)
 {
     private const string CrockfordAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly MagicLinkSubmissionPollingOptions _polling = pollingOptions.Value.IsValid()
+        ? pollingOptions.Value
+        : throw new OptionsValidationException(
+            nameof(MagicLinkSubmissionPollingOptions),
+            typeof(MagicLinkSubmissionPollingOptions),
+            ["Timeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
 
     /// <summary>Builds an internal commit intent from the server's resolved capability state.</summary>
     public Task<bool> SubmitResolvedUseAsync(
@@ -186,6 +196,7 @@ public sealed class MagicLinkDurableSubmissionService(IEventStoreGatewayClient g
             || status.TenantId != intent.Tenant.TenantId
             || status.Domain != TimesheetsEventStoreIntegration.DomainName
             || status.AggregateId != intent.TimeEntryId.Value
+            || status.RejectionEventType is not null
             || status.FailureReason is not null
             || status.Retryable is true)
         {
@@ -267,39 +278,60 @@ public sealed class MagicLinkDurableSubmissionService(IEventStoreGatewayClient g
         Type commandType,
         CancellationToken cancellationToken)
     {
+        Stopwatch elapsed = Stopwatch.StartNew();
+        using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(_polling.Timeout);
+        CancellationToken deadlineToken = deadline.Token;
         CommandStatusQueryResponse? status = await gateway.GetWorkloadCommandStatusAsync(
-            tenant, messageId, cancellationToken).ConfigureAwait(false);
+            tenant, messageId, deadlineToken)
+            .WaitAsync(deadlineToken).ConfigureAwait(false);
         if (status is null)
         {
+            TimeSpan submitRemaining = _polling.Timeout - elapsed.Elapsed;
+            if (submitRemaining <= TimeSpan.Zero)
+            {
+                return null;
+            }
+
             SubmitCommandResponse accepted = await gateway.SubmitWorkloadCommandAsync(
                 new SubmitCommandRequest(
                     messageId, tenant, TimesheetsEventStoreIntegration.DomainName, aggregateId,
                     commandType.FullName!, JsonSerializer.SerializeToElement(intent, commandType, _jsonOptions),
                     CorrelationId: messageId, IdempotencyKey: messageId),
-                cancellationToken).ConfigureAwait(false);
+                deadlineToken).WaitAsync(deadlineToken).ConfigureAwait(false);
             if (accepted.MessageId != messageId)
             {
                 return null;
             }
         }
 
-        for (int attempt = 0; attempt < 5; attempt++)
+        while (true)
         {
-            status ??= await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, cancellationToken).ConfigureAwait(false);
+            TimeSpan remaining = _polling.Timeout - elapsed.Elapsed;
+            if (remaining <= TimeSpan.Zero)
+            {
+                return null;
+            }
+
+            status ??= await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
+                .WaitAsync(deadlineToken).ConfigureAwait(false);
             if (status?.Status is nameof(CommandStatus.Completed) or nameof(CommandStatus.Rejected)
                 or nameof(CommandStatus.PublishFailed) or nameof(CommandStatus.TimedOut))
             {
                 return status;
             }
 
-            status = null;
-            if (attempt < 4)
+            remaining = _polling.Timeout - elapsed.Elapsed;
+            if (remaining <= TimeSpan.Zero)
             {
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                return null;
             }
-        }
 
-        return null;
+            status = null;
+            await Task.Delay(
+                remaining < _polling.PollInterval ? remaining : _polling.PollInterval,
+                deadlineToken).ConfigureAwait(false);
+        }
     }
 
     private static bool HasCommittedStatus(
@@ -316,6 +348,7 @@ public sealed class MagicLinkDurableSubmissionService(IEventStoreGatewayClient g
             && status.TenantId == tenant
             && status.Domain == TimesheetsEventStoreIntegration.DomainName
             && status.AggregateId == aggregateId
+            && status.RejectionEventType is null
             && status.FailureReason is null
             && status.Retryable is not true;
 

@@ -219,6 +219,7 @@ The repeated 2026-09-14 agent-context findings are consolidated into the canonic
   summary: Implement durable, atomic magic-link confirmation and adjustment persistence for unfinished Story 3.3/3.4 behavior.
   evidence: The live POST endpoints return `202 Accepted` from in-memory domain results without calling `IEventStoreGatewayClient.SubmitCommandAsync`, so neither the Time Entry event nor capability-use event is persisted and concurrent reuse is not prevented. The current EventStore gateway accepts one aggregate per submission and exposes no atomic multi-aggregate API; sequential submissions would violate the approved atomicity requirement. A dedicated high-priority remediation must choose a platform coordination or aggregate-boundary design and prove persisted end state, concurrency, replay rejection, and partial-failure safety.
   update_2026_10_10: Both public POST routes now return the shared opaque `403` after pure domain decisions, and the in-process fixture observes zero EventStore submit attempts. The durable atomic write, persisted concurrency proof, and deployed-history inventory remain open; the earlier `202` behavior above is historical evidence.
+  resolution_2026_10_10: Superseded by the later EventStore-backed submission increment. Both public POST routes now submit one atomic Time Entry owner batch, return `202` only after `Completed` status and exact stored-batch readback, and have local actor persistence, rejection replay, and concurrency tests. Deployed-history inventory and live Dapr-backed acceptance remain separate open release gates.
 
 ## Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)
 
@@ -506,7 +507,20 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
   summary: Wire and measure token-hash index projection readiness before treating a newly issued link as immediately resolvable.
-  evidence: The index has no production projection-host wiring, and a token returned after committed issuance may be looked up before the rebuildable index advances; local fixtures seed it directly. A live handler and issue-to-use journey would settle end-to-end readiness.
+  evidence: The production projection handler is discovered, and local HTTP fixtures deliver through the mapped projection route. A token returned after committed issuance may still be looked up before the rebuildable index advances; that visibility delay is unmeasured in a deployed topology. A live issue-to-use journey would settle end-to-end readiness.
+  update_2026_10_10: The original unwired-index observation was superseded by the discovered projection handler; the remaining item is deployed visibility timing.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+  summary: Add a production EventStore recording writer for Time Entry owner streams before live magic-link acceptance.
+  evidence: `MagicLinkDurableSubmissionService` is the only production magic-link submitter and no production code records a Time Entry into its EventStore owner stream. `MagicLinkEventStoreDomainProcessor` requires `timeEntry.IsRecorded` for use, so live confirm and adjust currently fail closed even after topology and issuer gates close. `AddTimesheetsMagicLinkEventStoreProcessing` owns the keyed `timesheets` processor; the future recording path must compose with that processor instead of registering a competing keyed processor. This is a release gate.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+  summary: Wire production capability and Time Entry read-model projection handlers for stored magic-link events.
+  evidence: Local read-model and HTTP fixtures exercise the stored wrappers, but production handlers for the capability and Time Entry read models remain unwired. Reconcile BH8, L1-BH12, L2-BH3, L3-BH12 and L4-BH8 from the durable-submission review before claiming live read-model freshness.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+  summary: Resolve magic-link helper collision cases before broadening production command routing.
+  evidence: Durable-submission review items L2-EC3, L3-BH9 and L4-EC1 remain deferred. Review the helper collision behavior with the future recording/processor composition work and pin the chosen routing semantics with actor-level tests.
 
 ## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-10)
 
@@ -521,3 +535,25 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
   summary: Re-run vulnerable, deprecated, and transitive package audits against the current 13.6.1 catalog graph.
   evidence: `docs/launch-readiness.md:25` and the transitive-drift row still cite 2026-09-17 audits of the earlier graph. Story 3.6 updated only the platform-alignment row, labeled as catalog evidence. The prose still pairs `Aspire.AppHost.Sdk` `13.5.3` with Aspire `13.6.1` packages. The catalog moved in `46265ba`, before the reviewed range.
+
+## Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+  summary: Decide and enforce a deadline for magic-link stored-event readback after terminal status.
+  evidence: `MagicLinkDurableSubmissionService` bounds status polling, but its pre-existing issue, transition, and use `ReadWorkloadStreamAsync` calls use only the request token. A stalled read can delay a public response indefinitely. A deployed latency policy and topology measurements should set the readback budget.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+  summary: Bind magic-link receipt events to the submitted command's correlation and causation identity.
+  evidence: EventStore `EventPersister` sets persisted event correlation and causation from the command, while pre-existing receipt verification checks sequence and payload but not those metadata fields. Decide the exact metadata policy across issue, transition, and use, then add tamper tests.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+  summary: Verify complete prior-value audit snapshots for magic-link adjustments.
+  evidence: Existing adjustment readback compares the effect's new values to the submitted intent but does not compare prior service date, duration, billable state, or comment to the loaded Time Entry state. Pass trustworthy pre-submit state into receipt verification and test corrupted prior-value snapshots.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+  summary: Enforce checkpoint tenant scope consistently in Timesheets read-model projections.
+  evidence: A Fresh `TimesheetsProjectionCheckpoint` from another tenant can mark matching-envelope evidence and ledger export preview ready because the pre-existing folds do not compare `checkpoint.TenantId` with the requested tenant. Define a common checkpoint validation across evidence, period, list, ledger, and report folds.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+  summary: Reconcile an uncertain committed magic-link use across separate HTTP retries.
+  evidence: Public endpoints pass a new `HttpContext.TraceIdentifier` on each request. The durable service keeps a message ID stable only within one request, so a later retry after an opaque committed outcome can use a new ID and receive a replay denial. Define an idempotency or status-reconciliation policy without exposing capability state.

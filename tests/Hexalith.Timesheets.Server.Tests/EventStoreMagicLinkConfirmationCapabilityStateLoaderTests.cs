@@ -1871,6 +1871,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
         public List<StreamReadRequest> Requests { get; } = [];
 
+        public List<StreamReadRequest> WorkloadRequests { get; } = [];
+
         public ScriptedGatewayClient WithStream(string tenant, string? aggregateId, params StreamReadEvent[] events)
         {
             _streams[(tenant, aggregateId)] = events;
@@ -1940,6 +1942,11 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         public Task<StreamReadPage> ReadStreamAsync(
             StreamReadRequest request,
             CancellationToken cancellationToken = default)
+            => throw new InvalidOperationException("The loader must use the workload stream route.");
+
+        private Task<StreamReadPage> ReadScriptedStreamAsync(
+            StreamReadRequest request,
+            CancellationToken cancellationToken = default)
         {
             Requests.Add(request);
             if (_exceptions.TryGetValue((request.Tenant, request.AggregateId), out Exception? exception))
@@ -2001,7 +2008,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         public Task<StreamReadPage> ReadWorkloadStreamAsync(
             StreamReadRequest request,
             CancellationToken cancellationToken = default)
-            => ReadStreamAsync(request, cancellationToken);
+        {
+            WorkloadRequests.Add(request);
+            return ReadScriptedStreamAsync(request, cancellationToken);
+        }
 
         private StreamReadPage Transform(StreamReadRequest request, StreamReadPage page)
             => _pageTransforms.TryGetValue(

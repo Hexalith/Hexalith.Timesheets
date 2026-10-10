@@ -25,8 +25,11 @@ public sealed class EventStoreGatewayWorkloadAssertionSource(
             [EventStoreWorkloadAuthenticationDefaults.DomainBindingClaimType] = TimesheetsEventStoreIntegration.DomainName
         };
         ClaimsPrincipal? user = httpContextAccessor.HttpContext?.User;
-        string? actor = user?.FindFirst("party_id")?.Value
-            ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string? actor = user?.FindFirst("party_id")?.Value;
+        if (string.IsNullOrWhiteSpace(actor))
+        {
+            actor = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        }
         if (user?.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(actor))
         {
             bindings[EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType] = actor;

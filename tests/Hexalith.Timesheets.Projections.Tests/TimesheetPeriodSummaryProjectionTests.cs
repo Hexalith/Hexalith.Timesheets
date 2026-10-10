@@ -1,10 +1,13 @@
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimesheetPeriods;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.TimesheetPeriods;
+using Hexalith.Timesheets.Server.MagicLinks;
 
 using Shouldly;
 
@@ -12,6 +15,68 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class TimesheetPeriodSummaryProjectionTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("tenant-2")]
+    public void Period_rejects_unscoped_or_cross_tenant_recording(string? deliveryTenant)
+    {
+        TimeEntryId entry = new("time-entry-1");
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", PeriodId(),
+            [Event("m1", 1, Recorded(entry)) with { TenantId = deliveryTenant },
+                Event("m2", 2, PeriodSubmitted(entry))],
+            FreshCheckpoint(2)));
+    }
+
+    [Fact]
+    public void Period_rejects_cross_tenant_decision_payload()
+    {
+        TimeEntryId entry = new("time-entry-1");
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", PeriodId(),
+            [Event("m1", 1, Recorded(entry)), Event("m2", 2, PeriodSubmitted(entry)),
+                Event("m3", 3, PeriodApproved(entry) with { Tenant = new TenantReference("tenant-2") })],
+            FreshCheckpoint(3)));
+    }
+
+    [Fact]
+    public void Empty_period_rejects_cross_tenant_entry_rejection_before_publishing_summary()
+    {
+        var entryId = new TimeEntryId("entry-outside-empty-period");
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", PeriodId(),
+            [Event("m1", 1, PeriodSubmitted()),
+                Event("m2", 2, EntryRejected(entryId) with { Tenant = new TenantReference("tenant-2") })],
+            FreshCheckpoint(2)));
+    }
+
+    [Theory]
+    [InlineData("used")]
+    [InlineData("revoked")]
+    [InlineData("expired")]
+    public void Empty_period_rejects_cross_tenant_normalized_magic_link_terminal(string terminal)
+    {
+        var capabilityId = new MagicLinkCapabilityId("capability-outside-empty-period");
+        var entryId = new TimeEntryId("entry-outside-empty-period");
+        var otherTenant = new TenantReference("tenant-2");
+        var source = new MagicLinkAuditMetadata("timesheets", "terminal");
+        DateTimeOffset atUtc = new(2026, 6, 19, 13, 0, 0, TimeSpan.Zero);
+        object payload = terminal switch
+        {
+            "used" => new StoredMagicLinkUsed(new MagicLinkConfirmationCapabilityUsed(
+                capabilityId, otherTenant, Contributor(), entryId, atUtc, source)),
+            "revoked" => new StoredMagicLinkRevoked(new MagicLinkConfirmationCapabilityRevoked(
+                capabilityId, otherTenant, Approver(), atUtc, source) { TimeEntryId = entryId }),
+            "expired" => new StoredMagicLinkExpired(new MagicLinkConfirmationCapabilityExpired(
+                capabilityId, otherTenant, atUtc, source) { TimeEntryId = entryId }),
+            _ => throw new ArgumentOutOfRangeException(nameof(terminal))
+        };
+
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", PeriodId(), [Event("m1", 1, PeriodSubmitted()), Event("m2", 2, payload)],
+            FreshCheckpoint(2)));
+    }
+
     [Fact]
     public void Projection_replays_period_and_entry_evidence_with_separate_states()
     {
@@ -187,7 +252,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     private static TimesheetPeriodSummaryProjection Projector() => new();
 
     private static TimesheetPeriodProjectionEvent Event(string messageId, long sequence, object payload)
-        => new(messageId, sequence, payload);
+        => new(messageId, sequence, payload, "tenant-1");
 
     private static TimesheetPeriodSubmitted PeriodSubmitted(params TimeEntryId[] ids)
         => new(

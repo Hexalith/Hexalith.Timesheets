@@ -60,6 +60,10 @@ public static class ServiceCollectionExtensions
             static provider => provider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>());
         services.TryAddSingleton<MagicLinkConfirmationCapabilityCommandService>();
         services.TryAddSingleton(TimeProvider.System);
+        services.AddOptions<MagicLinkSubmissionPollingOptions>()
+            .BindConfiguration("Timesheets:MagicLinks:SubmissionPolling")
+            .Validate(static options => options.IsValid(), "Magic-link submission polling options must be bounded.")
+            .ValidateOnStart();
         services.TryAddScoped<MagicLinkDurableSubmissionService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();

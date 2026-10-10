@@ -265,11 +265,11 @@ public sealed class ApprovedEntryCorrectionsE2ETests
             Tenant().TenantId,
             TimeEntryId(),
             [
-                new("message-4", 4, corrected),
-                new("message-2", 2, submitted),
-                new("message-3", 3, approved),
-                new("message-1", 1, recorded),
-                new("message-4", 4, corrected)
+                new("message-4", 4, corrected, Tenant().TenantId),
+                new("message-2", 2, submitted, Tenant().TenantId),
+                new("message-3", 3, approved, Tenant().TenantId),
+                new("message-1", 1, recorded, Tenant().TenantId),
+                new("message-4", 4, corrected, Tenant().TenantId)
             ],
             new(Tenant().TenantId, TimeEntryEvidenceProjection.ProjectionName, 4, ProjectionFreshness.Fresh))
             .ShouldNotBeNull();

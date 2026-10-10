@@ -22,7 +22,24 @@ public sealed class TimesheetPeriodSummaryProjection
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(checkpoint);
 
-        List<TimesheetPeriodProjectionEvent> ordered = Deduplicate(events);
+        TimesheetPeriodProjectionEvent[] delivered = [.. events];
+        if (delivered.Any(item => !StringComparer.Ordinal.Equals(item.TenantId, tenantId)
+            || item.Payload is TimesheetPeriodSubmitted submittedPayload
+                && submittedPayload.Tenant.TenantId != tenantId
+            || item.Payload is TimesheetPeriodApproved approvedPayload
+                && approvedPayload.Tenant.TenantId != tenantId
+            || item.Payload is TimesheetPeriodRejected rejectedPayload
+                && rejectedPayload.Tenant.TenantId != tenantId))
+        {
+            throw new InvalidOperationException("Timesheet Period delivery tenant does not match the requested projection.");
+        }
+        if (TimeEntryStoredEventNormalizer.Normalize(delivered.Select(static item => new TimeEntryProjectionEvent(
+                item.MessageId, item.SequenceNumber, item.Payload, item.TenantId)))
+            .Any(item => !TimeEntryEvidenceProjection.MatchesTenant(item.Payload, tenantId)))
+        {
+            throw new InvalidOperationException("Time Entry event tenant does not match the requested period projection.");
+        }
+        List<TimesheetPeriodProjectionEvent> ordered = Deduplicate(delivered);
         TimesheetPeriodSubmitted? submitted = ordered
             .Select(static item => item.Payload)
             .OfType<TimesheetPeriodSubmitted>()
@@ -42,7 +59,8 @@ public sealed class TimesheetPeriodSummaryProjection
             .Select(static item => new TimeEntryProjectionEvent(
                 item.MessageId,
                 item.SequenceNumber,
-                item.Payload))
+                item.Payload,
+                item.TenantId))
             .ToList();
         List<TimesheetPeriodEntrySummary> entrySummaries = [];
         List<TimeEntryId> incomplete = [];

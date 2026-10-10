@@ -1,4 +1,5 @@
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 
@@ -22,9 +23,16 @@ public sealed class TimeEntryEvidenceProjection
         TimeEntryEvidenceReadModel? model = null;
         List<TimeEntryEventLineageItem> lineage = [];
 
-        foreach (TimeEntryProjectionEvent projectionEvent in TimeEntryStoredEventNormalizer.Normalize(events))
+        TimeEntryProjectionEvent[] delivered = [.. events];
+        if (delivered.Any(item => !StringComparer.Ordinal.Equals(item.TenantId, tenantId)))
         {
-            if (!MatchesTenant(projectionEvent.Payload, tenantId))
+            throw new InvalidOperationException("Time Entry delivery tenant does not match the requested projection.");
+        }
+
+        foreach (TimeEntryProjectionEvent projectionEvent in TimeEntryStoredEventNormalizer.Normalize(delivered))
+        {
+            if (!StringComparer.Ordinal.Equals(projectionEvent.TenantId, tenantId)
+                || !MatchesTenant(projectionEvent.Payload, tenantId))
             {
                 throw new InvalidOperationException("Time Entry event tenant does not match the requested projection.");
             }
@@ -90,7 +98,7 @@ public sealed class TimeEntryEvidenceProjection
         return model;
     }
 
-    private static bool MatchesTenant(object payload, string tenantId)
+    internal static bool MatchesTenant(object payload, string tenantId)
         => payload switch
         {
             TimeEntrySubmitted item => item.Tenant.TenantId == tenantId,
@@ -100,6 +108,9 @@ public sealed class TimeEntryEvidenceProjection
             TimeEntryRejected item => item.Tenant.TenantId == tenantId,
             TimeEntryCorrected item => item.Tenant.TenantId == tenantId,
             TimeEntryApprovedCorrected item => item.Tenant.TenantId == tenantId,
+            MagicLinkConfirmationCapabilityUsed item => item.Tenant.TenantId == tenantId,
+            MagicLinkConfirmationCapabilityRevoked item => item.Tenant.TenantId == tenantId,
+            MagicLinkConfirmationCapabilityExpired item => item.Tenant.TenantId == tenantId,
             _ => true
         };
 

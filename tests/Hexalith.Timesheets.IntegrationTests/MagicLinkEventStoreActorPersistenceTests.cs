@@ -38,6 +38,77 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
     [Fact]
+    public async Task Valid_use_requires_verified_origin_at_the_processor_entry()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-origin-use");
+        var entryId = new TimeEntryId("entry-origin-use");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        using IServiceScope scope = factory.Services.CreateScope();
+        MagicLinkEventStoreDomainProcessor processor = scope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>();
+        var intent = new CommitMagicLinkUse(capabilityId, Tenant(), entryId,
+            new MagicLinkTokenHash(Hash(ValidConfirmToken())), MagicLinkUseAction.Confirm, null, ObservedAtUtc);
+        CommandEnvelope valid = ActorCommand(typeof(CommitMagicLinkUse).FullName!, "origin-use", entryId,
+            JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions));
+        object state = RecordedExternalState(timeEntryId: entryId);
+
+        (await processor.ProcessAsync(valid with { Extensions = null }, state, TestContext.Current.CancellationToken))
+            .IsRejection.ShouldBeTrue();
+        (await processor.ProcessAsync(valid, state, TestContext.Current.CancellationToken))
+            .Events.OfType<StoredMagicLinkUsed>().ShouldHaveSingleItem();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Valid_management_command_requires_verified_origin_and_actor_at_processor_entry(bool revoke)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-guard-seed"), new TimeEntryId("entry-guard-seed"));
+        var capabilityId = new MagicLinkCapabilityId(revoke ? "capability-guard-revoke" : "capability-guard-issue");
+        var entryId = new TimeEntryId(revoke ? "entry-guard-revoke" : "entry-guard-issue");
+        if (revoke)
+        {
+            await factory.ProjectValidStateAsync(client, "guard-revoke-token", MagicLinkAllowedAction.Confirm,
+                capabilityId, entryId);
+        }
+        using IServiceScope scope = factory.Services.CreateScope();
+        MagicLinkEventStoreDomainProcessor processor = scope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>();
+        CommandEnvelope valid = revoke
+            ? ActorCommand(typeof(CommitMagicLinkTransition).FullName!, "guard-revoke", entryId,
+                JsonSerializer.SerializeToUtf8Bytes(new CommitMagicLinkTransition(
+                    capabilityId, Tenant(), entryId, Operator(), MagicLinkTransitionAction.Revoke,
+                    new MagicLinkAuditMetadata("timesheets", "guard-revoke"), ObservedAtUtc), JsonOptions))
+            : CreateIssueEnvelope(CreateIssueIntent(capabilityId, entryId), "guard-issue");
+        valid = valid with
+        {
+            UserId = Operator().PartyId,
+            Extensions = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
+                [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = Operator().PartyId
+            }
+        };
+
+        (await processor.ProcessAsync(valid with { Extensions = null }, null, TestContext.Current.CancellationToken))
+            .IsRejection.ShouldBeTrue();
+        (await processor.ProcessAsync(valid with { UserId = "forged-actor" }, null, TestContext.Current.CancellationToken))
+            .IsRejection.ShouldBeTrue();
+        (await processor.ProcessAsync(valid with { Extensions = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
+            [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = "forged-actor"
+        } }, null, TestContext.Current.CancellationToken)).IsRejection.ShouldBeTrue();
+        var accepted = await processor.ProcessAsync(valid, null, TestContext.Current.CancellationToken);
+        accepted.IsRejection.ShouldBeFalse();
+        accepted.Events.ShouldHaveSingleItem().GetType().ShouldBe(revoke
+            ? typeof(StoredMagicLinkRevoked) : typeof(StoredMagicLinkIssued));
+    }
+
+    [Fact]
     public async Task Protected_process_route_dispatches_to_the_keyed_timesheets_processor()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081);
@@ -65,9 +136,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task EventStore_actor_state_store_commits_pair_and_reloads_it_after_actor_recreation(bool adjust)
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task EventStore_actor_state_store_commits_pair_and_reloads_it_after_actor_recreation(
+        bool adjust, bool recreateAfterRejection)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -108,10 +182,24 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         CommandEnvelope use = ActorCommand(
             typeof(CommitMagicLinkUse).FullName!, "actor-use", entryId,
             JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions));
+        CommandEnvelope rejectedUse = use with
+        {
+            MessageId = "actor-rejected-use",
+            Payload = JsonSerializer.SerializeToUtf8Bytes(
+                intent with { TokenHash = new MagicLinkTokenHash("wrong-hash") }, JsonOptions)
+        };
+        (await actor.ProcessCommandAsync(rejectedUse, TestContext.Current.CancellationToken)).Accepted.ShouldBeFalse();
+        (await actor.GetEventsAsync(0)).Count(item => item.EventTypeName == typeof(MagicLinkCommitRejected).FullName)
+            .ShouldBe(1);
+        if (recreateAfterRejection)
+        {
+            actor = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        }
         (await actor.ProcessCommandAsync(use, TestContext.Current.CancellationToken)).Accepted.ShouldBeTrue();
         var committed = await actor.GetEventsAsync(0);
         committed.Select(static item => item.EventTypeName).ShouldBe([
             typeof(StoredTimeEntryRecorded).FullName!,
+            typeof(MagicLinkCommitRejected).FullName!,
             typeof(StoredMagicLinkUsed).FullName!,
             adjust ? typeof(StoredTimeEntryAdjusted).FullName! : typeof(StoredTimeEntryConfirmed).FullName!
         ]);
@@ -119,7 +207,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             Tenant().TenantId, use.MessageId, TestContext.Current.CancellationToken)).ShouldNotBeNull();
         completed.Status.ShouldBe(CommandStatus.Completed);
         completed.EventCount.ShouldBe(2);
-        completed.CommittedEventSequence.ShouldBe(3);
+        completed.CommittedEventSequence.ShouldBe(4);
 
         AggregateActor restarted = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
         (await restarted.GetEventsAsync(0)).Select(static item => item.EventTypeName)
@@ -539,8 +627,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).ShouldBeEmpty();
     }
 
-    [Fact]
-    public async Task IssuedCapabilitySurvivesActorRecreationAndRejectsDistinctReissue()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task IssuedCapabilitySurvivesActorRecreationAndRejectsDistinctReissue(bool recreateAfterRejection)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -563,11 +653,20 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             capabilityId, new TimeEntryId("time-entry-actor-issue-replay"));
         AggregateActor actor = CreateMagicLinkActor(ownerId, stateManager, statusStore, invoker);
 
+        CommandEnvelope denied = CreateIssueEnvelope(first, "rejected-first-issue") with { Extensions = null };
+        (await actor.ProcessCommandAsync(denied, TestContext.Current.CancellationToken)).Accepted.ShouldBeFalse();
+        (await actor.GetEventsAsync(0)).ShouldHaveSingleItem()
+            .EventTypeName.ShouldBe(typeof(MagicLinkCommitRejected).FullName);
+        if (recreateAfterRejection)
+        {
+            actor = CreateMagicLinkActor(ownerId, stateManager, statusStore, invoker);
+        }
+
         (await actor.ProcessCommandAsync(
             CreateIssueEnvelope(first, "first-issue"), TestContext.Current.CancellationToken))
             .Accepted.ShouldBeTrue();
-        (await actor.GetEventsAsync(0)).ShouldHaveSingleItem()
-            .EventTypeName.ShouldBe(typeof(StoredMagicLinkIssued).FullName);
+        (await actor.GetEventsAsync(0)).Count(item => item.EventTypeName == typeof(StoredMagicLinkIssued).FullName)
+            .ShouldBe(1);
 
         AggregateActor restarted = CreateMagicLinkActor(ownerId, stateManager, statusStore, invoker);
         CommitMagicLinkIssue second = first with { TokenHash = new MagicLinkTokenHash("distinct-second-hash") };
