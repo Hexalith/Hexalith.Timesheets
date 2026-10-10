@@ -270,7 +270,18 @@ public sealed class MagicLinkDurableSubmissionService(
                 && adjusted.AdjustedValues.Comment == intent.Adjustment.Comment;
     }
 
-    private async Task<CommandStatusQueryResponse?> SubmitAndReadStatusAsync(
+    internal async Task<CommandStatusQueryResponse?> SubmitAndReadStatusAsync(
+        string messageId,
+        string tenant,
+        string aggregateId,
+        object intent,
+        Type commandType,
+        CancellationToken cancellationToken)
+        => (await SubmitAndReadStatusWithPreflightAsync(
+            messageId, tenant, aggregateId, intent, commandType, cancellationToken)
+            .ConfigureAwait(false)).Status;
+
+    internal async Task<(CommandStatusQueryResponse? Status, bool WasPresentAtPreflight)> SubmitAndReadStatusWithPreflightAsync(
         string messageId,
         string tenant,
         string aggregateId,
@@ -285,12 +296,13 @@ public sealed class MagicLinkDurableSubmissionService(
         CommandStatusQueryResponse? status = await gateway.GetWorkloadCommandStatusAsync(
             tenant, messageId, deadlineToken)
             .WaitAsync(deadlineToken).ConfigureAwait(false);
+        bool wasPresentAtPreflight = status is not null;
         if (status is null)
         {
             TimeSpan submitRemaining = _polling.Timeout - elapsed.Elapsed;
             if (submitRemaining <= TimeSpan.Zero)
             {
-                return null;
+                return (null, false);
             }
 
             SubmitCommandResponse accepted = await gateway.SubmitWorkloadCommandAsync(
@@ -301,7 +313,7 @@ public sealed class MagicLinkDurableSubmissionService(
                 deadlineToken).WaitAsync(deadlineToken).ConfigureAwait(false);
             if (accepted.MessageId != messageId)
             {
-                return null;
+                return (null, false);
             }
         }
 
@@ -310,7 +322,7 @@ public sealed class MagicLinkDurableSubmissionService(
             TimeSpan remaining = _polling.Timeout - elapsed.Elapsed;
             if (remaining <= TimeSpan.Zero)
             {
-                return null;
+                return (null, wasPresentAtPreflight);
             }
 
             status ??= await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
@@ -318,13 +330,13 @@ public sealed class MagicLinkDurableSubmissionService(
             if (status?.Status is nameof(CommandStatus.Completed) or nameof(CommandStatus.Rejected)
                 or nameof(CommandStatus.PublishFailed) or nameof(CommandStatus.TimedOut))
             {
-                return status;
+                return (status, wasPresentAtPreflight);
             }
 
             remaining = _polling.Timeout - elapsed.Elapsed;
             if (remaining <= TimeSpan.Zero)
             {
-                return null;
+                return (null, wasPresentAtPreflight);
             }
 
             status = null;
@@ -334,7 +346,7 @@ public sealed class MagicLinkDurableSubmissionService(
         }
     }
 
-    private static bool HasCommittedStatus(
+    internal static bool HasCommittedStatus(
         CommandStatusQueryResponse? status,
         string messageId,
         string tenant,
@@ -352,7 +364,7 @@ public sealed class MagicLinkDurableSubmissionService(
             && status.FailureReason is null
             && status.Retryable is not true;
 
-    private static T? Deserialize<T>(StreamReadEvent streamEvent)
+    internal static T? Deserialize<T>(StreamReadEvent streamEvent)
         where T : class
     {
         if (!string.Equals(streamEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase)
@@ -381,6 +393,10 @@ public sealed class MagicLinkDurableSubmissionService(
                 JsonSerializer.Deserialize<StoredTimeEntryConfirmed>(streamEvent.Payload, _jsonOptions)?.Event,
             var name when name == typeof(StoredTimeEntryAdjusted).FullName =>
                 JsonSerializer.Deserialize<StoredTimeEntryAdjusted>(streamEvent.Payload, _jsonOptions)?.Event,
+            var name when name == typeof(StoredTimeEntryRecorded).FullName =>
+                JsonSerializer.Deserialize<StoredTimeEntryRecorded>(streamEvent.Payload, _jsonOptions)?.Event,
+            var name when name == typeof(StoredTimeEntrySubmitted).FullName =>
+                JsonSerializer.Deserialize<StoredTimeEntrySubmitted>(streamEvent.Payload, _jsonOptions)?.Event,
             _ => null
         };
         return stored as T;
@@ -396,7 +412,7 @@ public sealed class MagicLinkDurableSubmissionService(
             + JsonSerializer.Serialize(intent.Adjustment, _jsonOptions));
     }
 
-    private static string CreateMessageId(string stableInput)
+    internal static string CreateMessageId(string stableInput)
     {
         byte[] input = Encoding.UTF8.GetBytes(stableInput);
         byte[] digest = SHA256.HashData(input);

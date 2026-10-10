@@ -587,6 +587,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 (typeof(StoredTimeEntryAdjusted), typeof(TimeEntryAdjustedThroughMagicLink)),
             var name when name == typeof(StoredTimeEntryRecorded).FullName =>
                 (typeof(StoredTimeEntryRecorded), typeof(TimeEntryRecorded)),
+            var name when name == typeof(StoredTimeEntrySubmitted).FullName =>
+                (typeof(StoredTimeEntrySubmitted), typeof(TimeEntrySubmitted)),
             _ => null
         };
         Type? eventType = stored is { } matched && eventTypes.Contains(matched.Domain)
@@ -622,6 +624,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             StoredTimeEntryConfirmed item => RequiredStoredEvent(item.Event),
             StoredTimeEntryAdjusted item => RequiredStoredEvent(item.Event),
             StoredTimeEntryRecorded item => RequiredStoredEvent(item.Event),
+            StoredTimeEntrySubmitted item => RequiredStoredEvent(item.Event),
             _ => payload
         };
     }

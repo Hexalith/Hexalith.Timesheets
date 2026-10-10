@@ -19,6 +19,7 @@ public static class TimeEntryStoredEventNormalizer
             object payload = item.Payload switch
             {
                 StoredTimeEntryRecorded stored => stored.Event,
+                StoredTimeEntrySubmitted stored => stored.Event,
                 StoredTimeEntryConfirmed stored => stored.Event,
                 StoredTimeEntryAdjusted stored => stored.Event,
                 StoredMagicLinkUsed stored => stored.Event,

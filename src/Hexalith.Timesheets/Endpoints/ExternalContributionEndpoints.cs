@@ -1,7 +1,6 @@
 using System.Security.Claims;
 
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
-using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -20,23 +19,21 @@ public static class ExternalContributionEndpoints
             static async Task<IResult> (
                 SubmitExternalTimeEntry command,
                 HttpContext httpContext,
-                ExternalContributionCommandService service,
+                TimeEntryRecordSubmissionService service,
                 CancellationToken cancellationToken) =>
             {
                 ClaimsPrincipal user = httpContext.User;
-                ExternalContributionCommandResult result = await service.SubmitAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                        httpContext.TraceIdentifier),
+                var context = TimesheetsServerRequestContext.FromTrustedSources(
+                    FirstClaimValue(user, "tenant_id", "tenant"),
+                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    httpContext.TraceIdentifier);
+                bool accepted = await service.SubmitAsync(
+                    context,
                     command,
-                    null,
-                    UnavailableCatalog(),
                     DateTimeOffset.UtcNow,
                     cancellationToken).ConfigureAwait(false);
 
-                return ToTransportResult(result.RecordResult.Authorization.IsAuthorized
-                    && result.RecordResult.DomainResult?.IsRejection != true);
+                return ToTransportResult(accepted);
             });
 
         group.MapPost(
@@ -79,9 +76,6 @@ public static class ExternalContributionEndpoints
             : Results.Problem(
                 title: "External contribution request was not accepted.",
                 statusCode: StatusCodes.Status403Forbidden);
-
-    private static ActivityTypeCatalogReadModel UnavailableCatalog()
-        => new([], ProjectionFreshnessMetadata.Unavailable());
 
     private static string? FirstClaimValue(ClaimsPrincipal user, params string[] claimTypes)
     {

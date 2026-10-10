@@ -5,6 +5,7 @@ using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Events;
 using Hexalith.EventStore.Contracts.Results;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
+using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
@@ -14,6 +15,7 @@ using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
+using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
 namespace Hexalith.Timesheets.Server.MagicLinks;
 
@@ -21,6 +23,7 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 public sealed class MagicLinkEventStoreDomainProcessor(
     EventStoreMagicLinkConfirmationCapabilityStateLoader stateLoader,
     MagicLinkConfirmationCapabilityCommandService commandService,
+    ExternalContributionCommandService externalContributionService,
     TimeProvider clock) : IDomainProcessor, IAsyncDomainProcessor
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
@@ -55,6 +58,11 @@ public sealed class MagicLinkEventStoreDomainProcessor(
         if (StringComparer.Ordinal.Equals(command.CommandType, typeof(CommitMagicLinkTransition).FullName))
         {
             return await ProcessTransitionAsync(command, currentState, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (StringComparer.Ordinal.Equals(command.CommandType, typeof(CommitTimeEntryRecord).FullName))
+        {
+            return await ProcessRecordAsync(command, currentState, cancellationToken).ConfigureAwait(false);
         }
 
         if (!StringComparer.Ordinal.Equals(command.CommandType, typeof(CommitMagicLinkUse).FullName))
@@ -160,6 +168,87 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             ? new StoredTimeEntryConfirmed((TimeEntryContributorConfirmed)result.TimeEntryResult!.DomainResult!.Events[0])
             : new StoredTimeEntryAdjusted((TimeEntryAdjustedThroughMagicLink)result.AdjustmentResult!.DomainResult!.Events[0]);
         return DomainResult.Success([new StoredMagicLinkUsed(used), effect]);
+    }
+
+    private async Task<DomainResult> ProcessRecordAsync(
+        CommandEnvelope envelope,
+        object? currentState,
+        CancellationToken cancellationToken)
+    {
+        CommitTimeEntryRecord? intent;
+        TimeEntryState? current;
+        try
+        {
+            intent = JsonSerializer.Deserialize<CommitTimeEntryRecord>(envelope.Payload, _jsonOptions);
+            current = DomainStateReplay.Rehydrate<TimeEntryState>(currentState);
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException)
+        {
+            return Reject();
+        }
+
+        SubmitExternalTimeEntry? proposed = intent?.Command;
+        if (proposed?.TimeEntryId is null
+            || proposed.Target is null
+            || proposed.Contributor is null
+            || proposed.ActivityTypeId is null
+            || proposed.Source is null
+            || string.IsNullOrWhiteSpace(proposed.Source.SourceSystem)
+            || string.IsNullOrWhiteSpace(proposed.Source.ExternalRequestId)
+            || intent?.Tenant is null
+            || intent.Actor is null
+            || intent.SubmittedAtUtc.Offset != TimeSpan.Zero
+            || !HasVerifiedActor(envelope, intent.Actor.PartyId)
+            || envelope.TenantId != intent.Tenant.TenantId
+            || envelope.AggregateId != proposed.TimeEntryId.Value
+            || (current is not null && (current.IsRecorded
+                || current.TimeEntryId is not null
+                || current.Target is not null
+                || current.Contributor is not null
+                || current.ActivityTypeId is not null
+                || current.ApprovalState != TimeEntryApprovalState.Unknown
+                || current.TimeEntrySubmissionId is not null
+                || current.ContributorConfirmationSource is not null
+                || current.TimeEntryApprovalDecisionId is not null
+                || current.TimeEntryCorrectionId is not null
+                || current.ExternalAdjustment is not null)))
+        {
+            return Reject();
+        }
+
+        ActivityTypeCatalogReadModel catalog = await stateLoader.LoadCatalogForTenantAsync(
+            intent.Tenant, cancellationToken).ConfigureAwait(false);
+        if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+        {
+            return Reject();
+        }
+
+        TimesheetsRequestContext context = TimesheetsServerRequestContext.FromTrustedSources(
+            intent.Tenant.TenantId, intent.Actor.PartyId, envelope.CorrelationId);
+        ExternalContributionCommandResult decision = await externalContributionService.SubmitAsync(
+            context, proposed, current, catalog, intent.SubmittedAtUtc, cancellationToken).ConfigureAwait(false);
+        if (!decision.RecordResult.WasDispatched
+            || decision.RecordResult.DomainResult?.Events is not [TimeEntryRecorded recorded]
+            || recorded.TimeEntryId != proposed.TimeEntryId
+            || recorded.ExternalSource != proposed.Source)
+        {
+            return Reject();
+        }
+
+        if (decision.SubmissionResult is null)
+        {
+            return DomainResult.Success([new StoredTimeEntryRecorded(recorded)]);
+        }
+
+        if (decision.SubmissionResult.Entries is not [{ WasDispatched: true, DomainResult.Events: [TimeEntrySubmitted submitted] }]
+            || submitted.TimeEntryId != proposed.TimeEntryId
+            || submitted.Tenant != intent.Tenant
+            || submitted.Submitter != intent.Actor)
+        {
+            return Reject();
+        }
+
+        return DomainResult.Success([new StoredTimeEntryRecorded(recorded), new StoredTimeEntrySubmitted(submitted)]);
     }
 
     private async Task<DomainResult> ProcessIssueAsync(

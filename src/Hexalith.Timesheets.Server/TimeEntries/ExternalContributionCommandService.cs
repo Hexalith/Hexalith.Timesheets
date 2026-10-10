@@ -67,7 +67,7 @@ public sealed class ExternalContributionCommandService
             return new(recordResult, null);
         }
 
-        TimeEntryState submissionState = state ?? ApplyRecordedEvent(recordResult);
+        TimeEntryState submissionState = state?.IsRecorded == true ? state : ApplyRecordedEvent(recordResult);
         TimeEntrySubmissionCommandResult submissionResult = await _submissionService.SubmitAsync(
             context,
             new SubmitTimeEntriesForApproval(

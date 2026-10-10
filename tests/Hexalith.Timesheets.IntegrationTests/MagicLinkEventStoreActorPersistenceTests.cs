@@ -18,12 +18,16 @@ using Hexalith.EventStore.Server.Events;
 using Hexalith.EventStore.Testing.Fakes;
 using Hexalith.EventStore.ServiceDefaults.Authentication;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
+using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Server.TimeEntries;
+using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -37,6 +41,248 @@ namespace Hexalith.Timesheets.IntegrationTests;
 
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
+    [Fact]
+    public async Task External_recording_route_commits_owner_state_before_magic_link_use()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-record-route");
+        var entryId = new TimeEntryId("entry-record-route");
+        string token = ValidConfirmToken();
+        await factory.ProjectValidStateAsync(client, token, MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        var command = new SubmitExternalTimeEntry(
+            entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+            new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+            new ExternalContributionSource("supplier-api", "request-record-route"));
+
+        using HttpResponseMessage recorded = await factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/external-contributions/", command);
+        factory.Gateway.SubmissionCount.ShouldBe(1);
+        recorded.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        StreamReadEvent storedRecording = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .ShouldHaveSingleItem();
+        storedRecording.EventTypeName.ShouldBe(typeof(StoredTimeEntryRecorded).FullName);
+        TimeEntryRecorded storedFacts = JsonSerializer.Deserialize<StoredTimeEntryRecorded>(
+            storedRecording.Payload, JsonOptions).ShouldNotBeNull().Event;
+        storedFacts.TimeEntryId.ShouldBe(command.TimeEntryId);
+        storedFacts.Target.ShouldBe(command.Target);
+        storedFacts.Contributor.ShouldBe(command.Contributor);
+        storedFacts.ActivityTypeId.ShouldBe(command.ActivityTypeId);
+        storedFacts.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        storedFacts.ServiceDate.ShouldBe(command.ServiceDate);
+        storedFacts.DurationMinutes.ShouldBe(command.DurationMinutes);
+        storedFacts.BillableState.ShouldBe(command.BillableState);
+        storedFacts.ExternalSource.ShouldBe(command.Source);
+
+        using HttpResponseMessage described = await client.GetAsync(
+            $"/api/timesheets/magic-links/confirm?t={token}", TestContext.Current.CancellationToken);
+        described.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using HttpResponseMessage used = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={token}",
+            new ConfirmTimeThroughMagicLink(), JsonOptions, TestContext.Current.CancellationToken);
+        used.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        using HttpResponseMessage replay = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={token}",
+            new ConfirmTimeThroughMagicLink(), JsonOptions, TestContext.Current.CancellationToken);
+        replay.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Count(item => item.EventTypeName == typeof(StoredTimeEntryRecorded).FullName).ShouldBe(1);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Count(item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task External_recording_retries_and_concurrent_submissions_commit_one_recording()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId("entry-record-concurrent");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-record-concurrent"), entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        SubmitExternalTimeEntry command = RecordingCommand(entryId, "request-concurrent");
+
+        Task<HttpResponseMessage> first = SubmitRecordingAsync(factory, client, command);
+        Task<HttpResponseMessage> second = SubmitRecordingAsync(factory, client, command);
+        using HttpResponseMessage firstResponse = await first;
+        using HttpResponseMessage secondResponse = await second;
+        firstResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        secondResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        using HttpResponseMessage retry = await SubmitRecordingAsync(factory, client, command);
+        retry.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Count(item => item.EventTypeName == typeof(StoredTimeEntryRecorded).FullName).ShouldBe(1);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Unverified_recording_status_or_receipt_denies_and_retry_does_not_append(bool receiptMismatch)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId(receiptMismatch ? "entry-record-receipt" : "entry-record-status");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId(receiptMismatch ? "capability-record-receipt" : "capability-record-status"), entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        if (receiptMismatch)
+        {
+            factory.Gateway.StoredPayloadTransform = payload => payload is StoredTimeEntryRecorded stored
+                ? stored with { Event = stored.Event with { DurationMinutes = 99 } }
+                : payload;
+        }
+        else
+        {
+            factory.Gateway.OverrideSuccessfulStatus = CommandStatus.PublishFailed;
+        }
+
+        SubmitExternalTimeEntry command = RecordingCommand(entryId, "request-uncertain");
+        using HttpResponseMessage first = await SubmitRecordingAsync(factory, client, command);
+        using HttpResponseMessage retry = await SubmitRecordingAsync(factory, client, command);
+        first.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        retry.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        (await first.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
+            .ShouldBe(await retry.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        factory.Gateway.SubmissionCount.ShouldBe(1);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Count(item => item.EventTypeName == typeof(StoredTimeEntryRecorded).FullName).ShouldBe(1);
+    }
+
+    [Theory]
+    [InlineData("unauthorized")]
+    [InlineData("unavailable-catalog")]
+    [InlineData("conflict")]
+    public async Task Rejected_recording_does_not_replace_existing_owner_evidence(string scenario)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId($"entry-record-{scenario}");
+        if (scenario == "unavailable-catalog")
+        {
+            await factory.ProjectRejectedCatalogStateAsync(client, ValidConfirmToken(), "missing-sequence");
+        }
+        else
+        {
+            await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+                new MagicLinkCapabilityId($"capability-record-{scenario}"), entryId);
+        }
+
+        if (scenario != "conflict")
+        {
+            factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        }
+
+        SubmitExternalTimeEntry command = RecordingCommand(entryId, $"request-{scenario}");
+        if (scenario == "unauthorized")
+        {
+            command = command with { Contributor = UnauthorizedContributor() };
+        }
+
+        using HttpResponseMessage response = await SubmitRecordingAsync(factory, client, command);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        body.ShouldNotContain(entryId.Value, Case.Insensitive);
+        body.ShouldNotContain(command.Source.ExternalRequestId, Case.Insensitive);
+        foreach (LogRecord record in factory.Logs.Records)
+        {
+            string diagnostics = $"{record.Category} {record.Message} {string.Join(' ', record.State)}";
+            diagnostics.ShouldNotContain(entryId.Value, Case.Insensitive);
+            diagnostics.ShouldNotContain(command.Source.ExternalRequestId, Case.Insensitive);
+        }
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Count(item => item.EventTypeName == typeof(StoredTimeEntryRecorded).FullName).ShouldBe(0);
+    }
+
+    private static SubmitExternalTimeEntry RecordingCommand(TimeEntryId entryId, string requestId)
+        => new(entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+            new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+            new ExternalContributionSource("supplier-api", requestId));
+
+    private static Task<HttpResponseMessage> SubmitRecordingAsync(
+        MagicLinkHttpBoundaryFactory factory,
+        HttpClient client,
+        SubmitExternalTimeEntry command)
+        => factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/external-contributions/", command);
+
+    [Fact]
+    public async Task Submitted_policy_commits_record_and_submission_as_one_verified_batch()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(
+            useConcreteLoader: true,
+            useMismatchedClaims: false,
+            externalContributionPolicy: new ExternalContributionPolicyOptions
+            {
+                InitialApprovalState = TimeEntryApprovalState.Submitted
+            });
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId("entry-record-submitted");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-record-submitted"), entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+
+        SubmitExternalTimeEntry command = RecordingCommand(entryId, "request-submitted");
+        using HttpResponseMessage response = await SubmitRecordingAsync(factory, client, command);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Select(static item => item.EventTypeName).ShouldBe([
+                typeof(StoredTimeEntryRecorded).FullName!,
+                typeof(StoredTimeEntrySubmitted).FullName!
+            ]);
+        TimeEntrySubmitted submitted = JsonSerializer.Deserialize<StoredTimeEntrySubmitted>(
+            factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)[1].Payload,
+            JsonOptions).ShouldNotBeNull().Event;
+        submitted.TimeEntryId.ShouldBe(entryId);
+        submitted.Tenant.ShouldBe(Tenant());
+        submitted.Submitter.ShouldBe(Contributor());
+        submitted.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+
+        // The HTTP route supplies a fresh UTC instant on every request. A completed retry
+        // must verify the existing batch without requiring that new instant to match it.
+        await Task.Delay(TimeSpan.FromMilliseconds(20), TestContext.Current.CancellationToken);
+        using HttpResponseMessage retry = await SubmitRecordingAsync(factory, client, command);
+        retry.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.SubmissionCount.ShouldBe(1);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Select(static item => item.EventTypeName).ShouldBe([
+                typeof(StoredTimeEntryRecorded).FullName!,
+                typeof(StoredTimeEntrySubmitted).FullName!
+            ]);
+    }
+
+    [Fact]
+    public async Task Submitted_policy_denies_new_command_with_tampered_submission_instant()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(
+            useConcreteLoader: true,
+            useMismatchedClaims: false,
+            externalContributionPolicy: new ExternalContributionPolicyOptions
+            {
+                InitialApprovalState = TimeEntryApprovalState.Submitted
+            });
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId("entry-record-submitted-tampered");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("capability-record-submitted-tampered"), entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        factory.Gateway.StoredPayloadTransform = payload => payload is StoredTimeEntrySubmitted stored
+            ? stored with { Event = stored.Event with { SubmittedAtUtc = stored.Event.SubmittedAtUtc.AddMinutes(1) } }
+            : payload;
+
+        using HttpResponseMessage response = await SubmitRecordingAsync(
+            factory, client, RecordingCommand(entryId, "request-submitted-tampered"));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        factory.Gateway.SubmissionCount.ShouldBe(1);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Select(static item => item.EventTypeName).ShouldBe([
+                typeof(StoredTimeEntryRecorded).FullName!,
+                typeof(StoredTimeEntrySubmitted).FullName!
+            ]);
+    }
+
     [Fact]
     public async Task Valid_use_requires_verified_origin_at_the_processor_entry()
     {
@@ -151,9 +397,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         await factory.ProjectValidStateAsync(
             client, token, adjust ? MagicLinkAllowedAction.Adjust : MagicLinkAllowedAction.Confirm,
             capabilityId, entryId);
-        TimeEntryRecorded recorded = JsonSerializer.Deserialize<TimeEntryRecorded>(
-            factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).ShouldHaveSingleItem().Payload,
-            JsonOptions).ShouldNotBeNull();
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
 
         using IServiceScope scope = factory.Services.CreateScope();
         MagicLinkEventStoreDomainProcessor processor = scope.ServiceProvider
@@ -162,18 +406,29 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var statusStore = new InMemoryCommandStatusStore();
         IDomainServiceInvoker invoker = Substitute.For<IDomainServiceInvoker>();
         invoker.InvokeAsync(Arg.Any<CommandEnvelope>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                CommandEnvelope envelope = call.ArgAt<CommandEnvelope>(0);
-                return envelope.CommandType == "fixture.seed-recorded"
-                    ? Task.FromResult(DomainResult.Success([new StoredTimeEntryRecorded(recorded)]))
-                    : processor.ProcessAsync(
-                        envelope, call.ArgAt<object?>(1), call.ArgAt<CancellationToken>(2));
-            });
+            .Returns(call => processor.ProcessAsync(
+                call.ArgAt<CommandEnvelope>(0), call.ArgAt<object?>(1), call.ArgAt<CancellationToken>(2)));
 
         AggregateActor actor = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
-        CommandEnvelope seed = ActorCommand("fixture.seed-recorded", "actor-seed", entryId, []);
+        var recording = new CommitTimeEntryRecord(
+            new SubmitExternalTimeEntry(
+                entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+                new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+                new ExternalContributionSource("supplier-api", "request-actor-seed")),
+            Tenant(), Contributor(), ObservedAtUtc);
+        CommandEnvelope seed = ActorCommand(
+            typeof(CommitTimeEntryRecord).FullName!, "actor-seed", entryId,
+            JsonSerializer.SerializeToUtf8Bytes(recording, JsonOptions)) with
+        {
+            UserId = Contributor().PartyId,
+            Extensions = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
+                [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = Contributor().PartyId
+            }
+        };
         (await actor.ProcessCommandAsync(seed, TestContext.Current.CancellationToken)).Accepted.ShouldBeTrue();
+        (await actor.GetEventsAsync(0)).ShouldHaveSingleItem().EventTypeName.ShouldBe(typeof(StoredTimeEntryRecorded).FullName);
 
         var intent = new CommitMagicLinkUse(
             capabilityId, Tenant(), entryId, new MagicLinkTokenHash(Hash(token)),
@@ -223,6 +478,48 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             : typeof(StoredTimeEntryConfirmed).FullName)).ShouldBe(1);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EventStore_processor_rejects_recording_without_matching_verified_actor(bool mismatched)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId(mismatched ? "entry-actor-mismatch" : "entry-actor-missing");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId(mismatched ? "capability-actor-mismatch" : "capability-actor-missing"), entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        using IServiceScope scope = factory.Services.CreateScope();
+        MagicLinkEventStoreDomainProcessor processor = scope.ServiceProvider
+            .GetRequiredService<MagicLinkEventStoreDomainProcessor>();
+        var intent = new CommitTimeEntryRecord(
+            new SubmitExternalTimeEntry(entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+                new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+                new ExternalContributionSource("supplier-api", "actor-metadata")),
+            Tenant(), Contributor(), ObservedAtUtc);
+        CommandEnvelope envelope = ActorCommand(typeof(CommitTimeEntryRecord).FullName!, "actor-metadata", entryId,
+            JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions)) with
+        {
+            UserId = Contributor().PartyId,
+            Extensions = mismatched
+                ? new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
+                    [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = Operator().PartyId
+                }
+                : new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets"
+                }
+        };
+
+        DomainResult result = await processor.ProcessAsync(envelope, null, TestContext.Current.CancellationToken);
+
+        result.IsRejection.ShouldBeTrue();
+        result.Events.OfType<StoredTimeEntryRecorded>().ShouldBeEmpty();
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).ShouldBeEmpty();
+    }
+
     [Fact]
     public async Task EventStore_processor_rejects_forged_resolved_token_hash_before_mutation()
     {
@@ -262,6 +559,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var processor = new MagicLinkEventStoreDomainProcessor(
             scope.ServiceProvider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>(),
             scope.ServiceProvider.GetRequiredService<MagicLinkConfirmationCapabilityCommandService>(),
+            scope.ServiceProvider.GetRequiredService<ExternalContributionCommandService>(),
             new StaticTimeProvider(ObservedAtUtc));
         DateTimeOffset httpInstant = ObservedAtUtc.AddSeconds(2);
         var intent = new CommitMagicLinkUse(
@@ -341,6 +639,37 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         (await restarted.GetEventsAsync(0)).Count(item => item.EventTypeName == (expire
             ? typeof(StoredMagicLinkExpired).FullName
             : typeof(StoredMagicLinkRevoked).FullName)).ShouldBe(1);
+
+        var recording = new CommitTimeEntryRecord(
+            new SubmitExternalTimeEntry(entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+                new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+                new ExternalContributionSource("supplier-api", "after-terminal")),
+            Tenant(), Contributor(), ObservedAtUtc);
+        CommandEnvelope record = ActorCommand(typeof(CommitTimeEntryRecord).FullName!, "record-after-terminal", entryId,
+            JsonSerializer.SerializeToUtf8Bytes(recording, JsonOptions)) with
+        {
+            UserId = Contributor().PartyId,
+            Extensions = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
+                [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = Contributor().PartyId
+            }
+        };
+        (await restarted.ProcessCommandAsync(record, TestContext.Current.CancellationToken)).Accepted.ShouldBeTrue();
+        AggregateActor afterRecording = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        (await afterRecording.GetEventsAsync(0)).Select(static item => item.EventTypeName).ShouldBe([
+            expire ? typeof(StoredMagicLinkExpired).FullName! : typeof(StoredMagicLinkRevoked).FullName!,
+            typeof(MagicLinkCommitRejected).FullName!,
+            typeof(StoredTimeEntryRecorded).FullName!
+        ]);
+        var use = new CommitMagicLinkUse(capabilityId, Tenant(), entryId,
+            new MagicLinkTokenHash(Hash(ValidConfirmToken())), MagicLinkUseAction.Confirm, null, ObservedAtUtc);
+        CommandEnvelope useEnvelope = ActorCommand(typeof(CommitMagicLinkUse).FullName!,
+            "use-after-terminal-record", entryId, JsonSerializer.SerializeToUtf8Bytes(use, JsonOptions));
+        (await afterRecording.ProcessCommandAsync(useEnvelope, TestContext.Current.CancellationToken))
+            .Accepted.ShouldBeFalse();
+        (await afterRecording.GetEventsAsync(0)).Count(item => item.EventTypeName == typeof(StoredMagicLinkUsed).FullName)
+            .ShouldBe(0);
     }
 
     [Fact]
@@ -403,6 +732,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var processor = new MagicLinkEventStoreDomainProcessor(
             scope.ServiceProvider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>(),
             scope.ServiceProvider.GetRequiredService<MagicLinkConfirmationCapabilityCommandService>(),
+            scope.ServiceProvider.GetRequiredService<ExternalContributionCommandService>(),
             new StaticTimeProvider(ObservedAtUtc.AddDays(2)));
         var intent = new CommitMagicLinkUse(
             capabilityId, Tenant(), entryId, new MagicLinkTokenHash(Hash(ValidConfirmToken())),
@@ -426,6 +756,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var processor = new MagicLinkEventStoreDomainProcessor(
             scope.ServiceProvider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>(),
             scope.ServiceProvider.GetRequiredService<MagicLinkConfirmationCapabilityCommandService>(),
+            scope.ServiceProvider.GetRequiredService<ExternalContributionCommandService>(),
             new StaticTimeProvider(ObservedAtUtc.AddDays(2)));
         var capabilityId = new MagicLinkCapabilityId("capability-queued-issue");
         var entryId = new TimeEntryId("time-entry-queued-issue");
@@ -471,6 +802,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var processor = new MagicLinkEventStoreDomainProcessor(
             scope.ServiceProvider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>(),
             scope.ServiceProvider.GetRequiredService<MagicLinkConfirmationCapabilityCommandService>(),
+            scope.ServiceProvider.GetRequiredService<ExternalContributionCommandService>(),
             clock);
         var capabilityId = new MagicLinkCapabilityId("capability-expiry-in-issue-gate");
         var issue = new IssueMagicLinkConfirmationCapability(
@@ -529,6 +861,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var processor = new MagicLinkEventStoreDomainProcessor(
             scope.ServiceProvider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>(),
             scope.ServiceProvider.GetRequiredService<MagicLinkConfirmationCapabilityCommandService>(),
+            scope.ServiceProvider.GetRequiredService<ExternalContributionCommandService>(),
             clock);
         factory.AccessGuard.OnAuthorizeAsync = async _ =>
         {
@@ -566,6 +899,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var processor = new MagicLinkEventStoreDomainProcessor(
             scope.ServiceProvider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>(),
             scope.ServiceProvider.GetRequiredService<MagicLinkConfirmationCapabilityCommandService>(),
+            scope.ServiceProvider.GetRequiredService<ExternalContributionCommandService>(),
             new StaticTimeProvider(ObservedAtUtc));
         var capabilityId = new MagicLinkCapabilityId("capability-numeric-action");
         var issue = new IssueMagicLinkConfirmationCapability(

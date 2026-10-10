@@ -65,6 +65,7 @@ public static class ServiceCollectionExtensions
             .Validate(static options => options.IsValid(), "Magic-link submission polling options must be bounded.")
             .ValidateOnStart();
         services.TryAddScoped<MagicLinkDurableSubmissionService>();
+        services.TryAddScoped<TimeEntryRecordSubmissionService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();

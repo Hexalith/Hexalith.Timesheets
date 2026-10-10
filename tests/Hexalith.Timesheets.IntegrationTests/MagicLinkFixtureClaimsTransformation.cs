@@ -16,7 +16,9 @@ internal sealed class MagicLinkFixtureClaimsTransformation(
     public Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
     {
         if (contextAccessor.HttpContext?.Request.Path.StartsWithSegments(
-                "/api/timesheets/magic-links/confirmation-capabilities", StringComparison.OrdinalIgnoreCase) != true)
+                "/api/timesheets/magic-links/confirmation-capabilities", StringComparison.OrdinalIgnoreCase) != true
+            && contextAccessor.HttpContext?.Request.Path.StartsWithSegments(
+                "/api/timesheets/external-contributions", StringComparison.OrdinalIgnoreCase) != true)
         {
             return Task.FromResult(principal);
         }

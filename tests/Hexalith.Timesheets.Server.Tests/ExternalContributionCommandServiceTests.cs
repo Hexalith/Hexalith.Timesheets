@@ -205,6 +205,27 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
+    public async Task Submitted_policy_records_after_retained_rejection_state()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryState retainedRejection = new();
+        ExternalContributionPolicyOptions options = new()
+        {
+            InitialApprovalState = TimeEntryApprovalState.Submitted
+        };
+
+        ExternalContributionCommandResult result = await fixture.CreateExternalService(options).SubmitAsync(
+            Context(), SubmitExternalCommand(), retainedRejection, FreshCatalog(), EventAtUtc(),
+            TestContext.Current.CancellationToken);
+
+        result.RecordResult.DomainResult.ShouldNotBeNull().Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryRecorded>();
+        result.SubmissionResult.ShouldNotBeNull().Entries.ShouldHaveSingleItem()
+            .DomainResult.ShouldNotBeNull().Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntrySubmitted>();
+    }
+
+    [Fact]
     public async Task Submit_external_time_entry_fails_closed_on_work_authority_before_contributor_policy_or_dispatch()
     {
         Fixture fixture = AuthorizedFixture();

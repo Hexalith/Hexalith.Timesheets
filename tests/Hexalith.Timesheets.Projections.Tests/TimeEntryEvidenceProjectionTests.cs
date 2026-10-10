@@ -277,6 +277,23 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void Projection_unwraps_stored_submission_and_preserves_submission_lineage()
+    {
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1", TimeEntryId(),
+            [
+                Event("m1", 1, new StoredTimeEntryRecorded(Recorded("time-entry-1", 45))),
+                Event("m2", 2, new StoredTimeEntrySubmitted(Submitted("time-entry-1")))
+            ], FreshCheckpoint(2));
+
+        model.ShouldNotBeNull();
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        model.EventLineage.Select(static item => item.EventName)
+            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted)]);
+        model.EventLineage.Select(static item => item.Ordinal).ShouldBe([1, 2]);
+    }
+
+    [Fact]
     public void Projection_dedupes_duplicate_submitted_message_id()
     {
         TimeEntryProjectionEvent submitted = Event("m2", 2, Submitted("time-entry-1"));

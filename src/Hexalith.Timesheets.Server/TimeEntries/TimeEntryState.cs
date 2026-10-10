@@ -133,6 +133,9 @@ public sealed class TimeEntryState
     /// <summary>Applies an EventStore recording payload.</summary>
     public void Apply(StoredTimeEntryRecorded recorded) => Apply(recorded.Event);
 
+    /// <summary>Applies an EventStore submission payload.</summary>
+    public void Apply(StoredTimeEntrySubmitted submitted) => Apply(submitted.Event);
+
     /// <summary>Ignores a rejected command retained in the EventStore stream.</summary>
     public void Apply(MagicLinkCommitRejected rejected)
         => ArgumentNullException.ThrowIfNull(rejected);

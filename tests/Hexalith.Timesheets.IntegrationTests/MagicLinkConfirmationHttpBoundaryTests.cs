@@ -1325,7 +1325,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         string? providerLoggingCategory = null,
         IMagicLinkTokenGenerator? tokenGenerator = null,
         IWorkloadAssertionIssuer? workloadAssertionIssuer = null,
-        HttpMessageHandler? workloadGatewayHandler = null) : WebApplicationFactory<Program>
+        HttpMessageHandler? workloadGatewayHandler = null,
+        ExternalContributionPolicyOptions? externalContributionPolicy = null) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
@@ -1589,6 +1590,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
                 services.RemoveAll<ITimesheetsAccessGuard>();
                 services.AddSingleton<ITimesheetsAccessGuard>(AccessGuard);
+
+                if (externalContributionPolicy is not null)
+                {
+                    services.RemoveAll<ExternalContributionPolicyOptions>();
+                    services.AddSingleton(externalContributionPolicy);
+                }
 
                 if (tokenGenerator is not null)
                 {

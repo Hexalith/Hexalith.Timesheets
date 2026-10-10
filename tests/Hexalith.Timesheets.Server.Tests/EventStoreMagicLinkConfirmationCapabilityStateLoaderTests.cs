@@ -459,6 +459,31 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
+    public async Task LoadTokenStateAsyncFoldsStoredSubmittedWrapper()
+    {
+        TimeEntrySubmitted submitted = Submitted(Tenant());
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value,
+                Event(1, "time-1", new StoredTimeEntryRecorded(Recorded())) with
+                {
+                    EventTypeName = typeof(StoredTimeEntryRecorded).FullName!
+                },
+                Event(2, "time-2", new StoredTimeEntrySubmitted(submitted)) with
+                {
+                    EventTypeName = typeof(StoredTimeEntrySubmitted).FullName!
+                });
+
+        MagicLinkEndpointTokenState loaded = await CreateLoader(
+                gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        TimeEntryState state = loaded.TimeEntryState.ShouldNotBeNull();
+        state.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        state.TimeEntrySubmissionId.ShouldBe(submitted.TimeEntrySubmissionId);
+    }
+
+    [Fact]
     public async Task LoadTokenStateAsyncFailsClosedWhenIndexReadThrows()
     {
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()), throwIndexRead: true);
