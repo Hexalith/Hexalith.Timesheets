@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-10-2026 (Story 3.7 reopened: valid public POST acceptance is suspended pending durable writes; Story 3.6 and release remain open. The 2026-10-09 review-guard evidence is retained in the story and test summary.)
+# last_updated: 10-10-2026 19:11 (Story 3.6 code review of 61d6fc7..0169765 plus owned EventStore 281b0b8e: 1 decision resolved, 14 patches left as action items including a high rejection-replay defect, 3 deferred; Story 3.6 back to in-progress. Story 3.7 and release remain open.)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 10-10-2026 14:36
+last_updated: 10-10-2026 19:11
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,7 +76,7 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
-  3-6-implement-eventstore-backed-magic-link-state-loading: review
+  3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: in-progress
   epic-3-retrospective: done
 

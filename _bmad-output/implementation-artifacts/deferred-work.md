@@ -507,3 +507,17 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
   summary: Wire and measure token-hash index projection readiness before treating a newly issued link as immediately resolvable.
   evidence: The index has no production projection-host wiring, and a token returned after committed issuance may be looked up before the rebuildable index advances; local fixtures seed it directly. A live handler and issue-to-use journey would settle end-to-end readiness.
+
+## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-10)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+  summary: Decide whether `ExistingTimeEntry` magic links are usable, or stop issuing them.
+  evidence: Issuance accepts `MagicLinkTargetKind.ExistingTimeEntry` (`MagicLinkConfirmationCapability.cs:274`), while use validation requires `ProposedTimeEntry` (`:371`). The asymmetry predates `61d6fc7`, but durable issuance now commits such links, so the issuer receives a token that every confirm or adjust denies.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+  summary: Define the authorization principal for system-initiated magic-link expiry (medium, unverified).
+  evidence: With a null `Actor`, `MagicLinkEventStoreDomainProcessor.ProcessTransitionAsync` builds the management context from `envelope.UserId`, which is the workload identity when the assertion binds no actor (`:275`). The production kernel is `DenyAll`, so whether a concrete access guard denies system expiry or matches a same-named Party is unknown. The concrete management/system-expiry authorization design settles it; see the existing `Expire` guard entry above.
+
+- source_spec: `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+  summary: Re-run vulnerable, deprecated, and transitive package audits against the current 13.6.1 catalog graph.
+  evidence: `docs/launch-readiness.md:25` and the transitive-drift row still cite 2026-09-17 audits of the earlier graph. Story 3.6 updated only the platform-alignment row, labeled as catalog evidence. The prose still pairs `Aspire.AppHost.Sdk` `13.5.3` with Aspire `13.6.1` packages. The catalog moved in `46265ba`, before the reviewed range.
