@@ -20,16 +20,13 @@ public sealed class TimeEntryEvidenceProjection
         ArgumentNullException.ThrowIfNull(checkpoint);
 
         TimeEntryEvidenceReadModel? model = null;
-        HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
         List<TimeEntryEventLineageItem> lineage = [];
 
-        foreach (TimeEntryProjectionEvent projectionEvent in events
-            .OrderBy(static projectionEvent => projectionEvent.SequenceNumber))
+        foreach (TimeEntryProjectionEvent projectionEvent in TimeEntryStoredEventNormalizer.Normalize(events))
         {
-            if (string.IsNullOrWhiteSpace(projectionEvent.MessageId)
-                || !appliedMessageIds.Add(projectionEvent.MessageId))
+            if (!MatchesTenant(projectionEvent.Payload, tenantId))
             {
-                continue;
+                throw new InvalidOperationException("Time Entry event tenant does not match the requested projection.");
             }
 
             if (projectionEvent.Payload is TimeEntryRecorded recorded
@@ -92,6 +89,19 @@ public sealed class TimeEntryEvidenceProjection
 
         return model;
     }
+
+    private static bool MatchesTenant(object payload, string tenantId)
+        => payload switch
+        {
+            TimeEntrySubmitted item => item.Tenant.TenantId == tenantId,
+            TimeEntryContributorConfirmed item => item.Tenant.TenantId == tenantId,
+            TimeEntryAdjustedThroughMagicLink item => item.Tenant.TenantId == tenantId,
+            TimeEntryApproved item => item.Tenant.TenantId == tenantId,
+            TimeEntryRejected item => item.Tenant.TenantId == tenantId,
+            TimeEntryCorrected item => item.Tenant.TenantId == tenantId,
+            TimeEntryApprovedCorrected item => item.Tenant.TenantId == tenantId,
+            _ => true
+        };
 
     private static TimeEntryEvidenceReadModel Apply(
         TimeEntryRecorded recorded,

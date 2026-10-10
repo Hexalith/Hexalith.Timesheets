@@ -15,6 +15,7 @@ using Hexalith.Timesheets.Server.TimesheetPeriods;
 
 using Hexalith.EventStore.Client.Registration;
 using Hexalith.EventStore.Client.Gateway;
+using Hexalith.EventStore.Client.Handlers;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -54,8 +55,12 @@ public static class ServiceCollectionExtensions
 
         services.AddEventStoreReadModelStore();
         services.TryAddSingleton<IMagicLinkTokenGenerator, CryptographicMagicLinkTokenGenerator>();
-        services.TryAddScoped<IMagicLinkConfirmationCapabilityStateLoader, EventStoreMagicLinkConfirmationCapabilityStateLoader>();
+        services.TryAddScoped<EventStoreMagicLinkConfirmationCapabilityStateLoader>();
+        services.TryAddScoped<IMagicLinkConfirmationCapabilityStateLoader>(
+            static provider => provider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>());
         services.TryAddSingleton<MagicLinkConfirmationCapabilityCommandService>();
+        services.TryAddSingleton(TimeProvider.System);
+        services.TryAddScoped<MagicLinkDurableSubmissionService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();
@@ -92,6 +97,20 @@ public static class ServiceCollectionExtensions
             provider.GetRequiredService<UnavailableDisplayHydrationProvider>());
         services.TryAddSingleton<ITimeEntryDisplayHydrator, UnavailableTimeEntryDisplayHydrator>();
 
+        return services;
+    }
+
+    /// <summary>Opts the host into the EventStore magic-link command processor.</summary>
+    public static IServiceCollection AddTimesheetsMagicLinkEventStoreProcessing(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddScoped<MagicLinkEventStoreDomainProcessor>();
+        services.AddKeyedScoped<IDomainProcessor>(
+            TimesheetsEventStoreIntegration.DomainName,
+            static (provider, _) => provider.GetRequiredService<MagicLinkEventStoreDomainProcessor>());
+        services.AddKeyedScoped<IAsyncDomainProcessor>(
+            TimesheetsEventStoreIntegration.DomainName,
+            static (provider, _) => provider.GetRequiredService<MagicLinkEventStoreDomainProcessor>());
         return services;
     }
 

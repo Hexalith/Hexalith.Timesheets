@@ -8,6 +8,7 @@ using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.MagicLinks.Commands;
 
 using Microsoft.Extensions.Logging;
 
@@ -29,6 +30,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 IssueMagicLinkConfirmationCapability command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
+                MagicLinkDurableSubmissionService submission,
+                IMagicLinkTokenGenerator tokenGenerator,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
@@ -45,20 +48,35 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ServerMagicLinkCapabilityState? state = await stateLoader
                     .LoadCapabilityAsync(command.CapabilityId, cancellationToken)
                     .ConfigureAwait(false);
-                MagicLinkCapabilityCommandResult result = await service.IssueAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
+                var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
                         FirstClaimValue(user, "tenant_id", "tenant"),
                         FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                        httpContext.TraceIdentifier),
+                        httpContext.TraceIdentifier);
+                DateTimeOffset issuedAtUtc = timeProvider.GetUtcNow();
+                MagicLinkCapabilityCommandResult result = await service.IssueAsync(
+                    trustedContext,
                     command,
                     state,
                     catalog,
-                    timeProvider.GetUtcNow(),
+                    issuedAtUtc,
                     cancellationToken).ConfigureAwait(false);
 
-                return result.Authorization.IsAuthorized && result.DomainResult?.IsRejection != true
-                    ? Results.Accepted(value: result.IssueResponse)
-                    : Denied();
+                if (result.Authorization.IsAuthorized
+                    && result.DomainResult?.IsSuccess == true
+                    && result.IssueResponse is { } response
+                    && trustedContext.Tenant is { } tenant
+                    && trustedContext.Actor is { } issuer
+                    && await submission.SubmitIssueAsync(
+                        new CommitMagicLinkIssue(
+                            command, tenant, issuer,
+                            tokenGenerator.DeriveHash(response.OneTimeToken), issuedAtUtc),
+                        httpContext.TraceIdentifier,
+                        cancellationToken).ConfigureAwait(false))
+                {
+                    return Results.Accepted(value: response);
+                }
+
+                return Denied();
             });
 
         group.MapPost(
@@ -68,6 +86,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 RevokeMagicLinkConfirmationCapability command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
+                MagicLinkDurableSubmissionService submission,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
@@ -81,19 +100,31 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ServerMagicLinkCapabilityState? state = await stateLoader
                     .LoadCapabilityAsync(command.CapabilityId, cancellationToken)
                     .ConfigureAwait(false);
-                MagicLinkCapabilityCommandResult result = await service.RevokeAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
+                var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
                         FirstClaimValue(user, "tenant_id", "tenant"),
                         FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                        httpContext.TraceIdentifier),
+                        httpContext.TraceIdentifier);
+                DateTimeOffset revokedAtUtc = timeProvider.GetUtcNow();
+                MagicLinkCapabilityCommandResult result = await service.RevokeAsync(
+                    trustedContext,
                     command,
                     state,
-                    timeProvider.GetUtcNow(),
+                    revokedAtUtc,
                     cancellationToken).ConfigureAwait(false);
 
-                return result.Authorization.IsAuthorized && result.DomainResult?.IsRejection != true
-                    ? Results.Accepted()
-                    : Denied();
+                return result.Authorization.IsAuthorized
+                    && result.DomainResult?.IsSuccess == true
+                    && state?.TimeEntryId is { } timeEntryId
+                    && trustedContext.Tenant is { } tenant
+                    && trustedContext.Actor is { } actor
+                    && await submission.SubmitTransitionAsync(
+                        new CommitMagicLinkTransition(
+                            command.CapabilityId, tenant, timeEntryId, actor,
+                            MagicLinkTransitionAction.Revoke, command.Source, revokedAtUtc),
+                        httpContext.TraceIdentifier,
+                        cancellationToken).ConfigureAwait(false)
+                        ? Results.Accepted()
+                        : Denied();
             });
 
         group.MapPost(
@@ -103,8 +134,10 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ExpireMagicLinkConfirmationCapability command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
+                MagicLinkDurableSubmissionService submission,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
-                TimeProvider timeProvider) =>
+                TimeProvider timeProvider,
+                CancellationToken cancellationToken) =>
             {
                 if (!StringComparer.Ordinal.Equals(capabilityId, command.CapabilityId.Value))
                 {
@@ -115,16 +148,26 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ServerMagicLinkCapabilityState? state = await stateLoader
                     .LoadCapabilityAsync(command.CapabilityId, httpContext.RequestAborted)
                     .ConfigureAwait(false);
-                return service.Expire(
+                var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
+                    FirstClaimValue(user, "tenant_id", "tenant"),
+                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    httpContext.TraceIdentifier);
+                DateTimeOffset expiredAtUtc = timeProvider.GetUtcNow();
+                return !service.Expire(
                     command,
                     state,
-                    TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                        httpContext.TraceIdentifier),
-                    timeProvider.GetUtcNow()).IsRejection
-                    ? Denied()
-                    : Results.Accepted();
+                    trustedContext,
+                    expiredAtUtc).IsRejection
+                    && state?.TimeEntryId is { } timeEntryId
+                    && trustedContext.Tenant is { } tenant
+                    && await submission.SubmitTransitionAsync(
+                        new CommitMagicLinkTransition(
+                            command.CapabilityId, tenant, timeEntryId, trustedContext.Actor,
+                            MagicLinkTransitionAction.Expire, command.Source, expiredAtUtc),
+                        httpContext.TraceIdentifier,
+                        cancellationToken).ConfigureAwait(false)
+                        ? Results.Accepted()
+                        : Denied();
             });
 
         endpoints.MapGet(
@@ -170,6 +213,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 HttpContext httpContext,
                 ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
+                MagicLinkDurableSubmissionService submission,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
@@ -196,7 +240,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                         MagicLinkInvalidLinkOutcomeCategory.Unknown);
                 }
 
-                _ = await service.ConfirmAsync(
+                DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
+                MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
                     MagicLinkExternalRequestContext.FromResolvedCapability(
                         state.CapabilityState,
                         httpContext.TraceIdentifier),
@@ -204,10 +249,19 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     command,
                     state.CapabilityState,
                     state.TimeEntryState,
-                    timeProvider.GetUtcNow(),
+                    usedAtUtc,
                     cancellationToken).ConfigureAwait(false);
 
-                // A pure domain result is not a durable commit receipt.
+                if (result.WasDispatched
+                    && state.CapabilityState is { } resolvedCapability
+                    && await submission.SubmitResolvedUseAsync(
+                        resolvedCapability, MagicLinkUseAction.Confirm, null, usedAtUtc,
+                        httpContext.TraceIdentifier,
+                        cancellationToken).ConfigureAwait(false))
+                {
+                    return Results.Accepted();
+                }
+
                 return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm/submit");
 
@@ -254,6 +308,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 HttpContext httpContext,
                 ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
+                MagicLinkDurableSubmissionService submission,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
@@ -266,7 +321,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 MagicLinkEndpointTokenState state = await stateLoader
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
-                _ = await service.AdjustAsync(
+                DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
+                MagicLinkConfirmationUseResult result = await service.AdjustAsync(
                     MagicLinkExternalRequestContext.FromResolvedCapability(
                         state.CapabilityState,
                         httpContext.TraceIdentifier),
@@ -275,10 +331,19 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     state.CapabilityState,
                     state.TimeEntryState,
                     state.ActivityTypeCatalog,
-                    timeProvider.GetUtcNow(),
+                    usedAtUtc,
                     cancellationToken).ConfigureAwait(false);
 
-                // A pure domain result is not a durable commit receipt.
+                if (result.WasDispatched
+                    && state.CapabilityState is { } resolvedCapability
+                    && await submission.SubmitResolvedUseAsync(
+                        resolvedCapability, MagicLinkUseAction.Adjust, command, usedAtUtc,
+                        httpContext.TraceIdentifier,
+                        cancellationToken).ConfigureAwait(false))
+                {
+                    return Results.Accepted();
+                }
+
                 return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust/submit");
 

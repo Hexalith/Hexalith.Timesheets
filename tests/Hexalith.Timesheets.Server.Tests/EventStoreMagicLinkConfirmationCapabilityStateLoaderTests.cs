@@ -33,7 +33,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     {
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
         var gateway = new ScriptedGatewayClient()
-            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(2, "capability-2", Issued()), Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
             .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
             .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
         var loader = CreateLoader(gateway, readModels);
@@ -47,7 +47,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         state.TimeEntryState.ShouldNotBeNull().TimeEntryId.ShouldBe(TimeEntryId());
         state.ActivityTypeCatalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
         state.ActivityTypeCatalog.Items.ShouldHaveSingleItem().ActivityTypeId.ShouldBe(ActivityId());
-        gateway.Requests.Select(static request => request.AggregateId).ShouldBe([CapabilityId().Value, TimeEntryId().Value]);
+        gateway.Requests.Select(static request => request.AggregateId).ShouldBe(
+            [CapabilityId().Value, TimeEntryId().Value, TimeEntryId().Value]);
     }
 
     [Fact]
@@ -127,7 +128,42 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             .ConfigureAwait(true);
 
         state.ShouldNotBeNull().Tenant.ShouldBe(Tenant());
-        gateway.Requests.ShouldHaveSingleItem().Tenant.ShouldBe(Tenant().TenantId);
+        gateway.Requests.Count.ShouldBe(2);
+        gateway.Requests[0].Tenant.ShouldBe(Tenant().TenantId);
+        gateway.Requests[1].AggregateId.ShouldBe(TimeEntryId().Value);
+    }
+
+    [Theory]
+    [InlineData(StreamReplayReasonCodes.MissingStream, true)]
+    [InlineData(StreamReplayReasonCodes.MissingEvent, false)]
+    [InlineData(null, false)]
+    public async Task Proposed_entry_owner_accepts_only_explicit_missing_stream_reason(
+        string? reasonCode, bool expectedCapability)
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithException(Tenant().TenantId, TimeEntryId().Value,
+                new EventStoreGatewayException(404, "Not Found", reasonCode: reasonCode));
+
+        Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState? state = await
+            CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+                .LoadCapabilityAsync(CapabilityId(), TestContext.Current.CancellationToken);
+
+        (state is not null).ShouldBe(expectedCapability);
+    }
+
+    [Fact]
+    public async Task Repeated_physical_issuance_at_distinct_sequences_fails_closed()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value,
+                Event(1, "first-issue", Issued()), Event(2, "second-issue", Issued()));
+
+        Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState? state = await
+            CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+                .LoadCapabilityAsync(CapabilityId(), TestContext.Current.CancellationToken);
+
+        state.ShouldBeNull();
     }
 
     /// <summary>Rejects a missing capability identifier before request-context access or persistence I/O.</summary>
@@ -1961,6 +1997,11 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                     null));
             return Task.FromResult(Transform(request, page));
         }
+
+        public Task<StreamReadPage> ReadWorkloadStreamAsync(
+            StreamReadRequest request,
+            CancellationToken cancellationToken = default)
+            => ReadStreamAsync(request, cancellationToken);
 
         private StreamReadPage Transform(StreamReadRequest request, StreamReadPage page)
             => _pageTransforms.TryGetValue(

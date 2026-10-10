@@ -2,6 +2,7 @@ using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.MagicLinks;
 
 using CapabilityState = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState;
 
@@ -21,40 +22,122 @@ public sealed class MagicLinkConfirmationCapabilityProjection
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(checkpoint);
 
-        MagicLinkConfirmationCapabilityReadModel? model = null;
-        HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
-
-        foreach (MagicLinkProjectionEvent projectionEvent in events
-            .OrderBy(static projectionEvent => projectionEvent.SequenceNumber))
+        var seen = new Dictionary<(bool OwnerStream, long Sequence), object>();
+        var ordered = new List<MagicLinkProjectionEvent>();
+        bool issuedInCapabilityStream = false;
+        bool terminalInCapabilityStream = false;
+        foreach (MagicLinkProjectionEvent item in events.OrderBy(static value => value.SequenceNumber))
         {
-            if (string.IsNullOrWhiteSpace(projectionEvent.MessageId)
-                || !appliedMessageIds.Add(projectionEvent.MessageId))
+            // Stored terminal wrappers belong to the Time Entry stream; issuance and legacy
+            // terminal events belong to the capability stream. Their sequence spaces differ.
+            bool ownerStream = item.Payload is StoredMagicLinkUsed or StoredMagicLinkRevoked or StoredMagicLinkExpired;
+            object payload = Unwrap(item.Payload);
+            if (!ownerStream && payload is MagicLinkConfirmationCapabilityIssued issued
+                && issued.CapabilityId == capabilityId)
             {
+                if (terminalInCapabilityStream)
+                {
+                    throw new InvalidOperationException("Capability issuance follows a terminal transition.");
+                }
+
+                issuedInCapabilityStream = true;
+            }
+            else if (!ownerStream && IsTerminalFor(payload, capabilityId))
+            {
+                if (!issuedInCapabilityStream)
+                {
+                    throw new InvalidOperationException("Capability transition precedes issuance.");
+                }
+
+                terminalInCapabilityStream = true;
+            }
+
+            var key = (ownerStream, item.SequenceNumber);
+            if (seen.TryGetValue(key, out object? existing))
+            {
+                if (existing.GetType() != payload.GetType() || !Equals(existing, payload))
+                {
+                    throw new InvalidOperationException("Capability delivery has contradictory evidence.");
+                }
+
                 continue;
             }
 
-            if (projectionEvent.Payload is MagicLinkConfirmationCapabilityIssued issued
-                && issued.CapabilityId == capabilityId)
+            seen.Add(key, payload);
+            ordered.Add(item with { Payload = payload });
+        }
+
+        // The issue event belongs to the capability stream. New terminal events belong to a
+        // different Time Entry stream, where sequence numbers are not comparable with issuance.
+        MagicLinkConfirmationCapabilityIssued[] issuances = ordered
+            .Select(static projectionEvent => projectionEvent.Payload)
+            .OfType<MagicLinkConfirmationCapabilityIssued>()
+            .Where(issued => issued.CapabilityId == capabilityId)
+            .ToArray();
+        if (issuances.Length == 0)
+        {
+            return null;
+        }
+
+        MagicLinkConfirmationCapabilityIssued issuance = issuances[0];
+        if (issuances.Length > 1)
+        {
+            throw new InvalidOperationException("Capability issuance history is contradictory.");
+        }
+
+        MagicLinkConfirmationCapabilityReadModel model = Apply(issuance, checkpoint, observedAtUtc);
+
+        foreach (MagicLinkProjectionEvent projectionEvent in ordered)
+        {
+            if (projectionEvent.Payload is MagicLinkConfirmationCapabilityRevoked conflictingRevoke
+                && conflictingRevoke.CapabilityId == capabilityId
+                && (conflictingRevoke.Tenant != issuance.Tenant
+                    || (conflictingRevoke.TimeEntryId is not null
+                        && conflictingRevoke.TimeEntryId != issuance.TimeEntryId)))
             {
-                model = Apply(issued, checkpoint, observedAtUtc);
+                throw new InvalidOperationException("Capability revocation does not match issuance.");
             }
-            else if (projectionEvent.Payload is MagicLinkConfirmationCapabilityRevoked revoked
+
+            if (projectionEvent.Payload is MagicLinkConfirmationCapabilityExpired conflictingExpire
+                && conflictingExpire.CapabilityId == capabilityId
+                && (conflictingExpire.Tenant != issuance.Tenant
+                    || (conflictingExpire.TimeEntryId is not null
+                        && conflictingExpire.TimeEntryId != issuance.TimeEntryId)))
+            {
+                throw new InvalidOperationException("Capability expiry does not match issuance.");
+            }
+
+            if (projectionEvent.Payload is MagicLinkConfirmationCapabilityUsed conflictingUse
+                && conflictingUse.CapabilityId == capabilityId
+                && (conflictingUse.Tenant != issuance.Tenant
+                    || conflictingUse.TimeEntryId != issuance.TimeEntryId))
+            {
+                throw new InvalidOperationException("Capability use does not match issuance.");
+            }
+
+            if (IsTerminalFor(projectionEvent.Payload, capabilityId)
+                && model.State != CapabilityState.Issued)
+            {
+                throw new InvalidOperationException("Capability has multiple terminal transitions.");
+            }
+
+            if (projectionEvent.Payload is MagicLinkConfirmationCapabilityRevoked revoked
                 && revoked.CapabilityId == capabilityId
-                && model is not null
+                && (revoked.TimeEntryId is null || revoked.TimeEntryId == model.TimeEntryId)
                 && model.State == CapabilityState.Issued)
             {
                 model = Apply(revoked, model, checkpoint, observedAtUtc);
             }
             else if (projectionEvent.Payload is MagicLinkConfirmationCapabilityExpired expired
                 && expired.CapabilityId == capabilityId
-                && model is not null
+                && (expired.TimeEntryId is null || expired.TimeEntryId == model.TimeEntryId)
                 && model.State == CapabilityState.Issued)
             {
                 model = Apply(expired, model, checkpoint, observedAtUtc);
             }
             else if (projectionEvent.Payload is MagicLinkConfirmationCapabilityUsed used
                 && used.CapabilityId == capabilityId
-                && model is not null
+                && used.TimeEntryId == model.TimeEntryId
                 && model.State == CapabilityState.Issued)
             {
                 model = Apply(used, model, checkpoint, observedAtUtc);
@@ -63,6 +146,24 @@ public sealed class MagicLinkConfirmationCapabilityProjection
 
         return model;
     }
+
+    private static object Unwrap(object payload) => payload switch
+    {
+        StoredMagicLinkIssued item => item.Event,
+        StoredMagicLinkUsed item => item.Event,
+        StoredMagicLinkRevoked item => item.Event,
+        StoredMagicLinkExpired item => item.Event,
+        _ => payload
+    } ?? throw new InvalidOperationException("Stored capability evidence is missing.");
+
+    private static bool IsTerminalFor(object payload, MagicLinkCapabilityId capabilityId)
+        => payload switch
+        {
+            MagicLinkConfirmationCapabilityRevoked item => item.CapabilityId == capabilityId,
+            MagicLinkConfirmationCapabilityExpired item => item.CapabilityId == capabilityId,
+            MagicLinkConfirmationCapabilityUsed item => item.CapabilityId == capabilityId,
+            _ => false
+        };
 
     private static MagicLinkConfirmationCapabilityReadModel Apply(
         MagicLinkConfirmationCapabilityIssued issued,

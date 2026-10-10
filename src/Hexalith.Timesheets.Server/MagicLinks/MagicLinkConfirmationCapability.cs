@@ -271,12 +271,15 @@ public static class MagicLinkConfirmationCapability
             errors.Add(new("target", "required", "Magic-link target is required."));
         }
 
-        if (command.Scope.TargetKind == MagicLinkTargetKind.Unknown)
+        if (command.Scope.TargetKind is not (MagicLinkTargetKind.ProposedTimeEntry
+            or MagicLinkTargetKind.ExistingTimeEntry))
         {
             errors.Add(new("targetKind", "required", "Magic-link target kind is required."));
         }
 
-        if (command.AllowedAction == MagicLinkAllowedAction.Unknown)
+        if (command.AllowedAction is not (MagicLinkAllowedAction.Confirm
+            or MagicLinkAllowedAction.Adjust
+            or MagicLinkAllowedAction.ConfirmOrAdjust))
         {
             errors.Add(new("allowedAction", "required", "Magic-link allowed action is required."));
         }

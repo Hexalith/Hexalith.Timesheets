@@ -15,6 +15,27 @@ namespace Hexalith.Timesheets.Projections.Tests;
 public sealed class ApprovedTimeLedgerProjectionTests
 {
     [Fact]
+    public void Ledger_accepts_independent_owner_streams_with_the_same_local_sequences()
+    {
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("first-recorded", 1, Recorded("time-entry-1", 45)),
+            Event("second-recorded", 1, Recorded("time-entry-2", 30)),
+            Event("first-submitted", 2, Submitted("time-entry-1")),
+            Event("second-submitted", 2, Submitted("time-entry-2")),
+            Event("first-approved", 3, Approved("time-entry-1", "decision-1")),
+            Event("second-approved", 3, Approved("time-entry-2", "decision-2"))
+        ];
+
+        ApprovedTimeLedgerReadModel page = Projector().Project(
+            "tenant-1", events, FreshCheckpoint(3), new QueryApprovedTimeLedger());
+
+        page.Items.Select(static row => row.TimeEntryId.Value)
+            .OrderBy(static id => id, StringComparer.Ordinal)
+            .ShouldBe(["time-entry-1", "time-entry-2"]);
+    }
+
+    [Fact]
     public void Ledger_includes_only_approved_entries_by_default()
     {
         ApprovedTimeLedgerReadModel page = Projector().Project(

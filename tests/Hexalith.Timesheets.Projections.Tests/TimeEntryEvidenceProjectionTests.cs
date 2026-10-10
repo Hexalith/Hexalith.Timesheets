@@ -5,6 +5,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.TimeEntries;
+using Hexalith.Timesheets.Server.MagicLinks;
 
 using Shouldly;
 
@@ -12,6 +13,37 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class TimeEntryEvidenceProjectionTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Projection_folds_stored_magic_link_effects_and_duplicate_delivery(bool adjust)
+    {
+        TimeEntryRecorded recorded = Recorded("time-entry-1", 45);
+        object effect = adjust
+            ? new StoredTimeEntryAdjusted(Adjusted("time-entry-1", 75))
+            : new StoredTimeEntryConfirmed(Confirmed("time-entry-1"));
+        TimeEntryProjectionEvent storedEffect = Event("message-2", 3, effect);
+
+        TimeEntryEvidenceReadModel? model = Projector().Project(
+            "tenant-1", TimeEntryId(),
+            [Event("message-1", 1, new StoredTimeEntryRecorded(recorded)),
+                storedEffect, storedEffect],
+            FreshCheckpoint(3));
+
+        model.ShouldNotBeNull();
+        model.EventLineage.Count.ShouldBe(2);
+        if (adjust)
+        {
+            model.DurationMinutes.ShouldBe(75);
+            model.EventLineage[1].EventName.ShouldBe(nameof(TimeEntryAdjustedThroughMagicLink));
+        }
+        else
+        {
+            model.ContributorConfirmation.ShouldNotBeNull();
+            model.EventLineage[1].EventName.ShouldBe(nameof(TimeEntryContributorConfirmed));
+        }
+    }
+
     [Fact]
     public void Projection_exposes_recorded_draft_evidence_with_freshness_metadata()
     {
@@ -853,6 +885,41 @@ public sealed class TimeEntryEvidenceProjectionTests
             });
 
         includingNonCurrent.Items.ShouldHaveSingleItem().CorrectionState.ShouldBe(TimeEntryCorrectionState.Superseded);
+    }
+
+    [Fact]
+    public void Stored_normalizer_rejects_distinct_events_at_one_stream_sequence()
+    {
+        TimeEntryRecorded recorded = Recorded("time-entry-1", 45);
+        TimeEntryProjectionEvent first = Event("message-1", 1, recorded);
+        TimeEntryStoredEventNormalizer.Normalize([first, Event("", 1, recorded)])
+            .ShouldHaveSingleItem();
+
+        Should.Throw<InvalidOperationException>(() => TimeEntryStoredEventNormalizer.Normalize(
+            [first, Event("message-2", 1, Submitted("time-entry-1"))]));
+        Should.Throw<InvalidOperationException>(() => TimeEntryStoredEventNormalizer.Normalize(
+            [first, Event("", 1, Recorded("time-entry-1", 90))]));
+    }
+
+    [Fact]
+    public void List_projection_accepts_independent_owner_streams_with_the_same_local_sequence()
+    {
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("first", 1, Recorded("time-entry-1", 45)),
+            Event("second", 1, Recorded("time-entry-2", 30))
+        ];
+
+        TimeEntryQueryReadModel page = ListProjector().Project(
+            "tenant-1", events, FreshCheckpoint(1), new QueryTimeEntries());
+
+        page.Items.Select(static row => row.TimeEntryId.Value)
+            .OrderBy(static id => id, StringComparer.Ordinal)
+            .ShouldBe(["time-entry-1", "time-entry-2"]);
+        Should.Throw<InvalidOperationException>(() => ListProjector().Project(
+            "tenant-1",
+            [.. events, Event("collision", 1, Recorded("time-entry-1", 90))],
+            FreshCheckpoint(1), new QueryTimeEntries()));
     }
 
     private static TimeEntryEvidenceProjection Projector() => new();

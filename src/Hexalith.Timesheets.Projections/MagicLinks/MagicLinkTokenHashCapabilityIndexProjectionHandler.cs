@@ -209,7 +209,9 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     private static MagicLinkConfirmationCapabilityIssued? FoldIssuance(ProjectionRequest request)
     {
         MagicLinkConfirmationCapabilityIssued[] issuances = ProjectionEventReader.Normalize(request.Events)
-            .Select(ProjectionEventReader.Deserialize<MagicLinkConfirmationCapabilityIssued>)
+            .Select(static projectionEvent =>
+                ProjectionEventReader.Deserialize<MagicLinkConfirmationCapabilityIssued>(projectionEvent)
+                ?? ProjectionEventReader.Deserialize<StoredMagicLinkIssued>(projectionEvent)?.Event)
             .Where(static item => item is not null)
             .Cast<MagicLinkConfirmationCapabilityIssued>()
             .ToArray();

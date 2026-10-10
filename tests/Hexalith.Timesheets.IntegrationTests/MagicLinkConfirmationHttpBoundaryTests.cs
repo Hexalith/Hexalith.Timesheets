@@ -8,6 +8,7 @@ using System.Text.Json.Nodes;
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Commands;
+using Hexalith.EventStore.Contracts.Events;
 using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.Contracts.Queries;
 using Hexalith.EventStore.Contracts.Streams;
@@ -26,6 +27,7 @@ using Hexalith.Timesheets.Projections.ActivityTypes;
 using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -46,7 +48,7 @@ using ServerCapabilityState = Hexalith.Timesheets.Server.MagicLinks.MagicLinkCap
 
 namespace Hexalith.Timesheets.IntegrationTests;
 
-public sealed class MagicLinkConfirmationHttpBoundaryTests
+public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
     private static readonly DateTimeOffset ObservedAtUtc = new(2026, 6, 19, 13, 30, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -286,7 +288,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Concrete_loader_preserves_get_displays_and_denies_posts_after_projection_delivery()
+    public async Task Concrete_loader_commits_both_actions_after_projection_delivery()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -320,15 +322,15 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
         adjustDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
-        _ = await CaptureFailureAsync(confirmSubmit, "projected-confirm-submit", ValidConfirmToken());
-        _ = await CaptureFailureAsync(adjustSubmit, "projected-adjust-submit", ValidAdjustToken());
-        factory.Gateway.SubmissionCount.ShouldBe(0);
+        confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        adjustSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.SubmissionCount.ShouldBe(2);
         using HttpResponseMessage confirmAfterPost = await client.GetAsync(
             $"/api/timesheets/magic-links/confirm?t={ValidConfirmToken()}", TestContext.Current.CancellationToken);
         using HttpResponseMessage adjustAfterPost = await client.GetAsync(
             $"/api/timesheets/magic-links/adjust?t={ValidAdjustToken()}", TestContext.Current.CancellationToken);
-        confirmAfterPost.StatusCode.ShouldBe(HttpStatusCode.OK);
-        adjustAfterPost.StatusCode.ShouldBe(HttpStatusCode.OK);
+        confirmAfterPost.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        adjustAfterPost.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
         factory.Store.DirectIndexSeedCount.ShouldBe(0);
         factory.Store.DirectCatalogSeedCount.ShouldBe(0);
         factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
@@ -340,7 +342,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     /// <summary>Exercises the deactivation decision through projection delivery and all four HTTP routes.</summary>
     [Fact]
-    public async Task DeactivatedRecordedTypeCanBeDisplayedWhileSubmissionsStayDenied()
+    public async Task DeactivatedRecordedTypeCanBeDisplayedAndConfirmedWhileAdjustmentStaysDenied()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -369,7 +371,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await confirmDisplay.Content.ReadFromJsonAsync<MagicLinkConfirmationDisplayResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull().ActivityTypeLabel.ShouldBe("Delivery");
-        _ = await CaptureFailureAsync(confirmSubmit, "inactive-confirm-submit", ValidConfirmToken());
+        // Recorded evidence remains confirmable after capture availability changes.
+        // The established Story 3.6 decision keeps the availability gate on adjustment.
+        confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         CapturedFailure displayDenial = await CaptureFailureAsync(adjustDisplay, "inactive-adjust-display", ValidAdjustToken());
         CapturedFailure submitDenial = await CaptureFailureAsync(adjustSubmit, "inactive-adjust-submit", ValidAdjustToken());
         displayDenial.NormalizedBody.ShouldBe(submitDenial.NormalizedBody);
@@ -402,14 +406,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         {
             string token = route.Action == MagicLinkAllowedAction.Confirm ? ValidConfirmToken() : ValidAdjustToken();
             using HttpResponseMessage response = await SendAsync(client, route, token);
-            if (route.Method == HttpMethod.Get)
-            {
-                response.StatusCode.ShouldBe(HttpStatusCode.OK);
-            }
-            else
-            {
-                _ = await CaptureFailureAsync(response, route.Name, token);
-            }
+            response.StatusCode.ShouldBe(route.Method == HttpMethod.Get
+                ? HttpStatusCode.OK
+                : HttpStatusCode.Accepted);
         }
     }
 
@@ -558,9 +557,10 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         TimesheetsRequestContext authorizedContext = factory.AccessGuard.LastAuthorizationRequest.ShouldNotBeNull().Context;
         authorizedContext.Tenant.ShouldBe(expectedTenant);
         authorizedContext.Actor.ShouldBe(expectedActor);
-        authorizedContext.CorrelationId.ShouldBe(factory.ObservedTrustedContext.CorrelationId);
-        factory.Store.ReadKeys.ShouldHaveSingleItem().ShouldBe(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(expectedTenant));
-        StreamReadRequest request = factory.Gateway.Requests.ShouldHaveSingleItem();
+        authorizedContext.CorrelationId.ShouldNotBeNullOrWhiteSpace();
+        string catalogKey = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(expectedTenant);
+        factory.Store.ReadKeys.ShouldBe(useMismatchedClaims ? [catalogKey] : [catalogKey, catalogKey]);
+        StreamReadRequest request = factory.Gateway.Requests[0];
         request.Tenant.ShouldBe(expectedTenant.TenantId);
         request.AggregateId.ShouldBe(capabilityId.Value);
         response.StatusCode.ShouldBe(useMismatchedClaims ? HttpStatusCode.Forbidden : HttpStatusCode.Accepted);
@@ -575,14 +575,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             $"/api/timesheets/magic-links/confirmation-capabilities/{existingId.Value}/revoke",
             new RevokeMagicLinkConfirmationCapability(existingId, new MagicLinkAuditMetadata("timesheets", "admin-revoke")));
         revocation.StatusCode.ShouldBe(useMismatchedClaims ? HttpStatusCode.Forbidden : HttpStatusCode.Accepted);
-        StreamReadRequest existingRequest = factory.Gateway.Requests.ShouldHaveSingleItem();
+        StreamReadRequest existingRequest = factory.Gateway.Requests[0];
         existingRequest.Tenant.ShouldBe(expectedTenant.TenantId);
         existingRequest.AggregateId.ShouldBe(existingId.Value);
         factory.Store.ReadKeys.ShouldBeEmpty();
         TimesheetsRequestContext revocationContext = factory.AccessGuard.LastAuthorizationRequest.ShouldNotBeNull().Context;
         revocationContext.Tenant.ShouldBe(expectedTenant);
         revocationContext.Actor.ShouldBe(expectedActor);
-        revocationContext.CorrelationId.ShouldBe(factory.ObservedTrustedContext.CorrelationId);
+        revocationContext.CorrelationId.ShouldNotBeNullOrWhiteSpace();
     }
 
     /// <summary>Refuses missing issuance identifiers before loading state, authorizing or generating material.</summary>
@@ -1332,7 +1332,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         public ProjectionBackedReadModelStore Store { get; } = new();
 
-        public ScriptedEventStoreGateway Gateway { get; } = new();
+        private ScriptedEventStoreGateway? _gateway;
+
+        public ScriptedEventStoreGateway Gateway => _gateway ??= new ScriptedEventStoreGateway(() => Services);
 
         /// <summary>Gets the context observed from the actual host accessor during the latest request.</summary>
         public (TenantReference? Tenant, PartyReference? Actor, string? CorrelationId) ObservedTrustedContext { get; private set; }
@@ -1842,16 +1844,23 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         public int TrustedWorkExecutionCount => Volatile.Read(ref _trustedWorkExecutionCount);
 
+        public Func<CancellationToken, ValueTask>? OnAuthorizeAsync { get; set; }
+
         /// <summary>Gets the last request passed to the service's authorization boundary.</summary>
         public TimesheetsAuthorizationRequest? LastAuthorizationRequest { get; private set; }
 
-        public ValueTask<TimesheetsAuthorizationDecision> AuthorizeAsync(
+        public async ValueTask<TimesheetsAuthorizationDecision> AuthorizeAsync(
             TimesheetsAuthorizationRequest request,
             CancellationToken cancellationToken)
         {
             _ = Interlocked.Increment(ref _authorizationCount);
             LastAuthorizationRequest = request;
-            return ValueTask.FromResult(Decision(request));
+            if (OnAuthorizeAsync is { } gate)
+            {
+                await gate(cancellationToken).ConfigureAwait(false);
+            }
+
+            return Decision(request);
         }
 
         public async ValueTask<TimesheetsAuthorizationDecision> ExecuteIfAuthorizedAsync(
@@ -1886,7 +1895,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     private sealed class StaticTimeProvider(DateTimeOffset utcNow) : TimeProvider
     {
-        public override DateTimeOffset GetUtcNow() => utcNow;
+        public DateTimeOffset UtcNow { get; set; } = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 
     private sealed class ProjectionBackedReadModelStore : IReadModelStore
@@ -1974,30 +1985,191 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         }
     }
 
-    private sealed class ScriptedEventStoreGateway : IEventStoreGatewayClient
+    private sealed class ScriptedEventStoreGateway(Func<IServiceProvider> services) : IEventStoreGatewayClient
     {
+        private readonly SemaphoreSlim _submissionGate = new(1, 1);
+        private readonly object _stateGate = new();
+        private readonly Dictionary<string, CommandStatusQueryResponse> _statuses = new(StringComparer.Ordinal);
+        private readonly Dictionary<(string Tenant, string Aggregate), StreamReadEvent[]> _streams = [];
+        private readonly Dictionary<(string Tenant, string Aggregate), string> _missingStreamReasons = [];
 
-        // The magic-link loader never queries command status; this member exists only to satisfy
-        // IEventStoreGatewayClient.
+        public CommandStatus? OverrideSuccessfulStatus { get; set; }
+
+        public Func<object, object>? StoredPayloadTransform { get; set; }
+
         public Task<CommandStatusQueryResponse?> GetCommandStatusAsync(
             string messageId,
             CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-        private readonly Dictionary<(string Tenant, string Aggregate), StreamReadEvent[]> _streams = [];
+        {
+            lock (_stateGate)
+            {
+                return Task.FromResult(_statuses.GetValueOrDefault(messageId));
+            }
+        }
+
+        public Task<CommandStatusQueryResponse?> GetWorkloadCommandStatusAsync(
+            string tenant,
+            string messageId,
+            CancellationToken cancellationToken = default)
+        {
+            lock (_stateGate)
+            {
+                CommandStatusQueryResponse? status = _statuses.GetValueOrDefault(messageId);
+                return Task.FromResult(status?.TenantId == tenant ? status : null);
+            }
+        }
 
         public List<StreamReadRequest> Requests { get; } = [];
 
-        public int SubmissionCount { get; private set; }
+        private int _submissionCount;
+
+        public int SubmissionCount => Volatile.Read(ref _submissionCount);
 
         public void WithStream(string tenant, string aggregate, params StreamReadEvent[] events)
-            => _streams[(tenant, aggregate)] = events;
+        {
+            lock (_stateGate)
+            {
+                _streams[(tenant, aggregate)] = events;
+            }
+        }
 
-        public Task<SubmitCommandResponse> SubmitCommandAsync(
+        public void ReportMissingStream(string tenant, string aggregate, string reasonCode)
+        {
+            lock (_stateGate)
+            {
+                _streams.Remove((tenant, aggregate));
+                _missingStreamReasons[(tenant, aggregate)] = reasonCode;
+            }
+        }
+
+        public StreamReadEvent[] StoredEvents(string tenant, string aggregate)
+        {
+            lock (_stateGate)
+            {
+                return _streams.GetValueOrDefault((tenant, aggregate))?.ToArray() ?? [];
+            }
+        }
+
+        public async Task<SubmitCommandResponse> SubmitCommandAsync(
             SubmitCommandRequest request,
             CancellationToken cancellationToken = default)
         {
-            SubmissionCount++;
-            throw new NotSupportedException();
+            _ = Interlocked.Increment(ref _submissionCount);
+            await _submissionGate.WaitAsync(cancellationToken);
+            try
+            {
+                if (_statuses.ContainsKey(request.MessageId))
+                {
+                    return new SubmitCommandResponse(request.CorrelationId ?? request.MessageId, MessageId: request.MessageId);
+                }
+
+                using IServiceScope scope = services().CreateScope();
+                MagicLinkEventStoreDomainProcessor processor = scope.ServiceProvider
+                    .GetRequiredService<MagicLinkEventStoreDomainProcessor>();
+                object? currentState = CurrentState(request);
+                string? actor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>()
+                    .HttpContext?.User.FindFirstValue("party_id")
+                    ?? scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>()
+                        .HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                Dictionary<string, string> verifiedExtensions = new(StringComparer.Ordinal)
+                {
+                    [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets"
+                };
+                if (!string.IsNullOrWhiteSpace(actor))
+                {
+                    verifiedExtensions[EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = actor;
+                }
+                var envelope = new CommandEnvelope(
+                    request.MessageId,
+                    request.Tenant,
+                    request.Domain,
+                    request.AggregateId,
+                    request.CommandType,
+                    Encoding.UTF8.GetBytes(request.Payload.GetRawText()),
+                    request.CorrelationId ?? request.MessageId,
+                    null,
+                    actor ?? "timesheets",
+                    verifiedExtensions);
+                var result = await processor.ProcessAsync(envelope, currentState, cancellationToken);
+                var key = (request.Tenant, request.AggregateId);
+                StreamReadEvent[] before = StoredEvents(request.Tenant, request.AggregateId);
+                if (result.IsSuccess && OverrideSuccessfulStatus is null)
+                {
+                    List<StreamReadEvent> stored = [.. before];
+                    for (int index = 0; index < result.Events.Count; index++)
+                    {
+                        object payload = StoredPayloadTransform?.Invoke(result.Events[index]) ?? result.Events[index];
+                        stored.Add(new StreamReadEvent(
+                            stored.Count + 1,
+                            payload.GetType().FullName!,
+                            JsonSerializer.SerializeToUtf8Bytes(payload, payload.GetType(), JsonOptions),
+                            "json",
+                            1,
+                            $"{request.MessageId}-{index}",
+                            request.CorrelationId ?? request.MessageId,
+                            null,
+                            ObservedAtUtc,
+                            "fixture"));
+                    }
+
+                    lock (_stateGate)
+                    {
+                        _streams[key] = [.. stored];
+                    }
+                }
+
+                CommandStatus status = result.IsSuccess
+                    ? OverrideSuccessfulStatus ?? CommandStatus.Completed
+                    : CommandStatus.Rejected;
+                CommandStatusQueryResponse commandStatus = new(
+                    request.CorrelationId ?? request.MessageId,
+                    status.ToString(),
+                    (int)status,
+                    result.IsRejection ? result.Events[0].GetType().FullName : null,
+                    request.MessageId)
+                {
+                    CommittedEventSequence = status == CommandStatus.Completed ? before.Length + result.Events.Count : null,
+                    EventCount = status == CommandStatus.Completed ? result.Events.Count : 0,
+                    TenantId = request.Tenant,
+                    Domain = request.Domain,
+                    AggregateId = request.AggregateId
+                };
+                lock (_stateGate)
+                {
+                    _statuses[request.MessageId] = commandStatus;
+                }
+                return new SubmitCommandResponse(request.CorrelationId ?? request.MessageId, MessageId: request.MessageId);
+            }
+            finally
+            {
+                _submissionGate.Release();
+            }
+        }
+
+        public Task<SubmitCommandResponse> SubmitWorkloadCommandAsync(
+            SubmitCommandRequest request,
+            CancellationToken cancellationToken = default)
+            => SubmitCommandAsync(request, cancellationToken);
+
+        private object? CurrentState(SubmitCommandRequest request)
+        {
+            StreamReadEvent[] events = StoredEvents(request.Tenant, request.AggregateId);
+            if (events.Length == 0)
+            {
+                return null;
+            }
+
+            // Match the EventStore actor's snapshot-aware domain-service handoff, rather than
+            // handing the processor a pre-folded state from this fixture.
+            EventEnvelope[] envelopes = events.Select(item => new EventEnvelope(
+                new EventMetadata(
+                    item.MessageId, request.AggregateId, "timesheets", request.Tenant, request.Domain,
+                    item.SequenceNumber, item.SequenceNumber, item.Timestamp,
+                    item.CorrelationId ?? request.MessageId, item.CausationId ?? request.MessageId,
+                    item.UserId ?? "fixture", "fixture", item.EventTypeName,
+                    item.MetadataVersion, item.SerializationFormat),
+                item.Payload, null)).ToArray();
+            return new DomainServiceCurrentState(null, envelopes, 0, events[^1].SequenceNumber);
         }
 
         public Task<EventStoreQueryResult> SubmitQueryAsync(
@@ -2016,11 +2188,15 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             StreamReadRequest request,
             CancellationToken cancellationToken = default)
         {
-            Requests.Add(request);
-            StreamReadEvent[] all = request.AggregateId is not null
-                && _streams.TryGetValue((request.Tenant, request.AggregateId), out StreamReadEvent[]? stream)
-                    ? stream
-                    : [];
+            StreamReadEvent[] all;
+            lock (_stateGate)
+            {
+                Requests.Add(request);
+                all = request.AggregateId is not null
+                    && _streams.TryGetValue((request.Tenant, request.AggregateId), out StreamReadEvent[]? stream)
+                        ? stream
+                        : [];
+            }
             StreamReadEvent[] page = all
                 .Where(item => item.SequenceNumber > request.FromSequence)
                 .OrderBy(static item => item.SequenceNumber)
@@ -2041,6 +2217,24 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                     page.Length,
                     last is not null && last < latest,
                     null)));
+        }
+
+        public Task<StreamReadPage> ReadWorkloadStreamAsync(
+            StreamReadRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            lock (_stateGate)
+            {
+                if (request.AggregateId is not null
+                    && !_streams.ContainsKey((request.Tenant, request.AggregateId))
+                    && _missingStreamReasons.TryGetValue((request.Tenant, request.AggregateId), out string? reason))
+                {
+                    return Task.FromException<StreamReadPage>(
+                        new EventStoreGatewayException(404, "Not Found", reasonCode: reason));
+                }
+            }
+
+            return ReadStreamAsync(request, cancellationToken);
         }
     }
 

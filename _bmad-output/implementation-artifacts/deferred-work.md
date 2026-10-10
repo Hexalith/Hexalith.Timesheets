@@ -503,3 +503,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-close-remaining-acceptance-gaps.md`
   summary: Decide how public magic-link routes should handle unexpected loader or command-service exceptions.
   evidence: The confirm and adjust POST handlers already awaited loader and command services before this increment, and an uncaught access-guard or domain-service exception can still produce a framework error response instead of the common opaque denial. A dedicated error-handling decision should distinguish unexpected faults and cancellation from invalid links, then verify the public response and privacy-safe diagnostics without masking operational failures.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+  summary: Wire and measure token-hash index projection readiness before treating a newly issued link as immediately resolvable.
+  evidence: The index has no production projection-host wiring, and a token returned after committed issuance may be looked up before the rebuildable index advances; local fixtures seed it directly. A live handler and issue-to-use journey would settle end-to-end readiness.

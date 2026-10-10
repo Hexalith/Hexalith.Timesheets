@@ -1,7 +1,9 @@
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.MagicLinks;
 
 namespace Hexalith.Timesheets.Server.TimeEntries;
 
@@ -90,6 +92,54 @@ public sealed class TimeEntryState
     public TimeEntryApprovalScope SourceApprovalScope { get; private set; }
 
     public TimeEntryExternalAdjustmentEvidence? ExternalAdjustment { get; private set; }
+
+    /// <summary>Capability identifiers with a terminal transition owned by this Time Entry stream.</summary>
+    public HashSet<string> TerminalMagicLinkCapabilityIds { get; private set; } = new(StringComparer.Ordinal);
+
+    /// <summary>Whether a capability has conflicting terminal history in this stream.</summary>
+    public bool HasAmbiguousMagicLinkTerminalHistory { get; private set; }
+
+    /// <summary>Checks whether a capability has already reached a terminal state in this stream.</summary>
+    public bool HasTerminalMagicLinkCapability(MagicLinkCapabilityId capabilityId)
+        => TerminalMagicLinkCapabilityIds.Contains(capabilityId.Value);
+
+    /// <summary>Records a capability use in this Time Entry stream.</summary>
+    public void Apply(MagicLinkConfirmationCapabilityUsed used)
+        => RecordTerminalCapability(used.CapabilityId);
+
+    /// <summary>Applies an EventStore capability use payload.</summary>
+    public void Apply(StoredMagicLinkUsed used) => Apply(used.Event);
+
+    /// <summary>Records a capability revocation in this Time Entry stream.</summary>
+    public void Apply(MagicLinkConfirmationCapabilityRevoked revoked)
+        => RecordTerminalCapability(revoked.CapabilityId);
+
+    /// <summary>Applies an EventStore capability revocation payload.</summary>
+    public void Apply(StoredMagicLinkRevoked revoked) => Apply(revoked.Event);
+
+    /// <summary>Records a capability expiry in this Time Entry stream.</summary>
+    public void Apply(MagicLinkConfirmationCapabilityExpired expired)
+        => RecordTerminalCapability(expired.CapabilityId);
+
+    /// <summary>Applies an EventStore capability expiry payload.</summary>
+    public void Apply(StoredMagicLinkExpired expired) => Apply(expired.Event);
+
+    /// <summary>Applies an EventStore confirmation payload.</summary>
+    public void Apply(StoredTimeEntryConfirmed confirmed) => Apply(confirmed.Event);
+
+    /// <summary>Applies an EventStore adjustment payload.</summary>
+    public void Apply(StoredTimeEntryAdjusted adjusted) => Apply(adjusted.Event);
+
+    /// <summary>Applies an EventStore recording payload.</summary>
+    public void Apply(StoredTimeEntryRecorded recorded) => Apply(recorded.Event);
+
+    private void RecordTerminalCapability(MagicLinkCapabilityId capabilityId)
+    {
+        if (!TerminalMagicLinkCapabilityIds.Add(capabilityId.Value))
+        {
+            HasAmbiguousMagicLinkTerminalHistory = true;
+        }
+    }
 
     public TimeEntryLockState LockState => CorrectionState == TimeEntryCorrectionState.Superseded
         ? TimeEntryLockState.SupersededLocked

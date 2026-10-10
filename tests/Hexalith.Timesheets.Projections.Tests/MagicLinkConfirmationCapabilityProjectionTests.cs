@@ -6,6 +6,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.MagicLinks;
+using Hexalith.Timesheets.Server.MagicLinks;
 
 using Shouldly;
 
@@ -54,9 +55,9 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_orders_events_and_ignores_terminal_mutations_after_revocation()
+    public void Projection_rejects_terminal_mutations_after_revocation()
     {
-        MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
             CapabilityId(),
             [
                 Event("m3", 3, Expired()),
@@ -64,11 +65,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
                 Event("m1", 1, Issued())
             ],
             FreshCheckpoint(3),
-            ExpiresAtUtc());
-
-        model.ShouldNotBeNull();
-        model.State.ShouldBe(CapabilityState.Revoked);
-        model.ExpiredAtUtc.ShouldBeNull();
+            ExpiresAtUtc()));
     }
 
     [Fact]
@@ -88,9 +85,9 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_exposes_used_state_and_ignores_later_terminal_mutations()
+    public void Projection_rejects_terminal_mutations_after_use()
     {
-        MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
             CapabilityId(),
             [
                 Event("m1", 1, Issued()),
@@ -98,17 +95,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
                 Event("m3", 3, Revoked())
             ],
             FreshCheckpoint(3),
-            ObservedAtUtc());
-
-        model.ShouldNotBeNull();
-        model.State.ShouldBe(CapabilityState.Used);
-        model.StateBadgeText.ShouldBe("Used");
-        model.UsedAtUtc.ShouldBe(UsedAtUtc());
-        model.UseMetadata.ShouldBe(new MagicLinkAuditMetadata("magic-link", "capability-1"));
-        model.UseOutcomeCategory.ShouldBe("confirmed");
-        model.RevokedAtUtc.ShouldBeNull();
-        Serialized(model).ShouldNotContain("token", Case.Insensitive);
-        Serialized(model).ShouldNotContain("comment", Case.Insensitive);
+            ObservedAtUtc()));
     }
 
     [Fact]
@@ -127,6 +114,57 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
         model.UseOutcomeCategory.ShouldBe("adjusted");
         Serialized(model).ShouldNotContain("token", Case.Insensitive);
         Serialized(model).ShouldNotContain("hash", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Projection_reconciles_stored_cross_stream_terminal_before_issuance_sequence()
+    {
+        MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
+            CapabilityId(),
+            [
+                Event("target-use", 2, new StoredMagicLinkUsed(Used())),
+                Event("capability-issue", 3, new StoredMagicLinkIssued(Issued()))
+            ],
+            FreshCheckpoint(3),
+            ObservedAtUtc());
+
+        model.ShouldNotBeNull().State.ShouldBe(CapabilityState.Used);
+    }
+
+    [Fact]
+    public void Projection_rejects_legacy_terminal_before_issuance_in_capability_stream()
+    {
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            CapabilityId(),
+            [Event("legacy-terminal", 1, Revoked()), Event("late-issue", 2, Issued())],
+            FreshCheckpoint(2),
+            ObservedAtUtc()));
+    }
+
+    [Fact]
+    public void Projection_rejects_repeated_physical_issuance_even_when_identical()
+    {
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            CapabilityId(),
+            [Event("first-issue", 1, Issued()), Event("second-issue", 2, Issued())],
+            FreshCheckpoint(2), ObservedAtUtc()));
+    }
+
+    [Fact]
+    public void Projection_rejects_distinct_payloads_at_one_sequence_within_each_stream()
+    {
+        MagicLinkProjectionEvent issuance = Event("issue", 1, Issued());
+        Projector().Project(CapabilityId(), [issuance, Event("", 1, Issued())],
+            FreshCheckpoint(1), ObservedAtUtc()).ShouldNotBeNull();
+        Should.Throw<InvalidOperationException>(() => Projector().Project(CapabilityId(),
+            [issuance, Event("other", 1, Revoked())], FreshCheckpoint(1), ObservedAtUtc()));
+
+        MagicLinkProjectionEvent ownerUse = Event("owner-use", 1, new StoredMagicLinkUsed(Used()));
+        Projector().Project(CapabilityId(), [issuance, ownerUse],
+            FreshCheckpoint(1), ObservedAtUtc()).ShouldNotBeNull().State.ShouldBe(CapabilityState.Used);
+        Should.Throw<InvalidOperationException>(() => Projector().Project(CapabilityId(),
+            [issuance, ownerUse, Event("owner-revoke", 1, new StoredMagicLinkRevoked(Revoked()))],
+            FreshCheckpoint(1), ObservedAtUtc()));
     }
 
     private static string Serialized(MagicLinkConfirmationCapabilityReadModel model)

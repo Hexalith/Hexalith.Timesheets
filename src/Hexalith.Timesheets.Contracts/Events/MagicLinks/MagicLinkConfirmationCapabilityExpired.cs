@@ -8,4 +8,8 @@ public sealed record MagicLinkConfirmationCapabilityExpired(
     MagicLinkCapabilityId CapabilityId,
     TenantReference Tenant,
     DateTimeOffset ExpiredAtUtc,
-    MagicLinkAuditMetadata Source);
+    MagicLinkAuditMetadata Source)
+{
+    /// <summary>The Time Entry owner for newly written terminal transitions; absent on legacy events.</summary>
+    public TimeEntryId? TimeEntryId { get; init; }
+}

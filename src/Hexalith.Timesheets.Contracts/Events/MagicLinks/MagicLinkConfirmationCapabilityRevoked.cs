@@ -9,4 +9,8 @@ public sealed record MagicLinkConfirmationCapabilityRevoked(
     TenantReference Tenant,
     PartyReference RevokedBy,
     DateTimeOffset RevokedAtUtc,
-    MagicLinkAuditMetadata Source);
+    MagicLinkAuditMetadata Source)
+{
+    /// <summary>The Time Entry owner for newly written terminal transitions; absent on legacy events.</summary>
+    public TimeEntryId? TimeEntryId { get; init; }
+}

@@ -7,6 +7,18 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 
 public sealed class MagicLinkCapabilityState
 {
+    /// <summary>Applies an EventStore issuance payload.</summary>
+    public void Apply(StoredMagicLinkIssued issued) => Apply(issued.Event);
+
+    /// <summary>Applies an EventStore use payload.</summary>
+    public void Apply(StoredMagicLinkUsed used) => Apply(used.Event);
+
+    /// <summary>Applies an EventStore revocation payload.</summary>
+    public void Apply(StoredMagicLinkRevoked revoked) => Apply(revoked.Event);
+
+    /// <summary>Applies an EventStore expiry payload.</summary>
+    public void Apply(StoredMagicLinkExpired expired) => Apply(expired.Event);
+
     public bool Exists { get; private set; }
 
     public MagicLinkCapabilityId? CapabilityId { get; private set; }

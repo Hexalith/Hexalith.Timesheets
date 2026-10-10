@@ -55,6 +55,23 @@ public sealed class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
+    public async Task Index_live_writer_accepts_internal_stored_issuance_payload()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            new ProjectionRequest("tenant-1", "timesheets", "capability-1",
+                [Event(1, new StoredMagicLinkIssued(Issued()))]),
+            "dispatch-stored-issue",
+            TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+                MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+            .Entries["hash-only"].CapabilityId.ShouldBe(new MagicLinkCapabilityId("capability-1"));
+    }
+
+    [Fact]
     public async Task Index_live_collision_fails_without_replacing_the_original_candidate()
     {
         var store = new ScriptedReadModelStore();

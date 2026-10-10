@@ -93,25 +93,23 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Tenant-isolation/security");
         readiness.ShouldContain("Works checkout ownership");
         // Assert the shape of the evidence, not its arithmetic. Pinning exact suite totals reddens
-        // this lane on every test added anywhere in the solution — including one added to this very
-        // project — and the cheapest way back to green is hand-editing the document, which inverts
-        // the evidence discipline these assertions exist to enforce.
+        // this lane on every test added anywhere in the solution.
         readiness.ShouldMatch(@"\b\d{4}-\d{2}-\d{2}\b");
         readiness.ShouldContain("ArchitectureTests");
         readiness.ShouldContain("Projections.Tests");
         readiness.ShouldContain("Server.Tests");
         string[] fullSuite = ReadReleaseGateRow(readiness, "Tests (full suite)");
-        fullSuite[1].ShouldBe("FAIL");
+        fullSuite[1].ShouldBe("PASS");
         fullSuite[2].ShouldContain("Architecture");
         fullSuite[2].ShouldContain("Integration");
-        fullSuite[3].ShouldMatch(@"Total: \d+ tests, \d+ pass, ");
-        fullSuite[3].ShouldContain("failure");
+        fullSuite[3].ShouldContain("Six individual test lanes pass");
+        fullSuite[3].ShouldContain("skipped live infrastructure");
     }
 
     [Fact]
     public void Launch_readiness_overall_decision_is_an_honest_verdict_not_a_vanity_pass()
     {
-        // Open core stories and unfinished atomic magic-link persistence require FAIL, not a waiver.
+        // Open core stories and missing deployed persistence proof require FAIL, not a waiver.
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
 
         int decisionStart = readiness.LastIndexOf("Overall release decision", StringComparison.Ordinal);
@@ -121,7 +119,8 @@ public sealed class LaunchReadinessTests
         overall.ShouldContain("Overall release decision: **FAIL**");
         overall.ShouldContain("Stories 3.6 and 3.7 remain in progress, Story 5.2 remains in progress");
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
-        overall.ShouldContain("durable atomic magic-link confirm/adjust submission is unfinished");
+        overall.ShouldContain("Atomic magic-link submission and local actor commit/reload are implemented");
+        overall.ShouldContain("no live Dapr-backed EventStore acceptance has run");
         overall.ShouldNotContain("Story 3.6 is complete");
         overall.ShouldNotContain("Story 3.6 is in review");
         overall.ShouldNotContain("decision: **PASS**");
@@ -129,9 +128,9 @@ public sealed class LaunchReadinessTests
 
         string[] persistenceGate = ReadReleaseGateRow(readiness, "Magic-link durable confirm/adjust persistence");
         persistenceGate[1].ShouldBe("FAIL");
-        persistenceGate[2].ShouldContain("zero EventStore submit attempts");
-        persistenceGate[2].ShouldContain("no durable capability-use or Time Entry write is proven");
-        persistenceGate[3].ShouldContain("single-use enforcement is not durable");
+        persistenceGate[2].ShouldContain("exact stored use/effect batches");
+        persistenceGate[2].ShouldContain("actor recreation");
+        persistenceGate[3].ShouldContain("Deployed Dapr persistence");
     }
 
     [Fact]
@@ -156,9 +155,9 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Magic-link live end-to-end resolution");
         readiness.ShouldContain("Export preview");
         readiness.ShouldContain("canonical token-hash index and tenant Activity Type catalog projection handlers");
-        readiness.ShouldContain("valid Fresh-catalog GET displays return 200 while valid confirm/adjust POSTs return the shared opaque 403");
-        readiness.ShouldContain("The POST fixture records zero gateway submit attempts");
-        readiness.ShouldContain("not persistence or single-use");
+        readiness.ShouldContain("valid Fresh-catalog GET displays return 200 and valid confirm/adjust POSTs return 202 only after a Completed EventStore status");
+        readiness.ShouldContain("the separate EventStore actor state-store test proves local commit/reload");
+        readiness.ShouldContain("does not prove deployed Dapr persistence");
         readiness.ShouldNotContain("no projection-host wiring");
         readiness.ShouldNotContain("Valid links do not resolve");
         readiness.ShouldContain("no dedicated HTTP route");
@@ -219,12 +218,10 @@ public sealed class LaunchReadinessTests
 
         string[] liveResolution = ReadClassificationRow(readiness, "Magic-link live end-to-end resolution");
         liveResolution[2].ShouldBe("blocked");
-        liveResolution[1].ShouldContain("valid confirm/adjust POSTs return the shared opaque 403");
-        liveResolution[1].ShouldContain("zero gateway submit attempts");
-        liveResolution[1].ShouldContain("not persistence or single-use");
-        liveResolution[4].ShouldContain("concurrent requests can reuse the same unpersisted capability state");
-        liveResolution[5].ShouldContain("selects an EventStore write owner, atomically submits capability-use and Time Entry events");
-        liveResolution[5].ShouldContain("concurrent reuse is rejected from authoritative persisted state");
+        liveResolution[1].ShouldContain("valid confirm/adjust POSTs return 202 only after a Completed EventStore status");
+        liveResolution[4].ShouldContain("does not prove deployed Dapr persistence");
+        liveResolution[5].ShouldContain("Inventory deployed streams read-only");
+        liveResolution[5].ShouldContain("concurrent single-use and restart checks");
     }
 
     [Fact]

@@ -5,6 +5,7 @@ using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.EventStore.DomainService;
+using Hexalith.EventStore.Client.Gateway;
 
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -37,6 +38,8 @@ builder.AddEventStoreDomainService(
     typeof(TimesheetsProjectionsMarker).Assembly);
 // Keep the fail-closed Timesheets authorization and reference-validation seams.
 builder.Services.AddTimesheetsServerKernel();
+builder.Services.AddSingleton<IEventStoreGatewayWorkloadAssertionSource, EventStoreGatewayWorkloadAssertionSource>();
+builder.Services.AddTimesheetsMagicLinkEventStoreProcessing();
 builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsTrustedContextAccessor, HttpContextTimesheetsTrustedContextAccessor>());
 builder.Services.AddSingleton(TimeProvider.System);

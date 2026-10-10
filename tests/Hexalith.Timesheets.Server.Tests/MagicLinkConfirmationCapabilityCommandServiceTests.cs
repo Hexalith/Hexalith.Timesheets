@@ -250,13 +250,15 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         fixture.TokenGenerator.GenerateCount.ShouldBe(0);
     }
 
-    [Fact]
-    public async Task Issue_magic_link_rejects_unknown_allowed_action_before_token_generation()
+    [Theory]
+    [InlineData(MagicLinkAllowedAction.Unknown)]
+    [InlineData((MagicLinkAllowedAction)99)]
+    public async Task IssueMagicLinkRejectsUndefinedAllowedActionBeforeTokenGeneration(MagicLinkAllowedAction action)
     {
         Fixture fixture = AuthorizedProjectFixture();
         IssueMagicLinkConfirmationCapability command = IssueCommand() with
         {
-            AllowedAction = MagicLinkAllowedAction.Unknown
+            AllowedAction = action
         };
 
         MagicLinkCapabilityCommandResult result = await fixture.CreateService().IssueAsync(

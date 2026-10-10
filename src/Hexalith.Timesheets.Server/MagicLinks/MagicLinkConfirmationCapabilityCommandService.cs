@@ -110,6 +110,48 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             MagicLinkConfirmationCapability.HandleRevoke(command, state, context.Tenant, context.Actor, revokedAtUtc));
     }
 
+    /// <summary>Revalidates server-resolved issuance against current capability and catalog state.</summary>
+    internal async ValueTask<MagicLinkCapabilityCommandResult> IssueResolvedAsync(
+        TimesheetsRequestContext context,
+        IssueMagicLinkConfirmationCapability command,
+        MagicLinkCapabilityState? state,
+        ActivityTypeCatalogReadModel activityTypeCatalog,
+        MagicLinkTokenHash tokenHash,
+        DateTimeOffset issuedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        TimesheetsAuthorizationDecision authorization = await _accessGuard.AuthorizeAsync(
+            CreateAuthorizationRequest(context, command), cancellationToken).ConfigureAwait(false);
+        if (!authorization.IsAuthorized)
+        {
+            return new(authorization, null);
+        }
+
+        if (!TryResolveActivityTypeScope(command, activityTypeCatalog, out TimesheetsDomainResult? rejection))
+        {
+            return new(authorization, rejection);
+        }
+
+        return new(authorization, MagicLinkConfirmationCapability.HandleIssue(
+            command, state, context.Tenant, context.Actor, tokenHash, issuedAtUtc));
+    }
+
+    /// <summary>Revalidates a server-resolved expiry against the management authorization gate.</summary>
+    internal async ValueTask<MagicLinkCapabilityCommandResult> ExpireResolvedAsync(
+        TimesheetsRequestContext context,
+        ExpireMagicLinkConfirmationCapability command,
+        MagicLinkCapabilityState? state,
+        DateTimeOffset expiredAtUtc,
+        CancellationToken cancellationToken)
+    {
+        TimesheetsAuthorizationDecision authorization = await _accessGuard.AuthorizeAsync(
+            CreateManagementAuthorizationRequest(context, state), cancellationToken).ConfigureAwait(false);
+        return authorization.IsAuthorized
+            ? new(authorization, MagicLinkConfirmationCapability.HandleExpire(
+                command, state, context.Tenant, expiredAtUtc))
+            : new(authorization, null);
+    }
+
     public TimesheetsDomainResult Expire(
         ExpireMagicLinkConfirmationCapability command,
         MagicLinkCapabilityState? state,
@@ -156,6 +198,29 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         catch (ArgumentException)
         {
             return new(InvalidLinkRejection(), null);
+        }
+
+        return await ConfirmResolvedAsync(
+            context, tokenHash, command, capabilityState, timeEntryState, confirmedAtUtc, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>Revalidates a server-resolved confirmation during EventStore processing.</summary>
+    internal async ValueTask<MagicLinkConfirmationUseResult> ConfirmResolvedAsync(
+        TimesheetsRequestContext context,
+        MagicLinkTokenHash tokenHash,
+        ConfirmTimeThroughMagicLink command,
+        MagicLinkCapabilityState? capabilityState,
+        TimeEntryState? timeEntryState,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        TimesheetsAuthorizationDecision authorization = await _accessGuard.AuthorizeAsync(
+            CreateDisclosureAuthorizationRequest(context, capabilityState),
+            cancellationToken).ConfigureAwait(false);
+        if (!authorization.IsAuthorized)
+        {
+            return new(null, null);
         }
 
         TimesheetsDomainResult scopeResult = ValidateConfirmationScope(capabilityState, timeEntryState);
@@ -225,6 +290,30 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         catch (ArgumentException)
         {
             return new(InvalidLinkRejection(), null);
+        }
+
+        return await AdjustResolvedAsync(
+            context, tokenHash, command, capabilityState, timeEntryState, activityTypeCatalog, adjustedAtUtc, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    /// <summary>Revalidates server-resolved adjustment intent during EventStore processing.</summary>
+    internal async ValueTask<MagicLinkConfirmationUseResult> AdjustResolvedAsync(
+        TimesheetsRequestContext context,
+        MagicLinkTokenHash tokenHash,
+        AdjustTimeThroughMagicLink command,
+        MagicLinkCapabilityState? capabilityState,
+        TimeEntryState? timeEntryState,
+        ActivityTypeCatalogReadModel activityTypeCatalog,
+        DateTimeOffset adjustedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        TimesheetsAuthorizationDecision authorization = await _accessGuard.AuthorizeAsync(
+            CreateDisclosureAuthorizationRequest(context, capabilityState),
+            cancellationToken).ConfigureAwait(false);
+        if (!authorization.IsAuthorized)
+        {
+            return new(null, null);
         }
 
         TimesheetsDomainResult scopeResult = ValidateAdjustmentScope(capabilityState, timeEntryState);

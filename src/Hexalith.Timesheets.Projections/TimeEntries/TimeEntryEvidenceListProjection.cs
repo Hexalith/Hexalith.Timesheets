@@ -30,9 +30,7 @@ public sealed class TimeEntryEvidenceListProjection
         ArgumentNullException.ThrowIfNull(checkpoint);
         ArgumentNullException.ThrowIfNull(query);
 
-        TimeEntryProjectionEvent[] eventList = events
-            .OrderBy(static projectionEvent => projectionEvent.SequenceNumber)
-            .ToArray();
+        TimeEntryProjectionEvent[] eventList = [.. TimeEntryStoredEventNormalizer.Normalize(events)];
 
         List<TimeEntryQueryRowReadModel> rows = [];
         foreach (TimeEntryId timeEntryId in CandidateIds(eventList))
@@ -71,17 +69,10 @@ public sealed class TimeEntryEvidenceListProjection
 
     private static IEnumerable<TimeEntryId> CandidateIds(IEnumerable<TimeEntryProjectionEvent> events)
     {
-        HashSet<string> seenMessageIds = new(StringComparer.Ordinal);
         HashSet<TimeEntryId> seenTimeEntryIds = [];
 
         foreach (TimeEntryProjectionEvent projectionEvent in events)
         {
-            if (string.IsNullOrWhiteSpace(projectionEvent.MessageId)
-                || !seenMessageIds.Add(projectionEvent.MessageId))
-            {
-                continue;
-            }
-
             TimeEntryId? timeEntryId = projectionEvent.Payload switch
             {
                 TimeEntryRecorded recorded => recorded.TimeEntryId,
