@@ -187,13 +187,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     // ConfirmAsync takes no catalog, so this gate is load-bearing rather than
                     // defence in depth: the other three routes gate inside the command service.
                     //
-                    // The category is Unknown, not StaleCatalog. The loader discards the whole
-                    // bundle on any non-Fresh catalog and already collapses stale, rebuilding,
-                    // degraded, absent and unreadable into one Unavailable state, so a resolved
-                    // capability never survives to here and nothing can tell those apart. Reporting
-                    // StaleCatalog would assert a distinction no code makes — it read as reachable
-                    // only because a scripted test loader could produce it. Restoring it needs the
-                    // deferred AC2 work that keeps the explicit freshness state in the loader.
+                    // Catalog status is retained internally but must not change the public denial
+                    // or diagnostics category.
                     return DeniedWithDiagnostics(
                         loggerFactory,
                         httpContext,
@@ -201,7 +196,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                         MagicLinkInvalidLinkOutcomeCategory.Unknown);
                 }
 
-                MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
+                _ = await service.ConfirmAsync(
                     MagicLinkExternalRequestContext.FromResolvedCapability(
                         state.CapabilityState,
                         httpContext.TraceIdentifier),
@@ -212,9 +207,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     timeProvider.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
-                return result.WasDispatched
-                    ? Results.Accepted()
-                    : DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
+                // A pure domain result is not a durable commit receipt.
+                return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm/submit");
 
         endpoints.MapGet(
@@ -272,7 +266,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 MagicLinkEndpointTokenState state = await stateLoader
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
-                MagicLinkConfirmationUseResult result = await service.AdjustAsync(
+                _ = await service.AdjustAsync(
                     MagicLinkExternalRequestContext.FromResolvedCapability(
                         state.CapabilityState,
                         httpContext.TraceIdentifier),
@@ -284,9 +278,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     timeProvider.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
-                return result.WasDispatched
-                    ? Results.Accepted()
-                    : DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
+                // A pure domain result is not a durable commit receipt.
+                return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust/submit");
 
         return endpoints;

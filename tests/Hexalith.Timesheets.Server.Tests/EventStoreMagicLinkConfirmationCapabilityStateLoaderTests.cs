@@ -898,22 +898,109 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         gateway.Requests.ShouldBeEmpty();
     }
 
-    [Fact]
-    public async Task LoadActivityTypeCatalogAsync_rejects_non_fresh_catalog()
+    [Theory]
+    [InlineData(ProjectionFreshnessState.Stale)]
+    [InlineData(ProjectionFreshnessState.Rebuilding)]
+    [InlineData(ProjectionFreshnessState.Degraded)]
+    [InlineData(ProjectionFreshnessState.Unknown)]
+    [InlineData(ProjectionFreshnessState.Unavailable)]
+    public async Task LoadActivityTypeCatalogAsync_retains_only_non_fresh_status(ProjectionFreshnessState status)
     {
         var gateway = new ScriptedGatewayClient();
+        var metadata = new ProjectionFreshnessMetadata(
+            status,
+            "secret-cursor",
+            new DateTimeOffset(2026, 6, 19, 13, 30, 0, TimeSpan.Zero),
+            "secret-detail");
+        var persisted = new ActivityTypeCatalogReadModel(
+            [new ActivityTypeCatalogItem(ActivityId(), ActivityTypeScope.Tenant, null, "secret-label", true, BillableState.Billable)],
+            metadata);
         var loader = CreateLoader(
             gateway,
-            new InMemoryReadModelStore(
-                IndexWith(Hash()),
-                new ActivityTypeCatalogReadModel([], ProjectionFreshnessMetadata.Stale())));
+            new InMemoryReadModelStore(IndexWith(Hash()), persisted));
 
         ActivityTypeCatalogReadModel catalog = await loader
             .LoadActivityTypeCatalogAsync(TestContext.Current.CancellationToken)
             .ConfigureAwait(true);
 
-        catalog.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Unavailable);
+        catalog.ProjectionFreshness.State.ShouldBe(status);
+        catalog.ProjectionFreshness.Cursor.ShouldBeNull();
+        catalog.ProjectionFreshness.AsOfUtc.ShouldBeNull();
+        catalog.ProjectionFreshness.Detail.ShouldBeNull();
         catalog.Items.ShouldBeEmpty();
+
+        var tokenGateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+        MagicLinkEndpointTokenState tokenState = await CreateLoader(
+                tokenGateway,
+                new InMemoryReadModelStore(IndexWith(Hash()), persisted))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        tokenState.CapabilityState.ShouldBeNull();
+        tokenState.TimeEntryState.ShouldBeNull();
+        tokenState.ActivityTypeCatalog.ProjectionFreshness.State.ShouldBe(status);
+        tokenState.ActivityTypeCatalog.ProjectionFreshness.Cursor.ShouldBeNull();
+        tokenState.ActivityTypeCatalog.ProjectionFreshness.AsOfUtc.ShouldBeNull();
+        tokenState.ActivityTypeCatalog.ProjectionFreshness.Detail.ShouldBeNull();
+        tokenState.ActivityTypeCatalog.Items.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(ProjectionFreshnessState.Stale)]
+    [InlineData(ProjectionFreshnessState.Rebuilding)]
+    public async Task LoadTokenStateAsync_rejects_malformed_non_fresh_catalog(ProjectionFreshnessState status)
+    {
+        ActivityTypeCatalogReadModel malformed = InvalidFreshCatalog("duplicate-identifier") with
+        {
+            ProjectionFreshness = ProjectionFreshnessMetadata.StatusOnly(status)
+        };
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash()), malformed))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsync_returns_unavailable_when_catalog_is_missing()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+        var loader = CreateLoader(
+            gateway,
+            new InMemoryReadModelStore(IndexWith(Hash()), missingCatalogRead: true));
+
+        MagicLinkEndpointTokenState state = await loader
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
+        state.ActivityTypeCatalog.ProjectionFreshness.Cursor.ShouldBeNull();
+        state.ActivityTypeCatalog.ProjectionFreshness.AsOfUtc.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsync_returns_unavailable_for_unrecognized_catalog_status()
+    {
+        var malformed = new ActivityTypeCatalogReadModel(
+            [],
+            ProjectionFreshnessMetadata.StatusOnly((ProjectionFreshnessState)42));
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
+
+        MagicLinkEndpointTokenState state = await CreateLoader(
+                gateway,
+                new InMemoryReadModelStore(IndexWith(Hash()), malformed))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(state);
     }
 
     [Fact]
@@ -1656,7 +1743,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         MagicLinkTokenHashCapabilityIndexReadModel? index,
         ActivityTypeCatalogReadModel? catalog = null,
         bool throwCatalogRead = false,
-        bool throwIndexRead = false) : IReadModelStore
+        bool throwIndexRead = false,
+        bool missingCatalogRead = false) : IReadModelStore
     {
         public int ReadCount { get; private set; }
 
@@ -1679,6 +1767,11 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 if (throwCatalogRead)
                 {
                     throw new InvalidOperationException("Catalog read failed.");
+                }
+
+                if (missingCatalogRead)
+                {
+                    return Task.FromResult(new ReadModelEntry<TValue>(null, "etag-catalog"));
                 }
 
                 ActivityTypeCatalogReadModel value = catalog ?? new ActivityTypeCatalogReadModel(

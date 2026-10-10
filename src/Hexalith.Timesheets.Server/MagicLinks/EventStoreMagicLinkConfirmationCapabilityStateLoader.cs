@@ -126,13 +126,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             cancellationToken).ConfigureAwait(false);
         if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
         {
-            // LoadActivityTypeCatalogAsync collapses every non-Fresh condition — stale, rebuilding,
-            // degraded, absent, unreadable, invalid shape — into one Unavailable catalog, so nothing
-            // here can tell a lagging projection from an unreadable one. The whole bundle is
-            // therefore discarded rather than leaking a resolved capability on an unknown condition.
-            // Distinguishing them is the deferred AC2 item, and it is the prerequisite for any
-            // honest StaleCatalog diagnostic at the endpoint.
-            return UnavailableTokenState();
+            // Retain only the sanitized catalog status for internal diagnosis. No resolved
+            // capability, Time Entry, or catalog item can be used while the catalog is non-Fresh.
+            return new MagicLinkEndpointTokenState(null, null, catalog);
         }
 
         ActivityTypeCatalogItem[] matchingActivityTypes = catalog.Items
@@ -324,7 +320,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 .ConfigureAwait(false);
 
             ActivityTypeCatalogReadModel? catalog = entry.Value;
-            if (catalog?.ProjectionFreshness.State != ProjectionFreshnessState.Fresh
+            if (catalog?.ProjectionFreshness is null
+                || !Enum.IsDefined(catalog.ProjectionFreshness.State)
                 || catalog.Items is null
                 || catalog.Items.Any(static item =>
                     item.Scope != ActivityTypeScope.Tenant
@@ -338,7 +335,11 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 return UnavailableCatalog();
             }
 
-            return catalog;
+            return catalog.ProjectionFreshness.State == ProjectionFreshnessState.Fresh
+                ? catalog
+                : new ActivityTypeCatalogReadModel(
+                    [],
+                    ProjectionFreshnessMetadata.StatusOnly(catalog.ProjectionFreshness.State));
         }
         catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {

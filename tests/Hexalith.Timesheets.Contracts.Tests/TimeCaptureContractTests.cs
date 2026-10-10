@@ -1356,6 +1356,26 @@ public sealed class TimeCaptureContractTests
         AssertJsonOmitsCallerAuthority(json);
     }
 
+    [Theory]
+    [InlineData("/api/timesheets/magic-links/confirm/submit")]
+    [InlineData("/api/timesheets/magic-links/adjust/submit")]
+    public void OpenapiMagicLinkSubmitRoutesOnlyAdvertiseOpaqueDenial(string path)
+    {
+        string artifactPath = RepositoryPath(
+            "src",
+            "Hexalith.Timesheets.Contracts",
+            "openapi",
+            "timesheets-capture-contracts.v1.json");
+        JsonNode artifact = JsonNode.Parse(File.ReadAllText(artifactPath))
+            ?? throw new InvalidOperationException("OpenAPI artifact could not be parsed.");
+
+        JsonObject responses = artifact["paths"]?[path]?["post"]?["responses"]?.AsObject()
+            ?? throw new InvalidOperationException("Magic-link submit responses are missing.");
+        responses.Select(static response => response.Key).ShouldBe(["403"]);
+        responses["403"]?["content"]?["application/problem+json"]?["schema"]?["$ref"]
+            ?.GetValue<string>().ShouldBe("#/components/schemas/MagicLinkInvalidLinkDenial");
+    }
+
     [Fact]
     public void Openapi_ready_artifact_documents_safe_contract_surface_without_product_endpoints()
     {

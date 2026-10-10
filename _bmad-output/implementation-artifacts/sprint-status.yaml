@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 10-09-2026 19:35 (Story 3.6 review guard: local EventStore f87affae closes weak explicit GET-only authorization; separate Timesheets gitlink commit 61dc18b pins it. SDK focused 22/22, HTTP 482/482, scratch 4/4, and six lanes ran. The new pointer is not in local EventStore origin/main and was not pushed. Live topology, durable writes, acceptance and release remain open.)
+# last_updated: 10-10-2026 (Story 3.7 reopened: valid public POST acceptance is suspended pending durable writes; Story 3.6 and release remain open. The 2026-10-09 review-guard evidence is retained in the story and test summary.)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -77,7 +77,7 @@ development_status:
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
   3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
-  3-7-prove-magic-link-no-disclosure-at-the-http-boundary: done
+  3-7-prove-magic-link-no-disclosure-at-the-http-boundary: in-progress
   epic-3-retrospective: done
 
   # Epic 4: Approved Time Ledger, Reporting & Finance Export

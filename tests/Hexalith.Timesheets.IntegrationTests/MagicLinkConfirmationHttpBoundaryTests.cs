@@ -236,7 +236,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Valid_magic_link_http_boundary_requests_are_distinguishable_from_invalid_denials()
+    public async Task Valid_magic_link_get_displays_and_post_denials_match_invalid_denials()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -257,9 +257,22 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
                 TestContext.Current.CancellationToken);
 
         confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
-        confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         adjustDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
-        adjustSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        CapturedFailure confirmDenial = await CaptureFailureAsync(confirmSubmit, "valid-confirm-submit", ValidConfirmToken());
+        CapturedFailure adjustDenial = await CaptureFailureAsync(adjustSubmit, "valid-adjust-submit", ValidAdjustToken());
+        using HttpResponseMessage invalidResponse = await client.PostAsJsonAsync(
+            "/api/timesheets/magic-links/confirm/submit?t=confirm-submit-unknown",
+            new ConfirmTimeThroughMagicLink(),
+            TestContext.Current.CancellationToken);
+        CapturedFailure invalidDenial = await CaptureFailureAsync(invalidResponse, "unknown-confirm-submit", "confirm-submit-unknown");
+        foreach (CapturedFailure denial in new[] { confirmDenial, adjustDenial })
+        {
+            denial.ContentType.ShouldBe(invalidDenial.ContentType);
+            denial.NormalizedBody.ShouldBe(invalidDenial.NormalizedBody);
+            denial.Headers.ShouldBe(invalidDenial.Headers);
+            RawByteLength(denial.RawBody).ShouldBe(RawByteLength(invalidDenial.RawBody));
+        }
+        factory.Gateway.SubmissionCount.ShouldBe(0);
 
         MagicLinkConfirmationDisplayResponse confirmation = (await confirmDisplay.Content
             .ReadFromJsonAsync<MagicLinkConfirmationDisplayResponse>(JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull();
@@ -273,7 +286,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Concrete_loader_reaches_all_valid_http_routes_after_projection_delivery_without_read_model_seeding()
+    public async Task Concrete_loader_preserves_get_displays_and_denies_posts_after_projection_delivery()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -306,9 +319,16 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             TestContext.Current.CancellationToken);
 
         confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
-        confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         adjustDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
-        adjustSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        _ = await CaptureFailureAsync(confirmSubmit, "projected-confirm-submit", ValidConfirmToken());
+        _ = await CaptureFailureAsync(adjustSubmit, "projected-adjust-submit", ValidAdjustToken());
+        factory.Gateway.SubmissionCount.ShouldBe(0);
+        using HttpResponseMessage confirmAfterPost = await client.GetAsync(
+            $"/api/timesheets/magic-links/confirm?t={ValidConfirmToken()}", TestContext.Current.CancellationToken);
+        using HttpResponseMessage adjustAfterPost = await client.GetAsync(
+            $"/api/timesheets/magic-links/adjust?t={ValidAdjustToken()}", TestContext.Current.CancellationToken);
+        confirmAfterPost.StatusCode.ShouldBe(HttpStatusCode.OK);
+        adjustAfterPost.StatusCode.ShouldBe(HttpStatusCode.OK);
         factory.Store.DirectIndexSeedCount.ShouldBe(0);
         factory.Store.DirectCatalogSeedCount.ShouldBe(0);
         factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
@@ -320,7 +340,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
     /// <summary>Exercises the deactivation decision through projection delivery and all four HTTP routes.</summary>
     [Fact]
-    public async Task DeactivatedRecordedTypeCanBeDisplayedAndConfirmedWhileAdjustmentStaysDenied()
+    public async Task DeactivatedRecordedTypeCanBeDisplayedWhileSubmissionsStayDenied()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -349,7 +369,7 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await confirmDisplay.Content.ReadFromJsonAsync<MagicLinkConfirmationDisplayResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull().ActivityTypeLabel.ShouldBe("Delivery");
-        confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        _ = await CaptureFailureAsync(confirmSubmit, "inactive-confirm-submit", ValidConfirmToken());
         CapturedFailure displayDenial = await CaptureFailureAsync(adjustDisplay, "inactive-adjust-display", ValidAdjustToken());
         CapturedFailure submitDenial = await CaptureFailureAsync(adjustSubmit, "inactive-adjust-submit", ValidAdjustToken());
         displayDenial.NormalizedBody.ShouldBe(submitDenial.NormalizedBody);
@@ -382,7 +402,14 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
         {
             string token = route.Action == MagicLinkAllowedAction.Confirm ? ValidConfirmToken() : ValidAdjustToken();
             using HttpResponseMessage response = await SendAsync(client, route, token);
-            response.StatusCode.ShouldBe(route.Method == HttpMethod.Get ? HttpStatusCode.OK : HttpStatusCode.Accepted);
+            if (route.Method == HttpMethod.Get)
+            {
+                response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            }
+            else
+            {
+                _ = await CaptureFailureAsync(response, route.Name, token);
+            }
         }
     }
 
@@ -742,8 +769,8 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
             tokens.Add(validToken);
             using HttpResponseMessage denial = await SendAsync(client, route, invalidToken);
             denial.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-            using HttpResponseMessage success = await SendAsync(client, route, validToken);
-            success.StatusCode.ShouldBe(route.Method == HttpMethod.Get ? HttpStatusCode.OK : HttpStatusCode.Accepted);
+            using HttpResponseMessage validResponse = await SendAsync(client, route, validToken);
+            validResponse.StatusCode.ShouldBe(route.Method == HttpMethod.Get ? HttpStatusCode.OK : HttpStatusCode.Forbidden);
         }
 
         LogRecord[] records = factory.Logs.Records.ToArray();
@@ -812,11 +839,9 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
     {
         ExternalRoute route = ExternalRoutes().Single(static candidate => candidate.Name == "confirm-submit");
 
-        // A non-Fresh catalog behind an otherwise resolvable token, and a token that never resolved,
-        // must be reported identically. The loader collapses stale, rebuilding, degraded, absent and
-        // unreadable catalogs into one Unavailable state and discards the bundle with it, so no code
-        // can tell those apart — a StaleCatalog category here would assert a distinction that does
-        // not exist, and previously read as reachable only because a scripted loader could fake it.
+        // A non-Fresh catalog behind an otherwise resolvable token and an unresolved token
+        // must produce identical public diagnostics. The concrete loader retains status only
+        // internally; this boundary never publishes the distinction.
         using (MagicLinkHttpBoundaryFactory staleFactory = new())
         {
             using HttpClient staleClient = staleFactory.CreateClient();
@@ -1962,13 +1987,18 @@ public sealed class MagicLinkConfirmationHttpBoundaryTests
 
         public List<StreamReadRequest> Requests { get; } = [];
 
+        public int SubmissionCount { get; private set; }
+
         public void WithStream(string tenant, string aggregate, params StreamReadEvent[] events)
             => _streams[(tenant, aggregate)] = events;
 
         public Task<SubmitCommandResponse> SubmitCommandAsync(
             SubmitCommandRequest request,
             CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
+        {
+            SubmissionCount++;
+            throw new NotSupportedException();
+        }
 
         public Task<EventStoreQueryResult> SubmitQueryAsync(
             SubmitQueryRequest request,

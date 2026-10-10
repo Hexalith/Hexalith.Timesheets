@@ -37,4 +37,10 @@ public sealed record ProjectionFreshnessMetadata(
         null,
         null,
         detail);
+
+    public static ProjectionFreshnessMetadata StatusOnly(ProjectionFreshnessState state) => new(
+        state,
+        null,
+        null,
+        null);
 }

@@ -119,7 +119,7 @@ public sealed class LaunchReadinessTests
 
         string overall = readiness[decisionStart..];
         overall.ShouldContain("Overall release decision: **FAIL**");
-        overall.ShouldContain("Story 3.6 remains in progress, Story 5.2 remains in progress");
+        overall.ShouldContain("Stories 3.6 and 3.7 remain in progress, Story 5.2 remains in progress");
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
         overall.ShouldContain("durable atomic magic-link confirm/adjust submission is unfinished");
         overall.ShouldNotContain("Story 3.6 is complete");
@@ -129,9 +129,9 @@ public sealed class LaunchReadinessTests
 
         string[] persistenceGate = ReadReleaseGateRow(readiness, "Magic-link durable confirm/adjust persistence");
         persistenceGate[1].ShouldBe("FAIL");
-        persistenceGate[2].ShouldContain("not submitted to EventStore");
-        persistenceGate[2].ShouldContain("do not prove durable capability use or Time Entry writes");
-        persistenceGate[3].ShouldContain("concurrent requests can reuse the same unpersisted capability state");
+        persistenceGate[2].ShouldContain("zero EventStore submit attempts");
+        persistenceGate[2].ShouldContain("no durable capability-use or Time Entry write is proven");
+        persistenceGate[3].ShouldContain("single-use enforcement is not durable");
     }
 
     [Fact]
@@ -156,9 +156,9 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Magic-link live end-to-end resolution");
         readiness.ShouldContain("Export preview");
         readiness.ShouldContain("canonical token-hash index and tenant Activity Type catalog projection handlers");
-        readiness.ShouldContain("all four valid confirm/adjust HTTP routes reach their expected in-process responses without direct index or catalog seeding");
-        readiness.ShouldContain("Successful confirm/adjust POST results are not durably submitted to EventStore");
-        readiness.ShouldContain("they are not persistence or single-use evidence");
+        readiness.ShouldContain("valid Fresh-catalog GET displays return 200 while valid confirm/adjust POSTs return the shared opaque 403");
+        readiness.ShouldContain("The POST fixture records zero gateway submit attempts");
+        readiness.ShouldContain("not persistence or single-use");
         readiness.ShouldNotContain("no projection-host wiring");
         readiness.ShouldNotContain("Valid links do not resolve");
         readiness.ShouldContain("no dedicated HTTP route");
@@ -218,11 +218,12 @@ public sealed class LaunchReadinessTests
         timing[5].ShouldContain("practically classified by timing");
 
         string[] liveResolution = ReadClassificationRow(readiness, "Magic-link live end-to-end resolution");
-        liveResolution[2].ShouldBe("implemented / waived");
-        liveResolution[1].ShouldContain("Successful confirm/adjust POST results are not durably submitted to EventStore");
-        liveResolution[1].ShouldContain("not persistence or single-use evidence");
+        liveResolution[2].ShouldBe("blocked");
+        liveResolution[1].ShouldContain("valid confirm/adjust POSTs return the shared opaque 403");
+        liveResolution[1].ShouldContain("zero gateway submit attempts");
+        liveResolution[1].ShouldContain("not persistence or single-use");
         liveResolution[4].ShouldContain("concurrent requests can reuse the same unpersisted capability state");
-        liveResolution[5].ShouldContain("atomically submits capability-use and Time Entry events through EventStore");
+        liveResolution[5].ShouldContain("selects an EventStore write owner, atomically submits capability-use and Time Entry events");
         liveResolution[5].ShouldContain("concurrent reuse is rejected from authoritative persisted state");
     }
 

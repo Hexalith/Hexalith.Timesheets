@@ -218,6 +218,7 @@ The repeated 2026-09-14 agent-context findings are consolidated into the canonic
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Implement durable, atomic magic-link confirmation and adjustment persistence for unfinished Story 3.3/3.4 behavior.
   evidence: The live POST endpoints return `202 Accepted` from in-memory domain results without calling `IEventStoreGatewayClient.SubmitCommandAsync`, so neither the Time Entry event nor capability-use event is persisted and concurrent reuse is not prevented. The current EventStore gateway accepts one aggregate per submission and exposes no atomic multi-aggregate API; sequential submissions would violate the approved atomicity requirement. A dedicated high-priority remediation must choose a platform coordination or aggregate-boundary design and prove persisted end state, concurrency, replay rejection, and partial-failure safety.
+  update_2026_10_10: Both public POST routes now return the shared opaque `403` after pure domain decisions, and the in-process fixture observes zero EventStore submit attempts. The durable atomic write, persisted concurrency proof, and deployed-history inventory remain open; the earlier `202` behavior above is historical evidence.
 
 ## Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)
 
@@ -496,3 +497,9 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-18.md`
   summary: Refresh the managed repository agent context for the current launch posture and magic-link projection wiring.
   evidence: `AGENTS.md` still describes launch readiness as `CONCERNS` and says the token-hash projection lacks host wiring, while current launch readiness is `FAIL` and the in-process host discovers the projection handler. This can misdirect future agent work. Agent-context files require their own managed refresh and synchronized entry points.
+
+## Deferred from: fail-closed Story 3.6 review (2026-10-10)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-close-remaining-acceptance-gaps.md`
+  summary: Decide how public magic-link routes should handle unexpected loader or command-service exceptions.
+  evidence: The confirm and adjust POST handlers already awaited loader and command services before this increment, and an uncaught access-guard or domain-service exception can still produce a framework error response instead of the common opaque denial. A dedicated error-handling decision should distinguish unexpected faults and cancellation from invalid links, then verify the public response and privacy-safe diagnostics without masking operational failures.

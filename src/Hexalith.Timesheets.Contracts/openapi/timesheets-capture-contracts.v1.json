@@ -1548,9 +1548,8 @@
           }
         },
         "responses": {
-          "202": { "description": "Confirmation accepted" },
           "403": {
-            "description": "Opaque invalid-link response. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "description": "Opaque denial while durable submission is unavailable or the link is invalid. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
             "content": {
               "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
             }
@@ -1593,9 +1592,8 @@
           }
         },
         "responses": {
-          "202": { "description": "Adjustment accepted" },
           "403": {
-            "description": "Opaque invalid-link response. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
+            "description": "Opaque denial while durable submission is unavailable or the link is invalid. No failure reason, capability state, authority, target, duration, comment, approval, token, or hash material is exposed.",
             "content": {
               "application/problem+json": { "schema": { "$ref": "#/components/schemas/MagicLinkInvalidLinkDenial" } }
             }
