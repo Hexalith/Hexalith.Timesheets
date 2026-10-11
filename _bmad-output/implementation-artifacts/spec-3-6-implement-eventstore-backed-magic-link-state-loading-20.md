@@ -2,7 +2,7 @@
 title: 'Prove Story 3.6 against local Dapr persistence'
 type: 'feature'
 created: '2026-10-10'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: 'dd1028808b6592b9ff869d2dce5c1c24a5ad7cf5'
 review_loop_iteration: 0
@@ -51,9 +51,9 @@ context:
 **Execution:**
 
 - [x] `docs/local-magic-link-dapr-proof.md` — first run and record a preflight for existing EventStore-owned runtime resources, Timesheets Dapr identity, development signing, fresh catalog delivery, and isolated state. If the real path requires a forbidden new host/topology or unavailable platform support, record the exact blocker and stop dependent test work.
-- [ ] `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs` — when preflight succeeds, add an opt-in test (`TIMESHEETS_LIVE_DAPR=1`) that calls real local HTTP/Dapr/EventStore endpoints, verifies stored record/issue/use events and index/catalog delivery, and fails rather than skips when an opted-in prerequisite later disappears.
-- [ ] `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprFixture.cs` — connect to the platform-owned local runtime with isolated test identities and state; run confirm and adjust, a one-winner race, and restart/replay checks without substituting gateway or read-model storage.
-- [ ] `docs/local-magic-link-dapr-proof.md` — complete exact local start, credential, projection-delivery, test, state-inspection, restart, and cleanup commands; keep secrets and token material out of captures.
+- [x] `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs` — when preflight succeeds, add an opt-in test (`TIMESHEETS_LIVE_DAPR=1`) that calls real local HTTP/Dapr/EventStore endpoints, verifies stored record/issue/use events and index/catalog delivery, and fails rather than skips when an opted-in prerequisite later disappears.
+- [x] `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprFixture.cs` — connect to the platform-owned local runtime with isolated test identities and state; run confirm and adjust, a one-winner race, and restart/replay checks without substituting gateway or read-model storage.
+- [x] `docs/local-magic-link-dapr-proof.md` — complete exact local start, credential, projection-delivery, test, state-inspection, restart, and cleanup commands; keep secrets and token material out of captures.
 - [x] `_bmad-output/implementation-artifacts/tests/3-6-test-summary.md`, `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`, and `docs/launch-readiness.md` — record executed commands and persisted observations, or the exact blocking prerequisite. Preserve `in-progress`/`FAIL` and separate production gates.
 
 **Acceptance Criteria:**
@@ -64,16 +64,61 @@ context:
 
 ## Implementation Notes
 
+- 2026-10-11: The subsequent checked-in Timesheets Aspire composition connected
+  both applications and a scoped read-model store, superseding the earlier
+  preflight topology observation below. The live journey initially stopped at
+  EventStore's fail-closed `IdempotencyIntentAdapterRegistry`: Timesheets had
+  supplied an optional idempotency key without a trusted command adapter.
+  The Timesheets writer now omits that key and retains its stable MessageId for
+  retries. A Development-only signed fixture identity and access guard support
+  isolated `live-dapr-` tenants. The opt-in journey passes record, issue,
+  projection delivery, confirm and adjust, one-winner race, restart and replay
+  against real EventStore actors and persisted read models. Production
+  authorization, deployed histories, and deployed acceptance remain open.
+
 - 2026-10-11: The checked-in EventStore AppHost does not attach Timesheets or permit its trusted effects; the Timesheets AppHost has no EventStore resource or sidecar. The observed EventStore runtime belongs to another integration test. The local `statestore` scope excludes Timesheets, so a sidecar alone would not deliver the index/catalog. The preflight stop condition applies. The live fixture, opt-in test, dependent runbook steps, and first two acceptance criteria remain open; no persisted journey or matrix test was run. See `docs/local-magic-link-dapr-proof.md` for exact commands and the required platform-owned topology and read-model-store prerequisite.
 
 ## Spec Change Log
 
 ## Review Triage Log
 
+| Finding | Verdict and evidence | Route |
+| --- | --- | --- |
+| Edge 1: Development guard is always installed | `medium`: `Program.cs` replaces the normal guard for every Development run; an explicit local fixture switch is needed. | Patch. |
+| Edge 2: pre-existing identity claims may disagree with bindings | `false`: the verified workload evaluator constructs a fresh principal from caller, operation, and bound claims and never copies `tenant_id` or `party_id`; the transformation leaves any other principal unchanged. | Reject. |
+| Edge 3: fixture UI action lacks operation validation | `low`: unlike `TimesheetsAccessGuard`, the fixture implementation can report UI permission for a non-UI operation. | Patch. |
+| Edge 4: cancellation can race child-process exit | `low`: `Kill` can throw after the `HasExited` check and mask cancellation. | Patch. |
+| Blind 1: Development guard is always installed | `medium`: same verified guard registration as Edge 1. | Patch with Edge 1. |
+| Blind 2: fixture guard grants unrelated operations | `medium`: the prefix and actor checks alone allow export, query, UI, and other operations within fixture tenants; the live journey needs only its write operations. | Patch. |
+| Blind 3: fixture transformation ignores bound domain and operation | `medium`: a verified EventStore assertion for a different bound domain or operation could acquire fixture claims; require the Timesheets process binding. | Patch. |
+| Blind 4: a separate HTTP retry gets a new use MessageId | `medium`: the endpoint uses a per-request trace identifier, so an uncertain commit across requests can get a new command identity; this predates the live test and is already recorded in the deferred ledger. | Defer. |
+| Blind 5: other hosts lack `timesheets-readmodels` wiring or migration | `medium`: the address change belongs to the preceding local-topology increment; deployed component inventory and migration remain separate release gates. | Defer. |
+| Blind 6: synthetic Activity Type event is not stored | `false`: the accepted local goal requires SDK delivery and persisted catalog readback, which the test performs; it does not claim Activity Type rebuild from an owner stream. | Reject. |
+| Blind 7: issue projection delivery is invoked manually | `false`: the test delivers the actual stored issue event through the signed SDK `/project/v2` route and reads the persisted index; automatic production dispatcher wiring is a separate release gate. | Reject. |
+| Blind 8: GET content is not asserted | `low`: the test checks valid GET status while existing HTTP boundary tests cover display privacy; additional display assertions are outside this local persistence proof. | Reject. |
+| Blind 9: adjusted values are not independently checked | `medium`: the new script checks adjustment identity but not the requested duration, date, activity, and billable state in the stored effect. | Patch. |
+| Blind 10: restart replay can mask an unavailable loader | `medium`: a 403 and unchanged stream alone could be a fail-closed outage; reread persisted models and exercise a fresh valid link after restart. | Patch. |
+| Blind 11: live lane omits other invalid-token cases | `false`: this spec's live matrix targets valid use, race, replay, and unavailable prerequisites; the other negative cases have existing HTTP and service tests. | Reject. |
+| Blind 12: launch table and conclusion still deny a live journey | `medium`: dated rows describe the old state as current and contradict the new passing proof at the top. | Patch. |
+| Blind 13: spec has a stale successful-build command | `low`: the old command expectation conflicts with the current recorded MSB3243/CS1704 failure. | Patch. |
+| Verification gap 1: no null idempotency-key assertion | `medium`: the existing gateway mock would pass if the removed key were restored; the focused service test should pin a null key. | Patch. |
+| Verification gap 2: read-model routing is asserted against its own constants | `medium`: default unit tests cannot detect a component-name mismatch, while the opt-in Dapr lane does; a normal topology contract check remains useful but predates this live-journey increment. | Defer. |
+| Verification gap 3: fixture guard denial is untested | `medium`: the live lane only sends a permitted tenant; add an opted-in negative request and verify no owner event. | Patch. |
+| Verification other: deferred EventStore pin is stale | `false`: Timesheets HEAD still pins `5976ec93a2bfe998b8bcede73f45214751965347`, while the local submodule is `86d8847616b1f56064fa2dddf3d0ca07837b188f`; the pointer remains uncommitted. | Reject. |
+
 ## Verification
 
-**Commands:**
+**Current local acceptance:**
+
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build src/Hexalith.Timesheets/Hexalith.Timesheets.csproj --no-restore -m:1 -v:q` — zero warnings/errors.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-restore -m:1 -v:q` — zero warnings/errors.
+- `python3 scripts/local_aspire_magic_link_journey.py` — exited 0 after persisted catalog, confirm race, adjust and restart/replay checks.
+- With `TIMESHEETS_LIVE_DAPR_FIXTURE=1` on the local Aspire run, `TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'` — final status-strengthened run: one passed, zero failed/skipped in 73.929s. Earlier status-strengthened attempts failed closed at valid GET and recording under local gateway timeouts; the proof records both exact outcomes and the bounded safe retries.
+- The six default Timesheets executables passed individually: 1,584 passed, five skipped, zero failed (1,589 total).
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` — failed in `references/Hexalith.EventStore.Contracts` with the pre-existing MSB3243/CS1704 duplicate `Hexalith.Commons.UniqueIds` versions `2.30.1.0` and `1.0.0.0`; see the dated connected-topology proof.
+
+**Historical command expectations recorded before the current run:**
 
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false` — succeeds with current `global.json`.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` — zero warnings/errors.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` — expected zero warnings/errors at approval; the current run failed with the MSB3243/CS1704 conflict recorded above.
 - Run all six Timesheets test executables separately; run `TIMESHEETS_LIVE_DAPR=1 tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'` against the prepared target.

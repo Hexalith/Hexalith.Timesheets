@@ -309,7 +309,7 @@ public sealed class MagicLinkDurableSubmissionService(
                 new SubmitCommandRequest(
                     messageId, tenant, TimesheetsEventStoreIntegration.DomainName, aggregateId,
                     commandType.FullName!, JsonSerializer.SerializeToElement(intent, commandType, _jsonOptions),
-                    CorrelationId: messageId, IdempotencyKey: messageId),
+                    CorrelationId: messageId),
                 deadlineToken).WaitAsync(deadlineToken).ConfigureAwait(false);
             if (accepted.MessageId != messageId)
             {

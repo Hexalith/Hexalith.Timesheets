@@ -23,6 +23,22 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-11)
 
+The opt-in local Dapr journey now passes. Against distinct EventStore and
+Timesheets sidecars, it recorded entries, issued confirm and adjust links,
+delivered a Fresh catalog and the actual stored issue events to the candidate
+index, used each link, observed one stored use/effect batch per entry, and
+denied replay before and after EventStore restart. A concurrent confirm race
+had one `202` and one opaque `403`; the loser appended only a rejection marker.
+The writer omits Timesheets' optional idempotency key because EventStore has no
+trusted Timesheets intent adapter, while retaining stable MessageId retry
+identity. Signed Development fixture identities are isolated to `live-dapr-`
+tenants. The opted-in xUnit test passed 1/1. Exact commands, readback scope and
+remaining production gates are in [the local Dapr proof record](../../docs/local-magic-link-dapr-proof.md)
+and [test summary](tests/3-6-test-summary.md). Story 3.6 remains
+`in-progress`; launch remains `FAIL`.
+
+The preflight paragraph below records the earlier blocked state.
+
 The 2026-10-11 local Dapr preflight is blocked before an acceptance journey. `dapr list` has no `timesheets` app ID; the only running EventStore AppHost was owned by a separate integration test and was left untouched. The checked-in EventStore AppHost attaches sample and Tenants but not Timesheets or its trusted-effect allow-list; the Timesheets AppHost has no EventStore resource or Dapr sidecar. The local `statestore` scope also excludes Timesheets, blocking persisted index/catalog access. No live record/issue/use, projection delivery, stored readback, restart, or race proof ran. The opt-in live test and fixture were not added under the spec's stop condition. Exact commands and observations are in [the local Dapr proof record](../../docs/local-magic-link-dapr-proof.md) and [test summary](tests/3-6-test-summary.md). Story 3.6 remains `in-progress`; release remains `FAIL`.
 
 The 2026-10-10 recording increment commits external `TimeEntryRecorded` evidence, and optional `TimeEntrySubmitted` evidence, through the Time Entry owner actor after verified workload origin and actor binding, server-side authority checks, and a Fresh catalog. The route acknowledges only a bounded `Completed` status with matching stored-event readback. Local tests cover record-then-confirm over HTTP, actor recreation, concurrent retry, unauthorized and unavailable-catalog denial, conflicting owner state, uncertain status, and receipt mismatch. Review patches strengthened actor-bound retry identity, retained rejection and terminal handling, stored receipt verification, and wrapped-submission folds. All six Timesheets lanes pass individually: 1584 passed, four skipped. A separate focused HTTP run hit the previously tracked `"60"` numeric-substring assertion false positive. This is in-process evidence; Story 3.6 stays in progress and release remains `FAIL`.

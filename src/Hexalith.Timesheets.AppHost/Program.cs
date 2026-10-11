@@ -92,6 +92,11 @@ if (builder.ExecutionContext.IsRunMode)
         secret: true);
     ConfigureDevelopmentWorkload(eventStore, signing, "eventstore");
     ConfigureDevelopmentWorkload(timesheets, signing, "timesheets");
+    if (builder.Configuration["TIMESHEETS_LIVE_DAPR_FIXTURE"] == "1")
+    {
+        _ = timesheets.WithEnvironment("Timesheets__LiveDaprFixture__Enabled", "true");
+    }
+
     _ = eventStore.WithGeneratedEventStoreAppChannelToken();
     _ = timesheets.WithGeneratedEventStoreAppChannelToken();
 }

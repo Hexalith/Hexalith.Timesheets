@@ -103,7 +103,7 @@ public sealed class LaunchReadinessTests
         fullSuite[2].ShouldContain("Architecture");
         fullSuite[2].ShouldContain("Integration");
         fullSuite[3].ShouldContain("Six individual test lanes pass");
-        fullSuite[3].ShouldContain("skipped live infrastructure");
+        fullSuite[3].ShouldContain("opt-in live lane passes");
     }
 
     [Fact]
@@ -120,7 +120,8 @@ public sealed class LaunchReadinessTests
         overall.ShouldContain("Stories 3.6 and 3.7 remain in progress, Story 5.2 remains in progress");
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
         overall.ShouldContain("Atomic magic-link submission and local actor commit/reload are implemented");
-        overall.ShouldContain("no live Dapr-backed EventStore acceptance has run");
+        overall.ShouldContain("opt-in local Dapr/EventStore acceptance journey passed");
+        overall.ShouldContain("Deployed acceptance remains open");
         overall.ShouldNotContain("Story 3.6 is complete");
         overall.ShouldNotContain("Story 3.6 is in review");
         overall.ShouldNotContain("decision: **PASS**");
@@ -290,11 +291,12 @@ public sealed class LaunchReadinessTests
         historicalSmoke.ShouldContain("not current Aspire/Keycloak runtime compatibility evidence");
 
         string[] buildGate = ReadReleaseGateRow(readiness, "Build");
-        buildGate[1].ShouldBe("PASS");
+        buildGate[1].ShouldBe("FAIL");
         buildGate[2].ShouldContain("the changed worktree based on");
         buildGate[2].ShouldContain("57770d380c724c94233b78ac021a8f10cd5d6f39");
         buildGate[2].ShouldContain("--configuration Debug --no-restore -p:UseHexalithProjectReferences=true");
         buildGate[2].ShouldContain("0 warnings and 0 errors");
+        buildGate[2].ShouldContain("MSB3243/CS1704");
         buildGate[3].ShouldContain("HXW0002");
         buildGate[3].ShouldContain("not current-graph runtime evidence");
         buildGate[3].ShouldContain("current automated AppHost smoke remains deferred");

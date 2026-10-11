@@ -3,9 +3,11 @@ using Hexalith.Timesheets.Endpoints;
 using Hexalith.Timesheets.Endpoints.MagicLinks;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Runtime;
+using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.Client.Gateway;
+using Microsoft.AspNetCore.Authentication;
 
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -38,6 +40,15 @@ builder.AddEventStoreDomainService(
     typeof(TimesheetsProjectionsMarker).Assembly);
 // Keep the fail-closed Timesheets authorization and reference-validation seams.
 builder.Services.AddTimesheetsServerKernel();
+if (builder.Environment.IsDevelopment()
+    && builder.Configuration.GetValue<bool>("Timesheets:LiveDaprFixture:Enabled"))
+{
+    // The local proof accepts only isolated tenants carried by signed workload bindings.
+    builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsAccessGuard, LiveDaprFixtureAccessGuard>());
+    builder.Services.AddSingleton<IClaimsTransformation, LiveDaprFixtureClaimsTransformation>();
+    builder.Services.Configure<Hexalith.Timesheets.Server.MagicLinks.MagicLinkSubmissionPollingOptions>(
+        options => options.Timeout = TimeSpan.FromSeconds(30));
+}
 builder.Services.AddSingleton<IEventStoreGatewayWorkloadAssertionSource, EventStoreGatewayWorkloadAssertionSource>();
 builder.Services.AddTimesheetsMagicLinkEventStoreProcessing();
 builder.Services.AddHttpContextAccessor();

@@ -51,7 +51,8 @@ public sealed class MagicLinkDurableSubmissionServiceTests
         elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(2));
         reads.ShouldBeGreaterThan(5);
         await gateway.Received(1).SubmitWorkloadCommandAsync(
-            Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+            Arg.Is<SubmitCommandRequest>(request => request.IdempotencyKey == null),
+            Arg.Any<CancellationToken>());
         await gateway.DidNotReceive().ReadWorkloadStreamAsync(
             Arg.Any<Hexalith.EventStore.Contracts.Streams.StreamReadRequest>(), Arg.Any<CancellationToken>());
     }

@@ -575,3 +575,13 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
   summary: Detect colliding local AppHost identities and Redis database use before running topology probes on shared developer machines.
   evidence: Dapr app ID `timesheets` is required and Redis logical databases 13 and 14 are fixed for this local composition. The probes reject duplicate matching app IDs and use random tenants, but no separate startup lock reserves those IDs or databases across concurrent workspaces.
+
+## Deferred from: Story 3.6 local persisted journey review (2026-10-11)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
+  summary: Reconcile an uncertain committed magic-link use across separate HTTP retries.
+  evidence: The endpoint's per-request trace identifier changes the EventStore MessageId on a later HTTP retry; the local fixture proves stable retries within one request and replay denial, not cross-request status reconciliation. The earlier Story 3.6 deferred entry identifies the same release concern.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
+  summary: Verify deployed read-model component wiring and migration independently of the opt-in local journey.
+  evidence: Both loader and projection use `timesheets-readmodels`, and the local Dapr lane proves that component exists under the run-mode AppHost. Other hosting modes and prior deployed `statestore` data remain uninspected; default unit tests compare each route with its production constant and cannot detect a component mismatch.

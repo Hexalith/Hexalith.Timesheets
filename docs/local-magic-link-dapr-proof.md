@@ -1,6 +1,136 @@
 # Local magic-link Dapr proof
 
-The preflight below records the earlier blocked state. The connected local topology proof later in this document is the current infrastructure result; Story 3.6 acceptance remains open.
+The 2026-10-11 opt-in journey now passes against the checked-in local Aspire
+composition. The earlier preflight and delivery-only findings below remain as
+dated history. Story 3.6 and launch remain open for production gates.
+
+## Run the persisted journey
+
+From the Timesheets repository root, with Docker and Dapr available, use the
+checked-in Aspire composition. Its EventStore and Timesheets processes must be
+the only local applications with those Dapr IDs; the fixture checks this before
+it writes isolated data.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build src/Hexalith.Timesheets/Hexalith.Timesheets.csproj --no-restore -m:1 -v:q
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-restore -m:1 -v:q
+TIMESHEETS_LIVE_DAPR_FIXTURE=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire run --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
+```
+
+Leave `aspire run` in its own terminal. In a second terminal, inspect both app
+IDs and run the opt-in test:
+
+```bash
+dapr list
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'
+```
+
+The fixture reads the per-run Development signing key, app-channel token and
+Timesheets Dapr endpoint from the unique Timesheets process environment on
+Linux, in memory. It signs resource-bound assertions for the real EventStore
+gateway and SDK projection routes. Do not capture the environment, assertion,
+raw link or token hash. A random `live-dapr-` tenant, actor, activity, entry and
+capability isolate each run. The explicit AppHost setting passes
+`Timesheets__LiveDaprFixture__Enabled=true` only in local run mode; the host
+installs the Development-only claim mapping and access guard only with that
+setting. The guard permits only the journey's operations and tenant prefix;
+non-fixture tenants still fail closed. These
+are test identities, not production authorization.
+
+The fixture sends a synthetic `ActivityTypeCreated` through the authenticated
+SDK `/project/v2` route, verifies `Completed`, then reads the Fresh catalog via
+the Dapr read-model component. It records a Time Entry and issues each link via
+the real Timesheets HTTP routes. Those routes require EventStore `Completed`
+status and exact stored-event readback before returning `202`; the fixture
+also queries each record, issue, and use command status directly and matches
+`Completed`, event count, owner, and committed sequence to its stored batch.
+It independently reads the stored record and issue payloads. It delivers each
+actual stored issue event through `/project/v2`, verifies the token-hash index
+via Dapr, then checks valid GET, confirm and adjust POST, the stored use/effect
+payloads, a one-winner confirm race, equal opaque race/replay denials and a
+recording retry with no extra event. A signed non-fixture process assertion is
+denied before any capability owner event. The stored adjustment fields match
+the submitted values. The race loser may append one EventStore
+rejection marker; it never appends another use or effect. The fixture runs
+`aspire resource eventstore restart` and `aspire wait eventstore`, then checks
+both replay denials and unchanged owner streams. It rereads the catalog and
+candidate index and uses a fresh link after restart so a loader outage cannot
+look like successful replay denial. A recording retry keeps its source-derived
+command identity. The fixture permits at most three attempts for recording and
+valid GET when the host returns an opaque `403` during transient local gateway
+unavailability; any other status or continued denial fails the test.
+
+The direct inspection command is
+`python3 scripts/local_aspire_magic_link_journey.py`. It performs signed
+EventStore stream reads and separate Dapr read-model reads before and after
+the actor restart without printing protected payloads. Its tenant ID in the
+final line identifies the isolated run; rerunning the command creates a new
+tenant. The test leaves isolated EventStore and read-model data in the local
+containers. Do not flush shared Redis or delete actor state as cleanup. Stop
+only this Aspire run:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire stop --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
+```
+
+**Observed 2026-10-11:** both changed projects built with zero warnings or
+errors. `python3 scripts/local_aspire_magic_link_journey.py` exited 0 and
+reported persisted catalog, confirm race, adjust, and restart/replay success.
+The strengthened opted-in xUnit executable exited 0: one passed, zero failed
+or skipped in 73.929 seconds after the direct command-status and bounded
+readiness checks were added. The fixture fails if a required app, credential, store,
+projection route, stored payload, or replay guarantee disappears. This is local
+Dapr/EventStore persistence evidence only; production identity issuance,
+deployed history inventory, production read-model wiring and deployed
+acceptance remain open.
+
+The exact opted-in command shown above first passed 1/1 in 71.494 seconds
+after the authorization review fixes. After direct command-status assertions
+were added, its next run exited 1 with valid confirm GET returning opaque
+`403` after persisted record, issue, and index checks (83.307 seconds).
+`python3 scripts/local_aspire_magic_link_journey.py` then exited 0 against
+the same Aspire session. A further run of the same opted-in command exited 1
+when the adjust recording returned opaque `403` (32.549 seconds). Sanitized
+Timesheets warning telemetry showed outbound 10-second timeouts and 429
+retries. After adding bounded retries only for the stable-identity recording
+and read-only valid GET, the final opted-in command exited 0 with one passed,
+zero failed/skipped in 73.929 seconds. These failures did not produce an
+acceptance claim, and their raw assertions and token material were not captured.
+
+The six default Timesheets executables passed individually: 1,584 passed and
+five skipped across 1,589 cases. The solution build with
+`-p:UseHexalithProjectReferences=true -warnaserror` still fails in
+`references/Hexalith.EventStore.Contracts` with MSB3243/CS1704 for duplicate
+`Hexalith.Commons.UniqueIds` versions `2.30.1.0` and `1.0.0.0`; the same
+failure was recorded in the connected-topology increment before this journey.
+
+The post-review default commands, run from the repository root without the
+live opt-in variable, returned:
+
+| Exact command | Result |
+| --- | --- |
+| `tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests` | Exit 0; 56 passed. |
+| `tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests` | Exit 0; 92 passed. |
+| `tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests` | Exit 0; 523 passed. |
+| `tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests` | Exit 0; 174 passed. |
+| `tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests` | Exit 0; 663 passed, five skipped. |
+| `tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests` | Exit 0; 76 passed. |
+| `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` | Exit 1; EventStore.Contracts MSB3243/CS1704 duplicate UniqueIds versions above. |
+| `python3 -m py_compile scripts/local_aspire_magic_link_journey.py` | Exit 0. |
+| `git diff --check` | Exit 0. |
+
+After the current build gate was marked `FAIL` in `docs/launch-readiness.md`,
+`tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests'`
+first exited 1 with one stale `PASS` expectation (12/13 passed). The
+expectation was updated to the observed gate. Then
+`DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --no-restore -m:1 -v:q`
+exited 0 with zero warnings/errors, the same focused command exited 0 with
+13/13 passed, and the full ArchitectureTests command in the table exited 0
+with 56/56 passed.
+
+`DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire stop --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive`
+exited 0 after the final live run; this session's AppHost stopped cleanly.
+`dapr list` then exited 0 with `No Dapr instances found.`
 
 ## Preflight on 2026-10-11
 
@@ -35,31 +165,26 @@ production authorization. The
 authority-mode issuer still cannot bind tenant/domain/actor claims and remains
 a separate production gate.
 
-## Re-run procedure after the prerequisite is delivered
+## Historical re-run procedure before the prerequisite was delivered
 
-Do not run the opt-in lane against the current topology: it cannot reach a
-Timesheets Dapr application. Once the platform owner supplies the connected
-topology and its local credential and projection-delivery procedure, record the
-exact start, credential acquisition, isolated-state setup, projection delivery,
-stored-stream/read-model inspection, restart, and cleanup commands here before
-claiming acceptance. The current repository supplies no working commands for
-those dependent steps. Keep signing keys, credentials, raw links, and token
-hashes out of command captures.
+At this earlier preflight, the opt-in lane could not reach a Timesheets Dapr
+application. The connected topology and the working commands are documented
+above. Keep signing keys, credentials, raw links, and token hashes out of
+command captures.
 
-The intended Timesheets verification command, after the connected topology and
-`MagicLinkLiveDaprTests` exist, is:
+The verification command proposed at that preflight was:
 
 ```bash
 TIMESHEETS_LIVE_DAPR=1 tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'
 ```
 
-That lane must fail if an opted-in prerequisite disappears. It must require
-`Completed` plus exact stored-event readback before HTTP success, inspect the
-stored record/issue/use/effect events and delivered index/catalog, then repeat
-after actor or process restart and race concurrent use requests. One stored
+The implemented lane fails if an opted-in prerequisite disappears. It requires
+`Completed` plus exact stored-event readback before HTTP success, inspects the
+stored record/issue/use/effect events and delivered index/catalog, then repeats
+after actor or process restart and races concurrent use requests. One stored
 use/effect batch and common opaque denial for every loser are required. The
-current preflight did not reach any of these observations. No processes were
-started by this preflight, so no cleanup command was run.
+earlier preflight did not reach any of these observations. No processes were
+started by that preflight, so no cleanup command was run.
 
 ## Connected local topology proof on 2026-10-11
 
