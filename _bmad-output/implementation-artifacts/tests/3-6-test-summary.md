@@ -6,6 +6,12 @@
 
 ## Current Verification
 
+### Local Dapr acceptance preflight (2026-10-11)
+
+The preflight in [the local Dapr proof record](../../../docs/local-magic-link-dapr-proof.md) stopped before the opt-in acceptance journey. `docker info --format '{{.ServerVersion}}'` returned `29.8.2`, and `dapr list` exited 0 but listed no `timesheets` app ID. `aspire ps --non-interactive` found an EventStore AppHost run owned by a separate EventStore integration test; it was not modified. Source inspection found no Timesheets Dapr module or trusted-effect allow-list entry in the EventStore AppHost, while the Timesheets AppHost declares no EventStore resource or Dapr sidecar. The EventStore local `statestore` component also excludes Timesheets and directs domain services to use a separate scoped component, so adding a sidecar alone would not deliver the persisted index/catalog. The environment exposed no Timesheets/EventStore/Dapr/signing variable names. A connected, isolated Timesheets identity and persisted index/catalog delivery cannot be prepared from the checked-in topology without the separately owned platform work.
+
+Per the spec's preflight stop condition, `MagicLinkLiveDaprTests` and `MagicLinkLiveDaprFixture` were not added, and `TIMESHEETS_LIVE_DAPR=1` was not run. No record, issue, use, restart, race, or stored-event observation was made. `DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests'` exited 0 with 13/13 passed; `git diff --check` found no whitespace errors. The 2026-10-10 in-process and actor tests below remain the latest full Timesheets suite evidence; this documentation-only preflight did not rerun restore or build. Story 3.6 remains `in-progress` and release remains `FAIL`.
+
 ### EventStore Time Entry recording increment (2026-10-10)
 
 The external submission route now submits an internal recording intent to the existing keyed `timesheets` processor. The processor rehydrates current owner state, checks verified workload origin and actor, server-side authorization and references, and a Fresh Activity Type catalog before emitting one `StoredTimeEntryRecorded` and, when policy requires, one `StoredTimeEntrySubmitted`. The route returns `202` only after a bounded `Completed` status and matching stored-event readback. A stable command identity makes retries safe after uncertain results. The existing magic-link use path can then fold the recorded owner state.

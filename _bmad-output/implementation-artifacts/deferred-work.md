@@ -557,3 +557,21 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
   summary: Reconcile an uncertain committed magic-link use across separate HTTP retries.
   evidence: Public endpoints pass a new `HttpContext.TraceIdentifier` on each request. The durable service keeps a message ID stable only within one request, so a later retry after an opaque committed outcome can use a new ID and receive a replay denial. Define an idempotency or status-reconciliation policy without exposing capability state.
+
+## Deferred from: local Aspire/Dapr topology review (2026-10-11)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
+  summary: Commit and pin the EventStore-owned AppPort and metadata changes in a later authorized repository update.
+  evidence: The Timesheets AppHost uses an optional EventStore Aspire overload added in the modified `references/Hexalith.EventStore` worktree. The user explicitly prohibited staging, committing, and pushing for this task, so a clean checkout of the current gitlink does not yet contain that overload.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
+  summary: Inventory deployed read-model components and rebuild or migrate prior magic-link index and catalog data before deployment.
+  evidence: Local preflight found no Timesheets Dapr sidecar or usable prior store, while the shared read-model addresses now name `timesheets-readmodels`. Any deployed `statestore` data or component wiring is unobserved; the release decision remains FAIL pending its separate inventory and journey.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
+  summary: Include keyed-only domains in the legacy operational metadata path when that path must serve them.
+  evidence: The pre-existing versionless metadata overload derives domains from discovered aggregates. The new capability-bound v2 path admits keyed processors, but versionless requests still omit keyed-only domains such as Timesheets.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
+  summary: Detect colliding local AppHost identities and Redis database use before running topology probes on shared developer machines.
+  evidence: Dapr app ID `timesheets` is required and Redis logical databases 13 and 14 are fixed for this local composition. The probes reject duplicate matching app IDs and use random tenants, but no separate startup lock reserves those IDs or databases across concurrent workspaces.

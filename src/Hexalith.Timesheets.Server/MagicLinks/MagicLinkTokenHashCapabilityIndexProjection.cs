@@ -8,7 +8,7 @@ public static class MagicLinkTokenHashCapabilityIndexProjection
     public const string ProjectionName = "magic-link-token-hash-capability-index";
 
     /// <summary>The Dapr state-store component containing the candidate index.</summary>
-    public const string StateStoreName = "statestore";
+    public const string StateStoreName = "timesheets-readmodels";
 
     /// <summary>The fixed cross-tenant candidate-index key.</summary>
     public const string StateKey = "timesheets:magic-links:token-hash-capability-index:v1";

@@ -6,7 +6,7 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 public static class MagicLinkActivityTypeCatalogReadModelAddress
 {
     /// <summary>The Dapr state-store component containing the catalog.</summary>
-    public const string StateStoreName = "statestore";
+    public const string StateStoreName = "timesheets-readmodels";
 
     /// <summary>The logical read-model slot.</summary>
     public const string SlotName = "catalog";
