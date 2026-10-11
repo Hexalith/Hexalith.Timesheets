@@ -6,6 +6,130 @@
 
 ## Current Verification
 
+### Latest-tree materialization verification (2026-10-11)
+
+All six default Timesheets xUnit v3 executables ran individually: Architecture
+56/56, Contracts 92/92, Server 523/523, Projections 224/224, Works 76/76,
+and Integration 668 passed with five expected skips. Overall: **1,639 passed,
+five skipped, zero failed**. The Integration run includes persisted composed-host
+issuance/use through `/project/v2` and a mapped full Time Entry replay that
+deletes an existing selected row. The EventStore Client executable passed
+1,479/1,479. The affected EventStore DomainService classes passed 55/55; its
+full executable passed 581/583, with the same two unrelated historical
+failures: missing nested Tenants guardrail project and the isolated named
+endpoint catalog-registry assertion. The affected Timesheets Projections and
+Integration project builds passed with zero warnings or errors. The
+source-reference solution build still fails with the known duplicate
+`Hexalith.Commons.UniqueIds` MSB3243/CS1704 conflict; the package-reference
+solution build fails compiling sibling Works.Contracts with missing
+polymorphic-serialization types. Both repositories' `git diff --check` passed.
+
+The latest opt-in Dapr test exited 1 after catalog delivery and persisted
+readback, at its combined non-fixture issue/missing-owner assertion. An
+unrelated ChatBot AppHost introduced a second `eventstore` Dapr ID during the
+run. The original fixture did not print each status, so that exact failure's
+two statuses cannot be reconstructed. A diagnostic with both IDs present
+returned alternating 500/404 for the same signed missing-owner read through
+Timesheets' sidecar, while the Timesheets-owned EventStore sidecar returned
+404 on all eight probes. A separate signed non-fixture issuance returned 403.
+The fixture now reports only the two statuses if this assertion fails again.
+A second opt-in attempt stopped at strict preflight with two `eventstore` IDs.
+A final clean-preflight attempt reached persisted catalog, the non-fixture
+denial, both exact persisted composed Time Entry rebuild readbacks, the confirm
+race, and the adjust journey. It exited 1 after 122.714 seconds when the first
+post-restart owner stream read returned HTTP 401. ChatBot had again introduced
+a second `eventstore` ID during this run. Only the Timesheets AppHost started
+for these attempts was stopped; ChatBot was left untouched. The earlier 1/1
+opt-in success remains historical evidence, and current-tree local acceptance
+remains provisional.
+
+### Earlier materialized read-model increment (2026-10-11)
+
+The latest default Timesheets run passed Architecture 56/56, Contracts 92/92,
+Server 523/523, Projections 220/220, Works 76/76, and Integration 667 passed
+with five expected skips: **1,634 passed, five skipped**. The Integration lane
+includes an always-on composed-host test that invokes the mapped named Time
+Entry rebuild route in the mixed projection catalog and reads the persisted
+aggregate-owned evidence result. Two more always-on cases reject malformed
+confirmation and correction through normal dispatch and mapped rebuild without
+persisting a Fresh row. The full EventStore Client executable passed
+1,477/1,477. After fixing handler-local cancellation classification, the full
+EventStore DomainService run reported 581 passed and two previously recorded
+unrelated failures: the absent nested Tenants guardrail and isolated
+named-endpoint catalog assertion. The focused handler-local, store-owned, and
+caller cancellation cases passed 6/6.
+
+The final targeted pass after the round-4 corrections passed the EventStore
+partitioned rebuild class 10/10 (including dispatcher-level promotion and
+checkpoint-seeding interleaving), fenced dispatch class 13/13 (including
+store-owned task cancellation), streamed-stage class 7/7 (including near-limit
+operation-ID cleanup), and epoch coordinator class 11/11 (including legacy
+checkpoint rebuild recovery). The Time Entry and capability handler classes
+passed 13/13 and 33/33. The composed-host IntegrationTests project and
+EventStore Client project built with zero warnings or errors. The opt-in
+fixture now tests the mapped named Time Entry rebuild route and exact persisted
+readback and permits five bounded read-only 429/500/503 probes after EventStore
+restart; Python compilation and both repositories' `git diff --check` passed.
+This fixture revision has not completed a latest-tree live run. The latest
+isolated attempt reached persisted catalog delivery and a stored Time Entry
+record, then its first capability stream read returned HTTP 429 after an
+unrelated ChatBot AppHost restarted with a second `eventstore` Dapr ID. The
+Timesheets AppHost was stopped; the unrelated host was left untouched. The
+preexisting 1/1 result below remains historical evidence.
+
+An earlier checkpoint passed all six default Timesheets executables: Architecture
+56, Contracts 92, Server 523, Projections 218, Works 76, and Integration 664
+with five skips (**1,629 passed, five skipped**). Focused EventStore
+partitioned rebuild, fenced dispatch, and streamed-stage suites passed 5/5,
+8/8, and 5/5. A later targeted audit closed a promotion/seeding race with a
+durable SDK handoff fence: a deterministic interleaving test proves a second
+rebuild and ordinary delivery wait while checkpoints are seeded. After that
+change, the affected partitioned, fenced, and streamed-stage classes passed
+6/6, 8/8, and 5/5; three Timesheets capability rebuild cases passed 1/1 each.
+The final fenced class passed 10/10 after adding Dapr-exception outage cases.
+The new tests cover post-capture owner sequence handoff,
+interrupted scratch cleanup and retry after coordinator restart, abort cleanup,
+store outages before folding, and streamed-page readback. A later audit also
+proved committed scratch cleanup can resume after another epoch starts.
+Python compilation
+of the opt-in fixture and both repositories' `git diff --check` passed.
+The full EventStore Client executable passed 1,474/1,474. The full
+DomainService executable passed 573/575; its two failures are the existing
+absent nested-Tenants guardrail and the isolated named-endpoint catalog
+registry assertion, outside the changed shared projection paths.
+
+The source-reference solution build still exits 1 in EventStore.Contracts with
+MSB3243/CS1704 for duplicate `Hexalith.Commons.UniqueIds` versions 2.30.1.0
+and 1.0.0.0. A package-mode attempt exits 1 in sibling Works.Contracts with
+missing `Hexalith.PolymorphicSerializations` types. Two latest-tree isolated
+opt-in attempts reached persisted delivery: one stopped on command-status HTTP
+500, and the next passed the confirm race but received three opaque 403
+responses on adjust POST. A third attempt stopped before writing data when
+ChatBot restarted with a duplicate `eventstore` Dapr ID. The Timesheets
+AppHost was stopped and the unrelated process left untouched. The prior 1/1
+opt-in result below is historical evidence for the earlier revision.
+
+### Earlier materialized read-model run (2026-10-11)
+
+That earlier uncommitted revision added SDK-delivered Time Entry evidence
+and capability views. All six default Timesheets executables passed:
+Architecture 56, Contracts 92, Server 523, Projections 206, Works 76, and
+Integration 664 passed with five skips (**1617 passed, five skipped**). The
+EventStore Client suite passed 1469/1469; focused partitioned DomainService
+tests passed 3/3. The full DomainService suite passed 565/567, with one
+failure requiring a prohibited nested Tenants submodule and one isolated
+named-endpoint catalog-registry failure. The prescribed source-reference
+Timesheets solution build is blocked by the pre-existing duplicate
+`Hexalith.Commons.UniqueIds` assembly conflict (MSB3243/CS1704); affected
+Timesheets project builds passed with zero warnings or errors.
+
+The isolated opt-in Dapr run passed **1/1 in 160.146 seconds** with exactly
+one `eventstore` and one `timesheets` Dapr app. It covered both new model
+readbacks for confirm and adjust, the one-winner race, EventStore restart,
+replay denial, and a fresh post-restart link. Two earlier attempts reached
+the new readbacks but later returned transient opaque HTTP 403 responses.
+Story 3.6 remains `in-progress`; launch remains `FAIL` for production gates.
+
 ### Opt-in local Dapr/EventStore acceptance (2026-10-11)
 
 The checked-in Timesheets Aspire composition now runs distinct healthy

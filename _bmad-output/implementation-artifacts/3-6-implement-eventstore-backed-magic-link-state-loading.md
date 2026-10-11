@@ -23,7 +23,46 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-11)
 
-The opt-in local Dapr journey now passes. Against distinct EventStore and
+The current uncommitted read-model increment adds named EventStore delivery
+handlers for Time Entry evidence and tenant-scoped capability display, plus an
+EventStore SDK partitioned rebuild extension. The latest revision adds durable
+owner-sequence handoff at rebuild promotion, retryable pre-fold store outages,
+and recoverable cleanup of private rebuild state. A later audit added a durable
+promotion/seeding fence and a deterministic interleaving test. All six default Timesheets
+executables passed on the latest tree (1,639 passed, five skipped), including
+persisted composed-host issuance/use through `/project/v2`, applied Time Entry
+deletion through mapped rebuild, and malformed-effect dispatch/rebuild denial.
+The EventStore Client suite passed 1,479/1,479. Focused EventStore partitioned
+rebuild, fenced dispatch, streamed-stage, and epoch coordinator suites passed
+10/10, 13/13, 7/7, and 11/11. A later full DomainService run passed 581/583;
+its two failures are the previously recorded unrelated nested-Tenants
+guardrail and named-endpoint catalog assertion. Handler-local, store-owned,
+and caller cancellation cases passed 6/6 after the dispatcher fix.
+The earlier opt-in Dapr journey passed 1/1 in 160.146 seconds, but that run
+predates these latest changes. Two latest-tree isolated attempts reached stored
+delivery but stopped on command-status HTTP 500 and repeated opaque adjust
+POST 403 responses. ChatBot then restarted with a duplicate `eventstore` Dapr
+ID, blocking a further run at preflight. A later attempt reached persisted
+catalog delivery and a stored recording, then received HTTP 429 on its first
+capability stream read after ChatBot restarted with a second `eventstore` ID.
+The latest opt-in attempt reached persisted catalog delivery, then failed a
+combined non-fixture issuance/missing-owner assertion after a second
+`eventstore` ID appeared. The assertion did not retain individual statuses.
+A separate diagnostic with both IDs present found the signed missing-owner
+read alternated between HTTP 500 and 404 through Timesheets' sidecar, while
+the Timesheets-owned EventStore sidecar consistently returned 404; a
+non-fixture issuance returned 403. A follow-up attempt stopped at strict
+duplicate-ID preflight. The unrelated host was left untouched and the
+Timesheets AppHost was stopped. A final clean-preflight run passed catalog
+readback, non-fixture denial, both composed Time Entry rebuild readbacks,
+confirm race, and adjust journey; it then exited 1 on HTTP 401 reading an
+owner stream after EventStore restart, after the duplicate `eventstore` ID
+returned. The fixture now reports both statuses on future assertion failures.
+This is local proof; production identity issuance, deployed
+read-model wiring, deployed-history inventory, and deployed acceptance remain
+open. Story 3.6 is `in-progress` and launch is `FAIL`.
+
+The earlier opt-in local Dapr journey passed. Against distinct EventStore and
 Timesheets sidecars, it recorded entries, issued confirm and adjust links,
 delivered a Fresh catalog and the actual stored issue events to the candidate
 index, used each link, observed one stored use/effect batch per entry, and
@@ -565,6 +604,7 @@ Current cumulative Story 3.6 inventory, including its accepted review increments
 
 | Date | Change |
 |------|--------|
+| 2026-10-11 | Latest read-model revision: added owner-sequence handoff at rebuild promotion, recoverable private scratch cleanup, and retryable early SDK store outages. Follow-up audits added a durable promotion/seeding fence, a committed-session cleanup retry after another epoch, and Dapr-exception outage coverage. Six Timesheets default executables passed with 1,629 passed and five skipped; focused EventStore partitioned rebuild, fenced delivery, and streamed-stage suites passed 6/6, 10/10, and 5/5. Source-reference solution build remains blocked by duplicate UniqueIds assemblies. Two latest-tree local attempts stopped at command-status HTTP 500 and repeated adjust POST 403; a third found a duplicate ChatBot `eventstore` ID. The previous passing run remains historical. Story and launch remain open. |
 | 2026-10-11 | Local Dapr preflight stopped before acceptance: no Timesheets sidecar or connected EventStore topology is present, and the observed EventStore runtime belonged to a separate test. Added the blocker record and updated the test summary and launch readiness; no live fixture or persisted journey was attempted. The focused launch-readiness architecture class passed 13/13. Story stays in progress and release stays FAIL. |
 | 2026-10-10 | Closed 14 durable-submission review patches against current HEAD: bounded polling and rejection replay; truthful stored-status gateway fixture; OpenAPI 202; workload and composed-host binding tests; direct processor origin/actor pairs; tenant-scoped projections; stored receipt tamper matrix; current records, pointer and release gates. Source-reference IntegrationTests and Server.Tests builds passed with zero warnings/errors; HTTP boundary 557/557, IntegrationTests 652 pass/four skips, Server.Tests 512/512. Six-lane total 1565/1561 pass/four skips. Story 3.6 remains in progress and release remains FAIL pending deployed acceptance and recorded-owner wiring. |
 | 2026-10-09 | Spec-18 review found that explicit weak policy metadata on a GET-only canonical SDK route could suppress its denying fallback. EventStore `f87affae` now requires the catalog policy when authorization metadata is present; Timesheets `61dc18b` pins it in a separate gitlink-only commit. Focused SDK 22/22 and ExtensionsTests 81/81 pass; full SDK 548/549 retains the absent nested-Tenants guardrail failure. Source-reference build, HTTP 482/482, scratch-root 4/4, and six Timesheets lanes retain 1410 pass / one existing package-verdict failure / four skips. The pointer is local and unpublished. Story 3.6 and release remain open. |

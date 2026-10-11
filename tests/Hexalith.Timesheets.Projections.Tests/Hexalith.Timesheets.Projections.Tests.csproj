@@ -19,6 +19,7 @@
     <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" AdditionalProperties="NuGetAudit=false" />
     <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Contracts\Hexalith.EventStore.Contracts.csproj" AdditionalProperties="NuGetAudit=false" />
     <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.DomainService\Hexalith.EventStore.DomainService.csproj" AdditionalProperties="NuGetAudit=false" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Testing\Hexalith.EventStore.Testing.csproj" AdditionalProperties="NuGetAudit=false" />
   </ItemGroup>
 
   <ItemGroup>

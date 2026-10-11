@@ -7,15 +7,59 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The 2026-10-11 [opt-in local Dapr journey](local-magic-link-dapr-proof.md#run-the-persisted-journey)
+The latest 2026-10-11 materialized read-model tree passed all six default
+Timesheets test executables with **1,639 passed and five expected skips**.
+Always-run composed-host tests persisted capability issuance/use through the
+mapped `/project/v2` route and deleted an existing Time Entry row through an
+applied full replay. EventStore Client passed 1,479/1,479 and focused
+DomainService rebuild/dispatch tests passed 55/55; the full DomainService run
+retained two previously recorded unrelated failures (581/583). The latest
+opt-in Dapr journey has no clean pass: it reached persisted catalog delivery,
+then failed its combined non-fixture issue/missing-owner assertion while an
+unrelated ChatBot AppHost introduced a duplicate `eventstore` Dapr ID. A
+diagnostic proved duplicate routing can make the signed missing-owner read
+alternate between HTTP 500 and 404; the non-fixture issuance still returned
+403. The captured failing assertion did not retain both status codes, so its
+exact failing leg remains unknown. A follow-up attempt stopped at strict
+duplicate-ID preflight. A final clean-preflight run passed persisted catalog,
+non-fixture denial, both composed Time Entry rebuild readbacks, confirm race,
+and adjust journey, then exited 1 on HTTP 401 reading an owner stream after
+EventStore restart; a duplicate `eventstore` ID had appeared again during the
+run. The Timesheets AppHost was stopped and ChatBot was left untouched. Local
+acceptance is provisional; production binding issuance,
+deployed read-model wiring, history inventory, and deployed acceptance remain
+open. Story 3.6 stays in progress and launch remains **FAIL**.
+
+An earlier 2026-10-11 [opt-in local Dapr journey](local-magic-link-dapr-proof.md#run-the-persisted-journey)
 passed 1/1. It exercised real EventStore actors and persisted stream readback,
 SDK-delivered Fresh catalog and token index, confirm and adjust effects,
 recording retry, a one-winner race, and replay after EventStore restart.
 Development-only signed fixture identities were used. This closes the local
-persistence evidence gap, while production binding issuance, read-model
+persistence evidence gap, while production binding issuance, deployed read-model
 wiring, deployed-history inventory and deployed acceptance remain open.
 Story 3.6 stays in progress and launch remains **FAIL**. Older preflight and
 delivery-only observations below remain dated history.
+
+The latest 2026-10-11 materialized read-model revision has in-process SDK
+coverage for Time Entry evidence, generation-selected capability joins,
+poison-event parking, retryable selected-read outages, high-entropy
+10,000-owner partitioned rebuild, large single-owner and capability values,
+and applied-generation pruning. Owner-sequence handoff and private scratch
+cleanup passed focused restart and retry tests. All six default Timesheets
+executables passed with 1,634 passed and five skipped. An always-on
+composed-host test also committed the named Time Entry rebuild through the
+mapped endpoint and read back persisted evidence. The isolated opt-in
+Dapr fixture's 1/1 passing run in 160.146 seconds predates these latest
+changes. Two current isolated attempts reached stored delivery but stopped on
+command-status HTTP 500 and repeated opaque adjust POST 403 responses. ChatBot
+then restarted with a duplicate `eventstore` Dapr ID, blocking a further run
+at preflight. A later run reached catalog delivery and a stored recording,
+then received HTTP 429 on the first capability stream read when ChatBot
+restarted with a duplicate `eventstore` ID. That host was left untouched and
+the Timesheets AppHost was stopped. This
+is local proof only. Story 3.6 stays in progress and launch remains **FAIL**
+for production identity issuance, deployed read-model wiring, deployed-history
+inventory, and deployed acceptance.
 
 The 2026-10-10 Story 3.6 recording increment keeps the overall release decision at **FAIL**. The external submission route now sends recording to the keyed Timesheets EventStore processor and acknowledges only a timely `Completed` status with matching stored events. Local HTTP and actor tests prove record-then-confirm, actor recreation, one recording across retries, policy-required submission evidence, and opaque denial on uncertain receipts. Valid confirm and adjust submissions still require the same verified EventStore use batch. The local tests do not establish live Dapr persistence, production binding issuance, deployed-history inventory, or live host acceptance.
 

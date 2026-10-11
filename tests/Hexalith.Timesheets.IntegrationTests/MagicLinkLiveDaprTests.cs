@@ -24,6 +24,7 @@ public sealed class MagicLinkLiveDaprTests
         output.ShouldContain("non-fixture assertion denied without owner event");
         output.ShouldContain("confirm record/issue/index/GET/use/replay passed race");
         output.ShouldContain("adjust record/issue/index/GET/use/replay passed single");
+        output.ShouldContain("composed Time Entry rebuild committed and persisted");
         output.ShouldContain("actor restart and replay passed");
         output.ShouldContain("fresh post-restart link passed");
     }

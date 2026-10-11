@@ -1,0 +1,947 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
+using Hexalith.EventStore.Client.Projections;
+using Hexalith.EventStore.Contracts.Projections;
+using Hexalith.EventStore.DomainService;
+using Hexalith.EventStore.Testing.Fakes;
+using Hexalith.Timesheets.Contracts.Events.MagicLinks;
+using Hexalith.Timesheets.Contracts.Models.MagicLinks;
+using Hexalith.Timesheets.Contracts.References;
+using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Projections.MagicLinks;
+using Hexalith.Timesheets.Server.MagicLinks;
+
+using Microsoft.Extensions.DependencyInjection;
+
+using Shouldly;
+
+namespace Hexalith.Timesheets.Projections.Tests;
+
+public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
+{
+    private static readonly JsonSerializerOptions s_json = new(JsonSerializerDefaults.Web);
+    private static readonly DomainProjectionIdentityOptions s_identity = new() { AppId = "timesheets-test", ServiceVersion = "v1" };
+    private static readonly string s_catalog = ProjectionRouteCatalogFingerprint.Compute(
+        "timesheets-test", "v1", [new ProjectionDispatchRoute("timesheets", MagicLinkConfirmationCapabilityProjection.ProjectionName)]);
+
+    [Theory]
+    [InlineData(18)]
+    [InlineData(21)]
+    public async Task UseOutsideIssuanceWindowIsParkedWithoutAUsedRow(int day)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        (await Deliver(provider, "cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        DateTimeOffset usedAt = day == 21
+            ? Issued("cap-1").ExpiresAtUtc
+            : new DateTimeOffset(2026, 6, day, 15, 0, 0, TimeSpan.Zero);
+        ProjectionEventDto invalid = Event(1, 2, new StoredMagicLinkUsed(Used("cap-1") with { UsedAtUtc = usedAt }));
+
+        (await Deliver(provider, "entry-1", invalid)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        (await Deliver(provider, "entry-1", invalid)).ShouldBeOneOf(
+            ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued);
+    }
+
+    [Fact]
+    public async Task Normal_epoch_delivery_retains_two_capabilities_and_joins_terminal_first_without_token_data()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+
+        (await Deliver(provider, "entry-1", Event(1, 1, new StoredMagicLinkUsed(Used("cap-1"))))).ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView pending = (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull();
+        pending.Issuance.ShouldBeNull();
+        pending.Published.ShouldBeNull();
+
+        (await Deliver(provider, "cap-1", Event(1, 2, new StoredMagicLinkIssued(Issued("cap-1"))))).ShouldBe(ProjectionDispatchStatus.Completed);
+        (await Deliver(provider, "cap-2", Event(1, 3, new StoredMagicLinkIssued(Issued("cap-2"))))).ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView first = (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull();
+        first.Published.ShouldNotBeNull().State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+        (await Read(coordinator, handler, "cap-2")).ShouldNotBeNull().Published.ShouldNotBeNull();
+        string json = JsonSerializer.Serialize(first, s_json);
+        json.ShouldNotContain("hash-cap-1");
+        json.ShouldNotContain("tokenHash", Case.Insensitive);
+        SharedProjectionReadResult<MagicLinkConfirmationCapabilityReadModel> observed = await handler.ReadObservedAsync(
+            "tenant-1", new MagicLinkCapabilityId("cap-1"),
+            new DateTimeOffset(2026, 6, 22, 0, 0, 0, TimeSpan.Zero), coordinator,
+            TestContext.Current.CancellationToken);
+        observed.Value.ShouldNotBeNull().ExpiryState.ShouldBe(MagicLinkExpiryState.Expired);
+        observed.Value.ProjectionFreshness.AsOfUtc.ShouldBe(new DateTimeOffset(2026, 6, 22, 0, 0, 0, TimeSpan.Zero));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Normal_epoch_delivery_publishes_revocation_or_expiry(bool expiry)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        (await Deliver(provider, "cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+
+        object terminal = expiry
+            ? new StoredMagicLinkExpired(new MagicLinkConfirmationCapabilityExpired(
+                new MagicLinkCapabilityId("cap-1"), new TenantReference("tenant-1"),
+                new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero),
+                new MagicLinkAuditMetadata("timesheets", "expiry-cap-1"))
+                { TimeEntryId = new TimeEntryId("entry-1") })
+            : new StoredMagicLinkRevoked(new MagicLinkConfirmationCapabilityRevoked(
+                new MagicLinkCapabilityId("cap-1"), new TenantReference("tenant-1"),
+                new PartyReference("issuer-1"),
+                new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero),
+                new MagicLinkAuditMetadata("timesheets", "revoke-cap-1"))
+                { TimeEntryId = new TimeEntryId("entry-1") });
+        (await Deliver(provider, "entry-1", Event(1, 2, terminal))).ShouldBe(ProjectionDispatchStatus.Completed);
+
+        MagicLinkConfirmationCapabilityReadModel published = (await Read(coordinator, handler, "cap-1"))
+            .ShouldNotBeNull().Published.ShouldNotBeNull();
+        published.State.ShouldBe(expiry
+            ? Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Expired
+            : Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Revoked);
+        if (expiry)
+        {
+            published.ExpiredAtUtc.ShouldNotBeNull();
+            SharedProjectionReadResult<MagicLinkConfirmationCapabilityReadModel> observed = await handler.ReadObservedAsync(
+                "tenant-1", new MagicLinkCapabilityId("cap-1"),
+                new DateTimeOffset(2026, 6, 19, 15, 30, 0, TimeSpan.Zero), coordinator,
+                TestContext.Current.CancellationToken);
+            observed.Value.ShouldNotBeNull().ExpiryState.ShouldBe(MagicLinkExpiryState.Expired);
+            observed.Value.ExpiryBadgeText.ShouldBe("Expired");
+        }
+        else published.RevokedAtUtc.ShouldNotBeNull();
+    }
+
+    [Theory]
+    [InlineData("used")]
+    [InlineData("revoked")]
+    [InlineData("expired")]
+    public async Task Default_terminal_timestamp_is_parked_without_publishing(string kind)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        object terminal = kind switch
+        {
+            "used" => new StoredMagicLinkUsed(Used("cap-1") with { UsedAtUtc = default }),
+            "revoked" => new StoredMagicLinkRevoked(new MagicLinkConfirmationCapabilityRevoked(
+                new MagicLinkCapabilityId("cap-1"), new TenantReference("tenant-1"),
+                new PartyReference("issuer-1"), default,
+                new MagicLinkAuditMetadata("timesheets", "revoke-cap-1"))
+                { TimeEntryId = new TimeEntryId("entry-1") }),
+            "expired" => new StoredMagicLinkExpired(new MagicLinkConfirmationCapabilityExpired(
+                new MagicLinkCapabilityId("cap-1"), new TenantReference("tenant-1"), default,
+                new MagicLinkAuditMetadata("timesheets", "expiry-cap-1"))
+                { TimeEntryId = new TimeEntryId("entry-1") }),
+            _ => throw new InvalidOperationException("Unknown terminal case.")
+        };
+        ProjectionEventDto malformed = Event(1, 1, terminal);
+        (await Deliver(provider, "entry-1", malformed)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        (await Deliver(provider, "entry-1", malformed)).ShouldBeOneOf(
+            ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        (await Read(coordinator, handler, "cap-1")).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Normal_epoch_delivery_parks_malformed_head_then_processes_later_valid_event()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        ProjectionEventDto malformed = Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1"))) with
+        {
+            Payload = JsonSerializer.SerializeToUtf8Bytes(new { @event = (object?)null })
+        };
+        ProjectionDispatchStatus first = await Deliver(provider, "cap-1", malformed);
+        first.ShouldBe(ProjectionDispatchStatus.Retryable);
+        ProjectionDispatchStatus parked = await Deliver(provider, "cap-1", malformed);
+        parked.ShouldBeOneOf(ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        (await Deliver(provider, "cap-2", Event(1, 2, new StoredMagicLinkIssued(Issued("cap-2")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        (await Read(coordinator, handler, "cap-2")).ShouldNotBeNull().Published.ShouldNotBeNull();
+    }
+
+    [Theory]
+    [InlineData("target-kind")]
+    [InlineData("allowed-action")]
+    [InlineData("contributor")]
+    [InlineData("target-id")]
+    [InlineData("activity-type")]
+    [InlineData("time-entry")]
+    [InlineData("issuer")]
+    [InlineData("source-system")]
+    [InlineData("source-reference")]
+    public async Task Normal_epoch_delivery_parks_incomplete_or_unknown_issuance(string field)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        ProjectionEventDto valid = Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")));
+        JsonNode payload = JsonNode.Parse(valid.Payload)!.AsObject();
+        JsonNode issue = payload["event"]!;
+        switch (field)
+        {
+            case "target-kind": issue["targetKind"] = "Unknown"; break;
+            case "allowed-action": issue["allowedAction"] = "Unknown"; break;
+            case "contributor": issue["contributor"]!["partyId"] = " "; break;
+            case "target-id": issue["target"]!["targetId"] = " "; break;
+            case "activity-type": issue["activityTypeId"]!["value"] = " "; break;
+            case "time-entry": issue["timeEntryId"]!["value"] = " "; break;
+            case "issuer": issue["issuer"]!["partyId"] = " "; break;
+            case "source-system": issue["source"]!["sourceSystem"] = " "; break;
+            case "source-reference": issue["source"]!["sourceReference"] = " "; break;
+            default: throw new InvalidOperationException("Unknown test case.");
+        }
+
+        ProjectionEventDto malformed = valid with { Payload = JsonSerializer.SerializeToUtf8Bytes(payload, s_json) };
+        (await Deliver(provider, "cap-1", malformed)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        ProjectionDispatchStatus parked = await Deliver(provider, "cap-1", malformed);
+        parked.ShouldBeOneOf(ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", new MagicLinkCapabilityId("cap-1"));
+        (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(
+            handler.CreateScope("tenant-1"), 0, key, TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Selected_generation_write_outage_is_retryable_and_preserves_previous_complete_view()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        (await Deliver(provider, "cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        bool failNextWrite = true;
+        store.BatchFaultHook = (phase, _, _) =>
+        {
+            if (failNextWrite && phase == ReadModelBatchPhase.BeforeDispatch)
+            {
+                failNextWrite = false;
+                throw new HttpRequestException("Injected batch write outage.");
+            }
+
+            return Task.CompletedTask;
+        };
+
+        ProjectionEventDto used = Event(1, 2, new StoredMagicLinkUsed(Used("cap-1")));
+        (await Deliver(provider, "entry-1", used)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", new MagicLinkCapabilityId("cap-1"));
+        MagicLinkCapabilityProjectionView prior = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(
+            handler.CreateScope("tenant-1"), 0, key, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull()
+            .Inline.ShouldNotBeNull();
+        prior.Published.ShouldNotBeNull().State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued);
+        store.BatchFaultHook = null;
+        (await Deliver(provider, "entry-1", used))
+            .ShouldBeOneOf(ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+    }
+
+    [Fact]
+    public async Task LargeValidIssuanceCrossesLiveJournalLimitAndPublishesCompleteView()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        string target = new('p', 40_000);
+        MagicLinkConfirmationCapabilityIssued issued = Issued("cap-large") with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(target))
+        };
+        ProjectionEventDto item = Event(1, 1, new StoredMagicLinkIssued(issued));
+        (await Deliver(provider, "cap-large", item)).ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView selected = (await Read(coordinator, handler, "cap-large")).ShouldNotBeNull();
+        selected.Issuance.ShouldNotBeNull().Target.TargetId.ShouldBe(target);
+        selected.Published.ShouldNotBeNull().Target.TargetId.ShouldBe(target);
+        JsonSerializer.SerializeToUtf8Bytes(selected, s_json).Length.ShouldBeGreaterThan(64 * 1024);
+    }
+
+    [Fact]
+    public async Task NearOneMiBIssuanceCompletesOrdinaryDeliveryAndRebuildPromotion()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        string target = new('p', 950_000);
+        ProjectionEventDto item = Event(1, 1, new StoredMagicLinkIssued(Issued("cap-near-limit") with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(target))
+        }));
+        item.Payload.Length.ShouldBeLessThan(1_048_576);
+        (await Deliver(provider, "cap-near-limit", item)).ShouldBe(ProjectionDispatchStatus.Completed);
+        (await Read(coordinator, handler, "cap-near-limit")).ShouldNotBeNull()
+            .Published.ShouldNotBeNull().Target.TargetId.ShouldBe(target);
+
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        await Rebuild(provider, "near-limit-rebuild", [("cap-near-limit", item)]);
+        (await Read(coordinator, handler, "cap-near-limit")).ShouldNotBeNull()
+            .Published.ShouldNotBeNull().Target.TargetId.ShouldBe(target);
+    }
+
+    [Fact]
+    public async Task NearOneMiBIssuanceAndTerminalPublishCompleteViewWithinPhysicalAndJournalLimits()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        string target = new('p', 950_000);
+        string outcome = new('o', 950_000);
+        ProjectionEventDto issue = Event(1, 1, new StoredMagicLinkIssued(Issued("cap-double-large") with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(target))
+        }));
+        ProjectionEventDto terminal = Event(1, 2, new StoredMagicLinkUsed(Used("cap-double-large") with
+        {
+            OutcomeCategory = outcome
+        }));
+        issue.Payload.Length.ShouldBeLessThan(1_048_576);
+        terminal.Payload.Length.ShouldBeLessThan(1_048_576);
+
+        (await Deliver(provider, "cap-double-large", issue)).ShouldBe(ProjectionDispatchStatus.Completed);
+        (await Deliver(provider, "entry-1", terminal)).ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView selected = (await Read(coordinator, handler, "cap-double-large"))
+            .ShouldNotBeNull();
+        selected.Published.ShouldNotBeNull().Target.TargetId.ShouldBe(target);
+        selected.Published.UseOutcomeCategory.ShouldBe(outcome);
+        JsonSerializer.SerializeToUtf8Bytes(selected, s_json).Length.ShouldBeGreaterThan(127 * 24 * 1024);
+
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1",
+            new MagicLinkCapabilityId("cap-double-large"));
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        MagicLinkCapabilityProjectionStorage storage = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(
+            scope, 0, key, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        storage.Inline.ShouldBeNull();
+        storage.FragmentCount.ShouldBeInRange(1, 127);
+        for (int ordinal = 0; ordinal < storage.FragmentCount; ordinal++)
+        {
+            string fragmentKey = key + ":fragment:" + storage.Digest + ":" + ordinal;
+            MagicLinkCapabilityProjectionFragment fragment = (await coordinator
+                .ReadGenerationAsync<MagicLinkCapabilityProjectionFragment>(scope, 0, fragmentKey,
+                    TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+            JsonSerializer.SerializeToUtf8Bytes(fragment, s_json).Length.ShouldBeLessThanOrEqualTo(64 * 1024);
+        }
+    }
+
+    [Fact]
+    public async Task LargeViewRetryAfterPartialFragmentBatchesKeepsPriorCompletePointer()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        MagicLinkConfirmationCapabilityIssued issued = Issued("cap-fragment-retry") with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(new string('p', 950_000)))
+        };
+        (await Deliver(provider, "cap-fragment-retry", Event(1, 1, new StoredMagicLinkIssued(issued))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        int commits = 0;
+        store.BatchFaultHook = (phase, _, _) =>
+        {
+            if (phase == ReadModelBatchPhase.BeforeCommit && ++commits == 3)
+            {
+                throw new IOException("Injected fragment batch outage.");
+            }
+
+            return Task.CompletedTask;
+        };
+        ProjectionEventDto used = Event(1, 2, new StoredMagicLinkUsed(Used("cap-fragment-retry")));
+        (await Deliver(provider, "entry-1", used)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        commits.ShouldBeGreaterThanOrEqualTo(3);
+        MagicLinkCapabilityProjectionView prior = (await Read(coordinator, handler, "cap-fragment-retry"))
+            .ShouldNotBeNull();
+        prior.Published.ShouldNotBeNull().State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued);
+        store.BatchFaultHook = null;
+        (await Deliver(provider, "entry-1", used))
+            .ShouldBeOneOf(ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        (await Read(coordinator, handler, "cap-fragment-retry")).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WrongCapabilityStoredUnderSelectedKeyFailsClosed(bool fragmented)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        (await Deliver(provider, "cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkConfirmationCapabilityIssued other = Issued("cap-2") with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(
+                fragmented ? new string('p', 40_000) : "project-2"))
+        };
+        (await Deliver(provider, "cap-2", Event(1, 2, new StoredMagicLinkIssued(other))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView wrong = (await Read(coordinator, handler, "cap-2")).ShouldNotBeNull();
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        MagicLinkCapabilityId id = new("cap-1");
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", id);
+        string physical = Physical(scope, key);
+        ReadModelEntry<MagicLinkCapabilityProjectionStorage> existing = await store
+            .GetAsync<MagicLinkCapabilityProjectionStorage>(scope.StoreName, physical, TestContext.Current.CancellationToken);
+        MagicLinkCapabilityProjectionStorage replacement;
+        if (fragmented)
+        {
+            byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(wrong, s_json);
+            string digest = Convert.ToHexString(SHA256.HashData(bytes));
+            int count = (bytes.Length + 24 * 1024 - 1) / (24 * 1024);
+            for (int ordinal = 0; ordinal < count; ordinal++)
+            {
+                byte[] data = bytes.AsSpan(ordinal * 24 * 1024,
+                    Math.Min(24 * 1024, bytes.Length - ordinal * 24 * 1024)).ToArray();
+                string fragment = key + ":fragment:" + digest + ":" + ordinal;
+                (await store.TrySaveAsync(scope.StoreName, Physical(scope, fragment),
+                    new MagicLinkCapabilityProjectionFragment(data), string.Empty,
+                    TestContext.Current.CancellationToken)).ShouldBeTrue();
+            }
+
+            replacement = new MagicLinkCapabilityProjectionStorage(null, digest, bytes.Length, count);
+        }
+        else
+        {
+            replacement = new MagicLinkCapabilityProjectionStorage(wrong, null, 0, 0);
+        }
+
+        (await store.TrySaveAsync(scope.StoreName, physical, replacement, existing.ETag!,
+            TestContext.Current.CancellationToken)).ShouldBeTrue();
+        _ = await Should.ThrowAsync<InvalidOperationException>(() => handler.ReadViewAsync(
+            "tenant-1", id, coordinator, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task MalformedSelectedPointerIsParkedAndCannotPinLaterDelivery()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        (await Deliver(provider, "cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string logical = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", new MagicLinkCapabilityId("cap-1"));
+        string physical = Physical(scope, logical);
+        ReadModelEntry<MagicLinkCapabilityProjectionStorage> old = await store
+            .GetAsync<MagicLinkCapabilityProjectionStorage>(scope.StoreName, physical, TestContext.Current.CancellationToken);
+        (await store.TrySaveAsync(scope.StoreName, physical,
+            new MagicLinkCapabilityProjectionStorage(null, new string('A', 64), int.MaxValue, 1, 40 * 1024),
+            old.ETag!, TestContext.Current.CancellationToken)).ShouldBeTrue();
+
+        ProjectionEventDto terminal = Event(1, 2, new StoredMagicLinkUsed(Used("cap-1")));
+        (await Deliver(provider, "entry-1", terminal)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        (await Deliver(provider, "entry-1", terminal)).ShouldBeOneOf(
+            ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        (await Deliver(provider, "cap-2", Event(1, 3, new StoredMagicLinkIssued(Issued("cap-2")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+    }
+
+    [Fact]
+    public async Task Normal_epoch_delivery_rejects_changed_same_position_and_preserves_selected_view()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        ProjectionEventDto original = Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")));
+        (await Deliver(provider, "cap-1", original)).ShouldBe(ProjectionDispatchStatus.Completed);
+        ProjectionEventDto changed = original with { Payload = JsonSerializer.SerializeToUtf8Bytes(new StoredMagicLinkIssued(Issued("cap-1") with { TokenHash = new MagicLinkTokenHash("changed-hash") })) };
+        (await Deliver(provider, "cap-1", changed)).ShouldBe(ProjectionDispatchStatus.Failed);
+        (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued);
+    }
+
+    [Fact]
+    public async Task Ten_thousand_valid_high_entropy_owners_produce_bounded_independent_partitions()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        var identity = new DomainSharedProjectionRebuildIdentity(
+            "tenant-1", "timesheets", MagicLinkConfirmationCapabilityProjection.ProjectionName,
+            "high-entropy-10000", s_catalog);
+        var partitions = new List<DomainSharedProjectionRebuildPartition>(10_000);
+        var histories = new List<(string Owner, ProjectionEventDto Event)>(10_000);
+        for (int ordinal = 0; ordinal < 10_000; ordinal++)
+        {
+            string id = "cap-" + Convert.ToHexString(RandomNumberGenerator.GetBytes(58));
+            MagicLinkConfirmationCapabilityIssued issued = Issued("cap-1") with
+            {
+                CapabilityId = new MagicLinkCapabilityId(id),
+                TokenHash = new MagicLinkTokenHash(Convert.ToHexString(RandomNumberGenerator.GetBytes(64))),
+                Source = new MagicLinkAuditMetadata(
+                    Convert.ToHexString(RandomNumberGenerator.GetBytes(40)),
+                    Convert.ToHexString(RandomNumberGenerator.GetBytes(60)))
+            };
+            ProjectionEventDto item = Event(1, ordinal + 1, new StoredMagicLinkIssued(issued));
+            histories.Add((id, item));
+            ReadOnlyMemory<byte> bytes = await handler.PreparePartitionAsync(
+                identity,
+                new ProjectionRequest("tenant-1", "timesheets", id,
+                    [item]),
+                TestContext.Current.CancellationToken);
+            bytes.Length.ShouldBeLessThan(1_048_576);
+            partitions.Add(new DomainSharedProjectionRebuildPartition(ordinal, id, bytes));
+        }
+
+        DomainProjectionRebuildPlan plan = await handler.FinalizePartitionsAsync(
+            identity, partitions, TestContext.Current.CancellationToken);
+        plan.Operations.Count.ShouldBe(10_001);
+        plan.Operations.All(static operation => operation.CanonicalValue.Length < 64 * 1024).ShouldBeTrue();
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        histories.Sort(static (left, right) => string.CompareOrdinal(left.Owner, right.Owner));
+        await Rebuild(provider, "high-entropy-full-sdk", histories);
+        (await Read(coordinator, handler, histories[0].Owner)).ShouldNotBeNull().Published.ShouldNotBeNull();
+        (await Read(coordinator, handler, histories[^1].Owner)).ShouldNotBeNull().Published.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task Large_valid_capability_inventory_streams_more_than64MiB_through_full_rebuild()
+    {
+        const int ownerCount = 2_600;
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets",
+            MagicLinkConfirmationCapabilityProjection.ProjectionName, "large-capability-stream", s_catalog);
+        var histories = new List<(string Owner, ProjectionEventDto Event)>(ownerCount);
+        for (int ordinal = 0; ordinal < ownerCount; ordinal++)
+        {
+            string id = "cap-" + ordinal.ToString("D4");
+            string targetId = Convert.ToHexString(RandomNumberGenerator.GetBytes(8_192));
+            MagicLinkConfirmationCapabilityIssued issued = Issued(id) with
+            {
+                Target = new TimeEntryTargetReference(TimeEntryTargetKind.Project, targetId)
+            };
+            histories.Add((id, Event(1, ordinal + 1, new StoredMagicLinkIssued(issued))));
+        }
+
+        ReadOnlyMemory<byte> sample = await handler.PreparePartitionAsync(identity,
+            new ProjectionRequest("tenant-1", "timesheets", histories[0].Owner, [histories[0].Event]),
+            TestContext.Current.CancellationToken);
+        DomainProjectionRebuildPlan samplePlan = await handler.FinalizePartitionsAsync(identity,
+            [new DomainSharedProjectionRebuildPartition(0, histories[0].Owner, sample)],
+            TestContext.Current.CancellationToken);
+        ((long)samplePlan.Operations[0].CanonicalValue.Length * ownerCount)
+            .ShouldBeGreaterThan(64L * 1024 * 1024);
+
+        await Rebuild(provider, "large-capability-stream", histories);
+        (await Read(coordinator, handler, histories[0].Owner)).ShouldNotBeNull().Published.ShouldNotBeNull();
+        (await Read(coordinator, handler, histories[^1].Owner)).ShouldNotBeNull().Published.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task OneTimeEntryOwnerLargerThanOneMiBProducesBoundedCompleteChunks()
+    {
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(new InMemoryReadModelStore());
+        var identity = new DomainSharedProjectionRebuildIdentity(
+            "tenant-1", "timesheets", MagicLinkConfirmationCapabilityProjection.ProjectionName,
+            "large-time-entry-owner", s_catalog);
+        ProjectionEventDto[] history = Enumerable.Range(1, 4_000)
+            .Select(index => Event(index, index, new StoredMagicLinkExpired(
+                new MagicLinkConfirmationCapabilityExpired(
+                    new MagicLinkCapabilityId("cap-" + index.ToString("D4") + "-" + new string('c', 90)),
+                    new TenantReference("tenant-1"),
+                    new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero),
+                    new MagicLinkAuditMetadata(new string('s', 80), new string('r', 120)))
+                { TimeEntryId = new TimeEntryId("entry-1") })))
+            .ToArray();
+        var request = new ProjectionRequest("tenant-1", "timesheets", "entry-1", history);
+        ReadOnlyMemory<byte> unchunked = await handler.PreparePartitionAsync(
+            identity, request, TestContext.Current.CancellationToken);
+        unchunked.Length.ShouldBeGreaterThan(1_048_576);
+        IReadOnlyList<ReadOnlyMemory<byte>> chunks = await handler.PreparePartitionChunksAsync(
+            identity, request, TestContext.Current.CancellationToken);
+        chunks.Count.ShouldBeGreaterThan(1);
+        chunks.All(static chunk => chunk.Length <= 256 * 1024).ShouldBeTrue();
+        DomainProjectionRebuildPlan plan = await handler.FinalizePartitionsAsync(
+            identity,
+            chunks.Select((chunk, ordinal) => new DomainSharedProjectionRebuildPartition(
+                0, "entry-1", chunk, ordinal)).ToArray(),
+            TestContext.Current.CancellationToken);
+        plan.Operations.Count.ShouldBe(4_001);
+    }
+
+    [Fact]
+    public async Task Applied_rebuild_selects_complete_new_generation_and_prunes_missing_capability()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        (string Owner, ProjectionEventDto Event)[] first =
+        [
+            ("cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))),
+            ("cap-2", Event(1, 2, new StoredMagicLinkIssued(Issued("cap-2"))))
+        ];
+        await Rebuild(provider, "rebuild-1", first);
+        foreach (string capability in new[] { "cap-1", "cap-2" })
+        {
+            (await store.GetAsync<object>(handler.RebuildStoreName,
+                ScratchIndexKey("rebuild-1", capability), TestContext.Current.CancellationToken))
+                .Value.ShouldBeNull();
+            (await store.GetAsync<object>(handler.RebuildStoreName,
+                ScratchIndexMarkerKey("rebuild-1", capability, capability == "cap-1" ? 0 : 1),
+                TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+        }
+        (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull();
+        (await Read(coordinator, handler, "cap-2")).ShouldNotBeNull();
+        SharedProjectionReadResult<MagicLinkConfirmationCapabilityReadModel> expired = await handler.ReadObservedAsync(
+            "tenant-1", new MagicLinkCapabilityId("cap-1"),
+            new DateTimeOffset(2026, 6, 22, 0, 0, 0, TimeSpan.Zero), coordinator,
+            TestContext.Current.CancellationToken);
+        expired.Value.ShouldNotBeNull().ExpiryState.ShouldBe(MagicLinkExpiryState.Expired);
+
+        await Rebuild(provider, "rebuild-2", [first[1]]);
+        (await store.GetAsync<object>(handler.RebuildStoreName,
+            ScratchIndexKey("rebuild-2", "cap-2"), TestContext.Current.CancellationToken))
+            .Value.ShouldBeNull();
+        (await Read(coordinator, handler, "cap-1")).ShouldBeNull();
+        (await Read(coordinator, handler, "cap-2")).ShouldNotBeNull();
+    }
+
+    [Fact]
+    public async Task Aborted_staged_rebuild_removes_private_capability_contribution_index()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        ProjectionEventDto issued = Event(1, 1, new StoredMagicLinkIssued(Issued("cap-abort")));
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets",
+            MagicLinkConfirmationCapabilityProjection.ProjectionName, "staged-abort", s_catalog);
+        string fingerprint = DomainSharedProjectionRebuildFingerprint.AppendInventory(
+            DomainSharedProjectionRebuildFingerprint.EmptyInventory, 0,
+            DomainSharedProjectionRebuildFingerprint.ComputeHistory("cap-abort", false, [issued]));
+        (await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version, DomainSharedProjectionRebuildAction.Begin, identity,
+            CaptureInventoryFingerprint: fingerprint,
+            SourceHighWatermarks: new Dictionary<string, long> { ["cap-abort"] = 1 })))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        DomainSharedProjectionRebuildResponse current = await RebuildDispatch(provider,
+            new DomainSharedProjectionRebuildRequest(DomainSharedProjectionRebuildProtocol.Version,
+                DomainSharedProjectionRebuildAction.Accumulate, identity, AggregateOrdinal: 0,
+                AggregateId: "cap-abort", Events: [issued]));
+        current = await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version, DomainSharedProjectionRebuildAction.Finalize, identity,
+            ExpectedAggregateCount: current.AcceptedAggregateCount,
+            ExpectedInventoryFingerprint: current.InventoryFingerprint));
+        current.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        (await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version, DomainSharedProjectionRebuildAction.Stage, identity)))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        string indexKey = ScratchIndexKey("staged-abort", "cap-abort");
+        (await store.GetAsync<object>(handler.RebuildStoreName, indexKey,
+            TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+
+        (await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version, DomainSharedProjectionRebuildAction.Abort, identity)))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        (await store.GetAsync<object>(handler.RebuildStoreName, indexKey,
+            TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+        (await store.GetAsync<object>(handler.RebuildStoreName,
+            ScratchIndexMarkerKey("staged-abort", "cap-abort", 0),
+            TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+        (await Read(coordinator, handler, "cap-abort")).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task PausedContributionIndexWriterCannotRecreateScratchAfterAbortCleanup()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        ProjectionEventDto issued = Event(1, 1, new StoredMagicLinkIssued(Issued("cap-race")));
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets",
+            MagicLinkConfirmationCapabilityProjection.ProjectionName, "scratch-race", s_catalog);
+        string fingerprint = DomainSharedProjectionRebuildFingerprint.AppendInventory(
+            DomainSharedProjectionRebuildFingerprint.EmptyInventory, 0,
+            DomainSharedProjectionRebuildFingerprint.ComputeHistory("cap-race", false, [issued]));
+        (await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version, DomainSharedProjectionRebuildAction.Begin, identity,
+            CaptureInventoryFingerprint: fingerprint,
+            SourceHighWatermarks: new Dictionary<string, long> { ["cap-race"] = 1 })))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        DomainSharedProjectionRebuildResponse current = await RebuildDispatch(provider,
+            new DomainSharedProjectionRebuildRequest(DomainSharedProjectionRebuildProtocol.Version,
+                DomainSharedProjectionRebuildAction.Accumulate, identity, AggregateOrdinal: 0,
+                AggregateId: "cap-race", Events: [issued]));
+        (await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version, DomainSharedProjectionRebuildAction.Finalize, identity,
+            ExpectedAggregateCount: current.AcceptedAggregateCount,
+            ExpectedInventoryFingerprint: current.InventoryFingerprint)))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+
+        var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        int pauses = 0;
+        store.BatchFaultHook = async (phase, _, token) =>
+        {
+            if (phase == ReadModelBatchPhase.BeforeDispatch && Interlocked.Increment(ref pauses) == 1)
+            {
+                reached.TrySetResult();
+                await release.Task.WaitAsync(token);
+            }
+        };
+        Task<DomainSharedProjectionRebuildResponse> stage = RebuildDispatch(provider,
+            new DomainSharedProjectionRebuildRequest(DomainSharedProjectionRebuildProtocol.Version,
+                DomainSharedProjectionRebuildAction.Stage, identity));
+        await reached.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        (await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version, DomainSharedProjectionRebuildAction.Abort, identity)))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        release.TrySetResult();
+        (await stage).Status.ShouldNotBe(ProjectionDispatchStatus.Completed);
+        (await store.GetAsync<object>(handler.RebuildStoreName,
+            ScratchIndexKey("scratch-race", "cap-race"), TestContext.Current.CancellationToken))
+            .Value.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Streamed_rebuild_joins_issuance_and_time_entry_terminal_once()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        await Rebuild(provider, "joined-stream", [
+            ("cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))),
+            ("entry-1", Event(1, 2, new StoredMagicLinkUsed(Used("cap-1"))))
+        ]);
+        (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+    }
+
+    [Fact]
+    public async Task Streamed_rebuild_joins_terminal_owner_before_issuance_owner()
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        _ = await coordinator.RegisterWriterAsync(handler.CreateScope("tenant-1"), handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        await Rebuild(provider, "terminal-before-issuance", [
+            ("entry-1", Event(1, 1, new StoredMagicLinkUsed(Used("z-cap")))),
+            ("z-cap", Event(1, 2, new StoredMagicLinkIssued(Issued("z-cap"))))
+        ]);
+        (await Read(coordinator, handler, "z-cap")).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+    }
+
+    [Fact]
+    public async Task Selected_generation_read_outage_is_retryable_and_keeps_last_view()
+    {
+        var inner = new InMemoryReadModelStore();
+        var fault = new ReadFaultStore(inner);
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(fault);
+        var coordinator = new SharedProjectionEpochCoordinator(fault, inner);
+        using ServiceProvider provider = Provider(inner, coordinator, handler);
+        (await Deliver(provider, "cap-1", Event(1, 1, new StoredMagicLinkIssued(Issued("cap-1")))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        fault.FailNextGenerationRead = true;
+        ProjectionDispatchStatus result = await Deliver(provider, "entry-1", Event(1, 2, new StoredMagicLinkUsed(Used("cap-1"))));
+        result.ShouldBe(ProjectionDispatchStatus.Retryable);
+        (await Read(coordinator, handler, "cap-1")).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued);
+    }
+
+    private static async Task Rebuild(
+        ServiceProvider provider,
+        string operation,
+        IReadOnlyList<(string Owner, ProjectionEventDto Event)> histories)
+    {
+        string fingerprint = DomainSharedProjectionRebuildFingerprint.EmptyInventory;
+        for (int i = 0; i < histories.Count; i++)
+        {
+            fingerprint = DomainSharedProjectionRebuildFingerprint.AppendInventory(
+                fingerprint, i,
+                DomainSharedProjectionRebuildFingerprint.ComputeHistory(histories[i].Owner, false, [histories[i].Event]));
+        }
+
+        var identity = new DomainSharedProjectionRebuildIdentity(
+            "tenant-1", "timesheets", MagicLinkConfirmationCapabilityProjection.ProjectionName, operation, s_catalog);
+        var begin = new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version,
+            DomainSharedProjectionRebuildAction.Begin,
+            identity,
+            CaptureInventoryFingerprint: fingerprint,
+            SourceHighWatermarks: histories.ToDictionary(static item => item.Owner, static item => item.Event.GlobalPosition, StringComparer.Ordinal));
+        DomainSharedProjectionRebuildResponse current = await RebuildDispatch(provider, begin);
+        current.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        for (int i = 0; i < histories.Count; i++)
+        {
+            current = await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+                DomainSharedProjectionRebuildProtocol.Version,
+                DomainSharedProjectionRebuildAction.Accumulate,
+                identity,
+                AggregateOrdinal: i,
+                AggregateId: histories[i].Owner,
+                Events: [histories[i].Event]));
+            current.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        }
+
+        current = await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version,
+            DomainSharedProjectionRebuildAction.Finalize,
+            identity,
+            ExpectedAggregateCount: current.AcceptedAggregateCount,
+            ExpectedInventoryFingerprint: current.InventoryFingerprint));
+        current.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        current = await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version,
+            DomainSharedProjectionRebuildAction.Stage,
+            identity));
+        current.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        current.BatchFingerprint.ShouldStartWith("stream:");
+        current = await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version,
+            DomainSharedProjectionRebuildAction.Commit,
+            identity));
+        current.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        current = await RebuildDispatch(provider, new DomainSharedProjectionRebuildRequest(
+            DomainSharedProjectionRebuildProtocol.Version,
+            DomainSharedProjectionRebuildAction.Verify,
+            identity));
+        current.Status.ShouldBeOneOf(ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+    }
+
+    private static string ScratchIndexKey(string operation, string capability)
+        => "capability-rebuild-index:" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
+            "tenant-1\0" + operation + "\0" + capability)));
+
+    private static string ScratchIndexMarkerKey(string operation, string capability, long ownerOrdinal)
+    {
+        string batchId = "scratch-index:" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
+            operation + "\0" + capability + "\0" + ownerOrdinal + ":0")));
+        return new ReadModelBatchScope("statestore", "tenant-1", "timesheets",
+            MagicLinkConfirmationCapabilityProjection.ProjectionName,
+            MagicLinkConfirmationCapabilityProjection.ProjectionName, batchId).ComputeMarkerKey();
+    }
+
+    private static Task<DomainSharedProjectionRebuildResponse> RebuildDispatch(
+        ServiceProvider provider,
+        DomainSharedProjectionRebuildRequest request)
+        => DomainSharedProjectionRebuildDispatcher.DispatchAsync(
+            provider, request, new ProjectionDispatchOptions(), s_identity, TestContext.Current.CancellationToken);
+
+    private sealed class ReadFaultStore(InMemoryReadModelStore inner) : IReadModelStore
+    {
+        public bool FailNextGenerationRead { get; set; }
+
+        public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
+            string storeName, string key, CancellationToken cancellationToken = default) where TValue : class
+        {
+            if (FailNextGenerationRead && key.StartsWith("shared-generation:", StringComparison.Ordinal))
+            {
+                FailNextGenerationRead = false;
+                throw new HttpRequestException("Injected read outage.");
+            }
+
+            return inner.GetAsync<TValue>(storeName, key, cancellationToken);
+        }
+
+        public Task SaveAsync<TValue>(
+            string storeName, string key, TValue value, CancellationToken cancellationToken = default) where TValue : class
+            => inner.SaveAsync(storeName, key, value, cancellationToken);
+
+        public Task<bool> TrySaveAsync<TValue>(
+            string storeName, string key, TValue value, string etag, CancellationToken cancellationToken = default) where TValue : class
+            => inner.TrySaveAsync(storeName, key, value, etag, cancellationToken);
+    }
+
+    private static ServiceProvider Provider(
+        InMemoryReadModelStore store,
+        SharedProjectionEpochCoordinator coordinator,
+        MagicLinkConfirmationCapabilityProjectionHandler handler)
+    {
+        var services = new ServiceCollection();
+        _ = services.AddSingleton<IReadModelStore>(store);
+        _ = services.AddSingleton<IReadModelBatchStore>(store);
+        _ = services.AddSingleton(coordinator);
+        _ = services.AddScoped<IAsyncDomainProjectionHandler>(_ => handler);
+        return services.BuildServiceProvider();
+    }
+
+    private static async Task<ProjectionDispatchStatus> Deliver(ServiceProvider provider, string owner, ProjectionEventDto item)
+    {
+        ProjectionDispatchResponse result = await DomainProjectionDispatcher.DispatchAsync(
+            provider,
+            new ProjectionDispatchRequest(
+                new ProjectionRequest("tenant-1", "timesheets", owner, [item]),
+                [MagicLinkConfirmationCapabilityProjection.ProjectionName],
+                "delivery-" + owner + "-" + item.GlobalPosition,
+                s_catalog),
+            new ProjectionDispatchOptions(),
+            s_identity,
+            TestContext.Current.CancellationToken);
+        return result.Outcomes.Single().Status;
+    }
+
+    private static async Task<MagicLinkCapabilityProjectionView?> Read(
+        SharedProjectionEpochCoordinator coordinator,
+        MagicLinkConfirmationCapabilityProjectionHandler handler,
+        string id)
+    {
+        SharedProjectionReadResult<MagicLinkCapabilityProjectionView> result = await handler.ReadViewAsync(
+            "tenant-1", new MagicLinkCapabilityId(id), coordinator, TestContext.Current.CancellationToken);
+        result.IsAvailable.ShouldBeTrue();
+        return result.Value;
+    }
+
+    private static ProjectionEventDto Event(long sequence, long position, object payload)
+        => new(payload.GetType().Name, JsonSerializer.SerializeToUtf8Bytes(payload, s_json), "json", sequence,
+            DateTimeOffset.UnixEpoch, "correlation-1", "message-" + position, "user-1", position);
+
+    private static string Physical(SharedProjectionScope scope, string key)
+        => "shared-generation:" + scope.ComputeHash() + ":0:"
+            + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+
+    private static MagicLinkConfirmationCapabilityIssued Issued(string id)
+        => new(new MagicLinkCapabilityId(id), new TenantReference("tenant-1"), new PartyReference("party-1"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-1")),
+            new ActivityTypeId("activity-type-1"), new TimeEntryId("entry-1"),
+            MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm,
+            new MagicLinkTokenHash("hash-" + id),
+            new DateTimeOffset(2026, 6, 21, 12, 0, 0, TimeSpan.Zero),
+            new PartyReference("issuer-1"), new DateTimeOffset(2026, 6, 19, 12, 0, 0, TimeSpan.Zero),
+            new MagicLinkAuditMetadata("timesheets", "issue-" + id), true);
+
+    private static MagicLinkConfirmationCapabilityUsed Used(string id)
+        => new(new MagicLinkCapabilityId(id), new TenantReference("tenant-1"), new PartyReference("party-1"),
+            new TimeEntryId("entry-1"), new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero),
+            new MagicLinkAuditMetadata("timesheets", "use-" + id));
+}

@@ -14,6 +14,7 @@ using Hexalith.EventStore.Contracts.Queries;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.ServiceDefaults.Authentication;
+using Hexalith.EventStore.Testing.Fakes;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -24,6 +25,8 @@ using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections.ActivityTypes;
+using Hexalith.Timesheets.Projections.MagicLinks;
+using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -467,6 +470,214 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
         factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
             .Entries[issued.TokenHash.Value].CapabilityId.ShouldBe(issued.CapabilityId);
+    }
+
+    /// <summary>Full Time Entry replay commits through the composed host despite its shared routes.</summary>
+    [Fact]
+    public async Task ComposedNamedRebuildCommitsAggregateOwnedTimeEntryEvidence()
+    {
+        var store = new InMemoryReadModelStore();
+        using MagicLinkHttpBoundaryFactory factory = new(batchStore: store);
+        using HttpClient client = factory.CreateClient();
+        using IServiceScope scope = factory.Services.CreateScope();
+        string[] routeNames = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
+            .Where(static handler => handler.Domain == "timesheets")
+            .Select(static handler => handler.ProjectionType)
+            .ToArray();
+        routeNames.ShouldContain(TimeEntryEvidenceProjection.ProjectionName);
+        routeNames.ShouldContain("magic-link-token-hash-capability-index");
+        routeNames.ShouldContain("magic-link-confirmation-capabilities");
+
+        DomainProjectionIdentityOptions identity = scope.ServiceProvider
+            .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>().Value;
+        ProjectionDispatchRoute[] routes = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
+            .Where(static handler => handler.Domain == "timesheets")
+            .Select(static handler => new ProjectionDispatchRoute(handler.Domain, handler.ProjectionType))
+            .ToArray();
+        string fingerprint = ProjectionRouteCatalogFingerprint.Compute(
+            identity.AppId, identity.ServiceVersion, routes);
+        var entryId = new TimeEntryId("time-entry-rebuild");
+        var recorded = new TimeEntryRecorded(
+            entryId,
+            TimeEntryTargetReference.ForProject(Project()),
+            Contributor(),
+            ActivityId(),
+            ActivityTypeScope.Tenant,
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            TimeEntryApprovalState.Draft,
+            ContributorCategory.ExternalContributor,
+            null);
+        var recordedEvent = new ProjectionEventDto(
+            typeof(TimeEntryRecorded).FullName!,
+            JsonSerializer.SerializeToUtf8Bytes(recorded, JsonOptions),
+            "json", 1, ObservedAtUtc, "rebuild-correlation", "rebuild-message",
+            Operator().PartyId, 1);
+        var dispatch = new ProjectionDispatchRequest(
+            new ProjectionRequest(Tenant().TenantId, "timesheets", entryId.Value, [recordedEvent]),
+            [TimeEntryEvidenceProjection.ProjectionName],
+            "composed-time-entry-rebuild",
+            fingerprint);
+
+        using HttpResponseMessage response = await factory.PostProjectionAsync(
+            client, "/project/rebuild/v1", dispatch);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        ProjectionDispatchOutcome outcome = (await response.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem();
+        outcome.ProjectionType.ShouldBe(TimeEntryEvidenceProjection.ProjectionName);
+        outcome.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+
+        string key = TimeEntryEvidenceReadModelAddress.StateKey(Tenant().TenantId, entryId);
+        var persisted = await store.GetAsync<TimeEntryEvidenceReadModel>(
+            TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken);
+        persisted.Value.ShouldNotBeNull().TimeEntryId.ShouldBe(entryId);
+        persisted.Value.DurationMinutes.ShouldBe(60);
+        persisted.Value.EventPayloadLineage.Count.ShouldBe(1);
+        persisted.Value.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+
+        var unrelated = recordedEvent with
+        {
+            EventTypeName = "UnrelatedOwnerEvent",
+            Payload = JsonSerializer.SerializeToUtf8Bytes(new { ignored = true }, JsonOptions),
+            MessageId = "unrelated-rebuild-message"
+        };
+        var prune = dispatch with
+        {
+            Request = new ProjectionRequest(Tenant().TenantId, "timesheets", entryId.Value, [unrelated]),
+            DispatchId = "composed-time-entry-prune"
+        };
+        using HttpResponseMessage pruneResponse = await factory.PostProjectionAsync(
+            client, "/project/rebuild/v1", prune);
+        pruneResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await pruneResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        (await store.GetAsync<TimeEntryEvidenceReadModel>(
+            TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken))
+            .Value.ShouldBeNull();
+    }
+
+    /// <summary>Normal composed projection delivery persists a selected capability after issuance and use.</summary>
+    [Fact]
+    public async Task ComposedNamedCapabilityRoutePersistsIssuedAndUsedSelectedRow()
+    {
+        var store = new InMemoryReadModelStore();
+        using MagicLinkHttpBoundaryFactory factory = new(batchStore: store);
+        using HttpClient client = factory.CreateClient();
+        using IServiceScope scope = factory.Services.CreateScope();
+        DomainProjectionIdentityOptions identity = scope.ServiceProvider
+            .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>().Value;
+        ProjectionDispatchRoute[] routes = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
+            .Where(static handler => handler.Domain == "timesheets")
+            .Select(static handler => new ProjectionDispatchRoute(handler.Domain, handler.ProjectionType))
+            .ToArray();
+        string fingerprint = ProjectionRouteCatalogFingerprint.Compute(
+            identity.AppId, identity.ServiceVersion, routes);
+        var capabilityId = new MagicLinkCapabilityId("composed-capability");
+        var entryId = new TimeEntryId("composed-entry");
+        var issued = new MagicLinkConfirmationCapabilityIssued(
+            capabilityId, Tenant(), Contributor(), TimeEntryTargetReference.ForProject(Project()),
+            ActivityId(), entryId, MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm,
+            new MagicLinkTokenHash("private-test-hash"), ObservedAtUtc.AddDays(1), Operator(),
+            ObservedAtUtc.AddHours(-1), new MagicLinkAuditMetadata("timesheets", "composed-issue"), true);
+        var used = new MagicLinkConfirmationCapabilityUsed(
+            capabilityId, Tenant(), Contributor(), entryId, ObservedAtUtc,
+            new MagicLinkAuditMetadata("timesheets", "composed-use"));
+        ProjectionEventDto Event(long position, object payload) => new(
+            payload.GetType().FullName!, JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions),
+            "json", 1, ObservedAtUtc, "composed-correlation", $"composed-message-{position}",
+            Operator().PartyId, position);
+        foreach ((string owner, ProjectionEventDto item) in new[]
+        {
+            (capabilityId.Value, Event(1, new StoredMagicLinkIssued(issued))),
+            (entryId.Value, Event(2, new StoredMagicLinkUsed(used)))
+        })
+        {
+            var dispatch = new ProjectionDispatchRequest(
+                new ProjectionRequest(Tenant().TenantId, "timesheets", owner, [item]),
+                [MagicLinkConfirmationCapabilityProjection.ProjectionName],
+                $"composed-capability-{owner}", fingerprint);
+            using HttpResponseMessage response = await factory.PostProjectionAsync(client, "/project/v2", dispatch);
+            response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            (await response.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+                JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+                .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        }
+
+        var handler = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
+            .OfType<MagicLinkConfirmationCapabilityProjectionHandler>().Single();
+        var coordinator = scope.ServiceProvider.GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionReadResult<MagicLinkConfirmationCapabilityReadModel> selected = await handler.ReadObservedAsync(
+            Tenant().TenantId, capabilityId, ObservedAtUtc, coordinator, TestContext.Current.CancellationToken);
+        selected.IsAvailable.ShouldBeTrue();
+        selected.Value.ShouldNotBeNull().State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+        JsonSerializer.Serialize(selected.Value, JsonOptions).ShouldNotContain("private-test-hash");
+    }
+
+    /// <summary>Malformed recognized evidence fails normal dispatch and mapped replay without publishing a row.</summary>
+    /// <param name="correction">Whether the malformed effect is a correction rather than a confirmation.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task MalformedTimeEntryEffectFailsDispatchAndMappedRebuild(bool correction)
+    {
+        var store = new InMemoryReadModelStore();
+        using MagicLinkHttpBoundaryFactory factory = new(batchStore: store);
+        using HttpClient client = factory.CreateClient();
+        using IServiceScope scope = factory.Services.CreateScope();
+        DomainProjectionIdentityOptions identity = scope.ServiceProvider
+            .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>().Value;
+        ProjectionDispatchRoute[] routes = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
+            .Where(static handler => handler.Domain == "timesheets")
+            .Select(static handler => new ProjectionDispatchRoute(handler.Domain, handler.ProjectionType))
+            .ToArray();
+        string fingerprint = ProjectionRouteCatalogFingerprint.Compute(
+            identity.AppId, identity.ServiceVersion, routes);
+        var entryId = new TimeEntryId(correction ? "time-entry-bad-correction" : "time-entry-bad-confirmation");
+        var recorded = new TimeEntryRecorded(
+            entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+            ActivityTypeScope.Tenant, new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+            TimeEntryApprovalState.Draft, ContributorCategory.ExternalContributor, null);
+        var correctedValues = new TimeEntryCorrectionValues(
+            TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+            new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+            ContributorCategory.ExternalContributor, null);
+        object malformed = correction
+            ? new TimeEntryCorrected(
+                entryId, new TimeEntryCorrectionId("correction-1"), Tenant(), Operator(),
+                ObservedAtUtc, null!, correctedValues, new TimeEntryRejectionReason("Rejected"),
+                new TimeEntryApprovalDecisionId("decision-1"), TimeEntryApprovalState.Draft,
+                TimeEntryCorrectionState.Corrected)
+            : new TimeEntryContributorConfirmed(
+                entryId, null!, Tenant(), ObservedAtUtc,
+                new ExternalContributionSource("magic-link", "capability-1"));
+        ProjectionEventDto Event(long sequence, object payload) => new(
+            payload.GetType().FullName!, JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions),
+            "json", sequence, ObservedAtUtc, "malformed-correlation", $"malformed-{sequence}",
+            Operator().PartyId, sequence);
+        var request = new ProjectionRequest(
+            Tenant().TenantId, "timesheets", entryId.Value, [Event(1, recorded), Event(2, malformed)]);
+
+        foreach (string path in new[] { "/project/v2", "/project/rebuild/v1" })
+        {
+            var dispatch = new ProjectionDispatchRequest(
+                request, [TimeEntryEvidenceProjection.ProjectionName],
+                $"malformed-{(correction ? "correction" : "confirmation")}-{path}", fingerprint);
+            using HttpResponseMessage response = await factory.PostProjectionAsync(client, path, dispatch);
+            response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            ProjectionDispatchOutcome outcome = (await response.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+                JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+                .Outcomes.ShouldHaveSingleItem();
+            outcome.Status.ShouldBe(ProjectionDispatchStatus.Failed);
+            outcome.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+
+            string key = TimeEntryEvidenceReadModelAddress.StateKey(Tenant().TenantId, entryId);
+            (await store.GetAsync<TimeEntryEvidenceReadModel>(
+                TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken))
+                .Value.ShouldBeNull();
+        }
     }
 
     /// <summary>Projection delivery on the internal port still requires both configured credentials.</summary>
@@ -1326,7 +1537,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         IMagicLinkTokenGenerator? tokenGenerator = null,
         IWorkloadAssertionIssuer? workloadAssertionIssuer = null,
         HttpMessageHandler? workloadGatewayHandler = null,
-        ExternalContributionPolicyOptions? externalContributionPolicy = null) : WebApplicationFactory<Program>
+        ExternalContributionPolicyOptions? externalContributionPolicy = null,
+        InMemoryReadModelStore? batchStore = null) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
@@ -1605,7 +1817,15 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
                 services.RemoveAll<IReadModelStore>();
                 services.RemoveAll<DaprReadModelStore>();
-                services.AddSingleton<IReadModelStore>(useConcreteLoader ? Store : new UnavailableReadModelStore());
+                IReadModelStore projectionStore = batchStore is not null
+                    ? batchStore
+                    : useConcreteLoader ? Store : new UnavailableReadModelStore();
+                services.AddSingleton(projectionStore);
+                if (batchStore is not null)
+                {
+                    services.RemoveAll<IReadModelBatchStore>();
+                    services.AddSingleton<IReadModelBatchStore>(batchStore);
+                }
 
                 if (workloadGatewayHandler is null)
                 {

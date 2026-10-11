@@ -1,8 +1,54 @@
 # Local magic-link Dapr proof
 
-The 2026-10-11 opt-in journey now passes against the checked-in local Aspire
-composition. The earlier preflight and delivery-only findings below remain as
-dated history. Story 3.6 and launch remain open for production gates.
+The latest 2026-10-11 opt-in attempt started with one healthy `eventstore` and
+one healthy `timesheets` Dapr app. It persisted and read back the catalog,
+then exited 1 after 22.378 seconds at the combined non-fixture issuance and
+missing-owner read assertion. An unrelated ChatBot AppHost added a second
+`eventstore` ID during the run. The assertion did not print its two individual
+statuses, so the exact failing leg of that attempt is unknown. A diagnostic
+while both IDs were present sent the same signed missing-owner request eight
+times through Timesheets' sidecar and observed alternating HTTP 500 and 404;
+the Timesheets-owned EventStore sidecar returned eight HTTP 404 responses.
+A separate signed non-fixture issuance returned HTTP 403. The fixture now
+prints only those two statuses on assertion failure. A subsequent opt-in
+attempt exited at strict preflight because two `eventstore` IDs existed. A
+final clean-preflight run reached the persisted catalog, non-fixture denial,
+both composed Time Entry rebuild readbacks, confirm race and adjust journey.
+It exited 1 after 122.714 seconds when a post-restart owner stream read
+returned HTTP 401; ChatBot had again introduced a second `eventstore` ID
+during the run. The Timesheets AppHost was stopped after each attempt; the
+unrelated AppHost was left untouched. No clean latest-tree end-to-end
+acceptance is claimed.
+
+The 2026-10-11 opt-in journey passed against an earlier revision of the
+checked-in local Aspire composition. The latest revision has no passing
+opt-in run. Two isolated attempts reached stored-event delivery: the first
+stopped at an EventStore command-status HTTP 500; the second passed the confirm
+race, then received three opaque 403 responses on the valid adjust POST.
+The next run stopped at strict preflight when an unrelated ChatBot AppHost
+restarted with a second `eventstore` Dapr ID. A later run passed catalog
+delivery and a stored recording, then its first capability stream read returned
+HTTP 429 after ChatBot restarted with a second `eventstore` ID. The Timesheets
+AppHost was stopped; the unrelated AppHost was left untouched. The current
+fixture also exercises the mapped Time Entry rebuild endpoint and checks exact
+persisted evidence; the latest attempt reached those checks as described above.
+Story 3.6 and launch remain open for production gates.
+
+## Materialized read-model extension (historical passing local run)
+
+The Story 3.6 fixture now delivers the actual stored Time Entry record and
+use/effect history to `time-entry-evidence`, and the stored issuance and use
+to `magic-link-confirmation-capabilities`. It reads the aggregate-owned
+evidence key and the capability's selected shared generation through Dapr,
+checks Fresh evidence lineage and the joined Used display, and verifies that
+no token or token hash appears in the capability value. On 2026-10-11, the
+isolated opt-in `MagicLinkLiveDaprTests` command below passed **1/1 in
+160.146 seconds** with exactly one `eventstore` and one `timesheets` Dapr app.
+It covered both new model readbacks for confirm and adjust, the one-winner
+race, EventStore restart, replay denial, and a fresh post-restart link. The
+Timesheets AppHost was stopped after the run. Two earlier attempts had passed
+the new readbacks but failed later at a transient opaque HTTP 403; the final
+passing run is historical evidence for its tested revision. Production gates remain open.
 
 ## Run the persisted journey
 
@@ -56,9 +102,12 @@ rejection marker; it never appends another use or effect. The fixture runs
 both replay denials and unchanged owner streams. It rereads the catalog and
 candidate index and uses a fresh link after restart so a loader outage cannot
 look like successful replay denial. A recording retry keeps its source-derived
-command identity. The fixture permits at most three attempts for recording and
-valid GET when the host returns an opaque `403` during transient local gateway
-unavailability; any other status or continued denial fails the test.
+command identity. The fixture permits at most three attempts for recording,
+valid GET, and valid POST when the host returns an opaque `403` during transient
+local gateway unavailability; any other status or continued denial fails the
+test. Read-only stream and command-status probes retry bounded HTTP 500/503
+responses and also HTTP 429 after EventStore restart; completion still requires exact stored-event and
+command-status matches.
 
 The direct inspection command is
 `python3 scripts/local_aspire_magic_link_journey.py`. It performs signed
@@ -81,7 +130,7 @@ or skipped in 73.929 seconds after the direct command-status and bounded
 readiness checks were added. The fixture fails if a required app, credential, store,
 projection route, stored payload, or replay guarantee disappears. This is local
 Dapr/EventStore persistence evidence only; production identity issuance,
-deployed history inventory, production read-model wiring and deployed
+deployed history inventory, deployed read-model wiring and deployed
 acceptance remain open.
 
 The exact opted-in command shown above first passed 1/1 in 71.494 seconds

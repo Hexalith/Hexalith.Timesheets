@@ -29,6 +29,9 @@ public sealed record TimeEntryEvidenceReadModel(
 
     public IReadOnlyList<TimeEntryEventLineageItem> EventLineage { get; init; } = [];
 
+    /// <summary>Canonical payload digests for the complete accepted owner prefix.</summary>
+    public IReadOnlyList<string> EventPayloadLineage { get; init; } = [];
+
     public TimeEntryApprovalDecisionEvidence? ApprovalDecision { get; init; }
 
     public TimeEntryCorrectionEvidence? Correction { get; init; }

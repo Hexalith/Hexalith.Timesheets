@@ -3,6 +3,9 @@ using System.Net;
 using Shouldly;
 
 using Hexalith.Timesheets.Runtime;
+using Hexalith.Timesheets.Projections.MagicLinks;
+using Hexalith.Timesheets.Projections.TimeEntries;
+using Hexalith.EventStore.DomainService;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -40,6 +43,21 @@ public sealed class InternalSurfaceGuardTests
         }
 
         return data;
+    }
+
+    [Fact]
+    public void Normally_composed_host_registers_both_materialized_projection_routes()
+    {
+        using GuardedFactory factory = new(allowOnAnyPort: false);
+        using HttpClient client = factory.CreateClient();
+        using IServiceScope scope = factory.Services.CreateScope();
+        string[] routes = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
+            .Where(static handler => handler.Domain == "timesheets")
+            .Select(static handler => handler.ProjectionType)
+            .ToArray();
+
+        routes.ShouldContain(TimeEntryEvidenceProjection.ProjectionName);
+        routes.ShouldContain(MagicLinkConfirmationCapabilityProjection.ProjectionName);
     }
 
     [Theory]
