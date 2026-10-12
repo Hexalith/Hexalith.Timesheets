@@ -1,6 +1,35 @@
 # Story 3.6 resume checkpoint — 2026-10-12
 
-## Current continuation
+## Current v1 migration continuation
+
+The scoped `spec-3-6-migrate-v1-magic-link-index-to-v7.md` implementation is
+locally verified. The separate authenticated `migrate-v1` route reconstructs
+v7 from independently verified complete issuance inventory, retaining legacy
+data and ordinary fail-closed behavior. The v6 migrator is unchanged. Durable
+checkpoints, pre-Begin ownership and bound EventStore witnesses cover
+page/checkpoint/seal/commit interruption, reservation races and abort cleanup
+after checkpoint deletion. Final promotion verifies exact staged membership
+and rechecks source, receipt, authority and journal after replay.
+
+SDK `10.0.401` source-reference solution restore/build passed with zero
+warnings/errors. Post-review migration/digest checks passed 64/64 and composed
+ingress passed 37/37. Three independent reviews are triaged and their patches
+verified; the pre-existing source-owner continuity prerequisite is deferred.
+The final six-suite run passed 1,867 tests with five expected skips and zero
+failures. The scoped migration spec is done; Story 3.6 remains in progress.
+Exact commands, matrix coverage and logs are in `tests/3-6-test-summary.md`.
+
+No AppHost or live journey was started. Independently verified complete
+cross-tenant coverage, real operator authority, enforced source/delivery
+quiescence, authoritative owner delivery continuity/handoff and recovery of
+the previously recorded four uncovered legacy journal deliveries remain
+unavailable. Default authority denies and the
+inventory provider is unavailable. Do not invent certification or clear
+Redis. Story 3.6 and release remain **FAIL**, Story 3.6 remains in progress,
+and both original live-dependent tasks remain unchecked. Existing spec-21,
+AppHost, ServiceDefaults, SDK sources and gitlinks are unchanged.
+
+## Prior continuation before v1 migration
 
 Resume `spec-3-6-materialize-magic-link-read-models.md`; it and Story 3.6
 remain in progress, with both live-dependent tasks unchecked. The current
@@ -75,3 +104,35 @@ The user requested **save and stop**. All work is preserved in the unstaged work
 2. Correct the remaining composed integration assertion, rerun the 10,000-owner ordinary HTTP lane with memory/time measurement, and finish all six Timesheets default lanes plus relevant EventStore SDK lanes.
 3. Update the spec task boxes and test/launch evidence with exact latest-tree results. Stage a review diff including untracked files from both repositories, then run the three context-free `$bmad-build` review layers as the rendered step 04 requires. Previous round-20 review archives are described in the spec; do not revert code unless a reviewed bad-spec loopback requires it.
 4. If the Folders owner pauses its AppHost, preflight `dapr list` for one `eventstore` ID before running the opt-in Timesheets live journey. Preserve the Story 3.6/release FAIL gate without independently certified deployed inventory, production authority, and live shared rebuild proof.
+
+## Initial explicit v1 migration handoff (2026-10-12)
+
+Continue `spec-3-6-migrate-v1-magic-link-index-to-v7.md`. The separately
+implemented `migrate-v1` route and verified-inventory migration now exist;
+the earlier statements that this implementation is missing are historical.
+The new provider remains unavailable by default and the existing authority
+remains default-deny. Focused warning-as-error Debug builds passed. Simulated
+migration tests passed 42/42 and composed ingress tests passed 31/31; exact
+commands/logs are in `tests/3-6-test-summary.md`. Parent broad verification
+and independent review remain pending for this implementation handoff.
+
+No AppHost or live journey was started, no Redis content was modified, and
+no staging, commits, dependency updates or submodule-pointer changes occurred.
+Before a real migration, independently installed immutable cross-tenant
+issuance inventory, server-side authority, source-cut and enforced writer/
+delivery quiescence evidence, and an empty pending global journal are required.
+The previously observed four uncovered legacy journal deliveries require
+verified recovery outside this migration; their captured identities cannot
+be fabricated. Resume alone must never seed trusted empty state over legacy.
+The prior failed live acceptance remains unchanged. Story 3.6 remains in
+progress and Story 3.6/release remain **FAIL**.
+
+Abort-cleanup recovery was subsequently completed through an immutable
+EventStore read-model witness retaining the exact operation/receipt/source
+binding after SDK checkpoint deletion. The new recreation test verifies
+mismatched/unauthorized refusal, matching cleanup with a revoked lookup,
+unchanged legacy selection, and successful fresh-operation persisted v7
+readback. The latest focused v1 suite passed 43/43 with no skips; its Debug
+build passed with zero warnings/errors. Exact commands/logs are in the
+Story 3.6 test summary. No live or deployed proof was added; Story 3.6 stays
+in progress and release stays **FAIL**.

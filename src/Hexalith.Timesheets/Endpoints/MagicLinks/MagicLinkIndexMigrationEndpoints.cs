@@ -14,6 +14,9 @@ public static class MagicLinkIndexMigrationEndpoints
         services.TryAddSingleton<IMagicLinkIndexMigrationAuthority,
             DenyAllMagicLinkIndexMigrationAuthority>();
         services.AddSingleton<MagicLinkTokenHashCapabilityIndexV6Migration>();
+        services.TryAddSingleton<IMagicLinkV1VerifiedInventoryProvider,
+            UnavailableMagicLinkV1VerifiedInventoryProvider>();
+        services.AddSingleton<MagicLinkTokenHashCapabilityIndexV1Migration>();
         return services;
     }
 
@@ -37,6 +40,29 @@ public static class MagicLinkIndexMigrationEndpoints
                 catch (UnauthorizedAccessException)
                 {
                     return Results.NotFound();
+                }
+            }).RequireAuthorization();
+        endpoints.MapPost("/admin/timesheets/magic-link-index/migrate-v1",
+            async (MagicLinkV1MigrationRequest request,
+                MagicLinkTokenHashCapabilityIndexV1Migration migration,
+                CancellationToken cancellationToken) =>
+            {
+                try
+                {
+                    await migration.MigrateAsync(request.OperationId, request.ReceiptId,
+                        cancellationToken).ConfigureAwait(false);
+                    return Results.NoContent();
+                }
+                catch (Exception error) when (error is UnauthorizedAccessException or ArgumentException or MagicLinkV1MigrationValidationException)
+                {
+                    return Results.NotFound();
+                }
+                catch (Exception error) when (error is InvalidOperationException or IOException or HttpRequestException
+                    or TimeoutException or OperationCanceledException
+                    or Hexalith.EventStore.Client.Projections.SharedProjectionReadUnavailableException
+                    or Hexalith.EventStore.Client.Projections.SharedProjectionWriteUnavailableException)
+                {
+                    return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
                 }
             }).RequireAuthorization();
         return endpoints;

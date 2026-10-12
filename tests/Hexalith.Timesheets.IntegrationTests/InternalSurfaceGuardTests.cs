@@ -42,6 +42,7 @@ public sealed class InternalSurfaceGuardTests
             "/project/rebuild/shared/v1",
             "/admin/operational-index-metadata",
             "/admin/timesheets/magic-link-index/migrate-v6",
+            "/admin/timesheets/magic-link-index/migrate-v1",
             "/PROJECT/v2",
             "/Process",
             "/Admin/operational-index-metadata"
@@ -87,33 +88,102 @@ public sealed class InternalSurfaceGuardTests
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    [Fact]
-    public async Task Internal_migration_route_is_default_denied_without_a_certified_operator_authority()
+    [Theory]
+    [InlineData("migrate-v6")]
+    [InlineData("migrate-v1")]
+    public async Task Internal_migration_route_is_default_denied_without_a_certified_operator_authority(string route)
     {
         using GuardedFactory factory = new(allowOnAnyPort: true, authenticatedOperator: true);
         using HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.PostAsync(
-            "/admin/timesheets/magic-link-index/migrate-v6",
-            new StringContent("{\"operationId\":\"migration\",\"certifiedInventoryFingerprint\":\"caller-only\"}",
+            "/admin/timesheets/magic-link-index/" + route,
+            new StringContent("{\"operationId\":\"migration\",\"certifiedInventoryFingerprint\":\"caller-only\",\"receiptId\":\"caller-only\"}",
                 System.Text.Encoding.UTF8, "application/json"),
             TestContext.Current.CancellationToken);
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    [Fact]
-    public async Task Internal_migration_route_requires_an_authenticated_operator()
+    [Theory]
+    [InlineData("migrate-v6")]
+    [InlineData("migrate-v1")]
+    public async Task Internal_migration_route_requires_an_authenticated_operator(string route)
     {
         var authority = new CountingMigration();
+        var inventory = new InternalMagicLinkV1Inventory([]);
         using GuardedFactory factory = new(allowOnAnyPort: true,
-            migrationAuthority: authority);
+            migrationAuthority: authority, inventory: inventory);
         using HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.PostAsync(
-            "/admin/timesheets/magic-link-index/migrate-v6",
-            new StringContent("{\"operationId\":\"migration\",\"certifiedInventoryFingerprint\":\"caller-only\"}",
+            "/admin/timesheets/magic-link-index/" + route,
+            new StringContent("{\"operationId\":\"migration\",\"certifiedInventoryFingerprint\":\"caller-only\",\"receiptId\":\"server-receipt\"}",
                 System.Text.Encoding.UTF8, "application/json"),
             TestContext.Current.CancellationToken);
         response.StatusCode.ShouldNotBe(HttpStatusCode.NoContent);
         authority.Calls.ShouldBe(0);
+        inventory.Calls.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Authenticated_v1_operator_without_installed_verified_inventory_is_opaquely_refused()
+    {
+        var store = new InMemoryReadModelStore();
+        var authority = new CountingMigration();
+        using GuardedFactory factory = new(allowOnAnyPort: true, store, authority, authenticatedOperator: true);
+        SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync("/admin/timesheets/magic-link-index/migrate-v1",
+            new StringContent("{\"operationId\":\"migration\",\"receiptId\":\"caller-only\"}", System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        authority.Calls.ShouldBe(0);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).Epoch.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Authenticated_v1_operator_with_default_authority_cannot_reserve_verified_inventory()
+    {
+        var store = new InMemoryReadModelStore();
+        var inventory = new InternalMagicLinkV1Inventory([]);
+        using GuardedFactory factory = new(allowOnAnyPort: true, store, authenticatedOperator: true, inventory: inventory);
+        SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync("/admin/timesheets/magic-link-index/migrate-v1",
+            new StringContent("{\"operationId\":\"migration\",\"receiptId\":\"server-receipt\"}", System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).Epoch.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Verified_internal_v1_route_selects_persisted_v7_candidates_and_retains_direct_legacy()
+    {
+        var store = new InMemoryReadModelStore();
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry[] rows =
+        [new("shared", new(new TenantReference("tenant-a"), new MagicLinkCapabilityId("owner-a"))),
+            new("shared", new(new TenantReference("tenant-b"), new MagicLinkCapabilityId("owner-b")))];
+        var inventory = new InternalMagicLinkV1Inventory(rows);
+        using GuardedFactory factory = new(allowOnAnyPort: true, store, new CountingMigration(),
+            authenticatedOperator: true, inventory: inventory);
+        SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        await store.SaveAsync(scope.StoreName, MagicLinkTokenHashCapabilityIndexProjection.StateKey,
+            new MagicLinkTokenHashCapabilityIndexReadModel(new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>()), TestContext.Current.CancellationToken);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync("/admin/timesheets/magic-link-index/migrate-v1",
+            new StringContent("{\"operationId\":\"route-v1\",\"receiptId\":\"server-receipt\"}", System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        MagicLinkTokenHashCapabilityIndexTreeRoot root = (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(new(store, store), scope);
+        (await reader.FindCandidatesAsync(root.TokenRoot, "shared", TestContext.Current.CancellationToken)).Count.ShouldBe(2);
+        foreach (MagicLinkTokenHashCapabilityIndexDirectoryEntry row in rows)
+            (await reader.FindOwnerAsync(root.OwnerRoot, row.Candidate.Tenant.TenantId, row.Candidate.CapabilityId.Value,
+                TestContext.Current.CancellationToken)).ShouldBe(row);
+        (await store.GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope.StoreName,
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
     }
 
     [Fact]
@@ -165,6 +235,82 @@ public sealed class InternalSurfaceGuardTests
                 ]), ReadModelBatchConcurrency.LastWrite);
             await Task.Yield();
         }
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"operationId\":\"\",\"receiptId\":\"server-receipt\"}")]
+    [InlineData("{\"operationId\":\"migration\",\"receiptId\":\"   \"}")]
+    public async Task Malformed_v1_identifiers_are_opaquely_refused_without_reservation(string body)
+    {
+        var store = new InMemoryReadModelStore();
+        using GuardedFactory factory = new(true, store, new CountingMigration(), authenticatedOperator: true,
+            inventory: new InternalMagicLinkV1Inventory([]));
+        SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync("/admin/timesheets/magic-link-index/migrate-v1",
+            new StringContent(body, System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).Epoch.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Invalid_installed_v1_inventory_is_opaquely_refused_and_retains_legacy()
+    {
+        var store = new InMemoryReadModelStore();
+        var inventory = new InternalMagicLinkV1Inventory([]) { InvalidDigest = true };
+        using GuardedFactory factory = new(true, store, new CountingMigration(), authenticatedOperator: true, inventory: inventory);
+        SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        await store.SaveAsync(scope.StoreName, MagicLinkTokenHashCapabilityIndexProjection.StateKey,
+            new MagicLinkTokenHashCapabilityIndexReadModel(new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>()), TestContext.Current.CancellationToken);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync("/admin/timesheets/magic-link-index/migrate-v1",
+            new StringContent("{\"operationId\":\"route-v1\",\"receiptId\":\"server-receipt\"}", System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).Epoch.ShouldBe(0);
+        (await store.GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope.StoreName,
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task V1_store_and_sdk_stage_failures_are_opaque_retryable_with_durable_private_state(bool sdkFailure)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InternalMagicLinkV1FaultStore(store, sdkFailure);
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry[] rows = [new("unique", new(new TenantReference("tenant"), new MagicLinkCapabilityId("owner")))];
+        using GuardedFactory factory = new(true, interrupted, new CountingMigration(), authenticatedOperator: true,
+            inventory: new InternalMagicLinkV1Inventory(rows));
+        SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        await store.SaveAsync(scope.StoreName, MagicLinkTokenHashCapabilityIndexProjection.StateKey,
+            new MagicLinkTokenHashCapabilityIndexReadModel(new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>()), TestContext.Current.CancellationToken);
+        using HttpClient client = factory.CreateClient();
+        async Task<HttpResponseMessage> SendAsync() => await client.PostAsync("/admin/timesheets/magic-link-index/migrate-v1",
+            new StringContent("{\"operationId\":\"route-v1\",\"receiptId\":\"server-receipt\"}", System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        using HttpResponseMessage failed = await SendAsync();
+        failed.StatusCode.ShouldBe(HttpStatusCode.ServiceUnavailable);
+        (await failed.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        interrupted.Fired.ShouldBe(1);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).IsBuilding.ShouldBeTrue();
+        (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+        using HttpResponseMessage retried = await SendAsync();
+        retried.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        MagicLinkTokenHashCapabilityIndexTreeRoot root = (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        (await new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope).FindOwnerAsync(root.OwnerRoot,
+            "tenant", "owner", TestContext.Current.CancellationToken)).ShouldBe(rows[0]);
+        (await store.GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope.StoreName,
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
     }
 
     /// <summary>Lists the four public capability routes without supplying a user principal or workload credentials.</summary>
@@ -232,9 +378,10 @@ public sealed class InternalSurfaceGuardTests
     }
 
     private sealed class GuardedFactory(bool allowOnAnyPort,
-        InMemoryReadModelStore? store = null,
+        IReadModelStore? store = null,
         IMagicLinkIndexMigrationAuthority? migrationAuthority = null,
-        bool authenticatedOperator = false) : WebApplicationFactory<Program>
+        bool authenticatedOperator = false,
+        IMagicLinkV1VerifiedInventoryProvider? inventory = null) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -248,7 +395,7 @@ public sealed class InternalSurfaceGuardTests
                     services.RemoveAll<IReadModelStore>();
                     services.RemoveAll<IReadModelBatchStore>();
                     services.AddSingleton<IReadModelStore>(store);
-                    services.AddSingleton<IReadModelBatchStore>(store);
+                    services.AddSingleton<IReadModelBatchStore>((IReadModelBatchStore)store);
                 }
                 if (migrationAuthority is not null)
                 {
@@ -257,6 +404,11 @@ public sealed class InternalSurfaceGuardTests
                 }
                 if (authenticatedOperator)
                     services.AddSingleton<IStartupFilter, OperatorPrincipalFilter>();
+                if (inventory is not null)
+                {
+                    services.RemoveAll<IMagicLinkV1VerifiedInventoryProvider>();
+                    services.AddSingleton(inventory);
+                }
             });
         }
     }

@@ -7,7 +7,21 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The latest 2026-10-12 source-reference restore/build with SDK `10.0.401`
+The scoped v1-to-v7 operator migration now has local code-level evidence:
+SDK `10.0.401` solution restore/build passed with zero warnings/errors, and
+post-review migration/digest checks passed 64/64 and composed ingress passed
+37/37. Three independent reviews are triaged and their patches verified;
+the pre-existing source-owner continuity prerequisite is deferred. The final
+six-suite run passed 1,867 tests with five expected skips and zero failures.
+The migration is default-denied without independent complete cross-tenant
+inventory, real operator authority and enforced source/delivery quiescence;
+authoritative owner delivery continuity/handoff remains unestablished, and
+the previously observed pending legacy journal requires verified recovery.
+No live journey was run, and no deployed certification is claimed. Story 3.6
+and release remain **FAIL**. Current commands and evidence are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+The earlier isolated 2026-10-12 source-reference restore/build with SDK `10.0.401`
 passed with zero warnings/errors, and the narrow Python proof passed 9/9.
 The isolated Timesheets AppHost had exactly one `eventstore` on app port
 8082 and one `timesheets` on 8081. Its opt-in journey failed 0/1 in
@@ -548,3 +562,33 @@ Prior Story 3.6 alternate-configuration and literal-parsing increment (2026-10-0
 | Works checkout ownership | PASS | Story 5.3 fitness tests in `WorksCheckoutGovernanceTests.cs`; `.gitmodules` and git index pin `references/Hexalith.Works` only. | Default checkout is the umbrella `references/` pin; a root gitlink is forbidden. This gate does not claim live Works host integration. |
 
 Overall release decision: **FAIL**. Stories 3.6 and 3.7 remain in progress, Story 5.2 remains in progress, and final Story 5.1 reconciliation remains ready for development. Atomic magic-link submission, EventStore-backed recording, local actor commit/reload, and composed-host registration of capability and Time Entry read-model handlers are implemented. The round-19 2026-10-12 isolated opt-in local Dapr/EventStore journey passed record, issue, confirm, adjust, race, restart, exact selected lineage, and capability readback checks in 106.313 seconds. Deployed acceptance remains open. The run-only AppHost has an EventStore resource, but the authority-mode workload issuer cannot sign tenant/domain/actor bindings. The shared-rebuild Begin producer now exists in code but has no independent installed coverage authority, all-writer receipt, certified legacy owner census, or live Dapr proof; deployed histories are unknown, and old capability-stream terminal writers must be stopped before rollout. Current Timesheets HEAD pins EventStore `3099cb27`; this worktree's SDK changes are uncommitted. Existing Works, export, performance, UI, legal-hold, package, privacy, and stakeholder gates retain their separate dispositions above.
+
+## Initial v1 migration code evidence (2026-10-12)
+
+The separate internal authenticated `migrate-v1` route is implemented with
+server-resolved inventory receipts and EventStore private epochs. The complete
+retained issuance stream includes terminal capabilities and omitted collisions,
+uses bounded tenant/append pages, and binds digest/count, source cut, independent
+coverage and enforced quiescence to durable progress. Resume and promotion
+revalidate these bindings. Local simulated migration tests passed 42/42;
+composed ingress tests passed 31/31, with both focused source-reference Debug
+builds at zero warnings/errors. Evidence and exact commands are in
+[the Story 3.6 test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+The production provider is unavailable and migration authority remains default-deny.
+No deployed inventory/installation proof, real operator authority or enforced
+writer/delivery quiescence exists here. The required empty global journal and
+verified recovery of pending legacy delivery identities have not been established.
+No AppHost, live journey or Redis migration ran in this increment. This is
+implementation evidence only; the earlier live failure and all deployed gates
+remain open. Story 3.6 remains in progress. Release remains **FAIL**.
+
+Abort-cleanup recovery was subsequently completed through an immutable
+EventStore read-model witness retaining the exact operation/receipt/source
+binding after SDK checkpoint deletion. The new recreation test verifies
+mismatched/unauthorized refusal, matching cleanup with a revoked lookup,
+unchanged legacy selection, and successful fresh-operation persisted v7
+readback. The pre-review focused v1 suite passed 43/43 with no skips; its Debug
+build passed with zero warnings/errors. Exact commands/logs are in the
+Story 3.6 test summary. No live or deployed proof was added; Story 3.6 stays
+in progress and release stays **FAIL**.

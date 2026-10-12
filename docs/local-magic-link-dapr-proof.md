@@ -1,6 +1,28 @@
 # Local magic-link Dapr proof
 
-## Current isolated local verification (2026-10-12)
+## Current v1 migration verification (2026-10-12)
+
+The separate internal `migrate-v1` operator migration is implemented and
+locally verified against simulated independent inventory/authority. The
+source-reference solution restore/build passed with zero warnings/errors;
+post-review migration/digest tests passed 64/64 and composed ingress passed
+37/37. Three independent reviews are triaged and their patches verified;
+the pre-existing source-owner continuity prerequisite is deferred. The final
+six-suite run passed 1,867 tests with five expected skips and zero failures.
+Full commands and matrix coverage are in the
+[test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+No live journey or AppHost was started for this increment. Real complete
+cross-tenant source coverage, migration authority, writer/delivery quiescence,
+authoritative owner delivery continuity/handoff, and verified recovery of
+the previously recorded pending legacy journal are
+still absent. The provider remains unavailable and authority default-deny.
+The previous isolated journey below is still the latest live acceptance
+result. Story 3.6 remains in progress and Story 3.6/release remain **FAIL**.
+Redis, AppHost, ServiceDefaults, ordinary delivery, v6 migration and SDK sources
+were preserved.
+
+## Previous isolated local verification (2026-10-12)
 
 The current SDK is `10.0.401`, as pinned by `global.json`. The source-reference
 solution restore and Debug build with `HexalithCommonsRoot=/tmp/no-commons`
@@ -713,3 +735,35 @@ ordinary project graph also failed in the existing Admin UI
 case could not run. The Timesheets projection-handler class passed (70/70)
 through its built test executable after `dotnet test` hit the repository's
 VSTest-on-.NET-10 tooling error.
+
+## Initial v1 operator migration code proof (2026-10-12)
+
+The separate `migrate-v1` implementation now exists and supersedes the earlier
+implementation-missing note. It uses EventStore epochs/read-model writes,
+server-resolved verified receipts, complete deterministic issuance replay,
+bounded private pages and tenant checkpoints, final authority/source checks,
+and atomic v7 promotion. Simulated local migration tests passed 42/42;
+composed internal-ingress tests passed 31/31. Exact build/test commands and
+logs are recorded in
+[the Story 3.6 test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+This increment ran no live journey and started no AppHost. The independently
+verified immutable cross-tenant contribution inventory and installation
+coverage, server-side operator authority, exact source-cut and externally
+enforced writer/delivery quiescence remain absent. The global pending journal
+must be empty; previously recorded uncovered legacy deliveries require verified
+recovery and cannot be covered by invented capture/checkpoint identities.
+The provider remains unavailable by default, and ordinary delivery continues
+to refuse unverified legacy state. No Redis data was seeded, cleared or migrated.
+Historical live successes/failures above remain intact; the latest live journey
+has not passed. Story 3.6 stays in progress and release stays **FAIL**.
+
+Abort-cleanup recovery was subsequently completed through an immutable
+EventStore read-model witness retaining the exact operation/receipt/source
+binding after SDK checkpoint deletion. The new recreation test verifies
+mismatched/unauthorized refusal, matching cleanup with a revoked lookup,
+unchanged legacy selection, and successful fresh-operation persisted v7
+readback. The pre-review focused v1 suite passed 43/43 with no skips; its Debug
+build passed with zero warnings/errors. Exact commands/logs are in the
+Story 3.6 test summary. No live or deployed proof was added; Story 3.6 stays
+in progress and release stays **FAIL**.

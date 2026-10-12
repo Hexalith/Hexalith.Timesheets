@@ -6,7 +6,25 @@
 
 ## Current Verification
 
-### Current independent evidence and isolated Dapr run (2026-10-12)
+### Current post-review v1 migration checks (2026-10-12)
+
+The separate EventStore-backed `migrate-v1` implementation passed final focused
+migration/digest checks 64/64 and composed ingress checks 37/37. Three
+independent reviews are triaged; all patch findings have regression evidence
+in the scoped migration spec. The pre-existing source-owner delivery
+continuity/handoff prerequisite is deferred. The final source-reference Debug
+solution build passed with zero warnings/errors in 10.07 seconds; all six
+individual default suites passed: 1,872 total, 1,867 passed, five expected
+skips, zero failures. Exact evidence is appended below.
+
+No live journey was run for this migration increment. Independently verified
+complete cross-tenant inventory, real operator authority, enforced source/
+delivery quiescence, authoritative owner continuity/handoff and recovery of
+the previously recorded four uncovered legacy journal items remain absent.
+Default authority denies and the inventory provider is unavailable. Story
+3.6 remains in progress and Story 3.6/release remain **FAIL**.
+
+### Previous independent evidence and isolated Dapr run (2026-10-12)
 
 With the `global.json` SDK `10.0.401`, source-reference solution restore
 exited 0 and the Debug build with `--no-restore -warnaserror
@@ -1191,3 +1209,271 @@ Create that empty scratch directory before either invocation. The prior binary's
 The same four scratch-root HTTP cases were rerun on 2026-10-09 from the spec-16 pre-review output with the second command above: four failures, all `HttpStatusCode.Unauthorized`, before any privacy log loop. The spec-16 420-case in-lane theory superseded the retained verifier; the current spec-17 theory has 432 cases and also checks the exact fixture comment in every category.
 
 Independent review strengthened eight test/record findings and deferred one pre-existing assertion false-positive risk: generic `60` substring checks can reject permitted correlation or timestamp data. The corresponding field-aware assertion follow-up is recorded in the spec-16 deferred-work section. These are test controls, not current HTTP or persisted-state evidence.
+
+## Explicit verified v1-to-v7 migration implementation (2026-10-12)
+
+Implemented the separately authenticated internal operator route
+`/admin/timesheets/magic-link-index/migrate-v1`. Its request identifies an
+operation and a server receipt; it never accepts a caller fingerprint as
+coverage proof. `UnavailableMagicLinkV1VerifiedInventoryProvider` and the
+existing default-deny migration authority remain the production defaults.
+The v6 migrator, ordinary projection/loader, SDK sources, Redis, AppHost,
+ServiceDefaults, dependencies and gitlinks were not changed.
+
+The receipt binds expected retained contribution count/digest, exact source
+cut, independently verified installation coverage (including certified erasure
+exclusions), and externally enforced writer/delivery quiescence. The provider
+contract includes terminal capabilities and omitted collisions. Inventories
+replay in ordinal tenant/owner order, reject duplicate/conflicting owners and
+more than 10,000 retained rows per tenant, and reject oversized identifiers.
+Preflight validates the complete stream before epoch reservation; resume and
+promotion recheck the source, receipt and authority. Checkpoints persist full
+receipt/source bindings at complete tenant boundaries. Private append pages
+contain at most eight logical mutations and respect the SDK byte limit;
+roster pages contain at most 64 rows. I/O/cancellation stages resume after
+coordinator/service recreation; invalidated evidence aborts without selecting
+v7. Direct and selected v1 data remain available after promotion.
+
+Exact focused commands (all executed from the repository root with SDK
+`10.0.401`):
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class '*MagicLinkV1MigrationTests'
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*InternalSurfaceGuardTests'
+```
+
+Both builds exited 0 with zero warnings/errors. The focused migration suite
+passed 42/42 with no skips in 1.282 seconds; the composed internal-ingress
+suite passed 31/31 with no skips in 6.517 seconds. Exact logs are
+`/tmp/timesheets-v1-projections-build.log`,
+`/tmp/timesheets-v1-migration-tests.log`,
+`/tmp/timesheets-v1-integration-build.log`, and
+`/tmp/timesheets-v1-internal-ingress-tests.log`. Fault tests assert that each
+simulated interruption actually fired, including after selector CAS and before
+the SDK commit marker. Fixtures represent simulated verification only.
+
+No live lane or AppHost was started. This repository still lacks independently
+verified immutable cross-tenant inventory/installation proof, deployed operator
+authority, enforced quiescence and verified recovery of the previously observed
+pending legacy journal. A caller-supplied receipt, legacy rows, checkpoint
+census or observed maximum cannot replace them. Missing provider installation
+is a runtime blocker. The existing live journey failure remains the latest
+live evidence. Story 3.6 remains in progress and release remains **FAIL**.
+Parent broad verification and independent build reviews are pending.
+
+Post-invalidation verification also ran the unchanged v6 migration, numeric
+index and global-index epoch classes with the new migration suite:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class '*MagicLinkV1MigrationTests' -class '*MagicLinkV6MigrationTests' -class '*MagicLinkNumericIndexTests' -class '*MagicLinkGlobalIndexEpochTests'
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests'
+```
+
+The index classes passed **61/61**, no skips, in 27.194 seconds; launch fitness
+passed **13/13**, no skips, in 0.168 seconds. Logs are
+`/tmp/timesheets-v1-index-focused-tests.log` and
+`/tmp/timesheets-v1-launch-readiness-tests.log`. The final individual v1
+rerun passed **42/42** in 1.282 seconds and ingress rerun passed **31/31**
+in 6.517 seconds after the revoked-lookup recovery case was added. That
+case returns no receipt on resume, aborts only the matching operation/receipt,
+retains legacy selection, and succeeds under a fresh operation after restored
+simulated evidence. `git diff --check` exited 0. No full-suite or deployed
+acceptance is claimed by this handoff.
+
+### Abort-cleanup restart recovery (2026-10-12)
+
+The migration now persists an immutable numeric abort witness through
+EventStore `ReadModelWritePolicy` before invoking SDK abort cleanup. It is
+outside disposable generation pages and retains the original epoch,
+operation, exact receipt and source binding after checkpoint 0 is erased.
+A recreated migrator checks the witness before reading disposable checkpoints,
+requires server-side authority for the original receipt fingerprint, and
+rejects changed operation/receipt identifiers or changed receipt contents.
+Revoked receipt lookup does not lose cleanup ownership. Matching retries
+finish abort without selecting v7; the aborted operation stays terminal and
+a fresh authorized operation can subsequently promote.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class '*MagicLinkV1MigrationTests'
+```
+
+The build exited 0 with zero warnings/errors in 9.81 seconds. All **43/43**
+v1 migration cases passed, no skips, in 1.911 seconds. Logs are
+`/tmp/timesheets-v1-abort-recovery-build.log` and
+`/tmp/timesheets-v1-abort-recovery-tests.log`. The new deterministic test
+fails once after the SDK physically deletes checkpoint 0, asserts Aborting
+and unchanged legacy selection, recreates the coordinator/service, refuses
+mismatched and unauthorized retries, finishes only the bound cleanup even
+when receipt lookup returns null, and verifies all persisted v7 candidates
+under a fresh operation. `git diff --check` exited 0. Earlier focused counts
+remain historical; parent broad verification/review is pending.
+
+
+## Parent verification of the v1 migration (2026-10-12)
+
+The reviewed implementation candidate is the working tree based on
+`60580d974c6e77a7e9fe0cbab93f22670c02ecda`, including abort-cleanup recovery.
+SDK `10.0.401` is selected by current `global.json`.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests -noColor
+```
+
+Restore exited 0. Build exited 0 with zero warnings/errors in 30.44 seconds.
+Logs: `/tmp/timesheets-v1-parent-restore.log` and
+`/tmp/timesheets-v1-parent-build.log`. The test projects were launched
+individually, concurrently; each executable exited 0.
+
+| Default suite | Total | Passed | Failed | Skipped | Time (seconds) |
+|---|---:|---:|---:|---:|---:|
+| ArchitectureTests | 56 | 56 | 0 | 0 | 6.615 |
+| Contracts.Tests | 92 | 92 | 0 | 0 | 1.840 |
+| Server.Tests | 543 | 543 | 0 | 0 | 2.060 |
+| Projections.Tests | 365 | 365 | 0 | 0 | 620.589 |
+| IntegrationTests | 713 | 708 | 0 | 5 | 648.213 |
+| Works.Tests | 76 | 76 | 0 | 0 | 0.673 |
+| Total | 1845 | 1840 | 0 | 5 | |
+
+Per-project logs are `/tmp/timesheets-v1-parent-<suite>.log` with the exact
+suite names above. Integration's five skips retain the declared performance,
+live Dapr, and infrastructure opt-ins. No live or performance opt-in was set.
+
+The scoped spec's complete matrix is covered by passing tests in
+`MagicLinkV1MigrationTests` (43/43) and `InternalSurfaceGuardTests` (31/31):
+
+| Matrix row | Passing coverage |
+|---|---|
+| Authority absent | MissingAuthorityCoverageOrQuiescenceNeverReservesAnEpoch; internal default-deny/authentication/provider cases |
+| Unique-only legacy | DirectOrSelectedV1RecoversAllCertifiedCandidatesIncludingCrossTenantCollisions |
+| Invalid inventory | InvalidCompleteInventoryIsRejectedBeforeReservation; ReceiptRevocationDuringStagingIsCheckedAgainBeforePromotion |
+| Unsafe source | PendingLegacyDeliveryIsRefusedWithoutFabricatingCapturedIdentities; MixedOrMissingLegacyLayoutsAreRefusedBeforeReservation; invalidated-root/source-cut cases |
+| Interrupted migration | InterruptedPrivatePagesCheckpointSealAndCommitResumeAfterRecreation; InterruptedAbortCleanupRetainsReceiptBindingAfterErasingFirstCheckpoint |
+| Failed migration | InvalidatedStagedEvidenceAbortsWithLegacySelectedAndPrivateGenerationIsolated; revoked lookup and abort-cleanup recovery cases |
+| Successful migration | DirectOrSelectedV1RecoversAllCertifiedCandidatesIncludingCrossTenantCollisions; Verified_internal_v1_route_selects_persisted_v7_candidates_and_retains_direct_legacy; changed-receipt refusal |
+
+PhysicalStagingUsesAtMostEightMutationsAndSixtyFourRowsPerRosterPage checks
+persisted bounded pages and every candidate/owner/tenant readback. Fixtures
+simulate independent verification; they certify no deployed inventory.
+Unchanged v6 and ordinary bootstrap/rebuild regressions passed in the full
+projection and integration suites.
+
+Additional inventory investigation found `ListTenantsQueryHandler` in the
+sibling Tenants module serves a paginated tenant-index projection visible to
+the caller (all tenants for a global administrator) and returns an empty
+result when the index is absent. That view is not independent source coverage.
+EventStore's installed source rosters remain tenant-scoped and require
+independent coverage and all-writer receipts. Neither mechanism establishes
+the missing complete global legacy owner census in this checkout.
+
+Story 3.6 remains in progress and release FAIL. No live lane was run because
+real inventory/authority/quiescence and recorded pending-journal recovery
+cannot be established. Three independent build reviews are pending.
+
+
+## Post-review v1 migration verification (2026-10-12)
+
+Three independent context-free reviews completed. All 18 reviewer findings
+were triaged individually before grouping; the parent then verified two
+additional reservation races. All 19 patch findings are implemented and
+have regression evidence in the scoped spec's review closure. One
+pre-existing prerequisite is deferred: independently verified legacy
+source-owner delivery continuity/handoff and pending-journal recovery.
+No candidate or unique-only legacy row is converted into a source checkpoint.
+
+The final edited-file checks were:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class '*MagicLinkV1MigrationTests' -class '*MagicLinkV1InventoryDigestTests'
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*InternalSurfaceGuardTests'
+```
+
+Both builds exited 0 with zero warnings/errors. Migration/digest passed
+**64/64 in 17.710 seconds**; ingress passed **37/37 in 6.634 seconds**, with
+no skips or failures. Logs are `/tmp/timesheets-v1-review-{build,tests,ingress-build,ingress-tests}.log`.
+Fixed literal receipt and contribution vectors were independently computed
+with Python SHA-256 and big-endian length prefixes. They cover property
+order, Unicode/escaped values and empty inventory.
+
+The 10,000-contribution boundary test uses a 256-byte tenant, 120-character
+owners and 128-character hashes. Every persisted token/owner row and the
+exact complete roster match the source. The measured largest physical page
+canonical values total **194,660 bytes**, the largest roster page is
+**155,722 bytes**, and **156 byte-split pages** were observed; append width
+is at most eight. The SDK's real batch validation accepted all staged pages.
+No global inventory is retained in memory; staging and membership checks
+retain one bounded tenant, with global leaf counts traversed separately.
+
+New deterministic callbacks demonstrate revocation/source changes during
+final replay and after successful sealing, persisted Begin before checkpoint
+zero, denied cleanup preserving exact state, changed malformed receipts,
+checkpoint-root corruption, selected marker repair after certification
+expiry, refusal of invalid selected layouts, and both preflight and
+post-ownership intervening promotions. A concurrent abort during unbound
+ownership recovery binds and isolates only the actually acquired epoch.
+Terminal retries cannot allocate again. Every injected callback/fault is
+asserted to have fired. Simulated receipt/authority fixtures certify no real
+installation.
+
+No live journey or AppHost was started. The independent inventory investigation
+found no installed global legacy census or migration authority. Tenant-index
+queries and per-tenant source rosters/snapshots cannot certify omitted global
+collisions; checkpoint enumeration can skip absent/corrupt pages. Complete
+immutable cross-tenant coverage, real authority, externally enforced source/
+delivery quiescence, authoritative owner continuity/handoff and verified
+recovery of the previously recorded four uncovered legacy journal entries
+must exist before a real migration/live journey. Default provider remains
+unavailable and authority default-deny. Story 3.6 and release remain **FAIL**.
+
+### Final parent build and six default suites
+The parent rebuilt the final source with SDK `10.0.401` after the review patches. No dependencies changed; the successful source-reference restore recorded above remains applicable.
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests -noColor
+```
+
+Build exited 0 in **10.07 seconds**, zero warnings/errors; log `/tmp/timesheets-v1-postreview-build.log`. Every test executable exited 0. The six projects ran individually, concurrently; no live or performance opt-in was set.
+
+| Default suite | Total | Passed | Failed | Skipped | Time (seconds) |
+|---|---:|---:|---:|---:|---:|
+| ArchitectureTests | 56 | 56 | 0 | 0 | 3.495 |
+| Contracts.Tests | 92 | 92 | 0 | 0 | 0.915 |
+| Server.Tests | 543 | 543 | 0 | 0 | 1.376 |
+| Projections.Tests | 386 | 386 | 0 | 0 | 570.029 |
+| IntegrationTests | 719 | 714 | 0 | 5 | 596.765 |
+| Works.Tests | 76 | 76 | 0 | 0 | 0.581 |
+| Total | 1872 | 1867 | 0 | 5 | |
+
+Per-project logs are `/tmp/timesheets-v1-postreview-<suite>.log` with the exact suite names above; parsed totals are `/tmp/timesheets-v1-postreview-results.json`. The five expected Integration skips are the declared live, performance and infrastructure lanes. Earlier counts in this document are dated evidence.
+
+The scoped migration spec is done. Story 3.6, its original live-dependent spec tasks and sprint state remain in progress; Story 3.6/release remain **FAIL**. Redis, AppHost, ServiceDefaults, ordinary delivery/loader, the v6 migrator, SDK sources, dependencies and gitlinks are unchanged. The Git index is untouched and HEAD remains `60580d974c6e77a7e9fe0cbab93f22670c02ecda`.
+
+
+Final launch-readiness fitness after the evidence edits exited 0: **13/13 in
+0.136 seconds**, no skips or failures:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+```
+
+Log: `/tmp/timesheets-v1-postreview-final-readiness.log`. `git diff --check`
+passed. Protected-source/story comparisons and the empty staged diff confirm
+preservation of the existing work. The final baseline-relative unified diff,
+including every untracked file, is
+`/tmp/timesheets-v1-migration-postreview-4uzfa6gj.diff`; no Git staging was used.

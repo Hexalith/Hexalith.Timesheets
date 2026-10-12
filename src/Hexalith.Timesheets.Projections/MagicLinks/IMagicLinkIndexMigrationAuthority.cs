@@ -2,7 +2,8 @@ namespace Hexalith.Timesheets.Projections.MagicLinks;
 
 /// <summary>
 /// Server-side operator authority and certified full-inventory receipt check for the explicit
-/// v6-to-v7 migration. A submitted fingerprint alone never grants this operation.
+/// v6-to-v7 migration and verified-inventory v1-to-v7 migration. A submitted fingerprint alone never
+/// grants this operation; v1 calls bind all server-resolved receipt fields into the fingerprint.
 /// </summary>
 public interface IMagicLinkIndexMigrationAuthority
 {
