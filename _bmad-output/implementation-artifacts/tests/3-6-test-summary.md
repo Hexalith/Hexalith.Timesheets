@@ -6,6 +6,31 @@
 
 ## Current Verification
 
+### Later isolated Dapr runs (2026-10-12)
+
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire start --no-build --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive --format Json`
+started one Timesheets AppHost. `dapr list` showed one `eventstore` on app
+port 8082 and one `timesheets` on app port 8081. The opt-in command was
+`TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor`.
+
+| Run | Result |
+| --- | --- |
+| 1 | Failed in 45.166 seconds. Catalog delivery and non-fixture denial printed. The idempotent recording retry returned 403. |
+| 2 | Failed in 79.433 seconds after the recording retry used the same bounded 403 wait. Index `/project/v2` returned status 2, `delivery_state_unavailable`. |
+| 3 | After a 70-second pause, failed in 67.923 seconds (68.177 seconds wall clock) with the same index outcome. |
+
+The direct state key `timesheets:magic-links:token-hash-capability-index:v1`
+still holds 72 entries. `HasSelectedLegacyIndexAsync` throws
+`SharedProjectionReadUnavailableException` for that key, and the dispatcher
+maps it to `delivery_state_unavailable`. The V7 format and root were absent,
+all 256 shard copy-on-write pointers were absent, and the global epoch
+journal held 4 unprepared issuance deliveries. Redis was not cleared.
+`python3 -m unittest test_magic_link_index_selection.py test_magic_link_evidence_lineage.py -v`
+from `scripts/` passed 8/8. `aspire stop --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive`
+then left `dapr list` empty and `aspire ps --non-interactive --format Json`
+as `[]`. The two live spec tasks stay unchecked. Story 3.6 and release
+remain `FAIL`.
+
 ### Round-24 directory and tenant-bounded rebuild proof (2026-10-12)
 
 The source-reference Projections test project built with `--no-restore
@@ -53,8 +78,9 @@ The executable paths were
 and
 `references/Hexalith.EventStore/tests/Hexalith.EventStore.DomainService.Tests/bin/Debug/net10.0/Hexalith.EventStore.DomainService.Tests`,
 respectively.
-The live Dapr journey remains blocked by the
-unrelated Folders runtime's duplicate `eventstore` ID. Story 3.6 and release
+At this round the live Dapr journey was still blocked by the
+unrelated Folders runtime's duplicate `eventstore` ID. The later isolated
+runs above are the current live evidence. Story 3.6 and release
 remain `FAIL`.
 
 ### Round-23 V7 bootstrap and effective-value checks (2026-10-12)

@@ -1,5 +1,37 @@
 # Local magic-link Dapr proof
 
+## Later isolated local runs (2026-10-12)
+
+The Timesheets AppHost was started with
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire start --no-build --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive --format Json`.
+Before the journeys, `dapr list` contained only this AppHost's `eventstore`
+(HTTP 22143, app port 8082) and `timesheets` (HTTP 22146, app port 8081).
+No unrelated AppHost was stopped and Redis was not cleared.
+
+`TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor`
+failed three times:
+
+- 45.166 seconds: catalog delivery and non-fixture denial succeeded, then
+  the idempotent recording retry returned 403.
+- 79.433 seconds: after that retry used the same bounded 403 delays as the
+  first write, index delivery returned
+  `[{'projectionType': 'magic-link-token-hash-capability-index', 'status': 2, 'state': None, 'reasonCode': 'delivery_state_unavailable'}]`.
+- 67.923 seconds, after waiting 70 seconds: the same index outcome.
+
+The direct key `timesheets:magic-links:token-hash-capability-index:v1`
+contains 72 entries. First V7 bootstrap calls
+`HasSelectedLegacyIndexAsync`, which throws
+`SharedProjectionReadUnavailableException` when that direct root exists.
+The dispatcher reports `delivery_state_unavailable`. The V7 format and root
+were absent, the 256 shard copy-on-write pointers were absent, and the
+global epoch journal held 4 unprepared issuance deliveries. The candidate
+and effective-value readbacks were not reached. Narrow Python checks passed
+8/8. `aspire stop --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive`
+stopped only this AppHost; `dapr list` was empty and
+`aspire ps --non-interactive --format Json` was `[]`. Deployed inventory,
+authority, and certified live shared rebuild remain unproven. Story 3.6 and
+release remain `FAIL`.
+
 ## Round-23 latest-tree preflight (2026-10-12)
 
 After the round-22 `/project/v2` failure, the V7 bootstrap scan was changed
@@ -12,7 +44,8 @@ journey requires exactly one `eventstore` ID on app port 8082. Folders then
 briefly disappeared and restarted within ten seconds of two empty Dapr/Aspire
 preflight reads; no stable isolation window existed. The Timesheets AppHost
 was not started. Folders was left untouched and Redis was not cleared. The
-round-22 failed attempts remain the latest isolated local result; deployed
+round-22 failed attempts were the latest isolated local result at this
+preflight; the later isolated runs above supersede them. Deployed
 inventory, authority, and certified live shared rebuild remain unproven.
 Story 3.6 and release remain `FAIL`.
 

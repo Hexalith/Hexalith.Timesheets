@@ -23,6 +23,21 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-12)
 
+A later isolated Timesheets AppHost started with
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1` and exactly one `eventstore` (app port 8082)
+and one `timesheets` (app port 8081). Three opt-in live journeys failed.
+The first failed in 45.166 seconds because the idempotent recording retry
+returned 403. After that retry waited across the same actor-limit delays as
+the first write, the following runs failed in 79.433 seconds and 67.923
+seconds at `magic-link-token-hash-capability-index` delivery with
+`delivery_state_unavailable`. The direct v1 index key still contains 72
+entries, so first V7 bootstrap throws
+`SharedProjectionReadUnavailableException` and publishes no root. Redis was
+not cleared. Narrow Python checks passed 8/8. The two live spec tasks stay
+unchecked. Stopping only that AppHost left `dapr list` and `aspire ps`
+empty. Independently certified deployed evidence is absent. Story 3.6 and
+release remain `FAIL`.
+
 Round-24 closes the two remaining code-level numeric index tasks. The
 handler-level four-tenant rebuild test covers 34,800 contributions and more
 than 400 selected pages, with repeated replacement/prune and unrelated
@@ -32,9 +47,8 @@ concrete loader; every selected contribution in the latter matches and
 resolves against its input. Focused tests and the full Projections lane
 (322/322 in 453.930 seconds) pass as recorded in the
 [test summary](tests/3-6-test-summary.md). The prior intermittent SDK
-retirement-cleanup result remains unexplained. The latest-tree live Dapr
-journey still needs stable isolation, and independently certified deployed
-evidence is absent. Story 3.6 and release remain `FAIL`.
+retirement-cleanup result remains unexplained. Independently certified
+deployed evidence is absent. Story 3.6 and release remain `FAIL`.
 
 Round-23 bounds the first V7 legacy-shard scan and checks the final legacy
 shard before bootstrap. The source-reference build and focused Projection
@@ -42,9 +56,9 @@ tests pass. The full default Integration lane passed 702/707 before that
 final edit and again afterward in 504.340 seconds. Python index and effective
 evidence checks pass 8/8. Folders owned an unrelated `eventstore` Dapr ID
 and restarted within ten seconds of two empty preflight reads, so no new
-Timesheets live run could be isolated. The previous two
-`/project/v2` failures remain unresolved live evidence. Story 3.6 and
-release remain `FAIL`.
+Timesheets live run could be isolated then. The previous two
+`/project/v2` failures were the latest live evidence until the isolated runs
+above. Story 3.6 and release remain `FAIL`.
 
 The round-22 worktree adds a V7 copy-on-write global index with bounded
 tenant rosters, candidate-generation rechecks, ordered ordinary insertion,

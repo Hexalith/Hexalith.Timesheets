@@ -22,8 +22,9 @@ def _pascal(value):
 
 
 def _path(hash_value, candidate):
+    """Match TokenPath: UTF-8 Base64 with '+' and '/' replaced and padding removed."""
     def encode(value):
-        return base64.b64encode(value.encode()).rstrip(b"=").decode()
+        return base64.urlsafe_b64encode(value.encode()).rstrip(b"=").decode()
     return (hash_value + "!" + encode(candidate["tenant"]["tenantId"])
             + "!" + encode(candidate["capabilityId"]["value"]))
 

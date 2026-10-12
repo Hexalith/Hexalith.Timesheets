@@ -514,9 +514,10 @@ def journey(action, race=False):
             and complete_evidence_lineage(evidence, record_events)
             and effective_evidence_values_match(evidence, record_events),
             "Delivered record evidence is not fresh, complete, or equal to stored values")
-    retry_status, _ = management("/api/timesheets/external-contributions/", record)
-    require(retry_status == 202 and event_names(entry) == recorded,
-            f"Recording retry returned {retry_status} or appended another event")
+    # The same public 403 can hide an actor 429 on the idempotent retry.
+    await_success(lambda: management("/api/timesheets/external-contributions/", record), 202,
+                  "Recording retry", retry_delays=ACTOR_RATE_LIMIT_RETRY_DELAYS)
+    require(event_names(entry) == recorded, "Recording retry appended another event")
 
     issue = {
         "capabilityId": {"value": capability},

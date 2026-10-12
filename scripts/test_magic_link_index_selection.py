@@ -8,10 +8,13 @@ from magic_link_index_selection import _path, _physical, selected_candidate
 
 
 class SelectedIndexTests(unittest.TestCase):
-    def test_numeric_path_matches_standard_base64_encoding(self):
+    def test_numeric_path_matches_server_url_safe_base64(self):
         candidate = {"tenant": {"tenantId": "\u083e"},
-                     "capabilityId": {"value": "capability-1"}}
-        self.assertEqual("hash!4KC+!Y2FwYWJpbGl0eS0x", _path("hash", candidate))
+                     "capabilityId": {"value": "aa?"}}
+        # U+083E is 4KC+ and "aa?" is YWE/ in standard Base64. The server path
+        # uses the URL-safe alphabet and strips padding, so those become 4KC- and YWE_.
+        self.assertEqual("hash!4KC-!YWE_", _path("hash", candidate))
+        self.assertNotEqual("hash!4KC+!YWE/", _path("hash", candidate))
 
     def test_numeric_candidate_requires_content_bound_node_and_stable_root(self):
         candidate = {"tenant": {"tenantId": "tenant-1"},

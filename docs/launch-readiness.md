@@ -7,6 +7,17 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
+A later 2026-10-12 isolated Timesheets AppHost had one `eventstore` on app
+port 8082 and one `timesheets` on 8081. Three opt-in magic-link journeys
+failed: 45.166 seconds at a recording-retry 403, then 79.433 seconds and
+67.923 seconds at index `delivery_state_unavailable`. The shared store still
+contains a direct v1 index of 72 entries, which the first V7 bootstrap
+rejects before publishing a root. Redis was not cleared, and only that
+AppHost was stopped. These runs do not supply deployed evidence. Story 3.6
+and release remain **FAIL**; exact commands are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md)
+and [local proof](local-magic-link-dapr-proof.md).
+
 The round-24 code-level index proof passed the focused numeric index class
 3/3 after routing its 34,800-contribution, four-tenant test through the real
 rebuild handler. Repeated A and B replacement/prune preserved C and D across
@@ -27,8 +38,9 @@ edit and again on the final tree in 504.340 seconds; focused post-edit
 Projection tests passed 3/3. Python V7 selection and effective evidence
 checks pass 8/8. The latest live preflight found Folders' unrelated
 `eventstore` Dapr ID, then Folders restarted within ten seconds of two
-empty preflight reads. The Timesheets AppHost was not started. The previous
-two `/project/v2` failures remain the latest local live outcome. Story 3.6
+empty preflight reads. The Timesheets AppHost was not started. Those
+two `/project/v2` failures were the latest local live outcome until the
+isolated runs above. Story 3.6
 and release remain **FAIL**; exact checks are in [the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md)
 and [local proof](local-magic-link-dapr-proof.md).
 

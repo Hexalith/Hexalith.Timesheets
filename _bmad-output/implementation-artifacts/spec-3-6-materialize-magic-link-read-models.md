@@ -193,18 +193,36 @@ context:
 
 ## Implementation Notes
 
+A later isolated Timesheets AppHost on 2026-10-12 had one `eventstore` on
+app port 8082 and one `timesheets` on 8081. Three opt-in
+`MagicLinkLiveDaprTests` runs failed. The first returned 403 from the
+idempotent recording retry after 45.166 seconds. After that retry used the
+same bounded 403 wait as the first write, the next two runs reached index
+delivery and failed: 79.433 seconds and 67.923 seconds, both with
+`magic-link-token-hash-capability-index` status 2 and
+`delivery_state_unavailable`. The shared store still holds the direct v1
+index key with 72 entries. `HasSelectedLegacyIndexAsync` treats that key as
+an unmigrated legacy root and throws `SharedProjectionReadUnavailableException`
+before V7 bootstrap; the dispatcher reports that as a retryable store
+outage. No V7 root was published, all 256 shard copy-on-write pointers were
+absent, and the global epoch journal retained 4 unprepared issuance
+deliveries. Redis was not cleared. Narrow Python selection and evidence
+checks passed 8/8, including URL-safe path encoding. The two live tasks
+above stay unchecked. Only this AppHost was stopped; `dapr list` and
+`aspire ps` were empty afterward. Deployed gates and Story 3.6/release
+remain `FAIL`.
+
 Round-23 code-level checks include a bounded 16-wide read of all 256 legacy
 shards before first V7 bootstrap, a selected last-shard legacy test, Python
 V7 interior and ambiguous candidate checks, server-compatible Base64 path
 encoding, and exact adjusted-comment evidence comparison. The full default
 Integration lane passed 702/707 with five declared skips before the final
 bootstrap edit and again afterward (504.340 seconds on the final tree). The
-latest live preflight found Folders' unrelated `eventstore` Dapr ID on app
-port 8080. Folders briefly disappeared and restarted within ten seconds of
-two empty preflight reads, so no new Timesheets AppHost was started. The
-round-22 `delivery_state_unavailable`
-failures remain the latest local live result. The live tasks above remain
-unchecked and Story 3.6/release remain `FAIL`.
+live preflight at that point found Folders' unrelated `eventstore` Dapr ID
+on app port 8080. Folders briefly disappeared and restarted within ten
+seconds of two empty preflight reads, so no new Timesheets AppHost was
+started then. The round-22 `delivery_state_unavailable` failures were the
+latest local live result until the isolated runs above.
 
 The reviewed round-20 code is preserved as `/tmp/bmad-build-3-6-round20-parent-head-code.patch`, `/tmp/bmad-build-3-6-round20-parent-files.tar`, `/tmp/bmad-build-3-6-round20-eventstore-code.patch`, and `/tmp/bmad-build-3-6-round20-eventstore-files.tar`, with manifests and SHA-256 digests. The original parent baseline-relative patch is also archived, but the HEAD-relative patch is the one to restore into the current committed Timesheets tree. Both restore patches pass `git apply --check` after the controlled code-only revert; story/spec/test and launch evidence documents remain edited. The round-20 zero-warning build, six passing test executables, focused 10,000-owner and 65-hash checks, and Python checks are historical until the next tree is verified. Folders held a duplicate `eventstore` Dapr ID, so no round-20 isolated live run occurred and no unrelated runtime was stopped.
 
