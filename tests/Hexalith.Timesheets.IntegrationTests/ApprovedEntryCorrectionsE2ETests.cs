@@ -91,7 +91,8 @@ public sealed class ApprovedEntryCorrectionsE2ETests
         corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
         corrected.PreviousValues.DurationMinutes.ShouldBe(60);
         corrected.CorrectedValues.DurationMinutes.ShouldBe(75);
-        corrected.CorrectedValues.Comment.ShouldBe(correction.Comment);
+        corrected.CorrectedValues.Comment.ShouldNotBeNull().Text.ShouldBe(correction.Comment!.Text);
+        corrected.CorrectedValues.Comment.Policy.ServerPublicationVersion.ShouldBe(1);
         state.Apply(corrected);
         state.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
         state.LockState.ShouldBe(TimeEntryLockState.LockedFromDirectEdit);
@@ -103,7 +104,7 @@ public sealed class ApprovedEntryCorrectionsE2ETests
         evidence.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
         evidence.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
         evidence.DurationMinutes.ShouldBe(75);
-        evidence.Comment.ShouldBe(correction.Comment);
+        evidence.Comment.ShouldBe(corrected.CorrectedValues.Comment);
         evidence.Correction.ShouldBeNull();
         evidence.ApprovalDecision.ShouldNotBeNull().ShouldSatisfyAllConditions(
             decision => decision.TimeEntryApprovalDecisionId.ShouldBe(approvalDecisionId),

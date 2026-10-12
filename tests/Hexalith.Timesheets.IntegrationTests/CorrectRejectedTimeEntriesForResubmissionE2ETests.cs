@@ -92,7 +92,8 @@ public sealed class CorrectRejectedTimeEntriesForResubmissionE2ETests
         corrected.RejectionDecisionId.ShouldBe(rejectionDecisionId);
         corrected.PreviousValues.DurationMinutes.ShouldBe(60);
         corrected.CorrectedValues.DurationMinutes.ShouldBe(75);
-        corrected.CorrectedValues.Comment.ShouldBe(correction.Comment);
+        corrected.CorrectedValues.Comment.ShouldNotBeNull().Text.ShouldBe(correction.Comment!.Text);
+        corrected.CorrectedValues.Comment.Policy.ServerPublicationVersion.ShouldBe(1);
         state.Apply(corrected);
 
         TimeEntrySubmitted resubmission = await SubmitOneAsync(
@@ -110,7 +111,7 @@ public sealed class CorrectRejectedTimeEntriesForResubmissionE2ETests
         evidence.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
         evidence.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
         evidence.DurationMinutes.ShouldBe(75);
-        evidence.Comment.ShouldBe(correction.Comment);
+        evidence.Comment.ShouldBe(corrected.CorrectedValues.Comment);
         evidence.ApprovalDecision.ShouldNotBeNull().ShouldSatisfyAllConditions(
             decision => decision.ApprovalState.ShouldBe(TimeEntryApprovalState.Rejected),
             decision => decision.Reason.ShouldBe(rejectionReason));

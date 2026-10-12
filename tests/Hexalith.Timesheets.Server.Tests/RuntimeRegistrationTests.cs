@@ -68,6 +68,7 @@ public sealed class RuntimeRegistrationTests
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton(Substitute.For<IEventStoreGatewayClient>());
         services.AddSingleton(Substitute.For<IReadModelStore>());
+        services.AddSingleton(Substitute.For<IReadModelBatchStore>());
         services.AddTimesheetsServerKernel();
 
         using ServiceProvider provider = services.BuildServiceProvider();

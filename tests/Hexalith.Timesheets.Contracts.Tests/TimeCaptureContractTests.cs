@@ -1461,6 +1461,17 @@ public sealed class TimeCaptureContractTests
         schemas.ContainsKey("TimeEntryEvidenceReadModel").ShouldBeTrue();
         schemas.ContainsKey("TimesheetsMetadataDescriptor").ShouldBeTrue();
 
+        JsonObject evidenceSchema = schemas["TimeEntryEvidenceReadModel"].ShouldNotBeNull().AsObject();
+        JsonObject evidenceProperties = evidenceSchema["properties"].ShouldNotBeNull().AsObject();
+        evidenceSchema["required"].ShouldNotBeNull().AsArray()
+            .Select(static item => item!.GetValue<string>()).ShouldContain("eventPayloadLineage");
+        evidenceProperties["eventPayloadLineage"].ShouldNotBeNull().AsObject()["type"]!
+            .GetValue<string>().ShouldBe("array");
+        evidenceProperties["packedEventLineage"].ShouldNotBeNull().AsObject()["format"]!
+            .GetValue<string>().ShouldBe("byte");
+        evidenceProperties["packedPayloadLineage"].ShouldNotBeNull().AsObject()["format"]!
+            .GetValue<string>().ShouldBe("byte");
+
         JsonObject correctionValues = schemas["TimeEntryCorrectionValues"].ShouldNotBeNull().AsObject();
         JsonObject correctionProperties = correctionValues["properties"].ShouldNotBeNull().AsObject();
         JsonObject activityTypeScope = correctionProperties["activityTypeScope"].ShouldNotBeNull().AsObject();

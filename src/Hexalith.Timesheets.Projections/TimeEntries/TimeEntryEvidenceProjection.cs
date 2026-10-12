@@ -1,14 +1,18 @@
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 
 namespace Hexalith.Timesheets.Projections.TimeEntries;
 
+/// <summary>Folds one owner's recognized stored events into display evidence.</summary>
 public sealed class TimeEntryEvidenceProjection
 {
+    /// <summary>The registered aggregate-owned projection name.</summary>
     public const string ProjectionName = "time-entry-evidence";
 
+    /// <summary>Projects one owner's canonical event history into a Time Entry evidence row.</summary>
     public TimeEntryEvidenceReadModel? Project(
         string tenantId,
         TimeEntryId timeEntryId,
@@ -41,7 +45,7 @@ public sealed class TimeEntryEvidenceProjection
                 && recorded.TimeEntryId == timeEntryId)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(recorded, checkpoint, lineage);
+                model = Apply(recorded, checkpoint, []);
             }
             else if (projectionEvent.Payload is TimeEntrySubmitted submitted
                 && submitted.TimeEntryId == timeEntryId
@@ -49,55 +53,99 @@ public sealed class TimeEntryEvidenceProjection
                 && model.ApprovalState == TimeEntryApprovalState.Draft)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(submitted, model, checkpoint, lineage);
+                model = Apply(submitted, model, checkpoint, []);
             }
             else if (projectionEvent.Payload is TimeEntryContributorConfirmed confirmed
                 && confirmed.TimeEntryId == timeEntryId
                 && model is not null)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(confirmed, model, checkpoint, lineage);
+                model = Apply(confirmed, model, checkpoint, []);
             }
             else if (projectionEvent.Payload is TimeEntryAdjustedThroughMagicLink adjusted
                 && adjusted.TimeEntryId == timeEntryId
                 && model?.ApprovalState == TimeEntryApprovalState.Draft)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(adjusted, model, checkpoint, lineage);
+                model = Apply(adjusted, model, checkpoint, []);
             }
             else if (projectionEvent.Payload is TimeEntryApproved approved
                 && approved.TimeEntryId == timeEntryId
                 && model?.ApprovalState == TimeEntryApprovalState.Submitted)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(approved, model, checkpoint, lineage);
+                model = Apply(approved, model, checkpoint, []);
             }
             else if (projectionEvent.Payload is TimeEntryRejected rejected
                 && rejected.TimeEntryId == timeEntryId
                 && model?.ApprovalState == TimeEntryApprovalState.Submitted)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(rejected, model, checkpoint, lineage);
+                model = Apply(rejected, model, checkpoint, []);
             }
             else if (projectionEvent.Payload is TimeEntryCorrected corrected
                 && corrected.TimeEntryId == timeEntryId
                 && model?.ApprovalState == TimeEntryApprovalState.Rejected)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(corrected, model, checkpoint, lineage);
+                model = Apply(corrected, model, checkpoint, []);
             }
             else if (projectionEvent.Payload is TimeEntryApprovedCorrected approvedCorrected
                 && approvedCorrected.TimeEntryId == timeEntryId
                 && model?.ApprovalState == TimeEntryApprovalState.Approved)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(approvedCorrected, model, checkpoint, lineage);
+                model = Apply(approvedCorrected, model, checkpoint, []);
             }
         }
 
-        return model;
+        return model is null ? null : model with { EventLineage = [.. lineage] };
     }
 
+    /// <summary>Applies one contiguous recognized owner event to a verified selected prefix.</summary>
+    internal TimeEntryEvidenceReadModel? ProjectNext(
+        string tenantId, TimeEntryId timeEntryId, TimeEntryEvidenceReadModel? current,
+        TimeEntryProjectionEvent item, TimesheetsProjectionCheckpoint checkpoint)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tenantId);
+        ArgumentNullException.ThrowIfNull(timeEntryId);
+        ArgumentNullException.ThrowIfNull(item);
+        ArgumentNullException.ThrowIfNull(checkpoint);
+        if (!string.Equals(item.TenantId, tenantId, StringComparison.Ordinal)
+            || !MatchesTenant(item.Payload, tenantId))
+            throw new InvalidOperationException("The Time Entry suffix has another tenant.");
+        IReadOnlyList<TimeEntryEventLineageItem> lineage = [.. current?.EventLineage ?? [],
+            CreateLineageItem(item)];
+        return item.Payload switch
+        {
+            TimeEntryRecorded recorded when recorded.TimeEntryId == timeEntryId && current is null
+                => Apply(recorded, checkpoint, lineage),
+            TimeEntrySubmitted submitted when submitted.TimeEntryId == timeEntryId
+                && current?.ApprovalState == TimeEntryApprovalState.Draft
+                => Apply(submitted, current, checkpoint, lineage),
+            TimeEntryContributorConfirmed confirmed when confirmed.TimeEntryId == timeEntryId
+                && current is not null
+                => Apply(confirmed, current, checkpoint, lineage),
+            TimeEntryAdjustedThroughMagicLink adjusted when adjusted.TimeEntryId == timeEntryId
+                && current?.ApprovalState == TimeEntryApprovalState.Draft
+                => Apply(adjusted, current, checkpoint, lineage),
+            TimeEntryApproved approved when approved.TimeEntryId == timeEntryId
+                && current?.ApprovalState == TimeEntryApprovalState.Submitted
+                => Apply(approved, current, checkpoint, lineage),
+            TimeEntryRejected rejected when rejected.TimeEntryId == timeEntryId
+                && current?.ApprovalState == TimeEntryApprovalState.Submitted
+                => Apply(rejected, current, checkpoint, lineage),
+            TimeEntryCorrected corrected when corrected.TimeEntryId == timeEntryId
+                && current?.ApprovalState == TimeEntryApprovalState.Rejected
+                => Apply(corrected, current, checkpoint, lineage),
+            TimeEntryApprovedCorrected corrected when corrected.TimeEntryId == timeEntryId
+                && current?.ApprovalState == TimeEntryApprovalState.Approved
+                => Apply(corrected, current, checkpoint, lineage),
+            _ => null
+        };
+    }
+
+    /// <summary>Checks the tenant reference of recognized stored payloads.</summary>
     internal static bool MatchesTenant(object payload, string tenantId)
         => payload switch
         {
@@ -134,6 +182,8 @@ public sealed class TimeEntryEvidenceProjection
             ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint))
         {
             Comment = recorded.Comment,
+            CommentProjectionState = recorded.Comment?.Policy.ProjectionInclusion
+                ?? TimesheetsCommentPolicyDecision.Unknown,
             ExternalSource = recorded.ExternalSource,
             SourceAuthority = TimeEntryEvidenceSourceAuthority.TimesheetsDomainEvents,
             EventLineage = [.. lineage],
@@ -194,6 +244,8 @@ public sealed class TimeEntryEvidenceProjection
             ContributorCategory = adjusted.AdjustedValues.ContributorCategory,
             AiMetrics = adjusted.AdjustedValues.AiMetrics,
             Comment = adjusted.AdjustedValues.Comment,
+            CommentProjectionState = adjusted.AdjustedValues.Comment?.Policy.ProjectionInclusion
+                ?? TimesheetsCommentPolicyDecision.Unknown,
             ExternalAdjustment = new(
                 adjusted.TimeEntryId,
                 adjusted.Contributor,
@@ -290,6 +342,8 @@ public sealed class TimeEntryEvidenceProjection
             AiMetrics = corrected.CorrectedValues.AiMetrics,
             CorrectionState = corrected.CorrectionState,
             Comment = corrected.CorrectedValues.Comment,
+            CommentProjectionState = corrected.CorrectedValues.Comment?.Policy.ProjectionInclusion
+                ?? TimesheetsCommentPolicyDecision.Unknown,
             Correction = new(
                 corrected.TimeEntryId,
                 corrected.TimeEntryCorrectionId,
@@ -333,6 +387,8 @@ public sealed class TimeEntryEvidenceProjection
             AiMetrics = corrected.CorrectedValues.AiMetrics,
             CorrectionState = corrected.CorrectionState,
             Comment = corrected.CorrectedValues.Comment,
+            CommentProjectionState = corrected.CorrectedValues.Comment?.Policy.ProjectionInclusion
+                ?? TimesheetsCommentPolicyDecision.Unknown,
             ApprovedCorrection = new(
                 corrected.TimeEntryId,
                 corrected.TimeEntryCorrectionId,

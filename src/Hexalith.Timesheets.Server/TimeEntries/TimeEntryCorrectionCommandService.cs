@@ -6,6 +6,7 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 
 namespace Hexalith.Timesheets.Server.TimeEntries;
 
@@ -31,16 +32,19 @@ public sealed class TimeEntryCorrectionCommandService
 
     private readonly ITimesheetsAccessGuard _accessGuard;
     private readonly ITimesheetsApprovalAuthorityResolver _authorityResolver;
+    private readonly TimeEntryCommentPublicationIssuer _commentIssuer;
 
     public TimeEntryCorrectionCommandService(
         ITimesheetsAccessGuard accessGuard,
-        ITimesheetsApprovalAuthorityResolver authorityResolver)
+        ITimesheetsApprovalAuthorityResolver authorityResolver,
+        TimeEntryCommentPublicationIssuer? commentIssuer = null)
     {
         ArgumentNullException.ThrowIfNull(accessGuard);
         ArgumentNullException.ThrowIfNull(authorityResolver);
 
         _accessGuard = accessGuard;
         _authorityResolver = authorityResolver;
+        _commentIssuer = commentIssuer ?? new TimeEntryCommentPublicationIssuer();
     }
 
     public async ValueTask<TimeEntryCorrectionCommandResult> CorrectAsync(
@@ -113,7 +117,7 @@ public sealed class TimeEntryCorrectionCommandService
         }
 
         TimesheetsDomainResult result = TimeEntry.Handle(
-            command,
+            command with { Comment = _commentIssuer.Issue(context, command.Comment) },
             command.TimeEntryId,
             state,
             context.Actor,
@@ -200,7 +204,7 @@ public sealed class TimeEntryCorrectionCommandService
         }
 
         TimesheetsDomainResult result = TimeEntry.Handle(
-            command,
+            command with { Comment = _commentIssuer.Issue(context, command.Comment) },
             command.TimeEntryId,
             state,
             context.Actor,

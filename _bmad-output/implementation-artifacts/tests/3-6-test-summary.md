@@ -6,7 +6,672 @@
 
 ## Current Verification
 
-### Latest-tree materialization verification (2026-10-11)
+### Round-24 directory and tenant-bounded rebuild proof (2026-10-12)
+
+The source-reference Projections test project built with `--no-restore
+-warnaserror -p:UseHexalithProjectReferences=true
+-p:HexalithCommonsRoot=/tmp/no-commons -m:1 /nr:false -v:q`: zero warnings
+and errors. `dotnet test ... --no-build --filter
+FullyQualifiedName~TenantReplacementPreservesCandidatesBeyondFourHundredGlobalPages`
+exited 1 before discovery because Microsoft.Testing.Platform rejects the
+VSTest target on .NET 10; verification used the built xUnit executable. The
+direct test executable passed the complete
+`MagicLinkNumericIndexTests` class **3/3 in 19.755 seconds**. Its large test
+now drives the actual index handler's streamed tenant finalization for four
+tenants of 8,700 contributions each, producing more than 400 selected global
+roster pages. It repeatedly replaces and prunes A and B, restores A, verifies
+unrelated C and D candidates and shared-hash ambiguity, and bounds the
+large replacement operation count below three times one tenant's inventory.
+`MoreThanFourHundredNumericDirectoryPagesRemainSelectable` passed **1/1 in
+0.358 seconds** with 401 selected numeric pages in one shard, two tenant
+identities, an integrity-checked interior page, and resolution through the
+concrete loader. `OneShardTenThousandDistinctMaximumOwnersUseBoundedDirectoryPages`
+passed **1/1 in 8.015 seconds**: all 10,000 selected roster contributions
+match the rebuild input and each resolves to its expected unique candidate;
+an interior candidate also resolves through the concrete loader.
+The exact executable selections were:
+
+```text
+tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class Hexalith.Timesheets.Projections.Tests.MagicLinkNumericIndexTests -noColor
+tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -method '*MoreThanFourHundredNumericDirectoryPagesRemainSelectable' -noColor
+tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -method '*OneShardTenThousandDistinctMaximumOwnersUseBoundedDirectoryPages' -noColor
+```
+
+The full Projections executable
+`tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -stopOnFail -noColor`
+exited 0: **322/322 passed in 453.930 seconds**. The earlier intermittent
+SDK promoted-value retirement failure did not recur in either the focused
+tenant test or the full lane; its underlying batch result remains unknown.
+The SDK's direct executables passed
+`-class Hexalith.EventStore.Client.Tests.Projections.SharedProjectionEpochCoordinatorTests -noColor`
+**20/20 in 0.349 seconds** and
+`-class Hexalith.EventStore.DomainService.Tests.DomainPartitionedSharedProjectionRebuildTests -noColor`
+**37/37 in 110.861 seconds**. These cover epoch retry, promotion/cleanup,
+tenant-scoped global operation identity, and partitioned rebuild behavior.
+The executable paths were
+`references/Hexalith.EventStore/tests/Hexalith.EventStore.Client.Tests/bin/Debug/net10.0/Hexalith.EventStore.Client.Tests`
+and
+`references/Hexalith.EventStore/tests/Hexalith.EventStore.DomainService.Tests/bin/Debug/net10.0/Hexalith.EventStore.DomainService.Tests`,
+respectively.
+The live Dapr journey remains blocked by the
+unrelated Folders runtime's duplicate `eventstore` ID. Story 3.6 and release
+remain `FAIL`.
+
+### Round-23 V7 bootstrap and effective-value checks (2026-10-12)
+
+The full default Integration lane after the saved V7 edits exited 0:
+**702 passed, five expected opt-in skips out of 707, in 515.854 seconds**.
+It began before the final bootstrap performance edit. A source-reference
+solution build after that edit passed with `--no-restore -warnaserror`, zero
+warnings/errors. Focused Projection checks passed **3/3** for fresh V7
+bootstrap, direct legacy-root denial, and a legacy value in the final shard.
+The first-issuance legacy scan now reads all 256 possible shards in bounded
+groups of 16 concurrent reads. This addresses a plausible cause of the
+earlier `/project/v2` timeout; it has not been validated in a live run.
+Narrow Python V7 selection and effective-evidence tests passed **8/8**,
+including an interior candidate, cross-tenant ambiguity, server Base64 path
+encoding, and an adjusted comment. `py_compile` and both repositories'
+`git diff --check` passed. The full default Integration rerun against the
+final bootstrap edit also exited 0: **702 passed, five expected skips out of
+707, in 504.340 seconds**.
+
+The local Dapr preflight cannot safely launch Timesheets: the unrelated
+Folders AppHost owned a Dapr `eventstore` ID on app port 8080, while the
+Timesheets journey requires exactly one `eventstore` ID on app port 8082.
+Folders then briefly disappeared and restarted within ten seconds of two
+empty preflight reads, so a stable isolated run could not begin. Folders was
+left untouched and no Timesheets AppHost was started. No latest-tree live candidate or
+effective-value readback is claimed. Story 3.6 and release remain `FAIL`.
+
+### Round-22 bounded V7 tenant index and latest-tree attempt (2026-10-12)
+
+The source-reference solution build passed with `--no-restore -warnaserror`
+and zero warnings/errors. A V7 copy-on-write trie now uses bounded tenant
+rosters and immutable node references. Focused verification passed:
+Architecture **56/56**, Contracts **92/92**, Server **543/543**, and Works
+**76/76** passed in their default lanes. The concentrated 10,000-owner
+rebuild passed **1/1**; normal
+10,000-candidate HTTP delivery **1/1 in 35.811 seconds**; selected-generation
+promotion race **1/1**; ordered insertion across equal-prefix pages **1/1**;
+and the more-than-400-roster-page tenant replacement **1/1** in isolated
+runs. Narrow Python index and lineage tests passed **6/6** and `py_compile`
+passed. The fresh full Projections command
+`tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -noColor`
+exited 1: **320 passed, one failed out of 321, in 522.274 seconds**. The
+only failure was the new tenant replacement test: SDK promoted-value
+retirement returned non-success during `BeginAsync` for `replace-tenant-a`.
+The cleanup outcome remains under investigation. The tenant-bounded rebuild
+task remains unchecked until this is resolved.
+
+A fresh diagnostic rerun with the SDK result status included in any
+retirement failure passed **321/321 in 517.904 seconds** with
+`-stopOnFail -noColor`; the intermittent failure did not reproduce, so its
+underlying batch status is still unknown. No full default Integration lane
+was run after the V7 tree edits; its opt-in live test failed as recorded
+below.
+
+The latest-tree isolated Dapr journey failed **0/1 in 38.545 seconds** and
+**0/1 in 77.228 seconds** at capability-index `/project/v2` delivery with
+`delivery_state_unavailable`; it did not reach V7 candidate or effective
+Time Entry readback. EventStore logs showed pending named-projection retries,
+500/503 responses, actor rate limiting, and a host timeout. The Timesheets
+AppHost was stopped; Dapr and Aspire returned empty inventories, and Redis
+was not cleared. The failed attempts are recorded in
+[the local proof](../../../docs/local-magic-link-dapr-proof.md). Story 3.6,
+deployed acceptance, and release remain `FAIL`.
+
+### Round-21 selected lookup and effective-value checks (2026-10-12)
+
+The source-reference solution built with `--no-restore -warnaserror` and zero
+warnings or errors. All six default Timesheets test executables exited 0;
+the Integration lane reported its five expected opt-in skips, including the
+live Dapr journey. Focused global-index tests passed **9/9**, including more
+than 400 numeric directory pages, all 10,000 distinct one-shard contributions,
+an interior-page loader candidate, and ordered insertion across a same-hash
+page boundary. The selected-generation promotion race passed **2/2** for
+inline and directory lookup. Record submission receipt tests passed **14/14**
+and the adjustment policy-change HTTP test passed **1/1**. Narrow Python
+lineage and selected-index tests passed **5/5**; `py_compile` and both
+repositories' `git diff --check` passed.
+
+The tenant-slice global rebuild capacity task remains open. The current index
+rebuild still reads every selected directory and collision page, materializes
+all owners in one list, and rewrites unrelated owners' admission markers. The
+SDK's `ReadGenerationAsync` reads only the requested generation's physical
+key, while streamed staging writes only supplied mutations. A sparse stage
+therefore makes unchanged admissions and pages disappear after promotion.
+Safe bounded replacement requires an explicit generation inheritance or
+immutable-page-reference contract with deletion masking, a tenant-owned
+prior-contribution roster, and bounded index manifests, plus retry and
+cross-tenant tests. No such contract is implemented or claimed here.
+
+The latest-tree isolated Dapr journey remains unrun because the unrelated
+Folders runtime still owns a duplicate `eventstore` Dapr ID. It was left
+untouched. Story and deployed launch gates remain `FAIL`.
+
+### Round-20 selected integrity and receipt verification (2026-10-12)
+
+The current source-reference solution build passed with `--no-restore
+-warnaserror -p:UseHexalithProjectReferences=true
+-p:HexalithCommonsRoot=/tmp/no-commons -m:1 /nr:false`, zero warnings and
+errors. All six default Timesheets test executables exited 0 individually:
+ArchitectureTests, Contracts.Tests, Server.Tests, Works.Tests,
+Projections.Tests, and IntegrationTests. The Integration run retained its
+five declared infrastructure/performance skips. The runner's quiet reporter
+did not print totals, so no new overall case count is claimed here.
+
+Focused checks passed: global index epoch **7/7**, including concentrated
+10,000-owner collision pages and 10,000 distinct maximum-length owners in
+one shard; normal mapped 10,000 high-entropy candidate delivery **1/1**;
+normal mapped 65 same-shard hashes and concrete directory resolution before
+and after tenant rebuild **1/1**; persisted adjustment comment tampering
+**3/3**; record submission receipt class **13/13**; comment policy suffix
+replay **1/1**; and EventStore sessionless cross-tenant global Abort **1/1**.
+The narrow Python effective-value and packed-lineage suite passed **3/3**,
+`py_compile` passed, and both Timesheets and EventStore `git diff --check`
+passed. The selected index now verifies complete directory/collision page
+manifests and content digests; persisted comments are compared to an
+independently issued server decision and recording event IDs must be nonblank
+and distinct. The policy toggle requires full owner replay before an enabled
+version can be selected.
+
+The latest-tree isolated Dapr journey has not run yet. Preflight found an
+unrelated Folders Aspire runtime with its own Dapr `eventstore` ID. The
+journey requires a unique `eventstore` ID; that runtime was left untouched.
+No local Redis projection state was cleared. Deployed inventory, authority,
+and certified shared rebuild remain open; Story 3.6 and release remain
+`FAIL`.
+
+### Round-19 five-task implementation (2026-10-12)
+
+The restored round-18 tree plus the round-19 changes built through the
+source-reference Debug solution with `--no-restore -warnaserror
+-p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons
+-m:1 /nr:false`: zero warnings and errors. All six default Timesheets
+executables passed: Architecture **56/56**, Contracts **92/92**, Server
+**535/535**, Works **76/76**, Projections **307/307** in 448.086 seconds,
+and Integration **693 passed, five declared skips** out of 698 in 470.414
+seconds. Overall: **1,759 passed, five skipped, zero failed**. The final
+build and targeted composed owner-duplicate route passed after the last
+owner-admission change. Both repositories pass `git diff --check`.
+
+The one-shard capacity test staged, promoted, and read back 10,000 distinct
+128-character hashes with maximum-length owner IDs. Numeric directory pages
+kept every canonical staged value below 1 MiB and returned the exact selected
+candidate; the earlier 10,000-owner concentrated same-hash page case also
+passes. A composed route test covers a later issuance for an owner on an
+earlier page and collision ambiguity. HTTP tests cover required redaction
+despite positive server authority and an explicitly cleared replacement
+comment through a second link. EventStore global-epoch cross-tenant tests
+passed **3/3**, including the same operation ID and empty inventory case.
+Python syntax and evidence-lineage tests passed **2/2**.
+
+The first latest-tree Dapr attempt failed **0/1 in 68.606 seconds** when
+the second recording stayed 403; a restart attempt failed **0/1 in 40.834
+seconds** on a 503 negative owner read, and a five-second diagnostic retry
+failed **0/1 in 19.560 seconds** at the same read. EventStore warnings showed anonymous
+actor 429 limits and pending projection retries; the owner-read 503 was
+backed by actor 429 exceptions. The fixture now waits across the configured
+60-second anonymous tenant rate-limit window for recording and actor reads,
+without changing authorization. The final isolated journey passed **1/1 in
+106.313 seconds** with one `eventstore` and one `timesheets` Dapr ID. It
+verified persisted confirm/adjust, race, restart, and selected readbacks.
+The Timesheets AppHost was stopped afterward; Dapr and Aspire were empty.
+The round-18 user-requested repeat failure is retained in the local proof.
+Deployed owner inventory, installation authority, and a certified live shared
+rebuild remain open. Story 3.6 and release remain `FAIL`.
+
+### Round-18 implementation (2026-10-12)
+
+Before the numeric page-address correction, the source-reference solution build with `--no-restore -warnaserror` passed
+with zero warnings and errors. Timesheets Architecture 56/56, Contracts
+92/92, Server 533/533, Works 76/76, and Projections 305/305 passed. Full
+Integration ran 696 cases: 691 passed, five expected skips, zero failed.
+The full Projections run took 360.472 seconds and the full Integration run
+399.597 seconds; focused checks after their final related edits passed.
+
+The new 10,000-owner same-hash capacity test passed SDK staging, promotion,
+all selected-page readbacks, and tenant-slice prune while preserving an
+unrelated hash. The global-index class passed 4/4, the new HTTP
+server-issued display theory 2/2, and the state-loader class 88/88. Positive
+external-record and magic-link-adjustment HTTP cases read back exact
+server-stamped comments and accepted responses. EventStore's changed
+idempotency class passed 27/27; a mapped coordinator test now accepts the
+9,999-to-10,000 transition and rejects event 10,001 before route dispatch
+(1/1 after a zero-warning test-project build). Both repositories pass
+`git diff --check`.
+
+The selected-page address was then corrected to use a fixed shard ordinal
+and allocated numeric page ID; the hash-to-page manifest and page hash
+binding remain inside private index values. Old hash-derived v3 page
+manifests have no numeric ID map and fail closed. The affected Integration,
+Projections, and Server test projects each built with `-warnaserror` and
+zero warnings/errors. Focused global-index tests passed 4/4, the composed
+normal route with two paged hashes in one shard passed 1/1, and the loader
+class passed 89/89. The 10,000-owner concentrated test passed 1/1 after
+checking that a stage retry leaves the previous selection intact until
+commit. The broad lanes above were not repeated after this focused fix.
+
+Selected legacy v2 index rows containing only a unique owner remain
+unverified and fail closed. The committed baseline had no v2 selected shard,
+and the current tenant-scoped capture cannot prove the absence of hidden
+cross-tenant collisions. The isolated round-18 Dapr journey passed **1/1
+in 118.195 seconds** with one app ID per resource, persisted
+confirm/adjust, race, restart, and selected readbacks. Dapr and Aspire were
+empty after stopping the AppHost. A subsequent warning-as-error
+source-reference build succeeded without changing the live host binary
+hashes. No deployed source inventory/authority certification is claimed;
+Story 3.6 and release remain `FAIL` pending those gates.
+
+### Round-17 seven-task implementation (2026-10-12)
+
+The restored round-16 code plus the round-17 fixes build from source references with `dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -m:1 -nodeReuse:false -p:UseSharedCompilation=false -warnaserror`: zero warnings and errors. Full Timesheets lanes passed on the round-17 implementation for Architecture 56/56, Contracts 92/92, Server 530/530, Works 76/76, and Projections 304/304. Subsequent narrow fixture and validation edits passed their focused classes, without repeating the six-minute Projections lane. The full Integration run executed 694 cases: 687 passed, five declared skips, and two E2E assertions compared raw caller comments against newly server-stamped committed comments. After correcting those assertions, both pass in a focused fresh-build rerun, together with the new coordinator failed-commit/restart case (3/3). Normal mapped index poison, cross-tenant collision, and composed restart cases pass in focused runs. Both repositories pass `git diff --check`; the OpenAPI JSON parses.
+
+The new regressions cover persisted ambiguity across tenant slices and prune, fail-closed legacy unique-only index rows, poison-event parking through `/project/v2`, server-owned comment decisions for external recording, magic-link adjustment, and correction, equal-lineage policy migration and removal, prior-tenant scratch cleanup, old MessageId reuse outside the receipt tail, duplicate domain metadata, and exact Time Entry row/event/payload lineage after a failed coordinator commit and host restart. The selected Time Entry policy defaults to no text publication; historical events without a server decision remain undisclosed. Independently certified deployed owner inventory and authority remain release gates.
+
+After that in-process verification, the isolated round-17 Dapr journey passed **1/1 in 127.469 seconds** with exactly one `eventstore` and one `timesheets` app ID. It checked persisted confirm/adjust, race, EventStore restart, and selected readbacks. The Timesheets AppHost was stopped; `dapr list` and `aspire ps --format Json` were empty afterward. This local run does not certify deployed coverage, authority, or a live shared rebuild.
+
+The full EventStore Client run reported 1,488/1,489 passing; its `SharedProjectionChunkedStageTests.TenThousandAggregateManifestPromotesOneGenerationAndSealsChunks` cleanup-timing assertion passed 1/1 when isolated. The DomainService full run reported 752/753 passing; its only failure is `DomainModuleAuthoringGuardrailTests.TenantsDomainService_DoesNotReferenceGeneratedApiHostOrDeclarePerMessageControllers`, which requires an absent nested Tenants checkout. Repository instructions prohibit initializing that nested submodule. Focused tests for the changed SDK paths passed. These full-lane failures do not establish a regression in the round-17 paths.
+
+The EventStore Server full run reported 4,428 passed, one failed, and 25 declared skips out of 4,454. Its sole failure, `ProjectionDeliveryIdempotencyCoordinatorTests.AnchoredSuffixAdvancesDurablePrefixWithoutReplayingPriorEvents`, seeded an old completed-state fixture without the new full-prefix MessageId digest, so the coordinator correctly withheld incremental admission pending a full replay. The fixture now includes the digest, and the test class passes 26/26 after a zero-warning Server.Tests build. A separate assertion pins the old fixture's fail-closed full-replay fallback. The ten-minute full Server lane was not repeated after this focused repair.
+
+### Round-16 global index and incremental mapped delivery (2026-10-12)
+
+The source-reference solution built with `--no-restore -warnaserror
+-p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons
+-m:1 /nr:false`, zero warnings and zero errors. All six default executables
+passed on the current tree: Architecture 56/56, Contracts 92/92, Server
+523/523, Works 76/76, Projections 301/301, and Integration 687 passed with
+five expected skips out of 692. Overall: **1,735 passed, five skipped, zero
+failed**. Both repositories pass `git diff --check`.
+
+Focused SDK and composed-host tests cover the 256-shard selected global
+index, exact 10,000 high-entropy candidates through normal `/project/v2`
+delivery, cross-tenant collision and tenant-slice prune, versioned source
+identity, the 9,999→10,000 mapped suffix with bounded source/HTTP calls,
+failed commit and restart, and coordinator-produced stage through the
+authenticated host. The actor-grounded composed producer passed both two
+and 10,000-owner cases in 359.474 seconds with a longer TestHost client
+timeout. This is test coverage, not deployed source certification.
+
+The first isolated local Dapr run failed **0/1 in 46.255 seconds** because
+the fixture still read the retired single index key. After it was changed
+to read the selected global shard, the rerun passed **1/1 in 116.727
+seconds** with one `eventstore` and one `timesheets` Dapr ID, persisted
+confirm/adjust, the one-winner race, restart, and exact selected readbacks.
+Dapr and Aspire were empty after stopping this AppHost. This does not certify
+deployed source coverage, authority, or a live shared rebuild. Story 3.6
+and release remain `FAIL`.
+
+### Historical round-15 bounded mapped delivery and replay (2026-10-12)
+
+The source-reference solution built with `-warnaserror`, zero warnings, and
+zero errors. Six default executables passed: Architecture 56/56, Contracts
+92/92, Server 523/523, Works 76/76, Projections 293/293, and Integration
+682 passed with five expected skips out of 687. Overall: **1,722 passed,
+five skipped, zero failed**. The Architecture lane first found two stale
+readiness prose assertions; those assertions were corrected, rebuilt with
+zero warnings, and the lane then passed 56/56.
+
+Focused EventStore coordinator 28/28, retry worker 10/10, orchestrator
+79/79, catalog 8/8, DomainService host 89/89, and part-route authorization
+14/14 passed. A real actor-backed ordinary source path delivered over 64 MiB
+without the legacy whole-history array; a composed Timesheets host covered
+10,000-event mapped stage/commit/verify/readback, all three named routes,
+partial failure, and durable retry. A focused Dapr selected-read outage
+regression passed after the broad suites.
+
+The isolated local Dapr journey passed **1/1 in 112.376 seconds** with one
+`eventstore` and one `timesheets` app ID, persisted confirm and adjust, the
+one-winner race, restart, and exact selected readbacks. Dapr and Aspire were
+empty after stopping the AppHost. [The local proof](../../../docs/local-magic-link-dapr-proof.md)
+records commands and limits. This does not certify deployed coverage,
+authority, or a live shared rebuild. Story 3.6 and release remain `FAIL`.
+
+### Historical round-14 source recovery and exact selected evidence (2026-10-12)
+
+The Timesheets source-reference solution built with `-warnaserror`, zero
+warnings, and zero errors. All six default executables passed on the round-14
+tree: Architecture 56/56, Contracts 92/92, Server 523/523, Works 76/76,
+Projections 274/274, and Integration 682 passed with five expected skips out
+of 687. Overall: **1,703 passed, five skipped, zero failed**. After the
+readiness table was refreshed, the affected Architecture fitness class was
+rebuilt with `-warnaserror` and passed 13/13. Both repositories pass
+`git diff --check`.
+
+EventStore's partitioned rebuild class passed 32/32, source producer 17/17,
+and roster actor 7/7. The actor-grounded Timesheets integration passed 2/2,
+including a 10,000-owner case. These cover pre-session Begin-page reclaim,
+SDK phase receipts and sealed rejection recovery, and bounded producer owner
+metadata. Focused Time Entry, capability selected-row, issue readback,
+confirm/adjust command correlation, configured actor-name, OpenAPI, and
+Python exact lineage checks passed.
+
+The opt-in local Dapr journey passed **1/1 in 67.664 seconds** on this tree.
+Its first attempt failed 0/1 in 117.700 seconds on a transient transport
+failure in the added post-restart lineage stream probe; the bounded read-only
+retry was then added. The passing rerun verified persisted confirm/adjust,
+the race, EventStore restart, exact selected Time Entry lineage, and
+capability readbacks. Strict pre/post checks each found one `eventstore` and
+one `timesheets` Dapr ID; both Dapr and Aspire were empty after stopping the
+Timesheets AppHost. [The local proof](../../../docs/local-magic-link-dapr-proof.md)
+records the command. Deployed source coverage, authority, selected readback,
+and a certified live shared rebuild remain open. Story 3.6 and release stay
+`FAIL`.
+
+### Historical round-13 paged Begin and selected repair (2026-10-12)
+
+The Timesheets source-reference solution built with `-warnaserror`, zero
+warnings, and zero errors. All six default executables passed on the round-13
+tree: Architecture 56/56, Contracts 92/92, Server 523/523, Works 76/76,
+Projections 267/267, and Integration 679 passed with five expected skips out
+of 684. Overall: **1,693 passed, five skipped, zero failed**. Both
+repositories pass `git diff --check`. Focused EventStore Client, Server,
+Contracts, and DomainService regressions passed, including the paged 10,000
+maximum-length erased-owner Begin, 1,001 colliding source owners, reserved
+capture admission under pending writes, and nonzero global-position JSON.
+The partitioned DomainService class passed 31/31. The Projections lane covers
+legacy writer lineage migration, corrupted selected capability repair with a
+pending valid journal event, and fragment-read promotion races. Integration
+covers a lost issue response and exact stored command identity.
+After refreshing the launch-readiness evidence, the affected Architecture
+fitness class was rebuilt with `-warnaserror` and passed 13/13.
+
+The opt-in local Dapr journey passed **1/1 in 125.174 seconds** on this tree.
+It verified persisted confirm/adjust, the one-winner race, EventStore restart,
+and selected Time Entry and capability readbacks. Strict pre/post checks each
+found one `eventstore` and one `timesheets` Dapr app ID; both Dapr and Aspire
+were empty after stopping this Timesheets AppHost. [The local proof](../../../docs/local-magic-link-dapr-proof.md)
+records the command. This does not certify deployed source coverage, a live
+shared rebuild, or deployed authority; Story 3.6 and release remain open.
+
+### Historical round-12 bounded source rebuild (2026-10-12)
+
+The Timesheets source-reference solution built with `-warnaserror`, zero
+warnings, and zero errors. All six default executables passed: Architecture
+56/56, Contracts 92/92, Server 523/523, Works 76/76, Projections 264/264,
+and Integration 675 passed with five expected skips out of 680. Overall:
+**1,686 passed, five skipped, zero failed**. The full Integration run preceded
+the final EventStore hash-page edit; final-tree composed near-limit
+commit/readback, cursor-tamper, and scratch-cleanup tests passed afterward.
+Both repositories pass `git diff --check`.
+
+The EventStore partitioned DomainService class passed 30/30; later focused
+hash-page tamper, 30,008-chunk fenced-manifest, page-boundary commit cleanup,
+and near-limit abort/retry checks passed. The source producer/gateway class
+passed 16/16. A 10,000-owner test streamed three cryptographic event payloads
+per owner with one active history reader at peak. A 10,000-event owner test
+split two 1,000,000-byte random events into separately bounded serialized
+requests. A 64 × near-1-MiB random-event case completed, committed, and read
+back the last payload hash. Timesheets streamed 10,000 terminal contributions
+without retaining an owner-wide view map; 4,000 contributions matched the
+existing fold byte-for-byte. A composed chunked issuance and Time Entry
+terminal owner rebuilt to the selected Used row. The maximum modeled 30,008
+output chunks use paged hashes, and the owner manifest passed the actual
+1-MiB fenced SDK batch gate. Commit and abort cleanup reclaimed pages and
+receipts. Production installation authority still defaults deny.
+
+The passing local Dapr journey below is round-11 evidence. The round-12 tree
+has no new live Dapr run or certified shared-rebuild coverage; Story 3.6 and
+the release decision remain open.
+
+### Historical round-11 isolated magic-link Dapr journey (2026-10-11)
+
+The opt-in `MagicLinkLiveDaprTests` executable invocation passed **1/1 in
+114.866 seconds** with `TIMESHEETS_LIVE_DAPR=1`. Strict `dapr list` checks
+before and after the journey each found one `eventstore` and one `timesheets`
+app ID; after `aspire stop`, Dapr and Aspire lists were empty. The fixture
+checked real persisted global-position continuity, both persisted confirm
+and adjust batches, one-winner confirm race, restart, and exact selected Time
+Entry and capability readbacks. The exact command and earlier failed attempts
+are in [the local Dapr proof](../../../docs/local-magic-link-dapr-proof.md).
+
+Two preceding isolated current-tree retries failed `[403,403]` at the confirm
+race. The first had stored recording, use, confirmation, and competing commit
+rejection: a delayed/lost POST response prevented the committed winner's 202.
+Concurrent exact-status polling plus stored-event readback fixed that case;
+four focused HTTP boundary tests and ten submission-service tests passed.
+The second had only the recording event: signed workload stream reads received
+429 and exhausted the transport timeout before submission. EventStore's
+limiter treated DaprInternal workload calls as anonymous. The finite limiter
+now keys them by the verified bound tenant and workload identity; its
+configured-limiter regression passed 1/1. XML comments were checked on all
+added public and internal source declarations in the modified and new
+Timesheets and EventStore files; missing comments on four internal helpers
+were added. The affected Timesheets Integration,
+Server.Tests, and host builds and the EventStore host, Server.Tests, and root
+AppHost builds passed with zero warnings/errors. The EventStore host rebuilt
+after the comment edits with zero warnings/errors. A broader EventStore
+IntegrationTests build under `-warnaserror` remains blocked by historical
+Admin.UI/Sample `MSB3277` dependency conflicts and missing Sample.Api assets;
+it is not counted as a passing lane.
+The updated launch-readiness fitness class passed **13/13** after its two
+historical no-live-pass assertions were revised; its affected project built
+with zero warnings/errors. `git diff --check` passed in both repositories.
+
+This passing local journey is distinct from a certified shared-rebuild Dapr
+run and deployed acceptance. No production installation coverage receipt
+issuer, independent virgin-store/all-writer certification, complete legacy
+actor-key census, or deployed exact-binding identity issuer is installed.
+Deployed selected readback and legacy terminal-writer retirement remain open.
+
+### Round-11 source inventory producer (2026-10-11)
+
+The final Debug source-reference Timesheets solution build passed with zero
+warnings and errors. All six test executables passed: Architecture 56/56,
+Contracts 92/92, Works 76/76, Server 523/523, Projections 258/258 (including
+the greater-than-64-MiB case), and Integration 671 passed with five declared
+skips out of 676. The total is **1,676 passed, five skipped, zero failed**.
+Affected EventStore source-reference suites passed Client shared projection
+87/87, DomainService shared rebuild 43/43, and Server source/route/erasure
+61/61. The earlier round-10 full DomainService run remains historical at
+732/734 with two unrelated guardrail/catalog failures; no broad EventStore
+rerun was required for this increment.
+
+The EventStore source roster registers owner writes before persistence,
+persists a 64-page source cut, releases appends only after SDK Begin, and
+holds erasure until every owner manifest is accepted. Its recovery state
+survives restarted actor instances and producer retries after lost Begin,
+Accumulate, Finalize, Stage, and Commit responses. A certified clean roster
+accepted 10,000 owners and rejected an omitted captured owner. The operator
+route rejected non-administrators and noncanonical tenant/domain scope; the
+Dapr gateway rejected tenant, domain, and version-mismatched registrations.
+The composed Timesheets capability handler rebuilt two and 10,000 high-entropy
+owners through the real DomainService dispatcher with selected readback
+(2/2, 307.2 seconds); the two-owner case then rebuilt completed erasure
+tombstones and pruned its previously selected row. Focused EventStore source,
+route, and erasure tests passed 15/15 after the frozen-count correction.
+The producer also denies domains without mandatory writer-fence configuration.
+No production `IInstallationCoverageAuthority` receipt issuer, certified
+deployed legacy inventory, or live Dapr rebuild is present. Those remain
+release gates.
+
+### Round-11 partial implementation verification (2026-10-11)
+
+The preserved round-10 Timesheets and EventStore code patches applied cleanly.
+The Timesheets Debug source-reference solution built with zero warnings/errors
+using the command below. The focused Time Entry handler class passed 41/41;
+the new selected terminal-cursor test and existing terminal-first regression
+passed 2/2; the re-signed compact ordinal test passed 1/1. The launch-readiness
+fitness class passed 13/13 after its current-language assertion was updated.
+The EventStore Client shared-epoch coordinator class passed 19/19. Python
+compilation of the updated opt-in journey passed; no latest-tree Dapr journey
+ran, so restart and rate-limit behavior remain unverified in the live fixture.
+A full Projections executable run was voluntarily canceled after roughly three
+minutes in its 10,000-owner capacity case because the changed code does not
+affect that capacity path; the runner reported an `OperationCanceledException`
+and exit 58. That run is **not** counted as a passing full suite.
+The Time Entry handler now fails older-prefix delivery closed while preserving
+the selected longer row, including when its approval field was changed and its
+storage digest recomputed. EventStore DomainService builds with zero warnings
+and errors; the focused independent scratch worker fault/retry and restarted
+cleanup tests pass 2/2. The 10,000-owner high-entropy fault case passed 1/1
+in 87.3 seconds after Commit stopped waiting for private scratch deletion; it
+passed again in 88.0 seconds after the durable work index was added. The hosted
+DomainService sweep scans a bounded durable work index every 30 seconds and
+retries failed private cleanup after a response or restart. At that partial
+verification point, the production shared-rebuild Begin inventory producer
+was still open. The later source-inventory increment above adds its code
+path; independent deployed coverage certification and live proof remain open.
+Story 3.6 and launch remain open.
+
+### Round-10 worktree verification (2026-10-11)
+
+The Timesheets Debug source-reference solution built with zero warnings and
+errors using `-p:HexalithCommonsRoot=/tmp/no-commons`. The default
+Architecture, Contracts, Server, Projections, Works, and Integration suites
+passed **56/56, 92/92, 523/523, 255/255, 76/76,
+and 669 passed with five declared skips**, respectively: **1,671
+passed, five skipped, zero failed**. The Projections full executable included
+the greater-than-64-MiB capacity case; its standard lane separately passed
+254/254 after the quiet full run exited zero. The first full
+Integration run exposed two test fixtures lacking the new authoritative source
+head; both fixtures were corrected and the full suite reran with zero failures
+(`674` total in the JUnit report).
+
+EventStore Client passed **1,487/1,487**. EventStore DomainService passed
+**732/734**; only the two previously recorded missing nested-Tenants guardrail
+subject and named-endpoint catalog-registry assertion failed. The strengthened
+10,000-owner high-entropy rebuild capacity case passed **1/1 in 91.779 seconds**:
+committed scratch cleanup failed on purpose, selected reads and live delivery
+continued, a new epoch began, and retry removed old private scratch for all
+10,000 captured owners. Focused SDK checks passed for actor-proven empty Time Entry deletion versus active
+empty rejection through the normal mapped coordinator, mixed-catalog
+Stage/Commit/Verify, sealed erased-owner tombstones versus active positive-head
+omission, evolved captured-event identity, and selected-view repair/retry.
+
+At that round-10 checkpoint, the shared Begin request sealed erased owners
+alongside source heads but had no production Begin inventory producer. The
+round-10 worktree had no opt-in Dapr rerun; the earlier round-9 0/1 issuance
+HTTP 403 attempt below was then the latest live observation. The current
+producer and latest-tree local pass are recorded above. Deployed erasure
+authority, story acceptance, and release gates remain open.
+
+The build command was
+`DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false -v:q`.
+The Projections full run used its built `net10.0` executable with
+`-noLogo -reporter quiet`; the standard count came from a second run excluding
+only `Large_valid_capability_inventory_streams_more_than64MiB_through_full_rebuild`.
+EventStore DomainService ran its built `net10.0` executable with `-noLogo`;
+the final strengthened capacity case then ran with `-method
+'*HighEntropyPartitionsPromoteAndPruneWithoutTenantCandidateGrowth'`.
+
+### Round-9 worktree verification (2026-10-11)
+
+The Timesheets source-reference solution built with zero warnings and errors
+using `-p:HexalithCommonsRoot=/tmp/no-commons`. At that checkpoint, default Architecture,
+Contracts, Server, Projections, Works, and Integration executables passed
+56/56, 92/92, 523/523, 252/252, 76/76, and 669 passed with five expected
+skips: **1,668 passed, five skipped, zero failed**. Projections ran as 251
+standard cases and one separate capacity case above 64 MiB; the changed Time
+Entry handler class was rerun 36/36. EventStore Client passed 1,487/1,487;
+the full DomainService executable passed 727/729. Its two failures are the
+same historical missing nested-Tenants guardrail subject and named-endpoint
+catalog-registry assertion. Focused EventStore coordinator and partitioned
+dispatcher suites passed 19/19 and 18/18; streamed staging passed 9/9. The mapped Time Entry prune
+regression passed after hashing canonical selected-row JSON. The changed
+EventStore stream controller class passed 26/26. The broad EventStore Server
+executable was stopped after roughly seven minutes of CPU-heavy execution
+without a completed result; its full-suite status is unverified.
+
+With the opt-in fixture setting enabled, the checked-in Aspire topology
+started healthy on an earlier round-9 checkpoint and immediate preflight showed exactly one `eventstore` and
+one `timesheets` Dapr ID. That journey passed persisted catalog
+readback and non-fixture denial, then failed 0/1 in 83.705 seconds at
+capability issuance HTTP 403; a diagnostic capability stream read returned
+404. Timesheets logged a workload stream-read request exhausting its HTTP
+timeouts. EventStore logged rate limiting and named-projection retry activity;
+the underlying cause remains unproved. Only the Timesheets AppHost was
+stopped. An unrelated topology later registered a duplicate `eventstore` ID,
+so no further isolated run was started. The current tree includes later captured-envelope
+and rebuild-head changes and has no live run; no latest-tree end-to-end pass is claimed.
+
+### Historical round-8 full verification and isolated Dapr attempts (2026-10-11)
+
+All six default Timesheets xUnit v3 executables were rebuilt with explicit
+Debug source references and `-p:HexalithCommonsRoot=/tmp/no-commons`, then
+ran individually: Architecture 56/56, Contracts 92/92, Server 523/523,
+Projections 236/236, Works 76/76, and Integration 669 passed with five
+expected skips. Overall: **1,652 passed, five skipped, zero failed**.
+All six builds and the AppHost build reported zero warnings and errors.
+EventStore Client passed **1,482/1,482**. The full DomainService executable
+passed 725/727; its two failures remain the missing nested-Tenants guardrail
+subject and the named-endpoint catalog-registry assertion recorded at the
+prior checkpoint. No nested submodule was initialized.
+
+`aspire start --no-build` and `aspire wait eventstore` / `aspire wait
+timesheets` succeeded. `dapr list` showed one app for each ID before the
+opt-in run and again after the third attempt. The first opt-in test failed
+**0/1 in 77.897 seconds** after persisted catalog and non-fixture denial,
+at capability issuance HTTP 403. The second failed **0/1 in 31.062 seconds**
+after issuance and selected-model readback, when both confirm race requests
+returned HTTP 403. The third failed **0/1 in 31.637 seconds** after a passing
+confirm race and composed Time Entry rebuild readback, at adjust issuance
+HTTP 403; a diagnostic capability stream read was unavailable. EventStore
+logs included rate-limit and named-projection retry messages, without enough
+correlation to establish the cause of any opaque 403. The fixture now reports
+safe stored-event counts or names on issuance/race failure. `aspire stop`
+stopped only the Timesheets AppHost, and `dapr list` was empty afterward.
+No end-to-end live pass for that checkpoint is claimed. The public-API/live-fixture
+task remains open, and production gates remain separate.
+
+### Focused continuity verification (2026-10-11, same implementation)
+
+After the round-7 baseline, the EventStore continuity, cancellation, abort
+closeout, and Time Entry envelope/transition checks passed the affected
+focused suites: EventStore partitioned rebuild **16/16**, fenced dispatch
+**17/17**, and coordinator plus streamed stage **23/23**; Timesheets capability
+handler **40/40**, Time Entry handler **22/22**, and composed HTTP boundary
+**573/573**. The composed suite includes the mapped 10,000-event Time Entry
+rebuild and failed-rebuild isolation. The three affected test projects and
+the Timesheets IntegrationTests project built with zero warnings and errors
+using `-p:HexalithCommonsRoot=/tmp/no-commons` where required.
+
+The opt-in Dapr journey had not completed on that tree. The earlier
+live observations below remain historical, and the public-API/live-fixture
+task remains open for a clean end-to-end run. The fixture retains strict
+duplicate-ID preflight, exact persisted readbacks, and bounded read-only
+429/500/503 post-restart probes.
+
+### Re-derived materialization verification (2026-10-11, prior checkpoint)
+
+The six default Timesheets executables passed individually after the capture,
+fold, cleanup, and compact-lineage changes: Architecture 56/56, Contracts
+92/92, Server 523/523, Projections 232/232, Works 76/76, and Integration
+669 passed with five expected skips. Overall: **1,648 passed, five skipped,
+zero failed**. The Integration lane includes mapped HTTP replay of a 10,000
+event, high-entropy Time Entry history, complete selected lineage readback,
+and failed rebuild isolation. The Projections lane includes the corresponding
+live aggregate-owned write and full-prefix digest comparison.
+
+EventStore Client passed **1,481/1,481**. The partitioned DomainService class
+passed **13/13**, including the dispatcher handoff regression;
+the full DomainService executable passed 718/720, with only the two previously
+recorded unrelated nested-Tenants guardrail and named-endpoint catalog
+assertion failures. Paused owner scratch write versus abort, committed and
+aborted terminal batch-marker removal, and committed-session crash/retry have
+focused passing tests. Both repository `git diff --check` commands passed.
+Affected project builds passed with `-p:HexalithCommonsRoot=/tmp/no-commons`;
+the supported source-reference solution command still fails at
+`Hexalith.EventStore.Contracts` with duplicate `Hexalith.Commons.UniqueIds`
+CS1704. The default solution build fails in sibling `Hexalith.Works.Contracts`
+with missing polymorphic-serialization references.
+
+The opt-in live test started after read-only preflight showed no Dapr apps.
+`aspire start --no-build` followed a focused AppHost build; `aspire wait`
+reported both Timesheets and EventStore healthy, and `dapr list` showed exactly
+one `timesheets` and one `eventstore` ID when the fixture began. A separate
+AppHost added a second `eventstore` during the run. The fixture passed
+persisted catalog delivery/readback and the non-fixture denial, then failed
+capability issuance with HTTP 403: **0/1, 87.102 seconds**. The duplicate ID
+and the 403 occurred in the same run; this observation does not prove the 403's
+cause. Only the Timesheets AppHost was stopped, using explicit `aspire stop`;
+the other AppHost was left running. Latest-tree live acceptance remains
+provisional. The fixture's persisted Time Entry readbacks now verify the
+lossless compact lineage bytes, and its post-restart read-only stream, status,
+and state probes allow five bounded attempts for HTTP 429/500/503.
+
+### Earlier materialization verification (2026-10-11)
 
 All six default Timesheets xUnit v3 executables ran individually: Architecture
 56/56, Contracts 92/92, Server 523/523, Projections 224/224, Works 76/76,
@@ -70,7 +735,7 @@ EventStore Client project built with zero warnings or errors. The opt-in
 fixture now tests the mapped named Time Entry rebuild route and exact persisted
 readback and permits five bounded read-only 429/500/503 probes after EventStore
 restart; Python compilation and both repositories' `git diff --check` passed.
-This fixture revision has not completed a latest-tree live run. The latest
+That fixture revision had not completed a live run. Its final
 isolated attempt reached persisted catalog delivery and a stored Time Entry
 record, then its first capability stream read returned HTTP 429 after an
 unrelated ChatBot AppHost restarted with a second `eventstore` Dapr ID. The
@@ -101,7 +766,7 @@ registry assertion, outside the changed shared projection paths.
 The source-reference solution build still exits 1 in EventStore.Contracts with
 MSB3243/CS1704 for duplicate `Hexalith.Commons.UniqueIds` versions 2.30.1.0
 and 1.0.0.0. A package-mode attempt exits 1 in sibling Works.Contracts with
-missing `Hexalith.PolymorphicSerializations` types. Two latest-tree isolated
+missing `Hexalith.PolymorphicSerializations` types. Two then-current isolated
 opt-in attempts reached persisted delivery: one stopped on command-status HTTP
 500, and the next passed the confirm race but received three opaque 403
 responses on adjust POST. A third attempt stopped before writing data when

@@ -7,6 +7,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 
 namespace Hexalith.Timesheets.Server.TimeEntries;
 
@@ -16,12 +17,14 @@ public sealed class ExternalContributionCommandService
     private readonly ExternalContributionPolicyOptions _policyOptions;
     private readonly TimeEntryCommandService _recordService;
     private readonly TimeEntrySubmissionCommandService _submissionService;
+    private readonly TimeEntryCommentPublicationIssuer _commentIssuer;
 
     public ExternalContributionCommandService(
         TimeEntryCommandService recordService,
         TimeEntrySubmissionCommandService submissionService,
         ITimesheetsAccessGuard accessGuard,
-        ExternalContributionPolicyOptions policyOptions)
+        ExternalContributionPolicyOptions policyOptions,
+        TimeEntryCommentPublicationIssuer? commentIssuer = null)
     {
         ArgumentNullException.ThrowIfNull(recordService);
         ArgumentNullException.ThrowIfNull(submissionService);
@@ -32,6 +35,7 @@ public sealed class ExternalContributionCommandService
         _submissionService = submissionService;
         _accessGuard = accessGuard;
         _policyOptions = policyOptions;
+        _commentIssuer = commentIssuer ?? new TimeEntryCommentPublicationIssuer();
     }
 
     public async ValueTask<ExternalContributionCommandResult> SubmitAsync(
@@ -137,7 +141,7 @@ public sealed class ExternalContributionCommandService
         }
 
         TimesheetsDomainResult result = TimeEntry.Handle(
-            command,
+            command with { Comment = _commentIssuer.Issue(context, command.Comment) },
             state,
             tenant,
             contributor,

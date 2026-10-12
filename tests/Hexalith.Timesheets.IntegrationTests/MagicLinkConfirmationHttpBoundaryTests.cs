@@ -1,11 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
 using Hexalith.EventStore.Client.Gateway;
+using Hexalith.EventStore.Client.Discovery;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Events;
@@ -31,6 +33,7 @@ using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -337,8 +340,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         adjustAfterPost.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
         factory.Store.DirectIndexSeedCount.ShouldBe(0);
         factory.Store.DirectCatalogSeedCount.ShouldBe(0);
-        factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
-            MagicLinkTokenHashCapabilityIndexProjection.StateKey).Entries.Count.ShouldBe(2);
+        factory.Store.GetSelectedIndex().Entries.Count.ShouldBe(2);
         factory.Store.Get<ActivityTypeCatalogReadModel>(
                 MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
             .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
@@ -399,7 +401,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             new MagicLinkCapabilityId("capability-adjust-public-port"), new TimeEntryId("time-entry-adjust-public-port"));
 
         MagicLinkTokenHashCapabilityIndexEntry candidate = factory.Store
-            .Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+            .GetSelectedIndex()
             .Entries[Hash(ValidConfirmToken())];
         candidate.CapabilityId.ShouldBe(capabilityId);
         candidate.Tenant.ShouldBe(Tenant());
@@ -448,8 +450,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 }]
             }
         };
-        string indexBefore = JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
-            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions);
+        string indexBefore = JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions);
         string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
         string assertion = await factory.IssueAssertionAsync(EventStoreWorkloadOperations.DomainServiceProject);
@@ -457,8 +458,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         using HttpResponseMessage response = await factory.PostProjectionAsync(client, projectionPath, dispatch, assertion);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
-        JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
-            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions).ShouldBe(indexBefore);
+        JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions).ShouldBe(indexBefore);
         JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
 
@@ -468,7 +468,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         (await admittedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
             .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
-        factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+        factory.Store.GetSelectedIndex()
             .Entries[issued.TokenHash.Value].CapabilityId.ShouldBe(issued.CapabilityId);
     }
 
@@ -490,6 +490,25 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         DomainProjectionIdentityOptions identity = scope.ServiceProvider
             .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>().Value;
+        AdminOperationalIndexMetadata.DomainMetadata mappedDomain =
+            AdminOperationalIndexMetadata.Create(
+                scope.ServiceProvider.GetRequiredService<DiscoveryResult>(),
+                ["timesheets"],
+                scope.ServiceProvider.GetServices<IDomainQueryHandler>(),
+                scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>(),
+                identity.AppId, identity.ServiceVersion,
+                scope.ServiceProvider.GetRequiredService<IOptions<ProjectionDispatchOptions>>().Value,
+                ["timesheets"],
+                scope.ServiceProvider.GetServices<IDomainProjectionHandler>())
+            .Domains.Single(domain => domain.Domain == "timesheets");
+        mappedDomain.MappedOnlyStreamedProjectionTypes.ShouldNotBeNull().ShouldContain(
+            TimeEntryEvidenceProjection.ProjectionName);
+        mappedDomain.IncrementalReplayProjectionTypes.ShouldNotBeNull().ShouldContain(
+            TimeEntryEvidenceProjection.ProjectionName);
+        mappedDomain.SharedEpochProjectionTypes.ShouldNotBeNull().ShouldContain(
+            MagicLinkConfirmationCapabilityProjection.ProjectionName);
+        mappedDomain.SharedEpochProjectionTypes.ShouldNotBeNull().ShouldContain(
+            MagicLinkTokenHashCapabilityIndexProjection.ProjectionName);
         ProjectionDispatchRoute[] routes = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
             .Where(static handler => handler.Domain == "timesheets")
             .Select(static handler => new ProjectionDispatchRoute(handler.Domain, handler.ProjectionType))
@@ -515,7 +534,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             "json", 1, ObservedAtUtc, "rebuild-correlation", "rebuild-message",
             Operator().PartyId, 1);
         var dispatch = new ProjectionDispatchRequest(
-            new ProjectionRequest(Tenant().TenantId, "timesheets", entryId.Value, [recordedEvent]),
+            new ProjectionRequest(Tenant().TenantId, "timesheets", entryId.Value, [recordedEvent]) {
+                RebuildSourceHeadSequence = 1,
+            },
             [TimeEntryEvidenceProjection.ProjectionName],
             "composed-time-entry-rebuild",
             fingerprint);
@@ -548,6 +569,36 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             Request = new ProjectionRequest(Tenant().TenantId, "timesheets", entryId.Value, [unrelated]),
             DispatchId = "composed-time-entry-prune"
         };
+        using HttpResponseMessage unprovedResponse = await factory.PostProjectionAsync(
+            client, "/project/rebuild/v1", prune);
+        unprovedResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await unprovedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        (await store.GetAsync<TimeEntryEvidenceReadModel>(
+            TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull();
+
+        var stale = prune with
+        {
+            Request = prune.Request with { RebuildSourceHeadSequence = 2 },
+            DispatchId = "composed-time-entry-prune-stale"
+        };
+        using HttpResponseMessage staleResponse = await factory.PostProjectionAsync(
+            client, "/project/rebuild/v1", stale);
+        staleResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await staleResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        (await store.GetAsync<TimeEntryEvidenceReadModel>(
+            TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull();
+
+        prune = prune with
+        {
+            Request = prune.Request with { RebuildSourceHeadSequence = 1 },
+            DispatchId = "composed-time-entry-prune-proved"
+        };
         using HttpResponseMessage pruneResponse = await factory.PostProjectionAsync(
             client, "/project/rebuild/v1", prune);
         pruneResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -557,6 +608,147 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         (await store.GetAsync<TimeEntryEvidenceReadModel>(
             TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken))
             .Value.ShouldBeNull();
+    }
+
+    /// <summary>Mapped replay retains a full high-entropy owner prefix and an invalid retry leaves it intact.</summary>
+    [Fact]
+    public async Task ComposedNamedRebuildRetainsTenThousandEventTimeEntryHistory()
+    {
+        var store = new InMemoryReadModelStore();
+        using MagicLinkHttpBoundaryFactory factory = new(batchStore: store);
+        using HttpClient client = factory.CreateClient();
+        using IServiceScope scope = factory.Services.CreateScope();
+        DomainProjectionIdentityOptions identity = scope.ServiceProvider
+            .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>().Value;
+        ProjectionDispatchRoute[] routes = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
+            .Where(static handler => handler.Domain == "timesheets")
+            .Select(static handler => new ProjectionDispatchRoute(handler.Domain, handler.ProjectionType))
+            .ToArray();
+        string fingerprint = ProjectionRouteCatalogFingerprint.Compute(
+            identity.AppId, identity.ServiceVersion, routes);
+        var entryId = new TimeEntryId("time-entry-large-rebuild");
+        var recorded = new TimeEntryRecorded(
+            entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+            ActivityTypeScope.Tenant, new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+            TimeEntryApprovalState.Draft, ContributorCategory.ExternalContributor, null);
+        ProjectionEventDto Event(long position, object payload) => new(
+            payload.GetType().FullName!, JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions),
+            "json", position, ObservedAtUtc, "large-rebuild-correlation", $"large-rebuild-message-{position}",
+            Operator().PartyId, position);
+        var events = new ProjectionEventDto[10_000];
+        events[0] = Event(1, recorded);
+        for (int index = 1; index < events.Length; index++)
+        {
+            string requestId = Convert.ToHexString(SHA256.HashData(BitConverter.GetBytes(index)));
+            events[index] = Event(index + 1, new TimeEntryContributorConfirmed(
+                entryId, Contributor(), Tenant(), ObservedAtUtc,
+                new ExternalContributionSource("magic-link", requestId)));
+        }
+
+        var dispatch = new ProjectionDispatchRequest(
+            new ProjectionRequest(Tenant().TenantId, "timesheets", entryId.Value, events) {
+                RebuildSourceHeadSequence = events.LongLength,
+            },
+            [TimeEntryEvidenceProjection.ProjectionName], "composed-large-rebuild", fingerprint);
+        byte[] complete = JsonSerializer.SerializeToUtf8Bytes(dispatch.Request.Events, JsonOptions);
+        complete.Length.ShouldBeGreaterThan(ProjectionRebuildTransportReference.PartBytes);
+        int partCount = (complete.Length + ProjectionRebuildTransportReference.PartBytes - 1)
+            / ProjectionRebuildTransportReference.PartBytes;
+        var header = dispatch with
+        {
+            Request = dispatch.Request with { Events = [] },
+            RebuildTransport = new(partCount, Convert.ToHexString(SHA256.HashData(complete)))
+        };
+        for (int ordinal = 0; ordinal < partCount; ordinal++)
+        {
+            int offset = ordinal * ProjectionRebuildTransportReference.PartBytes;
+            byte[] data = complete.AsSpan(offset,
+                Math.Min(ProjectionRebuildTransportReference.PartBytes, complete.Length - offset)).ToArray();
+            using HttpResponseMessage uploaded = await factory.PostProjectionPartAsync(client,
+                new ProjectionRebuildTransportPartRequest(header, ordinal, data));
+            uploaded.StatusCode.ShouldBe(HttpStatusCode.OK);
+        }
+        using HttpResponseMessage response = await factory.PostProjectionAsync(
+            client, "/project/rebuild/stage/v1", header);
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+
+        string key = TimeEntryEvidenceReadModelAddress.StateKey(Tenant().TenantId, entryId);
+        (await store.GetAsync<TimeEntryEvidenceReadModel>(TimeEntryEvidenceReadModelAddress.StateStoreName,
+            key, TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+        using HttpResponseMessage committed = await factory.PostProjectionAsync(
+            client, "/project/rebuild/commit/v1", header);
+        committed.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await committed.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        using HttpResponseMessage restaged = await factory.PostProjectionAsync(
+            client, "/project/rebuild/stage/v1", header);
+        restaged.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await restaged.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        using HttpResponseMessage verified = await factory.PostProjectionAsync(
+            client, "/project/rebuild/verify/v1", header);
+        verified.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await verified.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        for (int ordinal = 0; ordinal < partCount; ordinal++)
+        {
+            int offset = ordinal * ProjectionRebuildTransportReference.PartBytes;
+            byte[] data = complete.AsSpan(offset,
+                Math.Min(ProjectionRebuildTransportReference.PartBytes, complete.Length - offset)).ToArray();
+            using HttpResponseMessage reuploaded = await factory.PostProjectionPartAsync(client,
+                new ProjectionRebuildTransportPartRequest(header, ordinal, data));
+            reuploaded.StatusCode.ShouldBe(HttpStatusCode.OK);
+        }
+        using HttpResponseMessage reconciled = await factory.PostProjectionAsync(
+            client, "/project/rebuild/stage/v1", header);
+        reconciled.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await reconciled.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        TimeEntryEvidenceReadModel published = (await store.GetAsync<TimeEntryEvidenceReadModel>(
+            TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull();
+        published.EventLineage.Count.ShouldBe(10_000);
+        published.EventPayloadLineage.Count.ShouldBe(10_000);
+
+        var partial = header with { DispatchId = "composed-large-rebuild-partial" };
+        using HttpResponseMessage firstPart = await factory.PostProjectionPartAsync(client,
+            new ProjectionRebuildTransportPartRequest(partial, 0,
+                complete.AsSpan(0, ProjectionRebuildTransportReference.PartBytes).ToArray()));
+        firstPart.StatusCode.ShouldBe(HttpStatusCode.OK);
+        using HttpResponseMessage incomplete = await factory.PostProjectionAsync(
+            client, "/project/rebuild/stage/v1", partial);
+        incomplete.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        (await store.GetAsync<TimeEntryEvidenceReadModel>(TimeEntryEvidenceReadModelAddress.StateStoreName,
+            key, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull()
+            .EventPayloadLineage.ShouldBe(published.EventPayloadLineage);
+
+        var malformed = dispatch with
+        {
+            Request = new ProjectionRequest(Tenant().TenantId, "timesheets", entryId.Value,
+                [Event(1, recorded), Event(2, new TimeEntryContributorConfirmed(
+                    entryId, new PartyReference("wrong-contributor"), Tenant(), ObservedAtUtc,
+                    new ExternalContributionSource("magic-link", "invalid")))]) {
+                RebuildSourceHeadSequence = 2,
+            },
+            DispatchId = "composed-large-rebuild-invalid"
+        };
+        using HttpResponseMessage failedResponse = await factory.PostProjectionAsync(
+            client, "/project/rebuild/v1", malformed);
+        failedResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await failedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
+            .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Failed);
+        TimeEntryEvidenceReadModel retained = (await store.GetAsync<TimeEntryEvidenceReadModel>(
+            TimeEntryEvidenceReadModelAddress.StateStoreName, key, TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull();
+        retained.EventPayloadLineage.ShouldBe(published.EventPayloadLineage);
     }
 
     /// <summary>Normal composed projection delivery persists a selected capability after issuance and use.</summary>
@@ -597,13 +789,16 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         {
             var dispatch = new ProjectionDispatchRequest(
                 new ProjectionRequest(Tenant().TenantId, "timesheets", owner, [item]),
-                [MagicLinkConfirmationCapabilityProjection.ProjectionName],
+                [MagicLinkConfirmationCapabilityProjection.ProjectionName,
+                    MagicLinkTokenHashCapabilityIndexProjection.ProjectionName],
                 $"composed-capability-{owner}", fingerprint);
             using HttpResponseMessage response = await factory.PostProjectionAsync(client, "/project/v2", dispatch);
             response.StatusCode.ShouldBe(HttpStatusCode.OK);
-            (await response.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
-                JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
-                .Outcomes.ShouldHaveSingleItem().Status.ShouldBe(ProjectionDispatchStatus.Completed);
+            ProjectionDispatchOutcome[] outcomes = [.. (await response.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
+                JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull().Outcomes];
+            outcomes.Length.ShouldBe(2);
+            outcomes.ShouldAllBe(outcome => outcome.Status == ProjectionDispatchStatus.Completed
+                || outcome.Status == ProjectionDispatchStatus.AlreadyCompleted);
         }
 
         var handler = scope.ServiceProvider.GetServices<IAsyncDomainProjectionHandler>()
@@ -614,6 +809,15 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         selected.IsAvailable.ShouldBeTrue();
         selected.Value.ShouldNotBeNull().State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
         JsonSerializer.Serialize(selected.Value, JsonOptions).ShouldNotContain("private-test-hash");
+        SharedProjectionScope indexScope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        MagicLinkTokenHashCapabilityIndexTreeRoot indexRoot = (await coordinator
+            .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(indexScope,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey,
+                TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        var indexReader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, indexScope);
+        (await indexReader.FindCandidatesAsync(indexRoot.TokenRoot, "private-test-hash",
+            TestContext.Current.CancellationToken)).ShouldBe([
+                new MagicLinkTokenHashCapabilityIndexEntry(Tenant(), capabilityId)]);
     }
 
     /// <summary>Malformed recognized evidence fails normal dispatch and mapped replay without publishing a row.</summary>
@@ -825,8 +1029,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.Gateway.Requests.Clear();
         int authorizationBefore = factory.AccessGuard.AuthorizationCount;
         int trustedWorkBefore = factory.AccessGuard.TrustedWorkExecutionCount;
-        string indexBefore = JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
-            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions);
+        string indexBefore = JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions);
         string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
         JsonObject body = JsonSerializer.SerializeToNode(command, JsonOptions).ShouldNotBeNull().AsObject();
@@ -850,8 +1053,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.AccessGuard.AuthorizationCount.ShouldBe(authorizationBefore);
         factory.AccessGuard.TrustedWorkExecutionCount.ShouldBe(trustedWorkBefore);
         generator.GenerationCount.ShouldBe(1);
-        JsonSerializer.Serialize(factory.Store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
-            MagicLinkTokenHashCapabilityIndexProjection.StateKey), JsonOptions).ShouldBe(indexBefore);
+        JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions).ShouldBe(indexBefore);
         JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
             MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
     }
@@ -880,7 +1082,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 new MagicLinkCapabilityId($"capability-{route.Name}-cross-tenant"),
                 new TimeEntryId($"time-entry-{route.Name}-cross-tenant"));
             MagicLinkTokenHashCapabilityIndexEntry candidate = factory.Store
-                .Get<MagicLinkTokenHashCapabilityIndexReadModel>(MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+                .GetSelectedIndex()
                 .Entries[Hash(token)];
             candidate.Tenant.ShouldBe(Tenant());
             int gatewayRequestCount = factory.Gateway.Requests.Count;
@@ -1538,6 +1740,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         IWorkloadAssertionIssuer? workloadAssertionIssuer = null,
         HttpMessageHandler? workloadGatewayHandler = null,
         ExternalContributionPolicyOptions? externalContributionPolicy = null,
+        ITimeEntryCommentPublicationAuthority? commentAuthority = null,
         InMemoryReadModelStore? batchStore = null) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
@@ -1809,6 +2012,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     services.AddSingleton(externalContributionPolicy);
                 }
 
+                if (commentAuthority is not null)
+                {
+                    services.RemoveAll<ITimeEntryCommentPublicationAuthority>();
+                    services.AddSingleton(commentAuthority);
+                }
+
                 if (tokenGenerator is not null)
                 {
                     services.RemoveAll<IMagicLinkTokenGenerator>();
@@ -1821,11 +2030,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     ? batchStore
                     : useConcreteLoader ? Store : new UnavailableReadModelStore();
                 services.AddSingleton(projectionStore);
-                if (batchStore is not null)
-                {
-                    services.RemoveAll<IReadModelBatchStore>();
-                    services.AddSingleton<IReadModelBatchStore>(batchStore);
-                }
+                services.RemoveAll<IReadModelBatchStore>();
+                services.AddSingleton<IReadModelBatchStore>(batchStore is not null
+                    ? batchStore : Store);
 
                 if (workloadGatewayHandler is null)
                 {
@@ -1906,6 +2113,52 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject, assertion);
 
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
+        public async Task<HttpResponseMessage> PostProjectionPartAsync(
+            HttpClient client, ProjectionRebuildTransportPartRequest part)
+        {
+            using HttpRequestMessage request = new(HttpMethod.Post, "/project/rebuild/part/v1")
+            {
+                Content = JsonContent.Create(part, options: JsonOptions)
+            };
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject);
+            return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
+        public async Task<HttpResponseMessage> PostSharedProjectionAsync(
+            HttpClient client, DomainSharedProjectionRebuildRequest rebuild,
+            CancellationToken cancellationToken)
+        {
+            using HttpRequestMessage request = new(HttpMethod.Post, "/project/rebuild/shared/v1")
+            {
+                Content = JsonContent.Create(rebuild, options: JsonOptions)
+            };
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject);
+            return await client.SendAsync(request, cancellationToken);
+        }
+
+        public async Task<HttpResponseMessage> ForwardCoordinatorProjectionAsync(
+            HttpClient client, HttpRequestMessage source, CancellationToken cancellationToken)
+        {
+            string path = source.RequestUri?.AbsolutePath
+                ?? throw new InvalidOperationException("The coordinator request has no route.");
+            int routeStart = path.IndexOf("/project/", StringComparison.Ordinal);
+            if (routeStart < 0)
+            {
+                throw new InvalidOperationException("The coordinator request is outside projection routes.");
+            }
+
+            using HttpRequestMessage request = new(source.Method, path[routeStart..]);
+            if (source.Content is not null)
+            {
+                request.Content = new ByteArrayContent(
+                    await source.Content.ReadAsByteArrayAsync(cancellationToken));
+                request.Content.Headers.ContentType = source.Content.Headers.ContentType;
+            }
+
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProject);
+            return await client.SendAsync(request, cancellationToken);
         }
 
         public async Task<HttpResponseMessage> PostProtectedManagementAsync<T>(HttpClient client, string route, T body)
@@ -2142,10 +2395,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         public override DateTimeOffset GetUtcNow() => UtcNow;
     }
 
-    private sealed class ProjectionBackedReadModelStore : IReadModelStore
+    private sealed class ProjectionBackedReadModelStore : IReadModelStore, IReadModelBatchStore
     {
-        private readonly Dictionary<string, object> _values = new(StringComparer.Ordinal);
-        private readonly Dictionary<string, int> _versions = new(StringComparer.Ordinal);
+        private readonly InMemoryReadModelStore _inner = new();
 
         public int DirectCatalogSeedCount { get; private set; }
 
@@ -2154,11 +2406,92 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         /// <summary>Gets the read-model keys requested through the loader's store seam.</summary>
         public List<string> ReadKeys { get; } = [];
 
-        public bool Contains(string key) => _values.ContainsKey(key);
+        public bool Contains(string key)
+            => _inner.GetAsync<object>(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName, key)
+                .GetAwaiter().GetResult().Value is not null;
 
         public T Get<T>(string key)
             where T : class
-            => (T)_values[key];
+            => _inner.GetAsync<T>(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName, key)
+                .GetAwaiter().GetResult().Value ?? throw new KeyNotFoundException(key);
+
+        public MagicLinkTokenHashCapabilityIndexReadModel GetSelectedIndex()
+        {
+            var coordinator = new SharedProjectionEpochCoordinator(_inner, _inner);
+            SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+            SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexTreeRoot> tree = coordinator
+                .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                    MagicLinkTokenHashCapabilityIndexTreeReader.RootKey)
+                .GetAwaiter().GetResult();
+            tree.IsAvailable.ShouldBeTrue();
+            if (tree.Value is not null)
+            {
+                var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope);
+                var rows = new List<KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>>();
+                var visited = new HashSet<(long Generation, long NodeId)>();
+                void Visit(MagicLinkTokenHashCapabilityIndexNodeReference? reference)
+                {
+                    if (reference is null) return;
+                    visited.Add((reference.Generation, reference.NodeId)).ShouldBeTrue();
+                    MagicLinkTokenHashCapabilityIndexTreeNode node = reader.ReadNodeAsync(reference)
+                        .GetAwaiter().GetResult();
+                    if (node.Row is not null)
+                        rows.Add(new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(
+                            node.Row.TokenHash, node.Row.Candidate));
+                    foreach (MagicLinkTokenHashCapabilityIndexNodeReference child in node.Children.Values)
+                        Visit(child);
+                }
+                Visit(tree.Value.TokenRoot);
+                return MagicLinkTokenHashCapabilityIndexProjection.FromContributions(rows);
+            }
+            var contributions = new List<KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>>();
+            for (int shard = 0; shard < MagicLinkTokenHashCapabilityIndexProjection.ShardCount; shard++)
+            {
+                SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexReadModel> selected = coordinator
+                    .ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(
+                        MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
+                        MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard))
+                    .GetAwaiter().GetResult();
+                selected.IsAvailable.ShouldBeTrue();
+                contributions.AddRange(MagicLinkTokenHashCapabilityIndexProjection.Expand(selected.Value));
+                if (selected.Value is null) continue;
+                foreach ((string hash, int pageCount) in selected.Value.CandidatePageCounts)
+                {
+                    IReadOnlyList<int> pageIds = selected.Value.CandidatePageIds[hash];
+                    pageIds.Count.ShouldBe(pageCount);
+                    foreach (int pageId in pageIds)
+                    {
+                        SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexPage> selectedPage =
+                            coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexPage>(
+                                MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
+                                MagicLinkTokenHashCapabilityIndexProjection.CandidatePageKey(shard, pageId))
+                            .GetAwaiter().GetResult();
+                        selectedPage.IsAvailable.ShouldBeTrue();
+                        selectedPage.Value.ShouldNotBeNull().TokenHash.ShouldBe(hash);
+                        contributions.AddRange(selectedPage.Value.ShouldNotBeNull().Candidates.Select(candidate =>
+                            new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(hash, candidate)));
+                    }
+                }
+                foreach (MagicLinkTokenHashCapabilityIndexDirectoryReference reference in selected.Value.DirectoryPages)
+                {
+                    SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexDirectoryPage> selectedPage =
+                        coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexDirectoryPage>(
+                            MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
+                            MagicLinkTokenHashCapabilityIndexProjection.DirectoryPageKey(shard, reference.PageId))
+                        .GetAwaiter().GetResult();
+                    selectedPage.IsAvailable.ShouldBeTrue();
+                    MagicLinkTokenHashCapabilityIndexDirectoryEntry[] rows = [.. selectedPage.Value
+                        .ShouldNotBeNull().Entries];
+                    rows[0].TokenHash.ShouldBe(reference.FirstHash);
+                    rows[^1].TokenHash.ShouldBe(reference.LastHash);
+                    contributions.AddRange(rows.Select(static row =>
+                        new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(
+                            row.TokenHash, row.Candidate)));
+                }
+            }
+
+            return MagicLinkTokenHashCapabilityIndexProjection.FromContributions(contributions);
+        }
 
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
             string storeName,
@@ -2167,11 +2500,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             where TValue : class
         {
             ReadKeys.Add(key);
-            return Task.FromResult(new ReadModelEntry<TValue>(
-                _values.TryGetValue(key, out object? value) ? value as TValue : null,
-                _versions.TryGetValue(key, out int version)
-                    ? version.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                    : null));
+            return _inner.GetAsync<TValue>(storeName, key, cancellationToken);
         }
 
         // Direct, unconditional seeding is refused outright rather than merely counted. The counters
@@ -2200,9 +2529,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     "The Activity Type catalog must be established through the projection route, not seeded directly.");
             }
 
-            _values[key] = value;
-            _versions[key] = _versions.GetValueOrDefault(key) + 1;
-            return Task.CompletedTask;
+            return _inner.SaveAsync(storeName, key, value, cancellationToken);
         }
 
         public Task<bool> TrySaveAsync<TValue>(
@@ -2213,18 +2540,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             CancellationToken cancellationToken = default)
             where TValue : class
         {
-            string currentEtag = _versions.TryGetValue(key, out int version)
-                ? version.ToString(System.Globalization.CultureInfo.InvariantCulture)
-                : string.Empty;
-            if (!string.Equals(currentEtag, etag, StringComparison.Ordinal))
-            {
-                return Task.FromResult(false);
-            }
-
-            _values[key] = value;
-            _versions[key] = version + 1;
-            return Task.FromResult(true);
+            return _inner.TrySaveAsync(storeName, key, value, etag, cancellationToken);
         }
+
+        public Task<ReadModelBatchResult> ExecuteAsync(ReadModelBatch batch,
+            CancellationToken cancellationToken = default)
+            => _inner.ExecuteAsync(batch, cancellationToken);
     }
 
     private sealed class ScriptedEventStoreGateway(Func<IServiceProvider> services) : IEventStoreGatewayClient
@@ -2245,6 +2566,22 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         public Func<object, object>? StoredPayloadTransform { get; set; }
 
+        public Func<StreamReadEvent, StreamReadEvent>? StoredEventTransform { get; set; }
+
+        public Func<SubmitCommandRequest, CancellationToken, Task>? AfterStoredBeforeResponseAsync { get; set; }
+
+        public int TransientWorkloadStatusFailures { get; set; }
+
+        public bool StatusUnavailableUntilSubmission { get; set; }
+
+        public int TransientCommitBatchReadFailures { get; set; }
+
+        public int TransientIssueReadFailures { get; set; }
+
+        public int StaleIssueReadbacks { get; set; }
+
+        public int StaleCommitBatchReadbacks { get; set; }
+
         public Task<CommandStatusQueryResponse?> GetCommandStatusAsync(
             string messageId,
             CancellationToken cancellationToken = default)
@@ -2257,6 +2594,19 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         {
             lock (_stateGate)
             {
+                if (StatusUnavailableUntilSubmission && SubmissionCount == 0)
+                {
+                    return Task.FromException<CommandStatusQueryResponse?>(
+                        new EventStoreGatewayException(503, "Status preflight unavailable"));
+                }
+
+                if (TransientWorkloadStatusFailures > 0)
+                {
+                    TransientWorkloadStatusFailures--;
+                    return Task.FromException<CommandStatusQueryResponse?>(
+                        new EventStoreGatewayException(500, "Transient status fault"));
+                }
+
                 CommandStatusQueryResponse? status = _statuses.GetValueOrDefault(messageId);
                 if (status?.Status == nameof(CommandStatus.Completed) && CompletedStatusReadsToDelay > 0)
                 {
@@ -2363,7 +2713,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     for (int index = 0; index < result.Events.Count; index++)
                     {
                         object payload = StoredPayloadTransform?.Invoke(result.Events[index]) ?? result.Events[index];
-                        stored.Add(new StreamReadEvent(
+                        StreamReadEvent persisted = new(
                             stored.Count + 1,
                             payload.GetType().FullName!,
                             JsonSerializer.SerializeToUtf8Bytes(payload, payload.GetType(), JsonOptions),
@@ -2373,7 +2723,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                             request.CorrelationId ?? request.MessageId,
                             null,
                             ObservedAtUtc,
-                            "fixture"));
+                            "fixture");
+                        stored.Add(StoredEventTransform?.Invoke(persisted) ?? persisted);
                     }
 
                     lock (_stateGate)
@@ -2410,10 +2761,18 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
         }
 
-        public Task<SubmitCommandResponse> SubmitWorkloadCommandAsync(
+        public async Task<SubmitCommandResponse> SubmitWorkloadCommandAsync(
             SubmitCommandRequest request,
             CancellationToken cancellationToken = default)
-            => SubmitScriptedCommandAsync(request, cancellationToken);
+        {
+            SubmitCommandResponse receipt = await SubmitScriptedCommandAsync(request, cancellationToken);
+            if (AfterStoredBeforeResponseAsync is { } afterStored)
+            {
+                await afterStored(request, cancellationToken);
+            }
+
+            return receipt;
+        }
 
         private object? CurrentState(SubmitCommandRequest request)
         {
@@ -2494,6 +2853,34 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         {
             lock (_stateGate)
             {
+                if (request.PageSize == 1 && TransientIssueReadFailures > 0)
+                {
+                    TransientIssueReadFailures--;
+                    return Task.FromException<StreamReadPage>(
+                        new EventStoreGatewayException(503, "Transient issue read fault"));
+                }
+
+                if (request.PageSize == 1 && StaleIssueReadbacks > 0)
+                {
+                    StaleIssueReadbacks--;
+                    return SuppressReadbackEventsAsync(request, cancellationToken);
+                }
+
+                if (request.FromSequence >= 1 && request.PageSize == 2
+                    && TransientCommitBatchReadFailures > 0)
+                {
+                    TransientCommitBatchReadFailures--;
+                    return Task.FromException<StreamReadPage>(
+                        new EventStoreGatewayException(429, "Transient batch read fault"));
+                }
+
+                if (request.FromSequence >= 1 && request.PageSize == 2
+                    && StaleCommitBatchReadbacks > 0)
+                {
+                    StaleCommitBatchReadbacks--;
+                    return SuppressReadbackEventsAsync(request, cancellationToken);
+                }
+
                 if (request.AggregateId is not null
                     && !_streams.ContainsKey((request.Tenant, request.AggregateId))
                     && _missingStreamReasons.TryGetValue((request.Tenant, request.AggregateId), out string? reason))
@@ -2504,6 +2891,13 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
 
             return ReadScriptedStreamAsync(request, cancellationToken);
+        }
+
+        private async Task<StreamReadPage> SuppressReadbackEventsAsync(
+            StreamReadRequest request, CancellationToken cancellationToken)
+        {
+            StreamReadPage page = await ReadScriptedStreamAsync(request, cancellationToken).ConfigureAwait(false);
+            return page with { Events = [] };
         }
     }
 

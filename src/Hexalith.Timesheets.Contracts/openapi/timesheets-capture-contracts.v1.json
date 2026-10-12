@@ -796,6 +796,8 @@
           "lockEvidence",
           "sourceAuthority",
           "eventLineage",
+          "eventPayloadLineage",
+          "commentProjectionState",
           "displayHydration"
         ],
         "properties": {
@@ -819,12 +821,29 @@
             "type": "array",
             "items": { "$ref": "#/components/schemas/TimeEntryEventLineageItem" }
           },
+          "eventPayloadLineage": {
+            "type": "array",
+            "description": "SHA-256 digests of each canonical persisted owner event envelope, in sequence order.",
+            "items": { "type": "string", "pattern": "^[0-9A-F]{64}$" }
+          },
+          "packedEventLineage": {
+            "type": [ "string", "null" ],
+            "format": "byte",
+            "description": "Base64 encoded compact event lineage used by persisted selected views. Consumers should use eventLineage."
+          },
+          "packedPayloadLineage": {
+            "type": [ "string", "null" ],
+            "format": "byte",
+            "description": "Base64 encoded compact canonical payload digests used by persisted selected views. Consumers should use eventPayloadLineage."
+          },
           "approvalDecision": { "$ref": "#/components/schemas/TimeEntryApprovalDecisionEvidence" },
           "correction": { "$ref": "#/components/schemas/TimeEntryCorrectionEvidence" },
           "approvedCorrection": { "$ref": "#/components/schemas/TimeEntryApprovedCorrectionEvidence" },
           "lockEvidence": { "$ref": "#/components/schemas/TimeEntryLockEvidence" },
           "displayHydration": { "$ref": "#/components/schemas/TimeEntryDisplayHydration" },
-          "comment": { "$ref": "#/components/schemas/TimeEntryComment" }
+          "comment": { "$ref": "#/components/schemas/TimeEntryComment" },
+          "commentProjectionState": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision", "description": "The current comment projection decision; comment text is absent unless the decision is Allowed." },
+          "commentPublicationPolicyVersion": { "type": "integer", "description": "Version of the server policy used to materialize this row. Zero identifies historical rows pending replay." }
         }
       },
       "TimeEntryLockEvidence": {
@@ -1365,7 +1384,10 @@
           "exportInclusion": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision" },
           "supportDiagnostics": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision" },
           "redactionRequirement": { "$ref": "#/components/schemas/TimesheetsCommentRedactionRequirement" },
-          "retentionCategory": { "$ref": "#/components/schemas/TimesheetsEvidenceRetentionCategory" }
+          "retentionCategory": { "$ref": "#/components/schemas/TimesheetsEvidenceRetentionCategory" },
+          "serverPublicationVersion": { "type": "integer", "description": "Version of the server-issued per-comment publication decision. Caller-supplied values are replaced." },
+          "serverProjectionInclusion": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision", "description": "Server-issued per-comment projection decision. Caller-supplied values are replaced." },
+          "serverExternalConfirmationDisplay": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision", "description": "Server-issued per-comment external confirmation display decision. Caller-supplied values are replaced." }
         }
       },
       "TimesheetsMetadataDescriptor": {

@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 
 using Shouldly;
 
@@ -6,11 +7,17 @@ using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Projections.MagicLinks;
 using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.EventStore.DomainService;
+using Hexalith.EventStore.Client.Projections;
+using Hexalith.EventStore.Testing.Fakes;
+using Hexalith.Timesheets.Contracts.References;
+using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.MagicLinks;
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Hexalith.Timesheets.IntegrationTests;
@@ -34,6 +41,7 @@ public sealed class InternalSurfaceGuardTests
             "/project/rebuild/v1",
             "/project/rebuild/shared/v1",
             "/admin/operational-index-metadata",
+            "/admin/timesheets/magic-link-index/migrate-v6",
             "/PROJECT/v2",
             "/Process",
             "/Admin/operational-index-metadata"
@@ -77,6 +85,86 @@ public sealed class InternalSurfaceGuardTests
         // 404 rather than 403: a refusal that confirmed the route exists would hand an external
         // caller a map of the write surface.
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Internal_migration_route_is_default_denied_without_a_certified_operator_authority()
+    {
+        using GuardedFactory factory = new(allowOnAnyPort: true, authenticatedOperator: true);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/migrate-v6",
+            new StringContent("{\"operationId\":\"migration\",\"certifiedInventoryFingerprint\":\"caller-only\"}",
+                System.Text.Encoding.UTF8, "application/json"),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Internal_migration_route_requires_an_authenticated_operator()
+    {
+        var authority = new CountingMigration();
+        using GuardedFactory factory = new(allowOnAnyPort: true,
+            migrationAuthority: authority);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/migrate-v6",
+            new StringContent("{\"operationId\":\"migration\",\"certifiedInventoryFingerprint\":\"caller-only\"}",
+                System.Text.Encoding.UTF8, "application/json"),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldNotBe(HttpStatusCode.NoContent);
+        authority.Calls.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Certified_internal_operator_route_migrates_selected_v6_candidates()
+    {
+        var store = new InMemoryReadModelStore();
+        using GuardedFactory factory = new(allowOnAnyPort: true, store,
+            new PermittedMigration(), authenticatedOperator: true);
+        SharedProjectionEpochCoordinator coordinator = factory.Services
+            .GetRequiredService<SharedProjectionEpochCoordinator>();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        var ownerA = new MagicLinkTokenHashCapabilityIndexEntry(new TenantReference("tenant-a"),
+            new MagicLinkCapabilityId("owner-a"));
+        var ownerB = new MagicLinkTokenHashCapabilityIndexEntry(new TenantReference("tenant-b"),
+            new MagicLinkCapabilityId("owner-b"));
+        string hash = "shared";
+        _ = await coordinator.BeginAsync(scope, "route-seed", "source",
+            new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        _ = await coordinator.StageStreamingAsync(scope, "route-seed", Seed(),
+            TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(scope, "route-seed", TestContext.Current.CancellationToken);
+
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/migrate-v6",
+            new StringContent("{\"operationId\":\"route-migrate\",\"certifiedInventoryFingerprint\":\"certified\"}",
+                System.Text.Encoding.UTF8, "application/json"),
+            TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+        SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexTreeRoot> root = await coordinator
+            .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey,
+                TestContext.Current.CancellationToken);
+        (await new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope)
+            .FindCandidatesAsync(root.Value.ShouldNotBeNull().TokenRoot, hash,
+                TestContext.Current.CancellationToken)).Count.ShouldBe(2);
+
+        async IAsyncEnumerable<ReadModelBatchOperation> Seed()
+        {
+            yield return ReadModelBatchOperation.Write(
+                MagicLinkTokenHashCapabilityIndexProjection.ShardKey(hash),
+                MagicLinkTokenHashCapabilityIndexProjection.FromContributions(
+                [
+                    new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(hash, ownerA),
+                    new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(hash, ownerB)
+                ]), ReadModelBatchConcurrency.LastWrite);
+            await Task.Yield();
+        }
     }
 
     /// <summary>Lists the four public capability routes without supplying a user principal or workload credentials.</summary>
@@ -143,14 +231,69 @@ public sealed class InternalSurfaceGuardTests
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    private sealed class GuardedFactory(bool allowOnAnyPort) : WebApplicationFactory<Program>
+    private sealed class GuardedFactory(bool allowOnAnyPort,
+        InMemoryReadModelStore? store = null,
+        IMagicLinkIndexMigrationAuthority? migrationAuthority = null,
+        bool authenticatedOperator = false) : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.ConfigureLogging(static logging => logging.ClearProviders());
             builder.ConfigureServices(services =>
+            {
                 services.Configure<InternalSurfaceOptions>(
-                    options => options.AllowOnAnyPort = allowOnAnyPort));
+                    options => options.AllowOnAnyPort = allowOnAnyPort);
+                if (store is not null)
+                {
+                    services.RemoveAll<IReadModelStore>();
+                    services.RemoveAll<IReadModelBatchStore>();
+                    services.AddSingleton<IReadModelStore>(store);
+                    services.AddSingleton<IReadModelBatchStore>(store);
+                }
+                if (migrationAuthority is not null)
+                {
+                    services.RemoveAll<IMagicLinkIndexMigrationAuthority>();
+                    services.AddSingleton(migrationAuthority);
+                }
+                if (authenticatedOperator)
+                    services.AddSingleton<IStartupFilter, OperatorPrincipalFilter>();
+            });
+        }
+    }
+
+    private sealed class OperatorPrincipalFilter : IStartupFilter
+    {
+        public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(
+            Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
+            => app =>
+            {
+                app.Use(async (context, following) =>
+                {
+                    context.User = new ClaimsPrincipal(new ClaimsIdentity(
+                        [new Claim(ClaimTypes.NameIdentifier, "certified-operator")], "TestAuth"));
+                    await following(context).ConfigureAwait(false);
+                });
+                next(app);
+            };
+    }
+
+    private sealed class PermittedMigration : IMagicLinkIndexMigrationAuthority
+    {
+        public Task<bool> AuthorizeCertifiedMigrationAsync(string operationId,
+            string certifiedInventoryFingerprint, CancellationToken cancellationToken)
+            => Task.FromResult(operationId == "route-migrate"
+                && certifiedInventoryFingerprint == "certified");
+    }
+
+    private sealed class CountingMigration : IMagicLinkIndexMigrationAuthority
+    {
+        public int Calls { get; private set; }
+
+        public Task<bool> AuthorizeCertifiedMigrationAsync(string operationId,
+            string certifiedInventoryFingerprint, CancellationToken cancellationToken)
+        {
+            Calls++;
+            return Task.FromResult(true);
         }
     }
 }

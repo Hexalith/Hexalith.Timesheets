@@ -4,11 +4,13 @@ using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -425,7 +427,12 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     public async Task Adjust_magic_link_updates_draft_external_values_then_consumes_capability()
     {
         Fixture fixture = AuthorizedProjectFixture();
-        AdjustTimeThroughMagicLink command = AdjustCommand();
+        AdjustTimeThroughMagicLink command = AdjustCommand() with
+        {
+            Comment = new TimeEntryComment("adjustment private note",
+                TimeEntryCommentPolicy.SensitiveDefault with
+                { ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed })
+        };
 
         MagicLinkConfirmationUseResult result = await fixture.CreateService().AdjustAsync(
             Context(),
@@ -451,6 +458,9 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         adjusted.AdjustedValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
         adjusted.ActivityTypeScope.ShouldBe(adjusted.AdjustedValues.ActivityTypeScope!.Value);
         adjusted.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
+        adjusted.AdjustedValues.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        adjusted.AdjustedValues.Comment.Policy.ServerProjectionInclusion
+            .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
 
         MagicLinkConfirmationCapabilityUsed used = result.CapabilityResult.ShouldNotBeNull()
             .Events.ShouldHaveSingleItem()
@@ -1120,6 +1130,65 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
+    public async Task AdjustmentDisplayRequiresServerIssuedCommentPermission()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryComment callerAllowed = new("private note", TimeEntryCommentPolicy.SensitiveDefault with
+        {
+            ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed
+        });
+        MagicLinkConfirmationCapabilityCommandService service = fixture.CreateService();
+
+        MagicLinkAdjustmentDisplayResponse legacy = (await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(comment: callerAllowed), FreshCatalog(), ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        legacy.Comment.ShouldBeNull();
+
+        TimeEntryComment olderIssued = new("older private note", TimeEntryCommentPolicy.SensitiveDefault with
+        {
+            ServerPublicationVersion = TimeEntryCommentPublicationIssuer.CurrentVersion,
+            ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed
+        });
+        MagicLinkAdjustmentDisplayResponse olderDisplay = (await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(comment: olderIssued), FreshCatalog(), ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        olderDisplay.Comment.ShouldBeNull();
+
+        TimeEntryCommentPublicationIssuer issuer = new();
+        TimeEntryComment denied = issuer.Issue(Context(), callerAllowed).ShouldNotBeNull();
+        MagicLinkAdjustmentDisplayResponse deniedDisplay = (await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(comment: denied), FreshCatalog(), ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        deniedDisplay.Comment.ShouldBeNull();
+
+        ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayDisplayExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(true);
+        TimeEntryComment permitted = new TimeEntryCommentPublicationIssuer(authority)
+            .Issue(Context(), callerAllowed).ShouldNotBeNull();
+        permitted.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        MagicLinkAdjustmentDisplayResponse allowedDisplay = (await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(comment: permitted), FreshCatalog(), ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        allowedDisplay.Comment.ShouldBeNull();
+
+        TimeEntryComment cleared = new TimeEntryCommentPublicationIssuer(authority)
+            .Issue(Context(), new TimeEntryComment(callerAllowed.Text, callerAllowed.Policy with
+            {
+                RedactionRequirement = TimesheetsCommentRedactionRequirement.NotRequired
+            })).ShouldNotBeNull();
+        MagicLinkAdjustmentDisplayResponse clearedDisplay = (await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(comment: cleared), FreshCatalog(), ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        clearedDisplay.Comment.ShouldBe("private note");
+    }
+
+    [Fact]
     public async Task Describe_magic_link_fails_closed_for_invalid_used_expired_wrong_scope_or_unfresh_states()
     {
         Fixture fixture = AuthorizedProjectFixture();
@@ -1332,7 +1401,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         TimeEntryId? timeEntryId = null,
         TimeEntryTargetReference? target = null,
         PartyReference? contributor = null,
-        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant)
+        ActivityTypeScope activityTypeScope = ActivityTypeScope.Tenant,
+        TimeEntryComment? comment = null)
     {
         TimeEntryState state = new();
         state.Apply(new TimeEntryRecorded(
@@ -1348,6 +1418,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             ContributorCategory.ExternalContributor,
             null)
         {
+            Comment = comment,
             ExternalSource = new ExternalContributionSource("supplier-api", "request-1")
         });
         return state;

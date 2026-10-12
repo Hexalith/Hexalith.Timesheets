@@ -15,7 +15,10 @@ using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Runtime;
 
 using Microsoft.AspNetCore.Http;
@@ -170,7 +173,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
         using HttpResponseMessage adjusted = await client.PostAsJsonAsync(
             $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
-            AdjustCommand(), TestContext.Current.CancellationToken);
+            AdjustCommand() with
+            {
+                Comment = new TimeEntryComment("adjusted private note", TimeEntryCommentPolicy.SensitiveDefault with
+                {
+                    ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                    ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed
+                })
+            }, TestContext.Current.CancellationToken);
 
         confirmed.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         adjusted.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -184,6 +194,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         TimeEntryAdjustedThroughMagicLink adjustment = Persisted<StoredTimeEntryAdjusted>(adjustEvents[2]).Event;
         adjustment.TimeEntryId.ShouldBe(adjustEntryId);
         adjustment.AdjustedValues.DurationMinutes.ShouldBe(AdjustCommand().DurationMinutes);
+        adjustment.AdjustedValues.Comment.ShouldNotBeNull().Text.ShouldBe("adjusted private note");
+        adjustment.AdjustedValues.Comment.Policy.ServerPublicationVersion.ShouldBe(1);
+        adjustment.AdjustedValues.Comment.Policy.ProjectionInclusion
+            .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+        adjustment.AdjustedValues.Comment.Policy.ExternalConfirmationDisplay
+            .ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        adjustment.AdjustedValues.Comment.Policy.ServerExternalConfirmationDisplay
+            .ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
         factory.Gateway.StoredEvents(Tenant().TenantId, confirmId.Value).Length.ShouldBe(1);
         factory.Gateway.StoredEvents(Tenant().TenantId, adjustId.Value).Length.ShouldBe(1);
     }
@@ -295,6 +313,116 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Length.ShouldBe(3);
     }
 
+    [Fact]
+    public async Task Use_receipt_rejects_duplicate_persisted_event_identity()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-duplicate-event-id");
+        var entryId = new TimeEntryId("entry-duplicate-event-id");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, entryId);
+        factory.Gateway.StoredEventTransform = stored => stored with { MessageId = "same-event-id" };
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Length.ShouldBe(3);
+    }
+
+    [Theory]
+    [InlineData("text")]
+    [InlineData("serverProjection")]
+    [InlineData("serverDisplay")]
+    public async Task Adjustment_receipt_rejects_a_persisted_comment_different_from_the_server_decision(string field)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"capability-adjust-comment-{field}");
+        var entryId = new TimeEntryId($"entry-adjust-comment-{field}");
+        await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust,
+            capabilityId, entryId);
+        factory.Gateway.StoredPayloadTransform = payload => payload is StoredTimeEntryAdjusted stored
+            ? new StoredTimeEntryAdjusted(stored.Event with
+            {
+                AdjustedValues = stored.Event.AdjustedValues with
+                {
+                    Comment = field switch
+                    {
+                        "text" => new TimeEntryComment(
+                            "forged private note", stored.Event.AdjustedValues.Comment!.Policy),
+                        "serverProjection" => new TimeEntryComment(
+                            stored.Event.AdjustedValues.Comment!.Text,
+                            stored.Event.AdjustedValues.Comment!.Policy with
+                            {
+                                ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                                ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
+                            }),
+                        "serverDisplay" => new TimeEntryComment(
+                            stored.Event.AdjustedValues.Comment!.Text,
+                            stored.Event.AdjustedValues.Comment!.Policy with
+                            {
+                                ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed,
+                                ServerExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed
+                            }),
+                        _ => throw new ArgumentOutOfRangeException(nameof(field))
+                    }
+                }
+            }) : payload;
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
+            AdjustCommand() with
+            {
+                Comment = new TimeEntryComment("adjusted private note", TimeEntryCommentPolicy.SensitiveDefault with
+                {
+                    ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                    ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed
+                })
+            }, TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Length.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task Adjustment_receipt_keeps_the_pre_submit_comment_decision_when_authority_changes()
+    {
+        bool allowPublication = false;
+        ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayPublish(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(_ => allowPublication);
+        authority.MayDisplayExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(false);
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, commentAuthority: authority);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-adjust-authority-change");
+        var entryId = new TimeEntryId("entry-adjust-authority-change");
+        await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust,
+            capabilityId, entryId);
+        factory.Gateway.StoredPayloadTransform = payload =>
+        {
+            if (payload is StoredTimeEntryAdjusted) allowPublication = true;
+            return payload;
+        };
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
+            AdjustCommand() with
+            {
+                Comment = new TimeEntryComment("private adjustment", TimeEntryCommentPolicy.SensitiveDefault)
+            }, TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        allowPublication.ShouldBeTrue();
+        TimeEntryAdjustedThroughMagicLink adjusted = Persisted<StoredTimeEntryAdjusted>(
+            factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)[2]).Event;
+        adjusted.AdjustedValues.Comment.ShouldNotBeNull().Policy.ServerProjectionInclusion
+            .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+    }
+
     [Theory]
     [InlineData("message")]
     [InlineData("count")]
@@ -368,6 +496,123 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             stored.ShouldHaveSingleItem()).Event;
         eventData.TokenHash.Value.ShouldBe(Hash(issued.OneTimeToken));
         JsonSerializer.Serialize(stored, JsonOptions).ShouldNotContain(issued.OneTimeToken);
+    }
+
+    [Fact]
+    public async Task Issue_recovers_committed_event_when_submit_response_is_lost()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("catalog-seed-lost-issue"), new TimeEntryId("entry-seed-lost-issue"));
+        CancellationToken pendingSubmitToken = default;
+        factory.Gateway.AfterStoredBeforeResponseAsync = (request, token) =>
+        {
+            if (request.CommandType != typeof(CommitMagicLinkIssue).FullName)
+            {
+                return Task.CompletedTask;
+            }
+
+            pendingSubmitToken = token;
+            return Task.Delay(Timeout.InfiniteTimeSpan, token);
+        };
+        var capabilityId = new MagicLinkCapabilityId("capability-lost-issue-receipt");
+        var command = new IssueMagicLinkConfirmationCapability(
+            capabilityId,
+            new MagicLinkConfirmationScope(Contributor(), TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(), new TimeEntryId("entry-lost-issue-receipt"), MagicLinkTargetKind.ProposedTimeEntry),
+            MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1),
+            new MagicLinkAuditMetadata("timesheets", "lost-issue"));
+
+        using HttpResponseMessage response = await factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/magic-links/confirmation-capabilities", command);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        MagicLinkIssueResponse issued = (await response.Content.ReadFromJsonAsync<MagicLinkIssueResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        StreamReadEvent stored = factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).ShouldHaveSingleItem();
+        Persisted<StoredMagicLinkIssued>(stored).Event.TokenHash.Value.ShouldBe(Hash(issued.OneTimeToken));
+        pendingSubmitToken.IsCancellationRequested.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Issue_retries_transient_stored_read_after_exact_completion()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("catalog-seed-issue-read-retry"), new TimeEntryId("entry-seed-issue-read-retry"));
+        factory.Gateway.TransientIssueReadFailures = 1;
+        factory.Gateway.StaleIssueReadbacks = 1;
+        var capabilityId = new MagicLinkCapabilityId("capability-issue-read-retry");
+        var command = new IssueMagicLinkConfirmationCapability(
+            capabilityId,
+            new MagicLinkConfirmationScope(Contributor(), TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(), new TimeEntryId("entry-issue-read-retry"), MagicLinkTargetKind.ProposedTimeEntry),
+            MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1),
+            new MagicLinkAuditMetadata("timesheets", "issue-read-retry"));
+
+        using HttpResponseMessage response = await factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/magic-links/confirmation-capabilities", command);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        MagicLinkIssueResponse issued = (await response.Content.ReadFromJsonAsync<MagicLinkIssueResponse>(
+            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        factory.Gateway.TransientIssueReadFailures.ShouldBe(0);
+        factory.Gateway.StaleIssueReadbacks.ShouldBe(0);
+        factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).ShouldHaveSingleItem();
+        Persisted<StoredMagicLinkIssued>(factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value)[0])
+            .Event.TokenHash.Value.ShouldBe(Hash(issued.OneTimeToken));
+    }
+
+    [Fact]
+    public async Task Issue_receipt_rejects_event_from_a_different_command_message()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("catalog-seed-forged-issue"), new TimeEntryId("entry-seed-forged-issue"));
+        factory.Gateway.StoredEventTransform = stored => stored with { CorrelationId = "forged-command" };
+        var capabilityId = new MagicLinkCapabilityId("capability-forged-issue-receipt");
+        var command = new IssueMagicLinkConfirmationCapability(
+            capabilityId,
+            new MagicLinkConfirmationScope(Contributor(), TimeEntryTargetReference.ForProject(Project()),
+                ActivityId(), new TimeEntryId("entry-forged-issue-receipt"), MagicLinkTargetKind.ProposedTimeEntry),
+            MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1),
+            new MagicLinkAuditMetadata("timesheets", "forged-issue"));
+
+        using HttpResponseMessage response = await factory.PostProtectedManagementAsync(
+            client, "/api/timesheets/magic-links/confirmation-capabilities", command);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Use_receipt_rejects_another_commands_correlation_for_confirm_and_adjust(bool adjust)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId(adjust ? "capability-adjust-wrong-correlation" : "capability-confirm-wrong-correlation");
+        var entryId = new TimeEntryId(adjust ? "entry-adjust-wrong-correlation" : "entry-confirm-wrong-correlation");
+        string token = adjust ? ValidAdjustToken() : ValidConfirmToken();
+        await factory.ProjectValidStateAsync(client, token,
+            adjust ? MagicLinkAllowedAction.Adjust : MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        factory.Gateway.StoredEventTransform = stored => stored with { CorrelationId = "another-command" };
+
+        using HttpResponseMessage response = adjust
+            ? await client.PostAsJsonAsync($"/api/timesheets/magic-links/adjust/submit?t={token}",
+                AdjustCommand(), TestContext.Current.CancellationToken)
+            : await client.PostAsJsonAsync($"/api/timesheets/magic-links/confirm/submit?t={token}",
+                new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        stored.Length.ShouldBe(3);
+        stored[1].MessageId.ShouldNotBeNullOrWhiteSpace();
+        stored[2].MessageId.ShouldNotBeNullOrWhiteSpace();
+        stored[1].MessageId.ShouldNotBe(stored[2].MessageId);
     }
 
     [Theory]
@@ -502,6 +747,24 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Length.ShouldBe(2);
     }
 
+    [Fact]
+    public async Task Transition_receipt_rejects_missing_persisted_event_identity()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-transition-missing-event-id");
+        var entryId = new TimeEntryId("entry-transition-missing-event-id");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        factory.Gateway.StoredEventTransform = stored => stored with { MessageId = "" };
+
+        using HttpResponseMessage response = await factory.PostProtectedManagementAsync(
+            client, $"/api/timesheets/magic-links/confirmation-capabilities/{capabilityId.Value}/revoke",
+            new RevokeMagicLinkConfirmationCapability(
+                capabilityId, new MagicLinkAuditMetadata("timesheets", "missing-event-id")));
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
     [Theory]
     [InlineData("capability")]
     [InlineData("tenant")]
@@ -571,6 +834,131 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         int rejectedCommands = stored.Count(static item => item.EventTypeName == typeof(MagicLinkCommitRejected).FullName);
         rejectedCommands.ShouldBeLessThanOrEqualTo(1);
         stored.Length.ShouldBe(3 + rejectedCommands);
+        stored.Count(static item => item.EventTypeName == typeof(StoredMagicLinkUsed).FullName).ShouldBe(1);
+        stored.Count(static item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Confirm_race_reads_the_completed_batch_when_both_submit_responses_stall()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-delayed-submit-receipt");
+        var entryId = new TimeEntryId("time-entry-delayed-submit-receipt");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, entryId);
+        factory.Gateway.AfterStoredBeforeResponseAsync = (request, cancellationToken) =>
+            request.CommandType == typeof(CommitMagicLinkUse).FullName
+                ? Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken)
+                : Task.CompletedTask;
+
+        Task<HttpResponseMessage> first = client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        Task<HttpResponseMessage> second = client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        HttpResponseMessage[] responses = await Task.WhenAll(first, second);
+        responses.Count(static response => response.StatusCode == HttpStatusCode.Accepted).ShouldBe(1);
+        responses.Count(static response => response.StatusCode == HttpStatusCode.Forbidden).ShouldBe(1);
+        CapturedFailure loser = await CaptureFailureAsync(
+            responses.Single(static response => response.StatusCode == HttpStatusCode.Forbidden),
+            "delayed-submit-race-loser", ValidConfirmToken());
+        foreach (HttpResponseMessage response in responses)
+        {
+            response.Dispose();
+        }
+
+        using HttpResponseMessage replay = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        CapturedFailure replayDenial = await CaptureFailureAsync(replay, "delayed-submit-race-replay", ValidConfirmToken());
+        loser.ContentType.ShouldBe(replayDenial.ContentType);
+        loser.NormalizedBody.ShouldBe(replayDenial.NormalizedBody);
+        loser.Headers.ShouldBe(replayDenial.Headers);
+        using HttpResponseMessage unknown = await client.PostAsJsonAsync(
+            "/api/timesheets/magic-links/confirm/submit?t=unknown-delayed-submit-token",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        CapturedFailure baseline = await CaptureFailureAsync(
+            unknown, "delayed-submit-race-unknown", "unknown-delayed-submit-token");
+        loser.ContentType.ShouldBe(baseline.ContentType);
+        loser.NormalizedBody.ShouldBe(baseline.NormalizedBody);
+        loser.Headers.ShouldBe(baseline.Headers);
+
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        stored.Count(static item => item.EventTypeName == typeof(StoredMagicLinkUsed).FullName).ShouldBe(1);
+        stored.Count(static item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
+        stored.Count(static item => item.EventTypeName == typeof(MagicLinkCommitRejected).FullName).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Confirm_accepts_an_exact_committed_batch_after_submit_transport_fault()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-lost-submit-receipt");
+        var entryId = new TimeEntryId("time-entry-lost-submit-receipt");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, entryId);
+        factory.Gateway.AfterStoredBeforeResponseAsync = (request, _) =>
+            request.CommandType == typeof(CommitMagicLinkUse).FullName
+                ? Task.FromException(new InvalidOperationException("submit response lost after commit"))
+                : Task.CompletedTask;
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        stored.Count(static item => item.EventTypeName == typeof(StoredMagicLinkUsed).FullName).ShouldBe(1);
+        stored.Count(static item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Confirm_retries_transient_status_and_batch_read_faults_within_its_deadline()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-transient-commit-probes");
+        var entryId = new TimeEntryId("time-entry-transient-commit-probes");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, entryId);
+        factory.Gateway.TransientWorkloadStatusFailures = 1;
+        factory.Gateway.TransientCommitBatchReadFailures = 1;
+        factory.Gateway.StaleCommitBatchReadbacks = 1;
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.TransientWorkloadStatusFailures.ShouldBe(0);
+        factory.Gateway.TransientCommitBatchReadFailures.ShouldBe(0);
+        factory.Gateway.StaleCommitBatchReadbacks.ShouldBe(0);
+        factory.Gateway.SubmissionCount.ShouldBe(1);
+
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        stored.Count(static item => item.EventTypeName == typeof(StoredMagicLinkUsed).FullName).ShouldBe(1);
+        stored.Count(static item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Confirm_submits_once_when_status_preflight_is_unavailable_until_submission()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-preflight-unavailable");
+        var entryId = new TimeEntryId("time-entry-preflight-unavailable");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, entryId);
+        factory.Gateway.StatusUnavailableUntilSubmission = true;
+
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.SubmissionCount.ShouldBe(1);
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
         stored.Count(static item => item.EventTypeName == typeof(StoredMagicLinkUsed).FullName).ShouldBe(1);
         stored.Count(static item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
     }

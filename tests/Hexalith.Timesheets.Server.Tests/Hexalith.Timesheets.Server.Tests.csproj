@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Testing\Hexalith.EventStore.Testing.csproj" AdditionalProperties="NuGetAudit=false" />
   </ItemGroup>
 
   <ItemGroup>

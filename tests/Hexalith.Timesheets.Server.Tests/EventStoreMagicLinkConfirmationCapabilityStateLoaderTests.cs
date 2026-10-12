@@ -29,6 +29,145 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 {
     [Fact]
+    public async Task NumericIndexPromotionDuringCandidateResolutionFailsClosed()
+    {
+        var inner = new Hexalith.EventStore.Testing.Fakes.InMemoryReadModelStore();
+        var hooked = new PromotionHookReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(hooked, inner);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry first = new(Hash().Value,
+            new MagicLinkTokenHashCapabilityIndexEntry(Tenant(), CapabilityId()));
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry second = new(Hash().Value,
+            new MagicLinkTokenHashCapabilityIndexEntry(new TenantReference("tenant-2"),
+                new MagicLinkCapabilityId("capability-2")));
+
+        async Task PromoteAsync(string operation,
+            MagicLinkTokenHashCapabilityIndexDirectoryEntry row)
+        {
+            _ = await coordinator.BeginAsync(scope, operation, "inventory-" + operation,
+                new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+            MagicLinkTokenHashCapabilityIndexTreeRoot root = (await coordinator
+                .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                    MagicLinkTokenHashCapabilityIndexTreeReader.RootKey,
+                    TestContext.Current.CancellationToken)).Value
+                ?? new MagicLinkTokenHashCapabilityIndexTreeRoot(7, 0, null, null);
+            SharedProjectionEpochStatus status = await coordinator.GetStatusAsync(scope,
+                TestContext.Current.CancellationToken);
+            var builder = new MagicLinkTokenHashCapabilityIndexTreeBuilder(
+                new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope), root,
+                status.Epoch);
+            await builder.AddContributionAsync(row, TestContext.Current.CancellationToken);
+            _ = await coordinator.StageAsync(scope, operation, [.. builder.Operations()],
+                TestContext.Current.CancellationToken);
+            await coordinator.CommitAsync(scope, operation, TestContext.Current.CancellationToken);
+        }
+
+        await PromoteAsync("numeric-first", first);
+        bool promoted = false;
+        hooked.BeforeReadAsync = async (type, _) =>
+        {
+            if (type != typeof(MagicLinkTokenHashCapabilityIndexTreeNode) || promoted) return;
+            promoted = true;
+            hooked.BeforeReadAsync = null;
+            await PromoteAsync("numeric-second", second);
+        };
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway, hooked,
+            new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"), coordinator);
+
+        MagicLinkEndpointTokenState state = await loader.LoadTokenStateAsync(
+            "opaque-once", TestContext.Current.CancellationToken);
+
+        promoted.ShouldBeTrue();
+        state.CapabilityState.ShouldBeNull();
+        await gateway.DidNotReceive().ReadWorkloadStreamAsync(
+            Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SelectedIndexPromotionDuringCandidateResolutionFailsClosed(bool directoryCandidate)
+    {
+        MagicLinkTokenHash hash = Hash();
+        int shard = MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(hash.Value);
+        var first = new MagicLinkTokenHashCapabilityIndexEntry(Tenant(), CapabilityId());
+        var second = new MagicLinkTokenHashCapabilityIndexEntry(
+            new TenantReference("tenant-2"), new MagicLinkCapabilityId("capability-2"));
+        var oldPage = new MagicLinkTokenHashCapabilityIndexDirectoryPage(
+            [new MagicLinkTokenHashCapabilityIndexDirectoryEntry(hash.Value, first)]);
+        MagicLinkTokenHashCapabilityIndexReadModel oldRoot = directoryCandidate
+            ? MagicLinkTokenHashCapabilityIndexProjection.FromContributions([]) with
+            {
+                DirectoryPages = [new MagicLinkTokenHashCapabilityIndexDirectoryReference(0,
+                    hash.Value, hash.Value)],
+                DirectoryPageDigests = new Dictionary<int, string>
+                {
+                    [0] = MagicLinkTokenHashCapabilityIndexProjection.DirectoryPageDigest(oldPage)
+                },
+                NextCandidatePageId = 1
+            }
+            : MagicLinkTokenHashCapabilityIndexProjection.FromContributions([new(hash.Value, first)]);
+        MagicLinkTokenHashCapabilityIndexReadModel ambiguous =
+            MagicLinkTokenHashCapabilityIndexProjection.FromContributions(
+                [new(hash.Value, first), new(hash.Value, second)]);
+        var inner = new Hexalith.EventStore.Testing.Fakes.InMemoryReadModelStore();
+        var hooked = new PromotionHookReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(hooked, inner);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        _ = await coordinator.BeginAsync(scope, "selected-first", "inventory-first",
+            new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        List<ReadModelBatchOperation> initial =
+        [
+            ReadModelBatchOperation.Write(MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard),
+                oldRoot, ReadModelBatchConcurrency.LastWrite)
+        ];
+        if (directoryCandidate)
+            initial.Add(ReadModelBatchOperation.Write(
+                MagicLinkTokenHashCapabilityIndexProjection.DirectoryPageKey(shard, 0),
+                oldPage, ReadModelBatchConcurrency.LastWrite));
+        _ = await coordinator.StageAsync(scope, "selected-first", initial,
+            TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(scope, "selected-first", TestContext.Current.CancellationToken);
+        int rootReads = 0;
+        bool promoted = false;
+        hooked.BeforeReadAsync = async (type, key) =>
+        {
+            bool trigger = directoryCandidate
+                ? type == typeof(MagicLinkTokenHashCapabilityIndexDirectoryPage)
+                : type == typeof(MagicLinkTokenHashCapabilityIndexReadModel) && ++rootReads == 2;
+            if (!trigger || promoted) return;
+            promoted = true;
+            _ = await coordinator.BeginAsync(scope, "selected-second", "inventory-second",
+                new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+            _ = await coordinator.StageAsync(scope, "selected-second",
+                [ReadModelBatchOperation.Write(MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard),
+                    ambiguous, ReadModelBatchConcurrency.LastWrite)],
+                TestContext.Current.CancellationToken);
+            await coordinator.CommitAsync(scope, "selected-second", TestContext.Current.CancellationToken);
+        };
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway, hooked,
+            new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"), coordinator);
+
+        MagicLinkEndpointTokenState state = await loader.LoadTokenStateAsync(
+            "opaque-once", TestContext.Current.CancellationToken);
+
+        promoted.ShouldBeTrue();
+        state.CapabilityState.ShouldBeNull();
+        await gateway.DidNotReceive().ReadWorkloadStreamAsync(
+            Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task LoadTokenStateAsync_resolves_index_and_folds_capability_time_entry_and_catalog()
     {
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
@@ -117,6 +256,72 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
+    public async Task LoadTokenStateAsync_fails_closed_for_legacy_index_without_owner_contributions()
+    {
+        MagicLinkTokenHashCapabilityIndexReadModel canonical = IndexWith(Hash());
+        var legacy = new MagicLinkTokenHashCapabilityIndexReadModel(canonical.Entries);
+        var gateway = new ScriptedGatewayClient();
+        var loader = CreateLoader(gateway, new InMemoryReadModelStore(legacy));
+
+        MagicLinkEndpointTokenState state = await loader.LoadTokenStateAsync("opaque-once",
+            TestContext.Current.CancellationToken);
+
+        state.CapabilityState.ShouldBeNull();
+        gateway.Requests.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsync_fails_closed_for_conflicting_unique_and_paged_index()
+    {
+        MagicLinkTokenHashCapabilityIndexReadModel conflicting = IndexWith(Hash()) with
+        {
+            CandidatePageCounts = new Dictionary<string, int> { [Hash().Value] = 1 },
+            CandidatePageIds = new Dictionary<string, IReadOnlyList<int>> { [Hash().Value] = [0] },
+            NextCandidatePageId = 1
+        };
+        var gateway = new ScriptedGatewayClient();
+        var loader = CreateLoader(gateway, new InMemoryReadModelStore(conflicting));
+
+        MagicLinkEndpointTokenState state = await loader.LoadTokenStateAsync("opaque-once",
+            TestContext.Current.CancellationToken);
+
+        state.CapabilityState.ShouldBeNull();
+        gateway.Requests.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task LoadTokenStateAsync_fails_closed_for_hash_addressed_page_manifest()
+    {
+        MagicLinkTokenHashCapabilityIndexReadModel legacyPaged = IndexWith(Hash()) with
+        {
+            CandidatePageCounts = new Dictionary<string, int> { [Hash().Value] = 1 }
+        };
+        var gateway = new ScriptedGatewayClient();
+        var loader = CreateLoader(gateway, new InMemoryReadModelStore(legacyPaged));
+
+        MagicLinkEndpointTokenState state = await loader.LoadTokenStateAsync("opaque-once",
+            TestContext.Current.CancellationToken);
+
+        state.CapabilityState.ShouldBeNull();
+        gateway.Requests.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void LegacyUniqueOnlyIndexRetainsUnverifiedMarkerAcrossLiveAndTenantRebuild()
+    {
+        var legacy = new MagicLinkTokenHashCapabilityIndexReadModel(IndexWith(Hash()).Entries);
+        MagicLinkTokenHashCapabilityIndexReadModel delivered =
+            MagicLinkTokenHashCapabilityIndexProjection.Apply(legacy,
+                Issued(new MagicLinkCapabilityId("capability-2"), new MagicLinkTokenHash("hash-two")));
+        delivered.LegacyContributionsUnverified.ShouldBeTrue();
+
+        MagicLinkTokenHashCapabilityIndexReadModel rebuilt =
+            MagicLinkTokenHashCapabilityIndexProjection.ReplaceTenant(delivered, Tenant().TenantId,
+                MagicLinkTokenHashCapabilityIndexProjection.Rebuild([Issued()]));
+        rebuilt.LegacyContributionsUnverified.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task LoadCapabilityAsync_uses_trusted_ambient_tenant_for_admin_paths()
     {
         var gateway = new ScriptedGatewayClient()
@@ -174,7 +379,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
         ITimesheetsTrustedContextAccessor context = Substitute.For<ITimesheetsTrustedContextAccessor>();
         var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(
-            gateway, readModels, new DeterministicTokenGenerator(), context);
+            gateway, readModels, new DeterministicTokenGenerator(), context,
+            allowLegacyIndexRead: true);
 
         Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState? state = await loader
             .LoadCapabilityAsync(null!, TestContext.Current.CancellationToken);
@@ -910,7 +1116,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             gateway,
             readModels,
             new ThrowingTokenGenerator(),
-            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"));
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"),
+            allowLegacyIndexRead: true);
 
         MagicLinkEndpointTokenState state = await loader
             .LoadTokenStateAsync("malformed-token", TestContext.Current.CancellationToken)
@@ -1459,7 +1666,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             gateway,
             readModels,
             new DeterministicTokenGenerator(),
-            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"));
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"),
+            allowLegacyIndexRead: true);
 
     private static EventStoreMagicLinkConfirmationCapabilityStateLoader CreateLoaderWithoutTenant(
         IEventStoreGatewayClient gateway,
@@ -1468,13 +1676,13 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             gateway,
             readModels,
             new DeterministicTokenGenerator(),
-            new FixedTrustedContextAccessor(null, null, "correlation-1"));
+            new FixedTrustedContextAccessor(null, null, "correlation-1"),
+            allowLegacyIndexRead: true);
 
     private static MagicLinkTokenHashCapabilityIndexReadModel IndexWith(MagicLinkTokenHash hash)
-        => new(new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>(StringComparer.Ordinal)
-        {
-            [hash.Value] = new(Tenant(), CapabilityId())
-        });
+        => MagicLinkTokenHashCapabilityIndexProjection.FromContributions(
+            [new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(hash.Value,
+                new(Tenant(), CapabilityId()))]);
 
     private static StreamReadEvent Event(long sequence, string messageId, object payload)
         => new(

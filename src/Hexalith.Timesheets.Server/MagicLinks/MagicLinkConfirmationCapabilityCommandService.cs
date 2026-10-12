@@ -8,6 +8,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 namespace Hexalith.Timesheets.Server.MagicLinks;
@@ -478,7 +479,10 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
                 ["serviceDate", "durationMinutes", "activityTypeId", "billableState", "comment"],
                 ["target", "contributor", "tenant", "timeEntryId", "approvalState"])
             {
-                Comment = timeEntryState.Comment?.Policy.ExternalConfirmationDisplay == TimesheetsCommentPolicyDecision.Allowed
+                Comment = timeEntryState.Comment?.Policy is { ServerPublicationVersion: TimeEntryCommentPublicationIssuer.CurrentVersion,
+                    ServerExternalConfirmationDisplay: TimesheetsCommentPolicyDecision.Allowed,
+                    ExternalConfirmationDisplay: TimesheetsCommentPolicyDecision.Allowed,
+                    RedactionRequirement: TimesheetsCommentRedactionRequirement.NotRequired }
                     ? timeEntryState.Comment.Text
                     : null
             }

@@ -72,7 +72,23 @@ public sealed class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_live_collision_fails_without_replacing_the_original_candidate()
+    public async Task Index_live_writer_accepts_issuance_at_a_later_owner_sequence()
+    {
+        var store = new ScriptedReadModelStore();
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
+        DomainProjectionHandlerResult result = await handler.ProjectAsync(
+            new ProjectionRequest("tenant-1", "timesheets", "capability-1",
+                [Event(7, new StoredMagicLinkIssued(Issued()))]),
+            "later-owner-issuance", TestContext.Current.CancellationToken);
+
+        result.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey)
+            .Entries["hash-only"].CapabilityId.ShouldBe(new MagicLinkCapabilityId("capability-1"));
+    }
+
+    [Fact]
+    public async Task Index_live_collision_retains_both_owners_and_discloses_neither()
     {
         var store = new ScriptedReadModelStore();
         var original = new MagicLinkTokenHashCapabilityIndexEntry(
@@ -95,10 +111,12 @@ public sealed class MagicLinkStateProjectionHandlerTests
             "dispatch-collision",
             TestContext.Current.CancellationToken);
 
-        result.Status.ShouldBe(ProjectionDispatchStatus.Failed);
-        result.ReasonCode.ShouldBe(ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
-        store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
-            MagicLinkTokenHashCapabilityIndexProjection.StateKey).Entries["hash-only"].ShouldBe(original);
+        result.Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkTokenHashCapabilityIndexReadModel selected = store.Get<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey);
+        selected.Entries.ShouldNotContainKey("hash-only");
+        selected.Contributions["hash-only"].Count.ShouldBe(2);
+        selected.Contributions["hash-only"].ShouldContain(original);
     }
 
     [Fact]

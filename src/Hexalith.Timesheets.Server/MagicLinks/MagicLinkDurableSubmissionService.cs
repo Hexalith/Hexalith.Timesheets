@@ -10,8 +10,10 @@ using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.Runtime;
 using Microsoft.Extensions.Options;
 
@@ -20,10 +22,13 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 /// <summary>Submits one Time Entry command and verifies its terminal status and event batch.</summary>
 public sealed class MagicLinkDurableSubmissionService(
     IEventStoreGatewayClient gateway,
-    IOptions<MagicLinkSubmissionPollingOptions> pollingOptions)
+    IOptions<MagicLinkSubmissionPollingOptions> pollingOptions,
+    TimeEntryCommentPublicationIssuer? commentIssuer = null)
 {
     private const string CrockfordAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly TimeEntryCommentPublicationIssuer _commentIssuer = commentIssuer
+        ?? new TimeEntryCommentPublicationIssuer();
     private readonly MagicLinkSubmissionPollingOptions _polling = pollingOptions.Value.IsValid()
         ? pollingOptions.Value
         : throw new OptionsValidationException(
@@ -54,42 +59,71 @@ public sealed class MagicLinkDurableSubmissionService(
             $"issue\n{intent.Tenant.TenantId}\n{intent.Command.CapabilityId.Value}\n{requestId}");
         try
         {
-            CommandStatusQueryResponse? status = await SubmitAndReadStatusAsync(
-                messageId, intent.Tenant.TenantId, intent.Command.CapabilityId.Value, intent,
-                typeof(CommitMagicLinkIssue), cancellationToken).ConfigureAwait(false);
-            if (!HasCommittedStatus(status, messageId, intent.Tenant.TenantId, intent.Command.CapabilityId.Value, 1))
+            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            deadline.CancelAfter(_polling.Timeout);
+            try
             {
-                return false;
-            }
+                CommandStatusQueryResponse? status = await SubmitAndObserveStatusAsync(
+                    messageId, intent.Tenant.TenantId, intent.Command.CapabilityId.Value, intent,
+                    typeof(CommitMagicLinkIssue), cancellationToken, deadline.Token).ConfigureAwait(false);
+                if (!HasCommittedStatus(status, messageId, intent.Tenant.TenantId, intent.Command.CapabilityId.Value, 1))
+                {
+                    return false;
+                }
 
-            StreamReadPage page = await gateway.ReadWorkloadStreamAsync(
-                new StreamReadRequest(
-                    intent.Tenant.TenantId, TimesheetsEventStoreIntegration.DomainName,
-                    intent.Command.CapabilityId.Value,
-                    FromSequence: status!.CommittedEventSequence!.Value - 1,
-                    PageSize: 1),
-                cancellationToken).ConfigureAwait(false);
-            MagicLinkConfirmationCapabilityIssued? issued = page.Events.Count == 1
-                && page.Events[0].SequenceNumber == status.CommittedEventSequence
-                    ? Deserialize<MagicLinkConfirmationCapabilityIssued>(page.Events[0])
-                    : null;
-            return page.Tenant == intent.Tenant.TenantId
-                && page.Domain == TimesheetsEventStoreIntegration.DomainName
-                && page.AggregateId == intent.Command.CapabilityId.Value
-                && issued?.CapabilityId == intent.Command.CapabilityId
-                && issued.Tenant == intent.Tenant
-                && issued.TokenHash == intent.TokenHash
-                && issued.Issuer == intent.Issuer
-                && issued.Contributor == intent.Command.Scope.Contributor
-                && issued.Target == intent.Command.Scope.Target
-                && issued.ActivityTypeId == intent.Command.Scope.ActivityTypeId
-                && issued.TimeEntryId == intent.Command.Scope.TimeEntryId
-                && issued.TargetKind == intent.Command.Scope.TargetKind
-                && issued.AllowedAction == intent.Command.AllowedAction
-                && issued.ExpiresAtUtc == intent.Command.ExpiresAtUtc
-                && issued.Source == intent.Command.Source
-                && issued.IsSingleUse
-                && issued.IssuedAtUtc == intent.IssuedAtUtc;
+                StreamReadPage page;
+                while (true)
+                {
+                    try
+                    {
+                        using CancellationTokenSource probe = CreateProbeDeadline(deadline.Token);
+                        page = await gateway.ReadWorkloadStreamAsync(
+                            new StreamReadRequest(
+                                intent.Tenant.TenantId, TimesheetsEventStoreIntegration.DomainName,
+                                intent.Command.CapabilityId.Value,
+                                FromSequence: status!.CommittedEventSequence!.Value - 1,
+                                PageSize: 1),
+                            probe.Token).WaitAsync(probe.Token).ConfigureAwait(false);
+                        if (!IsStaleReadback(page, status.CommittedEventSequence.Value, 1))
+                        {
+                            break;
+                        }
+                    }
+                    catch (Exception exception) when (IsRetryableGatewayFailure(exception, cancellationToken))
+                    {
+                        // A completed command can become visible in the stream after its status.
+                    }
+
+                    await Task.Delay(_polling.PollInterval, deadline.Token).ConfigureAwait(false);
+                }
+                MagicLinkConfirmationCapabilityIssued? issued = page.Events.Count == 1
+                    && page.Events[0].SequenceNumber == status.CommittedEventSequence
+                        ? Deserialize<MagicLinkConfirmationCapabilityIssued>(page.Events[0])
+                        : null;
+                return page.Tenant == intent.Tenant.TenantId
+                    && page.Domain == TimesheetsEventStoreIntegration.DomainName
+                    && page.AggregateId == intent.Command.CapabilityId.Value
+                    && page.Events.Count == 1
+                    && HasStoredEventIdentity(page.Events[0], messageId)
+                    && issued?.CapabilityId == intent.Command.CapabilityId
+                    && issued.Tenant == intent.Tenant
+                    && issued.TokenHash == intent.TokenHash
+                    && issued.Issuer == intent.Issuer
+                    && issued.Contributor == intent.Command.Scope.Contributor
+                    && issued.Target == intent.Command.Scope.Target
+                    && issued.ActivityTypeId == intent.Command.Scope.ActivityTypeId
+                    && issued.TimeEntryId == intent.Command.Scope.TimeEntryId
+                    && issued.TargetKind == intent.Command.Scope.TargetKind
+                    && issued.AllowedAction == intent.Command.AllowedAction
+                    && issued.ExpiresAtUtc == intent.Command.ExpiresAtUtc
+                    && issued.Source == intent.Command.Source
+                    && issued.IsSingleUse
+                    && issued.IssuedAtUtc == intent.IssuedAtUtc;
+            }
+            finally
+            {
+                deadline.Cancel();
+            }
         }
         catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
@@ -125,7 +159,8 @@ public sealed class MagicLinkDurableSubmissionService(
                 || page.Domain != TimesheetsEventStoreIntegration.DomainName
                 || page.AggregateId != intent.TimeEntryId.Value
                 || page.Events.Count != 1
-                || page.Events[0].SequenceNumber != status.CommittedEventSequence)
+                || page.Events[0].SequenceNumber != status.CommittedEventSequence
+                || !HasStoredEventIdentity(page.Events[0], messageId))
             {
                 return false;
             }
@@ -166,12 +201,51 @@ public sealed class MagicLinkDurableSubmissionService(
         string messageId = CreateMessageId(intent, requestId);
         try
         {
-            CommandStatusQueryResponse? status = await SubmitAndReadStatusAsync(
-                messageId, intent.Tenant.TenantId, intent.TimeEntryId.Value, intent,
-                typeof(CommitMagicLinkUse), cancellationToken).ConfigureAwait(false);
-            return status is not null
-                && await VerifyCommittedBatchAsync(intent, messageId, status, capability, cancellationToken)
-                    .ConfigureAwait(false);
+            TimeEntryComment? expectedComment = intent.Action == MagicLinkUseAction.Adjust
+                && capability is not null
+                ? _commentIssuer.Issue(
+                    MagicLinkExternalRequestContext.FromResolvedCapability(capability, messageId),
+                    intent.Adjustment?.Comment)
+                : null;
+            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            deadline.CancelAfter(_polling.Timeout);
+            try
+            {
+                CommandStatusQueryResponse? status = await SubmitAndObserveStatusAsync(
+                    messageId, intent.Tenant.TenantId, intent.TimeEntryId.Value, intent,
+                    typeof(CommitMagicLinkUse), cancellationToken, deadline.Token).ConfigureAwait(false);
+                if (status is null)
+                {
+                    return false;
+                }
+
+                while (true)
+                {
+                    try
+                    {
+                        using CancellationTokenSource probe = CreateProbeDeadline(deadline.Token);
+                        bool? verified = await VerifyCommittedBatchAsync(intent, messageId, status, capability,
+                            expectedComment, probe.Token)
+                            .WaitAsync(probe.Token).ConfigureAwait(false);
+                        if (verified is not null)
+                        {
+                            return verified.Value;
+                        }
+                    }
+                    catch (Exception exception) when (IsRetryableGatewayFailure(exception, cancellationToken))
+                    {
+                        // Retry transient reads within the same bounded command deadline.
+                    }
+
+                    await Task.Delay(_polling.PollInterval, deadline.Token).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                // Stop an in-flight submit response after terminal status and exact stored
+                // evidence have already settled the caller's outcome.
+                deadline.Cancel();
+            }
         }
         catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
@@ -181,11 +255,114 @@ public sealed class MagicLinkDurableSubmissionService(
         return false;
     }
 
-    private async Task<bool> VerifyCommittedBatchAsync(
+    private async Task<CommandStatusQueryResponse?> SubmitAndObserveStatusAsync(
+        string messageId,
+        string tenant,
+        string aggregateId,
+        object intent,
+        Type commandType,
+        CancellationToken callerCancellationToken,
+        CancellationToken deadlineToken)
+    {
+        CommandStatusQueryResponse? status = null;
+        try
+        {
+            status = await ProbeStatusAsync(tenant, messageId, deadlineToken).ConfigureAwait(false);
+        }
+        catch (Exception exception) when (IsRetryableGatewayFailure(exception, callerCancellationToken))
+        {
+            // A transient status outage cannot prevent the first submission. Keep the
+            // same message identity and require a terminal status plus exact readback.
+        }
+
+        Task<SubmitCommandResponse>? submission = null;
+        if (status is null)
+        {
+            submission = gateway.SubmitWorkloadCommandAsync(new SubmitCommandRequest(
+                messageId, tenant, TimesheetsEventStoreIntegration.DomainName, aggregateId,
+                commandType.FullName!, JsonSerializer.SerializeToElement(intent, commandType, _jsonOptions),
+                CorrelationId: messageId), deadlineToken);
+            // EventStore may commit and expose a terminal status before the submit HTTP response
+            // survives projection delivery. The status and exact stored batch, never this pending
+            // transport response, authorize a successful external response.
+            _ = submission.ContinueWith(static task => _ = task.Exception,
+                CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
+        }
+
+        while (true)
+        {
+            deadlineToken.ThrowIfCancellationRequested();
+            if (submission is { IsCompleted: true })
+            {
+                try
+                {
+                    SubmitCommandResponse accepted = await submission.ConfigureAwait(false);
+                    if (accepted.MessageId != messageId)
+                    {
+                        return null;
+                    }
+                }
+                catch (Exception) when (!callerCancellationToken.IsCancellationRequested)
+                {
+                    // Any failed submit response has an unknown commit outcome, including an HTTP
+                    // resilience timeout. Only terminal status plus exact readback can prove success.
+                }
+
+                submission = null;
+            }
+
+            if (status?.Status is nameof(CommandStatus.Completed) or nameof(CommandStatus.Rejected)
+                or nameof(CommandStatus.PublishFailed) or nameof(CommandStatus.TimedOut))
+            {
+                return status;
+            }
+
+            try
+            {
+                status = await ProbeStatusAsync(tenant, messageId, deadlineToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (IsRetryableGatewayFailure(exception, callerCancellationToken))
+            {
+                status = null;
+            }
+
+            if (status?.Status is nameof(CommandStatus.Completed) or nameof(CommandStatus.Rejected)
+                or nameof(CommandStatus.PublishFailed) or nameof(CommandStatus.TimedOut))
+            {
+                return status;
+            }
+
+            await Task.Delay(_polling.PollInterval, deadlineToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<CommandStatusQueryResponse?> ProbeStatusAsync(
+        string tenant, string messageId, CancellationToken deadlineToken)
+    {
+        using CancellationTokenSource probe = CreateProbeDeadline(deadlineToken);
+        return await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, probe.Token)
+            .WaitAsync(probe.Token).ConfigureAwait(false);
+    }
+
+    private CancellationTokenSource CreateProbeDeadline(CancellationToken deadlineToken)
+    {
+        CancellationTokenSource probe = CancellationTokenSource.CreateLinkedTokenSource(deadlineToken);
+        probe.CancelAfter(TimeSpan.FromMilliseconds(Math.Min(2_000, _polling.Timeout.TotalMilliseconds / 3)));
+        return probe;
+    }
+
+    private static bool IsRetryableGatewayFailure(Exception exception, CancellationToken callerCancellationToken)
+        => !callerCancellationToken.IsCancellationRequested
+            && (exception is OperationCanceledException or TimeoutException or HttpRequestException
+                || exception is EventStoreGatewayException { StatusCode: 429 or 500 or 502 or 503 or 504 });
+
+    private async Task<bool?> VerifyCommittedBatchAsync(
         CommitMagicLinkUse intent,
         string messageId,
         CommandStatusQueryResponse status,
         MagicLinkCapabilityState? capability,
+        TimeEntryComment? expectedComment,
         CancellationToken cancellationToken)
     {
         if (!StringComparer.Ordinal.Equals(status.MessageId, messageId)
@@ -212,12 +389,20 @@ public sealed class MagicLinkDurableSubmissionService(
                 FromSequence: lastSequence - 2,
                 PageSize: 2),
             cancellationToken).ConfigureAwait(false);
+        if (IsStaleReadback(page, lastSequence, 2))
+        {
+            return null;
+        }
+
         if (page.Tenant != intent.Tenant.TenantId
             || page.Domain != TimesheetsEventStoreIntegration.DomainName
             || page.AggregateId != intent.TimeEntryId.Value
             || page.Events.Count != 2
             || page.Events[0].SequenceNumber != lastSequence - 1
-            || page.Events[1].SequenceNumber != lastSequence)
+            || page.Events[1].SequenceNumber != lastSequence
+            || !HasStoredEventIdentity(page.Events[0], messageId)
+            || !HasStoredEventIdentity(page.Events[1], messageId)
+            || StringComparer.Ordinal.Equals(page.Events[0].MessageId, page.Events[1].MessageId))
         {
             return false;
         }
@@ -267,8 +452,33 @@ public sealed class MagicLinkDurableSubmissionService(
                 && adjusted.AdjustedValues.DurationMinutes == intent.Adjustment.DurationMinutes
                 && adjusted.AdjustedValues.ActivityTypeId == intent.Adjustment.ActivityTypeId
                 && adjusted.AdjustedValues.BillableState == intent.Adjustment.BillableState
-                && adjusted.AdjustedValues.Comment == intent.Adjustment.Comment;
+                && (intent.Adjustment.Comment is null || capability is not null)
+                && CommentsMatchExpected(adjusted.AdjustedValues.Comment,
+                    expectedComment);
     }
+
+    internal static bool CommentsMatchExpected(TimeEntryComment? stored, TimeEntryComment? expected)
+    {
+        if (stored is null || expected is null) return stored is null && expected is null;
+        if (stored.Policy is null || expected.Policy is null) return false;
+        if (stored.Policy.ServerPublicationVersion != TimeEntryCommentPublicationIssuer.CurrentVersion
+            || stored.Policy.ServerProjectionInclusion is not (TimesheetsCommentPolicyDecision.Allowed
+                or TimesheetsCommentPolicyDecision.PolicyRequired)
+            || stored.Policy.ProjectionInclusion != stored.Policy.ServerProjectionInclusion
+            || stored.Policy.ServerExternalConfirmationDisplay is not (TimesheetsCommentPolicyDecision.Allowed
+                or TimesheetsCommentPolicyDecision.Excluded)
+            || stored.Policy.ExternalConfirmationDisplay != stored.Policy.ServerExternalConfirmationDisplay)
+            return false;
+        return stored == expected;
+    }
+
+    private static bool HasStoredEventIdentity(StreamReadEvent stored, string commandMessageId)
+        => !string.IsNullOrWhiteSpace(stored.MessageId)
+            && StringComparer.Ordinal.Equals(stored.CorrelationId, commandMessageId);
+
+    private static bool IsStaleReadback(StreamReadPage page, long lastSequence, int eventCount)
+        => page.Events.Count < eventCount
+            || page.Events[^1].SequenceNumber < lastSequence;
 
     internal async Task<CommandStatusQueryResponse?> SubmitAndReadStatusAsync(
         string messageId,

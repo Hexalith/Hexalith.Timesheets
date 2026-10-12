@@ -2,6 +2,7 @@ using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.TimeEntries;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
@@ -899,7 +900,12 @@ public sealed class TimeEntryAuthorizationTests
 
         TimeEntryCorrectionCommandResult result = await fixture.CreateCorrectionService().CorrectAsync(
             Context(),
-            CorrectCommand(TimeEntryId()),
+            CorrectCommand(TimeEntryId()) with
+            {
+                Comment = new TimeEntryComment("correction private note",
+                    TimeEntryCommentPolicy.SensitiveDefault with
+                    { ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed })
+            },
             RejectedState(ProjectCommand()),
             FreshCatalog(ActivityTypeScope.Tenant),
             CorrectionAtUtc(),
@@ -912,6 +918,9 @@ public sealed class TimeEntryAuthorizationTests
         corrected.CorrectedBy.ShouldBe(Context().Actor);
         corrected.Tenant.ShouldBe(Context().Tenant);
         corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
+        corrected.CorrectedValues.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        corrected.CorrectedValues.Comment.Policy.ServerProjectionInclusion
+            .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         await fixture.ProjectValidator.Received(2)
             .ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Project(), Arg.Any<CancellationToken>());
         await fixture.PartyValidator.Received(2)

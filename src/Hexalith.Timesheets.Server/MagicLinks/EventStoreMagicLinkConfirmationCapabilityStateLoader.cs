@@ -21,11 +21,15 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 /// <param name="readModelStore">The read-model store used for non-authoritative index and catalog lookup.</param>
 /// <param name="tokenGenerator">The canonical token hash derivation service.</param>
 /// <param name="contextAccessor">The trusted ambient context used by administrator paths.</param>
+/// <param name="indexCoordinator">The selected global candidate-index epoch, when registered.</param>
+/// <param name="allowLegacyIndexRead">Explicit compatibility for isolated legacy loader fixtures.</param>
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     IEventStoreGatewayClient eventStore,
     IReadModelStore readModelStore,
     IMagicLinkTokenGenerator tokenGenerator,
-    ITimesheetsTrustedContextAccessor contextAccessor) : IMagicLinkConfirmationCapabilityStateLoader
+    ITimesheetsTrustedContextAccessor contextAccessor,
+    SharedProjectionEpochCoordinator? indexCoordinator = null,
+    bool allowLegacyIndexRead = false) : IMagicLinkConfirmationCapabilityStateLoader
 {
     private const int StreamPageSize = 500;
 
@@ -35,6 +39,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     private readonly IReadModelStore _readModelStore = readModelStore ?? throw new ArgumentNullException(nameof(readModelStore));
     private readonly IMagicLinkTokenGenerator _tokenGenerator = tokenGenerator ?? throw new ArgumentNullException(nameof(tokenGenerator));
     private readonly ITimesheetsTrustedContextAccessor _contextAccessor = contextAccessor ?? throw new ArgumentNullException(nameof(contextAccessor));
+    private readonly SharedProjectionEpochCoordinator? _indexCoordinator = indexCoordinator;
 
     /// <inheritdoc/>
     public async ValueTask<ActivityTypeCatalogReadModel> LoadActivityTypeCatalogAsync(CancellationToken cancellationToken)
@@ -168,20 +173,138 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     {
         try
         {
-            ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> index = await _readModelStore
-                .GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(
+            MagicLinkTokenHashCapabilityIndexReadModel? value;
+            long? selectedGeneration = null;
+            string? selectedRootETag = null;
+            if (_indexCoordinator is { } coordinator)
+            {
+                SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+                SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexTreeFormat> format = await coordinator
+                    .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeFormat>(scope,
+                        MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey, cancellationToken)
+                    .ConfigureAwait(false);
+                SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexTreeRoot> tree = await coordinator
+                    .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                        MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, cancellationToken)
+                    .ConfigureAwait(false);
+                if (!format.IsAvailable || !tree.IsAvailable || format.IsStale || tree.IsStale)
+                    return null;
+                if (format.Value is not null || tree.Value is not null)
+                {
+                    if (format.Value?.StorageVersion != 7
+                        || tree.Value is not { StorageVersion: 7 } numericRoot
+                        || tree.Generation != format.Generation
+                        || string.IsNullOrWhiteSpace(tree.SelectedETag)) return null;
+                    var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope);
+                    IReadOnlyList<MagicLinkTokenHashCapabilityIndexEntry> candidates = await reader
+                        .FindCandidatesAsync(numericRoot.TokenRoot, tokenHash.Value, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (candidates.Count != 1) return null;
+                    SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexTreeRoot> rechecked =
+                        await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, cancellationToken)
+                            .ConfigureAwait(false);
+                    return rechecked.IsAvailable && !rechecked.IsStale
+                        && rechecked.Generation == tree.Generation
+                        && string.Equals(rechecked.SelectedETag, tree.SelectedETag, StringComparison.Ordinal)
+                        ? candidates[0] : null;
+                }
+                SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexReadModel> selected = await coordinator
+                    .ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(
+                        MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
+                        MagicLinkTokenHashCapabilityIndexProjection.ShardKey(tokenHash.Value),
+                        cancellationToken).ConfigureAwait(false);
+                value = selected.IsAvailable && !selected.IsStale ? selected.Value : null;
+                selectedGeneration = selected.Generation;
+                selectedRootETag = selected.SelectedETag;
+            }
+            else if (allowLegacyIndexRead)
+            {
+                // Legacy isolated loader fixtures continue to use the pre-epoch read-model seam.
+                // The composed host registers the epoch coordinator and always takes the selected path.
+                value = (await _readModelStore.GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(
                     MagicLinkTokenHashCapabilityIndexProjection.StateStoreName,
                     MagicLinkTokenHashCapabilityIndexProjection.StateKey,
-                    cancellationToken)
-                .ConfigureAwait(false);
+                    cancellationToken).ConfigureAwait(false)).Value;
+            }
+            else return null;
 
-            if (index.Value?.Entries is null
-                || !index.Value.Entries.TryGetValue(tokenHash.Value, out MagicLinkTokenHashCapabilityIndexEntry? candidate)
-                || candidate is null
-                || string.IsNullOrWhiteSpace(candidate.Tenant.TenantId)
-                || string.IsNullOrWhiteSpace(candidate.CapabilityId.Value))
+            if (value is null
+                || _indexCoordinator is not null && string.IsNullOrWhiteSpace(selectedRootETag)
+                || !MagicLinkTokenHashCapabilityIndexProjection.HasValidPageManifest(value)
+                || value.StorageVersion != MagicLinkTokenHashCapabilityIndexProjection.CurrentStorageVersion
+                || value.LegacyContributionsUnverified
+                || value.CandidatePageCounts.ContainsKey(tokenHash.Value))
             {
                 return null;
+            }
+
+            // Validate the complete selected shard before publishing even an inline hit.
+            // Otherwise an unread page can hide another owner for the same hash.
+            int shard = MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(tokenHash.Value);
+            var selectedDirectory = new List<MagicLinkTokenHashCapabilityIndexDirectoryEntry>();
+            foreach (MagicLinkTokenHashCapabilityIndexDirectoryReference reference in value.DirectoryPages)
+            {
+                if (_indexCoordinator is null) return null;
+                ReadModelEntry<MagicLinkTokenHashCapabilityIndexDirectoryPage> selectedPage =
+                    await _indexCoordinator.ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexDirectoryPage>(
+                        MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
+                        selectedGeneration!.Value,
+                        MagicLinkTokenHashCapabilityIndexProjection.DirectoryPageKey(shard, reference.PageId),
+                        cancellationToken).ConfigureAwait(false);
+                if (!MagicLinkTokenHashCapabilityIndexProjection.HasValidDirectoryPage(value,
+                        shard, reference, selectedPage.Value)) return null;
+                if (selectedDirectory.Count > 0
+                    && MagicLinkTokenHashCapabilityIndexProjection.CompareDirectoryRows(
+                        selectedDirectory[^1], selectedPage.Value!.Entries[0]) >= 0) return null;
+                selectedDirectory.AddRange(selectedPage.Value!.Entries);
+            }
+            foreach ((string hash, IReadOnlyList<int> pageIds) in value.CandidatePageIds)
+            {
+                if (_indexCoordinator is null) return null;
+                foreach (int pageId in pageIds)
+                {
+                    ReadModelEntry<MagicLinkTokenHashCapabilityIndexPage> selectedPage =
+                        await _indexCoordinator.ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexPage>(
+                            MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
+                            selectedGeneration!.Value,
+                            MagicLinkTokenHashCapabilityIndexProjection.CandidatePageKey(shard, pageId),
+                            cancellationToken).ConfigureAwait(false);
+                    if (!MagicLinkTokenHashCapabilityIndexProjection.HasValidCandidatePage(value,
+                            hash, pageId, selectedPage.Value)) return null;
+                }
+            }
+
+            MagicLinkTokenHashCapabilityIndexEntry? candidate;
+            if (value.Contributions.TryGetValue(tokenHash.Value, out var owners))
+            {
+                if (owners.Count != 1 || !value.Entries.TryGetValue(tokenHash.Value, out candidate)
+                    || candidate != owners[0]) return null;
+            }
+            else
+            {
+                if (_indexCoordinator is null || value.Entries.ContainsKey(tokenHash.Value)) return null;
+                MagicLinkTokenHashCapabilityIndexDirectoryEntry[] found = selectedDirectory
+                    .Where(row => row.TokenHash == tokenHash.Value).ToArray();
+                if (found.Length != 1) return null;
+                candidate = found[0].Candidate;
+            }
+
+            if (candidate is null
+                || string.IsNullOrWhiteSpace(candidate.Tenant.TenantId)
+                || string.IsNullOrWhiteSpace(candidate.CapabilityId.Value)) return null;
+
+            if (_indexCoordinator is { } selectedCoordinator)
+            {
+                SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexReadModel> rechecked =
+                    await selectedCoordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(
+                        MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
+                        MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard),
+                        cancellationToken).ConfigureAwait(false);
+                if (!rechecked.IsAvailable || rechecked.IsStale
+                    || rechecked.Generation != selectedGeneration
+                    || !string.Equals(rechecked.SelectedETag, selectedRootETag, StringComparison.Ordinal))
+                    return null;
             }
 
             return candidate;

@@ -8,6 +8,7 @@ using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
@@ -17,8 +18,12 @@ namespace Hexalith.Timesheets.Server.TimeEntries;
 public sealed class TimeEntryRecordSubmissionService(
     IEventStoreGatewayClient gateway,
     MagicLinkDurableSubmissionService durableSubmission,
-    ExternalContributionPolicyOptions policy)
+    ExternalContributionPolicyOptions policy,
+    TimeEntryCommentPublicationIssuer? commentIssuer = null)
 {
+    private readonly TimeEntryCommentPublicationIssuer _commentIssuer = commentIssuer
+        ?? new TimeEntryCommentPublicationIssuer();
+
     /// <summary>Returns true only after a Completed status and an exact owner-stream readback.</summary>
     public async Task<bool> SubmitAsync(
         TimesheetsRequestContext context,
@@ -50,6 +55,7 @@ public sealed class TimeEntryRecordSubmissionService(
         int expectedCount = policy.InitialApprovalState == TimeEntryApprovalState.Submitted ? 2 : 1;
         try
         {
+            TimeEntryComment? expectedComment = _commentIssuer.Issue(context, command.Comment);
             var submission = await durableSubmission.SubmitAndReadStatusWithPreflightAsync(
                 messageId, context.Tenant.TenantId, command.TimeEntryId.Value, intent,
                 typeof(CommitTimeEntryRecord), cancellationToken).ConfigureAwait(false);
@@ -74,6 +80,7 @@ public sealed class TimeEntryRecordSubmissionService(
                 || page.AggregateId != command.TimeEntryId.Value
                 || page.Events.Count != expectedCount
                 || page.Events[0].SequenceNumber != lastSequence - expectedCount + 1
+                || string.IsNullOrWhiteSpace(page.Events[0].MessageId)
                 || page.Events[0].CorrelationId != messageId)
             {
                 return false;
@@ -91,7 +98,8 @@ public sealed class TimeEntryRecordSubmissionService(
                 || recorded.ApprovalState != TimeEntryApprovalState.Draft
                 || recorded.ContributorCategory != ContributorCategory.ExternalContributor
                 || recorded.AiMetrics is not null
-                || recorded.Comment != command.Comment
+                || !MagicLinkDurableSubmissionService.CommentsMatchExpected(
+                    recorded.Comment, expectedComment)
                 || recorded.ExternalSource != command.Source)
             {
                 return false;
@@ -103,6 +111,8 @@ public sealed class TimeEntryRecordSubmissionService(
             }
 
             if (page.Events[1].SequenceNumber != lastSequence
+                || string.IsNullOrWhiteSpace(page.Events[1].MessageId)
+                || StringComparer.Ordinal.Equals(page.Events[0].MessageId, page.Events[1].MessageId)
                 || page.Events[1].CorrelationId != messageId)
             {
                 return false;

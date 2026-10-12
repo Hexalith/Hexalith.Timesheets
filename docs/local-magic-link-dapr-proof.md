@@ -1,6 +1,345 @@
 # Local magic-link Dapr proof
 
-The latest 2026-10-11 opt-in attempt started with one healthy `eventstore` and
+## Round-23 latest-tree preflight (2026-10-12)
+
+After the round-22 `/project/v2` failure, the V7 bootstrap scan was changed
+from 256 serial legacy-shard reads to bounded groups of 16 concurrent reads.
+Focused source-reference tests passed 3/3 and the narrow Python selection and
+effective-value suite passed 8/8. This is a code-level diagnosis, not a
+passing local Dapr result. The latest preflight found an unrelated Folders
+Aspire AppHost with an `eventstore` Dapr ID on app port 8080. The Timesheets
+journey requires exactly one `eventstore` ID on app port 8082. Folders then
+briefly disappeared and restarted within ten seconds of two empty Dapr/Aspire
+preflight reads; no stable isolation window existed. The Timesheets AppHost
+was not started. Folders was left untouched and Redis was not cleared. The
+round-22 failed attempts remain the latest isolated local result; deployed
+inventory, authority, and certified live shared rebuild remain unproven.
+Story 3.6 and release remain `FAIL`.
+
+## Round-21 isolated local attempt (2026-10-12)
+
+The current V7 numeric-tree fixture passed source-reference build and Python
+unit checks before launch. `dapr list` found no Dapr instances. The Timesheets
+AppHost was started with `TIMESHEETS_LIVE_DAPR_FIXTURE=1`; `aspire wait`
+reported `eventstore` and `timesheets` healthy, with exactly one Dapr app ID
+for each. The opt-in command below failed **0/1 in 38.545 seconds** when
+the capability-index `/project/v2` projection returned
+`delivery_state_unavailable`. Catalog and non-fixture denial checks had
+passed. A same-AppHost rerun after adding bounded retries for that
+projection admission failed **0/1 in 77.228 seconds** at the same point:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor
+```
+
+EventStore logs contained named-projection retries for the current and
+historical `live-dapr-*` tenants, HTTP 500/503 responses, and actor rate
+limiting; the Timesheets host logged a ten-second timeout. These observations
+do not establish one root cause. The fixture did not reach V7 candidate or
+effective-value readback, so this tree has no passing local Dapr proof.
+`aspire stop --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive` stopped only the Timesheets AppHost. Dapr listed no
+instances and `aspire ps --format Json --non-interactive` returned `[]`
+afterward. Redis was not cleared. Deployed inventory, authority, and a
+certified live shared rebuild remain open; Story 3.6 and release remain
+`FAIL`.
+
+## Round-20 latest-tree preflight (2026-10-12)
+
+The latest-tree journey adds an independent comparison of selected effective
+Time Entry values to the stored recording and adjustment events, including
+duration, billable, and approval state. Its narrow Python suite passed 3/3
+and `py_compile` passed. The opt-in Dapr journey has not run on this tree:
+process preflight found an unrelated Folders Aspire AppHost with a Dapr
+`eventstore` app ID. The required one-`eventstore`, one-`timesheets`
+isolation could not be established. The Folders runtime was left untouched;
+the Timesheets AppHost was not started and Redis was not cleared. The
+round-19 result below remains historical until an isolated latest-tree run
+passes. Deployed persistence and Story 3.6 gates remain `FAIL`.
+
+## Round-19 isolated local run (2026-10-12)
+
+The latest-tree opt-in journey passed **1/1 in 106.313 seconds** after the
+fixture's bounded retries for recording and actor reads were extended across
+EventStore's configured 60-second anonymous tenant rate-limit window.
+`dapr list -o json` and `aspire ps --non-interactive --format Json` were `[]`
+before launch. The Timesheets AppHost started with
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1` and `aspire start --no-build --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive --format Json`; `aspire wait` reported both projects healthy.
+The Dapr list contained exactly one `eventstore` ID on app port 8082 and one
+`timesheets` ID on app port 8081. The script checked uniqueness throughout.
+The passing command was:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor
+```
+
+It verified persisted confirm and adjust, the one-winner race, EventStore
+restart, and selected readbacks. On a valid GET denial, the fixture now
+reports only runtime uniqueness, index storage version and page count,
+candidate category, capability state category, and owner presence category;
+it does not print a token, hash, owner ID, or comment. The successful run did
+not trigger this denial diagnostic. `aspire stop --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive` stopped only this AppHost. Dapr and Aspire both returned
+`[]` afterward. The Redis projection store was not cleared or modified by
+cleanup.
+
+Three earlier round-19 attempts remain failure evidence. The first failed
+**0/1 in 68.606 seconds**: catalog delivery, non-fixture denial, Time Entry
+rebuild, and the confirm record/issue/index/GET/use/race passed, then the
+adjust recording stayed HTTP 403 after three attempts at 0, 1, and 2
+seconds. EventStore warnings showed anonymous actor HTTP 429 and pending
+named-projection retries, but the recording 403 alone did not prove that
+cause. The second failed **0/1 in 40.834 seconds** before recording: the
+negative non-fixture owner read returned 503 after a valid 403 issuance
+denial. A same-AppHost diagnostic rerun failed **0/1 in 19.560 seconds**;
+the negative owner read still returned 503 after five one-second retries.
+EventStore's recent `StreamsController` warnings for
+these reads contained Dapr actor 429 exceptions, establishing the inner
+rate-limit cause of that 503. Its configuration allows 1,000 anonymous
+requests per 60-second tenant window and 100 per one-second consumer window,
+with no queue; the rejection handler sets `Retry-After` from the denying
+lease. The public Timesheets 403 does not expose that inner header. The
+fixture now bounds recording and actor-read retries at offsets 0, 1, 6,
+21, and 66 seconds. These waits do not alter authorization or index trust.
+
+The round-18 first run passed **1/1 in 118.195 seconds**, but a
+user-requested repeat failed **0/1** after selected index readback when
+confirm GET remained denied. Its AppHost was stopped and Dapr/Aspire were
+empty afterward. The round-19 pass does not establish deployed inventory,
+authority, or a certified live shared rebuild. Story 3.6 and release remain
+`FAIL`.
+
+## Round-18 isolated local run (2026-10-12)
+
+The numeric page-address worktree passed the opt-in journey **1/1 in
+118.195 seconds**. `dapr list` and `aspire ps --format Json` were empty
+before launch. The Timesheets AppHost started with
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1` and `aspire start --no-build --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive --format Json`; `aspire wait` reported both resources
+healthy, and Dapr listed exactly one `eventstore` and one `timesheets` ID.
+The passing command was:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor
+```
+
+The fixture checked persisted confirm/adjust, race, EventStore restart,
+and selected readbacks. After stopping only this AppHost, `dapr list`
+returned no instances and `aspire ps --format Json` returned `[]`.
+A subsequent warning-as-error source-reference solution build succeeded
+without changing the AppHost, Timesheets host, or Projections binary hashes
+used by this run. Deployed inventory, authority, and certified live shared
+rebuild remain open; Story 3.6 and release remain `FAIL`.
+
+## Round-17 isolated local run (2026-10-12)
+
+The round-17 worktree passed the opt-in journey **1/1 in 127.469 seconds**.
+`dapr list` and `aspire ps --format Json` were empty before starting the
+Timesheets AppHost with `TIMESHEETS_LIVE_DAPR_FIXTURE=1` and
+`aspire start --no-build --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive --format Json`. `aspire wait` reported both `eventstore`
+and `timesheets` healthy, and Dapr listed exactly one app ID for each. The
+passing command was:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor
+```
+
+The fixture checked persisted confirm and adjust, a one-winner use race,
+EventStore restart, and exact selected model readbacks. `aspire stop
+--apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive` stopped only this AppHost; Dapr and Aspire were empty
+afterward. This does not certify deployed inventory, authority, or a live
+shared rebuild. Story 3.6 and release remain `FAIL`.
+
+## Round-16 isolated local run (2026-10-12)
+
+The current implementation passed the opt-in journey **1/1 in 116.727
+seconds** after the fixture was updated for the selected global token-index
+shard. The first attempt failed **0/1 in 46.255 seconds** after a stored
+issuance because it read the retired single `v1` index key; that failure did
+not reach confirm/adjust. `python3 -m py_compile` passed for the updated
+fixture. The passing rerun checked persisted confirm and adjust, a one-winner
+race, EventStore restart, exact selected Time Entry/capability rows, and the
+selected index shard before and after restart.
+
+Before each start, `dapr list` and `aspire ps --format Json` were empty.
+The Timesheets AppHost was started with `TIMESHEETS_LIVE_DAPR_FIXTURE=1`,
+`aspire start --no-build --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive --format Json`, and both resources passed `aspire wait`.
+Each run saw exactly one `eventstore` and one `timesheets` Dapr app ID. The
+passing command was:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor
+```
+
+After `aspire stop --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive`, both Dapr and Aspire lists were empty. This local run
+does not certify deployed source coverage, authority binding, or a live
+shared rebuild. Story 3.6 and release remain open.
+
+## Historical round-15 isolated local run (2026-10-12)
+
+The round-15 implementation tree passed the opt-in journey **1/1 in 112.376
+seconds**. Before launch, `dapr list` and `aspire ps --format Json` were empty.
+The Timesheets AppHost was started with `TIMESHEETS_LIVE_DAPR_FIXTURE=1` and
+`aspire start --no-build --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive --format Json`. `aspire wait eventstore` and `aspire wait
+timesheets` reported healthy, and `dapr list` showed exactly one of each app
+ID. The test command was:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor
+```
+
+The fixture checked persisted issue, confirm, and adjust, a one-winner use
+race, EventStore restart, and exact selected Time Entry and capability
+readback. After `aspire stop --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive`, `dapr list` and `aspire ps --format Json` were empty. This
+run does not certify deployed source coverage, authority binding, or a live
+shared rebuild. Story 3.6 and release remain open.
+
+## Historical round-14 isolated local run (2026-10-12)
+
+The current round-14 worktree passed the opt-in journey **1/1 in 67.664
+seconds** after a bounded transport retry was added to the new exact
+post-restart lineage read. An initial run failed **0/1 in 117.700 seconds**
+at that read with `A local HTTP or Dapr request could not complete`; before
+the failure it had passed catalog delivery, non-fixture denial, persisted
+confirm and adjust, the race, and the EventStore restart. The retry changes
+only this read-only stream probe. The passing rerun verified those steps and
+the exact selected Time Entry event and payload lineage after restart.
+
+Both runs used the Timesheets AppHost started with
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1` and this test command:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'
+```
+
+`aspire wait` reported both resources healthy;
+strict pre/post `dapr list` checks showed one `eventstore` and one
+`timesheets` app ID. After stopping this AppHost with `aspire stop --apphost`,
+both Dapr and Aspire reported no running instances. This local proof does not
+certify deployed source coverage, authority binding, or a certified live
+shared rebuild. Story 3.6 and release remain open.
+
+## Historical round-13 isolated local run (2026-10-12)
+
+The round-13 worktree passed the opt-in journey **1/1 in 125.174
+seconds** with this command:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'
+```
+
+The Timesheets AppHost was started with `TIMESHEETS_LIVE_DAPR_FIXTURE=1` and
+`aspire start --no-build --apphost
+src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+--non-interactive`. Both `aspire wait eventstore` and `aspire wait timesheets`
+reported healthy. `dapr list` showed exactly one `eventstore` and one
+`timesheets` app ID before and after the journey. After stopping this AppHost
+through `aspire stop --apphost`, both Dapr and Aspire reported no running
+instances. The fixture checked persisted confirm and adjust, the one-winner
+race, EventStore restart, and selected Time Entry and capability readbacks.
+This local run does not certify deployed source coverage, authority binding,
+or a certified live shared rebuild. Story 3.6 and release remain open.
+
+## Historical round-11 isolated local run (2026-10-11)
+
+The opt-in journey passed **1/1 in 114.866 seconds** on the round-11 worktree:
+
+```bash
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'
+```
+
+The operator checked `dapr list` before and after the journey: each check
+showed exactly one `eventstore` and one `timesheets` app ID. After stopping
+only this Timesheets AppHost with `aspire stop`, both Dapr and Aspire resource
+lists were empty. The fixture verified persisted confirm and adjust batches,
+one-winner confirm race and replay denial, actor restart, and exact selected
+Time Entry and capability readbacks. It uses persisted positive, increasing
+global positions with contiguous owner sequences and rejects a duplicate
+Dapr ID at preflight and after restart. Read-only stream, command-status, and
+selected-model probes have bounded HTTP 429/500/503 retries. The five-second
+default submission polling budget, single-write behavior, and opaque external
+denial remain in force.
+
+Two earlier latest-tree retries failed before these corrections. In the first,
+both confirm-race calls returned HTTP `[403,403]` even though EventStore had
+stored `StoredTimeEntryRecorded`, a capability use, a confirmation, and a
+rejected competing commit. The submission service awaited the POST response;
+a lost or delayed response after durable commit exhausted its deadline and
+hid the successful winner. It now checks exact command status concurrently
+with the POST and requires matching stored-event readback before returning
+HTTP 202. In the next isolated retry, both calls again returned `[403,403]`,
+but the target stream contained only `StoredTimeEntryRecorded`: workload
+stream-read POSTs received HTTP 429 and timed out before any use command was
+submitted. EventStore's rate limiter had put signed DaprInternal workload
+requests into the anonymous partition because it looked only for human JWT
+claims. It now partitions scheme-checked, signed workload requests by their
+verified bound tenant and workload identity, retaining finite rate limits.
+The first and second failures are historical results on earlier revisions of
+the round-11 worktree; its passing run is recorded above.
+
+This is local Development-topology evidence, not deployed acceptance. The
+shared-rebuild Begin producer still has no independently installed production
+coverage-authority receipt issuer, certified virgin-store/all-writer proof,
+complete legacy actor-key census, or certified live shared-rebuild run. The
+deployed authority-mode identity issuer also lacks the required exact
+tenant/domain/actor binding; deployed delivery/readback and retirement of old
+capability terminal writers remain open. Story 3.6 and release stay in progress.
+
+## Historical live attempt on an earlier round-9 checkpoint (2026-10-11)
+
+That earlier checkpoint's opt-in journey has
+**no clean pass**. After a zero-warning AppHost
+build, `aspire start --no-build` with `TIMESHEETS_LIVE_DAPR_FIXTURE=1` and both
+`aspire wait` checks succeeded. Immediate `dapr list` preflight showed exactly
+one `eventstore` and one `timesheets` app ID. The journey passed persisted
+catalog delivery/readback and non-fixture denial, then failed **0/1 in 83.705
+seconds** at capability issuance HTTP 403. Its diagnostic capability-stream
+read returned 404. Timesheets logs show an EventStore workload stream-read
+POST exhausting two 10-second attempt timeouts and its total request timeout;
+EventStore logged rate limiting and named-projection
+`delivery_state_unavailable` retries. Those observations do not establish why
+the read stalled or why issuance was denied. There was one `eventstore` ID
+during the run. Only the Timesheets AppHost was stopped through `aspire stop`;
+an unrelated topology later registered another `eventstore` ID and was left
+untouched. A preliminary fixture invocation stopped immediately because the
+AppHost lacked the opt-in run-mode setting; it made no journey request. The
+local live gate was open at that checkpoint.
+
+## Historical round-8 attempts (2026-10-11)
+
+The preserved round-8 re-derived worktree had **no clean opt-in pass**. The
+Timesheets AppHost was built and started with the checked-in topology;
+`aspire wait` found `timesheets` and `eventstore` healthy, and `dapr list`
+showed one of each app ID before the run and after the third attempt. Three
+isolated attempts passed persisted catalog delivery and non-fixture denial.
+They failed at capability issuance HTTP 403 (77.897 seconds), at a confirm
+race where both requests returned HTTP 403 (31.062 seconds), and at adjust
+issuance HTTP 403 after confirm, its race, and composed Time Entry rebuild
+readback had passed (31.637 seconds). EventStore logged rate-limit and
+named-projection retry activity; the opaque denials' cause is still
+unproven. The Timesheets AppHost was stopped with explicit `aspire stop`,
+and `dapr list` was empty afterward. The fixture retains exact compact
+Time Entry lineage checks, five bounded post-restart read-only retries for
+HTTP 429/500/503, and safe event-count/name diagnostics at issuance/race
+failure. None of these runs reached the post-restart checks.
+
+An earlier 2026-10-11 opt-in attempt started with one healthy `eventstore` and
 one healthy `timesheets` Dapr app. It persisted and read back the catalog,
 then exited 1 after 22.378 seconds at the combined non-fixture issuance and
 missing-owner read assertion. An unrelated ChatBot AppHost added a second
@@ -17,11 +356,11 @@ both composed Time Entry rebuild readbacks, confirm race and adjust journey.
 It exited 1 after 122.714 seconds when a post-restart owner stream read
 returned HTTP 401; ChatBot had again introduced a second `eventstore` ID
 during the run. The Timesheets AppHost was stopped after each attempt; the
-unrelated AppHost was left untouched. No clean latest-tree end-to-end
-acceptance is claimed.
+unrelated AppHost was left untouched. No clean end-to-end acceptance for
+that checkpoint is claimed.
 
 The 2026-10-11 opt-in journey passed against an earlier revision of the
-checked-in local Aspire composition. The latest revision has no passing
+checked-in local Aspire composition. That revision had no passing
 opt-in run. Two isolated attempts reached stored-event delivery: the first
 stopped at an EventStore command-status HTTP 500; the second passed the confirm
 race, then received three opaque 403 responses on the valid adjust POST.
@@ -29,9 +368,9 @@ The next run stopped at strict preflight when an unrelated ChatBot AppHost
 restarted with a second `eventstore` Dapr ID. A later run passed catalog
 delivery and a stored recording, then its first capability stream read returned
 HTTP 429 after ChatBot restarted with a second `eventstore` ID. The Timesheets
-AppHost was stopped; the unrelated AppHost was left untouched. The current
-fixture also exercises the mapped Time Entry rebuild endpoint and checks exact
-persisted evidence; the latest attempt reached those checks as described above.
+AppHost was stopped; the unrelated AppHost was left untouched. The round-8
+fixture also exercised the mapped Time Entry rebuild endpoint and checked exact
+persisted evidence; the final attempt reached those checks as described above.
 Story 3.6 and launch remain open for production gates.
 
 ## Materialized read-model extension (historical passing local run)

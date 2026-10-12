@@ -102,8 +102,8 @@ public sealed class LaunchReadinessTests
         fullSuite[1].ShouldBe("PASS");
         fullSuite[2].ShouldContain("Architecture");
         fullSuite[2].ShouldContain("Integration");
-        fullSuite[3].ShouldContain("Six individual test lanes pass");
-        fullSuite[3].ShouldContain("opt-in live lane passes");
+        fullSuite[3].ShouldMatch(@"All six executables ran on the round-\d+ implementation tree");
+        fullSuite[3].ShouldContain("local proof does not replace a deployed persistence test");
     }
 
     [Fact]
@@ -119,8 +119,11 @@ public sealed class LaunchReadinessTests
         overall.ShouldContain("Overall release decision: **FAIL**");
         overall.ShouldContain("Stories 3.6 and 3.7 remain in progress, Story 5.2 remains in progress");
         overall.ShouldContain("final Story 5.1 reconciliation remains ready for development");
-        overall.ShouldContain("Atomic magic-link submission and local actor commit/reload are implemented");
-        overall.ShouldContain("opt-in local Dapr/EventStore acceptance journey passed");
+        overall.ShouldContain("Atomic magic-link submission, EventStore-backed recording, local actor commit/reload");
+        overall.ShouldMatch(@"round-\d+ 2026-10-12 isolated opt-in local Dapr/EventStore journey passed");
+        overall.ShouldContain("shared-rebuild Begin producer now exists in code");
+        overall.ShouldContain("no independent installed coverage authority");
+        overall.ShouldContain("certified legacy owner census");
         overall.ShouldContain("Deployed acceptance remains open");
         overall.ShouldNotContain("Story 3.6 is complete");
         overall.ShouldNotContain("Story 3.6 is in review");
@@ -156,9 +159,9 @@ public sealed class LaunchReadinessTests
         readiness.ShouldContain("Magic-link live end-to-end resolution");
         readiness.ShouldContain("Export preview");
         readiness.ShouldContain("canonical token-hash index and tenant Activity Type catalog projection handlers");
-        readiness.ShouldContain("valid Fresh-catalog GET displays return 200 and valid confirm/adjust POSTs return 202 only after a Completed EventStore status");
-        readiness.ShouldContain("the separate EventStore actor state-store test proves local commit/reload");
-        readiness.ShouldContain("does not prove deployed Dapr persistence");
+        readiness.ShouldContain("valid Fresh-catalog GET displays return 200 and valid confirm/adjust POSTs return 202 only after Completed EventStore status and exact stored-event readback");
+        readiness.ShouldMatch(@"round-\d+ isolated local Dapr/EventStore journey passed 1/1");
+        readiness.ShouldContain("does not establish deployed Dapr persistence");
         readiness.ShouldNotContain("no projection-host wiring");
         readiness.ShouldNotContain("Valid links do not resolve");
         readiness.ShouldContain("no dedicated HTTP route");
@@ -219,8 +222,9 @@ public sealed class LaunchReadinessTests
 
         string[] liveResolution = ReadClassificationRow(readiness, "Magic-link live end-to-end resolution");
         liveResolution[2].ShouldBe("blocked");
-        liveResolution[1].ShouldContain("valid confirm/adjust POSTs return 202 only after a Completed EventStore status");
-        liveResolution[4].ShouldContain("does not prove deployed Dapr persistence");
+        liveResolution[1].ShouldContain("valid confirm/adjust POSTs return 202 only after Completed EventStore status and exact stored-event readback");
+        liveResolution[1].ShouldContain("The run-only AppHost declares an EventStore resource");
+        liveResolution[4].ShouldContain("does not establish deployed Dapr persistence");
         liveResolution[5].ShouldContain("Inventory deployed streams read-only");
         liveResolution[5].ShouldContain("concurrent single-use and restart checks");
     }
@@ -291,7 +295,8 @@ public sealed class LaunchReadinessTests
         historicalSmoke.ShouldContain("not current Aspire/Keycloak runtime compatibility evidence");
 
         string[] buildGate = ReadReleaseGateRow(readiness, "Build");
-        buildGate[1].ShouldBe("FAIL");
+        buildGate[1].ShouldBe("PASS");
+        buildGate[2].ShouldMatch(@"round-\d+ Timesheets source-reference Debug solution build passed");
         buildGate[2].ShouldContain("the changed worktree based on");
         buildGate[2].ShouldContain("57770d380c724c94233b78ac021a8f10cd5d6f39");
         buildGate[2].ShouldContain("--configuration Debug --no-restore -p:UseHexalithProjectReferences=true");

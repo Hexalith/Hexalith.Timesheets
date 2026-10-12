@@ -29,6 +29,8 @@ public static class ServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
 
         services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
+        services.TryAddSingleton<ITimeEntryCommentPublicationAuthority, DenyAllTimeEntryCommentPublicationAuthority>();
+        services.TryAddSingleton<TimeEntryCommentPublicationIssuer>();
         services.TryAddSingleton(TimesheetsApprovalAuthorityPolicyOptions.Default);
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IApprovalAuthoritySourceProvider, DefaultProjectApprovalAuthoritySourceProvider>());
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IApprovalAuthoritySourceProvider, DefaultWorkApprovalAuthoritySourceProvider>());

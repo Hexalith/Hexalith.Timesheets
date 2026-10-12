@@ -18,21 +18,32 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
+from magic_link_index_selection import selected_candidate
+
 
 def require(condition, message):
     if not condition:
         raise RuntimeError(message)
 
 
-def await_success(operation, expected_status, label):
-    for attempt in range(3):
+def await_success(operation, expected_status, label, diagnostics=None, retry_delays=(1, 1)):
+    for attempt in range(len(retry_delays) + 1):
         status, data = operation()
         if status == expected_status:
             return data
-        require(status == 403, f"{label} returned {status}")
-        if attempt < 2:
-            time.sleep(1)
-    raise RuntimeError(f"{label} remained denied after three bounded attempts")
+        if status != 403:
+            detail = "" if diagnostics is None else "; " + diagnostics()
+            raise RuntimeError(f"{label} returned {status}{detail}")
+        if attempt < len(retry_delays):
+            time.sleep(retry_delays[attempt])
+    detail = "" if diagnostics is None else "; " + diagnostics()
+    raise RuntimeError(f"{label} remained denied after {len(retry_delays) + 1} bounded attempts{detail}")
+
+
+# EventStore's anonymous actor tenant limiter has a 60-second window and no queue.
+# These waits cross one window without changing the HTTP route's authorization result.
+ACTOR_RATE_LIMIT_RETRY_DELAYS = (1, 5, 15, 45)
 
 
 def application(app_id, app_port):
@@ -41,6 +52,11 @@ def application(app_id, app_port):
     require(len(matches) == 1, f"Expected one {app_id} Dapr application; found {len(matches)}")
     require(int(matches[0][3]) == app_port, f"{app_id} sidecar targets the wrong application port")
     return int(matches[0][1])
+
+
+def assert_runtime_unique():
+    application("eventstore", 8082)
+    application("timesheets", 8081)
 
 
 pids = subprocess.check_output(["pgrep", "-f", "/Hexalith.Timesheets$"], text=True).splitlines()
@@ -67,7 +83,6 @@ tenant = "live-dapr-" + secrets.token_hex(8)
 actor = "live-actor-" + secrets.token_hex(6)
 activity = "live-activity-" + secrets.token_hex(6)
 project_id = "live-project-" + secrets.token_hex(6)
-restart_probe = False
 
 
 def b64(value):
@@ -127,17 +142,22 @@ def management(path, body, scoped_tenant=tenant):
 
 
 def stream(aggregate, scoped_tenant=tenant):
-    for attempt in range(5):
-        status, data = gateway("POST", "/api/v1/streams/read/workload", {
-            "tenant": scoped_tenant, "domain": "timesheets", "aggregateId": aggregate,
-        }, "eventstore:stream-read", scoped_tenant)
+    for attempt in range(len(ACTOR_RATE_LIMIT_RETRY_DELAYS) + 1):
+        try:
+            status, data = gateway("POST", "/api/v1/streams/read/workload", {
+                "tenant": scoped_tenant, "domain": "timesheets", "aggregateId": aggregate,
+            }, "eventstore:stream-read", scoped_tenant)
+        except RuntimeError:
+            if attempt < len(ACTOR_RATE_LIMIT_RETRY_DELAYS):
+                time.sleep(ACTOR_RATE_LIMIT_RETRY_DELAYS[attempt])
+                continue
+            raise
         if status == 200:
             return json.loads(data)["events"]
-        retryable = (429, 500, 503) if restart_probe else (500, 503)
-        require(status in retryable, f"Stream read for {aggregate} returned {status}")
-        if attempt < 4:
-            time.sleep(1)
-    raise RuntimeError(f"Stream read for {aggregate} remained unavailable after five bounded attempts")
+        require(status in (429, 500, 503), f"Stream read for {aggregate} returned {status}")
+        if attempt < len(ACTOR_RATE_LIMIT_RETRY_DELAYS):
+            time.sleep(ACTOR_RATE_LIMIT_RETRY_DELAYS[attempt])
+    raise RuntimeError(f"Stream read for {aggregate} remained unavailable after bounded attempts")
 
 
 def require_completed(events, aggregate):
@@ -151,8 +171,7 @@ def require_completed(events, aggregate):
             + urllib.parse.quote(tenant, safe="") + "/" + urllib.parse.quote(message_id, safe=""),
             operation="eventstore:command-status",
         )
-        retryable = (429, 500, 503) if restart_probe else (500, 503)
-        if status == 200 or status not in retryable:
+        if status == 200 or status not in (429, 500, 503):
             break
         if attempt < 4:
             time.sleep(1)
@@ -186,31 +205,54 @@ def stored_payload(event):
     return camel(decoded["Event"])
 
 
+def verified_positioned_events(events, aggregate):
+    previous_sequence = 0
+    previous_position = 0
+    for event in events:
+        sequence = event.get("sequenceNumber")
+        position = event.get("globalPosition")
+        require(isinstance(sequence, int) and sequence == previous_sequence + 1
+                and isinstance(position, int) and position > previous_position,
+                f"Stored stream for {aggregate} has missing or discontinuous persisted positions")
+        previous_sequence = sequence
+        previous_position = position
+    return events
+
+
 def project(events, aggregate, projection, fingerprint, scoped_tenant=tenant):
-    # Workload stream read omits the persisted global position. This synthetic
-    # local delivery uses the stable owner sequence as its SDK journal position.
-    delivery_events = [dict(event, globalPosition=event["sequenceNumber"]) for event in events]
+    delivery_events = verified_positioned_events(events, aggregate)
+    dispatch_id = "live-dapr-dispatch-" + secrets.token_hex(8)
     body = {
         "request": {"tenantId": scoped_tenant, "domain": "timesheets", "aggregateId": aggregate, "events": delivery_events},
         "projectionTypes": [projection],
-        "dispatchId": "live-dapr-dispatch-" + secrets.token_hex(8),
+        "dispatchId": dispatch_id,
         "catalogFingerprint": fingerprint,
     }
-    status, data = call(
-        timesheets + "/project/v2", "POST", body,
-        sign("timesheets", "eventstore", "domain-service:project"),
-    )
-    require(status == 200, f"{projection} delivery returned {status}")
-    outcomes = json.loads(data)["outcomes"]
-    require(len(outcomes) == 1 and outcomes[0]["projectionType"] == projection and outcomes[0]["status"] == 0,
-            f"{projection} delivery did not complete: {outcomes}")
+    for attempt in range(len(ACTOR_RATE_LIMIT_RETRY_DELAYS) + 1):
+        status, data = call(
+            timesheets + "/project/v2", "POST", body,
+            sign("timesheets", "eventstore", "domain-service:project"),
+        )
+        outcomes = json.loads(data).get("outcomes", []) if status == 200 else []
+        if (len(outcomes) == 1 and outcomes[0]["projectionType"] == projection
+                and outcomes[0]["status"] in (0, 1)):
+            return
+        retryable = (status in (429, 500, 503)
+                     or len(outcomes) == 1 and outcomes[0].get("reasonCode")
+                     == "delivery_state_unavailable")
+        if retryable and attempt < len(ACTOR_RATE_LIMIT_RETRY_DELAYS):
+            time.sleep(ACTOR_RATE_LIMIT_RETRY_DELAYS[attempt])
+            continue
+        require(status == 200, f"{projection} delivery returned {status}")
+        raise RuntimeError(f"{projection} delivery did not complete: {outcomes}")
 
 
 def rebuild_time_entry(events, aggregate, fingerprint):
-    delivery_events = [dict(event, globalPosition=event["sequenceNumber"]) for event in events]
+    delivery_events = verified_positioned_events(events, aggregate)
     body = {
         "request": {"tenantId": tenant, "domain": "timesheets", "aggregateId": aggregate,
-                    "events": delivery_events},
+                    "events": delivery_events,
+                    "rebuildSourceHeadSequence": len(delivery_events)},
         "projectionTypes": ["time-entry-evidence"],
         "dispatchId": "live-dapr-rebuild-" + secrets.token_hex(8),
         "catalogFingerprint": fingerprint,
@@ -228,7 +270,7 @@ def rebuild_time_entry(events, aggregate, fingerprint):
 
 def read_model(key_name):
     url = timesheets_sidecar + "/v1.0/state/timesheets-readmodels/" + urllib.parse.quote(key_name, safe="")
-    for attempt in range(5 if restart_probe else 1):
+    for attempt in range(5):
         status, data = call(url)
         if status == 200 or status not in (429, 500, 503):
             break
@@ -286,6 +328,93 @@ def selected_capability(capability):
     return json.loads(content)
 
 
+def selected_index(token_hash):
+    return _selected_index_snapshot(token_hash)[0]
+
+
+def _selected_index_snapshot(token_hash):
+    family = "magic-link-token-hash-capability-index"
+    components = ["timesheets-readmodels", "global-index", "timesheets", family, family, "shared-epoch"]
+    scope_bytes = "".join(f"{len(value)}:{value}" for value in components).encode()
+    scope_hash = b64(hashlib.sha256(scope_bytes).digest())
+    epoch = read_model("shared-epoch:" + scope_hash)
+    shard = hashlib.sha256(token_hash.encode()).digest()[0]
+    generation = epoch["activeGeneration"]
+    root_key = "timesheets:magic-links:token-hash-capability-index:v7:root"
+    format_key = "timesheets:magic-links:token-hash-capability-index:v7:format"
+    def physical(key_name):
+        return (f"shared-generation:{scope_hash}:{generation}:"
+                + hashlib.sha256(key_name.encode()).hexdigest().upper())
+    try:
+        selected_format = read_model(physical(format_key))
+    except RuntimeError:
+        selected_format = None
+    if selected_format is not None:
+        require(selected_format.get("storageVersion") == 7,
+                "Selected numeric index format is invalid")
+        return read_model(physical(root_key)), generation, scope_hash, shard
+    logical_key = f"timesheets:magic-links:token-hash-capability-index:v2:shard:{shard:02X}"
+    return read_model(physical(logical_key)), generation, scope_hash, shard
+
+
+def selected_index_candidate(token_hash):
+    """Resolve and verify one selected candidate without token-derived state keys."""
+    index, generation, scope_hash, shard = _selected_index_snapshot(token_hash)
+    return selected_candidate(token_hash, index, generation, scope_hash, shard,
+                              read_model, _selected_index_snapshot)
+
+
+def valid_get_diagnostics(token_hash, capability, entry):
+    """Return only shape and state categories; no token, hash, owner, or payload."""
+    try:
+        assert_runtime_unique()
+        runtime = "unique"
+    except (RuntimeError, subprocess.CalledProcessError):
+        runtime = "duplicate-or-unavailable"
+    try:
+        index = selected_index(token_hash)
+        version = index.get("storageVersion", 0)
+        version = version if isinstance(version, int) and 0 <= version <= 7 else "unknown"
+        if version == 7:
+            candidate_state = "numeric-unique" if selected_index_candidate(token_hash) else "numeric-missing-or-ambiguous"
+        elif version != 6:
+            candidate_state = "stale-selected-index-shape"
+        elif index.get("legacyContributionsUnverified"):
+            candidate_state = "unverified-legacy-contributions"
+        elif token_hash in index.get("candidatePageCounts", {}):
+            candidate_state = "paged-collision"
+        else:
+            owners = index.get("contributions", {}).get(token_hash, [])
+            candidate = index.get("entries", {}).get(token_hash)
+            if len(owners) == 1 and candidate == owners[0]:
+                candidate_state = "inline-unique"
+            elif len(owners) > 1:
+                candidate_state = "ambiguous"
+            elif index.get("directoryPages"):
+                candidate_state = "directory-unique-or-missing" if selected_index_candidate(token_hash) else "directory-ambiguous-or-invalid"
+            else:
+                candidate_state = "missing"
+        index_shape = ("v7-numeric-trie" if version == 7
+                       else f"v{version}-pages-{len(index.get('directoryPages', []))}")
+    except (RuntimeError, KeyError, ValueError, TypeError):
+        index_shape = "unavailable"
+        candidate_state = "unavailable"
+    try:
+        view = selected_capability(capability)
+        capability_state = view.get("published", {}).get("state", "unpublished")
+        if capability_state not in ("Issued", "Used", "Revoked", "Expired", "unpublished"):
+            capability_state = "unknown"
+    except (RuntimeError, KeyError, ValueError, TypeError):
+        capability_state = "unavailable"
+    try:
+        owner_events = stream(entry)
+        owner_state = "present" if owner_events else "empty"
+    except (RuntimeError, KeyError, ValueError, TypeError):
+        owner_state = "unavailable"
+    return (f"safe diagnostics runtime={runtime} index-shape={index_shape} "
+            f"candidate={candidate_state} capability={capability_state} owner={owner_state}")
+
+
 metadata_status, metadata_data = call(
     timesheets + "/admin/operational-index-metadata", "POST",
     {"domains": ["timesheets"], "appId": "timesheets", "serviceVersion": "v1"},
@@ -339,9 +468,13 @@ other_issue = {
     "source": {"sourceSystem": "live-dapr-proof", "sourceReference": "issue-" + secrets.token_hex(8)},
 }
 other_status, _ = management("/api/timesheets/magic-links/confirmation-capabilities", other_issue, other_tenant)
-missing_status, _ = gateway("POST", "/api/v1/streams/read/workload", {
-    "tenant": other_tenant, "domain": "timesheets", "aggregateId": other_capability,
-}, "eventstore:stream-read", other_tenant)
+for missing_attempt in range(len(ACTOR_RATE_LIMIT_RETRY_DELAYS) + 1):
+    missing_status, _ = gateway("POST", "/api/v1/streams/read/workload", {
+        "tenant": other_tenant, "domain": "timesheets", "aggregateId": other_capability,
+    }, "eventstore:stream-read", other_tenant)
+    if missing_status not in (429, 500, 503) or missing_attempt == len(ACTOR_RATE_LIMIT_RETRY_DELAYS):
+        break
+    time.sleep(ACTOR_RATE_LIMIT_RETRY_DELAYS[missing_attempt])
 require(other_status == 403 and missing_status == 404,
         f"Non-fixture process assertion failed: issue status {other_status}, "
         f"missing owner read status {missing_status}")
@@ -349,6 +482,7 @@ print("non-fixture assertion denied without owner event")
 
 
 def journey(action, race=False):
+    assert_runtime_unique()
     entry = "live-entry-" + secrets.token_hex(8)
     capability = "live-capability-" + secrets.token_hex(8)
     record = {
@@ -360,7 +494,9 @@ def journey(action, race=False):
         "billableState": "Billable",
         "source": {"sourceSystem": "live-dapr-proof", "externalRequestId": "record-" + secrets.token_hex(8)},
     }
-    await_success(lambda: management("/api/timesheets/external-contributions/", record), 202, "Recording")
+    # A public 403 can hide an inner actor 429; retry across one rate-limit window.
+    await_success(lambda: management("/api/timesheets/external-contributions/", record), 202,
+                  "Recording", retry_delays=ACTOR_RATE_LIMIT_RETRY_DELAYS)
     record_events = stream(entry)
     recorded = [event["eventTypeName"].split(",", 1)[0].rsplit(".", 1)[-1] for event in record_events]
     require(recorded == ["StoredTimeEntryRecorded"], f"Recorded owner stream differs: {recorded}")
@@ -375,8 +511,9 @@ def journey(action, race=False):
     evidence = read_model(f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence")
     require(evidence["timeEntryId"]["value"] == entry
             and evidence["projectionFreshness"]["state"] == "Fresh"
-            and len(evidence["eventPayloadLineage"]) == 1,
-            "Delivered record evidence is not fresh or complete")
+            and complete_evidence_lineage(evidence, record_events)
+            and effective_evidence_values_match(evidence, record_events),
+            "Delivered record evidence is not fresh, complete, or equal to stored values")
     retry_status, _ = management("/api/timesheets/external-contributions/", record)
     require(retry_status == 202 and event_names(entry) == recorded,
             f"Recording retry returned {retry_status} or appended another event")
@@ -393,7 +530,13 @@ def journey(action, race=False):
         "source": {"sourceSystem": "live-dapr-proof", "sourceReference": "issue-" + secrets.token_hex(8)},
     }
     status, data = management("/api/timesheets/magic-links/confirmation-capabilities", issue)
-    require(status == 202, f"Capability issuance returned {status}")
+    if status != 202:
+        try:
+            stored_issue_count = len(stream(capability))
+            detail = f"; stored capability events: {stored_issue_count}"
+        except RuntimeError as error:
+            detail = f"; capability stream read unavailable ({error})"
+        raise RuntimeError(f"Capability issuance returned {status}{detail}")
     token = json.loads(data)["oneTimeToken"]
     issued_events = stream(capability)
     require(len(issued_events) == 1
@@ -415,16 +558,18 @@ def journey(action, race=False):
             "Delivered capability issue is missing or exposed a token")
     token_hash = b64(hashlib.sha256(token.encode()).digest())
     require(token_hash not in json.dumps(issued_view), "Capability view exposed the token hash")
-    index = read_model("timesheets:magic-links:token-hash-capability-index:v1")
-    candidate = index["entries"].get(token_hash)
+    candidate = selected_index_candidate(token_hash)
     require(candidate is not None and candidate["tenant"]["tenantId"] == tenant
             and candidate["capabilityId"]["value"] == capability,
             "Delivered candidate index does not match the stored issue")
     route = "confirm" if action == "Confirm" else "adjust"
     suffix = "?t=" + urllib.parse.quote(token, safe="")
+    assert_runtime_unique()
     await_success(
         lambda: call(f"http://127.0.0.1:8080/api/timesheets/magic-links/{route}" + suffix),
-        200, f"Valid {route} GET")
+        200, f"Valid {route} GET",
+        lambda: valid_get_diagnostics(token_hash, capability, entry))
+    assert_runtime_unique()
     payload = {} if action == "Confirm" else {
         "serviceDate": now.date().isoformat(), "durationMinutes": 45,
         "activityTypeId": {"value": activity}, "billableState": "Billable",
@@ -434,7 +579,13 @@ def journey(action, race=False):
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             replies = list(pool.map(lambda _: call(submit_url, "POST", payload), range(2)))
         codes = sorted(status for status, _ in replies)
-        require(codes == [202, 403], f"Race returned {codes}, expected one winner")
+        if codes != [202, 403]:
+            try:
+                observed_names = event_names(entry)
+                detail = f"; stored event names: {observed_names}"
+            except RuntimeError as error:
+                detail = f"; owner stream read unavailable ({error})"
+            raise RuntimeError(f"Race returned {codes}, expected one winner{detail}")
         race_denial = next(body for status, body in replies if status == 403)
     else:
         await_success(lambda: call(submit_url, "POST", payload), 202, f"Valid {route} POST")
@@ -448,8 +599,9 @@ def journey(action, race=False):
     project(final_events, entry, "magic-link-confirmation-capabilities", fingerprint)
     final_evidence = read_model(f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence")
     require(final_evidence["projectionFreshness"]["state"] == "Fresh"
-            and len(final_evidence["eventPayloadLineage"]) == len(final_events),
-            "Delivered Time Entry effect evidence is not fresh or complete")
+            and complete_evidence_lineage(final_evidence, final_events)
+            and effective_evidence_values_match(final_evidence, final_events),
+            "Delivered Time Entry effect evidence is not fresh, complete, or equal to stored values")
     rebuild_time_entry(final_events, entry, fingerprint)
     rebuilt_evidence = read_model(f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence")
     require(rebuilt_evidence == final_evidence,
@@ -480,6 +632,7 @@ def journey(action, race=False):
     if race:
         require(replay_body == race_denial, "Race loser and replay returned different denials")
     print(action.lower(), "record/issue/index/GET/use/replay passed", "race" if race else "single")
+    assert_runtime_unique()
     return entry, submit_url, payload, replay_body, names, token_hash, capability
 
 
@@ -493,14 +646,17 @@ subprocess.run([
     "aspire", "wait", "eventstore", "--timeout", "60", "--apphost",
     "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj", "--non-interactive",
 ], check=True, stdout=subprocess.DEVNULL)
-restart_probe = True
+eventstore_port = application("eventstore", 8082)
+application("timesheets", 8081)
+timesheets = f"http://127.0.0.1:{eventstore_port}/v1.0/invoke/timesheets/method"
+with urllib.request.urlopen(timesheets_sidecar + "/v1.0/metadata", timeout=20) as response:
+    require(json.load(response).get("id") == "timesheets", "Timesheets points to another Dapr app after restart")
 catalog_after = read_model(f"timesheets:magic-links:activity-type-catalog:{tenant}:v1")
 require(catalog_after["projectionFreshness"]["state"] == "Fresh"
         and any(item["activityTypeId"]["value"] == activity for item in catalog_after["items"]),
         "Catalog was unavailable after restart")
-index_after = read_model("timesheets:magic-links:token-hash-capability-index:v1")
 for entry, url, payload, denial, names, token_hash, capability in [confirm, adjust]:
-    candidate = index_after["entries"].get(token_hash)
+    candidate = selected_index_candidate(token_hash)
     require(candidate is not None and candidate["tenant"]["tenantId"] == tenant
             and candidate["capabilityId"]["value"] == capability,
             "Candidate index was unavailable after restart")
@@ -508,7 +664,8 @@ for entry, url, payload, denial, names, token_hash, capability in [confirm, adju
         f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence")
     require(persisted_evidence["timeEntryId"]["value"] == entry
             and persisted_evidence["projectionFreshness"]["state"] == "Fresh"
-            and len(persisted_evidence["eventPayloadLineage"]) == len(names),
+            and complete_evidence_lineage(persisted_evidence, stream(entry))
+            and effective_evidence_values_match(persisted_evidence, stream(entry)),
             "Time Entry evidence was unavailable after restart")
     persisted_capability = selected_capability(capability)
     require(persisted_capability["published"]["capabilityId"]["value"] == capability
@@ -520,5 +677,6 @@ for entry, url, payload, denial, names, token_hash, capability in [confirm, adju
     require(after == names,
             f"Post-restart stream differs: {after}")
 journey("Confirm")
+assert_runtime_unique()
 print("fresh post-restart link passed")
 print("actor restart and replay passed", "tenant", tenant)

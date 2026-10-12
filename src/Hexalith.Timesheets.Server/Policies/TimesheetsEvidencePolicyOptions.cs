@@ -14,6 +14,9 @@ public sealed record TimesheetsEvidencePolicyOptions
 
     public bool ExportCommentsAllowed { get; init; }
 
+    /// <summary>Allows the projection host to publish comment text when the event also permits it.</summary>
+    public bool ProjectionCommentsAllowed { get; init; }
+
     public IReadOnlyList<string> LaunchReadinessGaps
     {
         get

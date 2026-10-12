@@ -5,17 +5,21 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 
 namespace Hexalith.Timesheets.Server.TimeEntries;
 
 public sealed class TimeEntryCommandService
 {
     private readonly ITimesheetsAccessGuard _accessGuard;
+    private readonly TimeEntryCommentPublicationIssuer _commentIssuer;
 
-    public TimeEntryCommandService(ITimesheetsAccessGuard accessGuard)
+    public TimeEntryCommandService(ITimesheetsAccessGuard accessGuard,
+        TimeEntryCommentPublicationIssuer? commentIssuer = null)
     {
         ArgumentNullException.ThrowIfNull(accessGuard);
         _accessGuard = accessGuard;
+        _commentIssuer = commentIssuer ?? new TimeEntryCommentPublicationIssuer();
     }
 
     public async ValueTask<TimeEntryCommandResult> RecordAsync(
@@ -43,7 +47,10 @@ public sealed class TimeEntryCommandService
             return new(authorization, rejection);
         }
 
-        return new(authorization, TimeEntry.Handle(command, state, scope), true);
+        return new(authorization, TimeEntry.Handle(command with
+        {
+            Comment = _commentIssuer.Issue(context, command.Comment)
+        }, state, scope), true);
     }
 
     private static TimesheetsAuthorizationRequest CreateAuthorizationRequest(

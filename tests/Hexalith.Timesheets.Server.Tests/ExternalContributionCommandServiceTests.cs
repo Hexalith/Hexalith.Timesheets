@@ -2,6 +2,7 @@ using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
@@ -17,6 +18,26 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class ExternalContributionCommandServiceTests
 {
+    [Fact]
+    public async Task ExternalRecordOverwritesCallerCommentPublicationClaim()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        var callerComment = new TimeEntryComment("external private note",
+            TimeEntryCommentPolicy.SensitiveDefault with
+            { ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed });
+        ExternalContributionCommandResult result = await fixture.CreateExternalService().SubmitAsync(
+            Context(), SubmitExternalCommand() with { Comment = callerComment }, null,
+            FreshCatalog(), EventAtUtc(), TestContext.Current.CancellationToken);
+
+        TimeEntryRecorded recorded = result.RecordResult.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem().ShouldBeOfType<TimeEntryRecorded>();
+        recorded.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        recorded.Comment.Policy.ServerProjectionInclusion
+            .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+        recorded.Comment.Policy.ProjectionInclusion
+            .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+    }
+
     [Fact]
     public async Task Submit_external_time_entry_reuses_record_flow_and_forces_external_contributor_evidence()
     {

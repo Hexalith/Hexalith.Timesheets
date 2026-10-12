@@ -8,7 +8,8 @@ internal static class ProjectionEventReader
 {
     private static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web);
 
-    internal static IReadOnlyList<ProjectionEventDto> Normalize(IEnumerable<ProjectionEventDto> events)
+    internal static IReadOnlyList<ProjectionEventDto> Normalize(
+        IEnumerable<ProjectionEventDto> events, long expectedFirstSequence = 1)
     {
         if (events is null)
         {
@@ -39,7 +40,11 @@ internal static class ProjectionEventReader
         }
 
         normalized.Sort(static (left, right) => left.SequenceNumber.CompareTo(right.SequenceNumber));
-        long expectedSequence = 1;
+        long expectedSequence = expectedFirstSequence;
+        if (expectedSequence <= 0)
+        {
+            throw new InvalidOperationException("The projection event sequence must be positive.");
+        }
         HashSet<string> messageIds = new(StringComparer.Ordinal);
         if (normalized.Any(item => item.SequenceNumber != expectedSequence++
                 || (!string.IsNullOrWhiteSpace(item.MessageId) && !messageIds.Add(item.MessageId))))
@@ -87,6 +92,22 @@ internal static class ProjectionEventReader
             && string.Equals(left.CorrelationId, right.CorrelationId, StringComparison.Ordinal)
             && string.Equals(left.MessageId, right.MessageId, StringComparison.Ordinal)
             && string.Equals(left.UserId, right.UserId, StringComparison.Ordinal)
+            && left.MetadataVersion == right.MetadataVersion
+            && string.Equals(left.StoredEventContractType, right.StoredEventContractType, StringComparison.Ordinal)
+            && left.StoredPayloadVersion == right.StoredPayloadVersion
+            && string.Equals(left.StoredSerializationFormat, right.StoredSerializationFormat, StringComparison.Ordinal)
+            && string.Equals(left.EffectiveEventContractType, right.EffectiveEventContractType, StringComparison.Ordinal)
+            && left.EffectivePayloadVersion == right.EffectivePayloadVersion
+            && string.Equals(left.EffectiveSerializationFormat, right.EffectiveSerializationFormat, StringComparison.Ordinal)
+            && ((left.EffectivePayload is null && right.EffectivePayload is null)
+                || left.EffectivePayload is not null && right.EffectivePayload is not null
+                    && left.EffectivePayload.AsSpan().SequenceEqual(right.EffectivePayload))
+            && string.Equals(left.StoredEventTypeName, right.StoredEventTypeName, StringComparison.Ordinal)
+            && ((left.StoredDigest is null && right.StoredDigest is null)
+                || left.StoredDigest is not null && right.StoredDigest is not null
+                    && left.StoredDigest.AsSpan().SequenceEqual(right.StoredDigest))
+            && string.Equals(left.RegistryFingerprint, right.RegistryFingerprint, StringComparison.Ordinal)
+            && left.IsAdapted == right.IsAdapted
             && left.GlobalPosition == right.GlobalPosition;
 
     private static bool Matches<T>(string? eventTypeName)

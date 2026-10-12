@@ -6,10 +6,12 @@ using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.Extensions.Options;
@@ -49,6 +51,103 @@ public sealed class TimeEntryRecordSubmissionServiceTests
             TestContext.Current.CancellationToken)).ShouldBe(expected);
         await gateway.DidNotReceive().SubmitWorkloadCommandAsync(
             Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Completed_recording_rejects_comment_decision_not_issued_by_server()
+    {
+        SubmitExternalTimeEntry command = Command() with
+        {
+            Comment = new TimeEntryComment("private note", TimeEntryCommentPolicy.SensitiveDefault)
+        };
+        string? messageId = null;
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                messageId = call.ArgAt<string>(1);
+                return Task.FromResult<CommandStatusQueryResponse?>(Status(messageId));
+            });
+        TimeEntryComment expected = new TimeEntryCommentPublicationIssuer()
+            .Issue(Context(), command.Comment).ShouldNotBeNull();
+        TimeEntryComment forged = new(expected.Text, expected.Policy with
+        {
+            ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
+        });
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(Page(Recorded(command) with { Comment = forged }, messageId!)));
+
+        (await Service(gateway).SubmitAsync(Context(), command, DateTimeOffset.UtcNow,
+            TestContext.Current.CancellationToken)).ShouldBeFalse();
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(Page(Recorded(command) with { Comment = expected }, messageId!)));
+        (await Service(gateway).SubmitAsync(Context(), command, DateTimeOffset.UtcNow,
+            TestContext.Current.CancellationToken)).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Completed_recording_uses_pre_submit_comment_decision_when_authority_changes()
+    {
+        SubmitExternalTimeEntry command = Command() with
+        {
+            Comment = new TimeEntryComment("private note", TimeEntryCommentPolicy.SensitiveDefault)
+        };
+        bool allowPublication = false;
+        ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayPublish(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(_ => allowPublication);
+        var issuer = new TimeEntryCommentPublicationIssuer(authority);
+        TimeEntryComment expected = issuer.Issue(Context(), command.Comment).ShouldNotBeNull();
+        string? messageId = null;
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                allowPublication = true;
+                messageId = call.ArgAt<string>(1);
+                return Task.FromResult<CommandStatusQueryResponse?>(Status(messageId));
+            });
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(Page(Recorded(command) with { Comment = expected }, messageId!)));
+        var service = new TimeEntryRecordSubmissionService(gateway,
+            new MagicLinkDurableSubmissionService(gateway, Options.Create(new MagicLinkSubmissionPollingOptions())),
+            ExternalContributionPolicyOptions.Default, issuer);
+
+        (await service.SubmitAsync(Context(), command, DateTimeOffset.UtcNow,
+            TestContext.Current.CancellationToken)).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("", "event-message-2")]
+    [InlineData("event-message-1", "event-message-1")]
+    [InlineData("event-message-1", " ")]
+    public async Task Completed_two_event_recording_requires_distinct_nonblank_event_ids(
+        string firstId, string secondId)
+    {
+        SubmitExternalTimeEntry command = Command();
+        string? messageId = null;
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                messageId = call.ArgAt<string>(1);
+                return Task.FromResult<CommandStatusQueryResponse?>(Status(messageId) with
+                {
+                    EventCount = 2,
+                    CommittedEventSequence = 2
+                });
+            });
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(Page(Recorded(command), messageId!,
+                Submitted(command, DateTimeOffset.UnixEpoch), recordedMessageId: firstId,
+                submittedMessageId: secondId)));
+
+        (await Service(gateway, new ExternalContributionPolicyOptions
+        {
+            InitialApprovalState = TimeEntryApprovalState.Submitted
+        }).SubmitAsync(Context(), command, DateTimeOffset.UnixEpoch,
+            TestContext.Current.CancellationToken)).ShouldBeFalse();
     }
 
     [Theory]
@@ -213,20 +312,21 @@ public sealed class TimeEntryRecordSubmissionServiceTests
 
     private static StreamReadPage Page(
         TimeEntryRecorded recorded, string messageId, TimeEntrySubmitted? submitted = null,
-        string? recordedCorrelation = null, string? submittedCorrelation = null)
+        string? recordedCorrelation = null, string? submittedCorrelation = null,
+        string? recordedMessageId = null, string? submittedMessageId = null)
     {
         StoredTimeEntryRecorded stored = new(recorded);
         List<StreamReadEvent> events =
         [
             new(1, typeof(StoredTimeEntryRecorded).FullName!,
                 JsonSerializer.SerializeToUtf8Bytes(stored, _jsonOptions), "json", 1,
-                "event-message-1", recordedCorrelation ?? messageId, null, DateTimeOffset.UtcNow, "actor-1")
+                recordedMessageId ?? "event-message-1", recordedCorrelation ?? messageId, null, DateTimeOffset.UtcNow, "actor-1")
         ];
         if (submitted is not null)
         {
             events.Add(new StreamReadEvent(2, typeof(StoredTimeEntrySubmitted).FullName!,
                 JsonSerializer.SerializeToUtf8Bytes(new StoredTimeEntrySubmitted(submitted), _jsonOptions), "json", 1,
-                "event-message-2", submittedCorrelation ?? messageId, null, DateTimeOffset.UtcNow, "actor-1"));
+                submittedMessageId ?? "event-message-2", submittedCorrelation ?? messageId, null, DateTimeOffset.UtcNow, "actor-1"));
         }
         return new StreamReadPage("tenant-1", "timesheets", "entry-1",
             events, new StreamReadMetadata(0, null, events.Count, events.Count, events.Count, false, null));

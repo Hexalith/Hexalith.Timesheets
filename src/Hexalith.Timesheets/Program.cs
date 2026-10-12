@@ -51,6 +51,7 @@ if (builder.Environment.IsDevelopment()
 }
 builder.Services.AddSingleton<IEventStoreGatewayWorkloadAssertionSource, EventStoreGatewayWorkloadAssertionSource>();
 builder.Services.AddTimesheetsMagicLinkEventStoreProcessing();
+builder.Services.AddTimesheetsIndexMigration();
 builder.Services.AddHttpContextAccessor();
 builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsTrustedContextAccessor, HttpContextTimesheetsTrustedContextAccessor>());
 builder.Services.AddSingleton(TimeProvider.System);
@@ -69,6 +70,7 @@ app.UseAuthorization();
 app.UseEventStoreDomainService();
 app.MapTimesheetsExternalContributionEndpoints();
 app.MapTimesheetsMagicLinkConfirmationCapabilityEndpoints();
+app.MapTimesheetsIndexMigrationEndpoints();
 
 app.MapGet(
     "/metadata/timesheets",

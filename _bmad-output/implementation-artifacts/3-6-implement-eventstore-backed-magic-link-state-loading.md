@@ -21,7 +21,210 @@ so that confirmation and adjustment work outside service-only tests without weak
 3. **Given** a token is malformed, unknown, expired, revoked, used, wrong-action, wrong-recipient, cross-tenant, replayed, or unresolved, **when** any magic-link endpoint is called, **then** the same no-disclosure external failure state is returned, **and** no Time Entry confirmation, adjustment, capability-use event, or protected detail is emitted.
 4. **Given** the loader cannot access required EventStore state, Time Entry state, or Activity Type catalog state, **when** the request is evaluated, **then** the host fails closed with the same external no-disclosure response, **and** internal diagnostics record only correlation-safe outcome categories.
 
-## Current Review Disposition (2026-10-11)
+## Current Review Disposition (2026-10-12)
+
+Round-24 closes the two remaining code-level numeric index tasks. The
+handler-level four-tenant rebuild test covers 34,800 contributions and more
+than 400 selected pages, with repeated replacement/prune and unrelated
+candidate preservation. The 401-page one-shard selected directory and
+10,000-input one-shard rebuild both resolve interior candidates through the
+concrete loader; every selected contribution in the latter matches and
+resolves against its input. Focused tests and the full Projections lane
+(322/322 in 453.930 seconds) pass as recorded in the
+[test summary](tests/3-6-test-summary.md). The prior intermittent SDK
+retirement-cleanup result remains unexplained. The latest-tree live Dapr
+journey still needs stable isolation, and independently certified deployed
+evidence is absent. Story 3.6 and release remain `FAIL`.
+
+Round-23 bounds the first V7 legacy-shard scan and checks the final legacy
+shard before bootstrap. The source-reference build and focused Projection
+tests pass. The full default Integration lane passed 702/707 before that
+final edit and again afterward in 504.340 seconds. Python index and effective
+evidence checks pass 8/8. Folders owned an unrelated `eventstore` Dapr ID
+and restarted within ten seconds of two empty preflight reads, so no new
+Timesheets live run could be isolated. The previous two
+`/project/v2` failures remain unresolved live evidence. Story 3.6 and
+release remain `FAIL`.
+
+The round-22 worktree adds a V7 copy-on-write global index with bounded
+tenant rosters, candidate-generation rechecks, ordered ordinary insertion,
+and immutable pre-submit comment decisions. The source-reference build,
+Server suite, focused 10,000-owner rebuild and HTTP delivery, and narrow
+Python checks pass. A full Projections run exposed an SDK retirement-cleanup
+failure in the new large tenant-replacement test; at that point the task
+remained open while that failure was diagnosed. A fresh full diagnostic rerun passed
+321/321, but the first failure's SDK batch status did not reproduce. The
+latest-tree isolated Dapr journey
+failed twice at capability-index projection admission before V7 candidate
+and effective-value readbacks. The Timesheets AppHost was stopped, Dapr and
+Aspire were empty, and Redis was not cleared. Independently certified
+deployed inventory, authority, and live shared rebuild remain open; Story
+3.6 and release remain `FAIL`. The [test summary](tests/3-6-test-summary.md)
+and [local proof](../../docs/local-magic-link-dapr-proof.md) record the
+exact results.
+
+The round-19 worktree closes the five new implementation tasks. Selected
+numeric directory pages hold 10,000 distinct maximum-length-owner hashes in
+one shard below the 1 MiB value limit; owner admission parks repeated issuance
+even when the owner is in an earlier page. Adjustment GET never emits a raw
+required-redaction comment, while a cleared replacement appears through a
+second valid link. EventStore global rebuild reconciliation and epoch retry
+compare tenant as well as operation ID. The local fixture checks unique Dapr
+IDs and emits token-free categories if valid GET is denied. The
+source-reference build has zero warnings/errors, and the six default
+Timesheets lanes pass with **1,759 passed and five expected skips**. The
+isolated local Dapr journey passed **1/1 in 106.313 seconds** after three
+documented failed attempts exposed actor rate-limit timing; the round-18
+user-requested repeat failure is also retained. Dapr and Aspire were empty
+after stopping only the Timesheets AppHost. Deployed owner inventory,
+authority, and a certified live shared rebuild remain open; Story 3.6 and
+release remain `FAIL`.
+
+The round-18 implementation closes the four new tasks: server-issued
+external comment display, bounded selected pages for 10,000 concentrated
+same-hash candidates, an aggregate-total 10,000-event suffix limit before
+mapped route dispatch, and positive comment-bearing HTTP record/adjust
+receipts. The source-reference build passed with zero warnings/errors;
+six default Timesheets lanes passed with 1,753 passing cases and five expected
+skips before the numeric page-address correction. That correction keeps
+only fixed shard and allocated page ordinals in Dapr keys; focused index,
+same-shard composed-route, and loader tests pass on the corrected tree.
+The EventStore mapped event-10,001 boundary passed its focused
+test. Synthetic legacy v2 unique-only index rows remain fail closed:
+the committed baseline did not release such rows, and tenant-only capture
+cannot certify hidden cross-tenant contributions. The isolated round-18
+Dapr journey passed 1/1 in 118.195 seconds with persisted confirm/adjust,
+race, restart, and selected readbacks; Dapr and Aspire were empty afterward.
+Deployed inventory/authority proof and a certified live shared rebuild
+remain open; Story 3.6 and release remain `FAIL`.
+
+The round-17 worktree closes seven additional implementation tasks for
+durable index ambiguity, poison-event parking, server-issued per-comment
+publication, prior-tenant global scratch cleanup, full-prefix MessageId
+checks, duplicate catalog rejection, and nonempty Time Entry commit/restart
+readback. The source-reference build and five default Timesheets lanes pass.
+The full Integration lane found two assertions for unstamped comments; both
+passed after correction in a focused fresh-build rerun. The isolated local
+Dapr journey passed **1/1 in 127.469 seconds** and left Dapr/Aspire empty
+after stopping the Timesheets AppHost. Deployed source coverage, authority,
+and certified live shared rebuild remain open; Story 3.6 and release remain
+`FAIL`.
+
+The round-16 worktree adds a selected 256-shard global token index with
+tenant-safe rebuild/prune, full optional source provenance and versioned
+mapped-delivery identity, incremental ordinary Time Entry catch-up, and
+server-gated comment publication. Composed host tests cover coordinator
+stage/commit/readback and all three mapped handlers across failed commit,
+restart, and later use. A normal `/project/v2` test selected all 10,000
+high-entropy index candidates; the actor-grounded composed producer passed
+its 10,000-owner case. The source-reference solution builds with zero
+warnings/errors, and all six default Timesheets suites pass with **1,735
+passed, five skipped, zero failed**. The isolated local Dapr journey passed
+**1/1 in 116.727 seconds** after its fixture was updated for the selected
+global index shard. Independent deployed source coverage, authority, and
+live shared rebuild remain open; Story 3.6 stays in progress and release
+remains `FAIL`.
+
+Historically, the round-15 worktree adds response-independent Begin-page cleanup,
+policy-safe Time Entry comments, correction parity, linear selected-lineage
+validation, complete optional envelope provenance, and Dapr selected-read
+outage classification. EventStore now pages authoritative actor histories for
+mapped ordinary delivery and full replay, transports bounded durable parts,
+and preserves all three Timesheets named routes through durable route
+checkpoints and retry. The source-reference solution builds with zero
+warnings/errors; six default suites pass with **1,722 passed, five skipped,
+zero failed**. Focused EventStore capacity, routing, retry, and registration
+checks pass. The isolated local Dapr journey passed **1/1 in 112.376 seconds**
+with persisted confirm/adjust, race, restart, and exact selected readbacks.
+Independent deployed source coverage, authority, and live shared rebuild
+remain open; Story 3.6 stays in progress and release remains `FAIL`.
+
+Historically, The round-14 worktree adds recoverable pre-session Begin-page cleanup,
+SDK-receipted roster phase transitions, sealed Begin rejection recovery, and
+bounded producer owner metadata. It validates historical correction scope and
+selected capability semantics, retries committed issue readback, proves exact
+use command correlation, reconciles packed lineage with OpenAPI, checks
+selected lineage contents in the local fixture, and uses the configured
+aggregate actor name for erased-owner replay. The source-reference solution
+builds with zero warnings/errors, and all six default Timesheets suites pass
+with **1,703 passed, five skipped, zero failed**. EventStore partitioned
+rebuild 32/32, producer 17/17, roster 7/7, and actor-grounded Timesheets
+integration 2/2 pass. The isolated local Dapr journey passed **1/1 in 67.664
+seconds** on the current tree after a bounded read-only post-restart retry;
+it verified persisted confirm/adjust, race, restart, exact selected Time Entry
+lineage, and capability readbacks. Independent source-coverage certification,
+deployed authority and readback, and a certified live shared rebuild remain
+open. Story 3.6 remains in progress and release remains `FAIL`.
+
+Historically, the round-13 worktree adds collision-safe source roster spillover, reserves
+capture admission before pending writes drain, and transfers a complete
+10,000-owner maximum-length erased inventory through bounded, retry-safe
+Begin pages. It migrates actual previous-writer Time Entry lineage, repairs
+corrupt selected capability storage through captured history without
+acknowledging a pending valid journal event, rechecks the epoch after
+fragment reads, recovers a committed issue after a lost response, binds
+stored event correlation to its exact command, and rejects undefined numeric
+evidence enums. The Timesheets solution built with `-warnaserror` and zero
+warnings/errors; all six default suites passed with **1,693 passed, five
+skipped, zero failed**. The current-tree isolated local Dapr journey passed
+**1/1 in 125.174 seconds**, including persisted confirm/adjust, race,
+restart, and selected readbacks. Independent source-coverage certification,
+deployed authority and readback, and a certified live shared rebuild remain
+open. Story 3.6 remains in progress and release remains `FAIL`.
+
+Historically, the round-12 worktree extends the EventStore SDK and Timesheets capability
+handler with bounded-memory streamed owner rebuild. Source write intents and
+pre-seal captures have recovery paths; producer requests and gateway responses
+are bounded; a near-limit owner is transported in parts, folded one
+contribution at a time, and staged with paged chunk hashes and recoverable
+scratch cleanup. Legacy explicit-lineage Time Entry selected rows can be
+validated and migrated. A terminal global position must follow issuance, and
+transient command-status preflight failure can proceed through the same
+idempotent submit identity with exact stored-result verification. The
+source-reference solution builds with `-warnaserror`, zero warnings/errors.
+All six Timesheets suites passed with **1,686 passed, five skipped, zero
+failed**; the EventStore partitioned DomainService class passed 30/30 and
+producer/gateway class 16/16. The full Integration run preceded the final
+hash-page edit; final-tree composed near-limit and cleanup checks passed.
+The round-11 local Dapr journey remains historical evidence, and round-12 has
+no live Dapr rerun. Independent source-coverage certification, deployed
+readback, and exact-binding authority remain open. Story 3.6 remains in
+progress and release remains `FAIL`.
+
+Historically, the round-11 worktree passed the Debug source-reference solution build and all
+six default Timesheets suites (1,676 passed, five declared skips). Affected
+EventStore Client, DomainService, and Server subsets pass 87/87, 43/43, and
+61/61. The EventStore source roster and shared Begin producer are implemented
+behind a default-deny installation coverage authority; composed Timesheets
+rebuild tests pass with two and 10,000 owners, including erasure pruning. The
+round-11 isolated local Dapr magic-link journey passed **1/1 in 114.866
+seconds** with persisted confirm/adjust, one-winner race, restart, and exact
+selected readbacks. Two preceding current-tree race attempts returned
+`[403,403]`: response loss after a stored winner was fixed with concurrent
+exact-status polling and readback, then pre-submit rate limiting was fixed by
+partitioning signed DaprInternal workloads by verified tenant and identity.
+Focused regressions passed after the fixes. The local journey does not certify
+the separate live shared-rebuild producer or deployed source coverage. No
+production coverage receipt issuer, independent virgin-store/all-writer
+certification, complete legacy actor-key census, or exact-binding deployed
+identity issuer is installed. Story 3.6 remains in progress and release
+remains `FAIL`. The [test summary](tests/3-6-test-summary.md) records exact
+counts and limitations.
+
+The earlier re-derived worktree corrected Time Entry transitions and compact
+event-envelope lineage, capability action/terminal validation, EventStore
+capture continuity and cancellation, and private rebuild scratch closeout.
+The six default Timesheets suites pass with **1,652 tests passed and five
+expected skips**. EventStore Client passes 1,482/1,482; the full
+DomainService suite passes 725/727 with the same two previously recorded
+unrelated failures. Three isolated latest-tree Dapr attempts passed persisted
+catalog delivery and non-fixture denial; the furthest also passed confirm,
+its one-winner race, and composed Time Entry rebuild readback. Each stopped
+on an opaque 403 at issuance or use, and EventStore logs showed rate-limit
+and retry activity without proving a cause. The Timesheets AppHost was
+stopped. Live acceptance remains provisional, and Story 3.6 stays in
+progress. Exact commands, results, and build limitations are in
+[the current test summary](tests/3-6-test-summary.md).
 
 The current uncommitted read-model increment adds named EventStore delivery
 handlers for Time Entry evidence and tenant-scoped capability display, plus an
@@ -84,7 +287,7 @@ The 2026-10-10 recording increment commits external `TimeEntryRecorded` evidence
 
 The 14 review patches from the fail-closed and durable-submission increments are now reconciled against HEAD; the closure map and original finding text appear in their review section below. The current EventStore pointer is `cf10b4c7`, contained in local `origin/main`. The production EventStore Time Entry recording writer now composes with the existing keyed `timesheets` processor and has local HTTP and actor proof. Live acceptance remains blocked by the undeployed topology, binding issuer, and read-model wiring. Production capability/Time Entry read-model handlers, helper collision decisions, and issue-to-index visibility timing remain deferred in the ledger. The release decision stays `FAIL`.
 
-The durable-submission increment now writes issue events to the capability stream and use, revoke, or expire events to the Time Entry owner stream. Confirm and adjust each produce one atomic use/effect batch; local EventStore actor state-store tests reload both after actor recreation and reject replay. Proposed-entry revoke/expire, queued use and issuance past expiry, expiry advancing during awaited authorization, undefined numeric actions, receipt integrity, malformed and repeated issuance, per-owner sequence handling, and explicit MissingStream behavior have regression coverage. The host returns `202` only after a timely `Completed` message-primary status and matching stored-event readback; polling defaults to a five-second deadline and 100-ms interval. Rejection events replay as no-ops in both capability and Time Entry state. Signed Timesheets workload assertions bind tenant and domain, and issue/revoke bind the authenticated actor; the EventStore gateway stamps verified origin metadata. The protected `/process` route, opaque non-Completed status handling, one-winner concurrency, legacy terminal folds, wrapped read-model effects, and a valid signed command through MediatR have runnable local tests. The current source-reference Debug restore/build passes with zero warnings or errors, and all six individual Timesheets lanes pass; exact current counts are in the test summary. The focused EventStore server selection previously passed 43/43 and client transport passed 2/2. Story 3.6 remains in progress because no live Dapr-backed EventStore acceptance or deployed-history inventory exists. The default authority-mode workload issuer cannot sign per-request tenant/domain/actor bindings, so this path fails closed until a trusted binding issuer is provided. Old capability-stream terminal writers must be stopped before rollout. The release decision remains `FAIL`.
+The durable-submission increment now writes issue events to the capability stream and use, revoke, or expire events to the Time Entry owner stream. Confirm and adjust each produce one atomic use/effect batch; local EventStore actor state-store tests reload both after actor recreation and reject replay. Proposed-entry revoke/expire, queued use and issuance past expiry, expiry advancing during awaited authorization, undefined numeric actions, receipt integrity, malformed and repeated issuance, per-owner sequence handling, and explicit MissingStream behavior have regression coverage. The host returns `202` only after a timely `Completed` message-primary status and matching stored-event readback; polling defaults to a five-second deadline and 100-ms interval. Rejection events replay as no-ops in both capability and Time Entry state. Signed Timesheets workload assertions bind tenant and domain, and issue/revoke bind the authenticated actor; the EventStore gateway stamps verified origin metadata. The protected `/process` route, opaque non-Completed status handling, one-winner concurrency, legacy terminal folds, wrapped read-model effects, and a valid signed command through MediatR have runnable local tests. The current source-reference Debug restore/build passes with zero warnings or errors, and all six individual Timesheets lanes pass; exact current counts are in the test summary. The focused EventStore server selection previously passed 43/43 and client transport passed 2/2. Story 3.6 remains in progress; the round-11 isolated local Dapr journey passed, but the round-12 SDK tree has no new live run and deployed EventStore acceptance, certified shared source coverage, and deployed-history inventory remain open. The default authority-mode workload issuer cannot sign per-request tenant/domain/actor bindings, so this path fails closed until a trusted binding issuer is provided. Old capability-stream terminal writers must be stopped before rollout. The release decision remains `FAIL`.
 
 The 37 historical unchecked review patches below have been reconciled individually: 28 are implemented or superseded by accepted decisions; nine retain explicit deferred work. A checked `[Review][Defer]` means the finding has been triaged and linked to its follow-up, not that its implementation is complete. Original finding text and historical decisions remain for provenance.
 
@@ -119,7 +322,7 @@ At the prior fail-closed POST baseline, the concrete loader and mapped projectio
   - [x] Loader unit/server tests: a valid candidate token resolves, folds capability state, folds the scoped Time Entry state, and returns a fresh catalog; duplicated/replayed/out-of-order events fold to the same deterministic state (idempotency); each invalid category fails closed returning unavailable/null **without revealing which stage failed**.
   - [x] Index tests: token-hash lookup resolves only via the rebuildable EventStore-backed projection; rebuild from `Issued` events reproduces the same mapping; the index stores no raw token and is non-authoritative for single-use/revocation/expiry.
   - [x] Endpoint/integration tests: with the concrete loader registered, valid GET confirm/adjust displays return 200 and invalid requests across the documented matrix return the identical opaque 403 through the HTTP boundary. Historical tests also observed valid POST 202 before the 2026-10-10 fail-closed change.
-  - [ ] Valid public POST success portion (reopened 2026-10-10): local gateway and EventStore actor state-store tests now prove `202` only after a verified atomic batch and reject concurrent reuse or replay. Complete this item with live Dapr-backed EventStore submission, restart/concurrency proof, deployed-history inventory, and a resource-binding authority-mode issuer; retain valid GET and opaque denial regressions.
+  - [ ] Valid public POST success portion (reopened 2026-10-10): local gateway and EventStore actor state-store tests now prove `202` only after a verified atomic batch and reject concurrent reuse or replay. The round-11 isolated local Dapr journey passed submission, restart, and one-winner concurrency; round-12 has no new live run; complete this item with deployed-history inventory, certified source coverage, deployed EventStore acceptance, and a resource-binding authority-mode issuer; retain valid GET and opaque denial regressions.
   - [x] Privacy/diagnostics tests: extend `DiagnosticsPrivacyTests` so logs, OpenAPI, read models, the new index, and metadata contain no raw token, disallowed hash, decoded material, comments, command bodies, personal data, target/display names, protected identifiers, or EventStore envelopes.
   - [x] Freshness tests: confirm `ConfirmAsync`/`AdjustAsync` fail closed when the Activity Type catalog freshness is not `Fresh` (Stale/Rebuilding/Unavailable/Degraded/Unknown).
 - [x] **Verify affected build and test lanes (AC: 1-4)**

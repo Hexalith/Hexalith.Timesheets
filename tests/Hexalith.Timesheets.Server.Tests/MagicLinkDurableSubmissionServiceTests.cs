@@ -58,7 +58,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Stalled_status_transport_cannot_exceed_the_polling_deadline()
+    public async Task Stalled_status_transport_submits_once_within_the_polling_deadline()
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         var stalled = new TaskCompletionSource<CommandStatusQueryResponse?>(
@@ -78,7 +78,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
         elapsed.Elapsed.ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(30));
         elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(2));
         transportToken.IsCancellationRequested.ShouldBeTrue();
-        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(
+        await gateway.Received(1).SubmitWorkloadCommandAsync(
             Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
     }
 

@@ -3,8 +3,11 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
+using Dapr;
+
 using Hexalith.EventStore.Client.Attributes;
 using Hexalith.EventStore.Client.Projections;
+using Hexalith.EventStore.Contracts.Identity;
 using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.DomainService;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -19,12 +22,14 @@ namespace Hexalith.Timesheets.Projections.MagicLinks;
 [EventStoreDomain(TimesheetsEventStoreIntegration.DomainName)]
 public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
     IAsyncDomainSharedProjectionScratchCleanupHandler,
+    IAsyncDomainSharedProjectionStreamedOwnerHandler,
     IDeclaresProjectionReadModelSlots
 {
     private const string WriterId = "timesheets-capability-projection";
     private const int InlineViewLimitBytes = 48 * 1024;
     private const int ViewFragmentBytes = 40 * 1024;
     private const int MaxPhysicalValueBytes = 64 * 1024;
+    private const int OwnerContributionFragmentBytes = 384 * 1024;
     private static readonly JsonSerializerOptions s_json = new(JsonSerializerDefaults.Web);
     private readonly IReadModelStore _store;
 
@@ -61,7 +66,8 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
 
     /// <inheritdoc />
     public SharedProjectionScope CreateScope(string tenantId)
-        => new(RebuildStoreName, tenantId, Domain, ProjectionType, [WriterId]);
+        => new(RebuildStoreName, new AggregateIdentity(tenantId, Domain, "capability").TenantId,
+            Domain, ProjectionType, [WriterId]);
 
     /// <summary>Reads a generation-selected display with expiry evaluated at observation time.</summary>
     public async Task<SharedProjectionReadResult<MagicLinkConfirmationCapabilityReadModel>> ReadObservedAsync(
@@ -91,14 +97,71 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         ArgumentNullException.ThrowIfNull(coordinator);
         string key = MagicLinkCapabilityReadModelAddress.StateKey(tenantId, capabilityId);
         SharedProjectionScope scope = CreateScope(tenantId);
-        SharedProjectionReadResult<MagicLinkCapabilityProjectionStorage> selected = await coordinator
-            .ReadAsync<MagicLinkCapabilityProjectionStorage>(scope, key, cancellationToken).ConfigureAwait(false);
-        MagicLinkCapabilityProjectionView? value = selected.Value is { } storage
-            ? await RestoreViewAsync(scope, capabilityId, selected.Generation, storage, coordinator, cancellationToken)
-                .ConfigureAwait(false)
-            : null;
-        return new SharedProjectionReadResult<MagicLinkCapabilityProjectionView>(
-            value, selected.Generation, selected.IsStale, selected.IsAvailable);
+        for (int attempt = 0; attempt < 4; attempt++)
+        {
+            SharedProjectionReadResult<MagicLinkCapabilityProjectionStorage> selected = await ReadSelectedStorageAsync(
+                coordinator, scope, key, cancellationToken).ConfigureAwait(false);
+            if (!selected.IsAvailable || selected.Value is null)
+            {
+                return new SharedProjectionReadResult<MagicLinkCapabilityProjectionView>(
+                    null, selected.Generation, selected.IsStale, selected.IsAvailable);
+            }
+
+            MagicLinkCapabilityProjectionView? value = null;
+            Exception? restoreFailure = null;
+            try
+            {
+                value = await RestoreViewAsync(scope, capabilityId, selected.Generation, selected.Value,
+                    coordinator, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                restoreFailure = exception;
+            }
+
+            SharedProjectionReadResult<MagicLinkCapabilityProjectionStorage> after = await ReadSelectedStorageAsync(
+                coordinator, scope, key, cancellationToken).ConfigureAwait(false);
+            if (after.Generation != selected.Generation
+                || !StringComparer.Ordinal.Equals(after.SelectedETag, selected.SelectedETag)
+                || after.IsAvailable != selected.IsAvailable || after.IsStale != selected.IsStale)
+            {
+                continue;
+            }
+
+            if (restoreFailure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(restoreFailure).Throw();
+            return new SharedProjectionReadResult<MagicLinkCapabilityProjectionView>(
+                value, selected.Generation, selected.IsStale, selected.IsAvailable)
+                { SelectedETag = selected.SelectedETag };
+        }
+
+        throw new SharedProjectionReadUnavailableException(
+            new InvalidOperationException("The selected capability epoch changed during fragment read."));
+    }
+
+    private static async Task<SharedProjectionReadResult<MagicLinkCapabilityProjectionStorage>> ReadSelectedStorageAsync(
+        SharedProjectionEpochCoordinator coordinator,
+        SharedProjectionScope scope,
+        string key,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await coordinator.ReadAsync<MagicLinkCapabilityProjectionStorage>(scope, key, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is DaprException or HttpRequestException or IOException
+            or TimeoutException or TaskCanceledException)
+        {
+            throw new SharedProjectionReadUnavailableException(exception);
+        }
     }
 
     /// <inheritdoc />
@@ -194,7 +257,9 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         }
         catch (Exception exception) when (IsFoldFailure(exception))
         {
-            throw Park(delivery);
+            // A valid journal event must remain retryable when previously selected storage is corrupt.
+            // Parking it would acknowledge and discard the event even after the storage is repaired.
+            throw new SharedProjectionReadUnavailableException(exception);
         }
         catch (Exception exception)
         {
@@ -281,17 +346,16 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         CancellationToken cancellationToken)
     {
         Dictionary<string, MagicLinkCapabilityProjectionView> owner = FoldOwner(identity, aggregateHistory, cancellationToken);
-        const int TargetChunkBytes = 128 * 1024;
         var chunks = new List<ReadOnlyMemory<byte>>();
         foreach ((string key, MagicLinkCapabilityProjectionView view) in owner.OrderBy(static item => item.Key, StringComparer.Ordinal))
         {
             byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(view, s_json);
-            int count = (bytes.Length + TargetChunkBytes - 1) / TargetChunkBytes;
+            int count = (bytes.Length + OwnerContributionFragmentBytes - 1) / OwnerContributionFragmentBytes;
             for (int ordinal = 0; ordinal < count; ordinal++)
             {
                 chunks.Add(JsonSerializer.SerializeToUtf8Bytes(new OwnerContributionChunk(key, ordinal, count,
-                    bytes.AsSpan(ordinal * TargetChunkBytes,
-                        Math.Min(TargetChunkBytes, bytes.Length - ordinal * TargetChunkBytes)).ToArray()), s_json));
+                    bytes.AsSpan(ordinal * OwnerContributionFragmentBytes,
+                        Math.Min(OwnerContributionFragmentBytes, bytes.Length - ordinal * OwnerContributionFragmentBytes)).ToArray()), s_json));
             }
         }
 
@@ -301,6 +365,76 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         }
 
         return Task.FromResult<IReadOnlyList<ReadOnlyMemory<byte>>>(chunks);
+    }
+
+    /// <inheritdoc />
+    public async IAsyncEnumerable<ReadOnlyMemory<byte>> StreamPartitionChunksAsync(
+        DomainSharedProjectionRebuildIdentity identity,
+        string aggregateId,
+        IAsyncEnumerable<ProjectionEventDto> events,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        Validate(identity);
+        var ownerRequest = new ProjectionRequest(identity.TenantId, identity.Domain, aggregateId, []);
+        Validate(ownerRequest);
+        MagicLinkCapabilityProjectionView? capabilityView = null;
+        string? capabilityId = null;
+        bool emitted = false;
+        await foreach (ProjectionEventDto item in events.WithCancellation(cancellationToken).ConfigureAwait(false))
+        {
+            (object Payload, bool OwnerStream)? decoded = Decode(item);
+            if (decoded is null) continue;
+            ValidateOwner(ownerRequest, decoded.Value);
+            MagicLinkCapabilityId id = IdOf(decoded.Value.Payload);
+            long position = item.GlobalPosition > 0 ? item.GlobalPosition : item.SequenceNumber;
+            if (decoded.Value.OwnerStream)
+            {
+                // A Time Entry terminal fact owns one capability. Emit each contribution
+                // immediately; the SDK contribution index rejects duplicate terminal owners.
+                MagicLinkCapabilityProjectionView view = Apply(MagicLinkCapabilityProjectionView.Empty,
+                    decoded.Value.Payload, true, identity.TenantId, position);
+                foreach (ReadOnlyMemory<byte> chunk in SerializeOwnerContribution(id.Value, view))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    emitted = true;
+                    yield return chunk;
+                }
+            }
+            else
+            {
+                if (capabilityId is not null && capabilityId != id.Value)
+                    throw new InvalidOperationException("One capability stream contains another capability ID.");
+                capabilityId = id.Value;
+                capabilityView = Apply(capabilityView ?? MagicLinkCapabilityProjectionView.Empty,
+                    decoded.Value.Payload, false, identity.TenantId, position);
+            }
+        }
+
+        if (capabilityView is not null)
+        {
+            foreach (ReadOnlyMemory<byte> chunk in SerializeOwnerContribution(capabilityId!, capabilityView))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                emitted = true;
+                yield return chunk;
+            }
+        }
+
+        if (!emitted)
+            yield return JsonSerializer.SerializeToUtf8Bytes(new OwnerContributionChunk(string.Empty, 0, 1, []), s_json);
+    }
+
+    private static IEnumerable<ReadOnlyMemory<byte>> SerializeOwnerContribution(
+        string key, MagicLinkCapabilityProjectionView view)
+    {
+        // The contribution bytes are Base64-encoded inside a chunk and again
+        // inside its fenced scratch batch. Both serialized layers fit 1 MiB.
+        byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(view, s_json);
+        int count = (bytes.Length + OwnerContributionFragmentBytes - 1) / OwnerContributionFragmentBytes;
+        for (int ordinal = 0; ordinal < count; ordinal++)
+            yield return JsonSerializer.SerializeToUtf8Bytes(new OwnerContributionChunk(key, ordinal, count,
+                bytes.AsSpan(ordinal * OwnerContributionFragmentBytes,
+                    Math.Min(OwnerContributionFragmentBytes, bytes.Length - ordinal * OwnerContributionFragmentBytes)).ToArray()), s_json);
     }
 
     /// <summary>Streams final mutations after indexing each capability's bounded owner locations.</summary>
@@ -751,7 +885,8 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         MagicLinkCapabilityId capabilityId)
     {
         if (view.Issuance is { } issue
-            && (issue.Tenant.TenantId != tenantId || issue.CapabilityId != capabilityId)
+            && (issue.Tenant?.TenantId != tenantId || issue.CapabilityId != capabilityId
+                || !ValidStoredIssuance(issue))
             || view.Published is { } published
             && (published.Tenant.TenantId != tenantId || published.CapabilityId != capabilityId)
             || view.Used is { } used
@@ -763,11 +898,44 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
             || (view.Used is not null ? 1 : 0)
                 + (view.Revoked is not null ? 1 : 0)
                 + (view.Expired is not null ? 1 : 0) > 1
+            || (view.TerminalPosition is > 0) != HasTerminal(view)
+            || view.TerminalPosition is <= 0
+            || view.TerminalInCapabilityStream && (view.Issuance is null || !HasTerminal(view))
             || !Equals(Publish(view with { Published = null }, tenantId).Published, view.Published))
         {
             throw new InvalidOperationException("The capability projection view does not match its selected identity.");
         }
     }
+
+    private static bool ValidStoredIssuance(MagicLinkConfirmationCapabilityReadModel issue)
+        => issue.State == Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued
+            && issue.ExpiryState == (issue.ExpiresAtUtc - issue.IssuedAtUtc <= TimeSpan.FromHours(24)
+                ? MagicLinkExpiryState.ExpiringSoon : MagicLinkExpiryState.Active)
+            && issue.StateBadgeText == "Issued"
+            && issue.ExpiryBadgeText == (issue.ExpiryState == MagicLinkExpiryState.ExpiringSoon
+                ? "Expiring soon" : "Active")
+            && !string.IsNullOrWhiteSpace(issue.CapabilityId?.Value)
+            && !string.IsNullOrWhiteSpace(issue.Contributor?.PartyId)
+            && issue.Target is not null
+            && issue.Target.TargetKind is TimeEntryTargetKind.Project or TimeEntryTargetKind.Work
+            && !string.IsNullOrWhiteSpace(issue.Target.TargetId)
+            && !string.IsNullOrWhiteSpace(issue.ActivityTypeId?.Value)
+            && !string.IsNullOrWhiteSpace(issue.TimeEntryId?.Value)
+            && issue.TargetKind is MagicLinkTargetKind.ProposedTimeEntry or MagicLinkTargetKind.ExistingTimeEntry
+            && issue.AllowedAction is MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.Adjust or MagicLinkAllowedAction.ConfirmOrAdjust
+            && issue.IssuedAtUtc != default
+            && issue.ExpiresAtUtc > issue.IssuedAtUtc
+            && !string.IsNullOrWhiteSpace(issue.Issuer?.PartyId)
+            && !string.IsNullOrWhiteSpace(issue.IssueMetadata?.SourceSystem)
+            && !string.IsNullOrWhiteSpace(issue.IssueMetadata?.SourceReference)
+            && issue.UsedAtUtc is null && issue.RevokedAtUtc is null && issue.ExpiredAtUtc is null
+            && issue.RevokedBy is null && issue.UseOutcomeCategory is null
+            && issue.UseMetadata is null && issue.RevocationMetadata is null && issue.ExpiryMetadata is null
+            && issue.ProjectionFreshness is { State: ProjectionFreshnessState.Fresh }
+            && issue.ProjectionFreshness.AsOfUtc is null && issue.ProjectionFreshness.Detail is null
+            && long.TryParse(issue.ProjectionFreshness.Cursor,
+                System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture,
+                out long position) && position > 0;
 
     private static string FragmentKey(string tenantId, MagicLinkCapabilityId capabilityId, string digest, int ordinal)
         => MagicLinkCapabilityReadModelAddress.StateKey(tenantId, capabilityId)
@@ -825,11 +993,26 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
             throw new InvalidOperationException("Capability issuance crosses the tenant.");
         }
 
+        if (view.TerminalPosition is { } terminalPosition
+            && (!long.TryParse(issue.ProjectionFreshness.Cursor,
+                System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture, out long issuancePosition)
+                || terminalPosition <= issuancePosition))
+        {
+            throw new InvalidOperationException("Capability terminal position does not follow issuance.");
+        }
+
         MagicLinkConfirmationCapabilityReadModel row = issue;
         if (view.Used is { } used)
         {
             if (used.TimeEntryId != issue.TimeEntryId || used.Contributor != issue.Contributor
-                || used.UsedAtUtc < issue.IssuedAtUtc || used.UsedAtUtc >= issue.ExpiresAtUtc)
+                || used.UsedAtUtc < issue.IssuedAtUtc || used.UsedAtUtc >= issue.ExpiresAtUtc
+                || (used.OutcomeCategory switch
+                {
+                    "confirmed" => issue.AllowedAction is not (MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.ConfirmOrAdjust),
+                    "adjusted" => issue.AllowedAction is not (MagicLinkAllowedAction.Adjust or MagicLinkAllowedAction.ConfirmOrAdjust),
+                    _ => true
+                }))
             {
                 throw new InvalidOperationException("Capability use does not match issuance.");
             }
@@ -861,7 +1044,8 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         }
         else if (view.Expired is { } expired)
         {
-            if (expired.TimeEntryId is not null && expired.TimeEntryId != issue.TimeEntryId)
+            if (expired.TimeEntryId is not null && expired.TimeEntryId != issue.TimeEntryId
+                || expired.ExpiredAtUtc < issue.ExpiresAtUtc)
             {
                 throw new InvalidOperationException("Capability expiry does not match issuance.");
             }
@@ -877,14 +1061,14 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
             };
         }
 
-        if (view.TerminalPosition is { } terminalPosition)
+        if (view.TerminalPosition is { } publishedTerminalPosition)
         {
             row = row with
             {
                 ProjectionFreshness = row.ProjectionFreshness with
                 {
                     Cursor = "issue:" + issue.ProjectionFreshness.Cursor + ";terminal:"
-                        + terminalPosition.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                        + publishedTerminalPosition.ToString(System.Globalization.CultureInfo.InvariantCulture)
                 }
             };
         }
@@ -939,7 +1123,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         }
     }
 
-    private static void ValidateIssued(MagicLinkConfirmationCapabilityIssued item, string tenantId)
+    internal static void ValidateIssued(MagicLinkConfirmationCapabilityIssued item, string tenantId)
     {
         if (item.Tenant?.TenantId != tenantId
             || string.IsNullOrWhiteSpace(item.CapabilityId?.Value)

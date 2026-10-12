@@ -7,14 +7,284 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The latest 2026-10-11 materialized read-model tree passed all six default
+The round-24 code-level index proof passed the focused numeric index class
+3/3 after routing its 34,800-contribution, four-tenant test through the real
+rebuild handler. Repeated A and B replacement/prune preserved C and D across
+more than 400 selected pages and retained shared-hash ambiguity. A separate
+401-page, one-shard selected directory resolved an interior candidate through
+the concrete loader; all selected contributions from a 10,000-input one-shard
+rebuild matched the input and resolved, with an interior loader check. The
+full Projections lane passed 322/322 in 453.930 seconds. The
+prior SDK retirement-cleanup failure remains intermittent and its batch
+status is unknown. These local code-level results do not supply the blocked
+live Dapr or deployed evidence. Story 3.6 and release remain **FAIL**; exact
+commands and results are in [the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+The round-23 code-level work bounds the first V7 legacy-shard scan to 16
+concurrent reads and adds a final-shard legacy guard test. The full default
+Integration lane passed 702/707 with five declared skips before that final
+edit and again on the final tree in 504.340 seconds; focused post-edit
+Projection tests passed 3/3. Python V7 selection and effective evidence
+checks pass 8/8. The latest live preflight found Folders' unrelated
+`eventstore` Dapr ID, then Folders restarted within ten seconds of two
+empty preflight reads. The Timesheets AppHost was not started. The previous
+two `/project/v2` failures remain the latest local live outcome. Story 3.6
+and release remain **FAIL**; exact checks are in [the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md)
+and [local proof](local-magic-link-dapr-proof.md).
+
+The round-22 worktree has a V7 copy-on-write global magic-link index with
+tenant rosters and selected-generation rechecks. Its source-reference build,
+Server suite, focused 10,000-owner rebuild, normal 10,000-candidate HTTP
+delivery, and narrow Python checks pass. A full Projections run exposed a
+failure in the new large tenant-replacement case during SDK retirement
+cleanup. A fresh full diagnostic rerun passed 321/321, but the first
+failure's batch status did not reproduce; at that point the tenant-bounded
+rebuild task stayed open pending diagnosis. The
+isolated latest-tree Dapr journey failed twice at capability-index projection
+admission with `delivery_state_unavailable`, before selected candidate and
+effective evidence readback. The Timesheets AppHost was stopped, Dapr and
+Aspire were empty, and Redis was not cleared. Exact results are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md)
+and [local proof](local-magic-link-dapr-proof.md). Deployed inventory,
+authority, and certified live shared rebuild remain unproven. Story 3.6 and
+the release decision remain **FAIL**.
+
+The round-20 worktree validates selected directory and collision page
+integrity, compares persisted recording and adjustment comments against an
+independent server decision, binds sessionless global Abort to operation
+tenant, requires full replay on comment-policy enablement, and resolves a
+65-hash mapped directory candidate through the concrete loader before and
+after tenant rebuild. The warning-as-error source-reference solution build
+and all six default Timesheets test executables passed. Focused 10,000-owner
+capacity and mapped delivery cases passed. The latest-tree Dapr journey is
+pending: an unrelated Folders Aspire runtime owns a Dapr `eventstore` ID,
+so the unique-ID isolation preflight did not pass. That runtime was left
+untouched; no Timesheets AppHost was started and Redis was not cleared.
+Deployed gates and the overall release decision remain **FAIL**. Exact
+current results are in [the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md)
+and [local proof](local-magic-link-dapr-proof.md).
+
+The round-19 worktree closes five implementation tasks: bounded numeric
+directory pages keep a maximum-length 10,000-owner single-shard index below
+the selected-value limit; owner admission prevents earlier-page duplicate
+issuance; adjustment display requires cleared redaction; global rebuild
+retries bind operation ID to tenant; and the local Dapr fixture reports safe
+valid-GET denial categories. The warning-as-error source-reference solution
+build passed. Six default Timesheets lanes passed **1,759 cases with five
+expected skips**. The final isolated Dapr journey passed **1/1 in 106.313
+seconds** after bounded fixture waits accounted for EventStore's configured
+60-second anonymous actor rate-limit window. Three earlier round-19 runs
+failed at the second recording (403) and twice at the negative owner read
+(503 from actor 429); the round-18 user-requested retry failure also remains recorded.
+The AppHost was stopped and Dapr/Aspire were empty. Deployed inventory,
+authority, and certified live shared rebuild remain open, so Story 3.6 and
+release remain **FAIL**. Exact outcomes are in [the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md)
+and [local proof](local-magic-link-dapr-proof.md).
+
+The round-18 worktree adds server-issued adjustment comment display, bounded numeric index pages for a 10,000-owner same-hash inventory, total 10,000-event mapped admission, and positive comment-bearing HTTP readbacks. A warning-as-error source-reference build passed, and the six default Timesheets lanes passed **1,753 cases with five expected skips** before a focused page-address correction. Focused tests after that correction passed. The isolated live Dapr journey then passed **1/1 in 118.195 seconds** with persisted confirm/adjust, race, restart, and selected readbacks; Dapr and Aspire were empty after stopping the Timesheets AppHost. Independently certified deployed inventory, authority, and live shared rebuild remain open, so Story 3.6 and release remain **FAIL**.
+
+The 2026-10-12 round-17 worktree closes the seven post-review implementation tasks: token-hash ambiguity is durable and legacy unique-only indexes fail closed; malformed mapped issuance parks; comment publication requires a server-issued per-comment decision and versioned selected replay; EventStore preserves the prior global rebuild tenant, complete-prefix MessageId uniqueness, and safe duplicate-domain catalog rejection; a nonempty Time Entry staged commit is retried after host restart with exact selected lineage. The source-reference Debug solution build passes with zero warnings. Architecture 56/56, Contracts 92/92, Server 530/530, Works 76/76, and Projections 304/304 pass. The Integration full run exposed two assertions expecting the old unstamped comment shape; both and the new restart case pass after the assertion update. SDK Client and DomainService broad runs retain one cleanup-timing and one absent nested-Tenants guardrail failure respectively. The SDK Server full run had one anchored-suffix fixture failure; after adding the required MessageId digest to that fixture, its idempotency class passes 26/26. This is in-process evidence. Deployed owner inventory, installation authority, and certified live shared rebuild remain open; Story 3.6 and release remain **FAIL**. Exact commands and limits are in [the Story 3.6 test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+The round-17 isolated local Dapr journey then passed **1/1 in 127.469 seconds** with one `eventstore` and one `timesheets` app ID, persisted confirm/adjust, restart, and selected readbacks. Dapr and Aspire were empty after stopping the Timesheets AppHost. This local pass does not close the deployed gates above.
+
+The 2026-10-12 round-16 source-reference solution build passed with
+`-warnaserror`, zero warnings, and zero errors. All six default executables
+passed on the current tree: Architecture 56/56, Contracts 92/92, Server
+523/523, Works 76/76, Projections 301/301, and Integration 687 passed with
+five expected skips out of 692: **1,735 passed, five skipped, zero failed**.
+The composed and SDK tests cover a selected 256-shard global token index
+with 10,000 high-entropy candidates, tenant-safe prune, incremental mapped
+Time Entry delivery, failed commit/restart, and authenticated host readback.
+The actor-grounded 10,000-owner composed producer passed. The isolated local
+Dapr journey passed **1/1 in 116.727 seconds** after its fixture was updated
+to read the selected global shard; its first attempt failed at the retired
+single-key readback. Dapr and Aspire were empty after stopping this AppHost.
+This local proof does not certify deployed authority, independent source
+coverage, or a certified live shared rebuild. SDK changes remain uncommitted
+worktree code; Story 3.6 and release remain `FAIL`.
+
+Historically, the 2026-10-12 round-15 source-reference solution build passed with
+`-warnaserror`, zero warnings, and zero errors. All six default executables
+passed: Architecture 56/56, Contracts 92/92, Server 523/523, Works 76/76,
+Projections 293/293, and Integration 682 passed with five declared skips out
+of 687: **1,722 passed, five skipped, zero failed**. Focused EventStore
+coordinator 28/28, retry worker 10/10, orchestrator 79/79, catalog 8/8,
+DomainService host 89/89, and part-route authorization 14/14 passed. The
+normal source path delivered over 64 MiB from bounded actor pages without the
+legacy whole-history array; composed tests covered 10,000-event mapped replay,
+all three Timesheets named routes, partial failure, and durable retry.
+
+The round-15 isolated local magic-link Dapr journey passed **1/1 in 112.376
+seconds** on 2026-10-12, with unique `eventstore` and `timesheets` Dapr IDs,
+persisted confirm/adjust, one-winner race, restart, and exact selected
+readbacks. Both Dapr and Aspire were empty after stopping this AppHost. This
+local proof does not certify deployed authority, independent source coverage,
+or a certified live shared rebuild. The SDK changes remain uncommitted worktree
+code; Story 3.6 and release remain open.
+
+Historically, the 2026-10-12 round-14 Timesheets source-reference solution build passed
+with `-warnaserror`, zero warnings, and zero errors. All six default
+executables passed: Architecture 56/56, Contracts 92/92, Server 523/523,
+Works 76/76, Projections 274/274, and Integration 682 passed with five
+declared skips out of 687. Overall: **1,703 passed, five skipped, zero
+failed**. EventStore's partitioned rebuild class passed 32/32, source
+producer 17/17, and roster actor 7/7; the actor-grounded Timesheets
+integration passed 2/2, including a 10,000-owner case. Both repositories
+pass `git diff --check`. The SDK changes remain uncommitted worktree code.
+
+The round-14 isolated local magic-link Dapr journey passed **1/1 in
+67.664 seconds** on 2026-10-12 after a bounded retry for the new exact
+post-restart lineage probe. The first run failed 0/1 after the EventStore
+restart when that read-only stream probe hit a transient HTTP/Dapr transport
+failure. The passing rerun verified persisted confirm and adjust, a
+one-winner race, restart, exact selected Time Entry lineage, and capability
+readbacks. Strict pre/post Dapr checks found one `eventstore` and one
+`timesheets` app ID; Dapr and Aspire were empty after stopping this AppHost.
+[The local proof](local-magic-link-dapr-proof.md) records commands and limits.
+It does not certify deployed authority, shared-rebuild source coverage, or a
+live shared Begin/rebuild.
+
+Historically, the 2026-10-12 round-13 Timesheets source-reference solution build passed
+with `-warnaserror`, zero warnings, and zero errors. All six default
+executables passed: Architecture 56/56, Contracts 92/92, Server 523/523,
+Works 76/76, Projections 267/267, and Integration 679 passed with five
+declared skips out of 684. Overall: **1,693 passed, five skipped, zero
+failed**. Focused EventStore tests also passed for paged Begin, 1,001
+colliding source owners, and durable rebuild retry. Both repositories pass
+`git diff --check`. These results are worktree evidence; the EventStore SDK
+changes are uncommitted.
+
+Historically, the round-13 isolated local magic-link Dapr journey passed **1/1 in
+125.174 seconds** on 2026-10-12. Strict pre/post checks found exactly one
+`eventstore` and one `timesheets` Dapr app ID; both Dapr and Aspire were empty
+after stopping the Timesheets AppHost. The fixture verified persisted confirm
+and adjust, a one-winner race, EventStore restart, and exact selected Time
+Entry and capability readbacks. [The local proof](local-magic-link-dapr-proof.md)
+records the command and limits. This local run does not certify deployed
+authority, shared-rebuild source coverage, or live shared Begin/rebuild.
+
+Historically, the round-11 isolated local magic-link Dapr journey passed **1/1 in
+114.866 seconds** on 2026-10-11. Strict pre/post checks each found exactly
+one `eventstore` and one `timesheets` app ID; both Dapr and Aspire were empty
+after stopping the Timesheets AppHost. The fixture verified persisted confirm
+and adjust, a one-winner race, restart, and exact selected Time Entry and
+capability readbacks with real persisted global positions. Two preceding
+current-tree race attempts failed `[403,403]`: one after EventStore had stored
+use/confirmation/rejected competitor, fixed by concurrent exact-status
+polling and stored-event readback; one before use was submitted because signed
+workload reads were rate-limited in the anonymous bucket, fixed by a finite
+verified-workload partition. [The local proof](local-magic-link-dapr-proof.md)
+records the command, narrow regressions, and limits. It predates the round-12
+SDK changes; the current-tree round-13 run is recorded above.
+
+The 2026-10-12 round-12 worktree builds the Timesheets source-reference
+solution with `-warnaserror` and zero warnings or errors. Architecture,
+Contracts, Server, Works, Projections, and Integration executables passed
+56/56, 92/92, 523/523, 76/76, 264/264, and 675 passed with five declared
+skips: **1,686 passed, five skipped, zero failed**. The full Integration run
+preceded the final EventStore hash-page edit; final-tree composed near-limit
+commit/readback and hash-page tamper/cleanup tests passed afterward.
+EventStore's partitioned DomainService class passed 30/30 and the producer
+and gateway class passed 16/16. The source producer now bounds history memory
+and serialized Dapr requests; the opted-in Timesheets handler streams owner
+contributions. Scratch chunk hashes are paged so the maximum modeled
+30,008-chunk manifest passes the actual 1-MiB fenced SDK batch gate. A
+10,000-owner, three-events-each producer case and near-1-MiB event/terminal
+cases passed. The round-12 worktree had no new live Dapr run; the round-13
+local pass is recorded above.
+
+The 2026-10-11 round-11 worktree adds an EventStore actor-owned shared Begin
+producer, a partitioned source roster and write/capture fence, a
+GlobalAdministrator operator route, durable restart stages, and completed
+erasure global-position evidence. Composed Timesheets capability rebuilds
+passed with two and 10,000 high-entropy owners; the two-owner case also
+pruned its previously selected row after actor-reported erasure. The source
+producer denies domains without mandatory writer-fence configuration, and
+installation coverage authority defaults deny. No independent virgin-store
+certificate, all-writer-enforcement receipt, or complete deployed legacy
+actor-key census is available, and no certified live shared-rebuild Dapr run
+has passed.
+The Debug source-reference solution built with zero warnings and errors.
+All six current Timesheets lanes passed with 1,676 passed and five declared
+skips; affected EventStore Client, DomainService, and Server subsets passed
+87/87, 43/43, and 61/61. These results do not certify deployed source
+coverage or a live shared rebuild.
+The deployed shared rebuild and Story 3.6 release gates remain **FAIL**.
+
+Historically, the round-10 worktree built with zero warnings and errors in Debug
+source-reference mode using the documented Commons-root override. All six
+default Timesheets suites pass: Architecture 56/56, Contracts 92/92, Server
+523/523, Projections 255/255, Works 76/76, and
+Integration 669 passed with five declared skips: **1,671 passed,
+five skipped, zero failed**. The Projections full run includes the
+greater-than-64-MiB capacity case. EventStore Client passes 1,487/1,487 and
+DomainService passes 732/734, retaining two historical guardrail/catalog
+failures. The 10,000-owner scratch cleanup regression passes 1/1, including
+selected reads and live delivery during recoverable cleanup. SDK tests also
+cover actor-proven empty Time Entry deletion and sealed erased-owner capture.
+The production Begin inventory producer is absent from this checkout, so the
+shared erasure authority remained contractual and deployed proof was open.
+At that checkpoint the round-10 live Dapr rerun was held and the earlier
+round-9 issuance HTTP 403 was the latest live observation. The current
+producer and latest-tree local pass are recorded above. Story 3.6 remains in
+progress and launch remains **FAIL**.
+
+The earlier round-9 read-model worktree built with zero warnings and errors
+using the documented Commons-root source-reference override. The EventStore
+Client suite passed **1,487/1,487** and DomainService passed **727/729**,
+with only the same two previously recorded nested-Tenants guardrail and
+named-endpoint catalog-registry failures. Current Timesheets Architecture,
+Contracts, Server, Projections, Works, and Integration suites passed
+**56/56, 92/92, 523/523, 252/252, 76/76, and 669 passed with five expected
+skips**: 1,668 passed, five skipped, zero failed. Projections ran as 251
+standard cases and one separate greater-than-64-MiB capacity case; the
+changed Time Entry handler class was rerun 36/36 after the final test-helper
+edit. EventStore stream controller tests passed 26/26; the broad EventStore
+Server run was stopped after roughly seven CPU-heavy minutes without a result.
+The latest opt-in local attempt, on an earlier round-9 checkpoint, failed
+**0/1 in 83.705 seconds** after catalog persistence and
+non-fixture denial, at capability issuance HTTP 403; its diagnostic stream
+read returned 404. Timesheets logged EventStore stream-read timeouts, while
+EventStore logged rate limiting and projection retry activity. One
+`eventstore` ID was present during the run; the cause of the opaque denial
+remains unproved. The Timesheets AppHost was stopped. The current tree has not
+been rerun live after the captured-envelope and rebuild-head changes while
+the unrelated duplicate Dapr app ID is being cleared. Local acceptance remains
+provisional and launch remains **FAIL**.
+
+The preserved round-8 read-model tree passed all six default Timesheets suites:
+**1,652 passed, five expected skips**. EventStore Client passed 1,482/1,482;
+DomainService passed 725/727, retaining the two previously documented
+nested-Tenants and catalog-registry failures. Focused EventStore partitioned,
+fenced, and coordinator/streamed suites passed 16/16, 17/17, and 23/23.
+New tests cover lossless 10,000-event Time Entry delivery and mapped rebuild,
+event-envelope lineage, capture continuity, cancellation, and private scratch
+closeout. Six Timesheets test projects and the AppHost built with zero warnings
+or errors using the recorded Commons-root override. The unmodified
+source-reference solution command still fails with duplicate
+`Hexalith.Commons.UniqueIds` CS1704.
+
+Three round-8 opt-in Dapr attempts began with one healthy Timesheets and
+one healthy EventStore app. They passed catalog persistence and non-fixture
+denial; the furthest run also passed the confirm race and composed Time Entry
+rebuild readback. The attempts failed, respectively, on capability issuance
+HTTP 403 (77.897 seconds), a confirm race with two HTTP 403 responses
+(31.062 seconds), and adjust issuance HTTP 403 after confirm passed
+(31.637 seconds). EventStore logs showed rate limiting and named-projection
+retry activity, but do not prove the cause of these opaque denials. The
+Timesheets AppHost was stopped after the runs. Local acceptance remains
+provisional; production binding issuance, deployed read-model wiring,
+history inventory, and deployed acceptance remain open. Story 3.6 stays
+in progress and launch remains **FAIL**.
+
+An earlier 2026-10-11 materialized read-model tree passed all six default
 Timesheets test executables with **1,639 passed and five expected skips**.
 Always-run composed-host tests persisted capability issuance/use through the
 mapped `/project/v2` route and deleted an existing Time Entry row through an
 applied full replay. EventStore Client passed 1,479/1,479 and focused
 DomainService rebuild/dispatch tests passed 55/55; the full DomainService run
-retained two previously recorded unrelated failures (581/583). The latest
-opt-in Dapr journey has no clean pass: it reached persisted catalog delivery,
+retained two previously recorded unrelated failures (581/583). That
+checkpoint's opt-in Dapr journey had no clean pass: it reached persisted catalog delivery,
 then failed its combined non-fixture issue/missing-owner assertion while an
 unrelated ChatBot AppHost introduced a duplicate `eventstore` Dapr ID. A
 diagnostic proved duplicate routing can make the signed missing-owner read
@@ -30,6 +300,25 @@ acceptance is provisional; production binding issuance,
 deployed read-model wiring, history inventory, and deployed acceptance remain
 open. Story 3.6 stays in progress and launch remains **FAIL**.
 
+The 2026-10-12 numeric global-index increment replaces fresh v7 tenant-slice
+rebuild's global owner materialization with copy-on-write trie paths and a
+paged, 10,000-owner tenant roster. Fresh ordinary issuance starts v7 after
+checking for selected v6 shards and legacy single-root state; existing v6
+shards keep their selected ordinary path until migration, and single-root
+state fails closed. A separate internal operator migration can
+validate selected v6 shards, stage tenant rosters under private numeric
+checkpoints, then switch one v7 root. It scans the entire selected v6 index
+once per tenant, so operator duration and owner-sequenced delivery backpressure
+grow as O(tenants × global rows); schedule it in a maintenance window. The
+`/admin/timesheets/magic-link-index/migrate-v6` route requires the internal
+listener, authenticated operator access, and a server-side certified-inventory
+authority. Its default authority denies migration. No deployed authority or
+certified inventory receipt is bound, so this code does not change the
+**FAIL** release gate. Selected v6 shard, page, and owner-admission values are
+retired after v7 promotion; older platform-retained generations remain subject
+to the EventStore retention contract. The local Dapr journey is still blocked
+by the unrelated Folders duplicate `eventstore` ID and is not claimed here.
+
 An earlier 2026-10-11 [opt-in local Dapr journey](local-magic-link-dapr-proof.md#run-the-persisted-journey)
 passed 1/1. It exercised real EventStore actors and persisted stream readback,
 SDK-delivered Fresh catalog and token index, confirm and adjust effects,
@@ -40,7 +329,7 @@ wiring, deployed-history inventory and deployed acceptance remain open.
 Story 3.6 stays in progress and launch remains **FAIL**. Older preflight and
 delivery-only observations below remain dated history.
 
-The latest 2026-10-11 materialized read-model revision has in-process SDK
+A prior 2026-10-11 materialized read-model revision has in-process SDK
 coverage for Time Entry evidence, generation-selected capability joins,
 poison-event parking, retryable selected-read outages, high-entropy
 10,000-owner partitioned rebuild, large single-owner and capability values,
@@ -49,8 +338,8 @@ cleanup passed focused restart and retry tests. All six default Timesheets
 executables passed with 1,634 passed and five skipped. An always-on
 composed-host test also committed the named Time Entry rebuild through the
 mapped endpoint and read back persisted evidence. The isolated opt-in
-Dapr fixture's 1/1 passing run in 160.146 seconds predates these latest
-changes. Two current isolated attempts reached stored delivery but stopped on
+Dapr fixture's 1/1 passing run in 160.146 seconds predates that
+checkpoint. Two then-current isolated attempts reached stored delivery but stopped on
 command-status HTTP 500 and repeated opaque adjust POST 403 responses. ChatBot
 then restarted with a duplicate `eventstore` Dapr ID, blocking a further run
 at preflight. A later run reached catalog delivery and a stored recording,
@@ -116,7 +405,7 @@ Classification vocabulary: atomic labels are `implemented`, `waived`, `post-v1`,
 | Magic-link HTTP no-disclosure | The 2026-10-10 full in-process IntegrationTests run passes 652 tests with four intentional skips, including the HTTP boundary class (557/557); the four scratch-root privacy cases retain dated 2026-10-09 evidence. | implemented / waived | Stories 3.6 and 3.7 / platform | TestServer and captured logs do not cover ingress, sidecar logs, scopes, or malformed-request diagnostics. Header values are compared across invalid responses but are not scanned for protected material. Token-bearing `?t=` responses lack `Cache-Control: no-store` and a restrictive `Referrer-Policy`. | Live topology, ingress and sidecar logging, scopes, and malformed-request diagnostics are verified separately; response header values are scanned for protected material, and successful and opaque-denial token-bearing responses set and verify `Cache-Control: no-store` and a restrictive `Referrer-Policy` before public exposure. | `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs`; public-route compatibility and spec-17 entries in `_bmad-output/implementation-artifacts/deferred-work.md` |
 | Magic-link Activity Type ownership inventory | v1 issue, display, confirm, and adjust paths accept tenant-owned Activity Types only while Project and Work remain valid time-entry targets. At issuance, issuance validates the catalog-selected tenant ownership but does not pre-load the target Time Entry, so target identity and Activity Type agreement remain use-time checks. For existing links, folded Time Entry scope is the authoritative use-time ownership gate; behind the canonical tenant-only catalog writer, duplicate and ownership-shape catalog checks are defence in depth while the zero-match presence gate remains required. The repository cannot inspect deployed capability or TimeEntry histories. | implemented / waived | Story 3.6 / release owner | A project-owned capability over normal project-owned Time Entry evidence is reissuable only after an authorized correction changes that Time Entry to a tenant-owned Activity Type, followed by capability revocation and reissuance. An Activity-Type-changing correction, including a change between tenant-owned Activity Types, denies every outstanding link whose capability still names the prior Activity Type, but that denial is not permanent: without revocation at the first Activity-Type change, an unused A-scoped link can become admissible again after an A-to-B-to-A sequence restores the same Activity Type ID and scope. The denial is opaque and operators receive no automatic signal, so Activity Type ID reuse can revalidate an unused old link. A legacy scope-less Project-to-Tenant correction can retain Project scope; a legacy scope-less Tenant-to-Project correction can retain Tenant scope while pointing at a project-owned Activity Type ID absent from the tenant catalog. Both mismatch shapes fail closed and cannot be repaired or reclassified by token reissue alone. | Before rollout, the release owner inventories deployed capability and TimeEntry histories, authorizes correction of repairable project-owned Time Entries to tenant-owned Activity Types, then revokes and reissues their affected capabilities. Operational correction handling revokes affected capabilities at the first Activity-Type change, before any later ID reuse can revalidate an old link, and reissues only the links still required. The owner also either explicitly accepts both legacy scope/Activity-Type mismatch shapes or owns a separate append-only remediation for histories that token reissue alone cannot repair. | `src/Hexalith.Timesheets.Server/MagicLinks`; `tests/Hexalith.Timesheets.Server.Tests/MagicLinkConfirmationCapabilityCommandServiceTests.cs`; `tests/Hexalith.Timesheets.Server.Tests/EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs` |
 | Magic-link invalid-token timing | Historical 2026-10-05 evidence: all four external routes returned equivalent invalid-link status, headers, content type, normalized body, and raw UTF-8 response length. Current in-process HTTP equivalence and privacy journeys pass; live topology remains unverified. Blank or hash-derivation-rejected tokens perform zero read-model and EventStore I/O; an unknown well-formed hash necessarily performs one token-index lookup. | implemented / waived | Story 3.6 / security | Backend work and distributed dependency timing are not constant across invalid-token classes even though the HTTP representation is opaque. | Revisit before public exposure without suitable abuse controls, if token entropy is weakened, or if evidence shows known invalid tokens can be practically classified by timing. | `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs`; `tests/Hexalith.Timesheets.Server.Tests/EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs` |
-| Magic-link live end-to-end resolution | Current in-process HTTP evidence: the host discovers the canonical token-hash index and tenant Activity Type catalog projection handlers. After delivery through the mapped projection route, valid Fresh-catalog GET displays return 200 and valid confirm/adjust POSTs return 202 only after a Completed EventStore status and exact stored-event readback. The separate EventStore actor state-store test proves local commit/reload for confirmation and adjustment; it does not prove deployed Dapr persistence. The concrete loader retains only sanitized non-Fresh catalog status internally. | blocked | Stories 3.6 and 3.7 | Local fixtures substitute the EventStore gateway, read-model store, and access guard; the AppHost declares no EventStore resource. Authority-mode workload issuance cannot bind a tenant, domain, or actor with the current issuer, so that configuration fails closed. This does not prove deployed Dapr persistence or the production access guard. | Inventory deployed streams read-only, stop legacy capability-stream terminal writers, provide a trusted resource-binding assertion issuer, then run all routes with concurrent single-use and restart checks against a declared EventStore resource. | `src/Hexalith.Timesheets/Program.cs`; `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkPersistedSubmissionTests.cs`; `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkEventStoreActorPersistenceTests.cs`; `_bmad-output/implementation-artifacts/tests/3-6-test-summary.md` |
+| Magic-link live end-to-end resolution | Current in-process HTTP evidence: the host discovers the canonical token-hash index and tenant Activity Type catalog projection handlers. After mapped delivery, valid Fresh-catalog GET displays return 200 and valid confirm/adjust POSTs return 202 only after Completed EventStore status and exact stored-event readback. The latest round-19 isolated local Dapr/EventStore journey passed 1/1 on 2026-10-12 after bounded fixture waits for the documented anonymous actor rate window, covering record, issue, confirm, adjust, concurrent single use, restart, and exact persisted selected-model readback. The run-only AppHost declares an EventStore resource. The concrete loader retains only sanitized non-Fresh catalog status internally. | blocked | Stories 3.6 and 3.7 | The isolated local journey does not establish deployed Dapr persistence, production access guard, or independently certified shared-rebuild coverage. Authority-mode workload issuance cannot bind a tenant, domain, or actor with the current issuer, so that configuration fails closed. | Inventory deployed streams read-only, stop legacy capability-stream terminal writers, provide a trusted resource-binding assertion issuer and independent source coverage receipts, then run all routes with concurrent single-use and restart checks in the deployed topology. | `src/Hexalith.Timesheets.AppHost/Program.cs`; `docs/local-magic-link-dapr-proof.md`; `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs`; `_bmad-output/implementation-artifacts/tests/3-6-test-summary.md` |
 | Export preview | `ApprovedTimeExportService.PreviewAsync` is side-effect-free and tested; no dedicated HTTP route maps the preview capability. | implemented / post-v1 | Story 4.9 | Metadata can imply a callable preview route that does not exist. | A story maps a preview endpoint, or metadata removes the HTTP-route implication. | `src/Hexalith.Timesheets.Server/Exports/ApprovedTimeExportService.cs`; `src/Hexalith.Timesheets.Contracts/TimesheetsMetadataCatalog.cs` |
 | Time-zone and period policy | Tenant time zone, UTC audit instants, tenant-local period keys, and DST/boundary export tests are implemented; carry-forward approval behavior remains open. | implemented / post-v1 | Stories 2.7 and 4.6 / PM | Carry-forward handling for existing approved entries remains unresolved. | Period-approval policy decision covers carry-forward behavior. | `tests/Hexalith.Timesheets.IntegrationTests`; PRD Q1 |
 | NFR13 UI behavior | No Timesheets UI project exists by design; FrontComposer metadata exists, but component-level accessibility is unproven. | post-v1 | UI-bearing story | WCAG behavior is not proven for Timesheets components. | A UI-bearing story scaffolds `Hexalith.Timesheets.UI` and `Hexalith.Timesheets.UI.Tests`. | `README.md`; current `src/` and `tests/` project list |
@@ -216,16 +505,16 @@ Prior Story 3.6 alternate-configuration and literal-parsing increment (2026-10-0
 
 | Gate | Verdict | Evidence | Notes |
 |---|---|---|---|
-| Build | FAIL | Historical passes: on 2026-10-04, the changed worktree based on `57770d380c724c94233b78ac021a8f10cd5d6f39` passed `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false` and `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` with 0 warnings and 0 errors. The same commands passed again on 2026-10-05 for the changed worktree based on `c5fcf987046018c980c5def7c2d3e1a9ce310abe`, with zero warnings and errors. The same commands passed for the spec-14 worktree based on `ee87e39f9f43e442e5426bb090afbe70be26492a` on 2026-10-05 with zero warnings/errors. Spec-15 source-reference Debug restore/build passed on 2026-10-08; spec-16 and spec-17 passed the same commands on 2026-10-09, all with zero warnings/errors. The 2026-10-09 public-route compatibility worktree also passed that build. The current 2026-10-11 command `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` exits 1 in `references/Hexalith.EventStore.Contracts` with MSB3243/CS1704 for duplicate `Hexalith.Commons.UniqueIds` versions `2.30.1.0` and `1.0.0.0`. | On 2026-10-03, the bare build and its explicit-Debug retry failed with HXW0002 and missing Works references (176 errors); the supported source-reference mode and matching restore passed. Owner, root cause, and candidate configuration-propagation fixes are recorded in [the Story 3.6 build-guidance ledger entry](../_bmad-output/implementation-artifacts/deferred-work.md#deferred-from-build-guidance-review-patches-for-story-36-2026-10-04). The 2026-09-15 runtime smoke is not current-graph runtime evidence; current automated AppHost smoke remains deferred, and the 2026-10-03 manual attempt failed as recorded above. The dated Story 5.3 SDK `10.0.400` evidence remains historical. |
+| Build | PASS | The latest round-20 Timesheets source-reference Debug solution build passed with `-warnaserror`, zero warnings, and zero errors. The round-10 build also passed using `-p:HexalithCommonsRoot=/tmp/no-commons`. Historical passes: on 2026-10-04, the changed worktree based on `57770d380c724c94233b78ac021a8f10cd5d6f39` passed `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false` and `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` with 0 warnings and 0 errors. The same commands passed again on 2026-10-05 for the changed worktree based on `c5fcf987046018c980c5def7c2d3e1a9ce310abe`, with zero warnings and errors. The same commands passed for the spec-14 worktree based on `ee87e39f9f43e442e5426bb090afbe70be26492a` on 2026-10-05 with zero warnings/errors. Spec-15 source-reference Debug restore/build passed on 2026-10-08; spec-16 and spec-17 passed the same commands on 2026-10-09, all with zero warnings/errors. The 2026-10-09 public-route compatibility worktree also passed that build. The round-9 worktree source-reference Debug build passed with zero warnings/errors using `-p:HexalithCommonsRoot=/tmp/no-commons`; the same build without that override failed earlier on 2026-10-11 with MSB3243/CS1704 duplicate `Hexalith.Commons.UniqueIds` versions `2.30.1.0` and `1.0.0.0`. | On 2026-10-03, the bare build and its explicit-Debug retry failed with HXW0002 and missing Works references (176 errors); the supported source-reference mode and matching restore passed. Owner, root cause, and candidate configuration-propagation fixes are recorded in [the Story 3.6 build-guidance ledger entry](../_bmad-output/implementation-artifacts/deferred-work.md#deferred-from-build-guidance-review-patches-for-story-36-2026-10-04). The 2026-09-15 runtime smoke is not current-graph runtime evidence; current automated AppHost smoke remains deferred, and the 2026-10-03 manual attempt failed as recorded above. The dated Story 5.3 SDK `10.0.400` evidence remains historical. |
 | Package currency | CONCERNS | Current restored-graph package listing and audits on 2026-09-17 under SDK `10.0.401`. | Direct NuGet, vulnerable, and deprecated audits are clean; root npm is not applicable; transitive drift is reviewed with no pin while the solution/AppHost tooling failure remains visible; platform prerelease entries are waived with owner, risk, and revisit condition. |
-| Tests (full suite) | PASS | The 2026-10-11 default Timesheets test executables passed individually: ArchitectureTests 56/56, Contracts.Tests 92/92, Server.Tests 523/523, Projections.Tests 174/174, IntegrationTests 663 pass/five skipped, and Works.Tests 76/76. Overall: 1584 passed, five skipped, zero failed. The opt-in local Dapr lane separately passed 1/1. The earlier focused EventStore workload server selection passed 43/43 and client transport passed 2/2. | Six individual test lanes pass; the opt-in live lane passes separately, while five default skips for infrastructure and performance remain explicit. A separate focused HTTP class run hit the previously tracked numeric-substring assertion false positive. The local proof does not replace a deployed persistence test. |
+| Tests (full suite) | PASS | The latest round-20 Timesheets executables all exited 0 individually: ArchitectureTests, Contracts.Tests, Server.Tests, Projections.Tests, IntegrationTests, and Works.Tests. The quiet runner did not print case totals. The latest isolated opt-in local Dapr pass remains the historical round-19 1/1 result in 106.313 seconds; a round-20 run awaits unique Dapr app IDs. | All six executables ran on the round-20 implementation tree. Five default skips for infrastructure and performance remain explicit. A separate historical focused HTTP class run hit the tracked numeric-substring assertion false positive. The local proof does not replace a deployed persistence test. |
 | Privacy/logging scans | CONCERNS | Current static privacy scans and the 432-case helper theory pass. The full IntegrationTests lane passed; a separate focused HTTP boundary run passed 567/568, with the generic `"60"` assertion falsely matching a permitted timestamp. The four scratch-root HTTP cases and the earlier combined HTTP classes retain 2026-10-09 evidence. | The numeric-substring assertion follow-up remains open. In-process capture omits log scopes and exception text; malformed-request diagnostics and ingress/sidecar logs remain unverified. |
-| Projection rebuild/idempotency | PASS | `tests/Hexalith.Timesheets.Projections.Tests/*ProjectionTests.cs`; Projections.Tests 174/174 pass, including stored submission lineage, tenant-scoped recording and terminal evidence, independent owner/capability stream sequence handling, and legacy terminal-before-issuance rejection. | Projection coverage passed with 0 skips. |
-| Export golden files | PASS | `tests/Hexalith.Timesheets.IntegrationTests/ApprovedTimeExportIntegrationTests.cs`; `tests/Hexalith.Timesheets.IntegrationTests/Exports/Golden/approved-time-export-v1-project-work-boundaries.csv`. | Golden-file cases passed in the current IntegrationTests lane: 663 pass and five intentional skips. |
+| Projection rebuild/idempotency | PASS | `tests/Hexalith.Timesheets.Projections.Tests/*ProjectionTests.cs`; round-19 Projections.Tests 307/307 pass, including stored submission lineage, tenant-scoped recording and terminal evidence, independent owner/capability stream sequence handling, and legacy terminal-before-issuance rejection. | Projection coverage passed with 0 skips. |
+| Export golden files | PASS | `tests/Hexalith.Timesheets.IntegrationTests/ApprovedTimeExportIntegrationTests.cs`; `tests/Hexalith.Timesheets.IntegrationTests/Exports/Golden/approved-time-export-v1-project-work-boundaries.csv`. | Golden-file cases passed in the round-10 IntegrationTests lane: 669 pass and five intentional skips. |
 | Magic-link HTTP no-disclosure | PASS / CONCERNS | The 2026-10-10 full IntegrationTests lane passed, including the HTTP boundary class; a separate focused class run passed 567/568 with one false positive from the generic `"60"` substring matching a permitted timestamp. The 2026-10-09 combined HTTP classes passed 482/482 and four scratch-root privacy cases also passed. | This is in-process route, projection-store, and captured-log evidence. The numeric-substring assertion risk is already tracked in `deferred-work.md`. The production authority-mode path still lacks a trusted binding issuer; the local run uses generated Development credentials. Header values are compared across invalid responses but are not scanned for protected material; token-bearing `?t=` responses lack `Cache-Control: no-store` and a restrictive `Referrer-Policy`. Ingress/sidecar logging is outside this test boundary. |
-| Magic-link durable confirm/adjust persistence | FAIL | Local EventStore actor state-store tests prove exact stored use/effect batches and actor recreation for confirm and adjust, plus proposed-entry revoke/expire markers. The HTTP fixture proves Completed status plus matching readback, one-winner concurrency, replay denial, revoke/expire terminal writes, and opaque non-Completed outcomes. Signed submit/status/stream HTTP route cases, a composed-host assertion-source binding case, processor origin/actor pairs, and stored-receipt integrity regressions for issue/use/confirm/adjust/expire pass. The fixture persists stored batches even for `EventsStored` and `PublishFailed`; both still yield an opaque 403. The later 2026-10-11 [local topology proof](local-magic-link-dapr-proof.md#connected-local-topology-proof-on-2026-10-11) connected both Dapr app IDs and proved synthetic SDK catalog and candidate-index readback, and the later opt-in local journey completed actor-originated record, issue, use, race, and restart checks. | The actor-originated local EventStore/Dapr journey passed. Deployed Dapr persistence remains unexercised. Local signed gateway, SDK projection, persisted readback, and actor-store isolation have been exercised. The current authority-mode issuer cannot sign tenant/domain/actor resource bindings; add a trusted issuer before rollout. A production EventStore recording writer now shares the existing keyed `timesheets` processor. The in-process external submission test uses an authenticated workload fixture; it does not establish production external caller authentication or the default fail-closed access guard. Production capability and Time Entry read-model handlers are also pending, along with the helper collision decisions recorded in the deferred ledger. Inventory unknown deployed histories and stop legacy terminal writers before enabling the new owner stream. Measure the configured five-second polling deadline and the `PublishFailed`-after-commit opaque outcome in the deployed topology. Current Timesheets HEAD pins EventStore `cf10b4c7`, contained in local EventStore `origin/main`. |
+| Magic-link durable confirm/adjust persistence | FAIL | Local EventStore actor state-store tests prove exact stored use/effect batches and actor recreation for confirm and adjust, plus proposed-entry revoke/expire markers. The HTTP fixture proves Completed status plus matching readback, one-winner concurrency, replay denial, revoke/expire terminal writes, and opaque non-Completed outcomes. Signed submit/status/stream HTTP route cases, a composed-host assertion-source binding case, processor origin/actor pairs, and stored-receipt integrity regressions for issue/use/confirm/adjust/expire pass. The fixture persists stored batches even for `EventsStored` and `PublishFailed`; both still yield an opaque 403. The latest round-19 isolated [local Dapr journey](local-magic-link-dapr-proof.md#round-19-isolated-local-run-2026-10-12) passed 1/1 in 106.313 seconds, including persisted confirm/adjust, one-winner race, restart, and exact selected readbacks. | Local EventStore/Dapr acceptance passed on the round-19 implementation tree. Deployed Dapr persistence remains unexercised. The authority-mode issuer cannot sign tenant/domain/actor resource bindings; add a trusted issuer before rollout. A production EventStore recording writer shares the keyed `timesheets` processor. The in-process external submission test uses an authenticated workload fixture; it does not establish production external caller authentication or the default fail-closed access guard. Capability and Time Entry read-model handlers are registered in the composed host, but deployed delivery, complete shared-rebuild inventory, and selected readback remain unverified. Inventory unknown deployed histories and stop legacy terminal writers before enabling the new owner stream. Measure the configured five-second polling deadline and the `PublishFailed`-after-commit opaque outcome in the deployed topology. Current Timesheets HEAD pins EventStore `3099cb27`; the SDK changes in this worktree are uncommitted. |
 | Performance evidence | PASS / WAIVED | `docs/performance-evidence.md`. | In-process NFR10/NFR11 pass; EventStore-backed wire path WAIVED. |
 | Tenant-isolation/security | PASS | `tests/Hexalith.Timesheets.Server.Tests/AuthorizationServiceTests.cs`, `AuthorityBoundaryTests.cs`, `FailClosedDefaultsTests.cs`, `TimeEntryAuthorizationTests.cs`; Server.Tests 523/523 pass. | Fail-closed defaults, loader integrity, and tenant-only magic-link Activity Type ownership passed. |
 | Works checkout ownership | PASS | Story 5.3 fitness tests in `WorksCheckoutGovernanceTests.cs`; `.gitmodules` and git index pin `references/Hexalith.Works` only. | Default checkout is the umbrella `references/` pin; a root gitlink is forbidden. This gate does not claim live Works host integration. |
 
-Overall release decision: **FAIL**. Stories 3.6 and 3.7 remain in progress, Story 5.2 remains in progress, and final Story 5.1 reconciliation remains ready for development. Atomic magic-link submission and local actor commit/reload are implemented. EventStore-backed recording is implemented, and the 2026-10-11 opt-in local Dapr/EventStore acceptance journey passed record, issue, confirm, adjust, race, and restart checks. Deployed acceptance remains open. The run-only AppHost now has an EventStore resource, the authority-mode workload issuer cannot sign tenant/domain/actor bindings, production capability and Time Entry read-model handlers remain unwired, deployed histories are unknown, and old capability-stream terminal writers must be stopped before rollout. Current Timesheets HEAD pins EventStore `cf10b4c7`, which local EventStore `origin/main` contains. Existing Works, export, performance, UI, legal-hold, package, privacy, and stakeholder gates retain their separate dispositions above.
+Overall release decision: **FAIL**. Stories 3.6 and 3.7 remain in progress, Story 5.2 remains in progress, and final Story 5.1 reconciliation remains ready for development. Atomic magic-link submission, EventStore-backed recording, local actor commit/reload, and composed-host registration of capability and Time Entry read-model handlers are implemented. The round-19 2026-10-12 isolated opt-in local Dapr/EventStore journey passed record, issue, confirm, adjust, race, restart, exact selected lineage, and capability readback checks in 106.313 seconds. Deployed acceptance remains open. The run-only AppHost has an EventStore resource, but the authority-mode workload issuer cannot sign tenant/domain/actor bindings. The shared-rebuild Begin producer now exists in code but has no independent installed coverage authority, all-writer receipt, certified legacy owner census, or live Dapr proof; deployed histories are unknown, and old capability-stream terminal writers must be stopped before rollout. Current Timesheets HEAD pins EventStore `3099cb27`; this worktree's SDK changes are uncommitted. Existing Works, export, performance, UI, legal-hold, package, privacy, and stakeholder gates retain their separate dispositions above.

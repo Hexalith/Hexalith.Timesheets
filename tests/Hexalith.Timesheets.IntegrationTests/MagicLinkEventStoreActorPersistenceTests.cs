@@ -23,9 +23,12 @@ using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.TimeEntries;
 using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
@@ -41,6 +44,104 @@ namespace Hexalith.Timesheets.IntegrationTests;
 
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
+    [Theory]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(true, false, true)]
+    public async Task AdjustmentHttpDisplayRequiresServerIssuedCommentDecision(
+        bool serverAllowsDisplay, bool requiresRedaction, bool displaysComment)
+    {
+        ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayDisplayExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(serverAllowsDisplay);
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true,
+            useMismatchedClaims: false, commentAuthority: authority);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"capability-display-{serverAllowsDisplay}-{requiresRedaction}");
+        var entryId = new TimeEntryId($"entry-display-{serverAllowsDisplay}-{requiresRedaction}");
+        string token = ValidAdjustToken();
+        await factory.ProjectValidStateAsync(client, token, MagicLinkAllowedAction.Adjust,
+            capabilityId, entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        var command = new SubmitExternalTimeEntry(entryId,
+            TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+            new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+            new ExternalContributionSource("supplier-api", "display-request"))
+        {
+            Comment = new TimeEntryComment("exact permitted note", TimeEntryCommentPolicy.SensitiveDefault with
+            {
+                ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed,
+                RedactionRequirement = requiresRedaction
+                    ? TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
+                    : TimesheetsCommentRedactionRequirement.NotRequired
+            })
+        };
+
+        using HttpResponseMessage recorded = await factory.PostProtectedManagementAsync(client,
+            "/api/timesheets/external-contributions/", command);
+        recorded.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        TimeEntryRecorded stored = JsonSerializer.Deserialize<StoredTimeEntryRecorded>(
+            factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+                .ShouldHaveSingleItem().Payload, JsonOptions).ShouldNotBeNull().Event;
+        stored.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        stored.Comment.Policy.ServerExternalConfirmationDisplay.ShouldBe(displaysComment
+            ? TimesheetsCommentPolicyDecision.Allowed : TimesheetsCommentPolicyDecision.Excluded);
+
+        using HttpResponseMessage display = await client.GetAsync(
+            $"/api/timesheets/magic-links/adjust?t={token}", TestContext.Current.CancellationToken);
+        display.StatusCode.ShouldBe(HttpStatusCode.OK);
+        MagicLinkAdjustmentDisplayResponse response = (await display.Content.ReadFromJsonAsync<
+            MagicLinkAdjustmentDisplayResponse>(JsonOptions, TestContext.Current.CancellationToken))
+            .ShouldNotBeNull();
+        response.Comment.ShouldBe(displaysComment ? "exact permitted note" : null);
+    }
+
+    [Fact]
+    public async Task AdjustmentHttpDisplayShowsClearedReplacementCommentThroughSecondLink()
+    {
+        ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayDisplayExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(true);
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true,
+            useMismatchedClaims: false, commentAuthority: authority);
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId("entry-display-replacement");
+        string firstToken = ValidAdjustToken();
+        string secondToken = "valid-adjust-token-second";
+        await factory.ProjectValidStateAsync(client, firstToken, MagicLinkAllowedAction.Adjust,
+            new MagicLinkCapabilityId("capability-display-replacement-first"), entryId);
+        await factory.ProjectValidStateAsync(client, secondToken, MagicLinkAllowedAction.Adjust,
+            new MagicLinkCapabilityId("capability-display-replacement-second"), entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        TimeEntryCommentPolicy clearedPolicy = TimeEntryCommentPolicy.SensitiveDefault with
+        {
+            RedactionRequirement = TimesheetsCommentRedactionRequirement.NotRequired
+        };
+        var recording = new SubmitExternalTimeEntry(entryId,
+            TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
+            new DateOnly(2026, 6, 19), 60, BillableState.Billable,
+            new ExternalContributionSource("supplier-api", "replacement-record"))
+        {
+            Comment = new TimeEntryComment("previous note", clearedPolicy)
+        };
+        using HttpResponseMessage recorded = await factory.PostProtectedManagementAsync(client,
+            "/api/timesheets/external-contributions/", recording);
+        recorded.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+
+        using HttpResponseMessage adjusted = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={firstToken}",
+            AdjustCommand() with { Comment = new TimeEntryComment("replacement note", clearedPolicy) },
+            JsonOptions, TestContext.Current.CancellationToken);
+        adjusted.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        using HttpResponseMessage display = await client.GetAsync(
+            $"/api/timesheets/magic-links/adjust?t={secondToken}", TestContext.Current.CancellationToken);
+        display.StatusCode.ShouldBe(HttpStatusCode.OK);
+        MagicLinkAdjustmentDisplayResponse response = (await display.Content.ReadFromJsonAsync<
+            MagicLinkAdjustmentDisplayResponse>(JsonOptions, TestContext.Current.CancellationToken))
+            .ShouldNotBeNull();
+        response.Comment.ShouldBe("replacement note");
+    }
+
     [Fact]
     public async Task External_recording_route_commits_owner_state_before_magic_link_use()
     {
@@ -54,7 +155,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var command = new SubmitExternalTimeEntry(
             entryId, TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
             new DateOnly(2026, 6, 19), 60, BillableState.Billable,
-            new ExternalContributionSource("supplier-api", "request-record-route"));
+            new ExternalContributionSource("supplier-api", "request-record-route"))
+        {
+            Comment = new TimeEntryComment("recorded private note", TimeEntryCommentPolicy.SensitiveDefault with
+            {
+                ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed
+            })
+        };
 
         using HttpResponseMessage recorded = await factory.PostProtectedManagementAsync(
             client, "/api/timesheets/external-contributions/", command);
@@ -74,6 +182,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         storedFacts.DurationMinutes.ShouldBe(command.DurationMinutes);
         storedFacts.BillableState.ShouldBe(command.BillableState);
         storedFacts.ExternalSource.ShouldBe(command.Source);
+        storedFacts.Comment.ShouldNotBeNull().Text.ShouldBe("recorded private note");
+        storedFacts.Comment.Policy.ServerPublicationVersion.ShouldBe(1);
+        storedFacts.Comment.Policy.ProjectionInclusion.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+        storedFacts.Comment.Policy.ExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        storedFacts.Comment.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
 
         using HttpResponseMessage described = await client.GetAsync(
             $"/api/timesheets/magic-links/confirm?t={token}", TestContext.Current.CancellationToken);
