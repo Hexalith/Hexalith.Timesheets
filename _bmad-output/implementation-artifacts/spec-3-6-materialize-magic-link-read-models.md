@@ -193,7 +193,37 @@ context:
 
 ## Implementation Notes
 
-A later isolated Timesheets AppHost on 2026-10-12 had one `eventstore` on
+Current 2026-10-12 verification: SDK `10.0.401` source-reference solution
+restore/build passed with zero warnings/errors; narrow Python proof passed
+9/9 and `py_compile` passed. The effective-value checker now independently
+requires the host publication flag and selected policy version, exact
+authorized inclusion, excluded/legacy/default omission and state, removed
+comments, and later approval/rejection state. Projection failure diagnostics
+emit safe categories and legacy-root presence/count, excluding raw outcome
+state and payloads. The existing V7 numeric candidate and exact packed
+lineage checks remain.
+The supplementary current-tree acceptance matrix passed 10/10 in 0.830
+seconds with no skips, covering persisted fold/state, terminal-first
+delivery/rebuild, replay conflict, pruning/cleanup, and store outages.
+
+The latest isolated Timesheets AppHost had exactly one `eventstore` on app
+8082 and one `timesheets` on 8081, both healthy. The opt-in journey failed
+0/1 in 76.410 seconds after catalog, non-fixture denial, and recorded
+Time Entry effective-value/lineage checks. Index delivery failed with
+`reason=delivery_state_unavailable; legacy-direct-root=present-unverified entries=72`.
+V7 candidate, confirm/adjust effects, and restart readbacks were not reached.
+The two live tasks remain unchecked and status remains in progress. Only
+this AppHost was stopped; Dapr/Aspire were empty afterward. Redis was not
+cleared. Ordinary bootstrap and tenant-slice rebuild both require a
+certified full migration for the direct v1 root. Complete certified
+cross-tenant legacy inventory and an authorized migration operator are
+absent; tenant-only capture cannot certify hidden collision contributions.
+Production authority, writer coverage/census, and deployed shared rebuild
+remain open; Story 3.6/release remain `FAIL`. Exact commands/results are in
+[the test summary](tests/3-6-test-summary.md) and
+[local proof](../../docs/local-magic-link-dapr-proof.md).
+
+Earlier isolated Timesheets runs on 2026-10-12 had one `eventstore` on
 app port 8082 and one `timesheets` on 8081. Three opt-in
 `MagicLinkLiveDaprTests` runs failed. The first returned 403 from the
 idempotent recording retry after 45.166 seconds. After that retry used the

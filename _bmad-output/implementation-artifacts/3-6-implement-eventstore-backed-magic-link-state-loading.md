@@ -23,7 +23,26 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-12)
 
-A later isolated Timesheets AppHost started with
+The latest-tree source-reference restore/build using SDK `10.0.401` passed
+with zero warnings/errors. The narrow Python proof passed 9/9 and now
+independently checks the host publication flag/version, exact comment
+inclusion/omission and state, comment removal, and later approval/rejection.
+The isolated Timesheets AppHost had exactly one `eventstore` (app 8082) and
+one `timesheets` (app 8081), both healthy. The opt-in journey failed 0/1 in
+76.410 seconds after catalog, non-fixture denial, and recorded Time Entry
+effective-value/lineage proof. Index delivery reported
+`reason=delivery_state_unavailable; legacy-direct-root=present-unverified entries=72`.
+Selected V7 candidate, confirm/adjust effects, and restart readbacks were
+not reached. Both live spec tasks remain unchecked. Only this AppHost was
+stopped; Dapr/Aspire were empty afterward and Redis was not cleared.
+The required certified full cross-tenant legacy inventory and authorized
+migration operator are absent. Tenant-slice capture cannot certify hidden
+global collision contributions. Production authority and deployed evidence
+remain open; Story 3.6 and release remain `FAIL`, with story/spec in progress.
+Exact commands/results are in the [test summary](tests/3-6-test-summary.md)
+and [local proof](../../docs/local-magic-link-dapr-proof.md).
+
+Earlier isolated Timesheets runs started with
 `TIMESHEETS_LIVE_DAPR_FIXTURE=1` and exactly one `eventstore` (app port 8082)
 and one `timesheets` (app port 8081). Three opt-in live journeys failed.
 The first failed in 45.166 seconds because the idempotent recording retry

@@ -38,7 +38,8 @@ class EvidenceLineageTests(unittest.TestCase):
             "serviceDate": "2026-06-19", "durationMinutes": 60,
             "activityTypeId": {"value": "activity-1"}, "billableState": "Billable",
             "activityTypeScope": "Tenant", "contributorCategory": "ExternalContributor",
-            "aiMetrics": None, "comment": None, "commentProjectionState": "PolicyRequired",
+            "aiMetrics": None, "comment": None, "commentProjectionState": "Unknown",
+            "commentPublicationPolicyVersion": 1,
             "approvalState": "Draft",
         }
         self.assertTrue(effective_evidence_values_match(model, [recorded]))
@@ -75,16 +76,29 @@ class EvidenceLineageTests(unittest.TestCase):
         selected = model | {
             "aiMetrics": {"origin": "Assisted", "minutesSaved": 5},
             "commentProjectionState": "Allowed",
+            "commentPublicationPolicyVersion": 2,
             "comment": {"text": "permitted", "policy": {
                 "serverPublicationVersion": 1, "serverProjectionInclusion": "Allowed"}}}
-        self.assertTrue(effective_evidence_values_match(selected, [recorded_with_comment]))
+        self.assertTrue(effective_evidence_values_match(
+            selected, [recorded_with_comment], projection_comments_allowed=True))
         self.assertFalse(effective_evidence_values_match(
-            selected | {"comment": {"text": "changed"}}, [recorded_with_comment]))
+            selected | {"comment": {"text": "changed"}}, [recorded_with_comment],
+            projection_comments_allowed=True))
         self.assertFalse(effective_evidence_values_match(
             selected | {"aiMetrics": {"origin": "Assisted", "minutesSaved": 6}},
-            [recorded_with_comment]))
+            [recorded_with_comment], projection_comments_allowed=True))
         self.assertFalse(effective_evidence_values_match(
-            selected | {"commentProjectionState": "Excluded"}, [recorded_with_comment]))
+            selected | {"commentProjectionState": "Excluded"}, [recorded_with_comment],
+            projection_comments_allowed=True))
+        self.assertFalse(effective_evidence_values_match(
+            selected | {"comment": None, "commentProjectionState": "PolicyRequired"},
+            [recorded_with_comment], projection_comments_allowed=True))
+        self.assertFalse(effective_evidence_values_match(selected, [recorded_with_comment]))
+        unpublished = selected | {"comment": None, "commentProjectionState": "PolicyRequired",
+                                  "commentPublicationPolicyVersion": 1}
+        self.assertTrue(effective_evidence_values_match(unpublished, [recorded_with_comment]))
+        self.assertFalse(effective_evidence_values_match(
+            unpublished | {"commentPublicationPolicyVersion": 2}, [recorded_with_comment]))
         adjusted_comment = event("StoredTimeEntryAdjusted", {"AdjustedValues": {
             "Comment": {"Text": "adjusted", "Policy": {
                 "ServerPublicationVersion": 1,
@@ -93,9 +107,43 @@ class EvidenceLineageTests(unittest.TestCase):
             "serverPublicationVersion": 1,
             "serverProjectionInclusion": "Allowed"}}}
         self.assertTrue(effective_evidence_values_match(
-            selected_adjusted, [recorded_with_comment, adjusted_comment]))
+            selected_adjusted, [recorded_with_comment, adjusted_comment],
+            projection_comments_allowed=True))
         self.assertFalse(effective_evidence_values_match(
-            selected, [recorded_with_comment, adjusted_comment]))
+            selected, [recorded_with_comment, adjusted_comment], projection_comments_allowed=True))
+
+        removed_comment = event("StoredTimeEntryAdjusted", {"AdjustedValues": {"Comment": None}})
+        self.assertTrue(effective_evidence_values_match(
+            selected | {"comment": None, "commentProjectionState": "Unknown"},
+            [recorded_with_comment, removed_comment], projection_comments_allowed=True))
+        self.assertFalse(effective_evidence_values_match(
+            selected, [recorded_with_comment, removed_comment], projection_comments_allowed=True))
+
+        for version, decision, state in ((1, "Excluded", "Excluded"),
+                                          (0, "Allowed", "PolicyRequired"),
+                                          (1, "PolicyRequired", "PolicyRequired")):
+            with self.subTest(version=version, decision=decision):
+                untrusted = with_metrics_and_comment | {"Comment": {
+                    "Text": "permitted", "Policy": {"ProjectionInclusion": "Allowed",
+                        "ServerPublicationVersion": version, "ServerProjectionInclusion": decision}}}
+                source = event("StoredTimeEntryRecorded", untrusted)
+                omitted = selected | {"comment": None, "commentProjectionState": state}
+                self.assertTrue(effective_evidence_values_match(
+                    omitted, [source], projection_comments_allowed=True))
+                self.assertFalse(effective_evidence_values_match(
+                    omitted | {"commentProjectionState": "Allowed", "comment": {
+                        "text": "permitted", "policy": {"projectionInclusion": "Allowed",
+                            "serverPublicationVersion": version, "serverProjectionInclusion": decision}}},
+                    [source], projection_comments_allowed=True))
+
+        rejected = event("TimeEntryRejected", {"ApprovalState": "Rejected"}, stored=False)
+        self.assertTrue(effective_evidence_values_match(
+            final | {"approvalState": "Rejected"}, [recorded, adjusted, submitted, rejected]))
+        self.assertFalse(effective_evidence_values_match(
+            final | {"approvalState": "Submitted"}, [recorded, adjusted, submitted, rejected]))
+        self.assertFalse(effective_evidence_values_match(
+            final | {"approvalState": "Rejected"}, [recorded, adjusted, submitted, rejected,
+                event("TimeEntryCorrected", {}, stored=False)]))
 
     def test_exact_persisted_event_and_payload_are_required(self):
         event = {

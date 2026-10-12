@@ -6,7 +6,58 @@
 
 ## Current Verification
 
-### Later isolated Dapr runs (2026-10-12)
+### Current independent evidence and isolated Dapr run (2026-10-12)
+
+With the `global.json` SDK `10.0.401`, source-reference solution restore
+exited 0 and the Debug build with `--no-restore -warnaserror
+-p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons
+-m:1 /nr:false` exited 0 in 15.96 seconds, with zero warnings/errors.
+`python3 -m unittest discover -s scripts -p 'test_magic_link_*.py' -v`
+passed **9/9**; compilation of the five journey/helper/test scripts passed.
+`tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor`
+passed **13/13 in 0.277 seconds** after the evidence edits; `git diff --check`
+passed. Its log is
+`/tmp/timesheets-story3-6-20261012-implementation-readiness.log`.
+The parent supplementary current-tree acceptance matrix passed **10/10 in
+0.830 seconds**, with no skips: stored recording/submission/approval,
+terminal-first normal delivery and reverse rebuild, changed-position
+replay, applied pruning, aborted scratch cleanup, and capability/Time Entry
+selected read/write outages. Evidence is
+`/tmp/timesheets-story3-6-20261012-parent-matrix.log` and
+`/tmp/timesheets-story3-6-20261012-parent-matrix.xml`.
+The effective-value verifier independently requires the expected host
+publication flag and selected policy version, exact authorized comments,
+safe omission and decision state for excluded/legacy/default comments,
+comment removal, and later approval/rejection state. Existing V7 numeric
+candidate and packed-lineage checks remain.
+
+Empty Dapr/Aspire preflight preceded an exact-target Timesheets AppHost
+start with `TIMESHEETS_LIVE_DAPR_FIXTURE=1`. Both projects were healthy;
+Dapr contained exactly one `eventstore` (HTTP 31640, app 8082) and one
+`timesheets` (HTTP 31643, app 8081). The existing opt-in xUnit command
+failed **0/1 in 76.410 seconds**. Catalog, non-fixture denial, and recorded
+Time Entry effective-value/lineage checks passed before index delivery
+failed with `reason=delivery_state_unavailable;
+legacy-direct-root=present-unverified entries=72`. V7 selected candidate,
+confirm/adjust effect, and restart acceptance were not reached. The exact
+AppHost stop exited 0; `dapr list` reported no instances and Aspire returned
+`[]`. No Redis state was cleared. Both live spec tasks remain unchecked,
+and Story 3.6/release remain `FAIL` with story/spec status in progress.
+
+The handler rejects this direct v1 root during ordinary bootstrap and
+tenant-slice rebuild. A certified full cross-tenant legacy inventory and
+authorized migration operator are absent; a tenant-only capture cannot
+certify hidden collision contributions. Production authority, writer
+enforcement/census, and deployed shared rebuild remain open. Runtime C#
+was unchanged; prior broad test runs are retained below.
+
+Commands, lifecycle details, and limits are in
+[the local proof](../../../docs/local-magic-link-dapr-proof.md).
+Exact logs are `/tmp/timesheets-story3-6-20261012-implementation-{restore,build,python,live,stop}.log`.
+The start log redacts credentials and the description log retains only safe
+resource metadata.
+
+### Earlier isolated Dapr runs (2026-10-12)
 
 `TIMESHEETS_LIVE_DAPR_FIXTURE=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire start --no-build --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive --format Json`
 started one Timesheets AppHost. `dapr list` showed one `eventstore` on app

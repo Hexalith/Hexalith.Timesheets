@@ -1,5 +1,33 @@
 # Story 3.6 resume checkpoint — 2026-10-12
 
+## Current continuation
+
+Resume `spec-3-6-materialize-magic-link-read-models.md`; it and Story 3.6
+remain in progress, with both live-dependent tasks unchecked. The current
+increment strengthens the independent selected comment-policy proof and
+token-free legacy-index diagnostics. SDK `10.0.401` source-reference restore
+and Debug solution build passed with zero warnings/errors. Python passed
+9/9, projection acceptance matrix passed 10/10, and launch-readiness fitness
+passed 13/13. Exact commands and logs are in `tests/3-6-test-summary.md`.
+
+The latest isolated Dapr journey failed 0/1 in 76.410 seconds after the
+recorded Time Entry check: `delivery_state_unavailable;
+legacy-direct-root=present-unverified entries=72`. V7 candidate, use/adjust,
+and restart acceptance were not reached. Only the Timesheets AppHost was
+stopped; Dapr and Aspire are empty and Redis was preserved.
+
+The existing operator endpoint is `migrate-v6`; its migrator explicitly
+rejects a direct or selected v1 single root even with migration authority.
+A separate full v1 migration implementation and independently certified
+cross-tenant owner inventory/authority are required. No concrete inventory
+authority is registered here. The user does not know those inputs; do not
+invent certification, clear the store, or bootstrap over legacy state.
+Story 3.6/release remain **FAIL**, and build review is pending because the
+live tasks have not passed. Preserve the concurrently created untracked
+`spec-3-6-implement-eventstore-backed-magic-link-state-loading-21.md`; it is
+outside this continuation's edits. Do not stage, commit, or alter gitlinks
+merely to resume. Earlier rounds below are historical.
+
 ## Round-24 continuation
 
 The unfinished v7 tree described below has been completed and built. The latest

@@ -4,10 +4,24 @@ import hashlib
 import json
 import unittest
 
-from magic_link_index_selection import _path, _physical, selected_candidate
+from magic_link_index_selection import _path, _physical, legacy_index_diagnostics, selected_candidate
 
 
 class SelectedIndexTests(unittest.TestCase):
+    def test_legacy_bootstrap_diagnostic_only_reports_shape_and_count(self):
+        sensitive = "sensitive-token-hash-and-owner"
+        legacy = {"entries": {sensitive: {"tenant": sensitive, "capabilityId": sensitive}}}
+        diagnostic = legacy_index_diagnostics(lambda _: legacy)
+        self.assertEqual("legacy-direct-root=present-unverified entries=1", diagnostic)
+        self.assertNotIn(sensitive, diagnostic)
+        self.assertEqual("legacy-direct-root=absent", legacy_index_diagnostics(lambda _: None))
+        self.assertEqual("legacy-direct-root=invalid", legacy_index_diagnostics(lambda _: {}))
+
+        def unavailable(_):
+            raise RuntimeError(sensitive)
+
+        self.assertEqual("legacy-direct-root=unavailable", legacy_index_diagnostics(unavailable))
+
     def test_numeric_path_matches_server_url_safe_base64(self):
         candidate = {"tenant": {"tenantId": "\u083e"},
                      "capabilityId": {"value": "aa?"}}

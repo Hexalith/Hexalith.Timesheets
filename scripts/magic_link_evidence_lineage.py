@@ -68,23 +68,28 @@ def complete_evidence_lineage(model, owner_events):
         return False
 
 
-def effective_evidence_values_match(model, owner_events):
-    """Compare selected effective values with the stored owner's recognized effects."""
+def effective_evidence_values_match(model, owner_events, *, projection_comments_allowed=False):
+    """Compare stored effects under the independently expected host publication policy."""
     try:
         expected = None
         approval = None
         for event in owner_events:
             name = event["eventTypeName"].split(",", 1)[0].rsplit(".", 1)[-1]
-            if name not in ("StoredTimeEntryRecorded", "StoredTimeEntryAdjusted",
+            if name not in ("StoredTimeEntryRecorded", "TimeEntryRecorded",
+                            "StoredTimeEntryAdjusted", "TimeEntryAdjustedThroughMagicLink",
                             "StoredTimeEntrySubmitted", "TimeEntrySubmitted",
                             "TimeEntryApproved", "TimeEntryRejected"):
+                if name in ("TimeEntryCorrected", "TimeEntryApprovedCorrected"):
+                    # The local journey does not exercise correction. Do not
+                    # certify effective values from an incomplete fold.
+                    return False
                 continue
             wrapped = json.loads(base64.b64decode(event["payload"], validate=True))
             payload = wrapped["Event"] if name.startswith("Stored") else wrapped
-            if name == "StoredTimeEntryRecorded":
+            if name in ("StoredTimeEntryRecorded", "TimeEntryRecorded"):
                 expected = payload
                 approval = payload["ApprovalState"]
-            elif name == "StoredTimeEntryAdjusted" and expected is not None:
+            elif name in ("StoredTimeEntryAdjusted", "TimeEntryAdjustedThroughMagicLink") and expected is not None:
                 expected = expected | payload["AdjustedValues"]
             elif expected is not None:
                 approval = payload["ApprovalState"]
@@ -105,18 +110,19 @@ def effective_evidence_values_match(model, owner_events):
             return False
         if model["approvalState"] != approval:
             return False
+        if model["commentPublicationPolicyVersion"] != (2 if projection_comments_allowed else 1):
+            return False
         expected_comment = camel(expected.get("Comment"))
         selected_comment = model.get("comment")
         if expected_comment is None:
-            return selected_comment is None and model.get("commentProjectionState") != "Allowed"
-        if selected_comment is not None and (selected_comment != expected_comment
-                                             or model.get("commentProjectionState") != "Allowed"):
-            return False
-        # The selected view can deliberately omit sensitive text. A published
-        # comment must always match the exact stored, server-stamped comment.
-        if selected_comment is None:
-            return model.get("commentProjectionState") != "Allowed"
-        return (expected_comment["policy"].get("serverPublicationVersion") == 1
-                and expected_comment["policy"].get("serverProjectionInclusion") == "Allowed")
+            return selected_comment is None and model.get("commentProjectionState") == "Unknown"
+        policy = expected_comment["policy"]
+        issued = policy.get("serverPublicationVersion") == 1
+        decision = policy.get("serverProjectionInclusion")
+        include = projection_comments_allowed and issued and decision == "Allowed"
+        expected_state = ("Allowed" if include else "Excluded"
+                          if issued and decision == "Excluded" else "PolicyRequired")
+        return (model.get("commentProjectionState") == expected_state
+                and selected_comment == (expected_comment if include else None))
     except (KeyError, TypeError, ValueError, IndexError):
         return False

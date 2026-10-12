@@ -7,7 +7,25 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-A later 2026-10-12 isolated Timesheets AppHost had one `eventstore` on app
+The latest 2026-10-12 source-reference restore/build with SDK `10.0.401`
+passed with zero warnings/errors, and the narrow Python proof passed 9/9.
+The isolated Timesheets AppHost had exactly one `eventstore` on app port
+8082 and one `timesheets` on 8081. Its opt-in journey failed 0/1 in
+76.410 seconds after catalog, non-fixture denial, and recorded Time Entry
+effective-value/lineage checks. Index delivery reported
+`delivery_state_unavailable` and the safe diagnosis
+`legacy-direct-root=present-unverified entries=72`. Confirm/adjust and
+restart acceptance were not reached. Only this AppHost was stopped;
+Dapr/Aspire were empty afterward and Redis was not cleared. A certified
+full cross-tenant legacy inventory and authorized migration operator are
+absent; ordinary bootstrap and tenant-slice rebuild both reject the direct
+v1 root. The two live tasks remain unchecked. Story 3.6 and release remain
+**FAIL**; production authority and deployed coverage/shared-rebuild gates
+remain open. Exact commands/results are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md)
+and [local proof](local-magic-link-dapr-proof.md).
+
+Earlier 2026-10-12 isolated Timesheets runs had one `eventstore` on app
 port 8082 and one `timesheets` on 8081. Three opt-in magic-link journeys
 failed: 45.166 seconds at a recording-retry 403, then 79.433 seconds and
 67.923 seconds at index `delivery_state_unavailable`. The shared store still

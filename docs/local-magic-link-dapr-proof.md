@@ -1,6 +1,71 @@
 # Local magic-link Dapr proof
 
-## Later isolated local runs (2026-10-12)
+## Current isolated local verification (2026-10-12)
+
+The current SDK is `10.0.401`, as pinned by `global.json`. The source-reference
+solution restore and Debug build with `HexalithCommonsRoot=/tmp/no-commons`
+exited 0; the build reported zero warnings and errors in 15.96 seconds.
+The narrow Python suite passed 9/9 and `py_compile` passed. A supplementary
+current-tree acceptance matrix passed 10/10 in 0.830 seconds: persisted
+recording/submission/approval, terminal-first delivery/reverse rebuild,
+changed-position replay, pruning, aborted scratch cleanup, and selected
+capability/Time Entry read/write outages. The independent
+effective-value proof now checks the host's expected comment publication
+version and flag, exact authorized inclusion, default/legacy/excluded
+omission, removal of a previous comment, and later approval/rejection state.
+It retains exact packed event/payload lineage and V7 numeric-directory
+candidate verification. Projection failures report only safe categories and
+legacy-root presence/count, without raw outcome state or stored payloads.
+
+After empty `dapr list` and `aspire ps --non-interactive --format Json`
+preflight, the exact Timesheets AppHost started with
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1`. Both resources were healthy and Dapr
+contained exactly `eventstore` (HTTP 31640, app port 8082) and `timesheets`
+(HTTP 31643, app port 8081). The opt-in xUnit command below failed
+**0/1 in 76.410 seconds**. Catalog delivery, non-fixture denial, and the
+recorded Time Entry's independent effective-value/lineage check succeeded.
+Capability-index delivery then failed with the token-free diagnosis
+`reason=delivery_state_unavailable; legacy-direct-root=present-unverified entries=72`.
+The selected V7 candidate, confirm/adjust effects, and restart readbacks
+were not reached. The two live spec tasks stay unchecked.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+python3 -m unittest discover -s scripts -p 'test_magic_link_*.py' -v
+python3 -m py_compile scripts/local_aspire_magic_link_journey.py scripts/magic_link_evidence_lineage.py scripts/magic_link_index_selection.py scripts/test_magic_link_evidence_lineage.py scripts/test_magic_link_index_selection.py
+TIMESHEETS_LIVE_DAPR_FIXTURE=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire start --no-build --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive --format Json
+aspire wait eventstore --timeout 60 --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
+aspire wait timesheets --timeout 60 --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
+TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests' -noColor
+aspire stop --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
+```
+
+The stop exited 0 and stopped only this Timesheets AppHost. Dapr reported
+no instances and Aspire returned `[]` afterward. Redis was not cleared.
+The existing direct v1 root requires a certified full migration: ordinary
+bootstrap and tenant-slice rebuild both refuse it. This checkout has no
+complete certified cross-tenant legacy owner inventory or authorized
+migration operator; a tenant-only capture cannot prove hidden collisions
+absent. Production resource-binding authority, writer-enforcement receipts,
+and deployed shared-rebuild/readback evidence remain separate open gates.
+Story 3.6 and release remain **FAIL** and the spec/story remain in progress.
+
+The existing `/admin/timesheets/magic-link-index/migrate-v6` endpoint supports
+selected v6 shards only. Its migrator rejects a direct or selected v1
+single root even after authority admission. A separate full v1 migration
+implementation is also missing; supplying an operator alone cannot unblock
+this stored format.
+
+Logs are `/tmp/timesheets-story3-6-20261012-implementation-{restore,build,python,live,stop}.log`;
+the lifecycle start log has credential fields/URL credentials redacted and
+the description log retains safe resource metadata only. Earlier broad
+suite counts below remain historical; runtime C# was unchanged by this
+verification increment.
+The launch-readiness fitness class passed 13/13 in 0.277 seconds after the
+evidence edits; `git diff --check` passed.
+
+## Earlier isolated local runs (2026-10-12)
 
 The Timesheets AppHost was started with
 `TIMESHEETS_LIVE_DAPR_FIXTURE=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire start --no-build --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive --format Json`.

@@ -8,6 +8,19 @@ import base64
 _V7_PREFIX = "timesheets:magic-links:token-hash-capability-index:v7:"
 
 
+def legacy_index_diagnostics(read_optional_model):
+    """Describe bootstrap obstruction without emitting a hash, owner or payload."""
+    try:
+        legacy = read_optional_model("timesheets:magic-links:token-hash-capability-index:v1")
+        if legacy is None:
+            return "legacy-direct-root=absent"
+        if not isinstance(legacy, dict) or not isinstance(legacy.get("entries"), dict):
+            return "legacy-direct-root=invalid"
+        return f"legacy-direct-root=present-unverified entries={len(legacy['entries'])}"
+    except (KeyError, TypeError, ValueError, RuntimeError):
+        return "legacy-direct-root=unavailable"
+
+
 def _physical(scope_hash, generation, logical_key):
     return (f"shared-generation:{scope_hash}:{generation}:"
             + hashlib.sha256(logical_key.encode()).hexdigest().upper())

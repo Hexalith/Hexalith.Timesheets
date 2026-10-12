@@ -19,7 +19,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
-from magic_link_index_selection import selected_candidate
+from magic_link_index_selection import legacy_index_diagnostics, selected_candidate
 
 
 def require(condition, message):
@@ -44,6 +44,10 @@ def await_success(operation, expected_status, label, diagnostics=None, retry_del
 # EventStore's anonymous actor tenant limiter has a 60-second window and no queue.
 # These waits cross one window without changing the HTTP route's authorization result.
 ACTOR_RATE_LIMIT_RETRY_DELAYS = (1, 5, 15, 45)
+
+# The checked-in host uses AddTimesheetsServerKernel's FailClosedDefault
+# evidence policy. Keep this expectation independent of the selected row.
+PROJECTION_COMMENTS_ALLOWED = False
 
 
 def application(app_id, app_port):
@@ -244,7 +248,11 @@ def project(events, aggregate, projection, fingerprint, scoped_tenant=tenant):
             time.sleep(ACTOR_RATE_LIMIT_RETRY_DELAYS[attempt])
             continue
         require(status == 200, f"{projection} delivery returned {status}")
-        raise RuntimeError(f"{projection} delivery did not complete: {outcomes}")
+        reason = ("delivery_state_unavailable" if len(outcomes) == 1
+                  and outcomes[0].get("reasonCode") == "delivery_state_unavailable" else "other")
+        detail = ("; " + legacy_index_diagnostics(lambda key: read_model(key, allow_missing=True))
+                  if projection == "magic-link-token-hash-capability-index" else "")
+        raise RuntimeError(f"{projection} delivery did not complete: reason={reason}{detail}")
 
 
 def rebuild_time_entry(events, aggregate, fingerprint):
@@ -268,7 +276,7 @@ def rebuild_time_entry(events, aggregate, fingerprint):
             f"Composed Time Entry rebuild did not commit: {outcomes}")
 
 
-def read_model(key_name):
+def read_model(key_name, allow_missing=False):
     url = timesheets_sidecar + "/v1.0/state/timesheets-readmodels/" + urllib.parse.quote(key_name, safe="")
     for attempt in range(5):
         status, data = call(url)
@@ -276,6 +284,8 @@ def read_model(key_name):
             break
         if attempt < 4:
             time.sleep(1)
+    if allow_missing and status in (204, 404):
+        return None
     require(status == 200, f"Read model {key_name} returned {status}")
     return json.loads(data)
 
@@ -512,7 +522,8 @@ def journey(action, race=False):
     require(evidence["timeEntryId"]["value"] == entry
             and evidence["projectionFreshness"]["state"] == "Fresh"
             and complete_evidence_lineage(evidence, record_events)
-            and effective_evidence_values_match(evidence, record_events),
+            and effective_evidence_values_match(evidence, record_events,
+                                                projection_comments_allowed=PROJECTION_COMMENTS_ALLOWED),
             "Delivered record evidence is not fresh, complete, or equal to stored values")
     # The same public 403 can hide an actor 429 on the idempotent retry.
     await_success(lambda: management("/api/timesheets/external-contributions/", record), 202,
@@ -601,7 +612,8 @@ def journey(action, race=False):
     final_evidence = read_model(f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence")
     require(final_evidence["projectionFreshness"]["state"] == "Fresh"
             and complete_evidence_lineage(final_evidence, final_events)
-            and effective_evidence_values_match(final_evidence, final_events),
+            and effective_evidence_values_match(final_evidence, final_events,
+                                                projection_comments_allowed=PROJECTION_COMMENTS_ALLOWED),
             "Delivered Time Entry effect evidence is not fresh, complete, or equal to stored values")
     rebuild_time_entry(final_events, entry, fingerprint)
     rebuilt_evidence = read_model(f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence")
@@ -666,7 +678,8 @@ for entry, url, payload, denial, names, token_hash, capability in [confirm, adju
     require(persisted_evidence["timeEntryId"]["value"] == entry
             and persisted_evidence["projectionFreshness"]["state"] == "Fresh"
             and complete_evidence_lineage(persisted_evidence, stream(entry))
-            and effective_evidence_values_match(persisted_evidence, stream(entry)),
+            and effective_evidence_values_match(persisted_evidence, stream(entry),
+                                                projection_comments_allowed=PROJECTION_COMMENTS_ALLOWED),
             "Time Entry evidence was unavailable after restart")
     persisted_capability = selected_capability(capability)
     require(persisted_capability["published"]["capabilityId"]["value"] == capability
