@@ -45,6 +45,19 @@ release PASS.
 
 ## Qualification Result
 
+The latest resume at Timesheets
+`aefd76772e84018442eb21b36549b8499a488721` inspects Platform
+`ce6f2d34398803644b29d02ba57625898190ce20`, which now retains an offline
+staging candidate outside active composition. Fresh native reads confirm
+both proposed staging namespaces are absent. Offline regeneration refused
+missing Platform-local nested inputs; no plan was published and none were
+initialized. P1 now has a read-only HTTP adapter, with operational enrollment
+still absent. Exact results and remaining owner gates are in
+[the candidate recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md).
+The original qualification report remains byte-for-byte unchanged because
+Platform pins its dated hash. This progress does not make the spec ready
+for development. Earlier qualification below is retained as history.
+
 The user directed discovery from Platform. Its designated cluster is
 `https://192.168.1.30:6443`; context `jpiquot@local` currently authenticates as
 `jpiquot` and supports native reads. Administrator owns operations; Jérôme
@@ -75,6 +88,9 @@ discovery is answered; no repeated deployment-information question is needed.
 
 ## Code Map
 
+- `docs/deployed-magic-link-platform-candidate-recheck.md` — latest offline
+  candidate/native target evidence; preserve the original qualification report
+  because Platform's preparer pins its dated hash.
 - `src/Hexalith.Timesheets/Runtime/EventStoreGatewayWorkloadAssertionSource.cs`
   — requires a resource-binding issuer; requests tenant/domain/actor bindings.
 - `src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkIndexMigrationEndpoints.cs`
@@ -90,17 +106,17 @@ discovery is answered; no repeated deployment-information question is needed.
 
 **Execution:**
 
-- [ ] `docs/deployed-magic-link-acceptance.md` — record selected target,
+- [x] `docs/deployed-magic-link-platform-candidate-recheck.md` — record selected target,
   artifact/source identity, operator, supported inspection mechanism and
   actual binding/authorization providers. Attach read-only prerequisite
   evidence or exact missing items before proposing any write command.
 - [ ] `docs/deployed-magic-link-acceptance.md` — verify full legacy coverage,
   owner continuity, pending-delivery recovery and subscriber/shared rebuild
   behavior. Prepare target-specific commands after qualification.
-- [ ] `_bmad-output/implementation-artifacts/tests/3-6-test-summary.md` and
+- [x] `_bmad-output/implementation-artifacts/tests/3-6-test-summary.md` and
   `docs/local-magic-link-dapr-proof.md` — retain local and deployed results
   separately, with exact commands, failure provenance and cleanup evidence.
-- [ ] `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`,
+- [x] `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`,
   `_bmad-output/implementation-artifacts/3-6-resume-checkpoint.md`, and
   `docs/launch-readiness.md` — reconcile evidence without closing the deployed
   task until all required receipts and persisted outcomes exist.
@@ -140,6 +156,15 @@ discovery is answered; no repeated deployment-information question is needed.
   Readiness passed 13/13 in 0.195s; whitespace validation passed. Frozen
   intent is preserved verbatim. External prerequisites remain missing; no
   implementation-ready approval or dependent domain operation is proposed.
+
+- Latest planning resume inspected Platform's offline staging candidate and
+  rechecked its proposed namespaces; neither exists. The preparer refused
+  missing nested inputs without publishing output. Seven evidence/tracking
+  files were reconciled, preserving frozen intent and the pinned original
+  qualification report. Readiness passed 13/13 in 0.120s; whitespace and
+  retained preparation/declaration checksums passed. Existing local proof is
+  retained separately; deployed proof remains blocked. No runtime/build,
+  deployment, domain, dependency or Git mutation was issued by this run.
 
 ## Spec Change Log
 

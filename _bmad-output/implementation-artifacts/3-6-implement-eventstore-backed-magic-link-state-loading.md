@@ -23,6 +23,18 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-13)
 
+The latest resume at `aefd76772e84018442eb21b36549b8499a488721` consumes
+Platform `ce6f2d34398803644b29d02ba57625898190ce20`. Platform now has an
+offline staging candidate and blocked preparation, outside active composition.
+Fresh native reads find its two proposed namespaces absent and no Timesheets
+name/image matches. Offline regeneration refused missing nested Platform
+inputs without publishing a plan or initializing dependencies. Production
+authority, certified inventory/maintenance/continuity and deployed subscriber/
+shared-rebuild gates remain open. [The candidate recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md)
+records exact evidence. Spec-23 stays draft, Story 3.6/Epic 3 stay in progress
+and release stays **FAIL**. The local results below retain their original
+source identity; no new runtime build or local journey is claimed.
+
 Fresh source-reference restore/build with SDK 10.0.401 passed, zero
 warnings/errors, 17.64s. The unchanged isolated Dapr journey then passed
 **1/1 in 126.554s**, runner exit **0**, at

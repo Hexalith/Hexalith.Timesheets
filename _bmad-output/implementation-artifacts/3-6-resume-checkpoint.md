@@ -1,5 +1,34 @@
 # Story 3.6 resume checkpoint — 2026-10-13
 
+## New Platform candidate qualified; installed prerequisites remain absent
+
+Resumed from Timesheets `aefd76772e84018442eb21b36549b8499a488721` with
+Platform `ce6f2d34398803644b29d02ba57625898190ce20`. Platform now retains
+an offline staging enrollment candidate and blocked operator preparation.
+It has no active Timesheets binding or retained release digests. Four native
+census reads passed with unchanged UID/counts and no Timesheets name/image
+matches; the proposed `hexalith-staging` and `hexalith-staging-data`
+namespaces both returned NotFound. The offline preparer refused missing
+Platform-local nested inputs and published no plan. None were initialized.
+
+The [candidate recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md)
+records exact commands, revisions, retained plan identity, source-enrollment
+drift and remaining owner requirements. The original qualification report
+is preserved byte-for-byte because Platform pins its dated SHA-256. P1 now
+has a read-only HTTP adapter but remains operationally unenrolled and is not
+a Timesheets inventory provider. No repeated target-discovery question or
+independent Timesheets runtime fix is established.
+
+Spec-23 stays draft until hosted deployment/release, production bindings,
+certified inventory/maintenance/continuity and subscriber/shared-rebuild
+evidence exist. Story 3.6/Epic 3 stay in progress; release stays **FAIL**.
+Prior local passes and historical failures are retained. No deployment,
+domain operation, dependency update or Git mutation was issued.
+The existing readiness executable passed 13/13 in 0.120s; whitespace,
+frozen-intent/pinned-report preservation and retained preparation/declaration
+checksums passed. Exact verification limits are in
+[the test summary](tests/3-6-test-summary.md).
+
 ## Build resume confirms missing deployed prerequisites
 
 From clean `main` at `28ffeaee83e9414ce9e205e57f674e4c29a6e40b`, the

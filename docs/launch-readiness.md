@@ -7,7 +7,21 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The latest source `11976c2d8000bfc83f1d816a085836beecf8f6d1` has fresh
+The latest qualification at Timesheets
+`aefd76772e84018442eb21b36549b8499a488721` consumes Platform
+`ce6f2d34398803644b29d02ba57625898190ce20`, which now retains an offline
+staging candidate outside active composition. Its proposed application/data
+namespaces both returned NotFound; the native census still found no Timesheets
+name/image matches. Offline preparation refused absent Platform-local nested
+inputs and published no plan. Hosted deployment/release, production bindings,
+certified inventory/maintenance/continuity and deployed subscriber/shared-rebuild
+evidence remain missing. See [the candidate recheck](deployed-magic-link-platform-candidate-recheck.md)
+for exact commands, retained preparation identity and discovery limits. Spec-23
+remains draft; Story 3.6/Epic 3 remain in progress; release remains **FAIL**.
+No current-source build or new local journey is claimed by this documentation
+recheck. The following results retain their original dates and revisions.
+
+Source `11976c2d8000bfc83f1d816a085836beecf8f6d1` has fresh
 SDK 10.0.401 source-reference restore/build evidence, zero warnings/errors in
 17.64s, and an unchanged isolated local journey passing **1/1 in 126.554s**.
 Exact owned cleanup and shared-state/TTL/scheduler preservation passed. The

@@ -6,6 +6,53 @@
 
 ## Current Verification
 
+### Latest Platform candidate and native target recheck (2026-10-13)
+
+Initial clean Timesheets `main`:
+`aefd76772e84018442eb21b36549b8499a488721`; Platform:
+`ce6f2d34398803644b29d02ba57625898190ce20`. SDK `dotnet --version`
+returned **10.0.401**, matching `global.json`. Platform now retains an offline
+staging candidate and blocked preparation, with no active Timesheets binding
+or retained release digests. Its P1 HTTP adapter supplies no Timesheets
+operational enrollment or certified inventory authority.
+
+Four bounded native census commands exited **0**, with unchanged cluster UID,
+23 namespaces, 100 workload/service objects and 111 pods, and no matching
+Timesheets/EventStore/Platform names or images. The candidate-specific
+namespace read exited **1**: both `hexalith-staging` and
+`hexalith-staging-data` were NotFound. The offline preparation command exited
+**1**, reporting unavailable/invalid inputs and publishing no plan. Required
+nested Platform inputs are absent and were not initialized. Exact commands,
+retained preparation revisions/hash and discovery limits are in
+[the candidate recheck](../../../docs/deployed-magic-link-platform-candidate-recheck.md).
+
+After readiness/tracking reconciliation, the existing test executable passed
+**13/13 in 0.120s**, zero errors/failures/skips/not-run, exit **0**:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+Whitespace validation passed. Frozen spec-23 intent was compared with its
+initial canonical revision and remains verbatim; status remains draft.
+Canonical JSON checksum verification matched the retained preparation hash
+and candidate declaration hash. The original qualification report remains
+unchanged at the exact SHA-256 pinned by Platform's preparer.
+
+Only evidence/tracking documentation changed in this run. Unrelated changes
+appeared in EventStore, McpCli and Parties after the initial clean preflight;
+they were preserved. EventStore source investigation observed two unresolved
+conflicts; no new solution build, broad suite or local journey was run for
+these documentation changes. The readiness runner uses existing build assets
+and validates repository documents; it is not a current dependency-graph
+build. Prior local passes retain their own revisions and dates.
+
+Hosted deployment/release, production bindings, certified full inventory,
+maintenance/source continuity and deployed subscriber/shared-rebuild evidence
+remain absent. Story 3.6/Epic 3 remain in progress and release remains **FAIL**.
+No infrastructure approval or domain/maintenance operation was issued.
+
 ### Deployed prerequisite recheck on build resume (2026-10-13)
 
 Clean baseline: Timesheets `28ffeaee83e9414ce9e205e57f674e4c29a6e40b`;
