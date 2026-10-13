@@ -7,7 +7,25 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The latest Story 3.6 tree enforces separate server authorization for
+The recording-response recovery increment adds bounded observation after a
+failed submit response and exact receipt checks for recording and terminal
+transitions. Public POST denials now share GET privacy headers. The
+source-reference Debug solution build using SDK 10.0.401 passed with zero
+warnings/errors; six individual suites passed 1,899 tests with five declared
+skips in 1,904 cases, and the focused HTTP selection passed 11/11. Independent
+review corrections are verified. A fresh local Dapr attempt failed at
+projection metadata HTTP 500 before domain commands.
+Owned processes eventually exited and verified follow-up cleanup removed all
+three private containers/components; shared DB0 changed during that cleanup
+interval and no cause is attributed. A diagnostic retry refused a foreign
+Works `eventstore` sidecar. This tree has no passing new live journey and
+does not supply certified legacy inventory, migration/resource-binding
+authority, source continuity, pending-delivery recovery, or deployed
+subscriber/shared-rebuild acceptance. Story 3.6 remains in progress and
+release readiness remains **FAIL**. Exact results are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+The earlier 2026-10-13 redaction tree enforces separate server authorization for
 unredacted external comment display and keeps version-1 stamped comments
 hidden on adjustment GET. SDK 10.0.401 solution restore/build passed with
 zero warnings/errors; six individual test suites passed 1,872/1,877 cases

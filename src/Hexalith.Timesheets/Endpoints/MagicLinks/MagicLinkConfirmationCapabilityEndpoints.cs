@@ -219,6 +219,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
+                SetPrivateLinkResponseHeaders(httpContext);
                 if (string.IsNullOrWhiteSpace(t))
                 {
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
@@ -315,6 +316,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
+                SetPrivateLinkResponseHeaders(httpContext);
                 if (string.IsNullOrWhiteSpace(t))
                 {
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);

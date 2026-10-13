@@ -23,6 +23,34 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-13)
 
+The recording-response recovery increment uses the existing bounded status
+polling after a failed submit response, retries transient status observations,
+and still requires exact stored-event evidence. Draft and Submitted recordings
+and revoke/expire transitions have lost-response and corrupted-receipt
+coverage. Both public POST routes now send the same privacy headers as GET,
+closing the header-equivalence regression found by the full integration run.
+The scoped implementation and review are tracked in
+[spec-22](spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md).
+The reviewed SDK 10.0.401 source-reference Debug solution build passed with
+zero warnings/errors. All six individual suites passed **1,899 cases with
+five declared skips and no failures in 1,904 total**; the targeted HTTP
+selection passed 11/11. Review corrections are verified and the scoped spec
+is done. Exact commands and provenance are in [the test summary](tests/3-6-test-summary.md).
+
+The fresh isolated live attempt failed before domain commands at projection
+metadata HTTP 500. Its initial stop left three captured resources alive beyond
+the runner's shutdown window; all captured processes later exited, and a
+verified cleanup retry removed all three private containers and component
+copies. The original journey preservation check passed, but shared Redis DB0
+changed during the later cleanup interval; no cause is attributed or shared
+data repaired. A diagnostic retry was refused by a foreign Works `eventstore`
+sidecar. This tree has no passing new live proof. Certified cross-tenant legacy
+inventory, real migration and resource-binding authority, source continuity,
+pending-delivery recovery, and deployed subscriber/shared-rebuild acceptance
+remain absent. Story 3.6 stays in progress; release remains **FAIL**.
+
+The following redaction and isolated-fixture results are earlier evidence.
+
 The latest tree requires separate server clearance before unredacted comment
 text can appear on an external adjustment GET. Caller-submitted
 `RedactionRequirement = NotRequired` alone cannot authorize disclosure;
@@ -384,7 +412,7 @@ At the prior fail-closed POST baseline, the concrete loader and mapped projectio
   - [x] Loader unit/server tests: a valid candidate token resolves, folds capability state, folds the scoped Time Entry state, and returns a fresh catalog; duplicated/replayed/out-of-order events fold to the same deterministic state (idempotency); each invalid category fails closed returning unavailable/null **without revealing which stage failed**.
   - [x] Index tests: token-hash lookup resolves only via the rebuildable EventStore-backed projection; rebuild from `Issued` events reproduces the same mapping; the index stores no raw token and is non-authoritative for single-use/revocation/expiry.
   - [x] Endpoint/integration tests: with the concrete loader registered, valid GET confirm/adjust displays return 200 and invalid requests across the documented matrix return the identical opaque 403 through the HTTP boundary. Historical tests also observed valid POST 202 before the 2026-10-10 fail-closed change.
-  - [ ] Valid public POST success portion (reopened 2026-10-10): local gateway and EventStore actor state-store tests now prove `202` only after a verified atomic batch and reject concurrent reuse or replay. The round-11 isolated local Dapr journey passed submission, restart, and one-winner concurrency; round-12 has no new live run; complete this item with deployed-history inventory, certified source coverage, deployed EventStore acceptance, and a resource-binding authority-mode issuer; retain valid GET and opaque denial regressions.
+  - [ ] Deployed valid public POST acceptance: local gateway and EventStore actor state-store tests prove `202` only after a verified atomic batch and reject concurrent reuse or replay; later isolated fixture and redaction journeys passed submission, restart, and one-winner concurrency. Spec-22 adds response-loss recovery and uniform POST privacy headers; its new live attempt failed at metadata HTTP 500 and its diagnostic retry was refused by a foreign runtime. Complete this item with deployed-history inventory, certified source coverage and continuity, pending-delivery recovery, deployed subscriber/shared-rebuild acceptance, and a resource-binding authority-mode issuer; retain valid GET and opaque denial regressions. Local passing fixtures do not close these deployed gates.
   - [x] Privacy/diagnostics tests: extend `DiagnosticsPrivacyTests` so logs, OpenAPI, read models, the new index, and metadata contain no raw token, disallowed hash, decoded material, comments, command bodies, personal data, target/display names, protected identifiers, or EventStore envelopes.
   - [x] Freshness tests: confirm `ConfirmAsync`/`AdjustAsync` fail closed when the Activity Type catalog freshness is not `Fresh` (Stale/Rebuilding/Unavailable/Degraded/Unknown).
 - [x] **Verify affected build and test lanes (AC: 1-4)**
@@ -855,6 +883,8 @@ Implemented the concrete EventStore-backed `IMagicLinkConfirmationCapabilityStat
 ### File List
 
 Current cumulative Story 3.6 inventory, including its accepted review increments:
+
+- 2026-10-13 recording-response follow-up: `tests/Hexalith.Timesheets.Server.Tests/TimeEntryRecordSubmissionServiceTests.cs`; `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md`; `_bmad-output/implementation-artifacts/3-6-resume-checkpoint.md`. Its runtime/helper, HTTP persistence tests and evidence records are included below.
 
 - Runtime and hosting: `README.md`; `aspire.config.json`; `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj`; `src/Hexalith.Timesheets.AppHost/Program.cs`; `src/Hexalith.Timesheets/Hexalith.Timesheets.csproj`; `src/Hexalith.Timesheets/Program.cs`; `src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs`; `src/Hexalith.Timesheets/Runtime/HttpContextTimesheetsTrustedContextAccessor.cs`; `src/Hexalith.Timesheets/Runtime/InternalSurfaceGuard.cs`; `src/Hexalith.Timesheets/Runtime/InternalSurfaceOptions.cs`.
 - Contracts: `src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeLedgerRowReadModel.cs`; `src/Hexalith.Timesheets.Contracts/Models/TimeEntryCorrectionValues.cs`; `src/Hexalith.Timesheets.Contracts/openapi/timesheets-capture-contracts.v1.json`.

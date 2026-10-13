@@ -215,6 +215,61 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             .Count(item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ExternalRecordingRecoversCommittedBatchAfterSubmitResponseFault(bool submitForApproval)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false,
+            externalContributionPolicy: new ExternalContributionPolicyOptions
+            {
+                InitialApprovalState = submitForApproval ? TimeEntryApprovalState.Submitted : TimeEntryApprovalState.Draft
+            });
+        using HttpClient client = factory.CreateClient();
+        var entryId = new TimeEntryId($"entry-record-lost-response-{submitForApproval}");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId($"capability-record-lost-response-{submitForApproval}"), entryId);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
+        factory.Gateway.AfterStoredBeforeResponseAsync = (request, _) =>
+            request.CommandType == typeof(CommitTimeEntryRecord).FullName
+                ? Task.FromException(new HttpRequestException("submit response lost after commit"))
+                : Task.CompletedTask;
+        SubmitExternalTimeEntry command = RecordingCommand(entryId, "request-lost-record-response");
+
+        using HttpResponseMessage first = await SubmitRecordingAsync(factory, client, command);
+        first.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        stored.Length.ShouldBe(submitForApproval ? 2 : 1);
+        stored[0].EventTypeName.ShouldBe(typeof(StoredTimeEntryRecorded).FullName);
+        TimeEntryRecorded recorded = JsonSerializer.Deserialize<StoredTimeEntryRecorded>(
+            stored[0].Payload, JsonOptions).ShouldNotBeNull().Event;
+        recorded.TimeEntryId.ShouldBe(command.TimeEntryId);
+        recorded.Target.ShouldBe(command.Target);
+        recorded.Contributor.ShouldBe(command.Contributor);
+        recorded.ActivityTypeId.ShouldBe(command.ActivityTypeId);
+        recorded.ServiceDate.ShouldBe(command.ServiceDate);
+        recorded.DurationMinutes.ShouldBe(command.DurationMinutes);
+        recorded.BillableState.ShouldBe(command.BillableState);
+        recorded.ExternalSource.ShouldBe(command.Source);
+        recorded.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        if (submitForApproval)
+        {
+            stored[1].EventTypeName.ShouldBe(typeof(StoredTimeEntrySubmitted).FullName);
+            TimeEntrySubmitted submitted = JsonSerializer.Deserialize<StoredTimeEntrySubmitted>(
+                stored[1].Payload, JsonOptions).ShouldNotBeNull().Event;
+            submitted.TimeEntryId.ShouldBe(command.TimeEntryId);
+            submitted.Tenant.ShouldBe(Tenant());
+            submitted.Submitter.ShouldBe(Contributor());
+            submitted.TimeEntrySubmissionId.Value.ShouldBe(command.Source.ExternalRequestId);
+            submitted.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        }
+
+        using HttpResponseMessage retry = await SubmitRecordingAsync(factory, client, command);
+        retry.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.SubmissionCount.ShouldBe(1);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).ShouldBe(stored);
+    }
+
     [Fact]
     public async Task External_recording_retries_and_concurrent_submissions_commit_one_recording()
     {

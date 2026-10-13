@@ -512,18 +512,28 @@ public sealed class MagicLinkDurableSubmissionService(
             TimeSpan submitRemaining = _polling.Timeout - elapsed.Elapsed;
             if (submitRemaining <= TimeSpan.Zero)
             {
+                deadline.Cancel();
                 return (null, false);
             }
 
-            SubmitCommandResponse accepted = await gateway.SubmitWorkloadCommandAsync(
-                new SubmitCommandRequest(
-                    messageId, tenant, TimesheetsEventStoreIntegration.DomainName, aggregateId,
-                    commandType.FullName!, JsonSerializer.SerializeToElement(intent, commandType, _jsonOptions),
-                    CorrelationId: messageId),
-                deadlineToken).WaitAsync(deadlineToken).ConfigureAwait(false);
-            if (accepted.MessageId != messageId)
+            try
             {
-                return (null, false);
+                SubmitCommandResponse accepted = await gateway.SubmitWorkloadCommandAsync(
+                    new SubmitCommandRequest(
+                        messageId, tenant, TimesheetsEventStoreIntegration.DomainName, aggregateId,
+                        commandType.FullName!, JsonSerializer.SerializeToElement(intent, commandType, _jsonOptions),
+                        CorrelationId: messageId),
+                    deadlineToken).WaitAsync(deadlineToken).ConfigureAwait(false);
+                if (accepted.MessageId != messageId)
+                {
+                    return (null, false);
+                }
+            }
+            catch (Exception) when (!deadlineToken.IsCancellationRequested)
+            {
+                // A failed transport response cannot settle whether EventStore committed.
+                // Observe the same command within the original deadline, without resubmitting;
+                // callers still require Completed status and exact stored-event evidence.
             }
         }
 
@@ -532,11 +542,21 @@ public sealed class MagicLinkDurableSubmissionService(
             TimeSpan remaining = _polling.Timeout - elapsed.Elapsed;
             if (remaining <= TimeSpan.Zero)
             {
+                deadline.Cancel();
                 return (null, wasPresentAtPreflight);
             }
 
-            status ??= await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
-                .WaitAsync(deadlineToken).ConfigureAwait(false);
+            try
+            {
+                status ??= await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
+                    .WaitAsync(deadlineToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (IsRetryableGatewayFailure(exception, cancellationToken))
+            {
+                // A transient observation fault does not justify another submission.
+                status = null;
+            }
+
             if (status?.Status is nameof(CommandStatus.Completed) or nameof(CommandStatus.Rejected)
                 or nameof(CommandStatus.PublishFailed) or nameof(CommandStatus.TimedOut))
             {
@@ -546,6 +566,7 @@ public sealed class MagicLinkDurableSubmissionService(
             remaining = _polling.Timeout - elapsed.Elapsed;
             if (remaining <= TimeSpan.Zero)
             {
+                deadline.Cancel();
                 return (null, wasPresentAtPreflight);
             }
 

@@ -6,6 +6,125 @@
 
 ## Current Verification
 
+### Recording response recovery and uniform denial headers (2026-10-13)
+
+Scoped spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md`.
+The response-first helper now polls the original command after a failed
+submission response and retries classified transient status failures within
+the same deadline. Completed status and exact stored recording/submission or
+terminal-transition evidence remain required. Accepted identity mismatch,
+nonretryable status, receipt corruption and caller cancellation retain their
+denial/propagation behavior. Both public POST routes use the existing GET
+privacy-header helper so denial headers remain equivalent across all routes.
+Independent review found five correction items and one deadline-cleanup
+follow-up; all were patched and targeted verification found no remaining
+issue. No new public API, persistence path, authority, dependency, gitlink or
+AppHost/ServiceDefaults change was made.
+
+SDK `dotnet --version`: **10.0.401**, matching `global.json`. Exact commands:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false > /tmp/timesheets-36-record-response-restore.log 2>&1
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false > /tmp/timesheets-36-record-response-reviewed-build.log 2>&1
+```
+
+Restore exited 0. Reviewed solution build exited 0 in **8.17s**, zero
+warnings/errors. Each default test project ran separately using its xUnit v3
+executable; final logs use `/tmp/timesheets-36-record-response-final-<Project>.log`.
+
+| Reviewed project | Result | Time |
+| --- | --- | --- |
+| ArchitectureTests | 57/57 | 4.981s |
+| Contracts.Tests | 92/92 | 1.301s |
+| Server.Tests | 558/558 | 2.758s |
+| Works.Tests | 76/76 | 0.714s |
+| Projections.Tests | 389/389 | 654.205s |
+| IntegrationTests | 727 passed, five declared skips, 732 total | 680.674s |
+
+Final total: **1,899 passed, five skipped, zero errors/failures/not-run in
+1,904 cases**. Every executable exited 0. Commands:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor > /tmp/timesheets-36-record-response-final-ArchitectureTests.log 2>&1
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests -noColor > /tmp/timesheets-36-record-response-final-Contracts.Tests.log 2>&1
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -noColor > /tmp/timesheets-36-record-response-final-Server.Tests.log 2>&1
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests -noColor > /tmp/timesheets-36-record-response-final-Works.Tests.log 2>&1
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -noColor > /tmp/timesheets-36-record-response-final-Projections.Tests.log 2>&1
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -noColor > /tmp/timesheets-36-record-response-final-IntegrationTests.log 2>&1
+```
+
+The reviewed focused HTTP selection passed **11/11 in 5.078s**, covering two
+recording-policy recovery cases, six revoke/expire normal/lost/corrupted
+receipt cases, and the three all-route invalid/cross-tenant/empty-token
+header-equivalence matrices. Command:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -method "*ExternalRecordingRecoversCommittedBatchAfterSubmitResponseFault" -method "*Management_terminal_transition_is_stored_in_target_stream_and_denies_later_use" -method "*Invalid_magic_link_http_boundary_responses_are_equivalent_and_opaque" -method "*Concrete_loader_cross_tenant_candidate_is_indistinguishable_from_an_unknown_token_on_every_route" -method "*Empty_or_missing_magic_link_token_is_indistinguishable_from_an_invalid_state_denial_on_every_route" -noColor > /tmp/timesheets-36-record-response-reviewed-http.log 2>&1
+```
+
+Recording service regressions include missing then Processing then Completed,
+status 503 recovery, status 403 refusal, an independently cancelled transport
+Task, caller cancellation, wrong accepted identity, exact one/two-event
+receipts, and timestamp corruption. The exhausted-budget test consumes
+800 ms before a response fault, keeps a one-second deadline with 500-ms
+scheduling tolerance, and checks the original transport token is cancelled.
+The HTTP fixtures assert stored event contents and retries without a second
+submission. These are in-process fixtures, separate from real Dapr evidence.
+
+The first source-reference build with new tests passed before production
+changes; its six service cases and two HTTP cases all failed, reproducing the
+response-first gap. Logs: `/tmp/timesheets-36-record-response-red-server.log`
+and `-red-http.log`. The initial post-fix service/HTTP selections passed
+33/33 and 5/5. The first broad Integration run then completed **720 passed,
+three failed, five skipped, 728 total in 606.894s**. All three failures were
+GET/POST privacy-header equivalence; the reviewed focused matrices above
+pass after applying the existing headers to POST. Its full Projections run
+passed 389/389 in 577.333s. Those first broad logs use
+`/tmp/timesheets-36-record-response-<Project>.log` and predate review corrections.
+
+Live commands/results:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-36-record-response-baseline
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-36-record-response-reviewed-live
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 /tmp/timesheets-36-record-response-diagnostic-run.py
+```
+
+- Baseline exited 1 before resource creation: `Matching Dapr app ID exists;
+  no AppHost started`; evidence `baseline/run-oonsusu5` under the path above.
+- Reviewed live attempt exited 1: **0/1 in 0.979s**, projection metadata
+  returned HTTP 500 before domain commands. Evidence:
+  `/tmp/timesheets-36-record-response-reviewed-live/run-t96n1_t4`.
+  Private endpoints/components were verified. Original journey preservation
+  matched; initial cleanup retained its dependencies because three captured
+  resources remained past the shutdown window. All 14 captured PID/start
+  identities later exited and no original bound resources remained.
+- Verified follow-up used the runner's original container identities and
+  ownership label, component path and captured process identities. Guarded
+  cleanup removed all three private containers and component copies;
+  evidence `/tmp/timesheets-36-record-response-reviewed-cleanup/run-kn4aqpc7`
+  reports `complete: true` and all recorded processes gone. The subsequent
+  preservation comparison failed because shared DB0's persistent digest
+  changed during that interval; no cause is attributed or shared data repaired.
+- The temporary diagnostic wrapper would capture sanitized Aspire logs before
+  stopping a failed run. Its retry exited 1 at preflight instead: a foreign
+  Works AppHost had restarted an `eventstore` sidecar. No resources started;
+  evidence `/tmp/timesheets-36-record-response-diagnostic-live/run-siweg2xx`.
+  That foreign runtime was left untouched. No metadata-500 cause is established.
+
+These live results provide no passing new journey. Certified cross-tenant
+legacy inventory, actual operator/resource-binding authority, enforced
+quiescence, owner continuity and pending-delivery recovery, and deployed
+subscriber/shared-rebuild acceptance remain open. **Story 3.6 remains
+in-progress; release remains FAIL.** The earlier evidence below stays historical.
+
+After the final evidence updates, launch-readiness fitness passed **13/13 in
+0.144s**, no errors/failures/skips/not-run; `git diff --check` exited 0.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class "*LaunchReadinessTests" -noColor > /tmp/timesheets-36-record-response-final-readiness.log 2>&1
+```
+
 ### Redaction clearance and final review patches (2026-10-13)
 
 SDK 10.0.401 source-reference restore and warning-as-error Debug solution

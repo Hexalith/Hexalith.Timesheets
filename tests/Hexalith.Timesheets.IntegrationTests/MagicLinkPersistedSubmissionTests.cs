@@ -1059,9 +1059,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Management_terminal_transition_is_stored_in_target_stream_and_denies_later_use(bool expire)
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, true, true)]
+    public async Task Management_terminal_transition_is_stored_in_target_stream_and_denies_later_use(
+        bool expire, bool loseResponse, bool corruptReceipt)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -1080,6 +1085,30 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         }
 
         var source = new MagicLinkAuditMetadata("timesheets", expire ? "expire" : "revoke");
+        if (loseResponse)
+        {
+            factory.Gateway.AfterStoredBeforeResponseAsync = (request, _) =>
+                request.CommandType == typeof(CommitMagicLinkTransition).FullName
+                    ? Task.FromException(new HttpRequestException("transition response lost after commit"))
+                    : Task.CompletedTask;
+        }
+
+        if (corruptReceipt)
+        {
+            factory.Gateway.StoredPayloadTransform = payload => payload switch
+            {
+                StoredMagicLinkRevoked revoked => revoked with
+                {
+                    Event = revoked.Event with { Source = new MagicLinkAuditMetadata("forged", "source") }
+                },
+                StoredMagicLinkExpired expired => expired with
+                {
+                    Event = expired.Event with { Source = new MagicLinkAuditMetadata("forged", "source") }
+                },
+                _ => payload
+            };
+        }
+
         using HttpResponseMessage transition = expire
             ? await factory.PostProtectedManagementAsync(
                 client, $"/api/timesheets/magic-links/confirmation-capabilities/{capabilityId.Value}/expire",
@@ -1087,12 +1116,34 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             : await factory.PostProtectedManagementAsync(
                 client, $"/api/timesheets/magic-links/confirmation-capabilities/{capabilityId.Value}/revoke",
                 new RevokeMagicLinkConfirmationCapability(capabilityId, source));
-        transition.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        transition.StatusCode.ShouldBe(corruptReceipt ? HttpStatusCode.Forbidden : HttpStatusCode.Accepted);
         StreamReadEvent[] target = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
         target.Length.ShouldBe(2);
         target[1].EventTypeName.ShouldBe(expire
             ? typeof(StoredMagicLinkExpired).FullName
             : typeof(StoredMagicLinkRevoked).FullName);
+        MagicLinkAuditMetadata expectedSource = corruptReceipt ? new("forged", "source") : source;
+        if (expire)
+        {
+            MagicLinkConfirmationCapabilityExpired expired = Persisted<StoredMagicLinkExpired>(target[1]).Event;
+            expired.CapabilityId.ShouldBe(capabilityId);
+            expired.Tenant.ShouldBe(Tenant());
+            expired.TimeEntryId.ShouldBe(entryId);
+            expired.ExpiredAtUtc.ShouldBe(ObservedAtUtc);
+            expired.Source.ShouldBe(expectedSource);
+        }
+        else
+        {
+            MagicLinkConfirmationCapabilityRevoked revoked = Persisted<StoredMagicLinkRevoked>(target[1]).Event;
+            revoked.CapabilityId.ShouldBe(capabilityId);
+            revoked.Tenant.ShouldBe(Tenant());
+            revoked.TimeEntryId.ShouldBe(entryId);
+            revoked.RevokedBy.ShouldBe(Contributor());
+            revoked.RevokedAtUtc.ShouldBe(ObservedAtUtc);
+            revoked.Source.ShouldBe(expectedSource);
+        }
+
+        factory.Gateway.SubmissionCount.ShouldBe(1);
         factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).Length.ShouldBe(1);
 
         using HttpResponseMessage laterUse = await client.PostAsJsonAsync(

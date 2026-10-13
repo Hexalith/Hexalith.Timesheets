@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Gateway;
@@ -271,10 +272,163 @@ public sealed class TimeEntryRecordSubmissionServiceTests
             Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(false, "completed", true)]
+    [InlineData(true, "completed", true)]
+    [InlineData(false, "receipt-mismatch", false)]
+    [InlineData(true, "timestamp-mismatch", false)]
+    [InlineData(false, "rejected", false)]
+    [InlineData(false, "publish-failed", false)]
+    [InlineData(false, "transient-status", true)]
+    [InlineData(false, "status-denied", false)]
+    [InlineData(false, "delayed", true)]
+    [InlineData(false, "transport-timeout", true)]
+    public async Task LostSubmitResponseRequiresCompletedStatusAndExactStoredRecording(
+        bool submitForApproval, string outcome, bool expected)
+    {
+        SubmitExternalTimeEntry command = Command();
+        DateTimeOffset submittedAtUtc = DateTimeOffset.UnixEpoch;
+        string? messageId = null;
+        int statusQueries = 0;
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        CommandStatus terminalStatus = outcome switch
+        {
+            "rejected" => CommandStatus.Rejected,
+            "publish-failed" => CommandStatus.PublishFailed,
+            _ => CommandStatus.Completed
+        };
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                messageId = call.ArgAt<string>(1);
+                statusQueries++;
+                if (statusQueries == 2 && outcome is "transient-status" or "status-denied")
+                {
+                    return Task.FromException<CommandStatusQueryResponse?>(new EventStoreGatewayException(
+                        outcome == "transient-status" ? 503 : 403, "Status query unavailable"));
+                }
+
+                if (statusQueries == 1 || (outcome == "delayed" && statusQueries == 2))
+                {
+                    return Task.FromResult<CommandStatusQueryResponse?>(null);
+                }
+
+                CommandStatus observedStatus = outcome == "delayed" && statusQueries == 3
+                    ? CommandStatus.Processing : terminalStatus;
+                return Task.FromResult<CommandStatusQueryResponse?>(Status(messageId) with
+                {
+                    Status = observedStatus.ToString(),
+                    StatusCode = (int)observedStatus,
+                    EventCount = submitForApproval ? 2 : 1,
+                    CommittedEventSequence = submitForApproval ? 2 : 1
+                });
+            });
+        gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+            .Returns(outcome == "transport-timeout"
+                ? Task.FromCanceled<SubmitCommandResponse>(new CancellationToken(true))
+                : Task.FromException<SubmitCommandResponse>(new HttpRequestException("submit response lost")));
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(Page(Recorded(command) with
+            {
+                DurationMinutes = outcome == "receipt-mismatch" ? 99 : command.DurationMinutes
+            }, messageId!, submitForApproval
+                ? Submitted(command, submittedAtUtc.AddMinutes(outcome == "timestamp-mismatch" ? 1 : 0))
+                : null)));
+
+        (await Service(gateway, new ExternalContributionPolicyOptions
+        {
+            InitialApprovalState = submitForApproval ? TimeEntryApprovalState.Submitted : TimeEntryApprovalState.Draft
+        }).SubmitAsync(Context(), command, submittedAtUtc, TestContext.Current.CancellationToken)).ShouldBe(expected);
+        statusQueries.ShouldBe(outcome switch
+        {
+            "transient-status" => 3,
+            "delayed" => 4,
+            _ => 2
+        });
+        await gateway.Received(1).SubmitWorkloadCommandAsync(
+            Arg.Is<SubmitCommandRequest>(request => request.MessageId == messageId && request.CorrelationId == messageId),
+            Arg.Any<CancellationToken>());
+        await gateway.Received(terminalStatus == CommandStatus.Completed && outcome != "status-denied" ? 1 : 0).ReadWorkloadStreamAsync(
+            Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task LostSubmitResponseWithoutTerminalStatusDeniesWithinPollingDeadline()
+    {
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        CancellationToken submissionToken = default;
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<CommandStatusQueryResponse?>(null));
+        gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+            .Returns(async call =>
+            {
+                submissionToken = call.ArgAt<CancellationToken>(1);
+                await Task.Delay(TimeSpan.FromMilliseconds(800), submissionToken);
+                throw new HttpRequestException("submit response lost");
+            });
+
+        Stopwatch elapsed = Stopwatch.StartNew();
+        Task<bool> outcome = Service(gateway, polling: new MagicLinkSubmissionPollingOptions
+        {
+            Timeout = TimeSpan.FromSeconds(1),
+            PollInterval = TimeSpan.FromMilliseconds(10)
+        }).SubmitAsync(Context(), Command(), DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+
+        (await outcome.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken)).ShouldBeFalse();
+        elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromMilliseconds(1_500));
+        submissionToken.IsCancellationRequested.ShouldBeTrue();
+        await gateway.Received(1).SubmitWorkloadCommandAsync(
+            Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+        await gateway.DidNotReceive().ReadWorkloadStreamAsync(
+            Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RecordingSubmitCallerCancellationPropagatesWithoutReadback()
+    {
+        using CancellationTokenSource caller = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<CommandStatusQueryResponse?>(null));
+        gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                caller.Cancel();
+                return Task.FromCanceled<SubmitCommandResponse>(caller.Token);
+            });
+
+        await Should.ThrowAsync<OperationCanceledException>(() => Service(gateway).SubmitAsync(
+            Context(), Command(), DateTimeOffset.UnixEpoch, caller.Token));
+        await gateway.Received(1).GetWorkloadCommandStatusAsync(
+            "tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await gateway.DidNotReceive().ReadWorkloadStreamAsync(
+            Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RecordingSubmitMismatchedAcceptedIdentityDeniesWithoutReadback()
+    {
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<CommandStatusQueryResponse?>(null),
+                call => Task.FromResult<CommandStatusQueryResponse?>(Status(call.ArgAt<string>(1))));
+        gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new SubmitCommandResponse("other-command", MessageId: "other-command")));
+
+        (await Service(gateway).SubmitAsync(Context(), Command(), DateTimeOffset.UnixEpoch,
+            TestContext.Current.CancellationToken)).ShouldBeFalse();
+        await gateway.Received(1).GetWorkloadCommandStatusAsync(
+            "tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await gateway.DidNotReceive().ReadWorkloadStreamAsync(
+            Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
     private static TimeEntryRecordSubmissionService Service(
-        IEventStoreGatewayClient gateway, ExternalContributionPolicyOptions? policy = null)
+        IEventStoreGatewayClient gateway, ExternalContributionPolicyOptions? policy = null,
+        MagicLinkSubmissionPollingOptions? polling = null)
         => new(gateway, new MagicLinkDurableSubmissionService(
-            gateway, Options.Create(new MagicLinkSubmissionPollingOptions())),
+            gateway, Options.Create(polling ?? new MagicLinkSubmissionPollingOptions())),
             policy ?? ExternalContributionPolicyOptions.Default);
 
     private static TimesheetsRequestContext Context()

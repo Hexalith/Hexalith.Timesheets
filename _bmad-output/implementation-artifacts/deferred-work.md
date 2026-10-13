@@ -637,3 +637,9 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
   summary: Put compiled AppHost fixture-control refusal probes in a routine verification lane.
   evidence: The separate hardening increment ran its compiled guard driver successfully, but routine test executables do not run `check_magic_link_apphost_guards.py --configuration-only`; Python unit tests mock commands. A routine negative probe would catch removal of ValidateFixtureControlPlane.
+
+## Resolution: Recording response-loss recovery (2026-10-13)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md`
+  summary: The local recording lost-response follow-up from the final materialization review is implemented.
+  evidence: The existing helper now observes the same command after a submit-response fault and retries classified transient status failures within its original deadline, without resubmitting. Completed status and exact stored recording/submission evidence remain required; Draft/Submitted HTTP cases prove one stored batch and a retry without another submission. Revoke/expire cases verify exact terminal evidence and reject corrupt receipts after response loss. Caller cancellation, transport timeout, delayed completion, mismatched accepted identity, and exhausted budget have regressions. Both public POST routes now share GET privacy headers, correcting the earlier all-route equivalence failure. This local fix does not establish deployed certification; existing readback-budget and still-pending-response concerns remain separate. Current validation and live limitations are in tests/3-6-test-summary.md.

@@ -1,5 +1,50 @@
 # Story 3.6 resume checkpoint — 2026-10-13
 
+## Recording response recovery and denial-header equivalence (2026-10-13)
+
+The scoped [spec-22](spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md)
+is complete. A failed external recording submit response now reaches bounded
+status observation and exact stored recording/submission readback, without
+another submission. Transient status faults retry inside the original
+deadline; nonretryable failures, wrong accepted identity, corrupted receipts
+and caller cancellation retain fail-closed behavior. Revoke/expire recovery
+has exact terminal-event coverage. Both public POST routes now share GET
+privacy headers, repairing the preceding patch's three equivalence failures.
+Five review items and the deadline cleanup follow-up are patched; targeted
+independent verification found no remaining issue.
+
+SDK 10.0.401 restore and reviewed warning-as-error Debug solution build
+passed, zero warnings/errors; build 8.17s. Six individual default suites
+passed **1,899 tests, five declared skips, zero failures in 1,904 total**.
+Reviewed counts: Architecture 57, Contracts 92, Server 558, Works 76,
+Projections 389, Integration 727 passed/5 skipped/732 total. Focused HTTP
+passed 11/11 in 5.078s. Exact commands, failed pre-fix regressions, the first
+full header failure, and final logs are in [the test summary](tests/3-6-test-summary.md).
+
+The baseline live preflight refused a matching Dapr ID. The later reviewed
+private fixture failed 0/1 at projection metadata HTTP 500 before domain
+commands: `/tmp/timesheets-36-record-response-reviewed-live/run-t96n1_t4`.
+Its stop initially left three captured resources past the shutdown window;
+all 14 captured PID/start identities subsequently exited. Verified follow-up
+cleanup removed all three private containers and component copies, with no
+bound resources remaining. Its evidence is
+`/tmp/timesheets-36-record-response-reviewed-cleanup/run-kn4aqpc7`.
+The original journey preservation check passed; the follow-up cleanup
+interval showed a changed shared DB0 persistent digest, so preservation for
+that interval is unproved. No cause is attributed or shared data repaired.
+A diagnostic retry refused the restarted foreign Works AppHost/eventstore
+and started nothing. That foreign runtime was left untouched; the metadata
+500 cause remains unestablished. This source tree has no passing new live
+journey. Earlier local passing evidence below is historical.
+
+The scoped fix is complete, while parent Story 3.6 and Epic 3 stay in progress
+and release stays **FAIL**. Certified complete cross-tenant legacy inventory,
+real operator/resource-binding authority, enforced quiescence, owner source
+continuity and pending-delivery recovery, and deployed subscriber/shared
+rebuild acceptance remain missing. No staging, commit, push, branch,
+dependency or gitlink update occurred. Spec-21 and completed prior specs
+remain preserved.
+
 ## Reviewed AppHost startup hardening (2026-10-13)
 
 The separate startup-hardening increment closes the deferred bare-fixture
