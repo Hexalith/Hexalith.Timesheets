@@ -1,6 +1,52 @@
 # Local magic-link Dapr proof
 
-## Final reviewed isolated fixture (2026-10-12)
+## Reviewed AppHost startup hardening (2026-10-13)
+
+The separate startup-hardening increment closes the deferred bare-fixture
+flag gap. Enabling `TIMESHEETS_LIVE_DAPR_FIXTURE=1` requires run mode,
+validated isolated components and explicit private placement/scheduler
+endpoints before security/resources or fixture authorization. Ordinary
+starts and the supported isolated runner retain their behavior. The completed
+fixture spec and its frozen intent are preserved byte-for-byte.
+
+SDK `10.0.401` restore/build passed; final Debug build zero warnings/errors
+in 4.87s. Python passed **65/65 in 7.277s**, Architecture **57/57 in 2.187s**,
+final LaunchReadiness **13/13 in 0.137s**, and both compiled guard modes **22/22**. Probes force validation-only and
+execution mode through command-line configuration and clear inherited
+case/colon/host-prefix aliases. The real configuration-only run also passed
+with polluted caller variables; Python checks it issues no runtime/storage
+commands or socket allocations. An Architecture tripwire protects the early
+return before Add* security/resources and Build/Run. Independent review
+confirmed the four probe corrections with no remaining concrete regression.
+
+The supported isolated live journey passed **1/1 in 138.093s**, zero
+errors/failures/skips/not-run, runner exit **0**. Evidence root:
+`/tmp/timesheets-apphost-hardening-20261013`; live `live/run-k4wmmm45`, final
+infrastructure guards `guards/run-936k1qhn`, polluted configuration-only
+checks `configuration-guards/run-815f7r2f`. All original real journey
+assertions remain. Only test-harness/Architecture corrections followed this
+live pass; runtime AppHost, runner and domain sources did not change.
+
+Both infrastructure-backed runs matched retained DB0 **113,816 keys**
+(113,690 permanent/126 expiring), DB13 **2,782** (2,671/111), DB14 **773
+permanent**, plus all **55 scheduler KV entries**, cluster identity and
+revision 12593. Retained TTL values/deadlines match, zero natural expirations.
+All **16** captured live PID/start identities exited, current bound-resource
+inventory is empty, and all three owned containers/component copies were
+removed. Final inventories and source/index preservation proof are saved.
+No legacy content was activated, cleared, migrated or repaired.
+
+Initial guard/live attempts refused a foreign Tenants/eventstore runtime
+before creating resources; that runtime exited independently before the
+passing retries. Those refusals, the initial configuration-only test-value
+failure and the Architecture assertion compile error remain recorded with
+exact commands/results in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+No staging, commit, push or dependency/gitlink update occurred. Legacy and
+deployed certification remain open: **Story 3.6/Epic 3 remain in progress;
+release readiness remains FAIL**. Earlier fixture evidence below is historical.
+
+## Historical final reviewed isolated fixture (2026-10-12)
 
 The isolation increment is complete and reviewed. Final Python passed 63/63,
 compiled guards 16/16, Architecture 56/56 and the latest fully isolated live

@@ -6,7 +6,137 @@
 
 ## Current Verification
 
-### Final reviewed fixture verification (2026-10-12)
+### Reviewed startup-hardening final result (2026-10-13)
+
+The scoped increment is complete and independently reviewed. AppHost runtime
+validation is mandatory whenever the fixture flag is enabled. Ordinary
+starts, the supported isolated runner, completed fixture spec/frozen intent,
+legacy environment and production defaults are preserved. Story 3.6 and
+Epic 3 remain in progress; release readiness remains **FAIL**.
+
+All evidence is under `/tmp/timesheets-apphost-hardening-20261013`.
+
+| Final check | Result | Evidence under root |
+| --- | --- | --- |
+| SDK/source-reference restore | SDK 10.0.401; exit 0 | `restore.log` |
+| Final Debug solution build | exit 0; 0 warnings/errors; 4.87s | `build-final.log` |
+| Focused Python | 65/65; exit 0; no skips; 7.277s | `python-reviewed.log` |
+| Python compile/diff whitespace | exit 0 | both changed Python scripts; `git diff --check` |
+| Architecture with ordering tripwire | 57/57; exit 0; no errors/failures/skips/not-run; 2.187s | `architecture-final.log` |
+| Final LaunchReadiness after evidence edits | 13/13; exit 0; no errors/failures/skips/not-run; 0.137s | `readiness-final.log` |
+| Compiled configuration-only guards, polluted environment | 22/22; exit 0; two selections 0, twenty refusals -6 | `configuration-guards-reviewed.log`, `configuration-guards/run-815f7r2f` |
+| Compiled infrastructure-backed guards | 22/22; driver exit 0; preservation/cleanup pass | `guards-final.log`, `guards/run-936k1qhn` |
+| Supported isolated live journey | 1/1; runner exit 0; no errors/failures/skips/not-run; 138.093s | `live-retry.log`, `live/run-k4wmmm45` |
+
+Review corrections clear controlled environment aliases and force validation-only
+plus execution mode through command-line configuration; add a bare-fixture
+publish refusal; protect the early-return ordering in Architecture; and avoid
+socket allocation in configuration-only endpoint mismatch probes. The same
+reviewer confirmed all four corrections and found no remaining concrete
+regression. Structured partial-result aggregation was a pre-existing optional
+improvement; failed command logs retain exact results. The original ledger
+entry stays historical and an appended resolution explicitly links it.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+python3 -m unittest discover -s scripts -p 'test_*magic_link*.py' -v
+python3 -m py_compile scripts/check_magic_link_apphost_guards.py scripts/test_isolated_magic_link_dapr.py
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor
+env timesheets_live_dapr_validate_only=0 timesheets_live_dapr_fixture=1 'Dapr:PlacementHostAddress=127.0.0.1:50005' dApR__SchedulerHostAddress=127.0.0.1:50006 ASPIRE_TIMESHEETS_LIVE_DAPR_COMPONENTS=/legacy/components DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --configuration-only --log-directory /tmp/timesheets-apphost-hardening-20261013/configuration-guards
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --log-directory /tmp/timesheets-apphost-hardening-20261013/guards
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-apphost-hardening-20261013/live
+```
+
+Live runtime proof identifies private Redis `127.0.0.1:59644`, placement
+`127.0.0.1:59645` and scheduler `127.0.0.1:37639`. Actual components/control
+targets were checked before commands. Its `recorded-process-exit.json` proves
+all 16 captured PID/start identities exited, `resource-exit.json` is `[]`,
+and `cleanup.json` confirms descendants gone, three owned containers removed
+and component copies removed. Live and final guards preserve DB0 **113,816**
+keys (113,690 permanent/126 expiring), DB13 **2,782** (2,671/111), DB14
+**773 permanent**, and all **55 scheduler KV entries**, cluster identity and
+revision 12593. Retained unexpired values/deadlines match, **zero natural
+expirations**. These totals are fresh-baseline observations; previous-day
+changes are not attributed, repaired or cleared. No legacy activation,
+clear, migration, repair or simulated production authority occurred.
+
+The first post-review build (`build-reviewed.log`) exited 1 in 5.16s with
+CS0023 at ScaffoldGovernanceTests.cs:110: a void-returning Shouldly assertion
+was chained. Splitting the assertions corrected it; the next full solution
+build passed as shown above. The Python and polluted compiled run passed
+while that test-only compile correction was being made. Runtime AppHost,
+isolated runner and domain sources were unchanged after the passing live
+journey, so the test-harness corrections required no repeat live execution.
+
+All initial failed/blocked attempts and intermediate passes below remain
+historical. No unchecked scoped work remains; full legacy/deployed gates
+still apply. Final LaunchReadiness and preservation audit follow.
+
+### Historical startup-hardening intermediate verification (2026-10-13)
+
+Separate scoped increment: `spec-3-6-harden-live-dapr-fixture-startup.md`.
+The bare fixture flag now fails closed without run mode, validated isolated
+components and both explicit private control endpoints. The validated flag
+also controls child fixture authorization. The completed fixture spec is
+unchanged, as are ordinary defaults, topology/ports, ServiceDefaults,
+dependencies, gitlinks, isolated runner and journey assertions. Story 3.6
+and Epic 3 stay in progress; release readiness remains **FAIL** for the open
+legacy/deployed certification gates.
+
+Evidence root: `/tmp/timesheets-apphost-hardening-20261013`.
+
+| Check | Exact result | Evidence under root |
+| --- | --- | --- |
+| SDK | `dotnet --version`: 10.0.401, matching `global.json` | pinned source-reference build |
+| Source-reference restore | exit 0; 23/28 projects up to date | `restore.log` |
+| Debug solution build | exit 0; 0 warnings/errors; 11.68s | `build.log` |
+| Architecture | exit 0; 56/56; no errors/failures/skips/not-run; 2.435s | `architecture.log` |
+| Compiled configuration-only guards | exit 0; 21/21: 2 selections exit 0, 19 refusals exit -6 | `configuration-guards-retry.log`, `configuration-guards/run-vbqi08b5/guards.json` |
+| Default infrastructure-backed guards | exit 1; preflight refused matching `eventstore` ID; zero probes executed | `guards.log`, `guards/run-sv8dl4sk` |
+| Isolated live runner | exit 1; same preflight refusal; zero live tests executed | `live.log`, `live/run-6v6b3b9r` |
+
+```bash
+dotnet --version
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -warnaserror -m:1 /nr:false
+python3 -m unittest discover -s scripts -p 'test_*magic_link*.py' -v
+python3 -m py_compile scripts/check_magic_link_apphost_guards.py scripts/test_isolated_magic_link_dapr.py
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --log-directory /tmp/timesheets-apphost-hardening-20261013/guards
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --configuration-only --log-directory /tmp/timesheets-apphost-hardening-20261013/configuration-guards
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-apphost-hardening-20261013/live
+```
+
+The first focused Python run passed 64/64 in 7.526s. After adding the
+configuration-only driver, it passed 65/65 in 7.358s; a later final run is
+recorded below. Python compilation and `git diff --check` exited 0.
+The first configuration-only attempt (`run-onwjsid6`, exit 1, retained
+`configuration-guards.log`) reached duplicate-control-endpoint with an
+unset test-only placement value, causing a subprocess-environment TypeError.
+All earlier probes exited, their temporary copies were removed, and cleanup
+was complete. Both test endpoint properties are now set; Python asserts all
+probe environment values are strings. The next attempt passed all 21.
+
+Configuration-only probes run the real compiled AppHost with validation-only
+set in every subprocess environment. The early return precedes security and
+resource construction; regressed refusal checks therefore cannot launch any
+resources. This mode creates only temporary component copies and logs, with
+no Aspire/Dapr/Docker/storage commands. `guards-mode.json` identifies the
+mode; `guards.json` records every result in a completed suite; failed attempts retain the sanitized command logs. The default guard runner and live
+runner retain their preflight, ownership, preservation and cleanup behavior.
+
+Initial AppHost/Dapr inventories were empty. A foreign Tenants AppHost
+subsequently appeared with matching `eventstore` ID and occupied port 8080:
+`/home/administrator/projects/hexalith/tenants/src/Hexalith.Tenants.AppHost/Hexalith.Tenants.AppHost.csproj`.
+Neither refused runner created resources; both `cleanup.json` records have
+`complete=true`, `components_created=false`, `containers_removed=0`.
+No foreign stop occurred. No shared-state snapshot is claimed for these
+preflight refusals; the foreign runtime can change its own services. The
+prior 2026-10-12 1/1 live pass remains historical and does not certify this
+new increment. No legacy activation, clear, migration, repair or simulated
+production authority occurred. Unchanged domain suites were not repeated.
+
+### Historical final reviewed fixture verification (2026-10-12)
 
 The scoped isolation increment is implemented, reviewed and verified. Three
 independent review layers ran across three rounds; all retained findings were
@@ -1826,3 +1956,67 @@ passed. Protected-source/story comparisons and the empty staged diff confirm
 preservation of the existing work. The final baseline-relative unified diff,
 including every untracked file, is
 `/tmp/timesheets-v1-migration-postreview-4uzfa6gj.diff`; no Git staging was used.
+
+### Startup-hardening final Python/readiness and preservation audit (2026-10-13)
+
+The final focused Python invocation above passed **65/65 in 7.398s**, exit 0,
+no skips; `python-verified.log` under the hardening evidence root records it.
+After the evidence edits, the focused LaunchReadiness executable passed
+**13/13 in 0.135s**, exit 0, no errors/failures/skips/not-run:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+```
+
+Log: `readiness.log`. `preservation-baseline.json` and
+`source-preservation.json` prove the completed fixture spec, sprint status,
+launch-readiness verdict, checked-in components, SDK and centralized package
+file hashes match; full HEAD, all indexed gitlinks and Git index bytes also
+match. No staging, commit, push or dependency update occurred. The recorded
+`runtime-inventory.json` then showed no Dapr instances, no AppHosts, no
+fixture-labelled containers and no temporary guard component directories.
+The foreign Tenants run had exited independently; a fresh-baseline retry of
+the infrastructure-backed guards and isolated live runner is being recorded
+separately from the preserved preflight failures above.
+
+### Infrastructure-backed compiled guard retry (2026-10-13)
+
+With empty runtime preflight, the same default guard command above passed
+**21/21**, driver exit **0**. Evidence:
+`/tmp/timesheets-apphost-hardening-20261013/guards/run-5gzxbytp`;
+log `guards-retry.log`. Valid isolated and ordinary selection exited 0;
+all 19 incomplete/unsafe/publish cases refused with exit -6. Every probe
+returns before resources even if admission validation regresses.
+
+Read-only before/after preservation reports `matches=true`: DB0 **113,816
+keys** (113,690 permanent/126 expiring), DB13 **2,782** (2,671/111), DB14
+**773 permanent**, and **55 scheduler KV entries** with the same cluster
+identity and revision **12593**. Retained TTL values/deadlines match with
+zero natural expirations. `cleanup.json` reports complete cleanup, journey
+descendants gone, all three owned containers removed and components removed.
+No AppHost/security/resource graph was constructed by any probe. These
+fresh-baseline totals differ from the previous day's baselines; cross-run
+changes are not attributed, repaired or cleared. The initial foreign-runtime
+refusal remains historical failure evidence.
+
+### Startup-hardening final preservation and cleanup audit (2026-10-13)
+
+Final LaunchReadiness passed **13/13 in 0.137s**, exit 0, after the final
+evidence/spec edits. Exact command:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+```
+
+`source-preservation-final.json` confirms the completed isolation spec
+(including frozen intent), sprint status, launch readiness, default components,
+SDK and centralized package catalog hashes remain unchanged. HEAD remains
+`a377d1240a86074b670d43796b9d2dcc49927f5e`; all indexed gitlinks and Git index
+bytes match the baseline. The staged diff is empty. `runtime-inventory-final.json`
+records no Dapr instances, no Aspire AppHosts, no fixture-labelled containers,
+no temporary guard component directories, and the removed live component copy.
+The passing live run's 16 captured identities, empty resource scanner and
+three-container/component cleanup proofs are retained. Final `git diff --check`
+passed. No stage/commit/push or dependency/gitlink update occurred. The scoped
+startup-hardening spec is done; Story 3.6/Epic 3 stay in progress and release
+readiness stays **FAIL** pending legacy and deployed certification.

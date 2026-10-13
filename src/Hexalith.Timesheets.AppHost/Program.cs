@@ -9,13 +9,18 @@ IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(ar
 
 string defaultComponentsDirectory = Path.Combine(builder.AppHostDirectory, "DaprComponents");
 string componentsDirectory = defaultComponentsDirectory;
+bool fixtureEnabled = builder.Configuration["TIMESHEETS_LIVE_DAPR_FIXTURE"] == "1";
 string? fixtureComponents = builder.Configuration["TIMESHEETS_LIVE_DAPR_COMPONENTS"];
-if (fixtureComponents is not null)
+if (fixtureEnabled || fixtureComponents is not null)
 {
-    if (!builder.ExecutionContext.IsRunMode || builder.Configuration["TIMESHEETS_LIVE_DAPR_FIXTURE"] != "1"
-        || string.IsNullOrWhiteSpace(fixtureComponents))
+    if (!builder.ExecutionContext.IsRunMode || !fixtureEnabled)
     {
         throw new InvalidOperationException("Isolated Dapr components require an explicit run-mode fixture opt-in.");
+    }
+
+    if (string.IsNullOrWhiteSpace(fixtureComponents))
+    {
+        throw new InvalidOperationException("Isolated Dapr fixture requires an explicit component directory.");
     }
 
     componentsDirectory = Path.GetFullPath(fixtureComponents);
@@ -127,7 +132,7 @@ if (builder.ExecutionContext.IsRunMode)
         _ = eventStore.WithEnvironment("TIMESHEETS_LIVE_DAPR_COMPONENTS", componentsDirectory);
         _ = timesheets.WithEnvironment("TIMESHEETS_LIVE_DAPR_COMPONENTS", componentsDirectory);
     }
-    if (builder.Configuration["TIMESHEETS_LIVE_DAPR_FIXTURE"] == "1")
+    if (fixtureEnabled)
     {
         _ = timesheets.WithEnvironment("Timesheets__LiveDaprFixture__Enabled", "true");
     }

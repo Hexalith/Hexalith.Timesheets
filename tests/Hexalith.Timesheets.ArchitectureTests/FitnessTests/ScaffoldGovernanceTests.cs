@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 using Shouldly;
@@ -87,6 +88,26 @@ public sealed class ScaffoldGovernanceTests
 
         sdk.GetProperty("version").GetString().ShouldBe("10.0.401");
         sdk.GetProperty("rollForward").GetString().ShouldBe("latestPatch");
+    }
+
+    /// <summary>
+    /// Protects the no-resource boundary used by unsafe fixture configuration probes.
+    /// </summary>
+    [Fact]
+    public void AppHostValidationOnlyReturnsBeforeSecurityResourcesAndExecution()
+    {
+        string program = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Program.cs"));
+        int probeStart = program.IndexOf("if (builder.Configuration[\"TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY\"] == \"1\")", StringComparison.Ordinal);
+        probeStart.ShouldBeGreaterThanOrEqualTo(0);
+        int probeEnd = program.IndexOf("\n}", probeStart, StringComparison.Ordinal);
+        probeEnd.ShouldBeGreaterThan(probeStart);
+        program[probeStart..probeEnd].ShouldContain("return;");
+
+        // Even a regressed fixture-admission check must reach this exit before
+        // any Add* helper (including security), Build, Run, or RunAsync call.
+        MatchCollection setupCalls = Regex.Matches(program, @"\.\s*(?:Add\w*|Build|Run(?:Async)?)\s*(?:<|\()");
+        setupCalls.ShouldNotBeEmpty();
+        setupCalls.ShouldAllBe(match => match.Index > probeEnd);
     }
 
     [Fact]

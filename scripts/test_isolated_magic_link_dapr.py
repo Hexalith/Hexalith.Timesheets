@@ -105,13 +105,81 @@ class IsolatedFixtureTests(unittest.TestCase):
                 message = "Dapr component selection: " + ("isolated fixture" if name == "valid-isolated" else "checked-in defaults")
                 return subprocess.CompletedProcess(arguments, 0, message, "")
             message = "Isolated Dapr components are missing or unsafe."
-            if name == "missing-opt-in":
+            if name in ("missing-opt-in", "publish-fixture", "publish-bare-fixture"):
                 message = "Isolated Dapr components require an explicit run-mode fixture opt-in."
+            if name in ("bare-fixture-flag", "missing-components", "empty-components", "whitespace-components"):
+                message = "Isolated Dapr fixture requires an explicit component directory."
             if name in ("missing-placement", "shared-placement", "missing-scheduler", "shared-scheduler", "duplicate-control-endpoint"):
                 message = "Isolated Dapr placement and scheduler endpoints are missing or unsafe."
             return subprocess.CompletedProcess(arguments, -6, "", message)
         commands.failure = probe
         return commands
+
+    def test_compiled_guard_driver_covers_incomplete_fixture_settings_with_harmless_probes(self):
+        commands = self.guard_commands()
+        instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
+        snapshot = fixture.SharedSnapshot()
+        snapshot["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 0, "sha256": "fixed"}
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                patch.object(guards, "read_only_shared_snapshot", return_value=snapshot), \
+                patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, guards.run_guards())
+        probes = {arguments[1].split("=", 1)[1]: (arguments, kwargs["env"])
+                  for arguments, kwargs in commands.calls if arguments[0] == str(executable)}
+        self.assertEqual(22, len(probes))
+        for name, (arguments, environment) in probes.items():
+            self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"], name)
+            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", arguments)
+        for name in ("bare-fixture-flag", "missing-components", "empty-components", "whitespace-components"):
+            environment = probes[name][1]
+            self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_FIXTURE"])
+            self.assertFalse(environment.get("TIMESHEETS_LIVE_DAPR_COMPONENTS", "").strip())
+        for name in ("bare-fixture-flag", "ordinary-defaults", "publish-bare-fixture"):
+            self.assertNotIn("TIMESHEETS_LIVE_DAPR_COMPONENTS", probes[name][1])
+            self.assertNotIn("Dapr__PlacementHostAddress", probes[name][1])
+            self.assertNotIn("Dapr__SchedulerHostAddress", probes[name][1])
+        self.assertNotIn("TIMESHEETS_LIVE_DAPR_FIXTURE", probes["ordinary-defaults"][1])
+        for setting in ("Dapr__PlacementHostAddress", "Dapr__SchedulerHostAddress"):
+            self.assertTrue(probes["missing-components"][1][setting].startswith("127.0.0.1:"))
+        self.assertIn("--publisher=manifest", probes["publish-fixture"][0])
+        self.assertIn("--AppHost:Operation=publish", probes["publish-bare-fixture"][0])
+        self.assertEqual("1", probes["publish-bare-fixture"][1]["TIMESHEETS_LIVE_DAPR_FIXTURE"])
+        self.assertFalse(commands.started)
+        self.assertFalse(commands.containers)
+        self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+        self.assertFalse(Path(instance.scratch).exists())
+
+    def test_configuration_only_guards_issue_only_validation_probes(self):
+        commands = self.guard_commands()
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        polluted = {"timesheets_live_dapr_validate_only": "0", "timesheets_live_dapr_fixture": "1",
+                    "Dapr:PlacementHostAddress": "127.0.0.1:50005", "dApR__SchedulerHostAddress": "127.0.0.1:50006",
+                    "ASPIRE_TIMESHEETS_LIVE_DAPR_COMPONENTS": "/legacy/components",
+                    "DOTNET_TIMESHEETS_LIVE_DAPR_COMPONENTS": "/legacy/components",
+                    "AppHost__Operation": "publish", "Publishing__Publisher": "manifest"}
+        instance.environment.update(polluted)
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                patch.object(guards, "available_control_port", side_effect=AssertionError("Unexpected socket bind")), \
+                patch.object(guards, "read_only_shared_snapshot", side_effect=AssertionError("Unexpected storage read")), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, guards.run_guards(configuration_only=True))
+        self.assertEqual(22, len(commands.calls))
+        for arguments, kwargs in commands.calls:
+            self.assertEqual(str(executable), arguments[0])
+            self.assertEqual("1", kwargs["env"]["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"])
+            self.assertTrue(all(isinstance(value, str) for value in kwargs["env"].values()))
+            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", arguments)
+            self.assertFalse(set(polluted) & set(kwargs["env"]))
+        self.assertIsNone(instance.scratch)
+        self.assertFalse(commands.containers)
+        self.assertEqual({"configuration_only": True, "resources_enabled": False},
+                         json.loads((instance.log_directory / "guards-mode.json").read_text()))
 
     def test_components_preserve_names_scopes_database_separation_and_defaults(self):
         originals = {path: (fixture.DEFAULT_COMPONENTS / path).read_bytes() for path in fixture.COMPONENT_FILES[:2]}

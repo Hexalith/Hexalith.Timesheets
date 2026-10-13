@@ -3,6 +3,8 @@
 Run after the Debug solution build. Every probe exits before constructing
 resources. Shared/missing-control probes and ordinary-default selection cannot
 activate retained storage even if the validation under test regresses.
+--configuration-only runs the same no-resource probes without starting private
+services or requiring an idle runtime; it supplies unused loopback test values.
 """
 
 import argparse
@@ -18,20 +20,46 @@ from run_isolated_magic_link_dapr import (
 )
 
 
-def run_guards(log_directory=None):
+def run_guards(log_directory=None, configuration_only=False):
     fixture = IsolatedFixture(log_directory=log_directory)
+    # IConfiguration treats environment keys case-insensitively and aliases __
+    # to :. Remove caller overrides, including host-prefixed providers, so
+    # missing-setting probes actually exercise missing settings.
+    controlled = {key.casefold() for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
+        "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY", "TIMESHEETS_LIVE_DAPR_REDIS_HOST",
+        "Dapr:PlacementHostAddress", "Dapr:SchedulerHostAddress", "AppHost:Operation", "Publishing:Publisher")}
+    for key in tuple(fixture.environment):
+        normalized = key.replace("__", ":").casefold()
+        aliases = [normalized]
+        for prefix in ("aspire_", "dotnet_"):
+            if normalized.startswith(prefix):
+                aliases.append(normalized[len(prefix):])
+        if any(alias in controlled for alias in aliases):
+            del fixture.environment[key]
     fixture.environment["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"] = "1"
     status = 1
     try:
-        fixture.preflight()
-        fixture.shared_before = read_only_shared_snapshot()
-        fixture.write_evidence("shared-before.json", json.dumps(fixture.shared_before, indent=2) + "\n")
-        fixture.start_infrastructure()
-        fixture.preflight()
+        if configuration_only:
+            fixture.placement = "127.0.0.1:16050"
+            fixture.scheduler = "127.0.0.1:16060"
+            fixture.environment.update({"TIMESHEETS_LIVE_DAPR_FIXTURE": "1",
+                "TIMESHEETS_LIVE_DAPR_REDIS_HOST": "127.0.0.1:16379",
+                "Dapr__PlacementHostAddress": fixture.placement,
+                "Dapr__SchedulerHostAddress": fixture.scheduler})
+        else:
+            fixture.preflight()
+            fixture.shared_before = read_only_shared_snapshot()
+            fixture.write_evidence("shared-before.json", json.dumps(fixture.shared_before, indent=2) + "\n")
+            fixture.start_infrastructure()
+            fixture.preflight()
+        fixture.write_evidence("guards-mode.json", json.dumps({"configuration_only": configuration_only,
+            "resources_enabled": False}, indent=2) + "\n")
         executable = APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
         require(executable.is_file(), "Build the Debug AppHost before running guard checks")
         baseline = dict(fixture.environment)
-        cases = ("valid-isolated", "ordinary-defaults", "missing-opt-in", "wrong-scope", "missing-component",
+        cases = ("valid-isolated", "ordinary-defaults", "bare-fixture-flag", "missing-components",
+                 "empty-components", "whitespace-components", "publish-fixture", "publish-bare-fixture",
+                 "missing-opt-in", "wrong-scope", "missing-component",
                  "missing-pubsub", "unsafe-pubsub", "missing-placement", "shared-placement",
                  "missing-scheduler", "shared-scheduler", "duplicate-control-endpoint",
                  "shared-redis", "mismatched-actor-redis", "mismatched-readmodel-redis", "mismatched-pubsub-redis")
@@ -42,9 +70,32 @@ def run_guards(log_directory=None):
                 fixture.environment = dict(baseline)
                 fixture.environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"] = directory
                 expected = "Isolated Dapr components are missing or unsafe."
+                mode = "publish" if name in ("publish-fixture", "publish-bare-fixture") else "run"
+                # Command-line configuration has precedence over every inherited
+                # provider. A regressed admission guard still cannot run resources.
+                arguments = [str(executable), "--guard-probe=" + name,
+                             "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", "--AppHost:Operation=" + mode]
                 if name == "ordinary-defaults":
                     fixture.environment.pop("TIMESHEETS_LIVE_DAPR_COMPONENTS")
                     fixture.environment.pop("TIMESHEETS_LIVE_DAPR_FIXTURE")
+                    fixture.environment.pop("Dapr__PlacementHostAddress")
+                    fixture.environment.pop("Dapr__SchedulerHostAddress")
+                elif name in ("bare-fixture-flag", "missing-components", "empty-components", "whitespace-components"):
+                    expected = "Isolated Dapr fixture requires an explicit component directory."
+                    if name in ("bare-fixture-flag", "missing-components"):
+                        fixture.environment.pop("TIMESHEETS_LIVE_DAPR_COMPONENTS")
+                    else:
+                        fixture.environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"] = "" if name == "empty-components" else " \t "
+                    if name == "bare-fixture-flag":
+                        fixture.environment.pop("Dapr__PlacementHostAddress")
+                        fixture.environment.pop("Dapr__SchedulerHostAddress")
+                elif name in ("publish-fixture", "publish-bare-fixture"):
+                    if name == "publish-bare-fixture":
+                        fixture.environment.pop("TIMESHEETS_LIVE_DAPR_COMPONENTS")
+                        fixture.environment.pop("Dapr__PlacementHostAddress")
+                        fixture.environment.pop("Dapr__SchedulerHostAddress")
+                    arguments.extend(["--publisher=manifest", "--output-path=" + str(Path(directory) / "unused-manifest.json")])
+                    expected = "Isolated Dapr components require an explicit run-mode fixture opt-in."
                 elif name == "missing-opt-in":
                     fixture.environment.pop("TIMESHEETS_LIVE_DAPR_FIXTURE")
                     expected = "Isolated Dapr components require an explicit run-mode fixture opt-in."
@@ -65,7 +116,8 @@ def run_guards(log_directory=None):
                 elif name.startswith("mismatched-"):
                     relative = COMPONENT_FILES[("actor", "readmodel", "pubsub").index(name.split("-")[1])]
                     path = Path(directory) / relative
-                    replacement = "127.0.0.1:" + str(available_control_port())
+                    port = 16400 + COMPONENT_FILES.index(relative) if configuration_only else available_control_port()
+                    replacement = "127.0.0.1:" + str(port)
                     require(replacement != baseline["TIMESHEETS_LIVE_DAPR_REDIS_HOST"], "Guard mismatch endpoint was not distinct")
                     path.write_text(path.read_text().replace(baseline["TIMESHEETS_LIVE_DAPR_REDIS_HOST"], replacement))
                 elif name in ("missing-placement", "shared-placement", "missing-scheduler", "shared-scheduler", "duplicate-control-endpoint"):
@@ -80,7 +132,7 @@ def run_guards(log_directory=None):
                         fixture.environment["Dapr__SchedulerHostAddress"] = fixture.placement
                 # Direct execution is a compiled configuration probe, with no
                 # Build/Run or resource construction. It is not an AppHost launch.
-                result = fixture.run_command([str(executable), "--guard-probe=" + name], check=False)
+                result = fixture.run_command(arguments, check=False)
                 output = (result.stdout or "") + (result.stderr or "")
                 if name in ("valid-isolated", "ordinary-defaults"):
                     marker = "isolated fixture" if name == "valid-isolated" else "checked-in defaults"
@@ -88,9 +140,10 @@ def run_guards(log_directory=None):
                             name + " selection was not verified")
                 else:
                     require(result.returncode != 0 and expected in output, name + " did not refuse before resource construction")
-                require(not json_output(fixture.run_command(["aspire", "ps", "--non-interactive", "--format", "Json"]).stdout),
-                        "A guard probe constructed an AppHost")
-                fixture.preflight()
+                if not configuration_only:
+                    require(not json_output(fixture.run_command(["aspire", "ps", "--non-interactive", "--format", "Json"]).stdout),
+                            "A guard probe constructed an AppHost")
+                    fixture.preflight()
                 results.append({"case": name, "exit": result.returncode, "passed": True})
                 print(name + ": compiled configuration check passed; exit " + str(result.returncode), flush=True)
         fixture.write_evidence("guards.json", json.dumps(results, indent=2) + "\n")
@@ -124,8 +177,10 @@ def run_guards(log_directory=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log-directory", type=Path)
+    parser.add_argument("--configuration-only", action="store_true",
+                        help="Run only compiled validation probes; never start infrastructure or resources")
     arguments = parser.parse_args()
     def interrupted(_signal, _frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, interrupted)
-    raise SystemExit(run_guards(arguments.log_directory))
+    raise SystemExit(run_guards(arguments.log_directory, arguments.configuration_only))
