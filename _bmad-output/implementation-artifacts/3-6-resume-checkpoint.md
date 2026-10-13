@@ -1,5 +1,34 @@
 # Story 3.6 resume checkpoint — 2026-10-13
 
+## Platform lookup resolves target discovery; deployed prerequisites absent
+
+At the user's direction, Platform source
+`2c3f0fd4befe4e7e2aa1a3f7ce8ae1d5e1808f3c` and native read-only access were
+inspected from Timesheets `6a95dbb10721fbe22a7fe89e9c021454aed43b45`.
+The designated API is `https://192.168.1.30:6443`; existing context
+`jpiquot@local` authenticates as `jpiquot`. Cluster UID matches the retained
+Platform census. Administrator owns operations; Jérôme Piquot is the generic
+P1 contract's maintainer. Planned domains are staging `hexalith.com` and
+production `tache.ai`.
+
+Native name/image checks found no identifiable Timesheets workload. Platform
+does not compose Timesheets and excludes it from MVP acceptance; no production
+binding issuer or Timesheets inventory/maintenance provider was found. The P1
+contract explicitly has no operational enrollment. Native cluster access,
+generic offline verification and infrastructure receipts do not establish the
+missing domain authority or full legacy source coverage.
+
+[The qualification record](../../docs/deployed-magic-link-acceptance.md)
+contains exact commands, findings and their limits. Spec-23's former target
+question is replaced by these facts and external prerequisites; it remains
+**draft**, not implementation-ready. Do not ask the user to reconstruct the
+same deployment information again. Timesheets deployment/enrollment,
+production bindings, certified inventory/quiescence/continuity and deployed
+subscriber/shared-rebuild evidence must exist before acceptance can continue.
+Story 3.6/Epic 3 remain in progress; release remains FAIL. Only Timesheets
+documentation changed; no runtime, Platform, cluster or Git mutation occurred.
+Earlier target-discovery checkpoints below are historical.
+
 ## Fresh local proof; deployed qualification needs target evidence
 
 The fresh SDK 10.0.401 source-reference restore and Debug build passed,

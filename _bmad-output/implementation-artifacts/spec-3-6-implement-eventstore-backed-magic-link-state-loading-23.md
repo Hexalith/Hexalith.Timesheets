@@ -43,15 +43,22 @@ release PASS.
 
 </frozen-after-approval>
 
-## Open Questions
+## Qualification Result
 
-- Which deployment and trusted evidence sources should supply acceptance?
-  Options: **Existing deployed target** (provide environment identity,
-  supported read-only access, responsible operator, installed resource-binding
-  issuer and independently verified inventory/maintenance receipt sources;
-  inspect before proposing writes) / **Local evidence only** (complete the
-  local evidence refresh and leave the parent/deployed gates unfinished).
-  Supply configuration or evidence references, rather than credentials.
+The user directed discovery from Platform. Its designated cluster is
+`https://192.168.1.30:6443`; context `jpiquot@local` currently authenticates as
+`jpiquot` and supports native reads. Administrator owns operations; Jérôme
+Piquot maintains the generic P1 contract. Planned domains are staging
+`hexalith.com` and production `tache.ai`. Current node/UID match Platform's
+retained inventory. Details and exact commands are in
+[the qualification record](../../docs/deployed-magic-link-acceptance.md).
+
+No identifiable Timesheets deployment, production resource-binding issuer or
+Timesheets inventory/maintenance provider was found. Platform excludes
+Timesheets from MVP acceptance; P1 remains offline and operationally
+unenrolled. These are missing external prerequisites, not unresolved target
+preferences. Keep this spec draft until installation/coverage/authority are
+established and a concrete acceptance plan is approved.
 
 ## Code Map
 
@@ -106,9 +113,15 @@ release PASS.
   restore/build passed, zero warnings/errors, 17.64s; fresh journey passed
   1/1 in 126.554s. Both cleanup/preservation checks passed; details are in the
   test summary. No runtime/test source changed.
-- No named deployment or installed real authority/inventory/maintenance
-  evidence was found. Resolve the Open Question before dependent work.
+- Initial investigation found no target; the subsequent user-directed Platform
+  investigation recovered infrastructure/access but found no qualified
+  Timesheets deployment or binding/inventory/maintenance provider. The earlier
+  request for deployment details is answered by the qualification record.
 - Readiness evidence checks passed 13/13 in 0.156s; whitespace validation passed.
+- Read-only Platform/native qualification used Platform
+  `2c3f0fd4befe4e7e2aa1a3f7ce8ae1d5e1808f3c` and Timesheets
+  `6a95dbb10721fbe22a7fe89e9c021454aed43b45` on 2026-10-13. No Platform,
+  runtime or cluster mutation occurred. See the record for exact scope/limits.
 
 ## Spec Change Log
 
