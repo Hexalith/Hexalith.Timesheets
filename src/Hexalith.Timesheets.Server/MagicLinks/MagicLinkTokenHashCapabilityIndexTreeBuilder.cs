@@ -84,6 +84,8 @@ public sealed class MagicLinkTokenHashCapabilityIndexTreeBuilder(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(contribution);
+        if (selected.StorageVersion != 7 || selected.NextNodeId < 0 || generation < 0)
+            throw new InvalidOperationException("The selected numeric index root is invalid.");
         string tenantId = contribution.Candidate.Tenant.TenantId;
         string ownerId = contribution.Candidate.CapabilityId.Value;
         MagicLinkTokenHashCapabilityIndexDirectoryEntry? admitted = await reader.FindOwnerAsync(

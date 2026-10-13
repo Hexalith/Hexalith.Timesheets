@@ -195,7 +195,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         adjustment.TimeEntryId.ShouldBe(adjustEntryId);
         adjustment.AdjustedValues.DurationMinutes.ShouldBe(AdjustCommand().DurationMinutes);
         adjustment.AdjustedValues.Comment.ShouldNotBeNull().Text.ShouldBe("adjusted private note");
-        adjustment.AdjustedValues.Comment.Policy.ServerPublicationVersion.ShouldBe(1);
+        adjustment.AdjustedValues.Comment.Policy.ServerPublicationVersion
+            .ShouldBe(TimeEntryCommentPublicationIssuer.CurrentVersion);
         adjustment.AdjustedValues.Comment.Policy.ProjectionInclusion
             .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         adjustment.AdjustedValues.Comment.Policy.ExternalConfirmationDisplay
@@ -535,14 +536,17 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         pendingSubmitToken.IsCancellationRequested.ShouldBeTrue();
     }
 
-    [Fact]
-    public async Task Issue_retries_transient_stored_read_after_exact_completion()
+    [Theory]
+    [InlineData(503)]
+    [InlineData(408)]
+    public async Task Issue_retries_transient_stored_read_after_exact_completion(int transientStatusCode)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
         await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
             new MagicLinkCapabilityId("catalog-seed-issue-read-retry"), new TimeEntryId("entry-seed-issue-read-retry"));
         factory.Gateway.TransientIssueReadFailures = 1;
+        factory.Gateway.TransientReadFailureStatusCode = transientStatusCode;
         factory.Gateway.StaleIssueReadbacks = 1;
         var capabilityId = new MagicLinkCapabilityId("capability-issue-read-retry");
         var command = new IssueMagicLinkConfirmationCapability(
@@ -915,8 +919,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         stored.Count(static item => item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
     }
 
-    [Fact]
-    public async Task Confirm_retries_transient_status_and_batch_read_faults_within_its_deadline()
+    [Theory]
+    [InlineData(429)]
+    [InlineData(408)]
+    public async Task Confirm_retries_transient_status_and_batch_read_faults_within_its_deadline(int transientStatusCode)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -926,6 +932,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             capabilityId, entryId);
         factory.Gateway.TransientWorkloadStatusFailures = 1;
         factory.Gateway.TransientCommitBatchReadFailures = 1;
+        factory.Gateway.TransientReadFailureStatusCode = transientStatusCode;
         factory.Gateway.StaleCommitBatchReadbacks = 1;
 
         using HttpResponseMessage response = await client.PostAsJsonAsync(

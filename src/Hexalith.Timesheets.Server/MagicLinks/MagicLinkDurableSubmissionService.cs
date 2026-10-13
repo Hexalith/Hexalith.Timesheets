@@ -355,7 +355,7 @@ public sealed class MagicLinkDurableSubmissionService(
     private static bool IsRetryableGatewayFailure(Exception exception, CancellationToken callerCancellationToken)
         => !callerCancellationToken.IsCancellationRequested
             && (exception is OperationCanceledException or TimeoutException or HttpRequestException
-                || exception is EventStoreGatewayException { StatusCode: 429 or 500 or 502 or 503 or 504 });
+                || exception is EventStoreGatewayException { StatusCode: 408 or 429 or 500 or 502 or 503 or 504 });
 
     private async Task<bool?> VerifyCommittedBatchAsync(
         CommitMagicLinkUse intent,

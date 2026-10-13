@@ -599,3 +599,41 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-harden-live-dapr-fixture-startup.md`
   summary: The deferred bare TIMESHEETS_LIVE_DAPR_FIXTURE=1 startup gap is closed by a separate scoped increment.
   evidence: AppHost admission now requires run mode, a nonblank validated isolated component directory and explicit private placement/scheduler endpoints before resource setup or fixture authorization. All 22 compiled validation-only probes pass, including bare/missing/empty/whitespace settings and both publish-mode refusals; ordinary defaults and the supported isolated runner are preserved. Initial infrastructure-backed guards and live validation refused a concurrent foreign Tenants/eventstore runtime before creating anything; after it exited independently, the guards passed 22/22 and isolated live journey passed 1/1 with preservation/cleanup proof. This resolves the historical entry sourced from [the completed isolation spec](spec-3-6-isolate-live-dapr-fixture-storage.md). Current local proof and exact results are in tests/3-6-test-summary.md; this closes the configuration gap only, without legacy/deployed certification or Story 3.6/release completion. The completed isolation spec and its frozen intent are unchanged.
+
+## Deferred from: final review of Story 3.6 materialization (2026-10-13)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Verify whether any deployed direct legacy shard must be rejected before v7 bootstrap.
+  evidence: The bootstrap checks selected legacy shards and the direct v1 single root. No released direct-shard writer is established here; deployed key-layout inspection or historical writer evidence would settle whether a direct shard can be present.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Recover a committed external recording when its submit response is lost.
+  evidence: The recording service uses the response-first helper, so a post-commit transport fault can cause the endpoint to return 403 before status and exact stored-event readback. No recording-route lost-response test covers this case.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Verify sealed v6 migration resume against a changed source or damaged staged root.
+  evidence: A sealed-stage retry calls CommitAsync before repeating source-digest and membership checks. SDK page digests protect staged bytes, and the global writer fence should prevent normal source changes; a fault test or evidence of an out-of-fence writer is needed to show the bad state is reachable.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Bind deployed migration authorization to the intended operator as well as its certified operation.
+  evidence: The endpoint requires authentication, while the authority port receives operation and receipt identifiers without ClaimsPrincipal. No permitted production authority is installed; review the eventual provider and ingress operator policy before enabling the route.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Retire obsolete same-generation capability projection fragments after repeated large-view updates.
+  evidence: WriteView creates digest-keyed fragments for each new large view, and its changed-view path does not delete the prior digest's fragments. They remain unreachable but consume read-model storage until generation cleanup.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Establish subscriber-driven projection delivery independently of manual mapped-route dispatch.
+  evidence: The isolated journey explicitly invokes `/project/v2` after reading stored events. Its 1/1 pass proves the composed mapped route and private pub/sub wiring, while automatic deployed subscription and shared rebuild acceptance remain unchecked.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Validate the complete selected v6 shard in the local Python candidate diagnostic.
+  evidence: An inline v6 candidate may be accepted without checking all manifest pages; the production loader validates the complete shard. Current isolated proof uses v7, but an old v6 diagnostic could overstate local evidence.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Distinguish selected-format read failure from an absent v7 format in the local index diagnostic.
+  evidence: `_selected_index_snapshot` catches every RuntimeError while reading the v7 format and falls back to v6, so a transient store outage can be misreported as a legacy shape. Production admission remains fail-closed.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+  summary: Put compiled AppHost fixture-control refusal probes in a routine verification lane.
+  evidence: The separate hardening increment ran its compiled guard driver successfully, but routine test executables do not run `check_magic_link_apphost_guards.py --configuration-only`; Python unit tests mock commands. A routine negative probe would catch removal of ValidateFixtureControlPlane.

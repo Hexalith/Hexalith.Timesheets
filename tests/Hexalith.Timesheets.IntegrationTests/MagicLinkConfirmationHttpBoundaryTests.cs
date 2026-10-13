@@ -209,6 +209,21 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         yield return ["ResponseBody", denialBody, Array.Empty<string>(), ProbeToken, true, false];
     }
 
+    [Theory]
+    [InlineData("confirm")]
+    [InlineData("adjust")]
+    public async Task Token_display_get_responses_disable_caching_and_referrers(string route)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new();
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.GetAsync(
+            $"/api/timesheets/magic-links/{route}?t=%20%20", TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        response.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();
+        response.Headers.GetValues("Referrer-Policy").ShouldContain("no-referrer");
+    }
+
     [Fact]
     public async Task Invalid_magic_link_http_boundary_responses_are_equivalent_and_opaque()
     {
@@ -2578,6 +2593,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         public int TransientIssueReadFailures { get; set; }
 
+        public int? TransientReadFailureStatusCode { get; set; }
+
         public int StaleIssueReadbacks { get; set; }
 
         public int StaleCommitBatchReadbacks { get; set; }
@@ -2857,7 +2874,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 {
                     TransientIssueReadFailures--;
                     return Task.FromException<StreamReadPage>(
-                        new EventStoreGatewayException(503, "Transient issue read fault"));
+                        new EventStoreGatewayException(TransientReadFailureStatusCode ?? 503, "Transient issue read fault"));
                 }
 
                 if (request.PageSize == 1 && StaleIssueReadbacks > 0)
@@ -2871,7 +2888,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 {
                     TransientCommitBatchReadFailures--;
                     return Task.FromException<StreamReadPage>(
-                        new EventStoreGatewayException(429, "Transient batch read fault"));
+                        new EventStoreGatewayException(TransientReadFailureStatusCode ?? 429, "Transient batch read fault"));
                 }
 
                 if (request.FromSequence >= 1 && request.PageSize == 2

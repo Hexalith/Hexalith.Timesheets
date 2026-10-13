@@ -11,6 +11,7 @@ using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 using Shouldly;
@@ -93,7 +94,8 @@ public sealed class CorrectRejectedTimeEntriesForResubmissionE2ETests
         corrected.PreviousValues.DurationMinutes.ShouldBe(60);
         corrected.CorrectedValues.DurationMinutes.ShouldBe(75);
         corrected.CorrectedValues.Comment.ShouldNotBeNull().Text.ShouldBe(correction.Comment!.Text);
-        corrected.CorrectedValues.Comment.Policy.ServerPublicationVersion.ShouldBe(1);
+        corrected.CorrectedValues.Comment.Policy.ServerPublicationVersion
+            .ShouldBe(TimeEntryCommentPublicationIssuer.CurrentVersion);
         state.Apply(corrected);
 
         TimeEntrySubmitted resubmission = await SubmitOneAsync(

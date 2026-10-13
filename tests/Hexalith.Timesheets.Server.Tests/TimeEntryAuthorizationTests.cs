@@ -8,6 +8,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -918,7 +919,8 @@ public sealed class TimeEntryAuthorizationTests
         corrected.CorrectedBy.ShouldBe(Context().Actor);
         corrected.Tenant.ShouldBe(Context().Tenant);
         corrected.CorrectionState.ShouldBe(TimeEntryCorrectionState.Corrected);
-        corrected.CorrectedValues.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        corrected.CorrectedValues.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion
+            .ShouldBe(TimeEntryCommentPublicationIssuer.CurrentVersion);
         corrected.CorrectedValues.Comment.Policy.ServerProjectionInclusion
             .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         await fixture.ProjectValidator.Received(2)

@@ -18,6 +18,21 @@ namespace Hexalith.Timesheets.Projections.Tests;
 public sealed class MagicLinkNumericIndexTests
 {
     [Fact]
+    public async Task OrdinaryIssuanceRejectsNegativeSelectedNodeIdBeforeWriting()
+    {
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        var builder = new MagicLinkTokenHashCapabilityIndexTreeBuilder(
+            new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope),
+            new MagicLinkTokenHashCapabilityIndexTreeRoot(7, -1, null, null), 1);
+
+        await Should.ThrowAsync<InvalidOperationException>(() => builder.AddContributionAsync(
+            Row("tenant-a", "owner-a", "hash-a"), TestContext.Current.CancellationToken));
+        builder.Operations(includeSelectedRoot: false).ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task RepeatedTenantReplacementKeepsUnrelatedPagesAndGlobalAmbiguity()
     {
         var store = new InMemoryReadModelStore();

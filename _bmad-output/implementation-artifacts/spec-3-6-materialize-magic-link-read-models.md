@@ -2,10 +2,10 @@
 title: 'Materialize Story 3.6 magic-link read models from EventStore delivery'
 type: 'feature'
 created: '2026-10-11'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 baseline_commit: '8c042a3a1a969deeedd29f85b0b0539bcac029c5'
-review_loop_iteration: 21
+review_loop_iteration: 22
 context:
   - '_bmad-output/implementation-artifacts/epic-3-context.md'
   - '_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md'
@@ -184,6 +184,7 @@ context:
 - [x] The same global index handler and SDK epoch/storage tests — replace tenant-slice rebuild's global `all` list and rewrite of every unrelated owner admission with a bounded, retry-safe way to replace only the tenant's contributions while preserving other tenants and collision ambiguity. Work and memory must be bounded by the tenant's supported 10,000 owners plus bounded index pages, not by the complete global inventory; prove repeated cross-tenant rebuild/prune with unrelated selected candidates and many global pages.
 - [x] `src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs`, `src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs`, and persisted gateway tests — capture the independently server-issued expected comment decision before submitting a recording or adjustment. Compare stored text and policy with that immutable expected decision after completion, even if a registered authority changes during the wait; preserve exact correlation and opaque unknown outcomes.
 - [x] `scripts/local_aspire_magic_link_journey.py`, `scripts/magic_link_evidence_lineage.py`, and narrow Python tests — recognize the current selected index version, verify a directory candidate instead of assuming every valid hash is inline, and compare the selected effective fields used by the journey with authoritative stored recording, adjustment, and approval effects, including target, contributor/category, metrics and comment where present. Retain packed lineage, token-free diagnostics, duplicate-ID preflight, and honest live-run evidence; deployed gates remain `FAIL`.
+- [x] `src/Hexalith.Timesheets.Server/Policies/ITimeEntryCommentPublicationAuthority.cs`, `TimeEntryCommentPublicationIssuer.cs`, and focused server/HTTP tests — ignore caller-submitted `RedactionRequirement` when issuing external display policy. Require a separate explicit server clearance of unredacted text in addition to display authorization, stamp the resulting requirement in the event, and prove caller `NotRequired` alone cannot disclose while trusted clearance can. Preserve default denial and the existing rule that a stamped required-redaction comment stays hidden.
 
 **Acceptance Criteria:**
 
@@ -330,6 +331,8 @@ The reviewed round-12 incremental Timesheets and EventStore implementations are 
 Review iteration 1 rejected the first implementation. Its passing local Dapr journey is a regression target for re-derivation, not current-tree evidence. Preserve the bounded transient `403` retry and the explicit persisted readback assertions.
 
 ## Spec Change Log
+
+- Review iteration 22: The new blind review found that caller-submitted `RedactionRequirement = NotRequired` can satisfy the issuer's display predicate when the server display authority returns true. Added an explicit server-owned clearance task and a negative caller-override test requirement. Preserve all committed materialization, index, migration and fixture work; no historical code or gitlinks may be reverted. The other review findings are triaged below, and the legacy/deployed release gates remain open.
 
 - Review iteration 20: Independent review found that a token lookup can mix global epoch generations, a valid cross-tenant shard can cross the 400-page directory ceiling, ordinary insertion can break full-row order when one hash spans pages, and tenant rebuild materializes and rewrites unrelated global owners. It also found that reissuing mutable comment authority during durable readback can reject an exact committed recording or adjustment, while local diagnostics still recognize only v5 and the live proof assumes an inline candidate and checks too few effective fields. The verification layer found that the 10,000-input rebuild checks only one sampled directory hash. The new non-frozen tasks require stable-generation lookup, scalable ordered and fully checked selected pages, tenant-bounded replacement, pre-submit immutable expected comment decisions, complete live index/effective-value proof, and the missing full-directory test. Avoid carrying forward independent root/page selections, a 400-page selected hard stop, first-matching-hash insertion, global `all` materialization, post-commit authority reissuance, or inline-only proof. KEEP: round-20 full selected page digests and fail-closed corruption checks, 10,000-owner collision and distinct-hash capacity, 65-hash mapped directory and rebuild loader checks, tenant-bound sessionless Abort, lossless policy-toggle replay, exact receipt correlation and event IDs, six passing default Timesheets lanes, zero-warning build, and Python lineage checks. After code-only reversion those passes are historical. Preserve default denial, unrelated gitlinks, numeric token-free keys, and the Story 3.6/release `FAIL` gate for missing deployed inventory, production authority, and certified shared rebuild. The round-20 local run was blocked by Folders' duplicate Dapr ID; leave Folders untouched until its owner pauses it.
 
@@ -726,11 +729,61 @@ Review iteration 1 rejected the first implementation. Its passing local Dapr jou
 | Round 20 Gap 1 — multi-page rebuilt candidate set unverified | medium | patch, moot on loopback: the pre-verified capacity test checks one sampled hash while the 65-hash composed test makes only one directory row. Omitting an interior rebuilt page could deny issued links without failing tests; compare every selected row to the 10,000 inputs and resolve an interior-page token. |
 | Round 20 Gap other — insertion breaks cross-page order | high | bad_spec, same root as Round 20 Edge 1: a new owner for a hash spanning directory pages can be inserted into the first page and leave cross-page rows out of order, making the loader deny the shard. |
 
+| Round 22 Blind 1 — caller export inclusion | high | carried defer from Round 17 Blind 2: export generation reads `ExportInclusion` without the current `ExportCommentsAllowed` gate; this predates the read-model materialization intent and remains a separate export-policy defect. |
+| Round 22 Blind 2 — caller redaction bypass | high | bad_spec: the issuer reads caller `RedactionRequirement`, so caller `NotRequired` plus a permissive display authority stamps external `Allowed` without an independent server clearance. The marked-done redaction task did not cover this caller override. |
+| Round 22 Blind 3 — empty certified inventory over legacy row | false | reject: the direct v1 index is non-authoritative candidate data; a genuinely certified event inventory, including verified erasure exclusions, determines the migration set. Requiring every legacy row would elevate potentially stale projection data to authority. The simulated empty receipt does not certify a deployed inventory. |
+| Round 22 Blind 4 — direct legacy shard at bootstrap | maybe-false | defer unverified medium: the bootstrap scans selected legacy shard generations but only the direct single root. No released direct-shard writer is established by this diff; inspect deployed key layout or a historical writer before treating a direct shard as reachable. |
+| Round 22 Blind 5 — pending legacy journal | medium | carried defer from the v1-migration continuity ledger: the route intentionally refuses a nonempty journal, and the observed pending delivery identities require independent verified recovery before migration. |
+| Round 22 Blind 6 — owner-sequence handoff | medium | carried defer from the v1-migration continuity ledger: candidate reconstruction does not establish an absent owner checkpoint; SDK delivery stays fail-closed until certified source continuity is supplied. |
+| Round 22 Blind 7 — default-deny migration registration | false | reject: unavailable inventory and deny-all authority are intentional defaults; installing real independently certified services is a deployment prerequisite, not a missing automatic production registration. |
+| Round 22 Blind 8 — delayed transition readback | medium | carried defer from Round 13 Blind 9: transition submission still has a response-first, single-read path, which predates this materialization increment. |
+| Round 22 Blind 9 — Projects/Tenants pointers | false | carried reject from Round 9 Blind 2: both pointers are committed historical changes outside this run's two documentation edits; do not revert unrelated gitlinks. |
+| Round 22 Blind 10 — package-currency pointer wording | false | reject: `This Story 3.6 increment` qualifies the dated package-currency observation, not every commit since the materialization spec's old baseline; the sentence makes no current-worktree pointer claim. |
+| Round 22 Blind 11 — mirrored Aspire skills | false | reject: those files were imported by a separate committed tooling change after the old baseline, outside the current Story 3.6 edit; removing them would overwrite unrelated repository history. |
+| Round 22 Gap 1 — transition lost submit response | medium | carried defer from Round 13 Blind 9: the response-first transition helper can deny an already committed revoke or expiry; the verification layer found no lost-response management-route test. |
+| Round 22 Gap 2 — recording lost submit response | medium | defer: the external recording path still uses the response-first helper and can deny a stored recording after a lost submit response; no covering recording-route test was found. This is separate from materializing read models. |
+| Round 22 Edge 1 — HTTP 408 retry classification | medium | patch, moot on redaction-spec loopback: a gateway 408 is absent from the bounded retry predicate, so a committed issue/use may be reported unavailable after a transient timeout. Add 408 to the existing retryable set and test the path after re-derivation. |
+
+| Final Blind 1 — v6 append byte bound | medium | patch: eight individually valid migration mutations can exceed the SDK's 256-KiB streamed-page limit; v6 migration now uses the SDK's byte accounting and splits before the limit. Focused v6 migration tests pass 5/5, including a maximum-width 128-owner tenant with measured byte splits. |
+| Final Blind 2 — sealed v6 stage resume | maybe-false | defer unverified medium: the shortcut commits a sealed stage without another source digest or membership check, but sealing follows a complete source scan under the global writer fence and the SDK validates page digests. A fault test that changes source after seal, or a deployed writer outside that fence, would establish reachability. |
+| Final Blind 3 — blank v6 operator fields | medium | patch: `ThrowIfNullOrWhiteSpace` escaped the v6 endpoint as 500; the endpoint now returns the same opaque 404 as v1. Two focused HTTP cases pass. |
+| Final Blind 4 — v1 abort after authority loss | false | reject: abort intentionally rechecks certified authority before mutating a Building epoch. Restoring authority permits recovery; bypassing revoked authority to clean it up would violate the migration gate. |
+| Final Blind 5 — default-deny migration registration | false | carried reject from Round 22 Blind 7: production registration deliberately fails closed until independent inventory and operator authority are installed. The deployed gate remains open. |
+| Final Blind 6 — operator-specific authorization | maybe-false | defer unverified high: `.RequireAuthorization()` authenticates the caller but the authority port receives operation and receipt identifiers rather than the principal. No permitted production authority is installed; review the eventual provider and ingress operator policy to determine whether another authenticated internal caller can reuse an operation. |
+| Final Blind 7 — old capability fragments | medium | defer: changed large capability views write digest-keyed fragments without retiring prior same-generation fragments, so repeated updates consume extra read-model storage until generation cleanup. This predates the current redaction increment. |
+| Final Blind 8 — subscriber delivery proof | medium | defer: the local journey invokes `/project/v2` from stored events and therefore proves mapped projection delivery, not a production subscription. The story's deployed delivery acceptance remains unchecked. |
+| Final Blind 9 — v6 Python proof manifest | medium | defer: the diagnostic helper can accept an inline v6 candidate without validating every manifest page; this may overstate legacy local proof even though the production loader rejects malformed selected shards. Current live proof uses v7. |
+| Final Blind 10 — format-read fallback diagnostic | medium | defer: a transient selected-format read error is treated as absent format and can produce a misleading v6 diagnostic. Production token admission is separate and fails closed. |
+| Final Blind 11 — token GET response headers | medium | patch: the public token display GETs lacked explicit cache and referrer controls. Both now emit `Cache-Control: no-store` and `Referrer-Policy: no-referrer`; two focused HTTP cases pass. |
+| Final Blind 12 — agent SDK text | medium | carried defer from the existing Story 5.3 agent-context ledger: `global.json` pins 10.0.401 while the managed agent block says 10.0.302. Updating all shared entry points belongs to the context refresh. |
+| Final Edge 1 — pre-issuance revocation timestamp | false | reject: the existing spec change log explicitly excludes a revocation chronology rule; the projection accepts valid terminal facts independently of cross-stream arrival order. |
+| Final Edge 2 — null selected legacy lineage | false | reject: corrupt selected storage must remain retryable so a valid journal event is not parked and discarded. `ValidateLineage` throws, and the handler wraps selected-read fold failure as unavailable. |
+| Final Edge 3 — negative numeric node ID | medium | patch: ordinary `AddContributionAsync` lacked the root guard used by tenant replacement and could allocate a negative node reference. It now rejects before writes; its focused test passes. |
+| Final Edge 4 — selected storage parked claim | false | reject: the spec requires malformed event wrappers to be parked; selected read-model corruption is intentionally retryable, as the handler comment and catch path state. |
+| Final Gap 1 — routine compiled fixture guard | medium | defer: the separate AppHost hardening increment has a compiled guard driver, but routine test executables do not invoke its configuration-only negative probes. The hardening evidence records a passing compiled guard run; no AppHost change belongs to this materialization spec. |
+| Final Gap 2 — opt-in pub/sub wiring | false | reject as an unverified-current-tree claim: the supported isolated Dapr runner was executed in this turn and passed 1/1, including actual sidecar component validation and projection delivery. It remains opt-in by design, and deployed subscription acceptance remains open. |
+
 ## Design Notes
 
 Use an aggregate-owned Time Entry slot and a shared capability slot. The shared slot holds a logical tenant view partitioned into per-capability values to respect the SDK epoch value limit. Terminal and issuance events have independent sequence spaces. Keep terminal-first Time Entry facts pending until a validated issuance, but reject a legacy capability-stream terminal that precedes issuance in that same stream. Use the SDK epoch contract because live delivery can race promotion; normal delivery bypasses `ProjectAsync`. Expected fold conflicts must use the SDK's parking/failure mechanism or be rejected before journaling. Extend the EventStore SDK's shared rebuild contract for bounded partitioned staging: the current single opaque candidate cannot represent all supported valid histories. Keep accumulation retry-safe, failed rebuild isolated from active reads, and work bounded per owner. Preserve the live Dapr fixture and its readback assertions. Persist no fingerprint or other data derived from the token hash in the capability view; rely on SDK journal identity for same-sequence conflicting deliveries. The Time Entry model may need an internal full-payload lineage digest in addition to its display lineage to validate replay and extensions.
 
 ## Verification
+
+Current 2026-10-13 source-reference restore and Debug solution build passed with
+SDK 10.0.401, zero warnings and zero errors. The six individually executed
+Timesheets suites passed 1,872/1,877 cases with five declared Integration
+skips: Architecture 57/57, Contracts 92/92, Server 545/545, Works 76/76,
+Projections 387/387, and Integration 715/720. The supported isolated Dapr
+journey passed 1/1 in 125.125 seconds on the redaction-version tree, using
+private Redis, placement and scheduler; retained shared-state preservation
+and private-resource cleanup passed. The Python magic-link checks passed
+65/65. The review patches followed those full suites and live journey:
+HTTP 408 issue-read/use-batch cases passed 4/4, v6 migration 5/5, negative
+numeric root 1/1, blank v6 operator requests 2/2, and token GET privacy
+headers 2/2. These
+local results do not establish the certified deployed inventory, migration
+authority, source continuity, or deployed shared rebuild required to finish
+Story 3.6.
 
 Round-18 implementation verification (2026-10-12): before the numeric
 page-address correction, the source-reference solution built with

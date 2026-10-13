@@ -7,6 +7,28 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
+The latest Story 3.6 tree enforces separate server authorization for
+unredacted external comment display and keeps version-1 stamped comments
+hidden on adjustment GET. SDK 10.0.401 solution restore/build passed with
+zero warnings/errors; six individual test suites passed 1,872/1,877 cases
+with five declared skips. The supported isolated Dapr journey passed 1/1 in
+125.125 seconds with private-resource cleanup and retained shared-state
+preservation; Python magic-link checks passed 65/65. Focused review checks
+passed for HTTP 408 retry, v6 page bounds, negative index IDs, blank operator
+requests, and token GET privacy headers. The broad suites and live journey
+precede those small patches. Local proof does not certify the retained
+shared v1 index, deployed migration authority, source continuity, or a
+deployed shared rebuild. Story 3.6 and release readiness remain **FAIL**.
+
+The reviewed 2026-10-13 isolated fixture passed its full local magic-link
+journey 1/1 in 138.093 seconds using private resources, with preservation
+and cleanup checks passing. Earlier-tree materialization handler tests passed
+72/72 for Time Entry evidence and 56/56 for capability evidence; two focused
+composed-route checks pass 1/1 each. This does not certify the retained shared
+direct v1 index or a deployed migration. Cross-tenant inventory, installed
+migration authority, source continuity, and deployed shared rebuild acceptance
+remain open. Story 3.6 and release readiness remain **FAIL**.
+
 The scoped v1-to-v7 operator migration now has local code-level evidence:
 SDK `10.0.401` solution restore/build passed with zero warnings/errors, and
 post-review migration/digest checks passed 64/64 and composed ingress passed

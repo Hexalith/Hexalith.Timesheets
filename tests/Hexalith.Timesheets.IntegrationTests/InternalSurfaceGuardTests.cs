@@ -104,6 +104,22 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Theory]
+    [InlineData("", "certified")]
+    [InlineData("migration", "")]
+    public async Task V6_migration_route_opaquely_refuses_blank_identifiers(string operationId, string fingerprint)
+    {
+        using GuardedFactory factory = new(allowOnAnyPort: true,
+            migrationAuthority: new CountingMigration(), authenticatedOperator: true);
+        using HttpClient client = factory.CreateClient();
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/migrate-v6",
+            new StringContent($"{{\"operationId\":\"{operationId}\",\"certifiedInventoryFingerprint\":\"{fingerprint}\"}}",
+                System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+    }
+
+    [Theory]
     [InlineData("migrate-v6")]
     [InlineData("migrate-v1")]
     public async Task Internal_migration_route_requires_an_authenticated_operator(string route)

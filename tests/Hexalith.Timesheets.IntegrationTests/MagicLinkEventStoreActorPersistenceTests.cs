@@ -45,20 +45,26 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
     [Theory]
-    [InlineData(false, true, false)]
-    [InlineData(true, true, false)]
-    [InlineData(true, false, true)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, true, false)]
+    [InlineData(true, true, false, true)]
     public async Task AdjustmentHttpDisplayRequiresServerIssuedCommentDecision(
-        bool serverAllowsDisplay, bool requiresRedaction, bool displaysComment)
+        bool serverAllowsDisplay, bool serverClearsRedaction, bool callerClaimsNoRedaction,
+        bool displaysComment)
     {
         ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
         authority.MayDisplayExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
             .Returns(serverAllowsDisplay);
+        authority.MayDisplayUnredactedExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(serverClearsRedaction);
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true,
             useMismatchedClaims: false, commentAuthority: authority);
         using HttpClient client = factory.CreateClient();
-        var capabilityId = new MagicLinkCapabilityId($"capability-display-{serverAllowsDisplay}-{requiresRedaction}");
-        var entryId = new TimeEntryId($"entry-display-{serverAllowsDisplay}-{requiresRedaction}");
+        var capabilityId = new MagicLinkCapabilityId(
+            $"capability-display-{serverAllowsDisplay}-{serverClearsRedaction}-{callerClaimsNoRedaction}");
+        var entryId = new TimeEntryId(
+            $"entry-display-{serverAllowsDisplay}-{serverClearsRedaction}-{callerClaimsNoRedaction}");
         string token = ValidAdjustToken();
         await factory.ProjectValidStateAsync(client, token, MagicLinkAllowedAction.Adjust,
             capabilityId, entryId);
@@ -71,9 +77,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             Comment = new TimeEntryComment("exact permitted note", TimeEntryCommentPolicy.SensitiveDefault with
             {
                 ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed,
-                RedactionRequirement = requiresRedaction
-                    ? TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
-                    : TimesheetsCommentRedactionRequirement.NotRequired
+                RedactionRequirement = callerClaimsNoRedaction
+                    ? TimesheetsCommentRedactionRequirement.NotRequired
+                    : TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
             })
         };
 
@@ -83,9 +89,13 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         TimeEntryRecorded stored = JsonSerializer.Deserialize<StoredTimeEntryRecorded>(
             factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
                 .ShouldHaveSingleItem().Payload, JsonOptions).ShouldNotBeNull().Event;
-        stored.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        stored.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion
+            .ShouldBe(TimeEntryCommentPublicationIssuer.CurrentVersion);
         stored.Comment.Policy.ServerExternalConfirmationDisplay.ShouldBe(displaysComment
             ? TimesheetsCommentPolicyDecision.Allowed : TimesheetsCommentPolicyDecision.Excluded);
+        stored.Comment.Policy.RedactionRequirement.ShouldBe(displaysComment
+            ? TimesheetsCommentRedactionRequirement.NotRequired
+            : TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure);
 
         using HttpResponseMessage display = await client.GetAsync(
             $"/api/timesheets/magic-links/adjust?t={token}", TestContext.Current.CancellationToken);
@@ -102,6 +112,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
         authority.MayDisplayExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
             .Returns(true);
+        authority.MayDisplayUnredactedExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(true);
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true,
             useMismatchedClaims: false, commentAuthority: authority);
         using HttpClient client = factory.CreateClient();
@@ -113,16 +125,13 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         await factory.ProjectValidStateAsync(client, secondToken, MagicLinkAllowedAction.Adjust,
             new MagicLinkCapabilityId("capability-display-replacement-second"), entryId);
         factory.Gateway.WithStream(Tenant().TenantId, entryId.Value);
-        TimeEntryCommentPolicy clearedPolicy = TimeEntryCommentPolicy.SensitiveDefault with
-        {
-            RedactionRequirement = TimesheetsCommentRedactionRequirement.NotRequired
-        };
+        TimeEntryCommentPolicy submittedPolicy = TimeEntryCommentPolicy.SensitiveDefault;
         var recording = new SubmitExternalTimeEntry(entryId,
             TimeEntryTargetReference.ForProject(Project()), Contributor(), ActivityId(),
             new DateOnly(2026, 6, 19), 60, BillableState.Billable,
             new ExternalContributionSource("supplier-api", "replacement-record"))
         {
-            Comment = new TimeEntryComment("previous note", clearedPolicy)
+            Comment = new TimeEntryComment("previous note", submittedPolicy)
         };
         using HttpResponseMessage recorded = await factory.PostProtectedManagementAsync(client,
             "/api/timesheets/external-contributions/", recording);
@@ -130,7 +139,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         using HttpResponseMessage adjusted = await client.PostAsJsonAsync(
             $"/api/timesheets/magic-links/adjust/submit?t={firstToken}",
-            AdjustCommand() with { Comment = new TimeEntryComment("replacement note", clearedPolicy) },
+            AdjustCommand() with { Comment = new TimeEntryComment("replacement note", submittedPolicy) },
             JsonOptions, TestContext.Current.CancellationToken);
         adjusted.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         using HttpResponseMessage display = await client.GetAsync(
@@ -183,7 +192,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         storedFacts.BillableState.ShouldBe(command.BillableState);
         storedFacts.ExternalSource.ShouldBe(command.Source);
         storedFacts.Comment.ShouldNotBeNull().Text.ShouldBe("recorded private note");
-        storedFacts.Comment.Policy.ServerPublicationVersion.ShouldBe(1);
+        storedFacts.Comment.Policy.ServerPublicationVersion
+            .ShouldBe(TimeEntryCommentPublicationIssuer.CurrentVersion);
         storedFacts.Comment.Policy.ProjectionInclusion.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         storedFacts.Comment.Policy.ExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
         storedFacts.Comment.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);

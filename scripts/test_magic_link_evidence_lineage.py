@@ -81,6 +81,13 @@ class EvidenceLineageTests(unittest.TestCase):
                 "serverPublicationVersion": 1, "serverProjectionInclusion": "Allowed"}}}
         self.assertTrue(effective_evidence_values_match(
             selected, [recorded_with_comment], projection_comments_allowed=True))
+        version_two_event = event("StoredTimeEntryRecorded", with_metrics_and_comment | {
+            "Comment": {"Text": "permitted", "Policy": {
+                "ServerPublicationVersion": 2, "ServerProjectionInclusion": "Allowed"}}})
+        version_two_selected = selected | {"comment": {"text": "permitted", "policy": {
+            "serverPublicationVersion": 2, "serverProjectionInclusion": "Allowed"}}}
+        self.assertTrue(effective_evidence_values_match(
+            version_two_selected, [version_two_event], projection_comments_allowed=True))
         self.assertFalse(effective_evidence_values_match(
             selected | {"comment": {"text": "changed"}}, [recorded_with_comment],
             projection_comments_allowed=True))

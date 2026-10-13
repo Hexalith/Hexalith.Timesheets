@@ -940,13 +940,15 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
             .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
     }
 
-    [Fact]
-    public async Task AllowedCommentRemainsInSelectedEvidence()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(TimeEntryCommentPublicationIssuer.CurrentVersion)]
+    public async Task AllowedCommentRemainsInSelectedEvidence(int issuedVersion)
     {
         TimeEntryComment allowed = new("approved note", TimeEntryCommentPolicy.SensitiveDefault with
         {
             ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
-            ServerPublicationVersion = TimeEntryCommentPublicationIssuer.CurrentVersion,
+            ServerPublicationVersion = issuedVersion,
             ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
         });
         var store = new TestStore();

@@ -117,7 +117,7 @@ def effective_evidence_values_match(model, owner_events, *, projection_comments_
         if expected_comment is None:
             return selected_comment is None and model.get("commentProjectionState") == "Unknown"
         policy = expected_comment["policy"]
-        issued = policy.get("serverPublicationVersion") == 1
+        issued = policy.get("serverPublicationVersion") in (1, 2)
         decision = policy.get("serverProjectionInclusion")
         include = projection_comments_allowed and issued and decision == "Allowed"
         expected_state = ("Allowed" if include else "Excluded"

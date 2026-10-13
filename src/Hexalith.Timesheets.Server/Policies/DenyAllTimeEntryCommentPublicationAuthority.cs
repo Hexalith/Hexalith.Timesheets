@@ -11,4 +11,7 @@ public sealed class DenyAllTimeEntryCommentPublicationAuthority : ITimeEntryComm
 
     /// <inheritdoc />
     public bool MayDisplayExternally(TimesheetsRequestContext context, TimeEntryComment comment) => false;
+
+    /// <inheritdoc />
+    public bool MayDisplayUnredactedExternally(TimesheetsRequestContext context, TimeEntryComment comment) => false;
 }

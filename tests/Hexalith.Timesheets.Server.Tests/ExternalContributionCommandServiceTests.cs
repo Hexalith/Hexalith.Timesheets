@@ -7,6 +7,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.References;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -31,7 +32,8 @@ public sealed class ExternalContributionCommandServiceTests
 
         TimeEntryRecorded recorded = result.RecordResult.DomainResult.ShouldNotBeNull()
             .Events.ShouldHaveSingleItem().ShouldBeOfType<TimeEntryRecorded>();
-        recorded.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        recorded.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion
+            .ShouldBe(TimeEntryCommentPublicationIssuer.CurrentVersion);
         recorded.Comment.Policy.ServerProjectionInclusion
             .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         recorded.Comment.Policy.ProjectionInclusion

@@ -458,7 +458,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
         adjusted.AdjustedValues.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
         adjusted.ActivityTypeScope.ShouldBe(adjusted.AdjustedValues.ActivityTypeScope!.Value);
         adjusted.Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-1"));
-        adjusted.AdjustedValues.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion.ShouldBe(1);
+        adjusted.AdjustedValues.Comment.ShouldNotBeNull().Policy.ServerPublicationVersion
+            .ShouldBe(TimeEntryCommentPublicationIssuer.CurrentVersion);
         adjusted.AdjustedValues.Comment.Policy.ServerProjectionInclusion
             .ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
 
@@ -1156,6 +1157,19 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             TestContext.Current.CancellationToken)).ShouldNotBeNull();
         olderDisplay.Comment.ShouldBeNull();
 
+        TimeEntryComment formerlyAllowed = new("old caller-cleared note", TimeEntryCommentPolicy.SensitiveDefault with
+        {
+            ServerPublicationVersion = 1,
+            ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed,
+            RedactionRequirement = TimesheetsCommentRedactionRequirement.NotRequired
+        });
+        MagicLinkAdjustmentDisplayResponse historicalDisplay = (await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
+            RecordedExternalState(comment: formerlyAllowed), FreshCatalog(), ConfirmedAtUtc(),
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        historicalDisplay.Comment.ShouldBeNull();
+
         TimeEntryCommentPublicationIssuer issuer = new();
         TimeEntryComment denied = issuer.Issue(Context(), callerAllowed).ShouldNotBeNull();
         MagicLinkAdjustmentDisplayResponse deniedDisplay = (await service.DescribeAdjustmentAsync(
@@ -1176,11 +1190,11 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             TestContext.Current.CancellationToken)).ShouldNotBeNull();
         allowedDisplay.Comment.ShouldBeNull();
 
+        authority.MayDisplayUnredactedExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(true);
         TimeEntryComment cleared = new TimeEntryCommentPublicationIssuer(authority)
-            .Issue(Context(), new TimeEntryComment(callerAllowed.Text, callerAllowed.Policy with
-            {
-                RedactionRequirement = TimesheetsCommentRedactionRequirement.NotRequired
-            })).ShouldNotBeNull();
+            .Issue(Context(), callerAllowed).ShouldNotBeNull();
+        cleared.Policy.RedactionRequirement.ShouldBe(TimesheetsCommentRedactionRequirement.NotRequired);
         MagicLinkAdjustmentDisplayResponse clearedDisplay = (await service.DescribeAdjustmentAsync(
             Context(), "opaque-once", IssuedState(allowedAction: MagicLinkAllowedAction.Adjust),
             RecordedExternalState(comment: cleared), FreshCatalog(), ConfirmedAtUtc(),

@@ -34,6 +34,8 @@ public sealed class TimeEntryCommentPublicationIssuerTests
         issued.Policy.ProjectionInclusion.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         issued.Policy.ExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
         issued.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        issued.Policy.RedactionRequirement.ShouldBe(
+            TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure);
     }
 
     [Theory]
@@ -57,7 +59,7 @@ public sealed class TimeEntryCommentPublicationIssuerTests
     }
 
     [Fact]
-    public void ExternalDisplayRequiresItsOwnServerDecision()
+    public void CallerClearanceCannotPermitExternalDisplay()
     {
         ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
         authority.MayPublish(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
@@ -72,8 +74,37 @@ public sealed class TimeEntryCommentPublicationIssuerTests
         TimeEntryComment issued = new TimeEntryCommentPublicationIssuer(authority)
             .Issue(Context(), submitted).ShouldNotBeNull();
 
+        issued.Policy.ExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        issued.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        issued.Policy.RedactionRequirement.ShouldBe(
+            TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure);
+    }
+
+    [Theory]
+    [InlineData(TimesheetsCommentRedactionRequirement.NotRequired)]
+    [InlineData(TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure)]
+    public void SeparateServerClearancePermitsUnredactedExternalDisplay(
+        TimesheetsCommentRedactionRequirement callerRequirement)
+    {
+        ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayDisplayExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(true);
+        authority.MayDisplayUnredactedExternally(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>())
+            .Returns(true);
+        TimeEntryComment submitted = new("permitted", TimeEntryCommentPolicy.SensitiveDefault with
+        {
+            RedactionRequirement = callerRequirement
+        });
+
+        TimeEntryComment issued = new TimeEntryCommentPublicationIssuer(authority)
+            .Issue(Context(), submitted).ShouldNotBeNull();
+
         issued.Policy.ExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
         issued.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
+        issued.Policy.RedactionRequirement.ShouldBe(TimesheetsCommentRedactionRequirement.NotRequired);
+        authority.Received(1).MayDisplayUnredactedExternally(Arg.Any<TimesheetsRequestContext>(),
+            Arg.Is<TimeEntryComment>(comment => comment.Policy.RedactionRequirement
+                == TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure));
     }
 
     [Fact]

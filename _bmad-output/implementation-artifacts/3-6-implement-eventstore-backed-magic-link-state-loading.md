@@ -21,7 +21,36 @@ so that confirmation and adjustment work outside service-only tests without weak
 3. **Given** a token is malformed, unknown, expired, revoked, used, wrong-action, wrong-recipient, cross-tenant, replayed, or unresolved, **when** any magic-link endpoint is called, **then** the same no-disclosure external failure state is returned, **and** no Time Entry confirmation, adjustment, capability-use event, or protected detail is emitted.
 4. **Given** the loader cannot access required EventStore state, Time Entry state, or Activity Type catalog state, **when** the request is evaluated, **then** the host fails closed with the same external no-disclosure response, **and** internal diagnostics record only correlation-safe outcome categories.
 
-## Current Review Disposition (2026-10-12)
+## Current Review Disposition (2026-10-13)
+
+The latest tree requires separate server clearance before unredacted comment
+text can appear on an external adjustment GET. Caller-submitted
+`RedactionRequirement = NotRequired` alone cannot authorize disclosure;
+previously stamped version-1 comments remain hidden externally. SDK 10.0.401
+source-reference restore and warning-as-error solution build passed. Six
+individual suites passed 1,872/1,877 cases with five declared Integration
+skips and no failures. The supported isolated Dapr journey passed 1/1 in
+125.125 seconds on this redaction tree, with private-resource cleanup and
+shared-state preservation passing. Python magic-link checks passed 65/65.
+Final review patches to HTTP 408 retry, v6 migration page bounds, negative
+index IDs, blank operator requests, and token GET privacy headers passed
+their focused tests afterward; the full suites and live journey predate
+those patches. This local proof
+does not establish deployed legacy inventory, migration authority, source
+continuity, or shared rebuild acceptance. Story 3.6 and release remain
+`FAIL`.
+
+The reviewed 2026-10-13 isolated fixture passed its complete magic-link
+journey 1/1 in 138.093 seconds with private state, broker, placement, and
+scheduler resources. Preservation and cleanup checks passed. This proves the
+earlier local path on isolated state; it did not migrate or certify the retained
+shared direct v1 index. The scoped materialization handler tests passed
+72/72 for Time Entry evidence and 56/56 for capability evidence on that
+earlier tree; two focused composed-route tests passed 1/1 each. Independently certified
+cross-tenant inventory, installed migration authority, source continuity,
+and deployed shared rebuild acceptance remain absent. Story 3.6 and release
+remain `FAIL`. The 2026-10-12 shared-state result below remains the latest
+attempt against the retained direct v1 root.
 
 The latest-tree source-reference restore/build using SDK `10.0.401` passed
 with zero warnings/errors. The narrow Python proof passed 9/9 and now

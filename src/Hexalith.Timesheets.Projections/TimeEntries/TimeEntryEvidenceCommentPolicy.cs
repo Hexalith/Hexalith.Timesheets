@@ -7,7 +7,7 @@ namespace Hexalith.Timesheets.Projections.TimeEntries;
 /// <summary>Applies server-issued comment authority before evidence leaves the fold.</summary>
 internal static class TimeEntryEvidenceCommentPolicy
 {
-    internal const int CurrentVersion = 1;
+    internal const int CurrentVersion = 2;
 
     internal static TimeEntryEvidenceReadModel Apply(TimeEntryEvidenceReadModel row,
         bool trustedPublicationAllowed, bool preserveStoredVersion = false)
@@ -48,7 +48,7 @@ internal static class TimeEntryEvidenceCommentPolicy
         => values with { Comment = Include(values.Comment, trustedPublicationAllowed) };
 
     private static TimeEntryComment? Include(TimeEntryComment? comment, bool trustedPublicationAllowed)
-        => trustedPublicationAllowed && comment?.Policy.ServerPublicationVersion == CurrentVersion
+        => trustedPublicationAllowed && comment?.Policy.ServerPublicationVersion is 1 or CurrentVersion
             && comment.Policy.ServerProjectionInclusion == TimesheetsCommentPolicyDecision.Allowed
             ? comment
             : null;
@@ -60,7 +60,7 @@ internal static class TimeEntryEvidenceCommentPolicy
                 ? TimesheetsCommentPolicyDecision.PolicyRequired : prior
             : Include(comment, trustedPublicationAllowed) is not null
                 ? TimesheetsCommentPolicyDecision.Allowed
-                : comment.Policy.ServerPublicationVersion == CurrentVersion
+                : comment.Policy.ServerPublicationVersion is 1 or CurrentVersion
                     && comment.Policy.ServerProjectionInclusion == TimesheetsCommentPolicyDecision.Excluded
                     ? TimesheetsCommentPolicyDecision.Excluded
                     : TimesheetsCommentPolicyDecision.PolicyRequired;

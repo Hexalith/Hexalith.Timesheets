@@ -181,6 +181,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
+                SetPrivateLinkResponseHeaders(httpContext);
                 if (string.IsNullOrWhiteSpace(t))
                 {
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
@@ -276,6 +277,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
+                SetPrivateLinkResponseHeaders(httpContext);
                 if (string.IsNullOrWhiteSpace(t))
                 {
                     return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
@@ -355,6 +357,12 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
             title: MagicLinkInvalidLinkDenial.Default.Title,
             detail: MagicLinkInvalidLinkDenial.Default.Detail,
             statusCode: StatusCodes.Status403Forbidden);
+
+    private static void SetPrivateLinkResponseHeaders(HttpContext httpContext)
+    {
+        httpContext.Response.Headers.CacheControl = "no-store";
+        httpContext.Response.Headers["Referrer-Policy"] = "no-referrer";
+    }
 
     private static IResult DeniedWithDiagnostics(
         ILoggerFactory loggerFactory,

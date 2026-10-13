@@ -225,6 +225,49 @@ public sealed class MagicLinkV6MigrationTests
             .ActiveGeneration.ShouldBe(migrated.ActiveGeneration);
     }
 
+    [Fact]
+    public async Task MaximumWidthV6TenantMigratesAcrossBoundedStreamingPages()
+    {
+        var store = new InMemoryReadModelStore();
+        var observed = new MagicLinkV1FaultStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(observed, observed);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await coordinator.RegisterWriterAsync(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        string tenant = "t" + new string('\u0001', 255);
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry[] rows = Enumerable.Range(0, 128)
+            .Select(index => Row(tenant, "o" + new string('\u0002', 114) + index.ToString("D5"),
+                new string(index < 64 ? 'A' : 'B', 128))).ToArray();
+        ReadModelBatchOperation[] roots = [.. rows
+            .GroupBy(row => MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(row.TokenHash))
+            .Select(group => ReadModelBatchOperation.Write(
+                MagicLinkTokenHashCapabilityIndexProjection.ShardKey(group.Key),
+                MagicLinkTokenHashCapabilityIndexProjection.FromContributions(group.Select(row =>
+                    new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(row.TokenHash,
+                        row.Candidate))), ReadModelBatchConcurrency.LastWrite))];
+        _ = await coordinator.BeginAsync(scope, "wide-v6", "certified-source",
+            new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        _ = await coordinator.StageStreamingAsync(scope, "wide-v6", AsAsync(roots),
+            TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(scope, "wide-v6", TestContext.Current.CancellationToken);
+
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, observed,
+            new PermittedCertifiedMigration());
+        await migration.MigrateAsync("wide-v7", "certified-selected-v6",
+            TestContext.Current.CancellationToken);
+        MagicLinkTokenHashCapabilityIndexTreeRoot root = (await coordinator
+            .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey,
+                TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope);
+        (await reader.ReadRosterAsync(root.TenantRoot, tenant,
+            TestContext.Current.CancellationToken)).ShouldNotBeNull().Count.ShouldBe(rows.Length);
+        observed.MaximumPhysicalBytes.ShouldBeLessThan(256 * 1024);
+        observed.MaximumRosterBytes.ShouldBeGreaterThan(64 * 1024);
+        observed.ByteSplitPages.ShouldBeGreaterThan(0);
+    }
+
     private static MagicLinkTokenHashCapabilityIndexDirectoryEntry Row(
         string tenant, string owner, string hash)
         => new(hash, new MagicLinkTokenHashCapabilityIndexEntry(

@@ -6,6 +6,50 @@
 
 ## Current Verification
 
+### Redaction clearance and final review patches (2026-10-13)
+
+SDK 10.0.401 source-reference restore and warning-as-error Debug solution
+build both exited 0 with zero warnings/errors. Each Timesheets test project
+ran as its built executable, with these exact results before the final
+review patches:
+
+| Project | Result | Time |
+| --- | --- | --- |
+| ArchitectureTests | 57/57 | 2.457s |
+| Contracts.Tests | 92/92 | 0.505s |
+| Server.Tests | 545/545 | 0.806s |
+| Works.Tests | 76/76 | 0.324s |
+| Projections.Tests | 387/387 | 541.756s |
+| IntegrationTests | 715 passed, five declared skips, 720 total | 508.201s |
+
+Total: 1,872 passed, five skipped, zero errors or failures in 1,877 cases.
+`python3 -m unittest discover -s scripts -p 'test_*magic_link*.py' -v`
+passed 65/65. Test logs are `/tmp/timesheets-36-final-<Project>.log`; the
+Python log is `/tmp/timesheets-36-redaction-python.log`.
+
+`DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-36-redaction-live`
+passed the opt-in journey 1/1 in 125.125 seconds on the redaction tree.
+`/tmp/timesheets-36-redaction-live/run-fcnqc17t/cleanup.json` reports complete
+cleanup, no failure reasons, and removal of all three owned containers;
+the runner reports retained shared state, unexpired TTL values and scheduler
+KV unchanged. The fixture uses private Redis, placement and scheduler.
+
+After that broad verification, the bounded retry classifier gained HTTP 408;
+v6 migration pages gained byte accounting; ordinary index insertion rejects
+negative node IDs; blank v6 operator requests are opaque; and token display
+GETs send no-store and no-referrer headers. Focused final-tree tests pass:
+four HTTP retry cases, five v6 migration cases (including a maximum-width
+128-owner byte-split case), one negative-root case, two blank-request cases,
+and two token-header cases. The affected Projections and Integration test
+projects build with zero warnings/errors. A final source-reference solution
+build passed with zero warnings/errors; a combined Integration selection
+passed 8/8, the v6 migration class 5/5, negative-root test 1/1, issuer
+class 8/8, and launch-readiness checks 13/13. The full suites and live run above
+predate these review patches. None of
+these local results supplies certified deployed legacy inventory, migration
+authority, source continuity or shared rebuild acceptance. Story 3.6 and
+release readiness remain **FAIL**.
+
 ### Reviewed startup-hardening final result (2026-10-13)
 
 The scoped increment is complete and independently reviewed. AppHost runtime

@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Projections;
@@ -18,6 +19,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
     IMagicLinkIndexMigrationAuthority authority)
 {
     private const int AppendWidth = 8;
+    private const int AppendByteLimit = 256 * 1024;
 
     /// <summary>
     /// Begins or resumes the named migration and atomically selects v7 after validating every v6
@@ -207,13 +209,22 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         CancellationToken cancellationToken)
     {
         var page = new List<ReadModelBatchOperation>(AppendWidth);
+        int pageBytes = 0;
         foreach (ReadModelBatchOperation operation in operations)
         {
+            int bytes = checked(operation.CanonicalValue.Length + Encoding.UTF8.GetByteCount(operation.Key)
+                + Encoding.UTF8.GetByteCount(operation.ValueTypeName) + 1024);
+            if (bytes > AppendByteLimit)
+                throw new InvalidOperationException("A private v6 migration value exceeds the SDK append limit.");
+            if (page.Count == AppendWidth || pageBytes + bytes > AppendByteLimit)
+            {
+                await coordinator.AppendStreamingPageAsync(scope, operationId, pageOrdinal++, page,
+                    cancellationToken).ConfigureAwait(false);
+                page = new List<ReadModelBatchOperation>(AppendWidth);
+                pageBytes = 0;
+            }
             page.Add(operation);
-            if (page.Count < AppendWidth) continue;
-            await coordinator.AppendStreamingPageAsync(scope, operationId, pageOrdinal++, page,
-                cancellationToken).ConfigureAwait(false);
-            page = new List<ReadModelBatchOperation>(AppendWidth);
+            pageBytes += bytes;
         }
         if (page.Count != 0)
             await coordinator.AppendStreamingPageAsync(scope, operationId, pageOrdinal++, page,

@@ -37,7 +37,7 @@ public static class MagicLinkIndexMigrationEndpoints
                         .ConfigureAwait(false);
                     return Results.NoContent();
                 }
-                catch (UnauthorizedAccessException)
+                catch (Exception error) when (error is UnauthorizedAccessException or ArgumentException)
                 {
                     return Results.NotFound();
                 }

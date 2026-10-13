@@ -9,7 +9,7 @@ public sealed class TimeEntryCommentPublicationIssuer(
     ITimeEntryCommentPublicationAuthority? authority = null)
 {
     /// <summary>The current issued-decision contract version.</summary>
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 
     private readonly ITimeEntryCommentPublicationAuthority _authority = authority
         ?? new DenyAllTimeEntryCommentPublicationAuthority();
@@ -24,9 +24,14 @@ public sealed class TimeEntryCommentPublicationIssuer(
         TimesheetsCommentPolicyDecision decision = allowed
             ? TimesheetsCommentPolicyDecision.Allowed
             : TimesheetsCommentPolicyDecision.PolicyRequired;
-        TimesheetsCommentPolicyDecision externalDecision = comment.Policy.RedactionRequirement
-            == TimesheetsCommentRedactionRequirement.NotRequired
-            && _authority.MayDisplayExternally(context, comment)
+        TimeEntryComment externalCandidate = new(comment.Text, comment.Policy with
+        {
+            RedactionRequirement = TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
+        });
+        bool mayDisplay = _authority.MayDisplayExternally(context, externalCandidate);
+        bool clearedForUnredactedDisplay = mayDisplay
+            && _authority.MayDisplayUnredactedExternally(context, externalCandidate);
+        TimesheetsCommentPolicyDecision externalDecision = clearedForUnredactedDisplay
             ? TimesheetsCommentPolicyDecision.Allowed
             : TimesheetsCommentPolicyDecision.Excluded;
         return new TimeEntryComment(comment.Text, comment.Policy with
@@ -35,6 +40,9 @@ public sealed class TimeEntryCommentPublicationIssuer(
             ServerProjectionInclusion = decision,
             ExternalConfirmationDisplay = externalDecision,
             ServerExternalConfirmationDisplay = externalDecision,
+            RedactionRequirement = clearedForUnredactedDisplay
+                ? TimesheetsCommentRedactionRequirement.NotRequired
+                : TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure,
             ServerPublicationVersion = CurrentVersion
         });
     }
