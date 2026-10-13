@@ -14,8 +14,14 @@ Exact owned cleanup and shared-state/TTL/scheduler preservation passed. The
 earlier metadata HTTP 500 did not recur, so the latest-tree local-proof gap
 is closed; its historical cause remains unexplained. No runtime code or tests
 changed and the six default suites were not rerun. The draft deployed
-qualification awaits a named environment, operator/access and real trusted
-evidence sources. Local mapped delivery does not establish certified legacy
+qualification identified Platform's designated cluster and existing native
+access. A fresh read-only recheck at Timesheets
+`28ffeaee83e9414ce9e205e57f674e4c29a6e40b` found no identifiable Timesheets
+workload or production binding/inventory/migration providers. Application
+enrollment and trusted evidence sources remain external prerequisites; see
+[the qualification record](deployed-magic-link-acceptance.md) for exact
+commands and bounded-discovery limits. Local mapped delivery does not
+establish certified legacy
 inventory, resource-binding/migration authority, enforced quiescence, source
 continuity, pending-delivery recovery, or deployed subscriber/shared-rebuild
 acceptance. Story 3.6 remains in progress; release remains **FAIL**.

@@ -1,5 +1,24 @@
 # Story 3.6 resume checkpoint — 2026-10-13
 
+## Build resume confirms missing deployed prerequisites
+
+From clean `main` at `28ffeaee83e9414ce9e205e57f674e4c29a6e40b`, the
+read-only cluster recheck passed all four native commands. The same cluster
+UID, 23 namespaces, 100 workload/service objects and 111 pods were observed;
+no Timesheets name/image matches were found. Independent source investigation
+confirmed missing production binding/inventory/migration providers. Exact
+commands, scope and discovery limits are in
+[the qualification record](../../docs/deployed-magic-link-acceptance.md).
+
+Resume draft spec-23 only after Timesheets enrollment, production bindings,
+certified source/maintenance/continuity and installed subscriber/shared-rebuild
+evidence exist. There is no unanswered target-discovery question and no
+independent Timesheets implementation gap established by this recheck.
+Story 3.6/Epic 3 stay in progress; release stays **FAIL**. Prior local evidence
+and completed specs are retained. No runtime or cluster mutation occurred.
+Documentation verification passed 13/13 readiness checks in 0.195s and
+whitespace validation passed; spec-23's frozen intent is preserved verbatim.
+
 ## Platform lookup resolves target discovery; deployed prerequisites absent
 
 At the user's direction, Platform source

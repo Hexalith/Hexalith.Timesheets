@@ -12,6 +12,39 @@ are identified. No qualified Timesheets deployment, resource-binding issuer
 or certified Timesheets inventory/maintenance provider was found. Story 3.6
 and Epic 3 remain in progress; release remains **FAIL**.
 
+## Story 3.6 build resume recheck (2026-10-13)
+
+Resuming from clean Timesheets `main` at
+`28ffeaee83e9414ce9e205e57f674e4c29a6e40b`, with Platform still at
+`2c3f0fd4befe4e7e2aa1a3f7ce8ae1d5e1808f3c`, repeated the bounded native
+census below. All four commands exited **0**. Responses were projected in
+memory to counts, namespace UID and matching names/images; no raw response
+or credentials were printed or retained.
+
+```text
+kubectl --context jpiquot@local --request-timeout=15s get namespace kube-system -o json
+kubectl --context jpiquot@local --request-timeout=15s get namespaces -o json
+kubectl --context jpiquot@local --request-timeout=15s get deployments,statefulsets,services -A -o json
+kubectl --context jpiquot@local --request-timeout=15s get pods -A -o json
+```
+
+The namespace UID remains `b5860674-1d1e-4a3b-b413-e1bb3b9a4557`.
+Counts remain **23 namespaces**, **100 deployments/statefulsets/services**
+and **111 pods**. No namespace/workload/service name or pod container/
+init-container image matched `timesheet`, `eventstore` or `platform`.
+The same bounded-discovery limits below apply; renamed workloads cannot be
+excluded by this check.
+
+An independent source investigation confirmed the default-deny Timesheets
+migration authority, unavailable verified-inventory provider and absent
+production resource-binding provider. Existing mapped projection/rebuild
+handlers and local manual delivery do not prove an installed subscriber.
+No independent Timesheets code change that closes these external gates was
+established. Spec-23 stays **draft** because deployment/enrollment,
+production bindings, certified coverage/maintenance/continuity and deployed
+subscriber/shared-rebuild evidence remain missing. No domain or maintenance
+operation was issued.
+
 ## Recovered environment and access information
 
 | Requested information | Evidence-backed value | Scope |

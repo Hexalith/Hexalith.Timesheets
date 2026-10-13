@@ -6,6 +6,39 @@
 
 ## Current Verification
 
+### Deployed prerequisite recheck on build resume (2026-10-13)
+
+Clean baseline: Timesheets `28ffeaee83e9414ce9e205e57f674e4c29a6e40b`;
+Platform remains `2c3f0fd4befe4e7e2aa1a3f7ce8ae1d5e1808f3c`.
+SDK `dotnet --version` returned **10.0.401**, matching `global.json`.
+Four bounded native cluster reads exited **0**, observing the same namespace
+UID, 23 namespaces, 100 workload/service objects and 111 pods. Names and
+pod images contained no `timesheet`, `eventstore` or `platform` matches.
+The projected responses contained no credentials or domain payloads; raw
+responses were not retained. Exact commands and bounded-discovery limits are
+in [the qualification record](../../../docs/deployed-magic-link-acceptance.md).
+
+Independent source investigation confirmed missing production resource-binding,
+verified-inventory and migration-authority providers. Existing mapped handlers
+and local manual delivery do not establish deployed subscriber/shared-rebuild
+acceptance. Draft spec-23 remains unready because external installation and
+certification dependencies are missing. Story 3.6/Epic 3 remain in progress;
+release remains **FAIL**. Only evidence/tracking documentation changed;
+runtime code, deployment and historical local results remain unchanged.
+
+After reconciliation, the existing readiness executable passed **13/13 in
+0.195s**, zero errors/failures/skips/not-run, exit **0**:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+Whitespace validation passed. The frozen spec-23 intent was compared with
+`git show HEAD:_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md`
+and is preserved verbatim; status remains draft. No new build, broad default
+suite or local journey was run for these documentation edits.
+
 ### Fresh local acceptance and deployed qualification checkpoint (2026-10-13)
 
 Baseline source: `11976c2d8000bfc83f1d816a085836beecf8f6d1`, clean main.
