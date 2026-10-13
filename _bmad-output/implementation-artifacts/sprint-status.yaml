@@ -77,6 +77,7 @@ development_status:
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
   3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
+  # No identifiable Timesheets deployment or production binding/inventory/migration providers
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: in-progress
   epic-3-retrospective: done
 
