@@ -1,6 +1,154 @@
 # Story 3.6 resume checkpoint — 2026-10-12
 
-## Current v1 migration continuation
+## Final reviewed isolated fixture (2026-10-12)
+
+The isolation increment is complete and reviewed. Final Python passed 63/63,
+compiled guards 16/16, Architecture 56/56 and the latest fully isolated live
+journey 1/1 in 135.607s, runner exit 0. Evidence:
+`/tmp/timesheets-isolation-final-live/run-wpbnjn90`. Every original journey
+assertion remains. The runner now generates captured PID/start exit proof:
+all 16 identities are gone, bound resource inventory is empty, and all three
+owned containers/component copies were removed. Retained DB0/13/14 contents,
+unexpired TTL values/deadlines and all 57 scheduler entries plus cluster
+identity match before/after; zero natural expirations occurred.
+
+The final verification retained a Docker port-publication failure before
+AppHost startup and a 1/1 functional pass whose shared broker/scheduler
+preservation failed. Shared state continued changing with the fixture stopped;
+no source is attributed or repaired. Read-only aggregate observations then
+held unchanged and the fresh-baseline retry passed. All historical results
+and exact commands are retained in the test summary. A pre-existing bare
+fixture-flag/shared-default startup concern is deferred; run the provided
+isolated runner with complete private settings. No production authority was
+simulated and no legacy data was cleared/migrated. The scoped fixture spec is
+done; parent Story 3.6 stays in progress and release remains **FAIL** pending
+legacy and deployed certification. Changes are uncommitted; the index,
+dependencies and gitlinks are untouched.
+
+## Historical round-3 isolated fixture continuation
+
+All nine amended isolation tasks are implemented and locally verified.
+The restored private Redis/pubsub/placement/scheduler behavior preserves the
+existing graph/ports/defaults. Round-3 guards additionally examine every Dapr
+YAML/YML extension/case, consume complete multiline/URL credentials, refuse
+malformed Docker ownership/ports, validate scheduler range proof, preserve
+original journey failure/streams when shutdown is unproved, and report
+failed evidence writes without losing the original exit. Unknown shutdown
+retains dependencies; a real bound survivor is tested through the production
+scanner. Compiled probes remain harmless before resource construction.
+
+SDK `10.0.401` supported source-reference restore/build exited 0; Debug build
+zero warnings/errors in 21.11s. Python 55/55 in 6.907s, Architecture 56/56
+in 2.874s, compiled guards 16/16 and latest isolated live 1/1 in 124.583s
+all passed without unexpected skips/errors; runner exit 0. Live evidence:
+`/tmp/timesheets-isolation-round3-live/run-liwouxcy`; guards:
+`/tmp/timesheets-isolation-round3-guards/run-wjgil617`.
+All 16 captured fixture processes, three owned containers and component
+copies are gone; final Aspire/Dapr/owned-container inventories are empty.
+Retained DB0/13/14 permanent and unexpired TTL values/deadlines and all
+54 scheduler entries match, zero natural expirations. Exact commands and
+baseline counts are in the test summary and local proof; cross-run baseline
+changes predate this fixture and are not attributed or repaired.
+
+LaunchReadiness passed 13/13 in 0.169s after evidence edits.
+
+Only this latest fully isolated result supports the materialization live
+checks. All earlier attempts/counts remain historical, including the first
+three state-store-only attempts without broker/scheduler preservation proof.
+Independent review is pending. Legacy inventory, actual authority, enforced
+quiescence, owner continuity, pending-delivery recovery and deployed
+certification remain open. Story 3.6 stays in progress and release stays
+**FAIL**. Do not stage, commit, push or change dependencies/gitlinks.
+
+## Historical round-2 fully isolated fixture continuation
+
+The amended `spec-3-6-isolate-live-dapr-fixture-storage.md` is implemented
+and locally verified. The run-mode AppHost guard validates isolated actor,
+read-model and pubsub components plus explicit private placement/scheduler
+endpoints before resources. The runner creates private services from the
+three installed immutable images, verifies actual sidecar files/targets,
+refuses every pre-existing AppHost and matching Dapr ID/occupied port, and
+stops only the exact owned AppHost. Journey process groups are terminated
+and descendants reaped before infrastructure cleanup; unknown Docker
+ownership, surviving resources or component deletion failures retain safe
+failure evidence and the original nonzero status. Evidence directories are
+unique and both streams are sanitized, including timeout stderr.
+
+SDK `10.0.401` source-reference restore/build passed, zero warnings/errors;
+Debug build took 7.30 seconds. Python passed 43/43, Architecture 56/56 in
+1.931 seconds, and checked-in compiled configuration guards 12/12. The
+latest fully isolated live test passed 1/1 in 140.368 seconds, zero skips,
+errors or not-run cases; runner exit 0. Evidence is
+`/tmp/timesheets-isolation-round2-live/run-wovpme49`. Stored-event,
+selected v7 candidate, effective policy/value/lineage, use/race/replay,
+composed rebuild and post-restart assertions all remain. All 16 captured
+fixture processes are gone, all three owned containers/component copies
+were removed, and final Aspire/Dapr inventories are empty.
+
+Before/after read-only preservation matches DB0 persistent broker/general
+values and all 90 retained expiring values/deadlines (113,203 total keys),
+DB13 persistent actor/command values and 347 expiring values/deadlines
+(3,018 total), DB14's 773 persistent read-model keys, and all 51 retained
+scheduler KV entries. No expiration occurred during the live run. Prior
+guard/snapshot-reader failures and the first three state-store-only journey
+attempts remain recorded; their DB13/14 fingerprints do not prove earlier
+broker/scheduler preservation. No earlier control-plane baseline exists;
+do not repair or clear earlier shared effects. Exact commands/logs and the
+transient manual dashboard-query output caveat are in the test summary and
+`docs/local-magic-link-dapr-proof.md`.
+
+Only current fully isolated evidence supports the two materialization live
+checks. Default-deny authority and unavailable inventory are unchanged.
+Legacy inventory, actual authority, enforced quiescence, source continuity,
+pending-delivery recovery and deployed certification remain open. Story
+3.6 remains in progress; Story 3.6/release remain **FAIL**. Do not stage,
+commit, push, update dependencies/gitlinks or invent rollout certification.
+
+## Prior state-store-only fixture continuation
+
+`spec-3-6-isolate-live-dapr-fixture-storage.md` is implemented and locally
+verified. The scoped AppHost override validates both exact component copies
+before resource construction and requires run mode plus explicit fixture
+opt-in. The runner uses the immutable installed `dapr_redis` image for a
+fresh disposable loopback endpoint, preflights both IDs and required ports,
+starts/waits/stops the exact AppHost, and removes only owned artifacts.
+Actual loaded actor/read-model endpoints are checked before commands.
+
+SDK `10.0.401` source-reference restore and Debug solution builds passed
+with zero warnings/errors. Six individual default suites passed 1,867 tests
+with five expected skips and zero failures; Python passed 25/25. Built
+AppHost missing-opt-in, wrong-scope and missing-component checks all refused
+startup with CLI exit 2 and no sidecars. The third state-store-only live run passed
+1/1 in 118.546 seconds with stored recording/issuance, v7 candidate,
+effective values/lineage, confirm/adjust, one-winner race, opaque denial,
+composed rebuild, restart and fresh post-restart use. The two original
+materialization live-dependent tasks were checked for that functional run;
+current checks rely on the fully isolated evidence above.
+
+Two preceding attempts failed at v7 candidate integrity verification
+(72.710 and 58.798 seconds). The read-only Python verifier failed to restore
+C# member order after SDK persistence sorted nested JSON properties. A
+regression reproduced the failure and the corrected verifier retained all
+integrity/identity/selection checks. Failed and passing sanitized logs are
+preserved at `/tmp/timesheets-isolated-dapr-live-proof`, `-2`, and `-3`.
+Final Dapr/Aspire and fixture-container inventories are empty. Legacy DB13
+and DB14 contents match the fresh pre-live fingerprints (3,018/773 keys);
+no legacy data was cleared or migrated. Exact commands and limits are in
+`tests/3-6-test-summary.md` and `docs/local-magic-link-dapr-proof.md`.
+
+The first three fixtures isolated only actor/read-model stores. Pub/sub
+and scheduler state remained shared; Redis DB13/14 fingerprints did not
+prove their preservation. No earlier control-plane baseline exists and no
+earlier shared effects were repaired or cleared. Treat these logs as prior
+functional evidence. This proof does not certify the legacy environment or deployment. Complete
+verified cross-tenant inventory, actual operator/resource-binding authority,
+enforced writer/delivery quiescence, source continuity/handoff and recovery
+of the four previously uncovered legacy journal deliveries remain open.
+Default migration authority still denies and inventory remains unavailable.
+Story 3.6 stays in progress; Story 3.6/release remain **FAIL**. Do not stage,
+commit, push, change dependencies/gitlinks, or invent rollout certification.
+
+## Prior v1 migration continuation
 
 The scoped `spec-3-6-migrate-v1-magic-link-index-to-v7.md` implementation is
 locally verified. The separate authenticated `migrate-v1` route reconstructs

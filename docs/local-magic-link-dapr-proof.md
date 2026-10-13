@@ -1,6 +1,215 @@
 # Local magic-link Dapr proof
 
-## Current v1 migration verification (2026-10-12)
+## Final reviewed isolated fixture (2026-10-12)
+
+The isolation increment is complete and reviewed. Final Python passed 63/63,
+compiled guards 16/16, Architecture 56/56 and the latest fully isolated live
+journey 1/1 in 135.607s, runner exit 0. Evidence:
+`/tmp/timesheets-isolation-final-live/run-wpbnjn90`. Every original journey
+assertion remains. The runner now generates captured PID/start exit proof:
+all 16 identities are gone, bound resource inventory is empty, and all three
+owned containers/component copies were removed. Retained DB0/13/14 contents,
+unexpired TTL values/deadlines and all 57 scheduler entries plus cluster
+identity match before/after; zero natural expirations occurred.
+
+The final verification retained a Docker port-publication failure before
+AppHost startup and a 1/1 functional pass whose shared broker/scheduler
+preservation failed. Shared state continued changing with the fixture stopped;
+no source is attributed or repaired. Read-only aggregate observations then
+held unchanged and the fresh-baseline retry passed. All historical results
+and exact commands are retained in the test summary. A pre-existing bare
+fixture-flag/shared-default startup concern is deferred; run the provided
+isolated runner with complete private settings. No production authority was
+simulated and no legacy data was cleared/migrated. The scoped fixture spec is
+done; parent Story 3.6 stays in progress and release remains **FAIL** pending
+legacy and deployed certification. Changes are uncommitted; the index,
+dependencies and gitlinks are untouched.
+
+## Historical round-3 fully isolated acceptance (2026-10-12)
+
+The latest-tree live journey passed **1/1 in 124.583 seconds**, zero
+errors/failures/skips/not-run; runner exit **0**. Evidence is
+`/tmp/timesheets-isolation-round3-live/run-liwouxcy`. The existing stored-event,
+selected v7 candidate, effective-value/comment-policy/lineage, confirm,
+adjust, one-winner race, opaque denial, composed rebuild, restart and fresh
+post-restart assertions remain unchanged.
+
+Round 3 additionally examines every loaded `.yaml`/`.yml` manifest regardless
+of case, consumes complete multiline JSON/YAML credential values and URL
+userinfo before output retention, refuses nullable/malformed Docker ownership
+and port bindings, validates the scheduler range envelope/rows/count, and
+preserves captured streams and the original failure when journey shutdown or
+evidence writes fail. Required evidence failures prevent successful status,
+including preservation-file writes after infrastructure cleanup. A real bound
+surviving process exercises the production scanner and blocks dependency
+removal. The three-service/three-component procedure below is current.
+
+SDK `10.0.401` source-reference restore exited 0; the final supported Debug
+build passed with zero warnings/errors in **21.11 seconds**. Focused Python
+passed **55/55 in 6.907 seconds**, zero skips; Architecture passed **56/56 in
+2.874 seconds**. Compiled guards passed **16/16**, including shared Redis and
+each component's mismatched endpoint. Every probe exits before constructing
+resources. Guard cleanup/preservation passed in
+`/tmp/timesheets-isolation-round3-guards/run-wjgil617`. The default live skip
+remains unchanged; untouched domain suites retain their dated earlier results.
+
+The live run used private Redis `127.0.0.1:61089`, placement
+`127.0.0.1:61092` and scheduler `127.0.0.1:35059`, including the private
+scheduler advertisement. `recorded-process-exit.json` proves all **16**
+captured PID/start identities exited; `resource-exit.json` is empty.
+`cleanup.json` confirms descendants gone, three owned containers removed and
+component copies removed. Final Aspire/Dapr and exact owned-container
+inventories are empty.
+
+Read-only before/after preservation matches DB0 **113,492 keys**
+(**113,384 persistent/108 expiring**), DB13 **3,018** (**2,671/347**), DB14
+**773 persistent**, and **54 scheduler KV entries**. Retained expiring values
+and absolute deadlines match, with **zero natural expirations**. These
+counts differ from the historical round-2 baseline before this fixture
+started; the cross-run changes are not attributed, repaired or cleared.
+The validated etcd range cannot turn an error/unknown response into an empty
+successful fingerprint. Only aggregate snapshot evidence is saved.
+
+LaunchReadiness passed **13/13 in 0.169 seconds** after evidence edits.
+
+This is local acceptance, with independent review pending. Legacy inventory,
+actual migration/resource-binding authority, enforced quiescence, source
+continuity, pending-delivery recovery and deployed certification remain open.
+The first three state-store-only attempts and round-2 evidence below remain
+historical. **Story 3.6 stays in progress; Story 3.6/release remain FAIL.**
+
+## Historical round-2 fully isolated acceptance (2026-10-12)
+
+The latest-tree journey passed **1/1 in 140.368 seconds**, with zero
+errors, failures, skips or not-run cases; runner exit **0**. Real stored
+recording/issuance, selected v7 candidate, effective Time Entry values and
+comment policy, packed lineage, confirm/adjust, one race winner, opaque
+replay denial, composed rebuild, restart readbacks and fresh post-restart
+use all remain asserted by the compiled live test.
+
+The existing AppHost graph and application ports are unchanged. The guarded
+run-mode override requires exact actor/read-model copies plus scoped
+`pubsub`, with the same private Redis endpoint, and explicit distinct
+private placement/scheduler targets before resource construction. Ordinary
+starts retain their defaults. The runner uses only immutable images already
+installed for `dapr_redis`, `dapr_placement` and `dapr_scheduler`, no pulls or
+shared volumes. Scheduler broadcast points to its own private loopback
+endpoint. Actual sidecar components and both control-plane targets are
+verified before domain commands.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --log-directory /tmp/timesheets-isolation-round2-guards
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-isolation-round2-live
+```
+
+SDK `10.0.401` source-reference restore exited 0; Debug solution build
+passed with zero warnings/errors in **7.30 seconds**. Architecture passed
+**56/56 in 1.931 seconds**. Focused Python passed **43/43**; compiled
+configuration checks passed **12/12**, including safe ordinary-default
+selection. Every compiled probe exits before resource construction, so
+unsafe/missing broker/control settings cannot activate retained storage
+when a guard regresses. All six unchanged domain suites already passed
+**1,867 cases with five expected skips** in the preceding round and were
+not repeated. The default live skip remains intact.
+
+Latest evidence is `/tmp/timesheets-isolation-round2-live/run-wovpme49`.
+`runtime-isolation.json` identifies private Redis `127.0.0.1:57994`,
+placement `127.0.0.1:57996` and scheduler `127.0.0.1:43793`.
+`resource-exit.json` is empty and `recorded-process-exit.json` proves all
+16 captured fixture processes exited, including the AppHost/dashboard.
+`cleanup.json` confirms journey descendants gone, component copies removed
+and all three owned containers removed. Final sanitized Aspire/Dapr and
+fixture-container inventories are empty. No foreign AppHost was stopped.
+
+Read-only before/after Redis snapshots cover DB0 broker/general state
+(**113,203 keys: 113,113 persistent and 90 expiring**), DB13 actor/command
+state (**3,018: 2,671 persistent and 347 expiring**) and DB14 read models
+(**773 persistent**). Persistent value fingerprints match; every retained
+expiring value and absolute expiry deadline matches, with **zero natural
+expirations** during this run. The full retained scheduler etcd KV snapshot
+also matches (**51 entries**). Only aggregate evidence is saved; raw values,
+key names and per-key hashes remain in memory. Reproduce the reader through
+`read_only_shared_snapshot` and `shared_preservation` in the fixture runner;
+its atomic Redis script uses only KEYS/DUMP/PTTL/TIME, and scheduler capture
+uses an etcd v3 all-key range at loopback port 2379.
+
+Prior guard-driver failures remain retained: a sequential snapshot met a
+natural expiry, the installed Redis 6.2 lacks EVAL_RO, and an initial
+one-TIME TTL reader could not establish deadline equality. The corrected
+reader pairs each PTTL with TIME. All 12 checks, cleanup and preservation
+then passed in `/tmp/timesheets-isolation-round2-guards/run-smukev4h`.
+During a manual inventory, tool output included the run's temporary
+dashboard login query; saved fixture evidence was sanitized, and the
+AppHost/dashboard process is now gone. No domain token or signing key was
+printed. All later inventories were sanitized before output.
+
+This proves local acceptance only. Legacy migration, complete cross-tenant
+inventory, actual operator/resource-binding authority, enforced writer and
+delivery quiescence, owner continuity/handoff, recovery of the four legacy
+pending deliveries and deployed certification remain open. No legacy
+content was cleared or migrated and no production authority was simulated.
+The live task boxes are checked using this fully isolated evidence;
+**Story 3.6 remains in progress and Story 3.6/release remain FAIL**.
+
+## Prior state-store-only fixture evidence (2026-10-12)
+
+The approved fixture now overrides component paths only in run mode with
+`TIMESHEETS_LIVE_DAPR_FIXTURE=1`. Before resource construction, the AppHost
+requires exact copies of both checked-in components with only their shared
+loopback Redis endpoint changed. Names, scopes, databases 13/14, empty
+passwords and key-prefix settings stay intact. Ordinary starts retain the
+checked-in paths. The resource graph, ServiceDefaults, SDK and gitlinks are
+unchanged.
+
+SDK `10.0.401` source-reference restore exited 0. Debug solution builds
+passed with zero warnings/errors (16.92 seconds initially, 6.06 seconds
+after the live-test endpoint assertion). Six individual default suites
+passed **1,867 tests with five expected skips and zero failures**. Focused
+Python checks passed **25/25**. Actual exact-path Aspire starts with missing
+opt-in, wrong scope and a missing component each refused startup with exit
+**2**, leaving no AppHost or Dapr sidecar.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-isolated-dapr-live-proof-3
+```
+
+The third state-store-only live journey passed **1/1 in 118.546 seconds**, runner
+exit **0**. It verified both loaded component endpoints before commands,
+real stored recording/issuance, the exact selected v7 candidate, effective
+Time Entry values and packed lineage, confirm/adjust, one race winner,
+opaque replay denial, composed rebuild and post-restart readbacks/fresh use.
+Earlier fixture attempts failed **0/1 in 72.710 seconds** and **0/1 in
+58.798 seconds** at selected candidate verification. The Python verifier
+had hashed nested fields in the SDK's sorted persistence order instead of
+the C# contract order. A sorted-persistence regression reproduced that
+failure; explicit contract-order reconstruction fixed it while retaining
+digest, identity, uniqueness and stable-selection checks. Both failed logs
+remain at `/tmp/timesheets-isolated-dapr-live-proof` and its `-2` sibling.
+
+Every attempt stopped only its owned exact AppHost and removed its own
+Redis container and component copies. Final Dapr inventory was empty,
+Aspire returned `[]`, and no fixture Redis container remained. Legacy
+actor/read-model DBs had **3,018/773 keys** immediately before the live
+attempts and afterward; read-only whole-database fingerprints matched.
+Preservation evidence is `/tmp/timesheets-isolated-dapr-preservation.json`.
+The earlier offline snapshot had three additional DB13 keys; that change
+predates fixture startup and its cause was not established.
+
+Those first three runs isolated actor/read-model storage only. Pub/sub
+and the scheduler remained shared; DB13/14 fingerprints did not establish
+broker or scheduler preservation. No earlier control-plane baseline exists.
+Earlier shared effects have not been repaired or cleared. Their functional
+results are retained as prior evidence, and only the fully isolated run
+above supports the current live task checks. Complete cross-tenant inventory, real migration/operator and
+resource-binding authority, enforced writer/delivery quiescence, source
+continuity/handoff, recovery of the four legacy pending deliveries and
+deployed certification remain open. No legacy data was cleared or migrated
+and no production authority was simulated. The live task checks from this functional run were provisional; current
+checks rely on the fully isolated evidence above; **Story 3.6 remains in progress and Story 3.6/release
+remain FAIL**. Commands, suite totals and safe log paths are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+## Prior v1 migration verification (2026-10-12)
 
 The separate internal `migrate-v1` operator migration is implemented and
 locally verified against simulated independent inventory/authority. The
@@ -17,8 +226,8 @@ cross-tenant source coverage, migration authority, writer/delivery quiescence,
 authoritative owner delivery continuity/handoff, and verified recovery of
 the previously recorded pending legacy journal are
 still absent. The provider remains unavailable and authority default-deny.
-The previous isolated journey below is still the latest live acceptance
-result. Story 3.6 remains in progress and Story 3.6/release remain **FAIL**.
+The previous journey below was the latest live acceptance result at this
+checkpoint. Story 3.6 remained in progress and Story 3.6/release remained **FAIL**.
 Redis, AppHost, ServiceDefaults, ordinary delivery, v6 migration and SDK sources
 were preserved.
 
@@ -512,23 +721,44 @@ passing run is historical evidence for its tested revision. Production gates rem
 ## Run the persisted journey
 
 From the Timesheets repository root, with Docker and Dapr available, use the
-checked-in Aspire composition. Its EventStore and Timesheets processes must be
-the only local applications with those Dapr IDs; the fixture checks this before
-it writes isolated data.
+isolated fixture runner after building the current source-reference Debug
+solution. Prerequisites are Linux process inspection, Python 3, the pinned
+.NET SDK, Aspire/Dapr CLIs, a working Docker daemon and immutable images
+already installed by `dapr_redis`, `dapr_placement` and `dapr_scheduler`.
+No image is pulled. Retained Redis at `127.0.0.1:6379` and the scheduler's
+etcd v3 range endpoint at `http://127.0.0.1:2379/v3/kv/range` must be readable
+for before/after preservation snapshots; these addresses are used only for
+read-only snapshots, never as fixture service targets. A missing or invalid
+snapshot fails verification.
+
+The runner refuses every existing AppHost, either matching Dapr ID and any
+occupied application port. It creates three owned disposable services:
+loopback-only Redis, placement and scheduler. Scheduler advertisement points
+to its private endpoint. Three scoped component copies select the private
+Redis for actor/command DB13, read-model DB14 and pub/sub DB0.
 
 ```bash
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build src/Hexalith.Timesheets/Hexalith.Timesheets.csproj --no-restore -m:1 -v:q
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --no-restore -m:1 -v:q
-TIMESHEETS_LIVE_DAPR_FIXTURE=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire run --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -warnaserror -p:UseHexalithProjectReferences=true -p:HexalithCommonsRoot=/tmp/no-commons -m:1 /nr:false
+python3 -m unittest discover -s scripts -p 'test_*magic_link*.py' -v
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py
 ```
 
-Leave `aspire run` in its own terminal. In a second terminal, inspect both app
-IDs and run the opt-in test:
-
-```bash
-dapr list
-TIMESHEETS_LIVE_DAPR=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*MagicLinkLiveDaprTests'
-```
+The runner sets `TIMESHEETS_LIVE_DAPR_FIXTURE=1` and
+`TIMESHEETS_LIVE_DAPR_COMPONENTS` for the AppHost, waits for both resources
+through Aspire, and supplies explicit private placement/scheduler addresses.
+It invokes the existing opt-in xUnit test and requires exactly one executed
+passing case with no skips/errors. The journey verifies every YAML/YML
+manifest loaded by both sidecars, case-insensitively, and both control-plane
+targets before sending a domain command. Startup, test,
+and cancellation paths stop only the AppHost whose process carries this
+fixture's component-directory binding after terminating and reaping journey
+descendants. Cleanup proves bound resources exited before removing the three
+owned containers and component copies. Unknown ownership retains dependencies.
+Sanitized stdout/stderr, including timeout streams, stay in a unique evidence
+directory per invocation. Cleanup/evidence failures preserve a journey's
+original nonzero status. Ordinary starts retain checked-in defaults.
 
 The fixture reads the per-run Development signing key, app-channel token and
 Timesheets Dapr endpoint from the unique Timesheets process environment on
@@ -540,7 +770,9 @@ capability isolate each run. The explicit AppHost setting passes
 installs the Development-only claim mapping and access guard only with that
 setting. The guard permits only the journey's operations and tenant prefix;
 non-fixture tenants still fail closed. These
-are test identities, not production authorization.
+are test identities, not production authorization. Random identities are
+supplementary separation; the fresh dedicated stores isolate the global index
+and retained actor/delivery histories together.
 
 The fixture sends a synthetic `ActivityTypeCreated` through the authenticated
 SDK `/project/v2` route, verifies `Completed`, then reads the Fresh catalog via
@@ -568,18 +800,13 @@ test. Read-only stream and command-status probes retry bounded HTTP 500/503
 responses and also HTTP 429 after EventStore restart; completion still requires exact stored-event and
 command-status matches.
 
-The direct inspection command is
-`python3 scripts/local_aspire_magic_link_journey.py`. It performs signed
-EventStore stream reads and separate Dapr read-model reads before and after
-the actor restart without printing protected payloads. Its tenant ID in the
-final line identifies the isolated run; rerunning the command creates a new
-tenant. The test leaves isolated EventStore and read-model data in the local
-containers. Do not flush shared Redis or delete actor state as cleanup. Stop
-only this Aspire run:
-
-```bash
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home aspire stop --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
-```
+The runner invokes `scripts/local_aspire_magic_link_journey.py` with inherited
+fixture bindings; it is not a standalone command against ordinary shared
+services. It performs signed EventStore stream reads and separate read-model
+readbacks before/after actor restart without printing protected payloads.
+Rerunning the isolated runner creates new disposable services and identifiers.
+Cancellation goes through the runner's exact Aspire cleanup; shared Redis,
+broker and scheduler content is preserved.
 
 **Observed 2026-10-11:** both changed projects built with zero warnings or
 errors. `python3 scripts/local_aspire_magic_link_journey.py` exited 0 and

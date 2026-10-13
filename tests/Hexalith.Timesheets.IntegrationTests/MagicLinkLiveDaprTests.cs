@@ -20,6 +20,7 @@ public sealed class MagicLinkLiveDaprTests
         (int exitCode, string output, string error) = await MagicLinkLiveDaprFixture
             .RunAsync(deadline.Token);
         exitCode.ShouldBe(0, $"Local Dapr journey failed. Output: {output} Error: {error}");
+        output.ShouldContain("isolated actor/read-model/pubsub and placement/scheduler endpoints verified");
         output.ShouldContain("catalog delivered and persisted");
         output.ShouldContain("non-fixture assertion denied without owner event");
         output.ShouldContain("confirm record/issue/index/GET/use/replay passed race");

@@ -177,13 +177,13 @@ context:
 - [x] `references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/DomainSharedProjectionRebuildDispatcher.cs`, epoch coordinator if needed, and normal SDK tests — bind sessionless global Abort to both `OperationId` and `OperationTenantId` throughout admission. Tenant B must not abort A's active global rebuild by reusing its ID; genuine same-tenant abort/retry and scratch cleanup must still work.
 - [x] `src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceProjectionHandler.cs` and persisted policy-toggle tests — when selected evidence was stored under disabled comment publication, a later suffix after enabling publication must require a source replay or an equivalent lossless migration before stamping the enabled policy version. A canonical full replay afterward must restore permitted text without equal-lineage conflict; disabled/history-unknown text must remain absent until authorized.
 - [x] `tests/Hexalith.Timesheets.IntegrationTests/GlobalIndexComposedTests.cs` and concrete loader tests — dispatch at least 65 distinct hashes into one shard through the normal mapped route, then resolve an exact selected directory candidate via `LoadTokenStateAsync`. Separately stage/rebuild a directory candidate and resolve it through that same loader, not only a manual page read. Prove an omitted ordinary directory write or loader branch would fail these assertions.
-- [ ] `scripts/local_aspire_magic_link_journey.py` and its narrow test — compare selected effective Time Entry values after recording and adjustment with the authoritative stored events, including duration, billable and approval state, while retaining exact packed lineage and token-free diagnostics. Record a latest-tree isolated Dapr run; leave deployed gates `FAIL` and stop only the Timesheets AppHost.
+- [x] `scripts/local_aspire_magic_link_journey.py` and its narrow test — compare selected effective Time Entry values after recording and adjustment with the authoritative stored events, including duration, billable and approval state, while retaining exact packed lineage and token-free diagnostics. Record a latest-tree isolated Dapr run; leave deployed gates `FAIL` and stop only the Timesheets AppHost.
 
 - [x] `src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs`, selected-index storage, and epoch-race tests — resolve one token against one stable global index generation. Pin root and all required pages to that generation and recheck selection before publishing a candidate, including an inline unique hit when promotion makes the hash ambiguous. Keep old-generation reads private and fail closed on missing, corrupt, stale, or changed selection.
 - [x] `src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexProjectionHandler.cs`, index manifest/loader, and mapped/rebuild tests — make the numeric, token-free directory scale beyond 400 physical pages without a selected shard becoming invalid. Preserve bounded values and complete integrity proof; a valid cross-tenant inventory with more than 400 pages in one shard must stage and resolve exact candidates. Select ordinary insertion by full `(hash, tenant, capability)` order across adjacent pages, including a hash spanning pages and a later owner beyond both; after split, every page boundary remains strictly ordered and all valid tokens still resolve. Compare every selected directory contribution with a 10,000-input rebuild and resolve an interior-page candidate through the concrete loader.
 - [x] The same global index handler and SDK epoch/storage tests — replace tenant-slice rebuild's global `all` list and rewrite of every unrelated owner admission with a bounded, retry-safe way to replace only the tenant's contributions while preserving other tenants and collision ambiguity. Work and memory must be bounded by the tenant's supported 10,000 owners plus bounded index pages, not by the complete global inventory; prove repeated cross-tenant rebuild/prune with unrelated selected candidates and many global pages.
 - [x] `src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs`, `src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs`, and persisted gateway tests — capture the independently server-issued expected comment decision before submitting a recording or adjustment. Compare stored text and policy with that immutable expected decision after completion, even if a registered authority changes during the wait; preserve exact correlation and opaque unknown outcomes.
-- [ ] `scripts/local_aspire_magic_link_journey.py`, `scripts/magic_link_evidence_lineage.py`, and narrow Python tests — recognize the current selected index version, verify a directory candidate instead of assuming every valid hash is inline, and compare the selected effective fields used by the journey with authoritative stored recording, adjustment, and approval effects, including target, contributor/category, metrics and comment where present. Retain packed lineage, token-free diagnostics, duplicate-ID preflight, and honest live-run evidence; deployed gates remain `FAIL`.
+- [x] `scripts/local_aspire_magic_link_journey.py`, `scripts/magic_link_evidence_lineage.py`, and narrow Python tests — recognize the current selected index version, verify a directory candidate instead of assuming every valid hash is inline, and compare the selected effective fields used by the journey with authoritative stored recording, adjustment, and approval effects, including target, contributor/category, metrics and comment where present. Retain packed lineage, token-free diagnostics, duplicate-ID preflight, and honest live-run evidence; deployed gates remain `FAIL`.
 
 **Acceptance Criteria:**
 
@@ -192,6 +192,47 @@ context:
 - Given a store outage, when delivery runs, then the SDK receives a retryable failure and the last complete view remains.
 
 ## Implementation Notes
+
+Final reviewed isolation (2026-10-12): the current fixture passed live 1/1 in 135.607s, runner exit 0, Python 63/63, compiled guards 16/16 and Architecture 56/56. All 16 captured PID/start identities, three owned containers and components are gone; retained DB0/13/14, TTL values/deadlines and 57 scheduler entries/cluster identity match. The latest proof supports the two live task boxes. All prior failures and narrower proofs are preserved in [the test summary](tests/3-6-test-summary.md). The isolated-fixture spec is done; this parent materialization/story remains in progress and release FAIL for legacy/deployed certification.
+
+Current round-3 fully isolated acceptance (2026-10-12): the latest-tree
+live test passed 1/1 in 124.583 seconds, zero errors/failures/skips/not-run,
+runner exit 0. Evidence is
+`/tmp/timesheets-isolation-round3-live/run-liwouxcy`. The private three-service,
+three-component fixture retained every original stored-event, v7 candidate,
+effective-value/comment-policy/lineage, one-winner race, opaque denial,
+composed rebuild and restart assertion. All 16 captured processes, three
+owned containers and component copies are gone; final inventories are empty.
+Before/after DB0/13/14 permanent and unexpired TTL values/deadlines and all
+54 scheduler entries match, zero natural expirations. Python 55/55,
+compiled guards 16/16 and Architecture 56/56 passed after a zero-warning
+supported source-reference Debug build. The two live task boxes are checked
+using this latest proof; all counts below are dated historical evidence.
+The first three fixture runs were state-store-only and do not prove earlier
+broker/scheduler preservation. Earlier shared effects are neither repaired
+nor cleared. Legacy/deployed inventory, actual authority, enforced quiescence,
+continuity/handoff and pending-delivery certification remain open. Independent
+review is pending; Story 3.6/release remain FAIL.
+
+Historical round-2 fully isolated acceptance (2026-10-12): the latest-tree fixture
+passed 1/1 in 140.368 seconds, with zero errors/failures/skips/not-run cases
+and runner exit 0. Actor/read-model/pubsub state uses private Redis, and
+private placement/scheduler endpoints include private scheduler broadcast.
+Actual sidecar files/targets were verified before commands. Stored events,
+selected v7 candidate, effective values/policy, packed lineage, one-winner
+race, opaque denial, composed rebuild, restart and fresh-use assertions all
+remain. All 16 captured fixture processes, three owned containers and
+component copies are gone. Retained DB0/13/14 permanent and unexpired TTL
+values/deadlines and all 51 scheduler KV entries match before/after; zero
+natural expirations occurred. Evidence is
+`/tmp/timesheets-isolation-round2-live/run-wovpme49`. The two live tasks are
+checked using this fully isolated proof. The first three fixture attempts
+were state-store-only: DB13/14 fingerprints do not prove earlier broker or
+scheduler preservation. No earlier control-plane baseline exists, and no
+earlier shared effects were repaired or cleared. Legacy/deployed inventory,
+actual authority, enforced quiescence, source continuity/handoff and pending
+delivery certification remain open. Story 3.6/release remain FAIL. Exact
+commands/results and limitations are in [the test summary](tests/3-6-test-summary.md).
 
 Current 2026-10-12 verification: SDK `10.0.401` source-reference solution
 restore/build passed with zero warnings/errors; narrow Python proof passed

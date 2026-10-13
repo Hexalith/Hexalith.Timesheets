@@ -10,6 +10,7 @@ import concurrent.futures
 import hashlib
 import hmac
 import json
+import os
 import secrets
 import subprocess
 import time
@@ -20,6 +21,7 @@ from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
 from magic_link_index_selection import legacy_index_diagnostics, selected_candidate
+from run_isolated_magic_link_dapr import verify_runtime_components
 
 
 def require(condition, message):
@@ -74,6 +76,13 @@ with open(f"/proc/{pids[0]}/environ", "rb") as process_environment:
 require(environment.get("ASPNETCORE_ENVIRONMENT") == "Development", "Timesheets must run in Development")
 require(environment.get("Timesheets__LiveDaprFixture__Enabled") == "true",
         "The run-mode live Dapr fixture setting is required")
+require(os.environ.get("TIMESHEETS_LIVE_DAPR_FIXTURE") == "1",
+        "The isolated fixture runner opt-in is required")
+verify_runtime_components(os.environ.get("TIMESHEETS_LIVE_DAPR_REDIS_HOST", ""),
+                          os.environ.get("TIMESHEETS_LIVE_DAPR_COMPONENTS", ""),
+                          os.environ.get("Dapr__PlacementHostAddress", ""),
+                          os.environ.get("Dapr__SchedulerHostAddress", ""))
+print("isolated actor/read-model/pubsub and placement/scheduler endpoints verified")
 key = environment["Authentication__JwtBearer__SigningKey"].encode()
 app_token = environment["APP_API_TOKEN"]
 timesheets_sidecar = environment["DAPR_HTTP_ENDPOINT"].rstrip("/")
@@ -367,11 +376,11 @@ def _selected_index_snapshot(token_hash):
     return read_model(physical(logical_key)), generation, scope_hash, shard
 
 
-def selected_index_candidate(token_hash):
+def selected_index_candidate(token_hash, diagnostic=None):
     """Resolve and verify one selected candidate without token-derived state keys."""
     index, generation, scope_hash, shard = _selected_index_snapshot(token_hash)
     return selected_candidate(token_hash, index, generation, scope_hash, shard,
-                              read_model, _selected_index_snapshot)
+                              read_model, _selected_index_snapshot, diagnostic)
 
 
 def valid_get_diagnostics(token_hash, capability, entry):
@@ -570,10 +579,12 @@ def journey(action, race=False):
             "Delivered capability issue is missing or exposed a token")
     token_hash = b64(hashlib.sha256(token.encode()).digest())
     require(token_hash not in json.dumps(issued_view), "Capability view exposed the token hash")
-    candidate = selected_index_candidate(token_hash)
+    candidate_diagnostic = []
+    candidate = selected_index_candidate(token_hash, candidate_diagnostic.append)
     require(candidate is not None and candidate["tenant"]["tenantId"] == tenant
             and candidate["capabilityId"]["value"] == capability,
-            "Delivered candidate index does not match the stored issue")
+            "Delivered candidate index does not match the stored issue; "
+            + (candidate_diagnostic[-1] if candidate_diagnostic else "candidate-owner-mismatch"))
     route = "confirm" if action == "Confirm" else "adjust"
     suffix = "?t=" + urllib.parse.quote(token, safe="")
     assert_runtime_unique()

@@ -57,6 +57,12 @@ class SelectedIndexTests(unittest.TestCase):
 
         self.assertEqual(candidate, selected_candidate(token_hash, root, 5, "scope", 0,
                                                         read_node, snapshot))
+        # SDK batch persistence sorts every JSON object's properties. Integrity
+        # is defined by the C# contracts' member order, independent of that
+        # persisted property order.
+        persisted_node = json.loads(json.dumps(node, sort_keys=True))
+        self.assertEqual(candidate, selected_candidate(token_hash, root, 5, "scope", 0,
+                                                        lambda _: persisted_node, snapshot))
         self.assertEqual(1, len(keys))
         self.assertIn(":4:", keys[0])
         self.assertIsNone(selected_candidate(token_hash, root, 5, "scope", 0,

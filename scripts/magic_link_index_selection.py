@@ -34,6 +34,17 @@ def _pascal(value):
     return value
 
 
+def _contract_row(row):
+    """Restore the typed C# member order after SDK JSON property sorting."""
+    if row is None:
+        return None
+    candidate = row["candidate"]
+    return {"TokenHash": row["tokenHash"], "Candidate": {
+        "Tenant": {"TenantId": candidate["tenant"]["tenantId"]},
+        "CapabilityId": {"Value": candidate["capabilityId"]["value"]},
+    }}
+
+
 def _path(hash_value, candidate):
     """Match TokenPath: UTF-8 Base64 with '+' and '/' replaced and padding removed."""
     def encode(value):
@@ -52,7 +63,7 @@ def _read_v7_node(reference, scope_hash, read_model):
     if not isinstance(children, dict) or len(children) > 256:
         raise ValueError("Invalid numeric node children")
     canonical = {
-        "Prefix": node["prefix"], "Row": _pascal(node.get("row")),
+        "Prefix": node["prefix"], "Row": _contract_row(node.get("row")),
         "Roster": _pascal(node.get("roster")),
         "Children": [{"Edge": edge, "Generation": child["generation"],
                       "NodeId": child["nodeId"], "Digest": child["digest"]}
@@ -65,7 +76,7 @@ def _read_v7_node(reference, scope_hash, read_model):
     return node
 
 
-def _selected_v7_candidate(token_hash, root, generation, scope_hash, read_model, read_snapshot):
+def _selected_v7_candidate(token_hash, root, generation, scope_hash, read_model, read_snapshot, diagnostic=None):
     prefix = token_hash + "!"
     candidates = []
     visited = set()
@@ -99,17 +110,24 @@ def _selected_v7_candidate(token_hash, root, generation, scope_hash, read_model,
             return None
         visit(root.get("tokenRoot"), "")
         current, current_generation, _, _ = read_snapshot(token_hash)
-        return (candidates[0] if len(candidates) == 1 and current_generation == generation
-                and current == root else None)
-    except (KeyError, TypeError, ValueError, RuntimeError):
+        if len(candidates) != 1 or current_generation != generation or current != root:
+            if diagnostic:
+                diagnostic("candidate-count-or-selection-changed")
+            return None
+        return candidates[0]
+    except (KeyError, TypeError, ValueError, RuntimeError) as error:
+        if diagnostic:
+            reason = {KeyError: "numeric-node-shape-invalid", TypeError: "numeric-node-shape-invalid",
+                      ValueError: "numeric-node-integrity-invalid", RuntimeError: "numeric-node-read-unavailable"}
+            diagnostic(reason.get(type(error), "numeric-node-read-unavailable"))
         return None
 
 
-def selected_candidate(token_hash, index, generation, scope_hash, shard, read_model, read_snapshot):
+def selected_candidate(token_hash, index, generation, scope_hash, shard, read_model, read_snapshot, diagnostic=None):
     """Return a unique proven owner only while the selected root stays unchanged."""
     if index.get("storageVersion") == 7:
         return _selected_v7_candidate(token_hash, index, generation, scope_hash,
-                                      read_model, read_snapshot)
+                                      read_model, read_snapshot, diagnostic)
     if index.get("storageVersion") != 6 or index.get("legacyContributionsUnverified"):
         return None
     if token_hash in index.get("candidatePageCounts", {}):
