@@ -23,6 +23,26 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-13)
 
+Fresh source-reference restore/build with SDK 10.0.401 passed, zero
+warnings/errors, 17.64s. The unchanged isolated Dapr journey then passed
+**1/1 in 126.554s**, runner exit **0**, at
+`/tmp/timesheets-36-build23-fresh/run-n0nc1rne`. All 16 captured processes
+exited, all three owned containers/components were removed, and shared-state,
+TTL and scheduler preservation passed. Baseline pre-existing assets also
+passed 1/1 in 137.078s. The earlier metadata HTTP 500 did not recur; no
+production defect or fix is established by that result.
+
+No runtime or test source changed. The six default suites were not rerun.
+The latest-tree local-proof gap is closed, while the deployed acceptance task
+below remains open. [Draft spec-23](spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md)
+requires a selected deployment, read-only access/operator and actual trusted
+binding/inventory/maintenance evidence. Story 3.6/Epic 3 remain in progress;
+release remains **FAIL**. Commands, cleanup, preservation and evidence limits
+are in [the test summary](tests/3-6-test-summary.md). Prior results below are
+historical and remain preserved.
+
+## Prior Recording-Response Review Disposition (2026-10-13)
+
 The recording-response recovery increment uses the existing bounded status
 polling after a failed submit response, retries transient status observations,
 and still requires exact stored-event evidence. Draft and Submitted recordings
@@ -412,7 +432,7 @@ At the prior fail-closed POST baseline, the concrete loader and mapped projectio
   - [x] Loader unit/server tests: a valid candidate token resolves, folds capability state, folds the scoped Time Entry state, and returns a fresh catalog; duplicated/replayed/out-of-order events fold to the same deterministic state (idempotency); each invalid category fails closed returning unavailable/null **without revealing which stage failed**.
   - [x] Index tests: token-hash lookup resolves only via the rebuildable EventStore-backed projection; rebuild from `Issued` events reproduces the same mapping; the index stores no raw token and is non-authoritative for single-use/revocation/expiry.
   - [x] Endpoint/integration tests: with the concrete loader registered, valid GET confirm/adjust displays return 200 and invalid requests across the documented matrix return the identical opaque 403 through the HTTP boundary. Historical tests also observed valid POST 202 before the 2026-10-10 fail-closed change.
-  - [ ] Deployed valid public POST acceptance: local gateway and EventStore actor state-store tests prove `202` only after a verified atomic batch and reject concurrent reuse or replay; later isolated fixture and redaction journeys passed submission, restart, and one-winner concurrency. Spec-22 adds response-loss recovery and uniform POST privacy headers; its new live attempt failed at metadata HTTP 500 and its diagnostic retry was refused by a foreign runtime. Complete this item with deployed-history inventory, certified source coverage and continuity, pending-delivery recovery, deployed subscriber/shared-rebuild acceptance, and a resource-binding authority-mode issuer; retain valid GET and opaque denial regressions. Local passing fixtures do not close these deployed gates.
+  - [ ] Deployed valid public POST acceptance: local gateway and EventStore actor state-store tests prove `202` only after a verified atomic batch and reject concurrent reuse or replay; later isolated fixture and redaction journeys passed submission, restart, and one-winner concurrency. Spec-22 adds response-loss recovery and uniform POST privacy headers. Its first new live attempt failed at metadata HTTP 500 and its diagnostic retry was refused by a foreign runtime; the subsequent fresh source-reference journey passed 1/1 in 126.554s with cleanup and preservation proof. Draft spec-23 awaits a selected deployed target and trusted evidence sources. Complete this item with deployed-history inventory, certified source coverage and continuity, pending-delivery recovery, deployed subscriber/shared-rebuild acceptance, and a resource-binding authority-mode issuer; retain valid GET and opaque denial regressions. Local passing fixtures do not close these deployed gates.
   - [x] Privacy/diagnostics tests: extend `DiagnosticsPrivacyTests` so logs, OpenAPI, read models, the new index, and metadata contain no raw token, disallowed hash, decoded material, comments, command bodies, personal data, target/display names, protected identifiers, or EventStore envelopes.
   - [x] Freshness tests: confirm `ConfirmAsync`/`AdjustAsync` fail closed when the Activity Type catalog freshness is not `Fresh` (Stale/Rebuilding/Unavailable/Degraded/Unknown).
 - [x] **Verify affected build and test lanes (AC: 1-4)**

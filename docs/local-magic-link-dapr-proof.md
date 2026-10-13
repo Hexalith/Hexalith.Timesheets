@@ -1,5 +1,36 @@
 # Local magic-link Dapr proof
 
+## Fresh source-reference local acceptance (2026-10-13)
+
+At source `11976c2d8000bfc83f1d816a085836beecf8f6d1`, SDK 10.0.401
+source-reference restore and Debug solution build passed, zero warnings/errors
+in 17.64s. The supported isolated runner then passed the unchanged journey
+**1/1 in 126.554s**, zero errors/failures/skips/not-run, runner exit **0**.
+Evidence: `/tmp/timesheets-36-build23-fresh/run-n0nc1rne`.
+A baseline run using pre-existing assets passed 1/1 in 137.078s at
+`/tmp/timesheets-36-build23-baseline/run-wihh1tih`.
+
+Fresh stored record/issue, selected candidate, effective values/policy/lineage,
+GET, confirm/adjust, single-use race, replay denial, composed rebuild, restart
+and fresh post-restart use assertions all remain. All **16** captured
+PID/start identities exited; bound resources are empty, and all three owned
+containers and component copies were removed. Shared DB0/13/14 retained
+**114,959/2,692/773** keys, including **114,788/2,671/773** permanent keys;
+retained TTL values/deadlines and all **65** scheduler entries, cluster identity
+and revision **12735** match before/after, with zero natural expirations.
+
+No runtime code, assertion, authority, dependency or gitlink changed. The
+earlier metadata HTTP 500 did not recur and its cause remains unestablished.
+Exact commands, baseline cleanup/preservation, temporary telemetry-credential
+tool-output limitation and narrow verification are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+This journey still drives projection delivery manually. It does not certify
+deployed subscriber delivery, legacy inventory, operator/resource-binding
+authority, enforced quiescence, source continuity, pending-delivery recovery
+or shared rebuild acceptance. Story 3.6/Epic 3 remain in progress; release
+remains **FAIL**. The draft deployed qualification requires a human-selected
+environment and genuine evidence sources. Earlier results below are historical.
+
 ## Reviewed AppHost startup hardening (2026-10-13)
 
 The separate startup-hardening increment closes the deferred bare-fixture

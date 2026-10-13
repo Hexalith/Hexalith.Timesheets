@@ -6,6 +6,74 @@
 
 ## Current Verification
 
+### Fresh local acceptance and deployed qualification checkpoint (2026-10-13)
+
+Baseline source: `11976c2d8000bfc83f1d816a085836beecf8f6d1`, clean main.
+Read-only investigation did not establish a cause or production fix for the
+earlier metadata HTTP 500. Both isolated attempts below reached the full
+existing journey without changing runtime code or assertions.
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-36-build23-baseline
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false -v:q
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false -v:q > /tmp/timesheets-36-build23-build.log 2>&1
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-36-build23-fresh
+```
+
+SDK **10.0.401** matches `global.json`. Restore exited **0**; fresh Debug
+solution build exited **0**, zero warnings/errors in **17.64s**.
+
+| Local attempt | Evidence | Result |
+| --- | --- | --- |
+| Baseline, pre-existing build assets | `/tmp/timesheets-36-build23-baseline/run-wihh1tih` | 1/1 passed in 137.078s; runner exit 0 |
+| Fresh source-reference build | `/tmp/timesheets-36-build23-fresh/run-n0nc1rne` | 1/1 passed in 126.554s; runner exit 0 |
+
+Each test reports zero errors, failures, skips and not-run cases. The
+unchanged test requires stored recording/issuance, selected v7 candidate,
+effective evidence/policy/lineage, valid GET, confirm/adjust, one race winner,
+opaque replay denial, composed rebuild, actor restart and fresh post-restart
+use. It invokes mapped projection delivery explicitly; this is not deployed
+subscriber acceptance. Initial baseline transport timeouts recovered through
+existing behavior. The historical metadata 500 remains unexplained.
+
+Both attempts proved cleanup and shared preservation. Baseline exited all
+14 captured PID/start identities; the fresh attempt exited all **16**.
+Both final bound-resource inventories were empty and each removed its three
+owned containers and component copies. Baseline shared DB0/13/14 counts were
+114,959/2,704/773; fresh counts were **114,959/2,692/773**. Fresh permanent
+counts were **114,788/2,671/773**, with **171/21/0** expiring keys.
+Each run's before/after contents and retained TTL values/deadlines match,
+with zero natural expirations during either interval. Both retained all
+**65** scheduler KV entries, cluster identity and revision **12735**.
+The lower DB13 count predates the fresh fixture; no cause is attributed.
+Proof is in each `shared-preservation.json`, `recorded-process-exit.json`,
+`resource-exit.json`, and `cleanup.json`.
+
+A manual monitoring dump during the baseline included its temporary OTLP
+API credential in tool output; the existing sanitizer did not remove that
+header. Later monitoring output used selected non-sensitive fields. No raw
+diagnostic dump was saved as acceptance evidence, and exact cleanup confirms
+the owning runtime exited. No domain token or signing key was printed.
+
+After evidence reconciliation, the narrow readiness lane passed **13/13 in
+0.156s**, zero errors/failures/skips/not-run, exit **0**. Whitespace validation
+also passed:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor > /tmp/timesheets-36-build23-readiness.log 2>&1
+git diff --check
+```
+
+Only documentation and a draft qualification spec changed. The six default
+suites were not rerun; their reviewed 1,899-pass evidence below remains
+historical. The refreshed live pass closes the latest-tree local-proof gap,
+not deployed certification. The draft [spec-23](../spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md)
+needs the selected deployment, operator/access and genuine binding,
+inventory/maintenance evidence before dependent work. Story 3.6/Epic 3
+remain in progress; release remains **FAIL**. No legacy data was migrated,
+cleared or repaired, and no staging, commit, push or dependency/gitlink update
+occurred. The preceding failed attempts and completed specs are preserved.
+
 ### Recording response recovery and uniform denial headers (2026-10-13)
 
 Scoped spec: `spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md`.

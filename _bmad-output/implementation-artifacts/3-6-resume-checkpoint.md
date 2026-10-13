@@ -1,5 +1,33 @@
 # Story 3.6 resume checkpoint — 2026-10-13
 
+## Fresh local proof; deployed qualification needs target evidence
+
+The fresh SDK 10.0.401 source-reference restore and Debug build passed,
+zero warnings/errors, 17.64s. The supported isolated journey passed **1/1
+in 126.554s**, runner exit **0**, at
+`/tmp/timesheets-36-build23-fresh/run-n0nc1rne`. All 16 captured PID/start
+identities exited, no bound resources remain, and three owned containers and
+component copies were removed. Shared-state, retained TTL and scheduler
+preservation passed. Baseline pre-existing assets also passed 1/1 in 137.078s.
+The earlier metadata 500 did not recur; no production fix is established.
+
+Only evidence documents and the draft
+[spec-23](spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md)
+changed. It is waiting in planning for the selected deployment, read-only
+access/operator and real resource-binding/inventory/maintenance providers.
+Resolve that Open Question before approval or dependent work. Do not resume
+it as implementation-ready; completed prior specs and spec-21 are preserved.
+Exact commands and the temporary telemetry-credential tool-output limitation
+are in [the test summary](tests/3-6-test-summary.md).
+
+The six default suites were not rerun; their prior reviewed evidence remains
+dated. No runtime code, AppHost/ServiceDefaults, dependency, gitlink or Git
+mutation changed. Local manual mapped delivery does not prove deployed
+subscriber/shared-rebuild acceptance or legacy source continuity and pending
+delivery recovery. Story 3.6/Epic 3 stay in progress; release stays **FAIL**.
+No legacy content was activated, cleared, migrated or repaired. Results below
+are historical.
+
 ## Recording response recovery and denial-header equivalence (2026-10-13)
 
 The scoped [spec-22](spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md)

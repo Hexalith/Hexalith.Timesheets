@@ -7,6 +7,22 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
+The latest source `11976c2d8000bfc83f1d816a085836beecf8f6d1` has fresh
+SDK 10.0.401 source-reference restore/build evidence, zero warnings/errors in
+17.64s, and an unchanged isolated local journey passing **1/1 in 126.554s**.
+Exact owned cleanup and shared-state/TTL/scheduler preservation passed. The
+earlier metadata HTTP 500 did not recur, so the latest-tree local-proof gap
+is closed; its historical cause remains unexplained. No runtime code or tests
+changed and the six default suites were not rerun. The draft deployed
+qualification awaits a named environment, operator/access and real trusted
+evidence sources. Local mapped delivery does not establish certified legacy
+inventory, resource-binding/migration authority, enforced quiescence, source
+continuity, pending-delivery recovery, or deployed subscriber/shared-rebuild
+acceptance. Story 3.6 remains in progress; release remains **FAIL**.
+Exact commands/results and evidence limits are in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+The following paragraphs retain historical evidence.
+
 The recording-response recovery increment adds bounded observation after a
 failed submit response and exact receipt checks for recording and terminal
 transitions. Public POST denials now share GET privacy headers. The
