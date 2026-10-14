@@ -45,7 +45,20 @@ release PASS.
 
 ## Qualification Result
 
-The latest resume at clean Timesheets `b9f968221a014c95869f3add8e16eda398b989c8`
+The 2026-10-14 resume at clean Timesheets
+`9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae` inspects Platform
+`92a02924894f6f2f219801a90e5bf25716abd028`. Its new staging dependency
+handoff supplies upgrade preparation only. Eight fresh bounded native reads
+confirm server v1.34.9, absent staging namespaces and unavailable Gateway
+resource type, with unchanged cluster UID/counts and no matching names/images.
+The next Platform operational dependency is fresh signed recovery/readback
+and an exact 4.27 retirement plan/prerequisites/approval, followed by accepted
+retirement. Hosted release and all four deployed owner requirements remain
+missing. See [the current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-staging-dependency-recheck).
+No intent gap or independent Timesheets runtime fix was established. Keep this
+spec draft; do not request implementation approval while it remains insufficient.
+
+The prior resume at clean Timesheets `b9f968221a014c95869f3add8e16eda398b989c8`
 inspects Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9`. Explicit
 Development/source host composition now supplies local listener, Dapr and
 read-model bindings; production/certification defaults remain denied or
@@ -100,6 +113,9 @@ discovery is answered; no repeated deployment-information question is needed.
 
 ## Code Map
 
+- `references/Hexalith.Platform/eng/timesheets-deployment/staging-dependency-handoff.md`
+  — Platform-owned recovery/retirement/upgrade and staging/release prerequisites;
+  consume as evidence only. Preparation grants no operational authority.
 - `docs/deployed-magic-link-platform-candidate-recheck.md` — latest offline
   candidate/native target evidence; preserve the original qualification report
   because Platform's preparer pins its dated hash.
@@ -186,6 +202,17 @@ discovery is answered; no repeated deployment-information question is needed.
   whitespace validation passed. Frozen intent and pinned report/preparation
   bytes remain unchanged. No runtime/deployment/domain/dependency/Git mutation
   occurred; production and deployed acceptance prerequisites remain missing.
+
+- The 2026-10-14 planning resume consumes the new Platform staging dependency
+  handoff and eight read-only native results. Intent gaps: none established;
+  irreversibles: deployment/maintenance/domain writes remain gated and were
+  not performed; footprint: seven Timesheets evidence/tracking documents only,
+  no new callable surface. Independent investigation found no separate runtime
+  fix. External prerequisites still fail the Ready for Development sufficiency
+  standard; frozen intent and historical evidence remain preserved.
+  Existing readiness assets passed 13/13 in 0.170s; whitespace and frozen-intent/
+  pinned-report/Platform-input preservation checks passed, including the
+  canonical preparation checksum. No fresh build or deployed proof is claimed.
 
 ## Spec Change Log
 

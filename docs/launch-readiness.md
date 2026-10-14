@@ -7,7 +7,22 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The latest recheck at Timesheets `b9f968221a014c95869f3add8e16eda398b989c8`
+The 2026-10-14 recheck at Timesheets
+`9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae` consumes Platform
+`92a02924894f6f2f219801a90e5bf25716abd028`. Its new staging dependency
+handoff supplies upgrade preparation only. Fresh native reads confirm server
+v1.34.9, both staging namespaces absent and no Gateway resource type. The
+next Platform dependency is fresh signed recovery/readback and an exact 4.27
+retirement plan/prerequisites/approval, followed by accepted retirement.
+Hosted release, production bindings, certified inventory/maintenance/continuity
+and deployed subscriber/shared-rebuild gates remain open. See
+[the current recheck](deployed-magic-link-platform-candidate-recheck.md#latest-staging-dependency-recheck)
+for exact commands, dependency ordering and bounded-discovery limits. No
+Timesheets runtime fix was established; spec-23 stays draft, Story 3.6/Epic 3
+stay in progress and release stays **FAIL**. No new build or local/deployed
+journey is claimed. The following evidence retains its original identity.
+
+The prior recheck at Timesheets `b9f968221a014c95869f3add8e16eda398b989c8`
 consumes Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9`, which adds
 explicit Development/source Timesheets composition. Local listener/Dapr/read-model
 bindings now exist; hosted staging enrollment, retained release artifacts and

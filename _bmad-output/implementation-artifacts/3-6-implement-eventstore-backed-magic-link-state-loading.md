@@ -21,9 +21,22 @@ so that confirmation and adjustment work outside service-only tests without weak
 3. **Given** a token is malformed, unknown, expired, revoked, used, wrong-action, wrong-recipient, cross-tenant, replayed, or unresolved, **when** any magic-link endpoint is called, **then** the same no-disclosure external failure state is returned, **and** no Time Entry confirmation, adjustment, capability-use event, or protected detail is emitted.
 4. **Given** the loader cannot access required EventStore state, Time Entry state, or Activity Type catalog state, **when** the request is evaluated, **then** the host fails closed with the same external no-disclosure response, **and** internal diagnostics record only correlation-safe outcome categories.
 
-## Current Review Disposition (2026-10-13)
+## Current Review Disposition (2026-10-14)
 
-The latest resume at `b9f968221a014c95869f3add8e16eda398b989c8` consumes
+The resume at clean Timesheets `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae`
+consumes Platform `92a02924894f6f2f219801a90e5bf25716abd028`. Its new
+staging dependency handoff supplies preparation only; fresh native reads
+confirm v1.34.9, absent staging namespaces and unavailable Gateway resource
+type. Hosted release, production authority, certified inventory/maintenance/
+continuity and deployed subscriber/shared-rebuild evidence remain absent.
+[The current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-staging-dependency-recheck)
+records exact commands and the recovery/4.27 retirement prerequisite. No
+independent Timesheets runtime fix was established. Spec-23 stays draft,
+Story 3.6/Epic 3 stay in progress and release stays **FAIL**. Only evidence/
+tracking changed; prior source identities and passing local evidence remain
+dated history. The dispositions below are earlier evidence.
+
+The prior resume at `b9f968221a014c95869f3add8e16eda398b989c8` consumes
 Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9`. An explicit
 Development/source Timesheets binding now provides separate listeners,
 internal Dapr routing and the read-model component, preserving default-deny

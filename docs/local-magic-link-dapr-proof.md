@@ -1,5 +1,17 @@
 # Local magic-link Dapr proof
 
+## Deployed prerequisite recheck (2026-10-14)
+
+The [current Platform recheck](deployed-magic-link-platform-candidate-recheck.md#latest-staging-dependency-recheck)
+consumes its new staging dependency handoff. Fresh read-only observations
+still find no identifiable Timesheets deployment; staging namespaces and the
+Gateway resource type are absent. Hosted release, real production providers,
+certified inventory/maintenance/continuity and installed subscriber/shared
+rebuild acceptance remain missing. No runtime build or local journey was
+rerun. The passing local proof below retains its original source identity;
+it grants no deployed acceptance. Story 3.6/Epic 3 stay in progress and
+release stays **FAIL**. Target discovery is answered.
+
 ## Fresh source-reference local acceptance (2026-10-13)
 
 At source `11976c2d8000bfc83f1d816a085836beecf8f6d1`, SDK 10.0.401
@@ -28,8 +40,9 @@ This journey still drives projection delivery manually. It does not certify
 deployed subscriber delivery, legacy inventory, operator/resource-binding
 authority, enforced quiescence, source continuity, pending-delivery recovery
 or shared rebuild acceptance. Story 3.6/Epic 3 remain in progress; release
-remains **FAIL**. The draft deployed qualification requires a human-selected
-environment and genuine evidence sources. Earlier results below are historical.
+remains **FAIL**. Subsequent qualification identified Platform's target and
+existing access; genuine deployed evidence sources remain missing. Earlier
+results below are historical.
 
 ## Reviewed AppHost startup hardening (2026-10-13)
 

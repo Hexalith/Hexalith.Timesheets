@@ -1,4 +1,25 @@
-# Story 3.6 resume checkpoint — 2026-10-13
+# Story 3.6 resume checkpoint — 2026-10-14
+
+## Staging dependency handoff qualified; deployed acceptance remains blocked
+
+Clean Timesheets `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae` consumes
+Platform `92a02924894f6f2f219801a90e5bf25716abd028`. Its new staging
+handoff closes an upgrade-preparation tooling gap only. Fresh native reads
+confirm v1.34.9, both staging namespaces NotFound, no Gateway resource type
+and unchanged cluster census with no matching names/images. The next Platform
+operational dependency is fresh signed recovery/readback and an exact 4.27
+retirement plan/prerequisites/approval, followed by accepted retirement.
+Exact commands, owner ordering and discovery limits are in
+[the current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-staging-dependency-recheck).
+
+Hosted release, production bindings, certified inventory/maintenance/continuity
+and deployed subscriber/shared-rebuild proof remain absent. No independent
+Timesheets runtime fix was established. Spec-23 stays draft; target discovery
+is answered and no implementation approval is requested for an insufficient
+spec. Story 3.6/Epic 3 stay in progress; release stays **FAIL**. Prior local
+evidence and pinned qualification/preparation bytes remain preserved. Only
+evidence/tracking documents changed; verification is in
+[the test summary](tests/3-6-test-summary.md).
 
 ## Development host binding added; deployed acceptance remains blocked
 

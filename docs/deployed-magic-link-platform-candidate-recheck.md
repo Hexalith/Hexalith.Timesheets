@@ -1,4 +1,70 @@
-# Story 3.6 Platform candidate recheck — 2026-10-13
+# Story 3.6 Platform candidate recheck — 2026-10-14
+
+## Latest staging dependency recheck
+
+Clean Timesheets `main` at `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae`
+consumes Platform `92a02924894f6f2f219801a90e5bf25716abd028`.
+Platform now retains a [staging dependency handoff](../references/Hexalith.Platform/eng/timesheets-deployment/staging-dependency-handoff.md).
+Its successor upgrade-preparation tooling records two separately gated hops;
+it supplies neither accepted infrastructure work nor Timesheets enrollment.
+The Development/source binding described below remains the available host binding.
+
+The next operational prerequisite in that handoff is fresh signed recovery/
+readback and a fresh exact Platform 4.27 retirement plan, prerequisite packet
+and approval, followed by accepted retirement/preservation. Post-retirement
+census/recovery and an approved successor procedure precede separately qualified
+upgrade hops; private Rancher/access, runner relocation and staging/release
+qualification remain later dependencies. The historical backup gate expired
+on October 2. Preparation receipts, completed tooling and the extended maintenance
+window do not establish operational acceptance or authorize execution. This
+Timesheets run did not execute any of those procedures or regenerate a plan.
+
+At **2026-10-14 07:32:39 UTC**, these bounded native reads used the retained
+client directly, with the existing context and credentials:
+
+```text
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s version --client -o json
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s get --raw=/version
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s get namespace kube-system -o json
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s get namespaces -o json
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s get deployments,statefulsets,services -A -o json
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s get pods -A -o json
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s get namespaces hexalith-staging hexalith-staging-data -o json
+/home/administrator/hexalith-upgrade-evidence/tools/v1.34.12/kubectl --context jpiquot@local --request-timeout=15s get gateways -A -o json
+```
+
+The first six exited **0**: client **v1.34.12**, server **v1.34.9**,
+cluster UID `b5860674-1d1e-4a3b-b413-e1bb3b9a4557`, **23 namespaces**,
+**100 workload/service objects** and **111 pods**. The name/namespace and pod
+container/init-container image scan found no `timesheet`, `eventstore` or
+`platform` matches. The namespace command exited **1**, with both requested
+namespaces NotFound. The Gateway command exited **1** because the server has
+no `gateways` resource type. Responses were projected in memory; raw JSON,
+credentials, Secrets and domain histories were neither printed nor retained.
+This census cannot exclude renamed applications, certify complete domain
+history or establish the recovery/acceptance gates above.
+
+Independent source investigation found unchanged default-deny migration
+authority and unavailable certified inventory. The assertion source still
+requires `IWorkloadAssertionIssuer.CanBindResources`; Platform supplies only
+Development signing. Existing mapped projections and shared rebuild handlers
+do not supply installed subscriber or owner-continuity evidence. No separate
+Timesheets runtime change was established that closes these external gates.
+
+The retained plan remains `prepared-blocked`, with deployment and activation
+unauthorized, acceptance **FAIL**, no live evidence and no retained release
+digests. The plan, declaration and original qualification report retain the
+SHA-256 values recorded below; canonical preparation checksum verification
+also passes. No nested input was initialized and no offline regeneration,
+runtime startup, domain operation, deployment or Git mutation was performed.
+Prior local tests and Platform preparation checks retain their original
+source identities; none was rerun as deployed acceptance.
+
+Spec-23 remains draft because its sufficiency gate is unmet. Story 3.6/Epic 3
+stay in progress and release stays **FAIL**. Resume deployed acceptance after
+the four owner requirements below are established. Target discovery is already
+answered; neither another deployment-information question nor implementation
+approval can supply those missing prerequisites.
 
 ## Latest Development binding recheck
 
