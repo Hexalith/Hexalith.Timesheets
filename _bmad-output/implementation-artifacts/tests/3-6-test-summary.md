@@ -6,6 +6,59 @@
 
 ## Current Verification
 
+### Development host binding and deployed prerequisite recheck (2026-10-13)
+
+Initial clean Timesheets `main`: `b9f968221a014c95869f3add8e16eda398b989c8`;
+Platform: `416878a74975b1023b3a00ab5d35aad4ce6365d9`. `dotnet --version`
+returned **10.0.401**, matching `global.json`. Independent source investigations
+confirmed the new explicit Development/source host binding and unchanged missing
+production/certification prerequisites. Platform's recorded focused/full/Python
+checks were read as historical evidence, not executed again. No separate
+Timesheets runtime defect was established.
+
+At 18:58 UTC the following bounded native reads were executed; the first four
+exited **0** and the last exited **1**, with both requested namespaces NotFound:
+
+```text
+kubectl --context jpiquot@local --request-timeout=15s get namespace kube-system -o json
+kubectl --context jpiquot@local --request-timeout=15s get namespaces -o json
+kubectl --context jpiquot@local --request-timeout=15s get deployments,statefulsets,services -A -o json
+kubectl --context jpiquot@local --request-timeout=15s get pods -A -o json
+kubectl --context jpiquot@local --request-timeout=15s get namespaces hexalith-staging hexalith-staging-data -o json
+```
+
+Observed cluster UID remained `b5860674-1d1e-4a3b-b413-e1bb3b9a4557`,
+with **23 namespaces**, **100 workload/service objects** and **111 pods**.
+The name/namespace and pod container/init-container image scan found no
+`timesheet`, `eventstore` or `platform` matches. Responses were reduced in memory
+to these fields; raw JSON, credentials, Secrets and domain histories were neither
+printed nor retained. Bounded discovery cannot certify complete history or exclude
+arbitrarily renamed applications. Exact new binding/retained-plan limits are in
+[the candidate recheck](../../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-development-binding-recheck).
+
+After the evidence/tracking reconciliation, the existing executable passed
+**13/13 in 0.154s**, zero errors/failures/skips/not-run, exit **0**:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+Whitespace validation passed. Frozen spec-23 intent remains verbatim at SHA-256
+`3bb249ed0d9b617bb92e06aa0a725ad0727a460293cbee1e1e9c99f3d63b922a`.
+The pinned original qualification report, retained Platform plan and declaration
+retain their hashes recorded in the candidate recheck. Offline preparation was
+not repeated; absent nested inputs were not initialized.
+
+Only seven Timesheets evidence/tracking files changed. This run used existing
+readiness build assets to check current repository documents; it does not prove
+a fresh dependency-graph build. No new solution build, broad suite, local journey,
+live Platform startup, deployment or domain/maintenance operation ran. Prior
+local results retain their original source identities. Spec-23 stays draft,
+Story 3.6/Epic 3 stay in progress and release remains **FAIL** pending hosted
+release, real production providers, certified inventory/maintenance/continuity
+and deployed subscriber/shared-rebuild proof.
+
 ### Latest Platform candidate and native target recheck (2026-10-13)
 
 Initial clean Timesheets `main`:

@@ -1,5 +1,57 @@
 # Story 3.6 Platform candidate recheck — 2026-10-13
 
+## Latest Development binding recheck
+
+Clean Timesheets `main` at `b9f968221a014c95869f3add8e16eda398b989c8`
+consumes Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9`.
+Compared with the prior Platform snapshot below, an explicit Development/source
+Timesheets host binding now exists. This closes the local composition gap;
+hosted staging enrollment and Story 3.6 deployed acceptance remain missing.
+
+`PlatformTimesheetsBinding.ValidateMode` requires source mode, and `SelectRun`
+requires the exact hash-bound Timesheets candidate in the selected Builds plan.
+`PlatformAppModel.Compose` requires a Development run. The opt-in supplies
+separate public/internal listeners, internal Dapr routing, the Timesheets-only
+read-model component and gateway registration. It preserves the owner's
+default-deny access/reference/migration providers, unavailable certified
+inventory and disabled live-fixture grants. See Platform's
+[binding qualification](../references/Hexalith.Platform/eng/timesheets-deployment/local-host-binding-qualification.md)
+and [binding source](../references/Hexalith.Platform/src/Hexalith.Platform.Composition/PlatformTimesheetsBinding.cs).
+Its recorded build/test passes supply source evidence; no live startup or
+deployed acceptance is recorded. Those checks were not rerun by this recheck.
+
+At **2026-10-13 18:58 UTC**, the four census commands listed below again
+exited **0**: cluster UID `b5860674-1d1e-4a3b-b413-e1bb3b9a4557`,
+**23 namespaces**, **100 deployments/statefulsets/services**, **111 pods**,
+and no matching names/namespaces or pod container/init-container images.
+The same candidate-specific namespace command exited **1**, with both
+`hexalith-staging` and `hexalith-staging-data` NotFound. Responses were
+projected in memory; no credentials, raw responses, Secrets or domain histories
+were printed or retained. This bounded census does not certify domain history
+or exclude arbitrarily renamed applications.
+
+The retained plan remains `prepared-blocked`, with deployment/activation
+unauthorized, acceptance **FAIL**, no live evidence and null release image,
+chart, provenance and rollback identities. Its dated statement that no
+Development binding exists predates the new code; it is preserved as a
+historical preparation record. Plan file SHA-256 remains
+`04b24f38d1910390bb075b8fe27e8f159ba202b6aeacf35f517bcc272a8043dc`;
+candidate file SHA-256 remains
+`b86836a73c5b4c1c6bccdd45f3fc908c467a0f9ccfb2aa02c71025bb7e808618`.
+The original qualification report retains its pinned hash below. Offline
+regeneration was not repeated: the required Platform-local nested inputs
+remain absent, and none were initialized.
+
+Independent source investigations found no production resource-binding issuer,
+certified Timesheets inventory/migration provider or installed subscriber/shared
+rebuild evidence. No separate Timesheets runtime fix was established. All four
+owner requirements below still apply; spec-23 remains draft, Story 3.6/Epic 3
+remain in progress and release stays **FAIL**. Only Timesheets evidence/tracking
+documents changed; no deployment, domain/maintenance operation, runtime build,
+dependency update or Git mutation was issued.
+
+## Prior offline candidate qualification
+
 Timesheets source `aefd76772e84018442eb21b36549b8499a488721` consumes
 Platform `ce6f2d34398803644b29d02ba57625898190ce20`. The initial Timesheets
 tree was clean on `main`. This recheck reads the new Platform preparation

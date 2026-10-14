@@ -7,7 +7,19 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The latest qualification at Timesheets
+The latest recheck at Timesheets `b9f968221a014c95869f3add8e16eda398b989c8`
+consumes Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9`, which adds
+explicit Development/source Timesheets composition. Local listener/Dapr/read-model
+bindings now exist; hosted staging enrollment, retained release artifacts and
+production authority remain absent. Five fresh native reads found both proposed
+namespaces NotFound and no matching workload names/images. Certified inventory,
+maintenance/source continuity and deployed subscriber/shared-rebuild evidence
+remain missing. [The candidate recheck](deployed-magic-link-platform-candidate-recheck.md#latest-development-binding-recheck)
+records exact evidence and unchanged preparation/report hashes. Spec-23 remains
+draft; Story 3.6/Epic 3 remain in progress and release stays **FAIL**. No new
+runtime build or local/deployed journey is claimed by this documentation recheck.
+
+The prior qualification at Timesheets
 `aefd76772e84018442eb21b36549b8499a488721` consumes Platform
 `ce6f2d34398803644b29d02ba57625898190ce20`, which now retains an offline
 staging candidate outside active composition. Its proposed application/data

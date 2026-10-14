@@ -23,7 +23,19 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-13)
 
-The latest resume at `aefd76772e84018442eb21b36549b8499a488721` consumes
+The latest resume at `b9f968221a014c95869f3add8e16eda398b989c8` consumes
+Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9`. An explicit
+Development/source Timesheets binding now provides separate listeners,
+internal Dapr routing and the read-model component, preserving default-deny
+owner providers. Fresh native reads still find both proposed staging namespaces
+absent and no matching names/images. Retained release artifacts, production
+bindings, certified inventory/maintenance/continuity and deployed subscriber/
+shared-rebuild evidence remain missing. [The candidate recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-development-binding-recheck)
+records exact source identities and discovery limits. Spec-23 stays draft;
+Story 3.6/Epic 3 stay in progress and release stays **FAIL**. No independent
+Timesheets runtime fix was established; only evidence/tracking changed.
+
+The prior resume at `aefd76772e84018442eb21b36549b8499a488721` consumes
 Platform `ce6f2d34398803644b29d02ba57625898190ce20`. Platform now has an
 offline staging candidate and blocked preparation, outside active composition.
 Fresh native reads find its two proposed namespaces absent and no Timesheets
@@ -938,6 +950,7 @@ Current cumulative Story 3.6 inventory, including its accepted review increments
 
 | Date | Change |
 |------|--------|
+| 2026-10-13 | Rechecked Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9` from clean Timesheets `b9f968221a014c95869f3add8e16eda398b989c8`: explicit Development/source host binding now exists, while five native reads confirm absent staging namespaces and no matching names/images. Production providers, certified inventory/maintenance/continuity, retained release and deployed subscriber/shared-rebuild evidence remain missing. Seven evidence/tracking files updated; readiness passed 13/13 in 0.154s. Frozen intent and pinned qualification/preparation bytes preserved. Spec-23 stays draft; Story 3.6/Epic 3 stay in progress; release stays FAIL. No runtime or infrastructure mutation. |
 | 2026-10-11 | Latest read-model revision: added owner-sequence handoff at rebuild promotion, recoverable private scratch cleanup, and retryable early SDK store outages. Follow-up audits added a durable promotion/seeding fence, a committed-session cleanup retry after another epoch, and Dapr-exception outage coverage. Six Timesheets default executables passed with 1,629 passed and five skipped; focused EventStore partitioned rebuild, fenced delivery, and streamed-stage suites passed 6/6, 10/10, and 5/5. Source-reference solution build remains blocked by duplicate UniqueIds assemblies. Two latest-tree local attempts stopped at command-status HTTP 500 and repeated adjust POST 403; a third found a duplicate ChatBot `eventstore` ID. The previous passing run remains historical. Story and launch remain open. |
 | 2026-10-11 | Local Dapr preflight stopped before acceptance: no Timesheets sidecar or connected EventStore topology is present, and the observed EventStore runtime belonged to a separate test. Added the blocker record and updated the test summary and launch readiness; no live fixture or persisted journey was attempted. The focused launch-readiness architecture class passed 13/13. Story stays in progress and release stays FAIL. |
 | 2026-10-10 | Closed 14 durable-submission review patches against current HEAD: bounded polling and rejection replay; truthful stored-status gateway fixture; OpenAPI 202; workload and composed-host binding tests; direct processor origin/actor pairs; tenant-scoped projections; stored receipt tamper matrix; current records, pointer and release gates. Source-reference IntegrationTests and Server.Tests builds passed with zero warnings/errors; HTTP boundary 557/557, IntegrationTests 652 pass/four skips, Server.Tests 512/512. Six-lane total 1565/1561 pass/four skips. Story 3.6 remains in progress and release remains FAIL pending deployed acceptance and recorded-owner wiring. |

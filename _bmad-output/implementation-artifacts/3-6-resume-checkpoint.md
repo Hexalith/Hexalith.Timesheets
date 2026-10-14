@@ -1,5 +1,29 @@
 # Story 3.6 resume checkpoint — 2026-10-13
 
+## Development host binding added; deployed acceptance remains blocked
+
+The clean resume at Timesheets `b9f968221a014c95869f3add8e16eda398b989c8`
+inspected Platform `416878a74975b1023b3a00ab5d35aad4ce6365d9`.
+Platform now supports explicit Development/source Timesheets composition with
+separate listeners, internal Dapr delivery and the exact read-model component.
+This supplies a local binding, preserving default-deny owner providers; it
+does not enroll a hosted staging release or certify Story 3.6 acceptance.
+
+Five fresh bounded native reads reproduced the same cluster UID, 23 namespaces,
+100 workload/service objects and 111 pods, with no matching names/images.
+Both proposed staging namespaces remain NotFound. Retained preparation still
+denies deployment/activation, has no release digests and records no live proof.
+No production bindings, certified inventory/maintenance/continuity or deployed
+subscriber/shared-rebuild evidence were found. Independent investigation found
+no separate Timesheets runtime fix. Exact commands and evidence limits are in
+[the candidate recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-development-binding-recheck).
+
+Resume draft spec-23 only when its external prerequisites exist. Target discovery
+is answered; do not repeat that question. Prior local passes and failures remain
+dated evidence. Story 3.6/Epic 3 stay in progress and release stays **FAIL**.
+Only evidence/tracking documents changed; no runtime, cluster, domain, dependency
+or Git mutation was issued. Verification is in [the test summary](tests/3-6-test-summary.md).
+
 ## New Platform candidate qualified; installed prerequisites remain absent
 
 Resumed from Timesheets `aefd76772e84018442eb21b36549b8499a488721` with
