@@ -7,6 +7,17 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
+Concurrent synchronization advanced Timesheets to
+`e2a9e0898f5e30f2b9f3457ece6ddd55d4c999ba` and observed Platform to
+`55bee680e6901a45946dd8bf1e4a4060952bd7ea`. Owner recovery continuation,
+source resume and isolated cleanup are recorded; the cleanup still needs
+protected Administrator signing and authentic final recovery validation.
+No hosted Timesheets release, production providers or deployed acceptance
+was added. [The reconciled checkpoint](deployed-magic-link-platform-candidate-recheck.md#latest-concurrent-owner-checkpoint)
+preserves both source snapshots and distinguishes external owner outcomes
+from this run's checks. Spec-23 stays draft, Story 3.6/Epic 3 stay in progress
+and release stays **FAIL**.
+
 The user-approved 2026-10-14 resume preserves existing working-tree changes
 at Timesheets HEAD `9fa572c6afb0782bf434e98b6e1b30674eb265d2`, observing
 Platform `4b9cb5624159de0782dd3329cdcc3b2d66010509` and EventStore

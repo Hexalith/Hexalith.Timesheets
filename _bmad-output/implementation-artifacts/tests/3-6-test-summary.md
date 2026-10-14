@@ -6,6 +6,69 @@
 
 ## Current Verification
 
+### Authorized dirty-tree prerequisite resume (2026-10-14)
+
+The user approved resuming over existing evidence edits and changed root
+submodule checkouts. Timesheets HEAD remained
+`9fa572c6afb0782bf434e98b6e1b30674eb265d2`; observed Platform was
+`4b9cb5624159de0782dd3329cdcc3b2d66010509`, and EventStore was
+`210b90da172cc7ca946fbb06cfd44390bffa707b`. `dotnet --version` returned
+**10.0.401**, matching the current `global.json`. No clean-tree or released
+artifact claim is made for these checkout identities.
+
+Eight native reads at **19:26:22 UTC** repeated the exact retained-client
+commands under [the staging recheck](../../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-staging-dependency-recheck).
+The first six exited **0**, with client v1.34.12, server v1.34.9, unchanged
+cluster UID, 23 namespaces, 100 workload/service objects, 111 pods and no
+matching names/images. Both staging namespaces were NotFound, exit **1**;
+the Gateway resource type was unavailable, exit **1**. Responses were reduced
+in memory; raw responses, credentials, Secrets and domain histories were not
+printed or retained. Exact source/provider findings and bounded-discovery
+limits are in [the current recheck](../../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-authorized-working-tree-recheck).
+
+A fresh focused ArchitectureTests build passed with **zero warnings/errors
+in 1.27s**, exit **0**. The rebuilt readiness class passed **13/13 in
+0.127s**, zero errors/failures/skips/not-run. Whitespace validation passed:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Debug -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+Preservation checks retain all pre-existing evidence edits, frozen spec-23
+intent at SHA-256 `3bb249ed0d9b617bb92e06aa0a725ad0727a460293cbee1e1e9c99f3d63b922a`,
+the pinned original qualification report, retained plan/declaration and prior
+unsigned preparation receipt. The canonical plan digest remains
+`80aaf70967771c671e9245982a906ea9b77d56bdb6b568ee60015ad4e33305c7`.
+Concurrent synchronization advanced Timesheets HEAD to
+`e2a9e0898f5e30f2b9f3457ece6ddd55d4c999ba`, Platform to
+`55bee680e6901a45946dd8bf1e4a4060952bd7ea` and Works to
+`ceef28532550061dd361dfe7df9c2a93582b2aa5`. The initial Platform handoff/
+prerequisite hashes changed externally; both input snapshots are retained,
+and the preservation check reported that drift rather than claiming unchanged
+inputs. No checkout, index or commit mutation was issued by this run.
+[The concurrent owner checkpoint](../../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-concurrent-owner-checkpoint)
+records approved partial recovery/cleanup and its unsigned receipt, without
+promoting it to accepted recovery or Timesheets deployment. This run adds evidence to six
+Timesheets documents; runtime/test source is unchanged. No solution build,
+broad suite or local/deployed journey is claimed by these focused checks.
+No signing, retirement, upgrade, deployment, domain/maintenance operation,
+dependency update, nested initialization or Git mutation was issued.
+The new Party JWT reader supplies no Timesheets production binding/certified
+provider, and no independent runtime fix was established. External prerequisites
+keep spec-23 draft, Story 3.6/Epic 3 in progress and release **FAIL**.
+
+After the concurrent owner evidence was reconciled, the rebuilt readiness
+class reran with the same exact command and passed **13/13 in 0.117s**, exit
+**0**, with zero errors/failures/skips/not-run. Final preservation checks
+passed for the six pre-existing document contents, frozen intent, pinned
+report/plan/declaration, prior receipt and newly captured owner inputs.
+Checkout changes matched only the recorded external Platform/Works moves;
+Timesheets source/tests stayed unchanged across that synchronization.
+`git diff --check` passed. Both handoff/prerequisite snapshots remain retained;
+the earlier detected drift is preserved as external activity, not hidden.
+
 ### Offline retirement preparation and native prerequisite recheck (2026-10-14)
 
 Initial clean Timesheets `main`: `9fa572c6afb0782bf434e98b6e1b30674eb265d2`;

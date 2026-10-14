@@ -1,5 +1,24 @@
 # Story 3.6 resume checkpoint — 2026-10-14
 
+## Concurrent recovery progress reconciled; protected signing remains external
+
+Concurrent synchronization advanced Timesheets to
+`e2a9e0898f5e30f2b9f3457ece6ddd55d4c999ba` and observed Platform to
+`55bee680e6901a45946dd8bf1e4a4060952bd7ea`. The new owner handoff records
+approved recovery continuation, Memories resume and isolated-target cleanup;
+its cleanup is unsigned and fresh recovery remains unaccepted. The immediate
+dependency is Administrator protected signing of the exact cleanup record,
+then authentic immutable readbacks and final recovery validation. Existing
+scope/incident/window/roles need no repeated selection. No Timesheets deployment
+or production provider was added. [The current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-concurrent-owner-checkpoint)
+records exact receipt identity, concurrent activity and evidence limits.
+
+Original contributions, frozen intent and pinned qualification/plan/declaration
+bytes remain preserved. This run issued no Git or operational mutation.
+All four deployed owner gates remain unmet; spec-23 stays draft, Story 3.6/Epic 3
+stay in progress and release stays **FAIL**. Verification is recorded in
+[the test summary](tests/3-6-test-summary.md).
+
 ## Authorized dirty-tree resume; deployed prerequisites remain missing
 
 The user approved preserving and continuing over the existing changes.

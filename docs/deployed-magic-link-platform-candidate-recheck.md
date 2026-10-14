@@ -1,5 +1,48 @@
 # Story 3.6 Platform candidate recheck — 2026-10-14
 
+## Latest concurrent owner checkpoint
+
+Concurrent synchronization advanced Timesheets to
+`e2a9e0898f5e30f2b9f3457ece6ddd55d4c999ba` and the observed Platform
+checkout to `55bee680e6901a45946dd8bf1e4a4060952bd7ea` during this run.
+The Platform/Works checkout moves and committed in-progress evidence additions
+were external activity; this build run issued no Git mutation. Initial and
+updated public input snapshots are retained separately. Existing evidence,
+frozen intent, the pinned original qualification report, retained plan and
+candidate declaration remain preserved.
+
+The updated [staging handoff](../references/Hexalith.Platform/eng/timesheets-deployment/staging-dependency-handoff.md#accepted-oidc-continuation-resumed-memories-and-unsigned-cleanup--2026-10-14)
+now records actual approved recovery continuation, Memories resume and isolated
+target cleanup. Its [sanitized unsigned receipt](../references/Hexalith.Platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-27/20261014t144239z-s427-accepted-oidc-continuation/verification.json),
+recorded at `2026-10-14T15:40:28.942839+00:00`, has SHA-256
+`defb0ec095cfe1ab5deca0f4e23f2c7206f7eeccbc4d3dff9f7f5ad1021919d2`.
+It records 32 completed authorized top-level commands, source resume at
+15:18:55 UTC, absent isolated target namespaces/PVs, zero cleanup-signing
+attempts and zero manifest/proof/gate/non-dry-validation dispatches. These
+are inspected owner-reported outcomes, not operations or recovery checks
+performed by this Timesheets run. Private recovery/signing originals were
+not inspected.
+
+The immediate owner dependency is **Administrator protected-terminal signing
+of the exact cleanup record**, followed by authentic signature verification,
+immutable readbacks and final non-dry recovery validation. The established
+recovery scope, incident decision, window and owner roles need no repeated
+selection. The receipt still records `acceptedFreshRecovery=false`,
+`Story4_27Accepted=false`, `Story4_1GateOpen=false` and
+`Timesheets3_6Accepted=false`. Accepted recovery, exact retirement qualification/
+approval/acceptance and the later hosted release/provider/source/deployed
+acceptance gates remain required; the continuation establishes no Timesheets
+deployment or activation.
+
+New `DaprPlatformHmacBinding` custody adapters require an independently enrolled
+`IDaprPlatformHmacAuthority`; no production authority or host invocation was
+found. They provide custody key/profile resolution, not Timesheets resource-bound
+workload assertions or inventory certification. Timesheets composition, its
+retained plan and runtime/test source remain unchanged. The 19:26:22 UTC native
+observations below retain their original capture identity. All four owner
+requirements remain unmet; spec-23 stays draft, Story 3.6/Epic 3 stay in progress
+and release stays **FAIL**.
+
 ## Latest authorized working-tree recheck
 
 The user approved resuming over the existing evidence edits and changed root
@@ -42,8 +85,9 @@ migration already exist and remain reusable once their owner gates qualify.
 
 The retained Platform plan remains `prepared-blocked`, with deployment and
 activation unauthorized, acceptance **FAIL**, no live evidence and null release
-digests. The original qualification report, candidate declaration, plan and
-inspected preparation/handoff inputs are preserved. No offline regeneration
+digests. The original qualification report, candidate declaration and plan
+remain unchanged; captured preparation/handoff snapshots are retained alongside
+the concurrent owner update above. No offline regeneration
 was attempted; the required Platform-local nested Timesheets host is absent,
 and no nested dependency was initialized. Fresh signed recovery/readback and
 exact 4.27 qualification/approval/accepted retirement remain the next Platform
