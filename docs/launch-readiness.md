@@ -7,7 +7,33 @@ Related evidence:
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.
 
-The 2026-10-14 recheck at Timesheets
+The user-approved 2026-10-14 resume preserves existing working-tree changes
+at Timesheets HEAD `9fa572c6afb0782bf434e98b6e1b30674eb265d2`, observing
+Platform `4b9cb5624159de0782dd3329cdcc3b2d66010509` and EventStore
+`210b90da172cc7ca946fbb06cfd44390bffa707b`. New configured Party JWT-read
+admission supplies no Timesheets production bindings or registered providers.
+Eight native reads at 19:26:22 UTC confirm unchanged census, absent staging
+namespaces and unavailable Gateway type. Hosted release, production authority,
+certified inventory/maintenance/continuity and installed subscriber/shared-rebuild
+acceptance remain missing. See [the current recheck](deployed-magic-link-platform-candidate-recheck.md#latest-authorized-working-tree-recheck)
+for exact identities, commands and limits. Spec-23 stays draft, Story 3.6/Epic 3
+stay in progress and release stays **FAIL**. Focused Architecture verification
+supplies document evidence only; no new solution build or local/deployed journey
+is claimed. Earlier evidence remains dated below.
+
+The latest 2026-10-14 recheck at Timesheets
+`9fa572c6afb0782bf434e98b6e1b30674eb265d2` consumes Platform
+`2bd78603e164265e3b6c00af9950429cff5510f9`. New offline retirement
+preparation supplies no production plan, approval or accepted retirement.
+Eight native reads still find both staging namespaces absent, no Gateway
+resource type and an unchanged census. Hosted release, production providers,
+certified inventory/maintenance/continuity and deployed subscriber/shared-rebuild
+proof remain missing. See [the current recheck](deployed-magic-link-platform-candidate-recheck.md#latest-offline-retirement-preparation-recheck)
+for exact source/receipt identities, commands and limits. Spec-23 stays draft;
+Story 3.6/Epic 3 stay in progress and release stays **FAIL**. No new build or
+local/deployed journey is claimed. Prior evidence remains dated below.
+
+The earlier 2026-10-14 recheck at Timesheets
 `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae` consumes Platform
 `92a02924894f6f2f219801a90e5bf25716abd028`. Its new staging dependency
 handoff supplies upgrade preparation only. Fresh native reads confirm server

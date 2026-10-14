@@ -1,5 +1,120 @@
 # Story 3.6 Platform candidate recheck — 2026-10-14
 
+## Latest authorized working-tree recheck
+
+The user approved resuming over the existing evidence edits and changed root
+submodule checkouts. Timesheets HEAD remains
+`9fa572c6afb0782bf434e98b6e1b30674eb265d2`; the observed Platform checkout is
+`4b9cb5624159de0782dd3329cdcc3b2d66010509`, and EventStore is
+`210b90da172cc7ca946fbb06cfd44390bffa707b`. These are checkout identities,
+not a clean-tree or released-artifact claim. Existing contributions are preserved.
+
+Platform's new configured JWT reader admits Party `ResolvePartyIdentity`
+requests with authenticated service, payload, tenant and actor checks.
+`PlatformIdentityOptions.JwtReaders` defaults empty. This adds a Party-read
+capability; it supplies no Timesheets resource-binding issuer, registered
+access/reference providers or certified inventory/migration authority.
+`PlatformTimesheetsBinding.ValidateMode` and `PlatformAppModel.Compose`
+still require Development/source operation. Hosted production composition and
+retained Release identities remain unavailable. The source investigation found
+no independent Timesheets runtime defect that closes the deployed gates.
+
+At **2026-10-14 19:26:22 UTC**, all eight exact commands under
+[the staging recheck](#latest-staging-dependency-recheck) were repeated with
+the retained client, existing context and 15-second request timeout. The first
+six exited **0**: client **v1.34.12**, server **v1.34.9**, cluster UID
+`b5860674-1d1e-4a3b-b413-e1bb3b9a4557`, **23 namespaces**, **100
+workload/service objects** and **111 pods**. The inspected names/namespaces
+and pod container/init-container images had no `timesheet`, `eventstore` or
+`platform` matches. The staging namespace command exited **1**, with both
+`hexalith-staging` and `hexalith-staging-data` NotFound; the Gateway command
+exited **1**, because `gateways` is unavailable. Raw responses were reduced
+in memory, without printing or retaining credentials, Secrets or domain
+histories. This bounded census cannot exclude renamed applications or certify
+complete domain history.
+
+The current EventStore issuer still cannot supply production resource-bound
+assertions: symmetric resource-binding mode excludes Production, and client
+credentials refuse bound requests. Timesheets keeps its denied access/reference
+defaults, denied migration authority and unavailable certified inventory.
+Its loader, durable processing, mapped projections and resumable v1-to-v7
+migration already exist and remain reusable once their owner gates qualify.
+
+The retained Platform plan remains `prepared-blocked`, with deployment and
+activation unauthorized, acceptance **FAIL**, no live evidence and null release
+digests. The original qualification report, candidate declaration, plan and
+inspected preparation/handoff inputs are preserved. No offline regeneration
+was attempted; the required Platform-local nested Timesheets host is absent,
+and no nested dependency was initialized. Fresh signed recovery/readback and
+exact 4.27 qualification/approval/accepted retirement remain the next Platform
+operational dependency. All four [owner requirements](#conditions-for-resuming-acceptance)
+remain unmet. Spec-23 stays draft, Story 3.6/Epic 3 stay in progress and release
+stays **FAIL**. Focused verification is recorded in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
+## Latest offline retirement preparation recheck
+
+Clean Timesheets `main` at `9fa572c6afb0782bf434e98b6e1b30674eb265d2`
+consumes Platform `2bd78603e164265e3b6c00af9950429cff5510f9`.
+Platform's [offline retirement prerequisites](../references/Hexalith.Platform/eng/cluster-management/STAGING-PREREQUISITES.md)
+now provide a local packet preparer and conditional first-census, renewed
+source-bound namespace/catalog/fresh-node fixture, second-plan and original
+signature-verification proposals. They leave private trust, principal,
+static native configuration, recipients, signing and freshness inputs unresolved.
+The native context does not establish those authorities.
+
+The [sanitized unsigned receipt](../references/Hexalith.Platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-27/20261014t100941z-s427-reviewed-preparation/verification.json)
+for `20261014t100941z-s427-reviewed-preparation` records retained preparation
+sources and historical integrity checks, **284/284** software tests and
+**31** preparation tests within that total. These are Platform's retained
+results, not checks rerun by this Timesheets investigation. The receipt has
+SHA-256 `acce726247d5b97bb84bfa5175955a55dc210de67aa86425ea4b3d4a8bce1898`.
+It explicitly records no production source observation or plan, no mutation
+authority, a closed live gate and no accepted retirement. Its historical
+signature/readback checks establish neither fresh recovery nor independent
+off-node acceptance. Private packet and recovery originals were not inspected.
+
+At **2026-10-14 10:57:18 UTC**, the eight exact commands listed under
+[the earlier staging recheck](#latest-staging-dependency-recheck) were repeated
+with the same retained client, context and 15-second request timeout. The first
+six exited **0**: client **v1.34.12**, server **v1.34.9**, cluster UID
+`b5860674-1d1e-4a3b-b413-e1bb3b9a4557`, **23 namespaces**, **100
+workload/service objects** and **111 pods**. No inspected name/namespace or
+pod container/init-container image matched `timesheet`, `eventstore` or
+`platform`. The namespace command exited **1**, with both `hexalith-staging`
+and `hexalith-staging-data` NotFound. The Gateway command exited **1** because
+the server has no `gateways` resource type. Responses were reduced in memory;
+no raw JSON, credentials, Secrets or domain histories were printed or retained.
+This census cannot exclude renamed applications or certify domain history.
+
+An independent source investigation confirmed unchanged production gaps:
+`EventStoreGatewayWorkloadAssertionSource.IssueAsync` requires
+`IWorkloadAssertionIssuer.CanBindResources`; production signing remains
+unqualified. The server kernel retains denied access/reference providers;
+the internal migration registration retains denied authority and unavailable
+certified inventory. Mapped materialization and shared-rebuild handlers already
+exist, but supply no installed subscriber or continuity evidence. No independent
+Timesheets runtime fix that closes these external gates was established.
+
+The next operational dependency remains fresh signed recovery/readback and
+an exact source-bound Platform 4.27 plan, prerequisite packet and approval,
+followed by accepted retirement/preservation. The new offline packet closes
+none of those gates. Later supported-target, Rancher/access, runner, staging,
+release/provider/source and deployed-acceptance prerequisites remain in the
+Platform handoff. No signing, fixture, retirement or deployment proposal was
+executed by this Timesheets run.
+
+The retained Timesheets plan still reports `prepared-blocked`, deployment and
+activation unauthorized, acceptance **FAIL**, no live evidence and no release
+digests. Its file/canonical hashes and the pinned original qualification report
+remain unchanged. Offline enrollment preparation/tests were not repeated:
+this checkout still lacks the nested Timesheets host input. The new handoff's
+statement that its mapped project is present describes its own checkout;
+historical setup errors are not a new result here. No nested dependency was
+initialized. Spec-23 remains draft, Story 3.6/Epic 3 remain in progress and
+release stays **FAIL** pending the four owner requirements below. Target
+discovery is answered; implementation approval cannot supply missing evidence.
+
 ## Latest staging dependency recheck
 
 Clean Timesheets `main` at `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae`

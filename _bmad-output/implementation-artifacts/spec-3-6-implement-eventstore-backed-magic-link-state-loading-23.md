@@ -45,6 +45,31 @@ release PASS.
 
 ## Qualification Result
 
+The latest user-approved resume preserves the existing uncommitted evidence
+and changed root submodule checkouts at Timesheets HEAD
+`9fa572c6afb0782bf434e98b6e1b30674eb265d2`. It observes Platform
+`4b9cb5624159de0782dd3329cdcc3b2d66010509` and EventStore
+`210b90da172cc7ca946fbb06cfd44390bffa707b`. Platform's configured Party JWT
+reader adds no Timesheets production binding or certified provider. Eight
+native reads at 19:26:22 UTC confirm both staging namespaces NotFound,
+unavailable Gateway type and unchanged census. Independent source investigation
+found no Timesheets runtime defect that closes the four deployed owner gates.
+See [the current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-authorized-working-tree-recheck).
+External dependencies still fail the Ready for Development sufficiency standard;
+this spec stays draft. Prior qualification and frozen intent remain preserved.
+
+The latest 2026-10-14 planning resume at clean Timesheets
+`9fa572c6afb0782bf434e98b6e1b30674eb265d2` consumes Platform
+`2bd78603e164265e3b6c00af9950429cff5510f9`. Its new offline retirement
+packet and conditional operator proposals establish no production plan,
+approval or accepted retirement. Eight native reads at 10:57:18 UTC reproduce
+the unchanged cluster, absent staging namespaces and unavailable Gateway type.
+All four deployed owner requirements remain missing; independent investigation
+found no separate Timesheets runtime fix. See [the current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-offline-retirement-preparation-recheck).
+The Ready for Development sufficiency standard still fails on external
+dependencies. Keep this spec draft; no intent gap or implementation approval
+request can resolve those missing prerequisites. Prior results below are history.
+
 The 2026-10-14 resume at clean Timesheets
 `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae` inspects Platform
 `92a02924894f6f2f219801a90e5bf25716abd028`. Its new staging dependency
@@ -113,6 +138,16 @@ discovery is answered; no repeated deployment-information question is needed.
 
 ## Code Map
 
+- `references/Hexalith.Platform/src/Hexalith.Platform.Identity/PlatformIdentityGatewayAdmission.cs`,
+  `PlatformIdentityJwtReader.cs`, and `PlatformIdentityOptions.cs` — configured
+  Party-read admission only; do not mistake it for a Timesheets resource-binding
+  issuer, registered provider or migration/inventory authority.
+- `references/Hexalith.Platform/eng/cluster-management/STAGING-PREREQUISITES.md`
+  — new offline retirement preparation and conditional operator handoff;
+  all operational inputs and acceptance remain separately gated.
+- `references/Hexalith.Platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-27/20261014t100941z-s427-reviewed-preparation/verification.json`
+  — sanitized unsigned preparation receipt only; its recorded software checks
+  and historical integrity are not fresh operational acceptance.
 - `references/Hexalith.Platform/eng/timesheets-deployment/staging-dependency-handoff.md`
   — Platform-owned recovery/retirement/upgrade and staging/release prerequisites;
   consume as evidence only. Preparation grants no operational authority.
@@ -213,6 +248,27 @@ discovery is answered; no repeated deployment-information question is needed.
   Existing readiness assets passed 13/13 in 0.170s; whitespace and frozen-intent/
   pinned-report/Platform-input preservation checks passed, including the
   canonical preparation checksum. No fresh build or deployed proof is claimed.
+
+- The latest planning resume consumes Platform's offline retirement continuation
+  and sanitized unsigned receipt, plus eight fresh native reads. Intent gaps:
+  none established; irreversibles: deployment, signing, maintenance and domain
+  operations remain gated and were not performed; footprint: six Timesheets
+  evidence/tracking documents, with no new callable surface. Existing frozen
+  intent, pinned qualification report and retained Platform inputs are preserved.
+  External release/provider/source/deployed-evidence dependencies still fail
+  sufficiency; this draft does not proceed to implementation approval.
+  Exact verification and its existing-build-asset limit are in
+  [the test summary](tests/3-6-test-summary.md).
+
+- The authorized dirty-tree planning resume records newer Platform/EventStore
+  checkout identities and fresh bounded target observations without changing
+  frozen intent, prior notes or acceptance scope. Intent gaps: none established.
+  Irreversibles: deployment, signing, maintenance and domain writes remain
+  dependent on exact qualification/approval and were not performed. Footprint:
+  six Timesheets evidence/tracking documents, no new callable surface. The
+  source/provider/release dependencies remain unresolved, so no implementation
+  approval is requested for this insufficient draft. Focused build/verification
+  and preservation results are recorded in [the test summary](tests/3-6-test-summary.md).
 
 ## Spec Change Log
 

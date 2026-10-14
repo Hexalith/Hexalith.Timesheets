@@ -1,5 +1,45 @@
 # Story 3.6 resume checkpoint — 2026-10-14
 
+## Authorized dirty-tree resume; deployed prerequisites remain missing
+
+The user approved preserving and continuing over the existing changes.
+Timesheets HEAD is `9fa572c6afb0782bf434e98b6e1b30674eb265d2`; observed
+Platform is `4b9cb5624159de0782dd3329cdcc3b2d66010509`, and EventStore is
+`210b90da172cc7ca946fbb06cfd44390bffa707b`. Platform's new configured Party
+JWT reader supplies no Timesheets production issuer or registered provider.
+Eight native reads at 19:26:22 UTC confirm the unchanged census, both staging
+namespaces NotFound and unavailable Gateway type. Exact results and limits
+are in [the current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-authorized-working-tree-recheck).
+
+No independent Timesheets runtime defect was established. Fresh signed
+recovery/readback and exact 4.27 qualification/approval/accepted retirement
+remain the next Platform dependency. Hosted release, production providers,
+certified inventory/maintenance/continuity and installed subscriber/shared-rebuild
+acceptance remain missing. Spec-23 stays draft, Story 3.6/Epic 3 stay in
+progress and release stays **FAIL**. Existing edits, frozen intent and pinned
+qualification/preparation bytes are preserved; verification is in
+[the test summary](tests/3-6-test-summary.md).
+
+## Offline retirement preparation advanced; deployed acceptance remains blocked
+
+Clean Timesheets `9fa572c6afb0782bf434e98b6e1b30674eb265d2` consumes
+Platform `2bd78603e164265e3b6c00af9950429cff5510f9`. Its new offline
+retirement packet and conditional operator proposals supply preparation only;
+no fresh source-bound production plan, approval or accepted retirement exists
+in that evidence. Eight native reads at 10:57:18 UTC still find server
+v1.34.9, both staging namespaces NotFound, no Gateway resource type and the
+unchanged census without matching names/images. Exact commands, receipt
+identity and evidence limits are in
+[the current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-offline-retirement-preparation-recheck).
+
+Fresh signed recovery/readback and exact 4.27 qualification/approval/acceptance
+remain the next Platform dependency. Hosted release, production providers,
+certified inventory/maintenance/continuity and deployed subscriber/shared-rebuild
+proof remain missing. Independent source investigation established no separate
+Timesheets runtime fix. Keep spec-23 draft, Story 3.6/Epic 3 in progress and
+release **FAIL**. Target discovery is answered. Verification and preservation
+checks are recorded in [the test summary](tests/3-6-test-summary.md).
+
 ## Staging dependency handoff qualified; deployed acceptance remains blocked
 
 Clean Timesheets `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae` consumes

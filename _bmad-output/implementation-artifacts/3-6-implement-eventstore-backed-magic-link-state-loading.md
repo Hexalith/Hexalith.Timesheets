@@ -23,6 +23,30 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+The user-approved resume preserves the existing dirty evidence/submodule
+state at Timesheets `9fa572c6afb0782bf434e98b6e1b30674eb265d2`, observing
+Platform `4b9cb5624159de0782dd3329cdcc3b2d66010509` and EventStore
+`210b90da172cc7ca946fbb06cfd44390bffa707b`. The new configured Party JWT
+reader closes none of the Timesheets production authority or deployment gates.
+Eight native reads at 19:26:22 UTC still find both staging namespaces absent,
+no Gateway type and an unchanged census. No independent Timesheets runtime
+defect was established. [The current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-authorized-working-tree-recheck)
+records exact results and remaining owner requirements. Spec-23 stays draft;
+Story 3.6/Epic 3 stay in progress and release stays **FAIL**. Earlier local
+passes and failures retain their original identities.
+
+The latest clean resume at Timesheets `9fa572c6afb0782bf434e98b6e1b30674eb265d2`
+consumes Platform `2bd78603e164265e3b6c00af9950429cff5510f9`. Its offline
+retirement preparation packet supplies no production plan, approval or accepted
+retirement. Eight fresh native reads still find both staging namespaces absent,
+no Gateway resource type and an unchanged census. Hosted release, production
+bindings, certified inventory/maintenance/continuity and deployed subscriber/
+shared-rebuild evidence remain missing. [The current recheck](../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-offline-retirement-preparation-recheck)
+records the new packet, exact native commands and discovery limits. Independent
+investigation established no separate Timesheets runtime fix. Spec-23 stays
+draft; Story 3.6/Epic 3 stay in progress and release stays **FAIL**. Only
+evidence/tracking documents changed; historical results below retain their dates.
+
 The resume at clean Timesheets `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae`
 consumes Platform `92a02924894f6f2f219801a90e5bf25716abd028`. Its new
 staging dependency handoff supplies preparation only; fresh native reads

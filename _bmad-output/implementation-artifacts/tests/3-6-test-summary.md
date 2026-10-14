@@ -6,6 +6,49 @@
 
 ## Current Verification
 
+### Offline retirement preparation and native prerequisite recheck (2026-10-14)
+
+Initial clean Timesheets `main`: `9fa572c6afb0782bf434e98b6e1b30674eb265d2`;
+Platform: `2bd78603e164265e3b6c00af9950429cff5510f9`. `dotnet --version`
+returned **10.0.401**, matching `global.json`. The new offline retirement
+preparation packet records no production source observation, plan, approval
+or accepted retirement. Platform's recorded 284/284 tests (including 31
+preparation tests) and historical integrity checks were inspected as retained
+evidence; neither software checks nor private preparation were rerun here.
+Independent source investigation established no separate Timesheets runtime fix.
+
+Eight native reads at **10:57:18 UTC** used the same exact commands as
+[the staging recheck](../../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-staging-dependency-recheck).
+The first six exited **0**: client v1.34.12, server v1.34.9, unchanged
+cluster UID, 23 namespaces, 100 workload/service objects and 111 pods, with
+no matching names/images. Both staging namespaces were NotFound, exit **1**;
+the Gateway resource type was unavailable, exit **1**. Responses were projected
+in memory; raw JSON, credentials, Secrets and domain histories were not printed
+or retained. These bounded observations do not certify domain history or
+exclude renamed applications. Receipt/source identities and all qualification
+limits are in [the current recheck](../../../docs/deployed-magic-link-platform-candidate-recheck.md#latest-offline-retirement-preparation-recheck).
+
+After reconciliation, the existing executable passed **13/13 in 0.163s**,
+zero errors/failures/skips/not-run, exit **0**:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+Whitespace validation passed. This uses existing build assets to check current
+documents; no fresh solution build, broad suite or local/deployed journey is
+claimed. Frozen spec-23 intent remains verbatim at SHA-256
+`3bb249ed0d9b617bb92e06aa0a725ad0727a460293cbee1e1e9c99f3d63b922a`.
+The pinned original qualification report and inspected Platform inputs remain
+unchanged; canonical plan hash verification passed at
+`80aaf70967771c671e9245982a906ea9b77d56bdb6b568ee60015ad4e33305c7`,
+and the candidate declaration retains its recorded hash. Spec-23 remains draft.
+Only six Timesheets evidence/tracking documents changed. No runtime startup,
+signing, fixture, retirement, upgrade, deployment, domain or maintenance
+operation was issued; no dependency, nested submodule or Git mutation occurred.
+Spec-23 stays draft, Story 3.6/Epic 3 stay in progress and release stays **FAIL**.
+
 ### Staging dependency handoff and native prerequisite recheck (2026-10-14)
 
 Initial clean Timesheets `main`: `9ecda28dc7ff540d83fad7ba1e5d585bdc33d0ae`;
