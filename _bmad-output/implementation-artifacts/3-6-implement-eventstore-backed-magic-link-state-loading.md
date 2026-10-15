@@ -23,6 +23,23 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+### Recovery checkpoint — 2026-10-15
+
+The 2026-10-15 recovery resume verified authentic policy/cleanup signatures and
+four fresh exact immutable provider readbacks at 08:49:13 UTC. Protected source
+bindings and cleanup absence passed. Concurrent owner progress prepared the
+manifest and three pass restore proofs; the next prerequisite is Administrator
+signing/publication of those four existing records, then authentic readbacks,
+the backup gate and non-dry final validation with honest M1/M2. The policy age
+limit ends 2026-10-15T11:40:42Z. See [the signed-cleanup checkpoint](../../docs/deployed-magic-link-platform-candidate-recheck.md#signed-cleanup-and-concurrent-records-reconciled--2026-10-15)
+for exact hashes, versions, failures and the protected-terminal action. Existing
+scope/incident/window/roles and all historical failures are preserved. Recovery
+remains unaccepted; retirement, upgrades and deployment need separate exact
+approvals. All deployed Timesheets owner gates remain unmet. Spec-23 stays
+draft; Story 3.6/Epic 3 stay in progress and release stays **FAIL**.
+
+Earlier dispositions retain their original dates and scope below.
+
 Concurrent synchronization advanced Timesheets to
 `e2a9e0898f5e30f2b9f3457ece6ddd55d4c999ba` and Platform to
 `55bee680e6901a45946dd8bf1e4a4060952bd7ea`. The new owner handoff records

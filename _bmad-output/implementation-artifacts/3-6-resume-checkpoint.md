@@ -1,5 +1,25 @@
 # Story 3.6 resume checkpoint — 2026-10-14
 
+## Signed cleanup verified; four record signatures pending — 2026-10-15
+
+At Timesheets `c9f71a9fc8db778ab364a955d0b30afde3104204`, the separate
+Platform owner checkout remains `55bee680e6901a45946dd8bf1e4a4060952bd7ea`
+with local continuation evidence. Policy and cleanup signatures authenticate;
+four exact immutable provider versions freshly matched at 08:49:13 UTC, with
+policy age 76,105.019278s below 86,400. Protected source bindings and cleanup
+absence checks passed. Concurrent owner progress prepared the manifest and
+three pass restore proofs; all four remain unsigned, and gate/final validation
+are absent. The next input is the Administrator's existing guarded protected-
+terminal signing action, followed by authentic readbacks and later gate/non-dry
+validation with honest M1/M2. No renewed scope/window/role decision is needed.
+
+[Exact results and signing action](../../docs/deployed-magic-link-platform-candidate-recheck.md#signed-cleanup-and-concurrent-records-reconciled--2026-10-15)
+retain concurrent attribution and this run's separate failed wrapper/diagnosis.
+No completed stage was replayed. Historical failures, frozen intent and prior
+inputs are preserved. Policy freshness ends 2026-10-15T11:40:42Z. Retirement,
+upgrades and deployment still require their separate exact approvals. Spec-23
+stays draft; Story 3.6/Epic 3 remain in progress and release stays **FAIL**.
+
 ## Concurrent recovery progress reconciled; protected signing remains external
 
 Concurrent synchronization advanced Timesheets to

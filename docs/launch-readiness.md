@@ -2,6 +2,17 @@
 
 Timesheets is neither story-complete nor launch-complete: Story 3.6 remains in progress, Story 5.2 remains in progress, and the final Story 5.1 reconciliation remains ready for development. This record classifies committed evidence at baseline `b0c41aaa3ad899ca13d49cd66e4f26f3b8e3ae5f` on 2026-06-26 and distinguishes concrete implemented behavior from unavailable defaults, skipped lanes, deferred integrations, package-currency evidence, and post-v1 decisions.
 
+The 2026-10-15 recovery checkpoint verifies authentic policy/cleanup signatures,
+four current immutable readbacks and preserved source/cleanup identities.
+The existing manifest and three restore proofs still need Administrator
+signatures/publication; the backup gate, final non-dry validation and honest
+M1/M2 remain pending. Policy freshness ends 2026-10-15T11:40:42Z. See
+[the current checkpoint](deployed-magic-link-platform-candidate-recheck.md#signed-cleanup-and-concurrent-records-reconciled--2026-10-15)
+for exact results, concurrent attribution, preserved failures and signing action.
+Existing decisions persist; retirement, upgrades and deployment retain separate
+exact approvals. No deployed acceptance gate closes. Spec-23 remains draft,
+Story 3.6/Epic 3 remain in progress and release remains **FAIL**.
+
 Related evidence:
 
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.

@@ -1,5 +1,101 @@
 # Story 3.6 Platform candidate recheck — 2026-10-14
 
+## Signed cleanup and concurrent records reconciled — 2026-10-15
+
+This resume starts at Timesheets `c9f71a9fc8db778ab364a955d0b30afde3104204`
+and the separate owning Platform checkout
+`55bee680e6901a45946dd8bf1e4a4060952bd7ea`. Platform's working spec and
+new evidence are local changes; the Timesheets `references/Hexalith.Platform`
+checkout was not advanced. Original recovery scope, accepted OIDC incident
+correction, October 7–31 window, conversation incident channel and Administrator
+roles remain in force within their existing limits.
+
+**Cleanup signing is complete.** The original policy and exact cleanup record
+both authenticate as `jpiquot@itaneo.com` under `hexalith-recovery`, pinned
+ED25519 fingerprint `SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk`.
+Cleanup SHA-256 remains
+`3ae690daad23e6a0f028ab28ca023ba9a04d4c72f810d9129b117125d08d5b78`;
+its actual signature SHA-256 is
+`c346a6a9692227302e4c804012bb1df2a0b1b3121f1c76a65a77c794bd6d280c`.
+The prior unsigned-only signing action was not replayed.
+
+At **2026-10-15T08:49:13.225649Z**, independent read-only reconciliation
+passed. Fresh validator HEAD/GET/retention reads matched these exact immutable
+versions, byte lengths and local SHA-256 values:
+
+| Record beneath `evidence/4-0/20261014t112353z/` | Provider version | Bytes |
+| --- | --- | --- |
+| `policy/recovery-policy.json` | `1791981906616560` | 17,780 |
+| `policy/recovery-policy.json.sig` | `1791981907303892` | 314 |
+| `cleanup/restore-target-cleanup.json` | `1792053509510188` | 9,535 |
+| `cleanup/restore-target-cleanup.json.sig` | `1792053509947219` | 314 |
+
+All four use AES256 and COMPLIANCE lock, with matching retention API dates in
+the future (November 13 for policy/signature and November 14 for cleanup/signature).
+Policy age was **76,105.019278 seconds**, below 86,400. The policy age limit ends
+**2026-10-15T11:40:42Z (13:40:42 Europe/Paris)**; the maintenance window does not
+extend it. Four protected namespace UIDs, all 15 source PVC/PV bindings and the
+CNPG controller UID/watch scope were preserved. Recorded isolated target
+namespaces/storage claims and temporary copies were absent.
+
+A separate executor began at `20261015t084001z` before this resume's private
+`20261015t084153z-s427-signed-cleanup-resume` custody. During inspection it
+completed the retained records prerequisite, original manifest and approved
+private-OIDC proof consumer. These are concurrent executor outcomes. Its
+manifest reports **4,714 immutable versions read back**; this resume separately
+matched **73 local evidence files**, the manifest/proof digests, pass results,
+RPO values (Keycloak 29s, OpenBao 127s, Memories 86s), isolation and exact
+accepted incident provenance. The 4,714-version readback was not replayed.
+
+| Existing unsigned record | SHA-256 |
+| --- | --- |
+| `manifest/evidence-manifest.json` | `9d16ecb2c1074fa72e131bd448b1230bee2581d4877c83576c78d8b14365f9d2` |
+| `keycloak/keycloak-restore-proof.json` | `f6570b31b4f138a2ffe2e44bfbb5c464d0462898ab7f496f795fa52a4c168734` |
+| `openbao/openbao-restore-proof.json` | `fc61e1a0ef9f0a29c47f9c003bef73e7467ce08c35fcbef181d8a14acd481545` |
+| `memories/memories-restore-proof.json` | `bc9725e06ab30fe02959b2db6370cfc58750e6420d05d9fa2b19f691326c1ee1` |
+
+**Next unresolved prerequisite:** Administrator protected-terminal signing and
+publication of these four existing records using the
+[exact guarded action](/home/administrator/hexalith-retirement-investigation-evidence/20261015t084001z-s427-signed-cleanup-continuation/NEXT-PROTECTED-SIGNING-ACTION.md),
+SHA-256 `a4cb7d9ce0ff2ccc51332e93bb4ab5525fc42a0417b2a20de0fd3b39d7873bfe`.
+The guard SHA-256 is
+`630f42e092adb467b10fedfce05ec3aa91b6a6f575d55c70c85db378cf119b06`;
+its local mode passed with zero remote requests and no signing. The full guard
+rechecks current freshness, exact inputs, protected storage, target absence
+and resumed intake before the Administrator signs. No repeated scope or
+incident approval is requested. Afterwards, authentic original signatures and
+fresh exact-version readbacks must precede the backup gate, its signature,
+non-dry final validation and honest actual M1/M2 final attestation/signature.
+At reconciliation all four signatures, the gate and final validation were absent;
+accepted fresh recovery remains **false**.
+
+This run also preserves its own bounded prerequisite wrapper's exit **1**
+(0.136s, no stdout), encrypted diagnostics and zero later dependent dispatches.
+The exact encrypted error is not claimed. A separate offline diagnosis with
+provider access disabled refused overwrite of an already existing proof;
+that later diagnosis does not prove the earlier error. Independent read-only
+reconciliation then established the current state without replaying records,
+capture, restore or cleanup. The failed canonical OIDC record remains unchanged
+at SHA-256 `014463ef76fd99431f6c268edbc41274b5031157f683a1630011956cb5738578`.
+
+The private reconciliation receipt
+[`readonly-reconciliation.json`](/home/administrator/hexalith-retirement-investigation-evidence/20261015t084153z-s427-signed-cleanup-resume/readonly-reconciliation.json)
+has SHA-256 `1a30ac7073f35747fdf09c617fcfff1addffcb021c4894df9a376d80b6be8731`.
+The separate [unsigned Platform verification receipt](/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-27/20261015t084153z-s427-signed-cleanup-resume/verification.json)
+has SHA-256 `756984df297d338707a3d1d1c004378047bd2e3be7ed309da733551712fab033`;
+its 29 private checksums and 13 archived source members verified. Concurrent
+Platform handoff additions retain their own capture times and source identities.
+Raw diagnostics remain encrypted; no recipient-decryption readback is claimed.
+This resume performed zero remote writes or stage replays. Historical evidence,
+frozen intent and pinned report/plan/declaration bytes remain preserved.
+Retirement, 4.1 node/etcd mutation, upgrades and Timesheets deployment/activation
+retain their separate exact approvals. Recovery progress supplies no hosted
+release, production authority, certified source/continuity or installed
+subscriber/shared-rebuild acceptance. Spec-23 stays draft, Story 3.6/Epic 3
+stay in progress, Platform 4.27 stays in progress, 4.1's operational gate stays
+closed and Timesheets release stays **FAIL**. Verification is in
+[the test summary](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md).
+
 ## Latest concurrent owner checkpoint
 
 Concurrent synchronization advanced Timesheets to

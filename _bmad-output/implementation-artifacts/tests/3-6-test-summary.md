@@ -6,6 +6,76 @@
 
 ## Current Verification
 
+### Signed cleanup and concurrent recovery reconciliation (2026-10-15)
+
+Timesheets starts at `c9f71a9fc8db778ab364a955d0b30afde3104204`; the separate
+owning Platform checkout is `55bee680e6901a45946dd8bf1e4a4060952bd7ea` with
+local continuation evidence. Its unchanged Timesheets gitlink was not staged
+or updated. SDK **10.0.401** matches the current `global.json`.
+
+Original policy/cleanup signatures verify against the pinned Administrator
+identity. At **08:49:13.225649 UTC**, the separate read-only reconciliation
+returned **allPass=true**, exit **0**: four exact immutable validator versions
+matched hashes/lengths, AES256 and COMPLIANCE retention; policy age
+**76,105.019278s < 86,400s**; protected source/cleanup/controller checks passed.
+The manifest's 4,714-version readback and three pass proofs belong to concurrent
+executor `20261015t084001z`, whose output appeared during this run. This resume
+independently matched its manifest/proof hashes, 73 local evidence files, RPO,
+isolation and accepted correction provenance; it did not replay those stages.
+All four record signatures, gate and final validation were absent at that
+observation. Exact versions/hashes, retained private receipt identity and the
+[guarded signing action](../../../docs/deployed-magic-link-platform-candidate-recheck.md#signed-cleanup-and-concurrent-records-reconciled--2026-10-15)
+are recorded in the checkpoint. Policy freshness ends **2026-10-15T11:40:42Z**.
+
+The failed bounded prerequisite wrapper is retained separately: child exit
+**1**, **0.136s**, no timeout/stdout, at **08:46:02 UTC**, with encrypted
+diagnostics and no later dependent dispatch. Its original encrypted error is
+not asserted. A later offline diagnosis, with provider access replaced by
+unconditional refusal, returned diagnostic `Refusal: refusing to overwrite an
+existing proof`, driver exit **0**. This later observation cannot establish
+the earlier error. The successful independent reconciliation is distinct from
+a retry of manifest/proof creation. Exact executed interfaces were:
+
+```bash
+env -u PYTHONOPTIMIZE PYTHONDONTWRITEBYTECODE=1 python3 /home/administrator/hexalith-retirement-investigation-evidence/20261015t084153z-s427-signed-cleanup-resume/continuation.py prerequisite-readback
+# Its bounded child, exit 1:
+uv run --quiet --no-project --with boto3 python /home/administrator/hexalith-retirement-investigation-evidence/20261015t084153z-s427-signed-cleanup-resume/continuation.py --preread
+# Separate independent reconciliation, exit 0:
+env -u PYTHONOPTIMIZE PYTHONDONTWRITEBYTECODE=1 uv run --quiet --no-project --with boto3 python /home/administrator/hexalith-retirement-investigation-evidence/20261015t084153z-s427-signed-cleanup-resume/reconcile_readonly.py
+```
+
+The offline diagnostic used `env -u PYTHONOPTIMIZE PYTHONDONTWRITEBYTECODE=1
+uv run --quiet --no-project --with boto3 python -` with a local heredoc that
+loaded `continuation.py` via `runpy` and replaced `s40lib.object_evidence` with
+unconditional refusal before `preread`. Its retained diagnostic SHA-256 is
+`9783fb0017c3208da65ceb747152a2eca0c9f4f4b177874100beda8278f684d8`.
+The independent reconciliation receipt SHA-256 is
+`1a30ac7073f35747fdf09c617fcfff1addffcb021c4894df9a376d80b6be8731`.
+No raw provider/native output or credentials were published.
+
+Focused document verification passed: ArchitectureTests build, exit **0**,
+**0 warnings/errors**, **0.98s**; rebuilt `LaunchReadinessTests`, exit **0**,
+**13/13 in 0.117s**, zero errors/failures/skips/not-run; `git diff --check`,
+exit **0**. Exact commands:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+The six Timesheets changes are evidence/tracking additions. Runtime/test
+source, frozen intent, original qualification, retained plan/declaration and
+historical failures remain preserved. No broad suite, fixture, solution build,
+local/deployed journey, signing, gate or non-dry final validation is claimed.
+This resume made zero remote writes and replayed no completed recovery stage.
+Next is Administrator signing/publication of the existing manifest and three
+proofs, then authentic fresh readbacks before later gate/validation signatures
+and actual final M1/M2. Existing scope/incident/window/roles persist. Retirement,
+upgrades and deployment retain their separate exact approvals. Spec-23 stays
+draft; Story 3.6/Epic 3 stay in progress and release stays **FAIL**.
+
 ### Authorized dirty-tree prerequisite resume (2026-10-14)
 
 The user approved resuming over existing evidence edits and changed root
