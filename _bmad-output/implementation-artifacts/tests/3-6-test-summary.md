@@ -6,6 +6,163 @@
 
 ## Current Verification
 
+### Fresh signed recovery accepted within deadline (2026-10-15 11:29 UTC)
+
+Concurrent final validation signing/publication completed **11:25:38 UTC**.
+The independent final read-only command below exited **0**, finished
+**2026-10-15T11:28:43.801049Z**: all **eight** original signatures authenticate,
+including the Administrator's actual final M1/M2 attestation; all **16** exact
+immutable versions freshly match hashes/lengths/AES256/COMPLIANCE retention.
+All 117 final bound files plus the precisely progressed ledger, complete
+policy/manifest/proof/cleanup/gate/validation bindings, RPO/cutoff/expiry,
+73 local manifest files and current 15 protected source bindings pass.
+Non-dry validation remains **4,809/4,809**, zero failures/skips, with all
+**4,714** versions reread/matching by the concurrent validator. This resume
+replayed none of those stages and issued no remote writes or signatures.
+
+```bash
+uv run --quiet --no-project --with boto3 python -B /home/administrator/hexalith-retirement-investigation-evidence/20261015t112105z-s427-timesheets-signed-records-reconcile/reconcile_final_signature.py
+```
+
+Final validation provider version `1792063538323774` (2,955,092 bytes) and
+signature version `1792063538589066` (314 bytes) freshly match at **11:28:38 UTC**.
+The [unsigned final receipt](../evidence/3-6/20261015t112105z-signed-recovery-reconcile/final-signed-acceptance.json)
+records every exact original signature/version and owner-acceptance lineage.
+At **11:29:22 UTC**, further bounded native reads again passed isolated target
+name/UID/storage/claim and temporary-copy absence with intake **2/2** ready.
+Fresh 4.0 is accepted at **11:28:43 UTC**, **only until 11:40:42 UTC**;
+policy age **85,681.800962s < 86,400s**. Expiry requires separately authorized
+fresh recovery, preserving this RID and timestamps, without automatic replay.
+
+The [current checkpoint](../../../docs/deployed-magic-link-platform-candidate-recheck.md#fresh-signed-recovery-accepted-within-deadline--2026-10-15-1129-utc)
+names fresh 4.1 external-etcd/node/configuration recovery and independent
+recovered-native access as the next separately scoped prerequisite. Concurrent
+offline preparation has zero remote requests and a closed gate. Retirement,
+upgrades and deployment retain separate exact approvals. Spec-23 stays draft,
+4.27/Story 3.6/Epic 3 stay in progress, 4.1 stays closed and release stays **FAIL**.
+Earlier barrier receipts and all historical failures remain unchanged.
+
+After recording final acceptance, the same existing LaunchReadiness executable
+command passed **13/13 in 0.122s**, zero errors/failures/skips/not-run; final
+`git diff --check` passed. Prior sealed checksum sets remain valid. The
+[final local verification](../evidence/3-6/20261015t112105z-signed-recovery-reconcile/final-local-verification.json)
+records preservation and custody checks. No broad build/suite/journey ran.
+The first final local custody audit exited **1** on the new unsigned
+`preservation-after.json` summary at mode `0644`; its content was preserved and
+only that file's mode corrected to `0600` before the final audit. No signed
+original or operational gate input changed, and the failed check is retained.
+
+### Signed recovery and final attestation barrier (2026-10-15 11:24 UTC)
+
+Independent reconciliation finished **2026-10-15T11:22:08.728445Z**, exit **0**:
+seven original input signatures authenticate, all eight requested manifest/proof
+objects freshly match their original immutable versions, and all 14 objects
+including policy/cleanup/gate match exact bytes, AES256 and COMPLIANCE retention.
+Approved original bindings (98 files), 73 manifest local files, proof/RPO,
+freshness, all 15 protected storage bindings, source/controller identities,
+target absence and Memories 2/2 readiness pass. Policy age was **85,286.728436s**;
+the first policy/gate deadline remains **2026-10-15T11:40:42Z**.
+
+Concurrent executor results are reconciled, without replay: the four signatures
+were published and their temporary agent stopped at **11:01:09 UTC**; the gate
+was signed/published; non-dry validation at **11:12:03 UTC** passed
+**4,809/4,809**, zero failures/skips, with **4,714/4,714** manifest versions
+reread/matching. Current M1/M2 receipts pass but explicitly leave final manual
+attestation incomplete. At **11:23:40 UTC**, the final signature/preflight are
+absent and both final provider keys return **404**. The existing final guard
+passes local-only mode, and its existing Bash action passes syntax validation.
+Both M1 source pods still match their UIDs with ready containers/zero restarts.
+
+Exact read-only commands (both exited **0**):
+
+```bash
+uv run --quiet --no-project --with boto3 python -B /home/administrator/hexalith-retirement-investigation-evidence/20261015t112105z-s427-timesheets-signed-records-reconcile/reconcile.py
+uv run --quiet --no-project --with boto3 python -B /home/administrator/hexalith-retirement-investigation-evidence/20261015t112105z-s427-timesheets-signed-records-reconcile/check_final_prerequisite.py
+```
+
+The [unsigned receipt](../evidence/3-6/20261015t112105z-signed-recovery-reconcile/verification.json)
+and [current checkpoint](../../../docs/deployed-magic-link-platform-candidate-recheck.md#signed-recovery-reconciled-final-attestation-pending--2026-10-15-1124-utc)
+record exact versions, hashes, current action and expiry prerequisite. Stop for
+the honest Administrator M1/M2 attestation/final signature, then authenticate
+the original and obtain both exact immutable final readbacks before accepting
+recovery. No competing signer, remote write or completed-stage replay ran.
+If expired, preserve this RID and require separately authorized fresh recovery;
+never change timestamps or replace it automatically. Existing decisions,
+changes and failures remain preserved. Spec-23 stays draft; 4.27/Story 3.6/Epic 3
+stay in progress, 4.1 stays closed and release stays **FAIL**. No broad suite,
+solution build, capture/restore or local/deployed journey is claimed here.
+
+Focused document checks passed: SDK **10.0.401** matches `global.json`;
+the existing built **13/13 LaunchReadinessTests** passed in **0.124s**, zero
+errors/failures/skips/not-run. Whitespace validation passed. Exact commands:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+Preservation checks confirm insertions only over all five existing Timesheets
+documents, unchanged frozen spec-23/pinned acceptance bytes, unchanged bound
+Platform execution/procedure/maintenance snapshots, preserved prior untracked
+receipts and unchanged Git index. The [local verification receipt](../evidence/3-6/20261015t112105z-signed-recovery-reconcile/local-verification.json)
+records these checks. No dependency, runtime/test source or gitlink changed.
+
+### Current unsigned/unpublished recovery barrier (2026-10-15 10:20 UTC)
+
+The independent read-only check finished at **2026-10-15T10:20:44.986852Z**:
+the manifest and three restore proofs remain unsigned and unpublished (all
+eight provider HEADs **404**, unchanged four-entry ledger). Policy/cleanup
+signatures authenticate; their four exact immutable versions freshly match.
+All 15 protected storage bindings, source/controller identities, target absence
+and Memories 2/2 readiness pass. Existing records were inspected without replay.
+The next input is the Administrator's existing guarded protected-terminal
+signing/publication action; reconcile the concurrent replacement-agent unlock
+checkpoint before any signer. Gate creation/signing, non-dry validation and
+honest current Administrator M1/M2 attestation/signature remain pending.
+Policy freshness still ends **2026-10-15T11:40:42Z**; preserve expired evidence
+and obtain separately authorized fresh recovery prerequisites if it lapses.
+Existing scope/incident/window/roles, changes and historical failures are
+preserved. Retirement, upgrades and deployment retain separate exact approvals.
+Spec-23 stays draft, 4.27/Story 3.6/Epic 3 stay in progress, 4.1 stays closed and
+release remains **FAIL**.
+
+Read-only reconciliation exited **0**; exact command:
+
+```bash
+env -u PYTHONOPTIMIZE PYTHONDONTWRITEBYTECODE=1 uv run --offline --quiet --no-project --with boto3 python /home/administrator/hexalith-retirement-investigation-evidence/20261015t101936z-s427-timesheets-readonly-resume/reconcile.py
+```
+
+The [current recheck](../../../docs/deployed-magic-link-platform-candidate-recheck.md#current-signature-and-publication-barrier--2026-10-15-1020-utc)
+records four exact HEAD/GET/retention readbacks (10:20:38–39 UTC), eight
+prepared-pair HEAD **404** results, 73 local evidence-file matches and the
+protected native guards. The private reconciliation SHA-256 is
+`6d96d06f015ade9da3579473662ce24e3fcf4621cfa59167167619e80b334886`;
+the [sanitized unsigned receipt](../evidence/3-6/20261015t101936z-recovery-readonly-resume/verification.json)
+has SHA-256 `9ebda6f92e60e1387d89d72a3ed47a8bbc21eb1150fa8d83ae577135cf5201ce`. No broad suite, fixture, solution build or
+local/deployed journey is claimed for this documentation-only continuation.
+No later operational gate was dispatched past the missing protected signatures.
+
+At **10:24:21 UTC**, four bounded read-only `ListObjectVersions` prefix scans
+confirmed **zero immutable versions and zero delete markers** for the eight
+exact manifest/proof/signature keys. No provider write occurred. The [separate
+publication-history receipt](../evidence/3-6/20261015t101936z-recovery-readonly-resume/publication-version-presence.json)
+has SHA-256 `a5aacbe38563e395918db9767dc2d2143454f1a825a5bb44e677e0ea0bba999b`; full responses remain encrypted in private custody.
+
+Focused document verification passed using the existing built test executable:
+**13/13 LaunchReadinessTests**, zero errors/failures/skips/not-run, **0.118s**.
+SDK **10.0.401** matches current `global.json`. No rebuild was required for
+these tests, which read current repository documents. Exact commands:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+git diff --check
+```
+
+All three commands passed; whitespace validation exited **0**. Existing
+runtime/test source, frozen spec-23 intent and production tasks are unchanged.
+
 ### Signed cleanup and concurrent recovery reconciliation (2026-10-15)
 
 Timesheets starts at `c9f71a9fc8db778ab364a955d0b30afde3104204`; the separate

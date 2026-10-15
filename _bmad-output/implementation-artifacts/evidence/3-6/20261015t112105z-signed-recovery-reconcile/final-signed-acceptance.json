@@ -1,0 +1,449 @@
+{
+  "Story4_1GateOpen": false,
+  "Story4_27Accepted": false,
+  "Timesheets3_6Accepted": false,
+  "acceptedAt": "2026-10-15T11:28:43.800962+00:00",
+  "acceptedFreshRecovery": true,
+  "allChecksPass": true,
+  "authenticatedOriginalSignatures": {
+    "cleanup/restore-target-cleanup.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "cleanup/restore-target-cleanup.json",
+      "sha256": "3ae690daad23e6a0f028ab28ca023ba9a04d4c72f810d9129b117125d08d5b78",
+      "signaturePresent": true,
+      "signatureSha256": "c346a6a9692227302e4c804012bb1df2a0b1b3121f1c76a65a77c794bd6d280c",
+      "verified": true
+    },
+    "gate/backup-gate.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "gate/backup-gate.json",
+      "sha256": "c23f0d12067a4eff0379af8a811ab8ae693b02304b897b570802fccd90356695",
+      "signaturePresent": true,
+      "signatureSha256": "8f21e993071501b4e3783ee6c965ab3de7967b32bce6566bf2fdcf68f8eedb94",
+      "verified": true
+    },
+    "keycloak/keycloak-restore-proof.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "keycloak/keycloak-restore-proof.json",
+      "sha256": "f6570b31b4f138a2ffe2e44bfbb5c464d0462898ab7f496f795fa52a4c168734",
+      "signaturePresent": true,
+      "signatureSha256": "d14444c6105402d35bcd0e6a29f7870f7ba66ce646c12afd212b973b1199076e",
+      "verified": true
+    },
+    "manifest/evidence-manifest.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "manifest/evidence-manifest.json",
+      "sha256": "9d16ecb2c1074fa72e131bd448b1230bee2581d4877c83576c78d8b14365f9d2",
+      "signaturePresent": true,
+      "signatureSha256": "e81bb6d612782c578ab889c90983af853ef7d2d66ee0dba4e9eb817b1f81e404",
+      "verified": true
+    },
+    "memories/memories-restore-proof.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "memories/memories-restore-proof.json",
+      "sha256": "bc9725e06ab30fe02959b2db6370cfc58750e6420d05d9fa2b19f691326c1ee1",
+      "signaturePresent": true,
+      "signatureSha256": "7af3e5048b9c9f577ee3a44762a110898dba0591819e022f6220f4a5d6289c41",
+      "verified": true
+    },
+    "openbao/openbao-restore-proof.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "openbao/openbao-restore-proof.json",
+      "sha256": "fc61e1a0ef9f0a29c47f9c003bef73e7467ce08c35fcbef181d8a14acd481545",
+      "signaturePresent": true,
+      "signatureSha256": "5c2c82769da9a29ec29fee51c0cf204a3c98c3cecb6536a14b0f68fe1dd34783",
+      "verified": true
+    },
+    "policy/recovery-policy.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "policy/recovery-policy.json",
+      "sha256": "021a8c773366fc2cc5b36e5407e03fd0e0a4dca363df1da71704725443bdc85a",
+      "signaturePresent": true,
+      "signatureSha256": "7f5dc8431113f6f5a993ed7cefda5a427673a3334fff2a380d8a1a3eab715f0e",
+      "verified": true
+    },
+    "validation/validation.json": {
+      "detail": "Good \"hexalith-recovery\" signature for jpiquot@itaneo.com with ED25519 key SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "keyFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+      "present": true,
+      "record": "validation/validation.json",
+      "sha256": "b269db6ab85f3a99d27560742921f0192d41925d9a3fe2bebd3adc95c6b234ae",
+      "signaturePresent": true,
+      "signatureSha256": "aa7b56e6f4ae938342d1de1d77b99f57c760f1b562fcf0fa188da5d99e7b27c7",
+      "verified": true
+    }
+  },
+  "concurrentNextPrerequisitePreparation": {
+    "attemptId": "20261015t112841z-post-40-recovery-prerequisite",
+    "authorizationExpanded": false,
+    "directory": "/home/administrator/hexalith-upgrade-evidence/evidence/epic-4/4-1/20261015t112841z-post-40-recovery-prerequisite",
+    "gateState": "closed",
+    "lineageSha256": "b65c80c2c5869ebd9be062f06ae305651cc63f53ea6774edf28d3d76ac1e251c",
+    "notExecutedByThisRun": true,
+    "preparedAt": "2026-10-15T11:28:41.462257+00:00",
+    "remoteRequests": 0
+  },
+  "concurrentOwnerAcceptance": {
+    "acceptedAt": "2026-10-15T11:27:34.340622+00:00",
+    "notExecutedByThisRun": true,
+    "path": "/home/administrator/hexalith-retirement-investigation-evidence/20261015t110948z-s427-signed-gate-final-validation/fresh-signed-recovery-acceptance.json",
+    "sha256": "45350fe6bedb4ccdb09d704af7e5b48ef6ea82ab004bac7bf5959327f070e712"
+  },
+  "currentM1SourceProcessesPreserved": true,
+  "currentTargetAbsence": {
+    "allPass": true,
+    "checkedAt": "2026-10-15T11:29:22.864587+00:00",
+    "freshnessDeadline": "2026-10-15T11:40:42Z",
+    "isolatedNamespaceNamesAndUidsAbsent": true,
+    "isolatedPvNamesUidsClaimsAbsent": true,
+    "memoriesIntakeReadyReplicas": 2,
+    "remoteWrites": 0,
+    "temporaryCopiesAbsent": true
+  },
+  "expiryBasis": "policy.preparedAt",
+  "finalBoundFilesVerifiedExceptProgressedLedger": 117,
+  "finalSignatureSha256": "aa7b56e6f4ae938342d1de1d77b99f57c760f1b562fcf0fa188da5d99e7b27c7",
+  "finalSigningByThisRun": false,
+  "finalValidationSha256": "b269db6ab85f3a99d27560742921f0192d41925d9a3fe2bebd3adc95c6b234ae",
+  "finishedAt": "2026-10-15T11:28:43.801049+00:00",
+  "freshExactVersionReadbacks": [
+    {
+      "bytes": 17780,
+      "contentLength": 17780,
+      "etag": "90228444fcd20404208e6b00a74737fb",
+      "key": "evidence/4-0/20261014t112353z/policy/recovery-policy.json",
+      "lastModified": "2026-10-14T12:45:06Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-13T12:45:06Z",
+      "readAt": "2026-10-15T11:28:35Z",
+      "readBackSha256": "021a8c773366fc2cc5b36e5407e03fd0e0a4dca363df1da71704725443bdc85a",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-13T12:45:06Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1791981906616560"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "59815675f9ece2fc601c0c0f8ffcb81a",
+      "key": "evidence/4-0/20261014t112353z/policy/recovery-policy.json.sig",
+      "lastModified": "2026-10-14T12:45:07Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-13T12:45:07Z",
+      "readAt": "2026-10-15T11:28:35Z",
+      "readBackSha256": "7f5dc8431113f6f5a993ed7cefda5a427673a3334fff2a380d8a1a3eab715f0e",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-13T12:45:07Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1791981907303892"
+    },
+    {
+      "bytes": 9535,
+      "contentLength": 9535,
+      "etag": "abaffca894f2c8adae72c53be8557aaa",
+      "key": "evidence/4-0/20261014t112353z/cleanup/restore-target-cleanup.json",
+      "lastModified": "2026-10-15T08:38:29Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T08:38:29Z",
+      "readAt": "2026-10-15T11:28:36Z",
+      "readBackSha256": "3ae690daad23e6a0f028ab28ca023ba9a04d4c72f810d9129b117125d08d5b78",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T08:38:29Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792053509510188"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "d07f22980b65ecbc639dfb194ed70468",
+      "key": "evidence/4-0/20261014t112353z/cleanup/restore-target-cleanup.json.sig",
+      "lastModified": "2026-10-15T08:38:29Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T08:38:29Z",
+      "readAt": "2026-10-15T11:28:36Z",
+      "readBackSha256": "c346a6a9692227302e4c804012bb1df2a0b1b3121f1c76a65a77c794bd6d280c",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T08:38:29Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792053509947219"
+    },
+    {
+      "bytes": 11113,
+      "contentLength": 11113,
+      "etag": "367132cd312b600d9e6909f3a9fa96cb",
+      "key": "evidence/4-0/20261014t112353z/keycloak/keycloak-restore-proof.json",
+      "lastModified": "2026-10-15T11:00:56Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:00:56Z",
+      "readAt": "2026-10-15T11:28:36Z",
+      "readBackSha256": "f6570b31b4f138a2ffe2e44bfbb5c464d0462898ab7f496f795fa52a4c168734",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:00:56Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062056899533"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "3877c1af871d872bd4e62aa5e9b5aefb",
+      "key": "evidence/4-0/20261014t112353z/keycloak/keycloak-restore-proof.json.sig",
+      "lastModified": "2026-10-15T11:00:57Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:00:57Z",
+      "readAt": "2026-10-15T11:28:36Z",
+      "readBackSha256": "d14444c6105402d35bcd0e6a29f7870f7ba66ce646c12afd212b973b1199076e",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:00:57Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062057280661"
+    },
+    {
+      "bytes": 4479435,
+      "contentLength": 4479435,
+      "etag": "fd62edf58614549dcee48ccd29fff8c7",
+      "key": "evidence/4-0/20261014t112353z/manifest/evidence-manifest.json",
+      "lastModified": "2026-10-15T11:00:57Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:00:57Z",
+      "readAt": "2026-10-15T11:28:36Z",
+      "readBackSha256": "9d16ecb2c1074fa72e131bd448b1230bee2581d4877c83576c78d8b14365f9d2",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:00:57Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062057504562"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "c1372676f084923e0df7b084d4e84103",
+      "key": "evidence/4-0/20261014t112353z/manifest/evidence-manifest.json.sig",
+      "lastModified": "2026-10-15T11:00:58Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:00:58Z",
+      "readAt": "2026-10-15T11:28:37Z",
+      "readBackSha256": "e81bb6d612782c578ab889c90983af853ef7d2d66ee0dba4e9eb817b1f81e404",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:00:58Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062058507534"
+    },
+    {
+      "bytes": 11940,
+      "contentLength": 11940,
+      "etag": "d3de6600662f9ce3c1724591ad7cf34f",
+      "key": "evidence/4-0/20261014t112353z/memories/memories-restore-proof.json",
+      "lastModified": "2026-10-15T11:00:58Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:00:58Z",
+      "readAt": "2026-10-15T11:28:37Z",
+      "readBackSha256": "bc9725e06ab30fe02959b2db6370cfc58750e6420d05d9fa2b19f691326c1ee1",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:00:58Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062058977015"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "079941c6843fb71817adc383ee1b9795",
+      "key": "evidence/4-0/20261014t112353z/memories/memories-restore-proof.json.sig",
+      "lastModified": "2026-10-15T11:00:59Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:00:59Z",
+      "readAt": "2026-10-15T11:28:37Z",
+      "readBackSha256": "7af3e5048b9c9f577ee3a44762a110898dba0591819e022f6220f4a5d6289c41",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:00:59Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062059296317"
+    },
+    {
+      "bytes": 10858,
+      "contentLength": 10858,
+      "etag": "43720ace3e7849a8f48ea0b6eae3e457",
+      "key": "evidence/4-0/20261014t112353z/openbao/openbao-restore-proof.json",
+      "lastModified": "2026-10-15T11:00:59Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:00:59Z",
+      "readAt": "2026-10-15T11:28:37Z",
+      "readBackSha256": "fc61e1a0ef9f0a29c47f9c003bef73e7467ce08c35fcbef181d8a14acd481545",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:00:59Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062059912492"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "4ddbf7f787769a0b867f0dfd9c248717",
+      "key": "evidence/4-0/20261014t112353z/openbao/openbao-restore-proof.json.sig",
+      "lastModified": "2026-10-15T11:01:01Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:01:01Z",
+      "readAt": "2026-10-15T11:28:37Z",
+      "readBackSha256": "5c2c82769da9a29ec29fee51c0cf204a3c98c3cecb6536a14b0f68fe1dd34783",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:01:01Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062061083724"
+    },
+    {
+      "bytes": 26755,
+      "contentLength": 26755,
+      "etag": "3285d9064171526c58a00ad977e74ed4",
+      "key": "evidence/4-0/20261014t112353z/gate/backup-gate.json",
+      "lastModified": "2026-10-15T11:09:17Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:09:17Z",
+      "readAt": "2026-10-15T11:28:38Z",
+      "readBackSha256": "c23f0d12067a4eff0379af8a811ab8ae693b02304b897b570802fccd90356695",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:09:17Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062557997233"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "cab9fe669d122098157057373696c797",
+      "key": "evidence/4-0/20261014t112353z/gate/backup-gate.json.sig",
+      "lastModified": "2026-10-15T11:09:18Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:09:18Z",
+      "readAt": "2026-10-15T11:28:38Z",
+      "readBackSha256": "8f21e993071501b4e3783ee6c965ab3de7967b32bce6566bf2fdcf68f8eedb94",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:09:18Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792062558367544"
+    },
+    {
+      "bytes": 2955092,
+      "contentLength": 2955092,
+      "etag": "76cc15e806e18193219feee789809558",
+      "key": "evidence/4-0/20261014t112353z/validation/validation.json",
+      "lastModified": "2026-10-15T11:25:38Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:25:38Z",
+      "readAt": "2026-10-15T11:28:38Z",
+      "readBackSha256": "b269db6ab85f3a99d27560742921f0192d41925d9a3fe2bebd3adc95c6b234ae",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:25:38Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792063538323774"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "338d411760e90d4ff2ec20761183c7c7",
+      "key": "evidence/4-0/20261014t112353z/validation/validation.json.sig",
+      "lastModified": "2026-10-15T11:25:38Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T11:25:38Z",
+      "readAt": "2026-10-15T11:28:38Z",
+      "readBackSha256": "aa7b56e6f4ae938342d1de1d77b99f57c760f1b562fcf0fa188da5d99e7b27c7",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T11:25:38Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792063538589066"
+    }
+  ],
+  "immutableVersionsMatching": 16,
+  "kind": "hexalith.timesheets-concurrent-final-signature-read-only-verification",
+  "manifestLocalEvidenceVerified": 73,
+  "manifestVersionsReReadByConcurrentNonDryValidation": 4714,
+  "nextUnresolvedPrerequisite": "Separately scoped fresh Story 4.1 external-etcd/node/configuration recovery contract and independent recovered-native access, then current retirement census/source-bound qualification/final plan and exact retirement approval. No retirement, upgrade or deployment authority is supplied; 4.27 remains in progress, 4.1 closed and Timesheets 3.6 open/FAIL.",
+  "nonDryValidationSummary": {
+    "fail": 0,
+    "pass": 4809,
+    "skipped": 0,
+    "total": 4809
+  },
+  "originalAdministratorFinalM1M2AttestationAuthentic": true,
+  "ownerFinalSigningPreflightSha256": "7a073106bd43c081dd3d9f383e4cde674a78b6e345f2234d90770447cde0a5da",
+  "policyAgeSecondsAtFinish": 85681.800962,
+  "policyAgeSecondsAtStart": 85672.425835,
+  "privateReceiptPath": "/home/administrator/hexalith-retirement-investigation-evidence/20261015t112105z-s427-timesheets-signed-records-reconcile/final-signature-reconciliation.json",
+  "privateReceiptSha256": "007babdae72f455f122e73481f5953e49aa4791bcdd4d3fb2b83228016c447ef",
+  "protectedSource": {
+    "afterCleanup": true,
+    "allPass": true,
+    "controllerUid": "f0a3408a-825a-45ac-82ab-aae0bd792c84",
+    "sourceBindingCount": 15,
+    "targetCount": 0,
+    "watchNamespace": [
+      "keycloak,cnpg-system"
+    ]
+  },
+  "recipientDecryptionReadbackClaimed": false,
+  "recoveryId": "20261014t112353z",
+  "remoteWrites": 0,
+  "signingAttempts": 0,
+  "stageReplays": 0,
+  "startedAt": "2026-10-15T11:28:34.037367+00:00",
+  "unsignedOperatorObservation": true,
+  "uploadLedgerSha256": "d3b90c273566e8da2cd94b36d6d6d6fc1dab8168bae89a6676fb2aeea2561dff",
+  "validUntil": "2026-10-15T11:40:42Z"
+}

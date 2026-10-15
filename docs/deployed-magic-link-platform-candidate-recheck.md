@@ -1,5 +1,240 @@
 # Story 3.6 Platform candidate recheck — 2026-10-14
 
+## Fresh signed recovery accepted within deadline — 2026-10-15 11:29 UTC
+
+Concurrent Administrator progress completed the existing final guarded action:
+its preflight passed at **11:25:31 UTC**, and the unchanged validation and
+signature were published at **11:25:38 UTC**. No competing signer was started.
+The preceding 11:24 checkpoint is preserved below as dated evidence.
+
+Independent read-only final reconciliation finished at
+**2026-10-15T11:28:43.801049Z**, exit **0**. All **eight original signatures**
+authenticate under the pinned Administrator identity, including the actual final
+signature over validation SHA-256
+`b269db6ab85f3a99d27560742921f0192d41925d9a3fe2bebd3adc95c6b234ae`.
+Its authentic `manualStepsAttestation` now attests the actual M1/M2 observations
+performed after non-dry validation; the historical preparation flags are not
+rewritten. Current source pod UIDs/readiness/zero restarts still match M1.
+
+Fresh validator reads match **all 16 exact original immutable record/signature
+versions**, including the earlier eight manifest/proof objects and these final
+objects read at **11:28:38 UTC**:
+
+| Object beneath `evidence/4-0/20261014t112353z/` | Exact provider version | Bytes |
+| --- | --- | --- |
+| `validation/validation.json` | `1792063538323774` | 2,955,092 |
+| `validation/validation.json.sig` | `1792063538589066` | 314 |
+
+Final signature SHA-256 is
+`aa7b56e6f4ae938342d1de1d77b99f57c760f1b562fcf0fa188da5d99e7b27c7`.
+All 16 match hashes/lengths, AES256 and COMPLIANCE retention with matching API
+dates at least 30 days from publication. The ledger preserves its original
+14 entries plus exactly these two, SHA-256
+`d3b90c273566e8da2cd94b36d6d6d6fc1dab8168bae89a6676fb2aeea2561dff`.
+All final bound bytes (117 files plus the reconciled ledger), full
+policy/manifest/proof/cleanup/gate/validation bindings, RPO/cutoff/expiry limits,
+73 local manifest files and current 15 source storage bindings pass. Non-dry
+validation remains **4,809/4,809 pass**, zero failures/skips, with **4,714/4,714**
+manifest versions reread by the concurrent validator. At **11:29:22 UTC**, fresh
+native reads again find all recorded isolated namespace/PV names/UIDs/claims
+and temporary copies absent, with Memories intake **2/2** ready.
+
+**Fresh Story 4.0 recovery is accepted as of 11:28:43 UTC, valid only until
+2026-10-15T11:40:42Z (13:40:42 Europe/Paris).** Policy age was
+**85,681.800962s < 86,400s**. The independent [unsigned final receipt](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t112105z-signed-recovery-reconcile/final-signed-acceptance.json)
+retains every signature, exact version and binding result. The concurrent owner
+acceptance at **11:27:34 UTC**, SHA-256
+`45350fe6bedb4ccdb09d704af7e5b48ef6ea82ab004bac7bf5959327f070e712`,
+agrees. Both audits are unsigned observations of the authentic signed originals.
+No capture, restore, cleanup, manifest/proof generation, gate, validation or
+signing was replayed by this Timesheets resume; remote writes remain **zero**.
+
+**Next unresolved prerequisite for Story 3.6:** separately scoped fresh
+**Story 4.1 external-etcd/node/configuration recovery and independent recovered-
+native access**, followed by current retirement census, source-bound fixtures,
+final plan and exact retirement approval. Historical October 1 recovery and
+unsigned preparation do not satisfy it; old hardcoded capture/restore scripts
+must not be reused for a new attempt. Concurrent owner preparation allocated
+`20261015t112841z-post-40-recovery-prerequisite` with **zero remote requests**
+and a **closed** gate. This supplies preparation only. Retirement, upgrades
+and deployment retain their separate exact approvals; none is dispatched here.
+
+At any later use, enforce the unchanged **11:40:42Z** deadline. Once expired,
+preserve this entire RID and obtain separate exact authorization for a fresh
+policy/bundle and current source/capture/isolated-restore/cleanup/proof/signature/
+immutable-readback/non-dry-validation/M1/M2 evidence. Never edit timestamps,
+extend the window into freshness, automatically replace the bundle or replay
+completed stages. Existing scope, incident decisions, roles, changes and all
+historical failures remain preserved. Spec-23 stays draft; 4.27/Story 3.6/Epic 3
+stay in progress, 4.1's operational gate stays closed and release stays **FAIL**.
+
+## Signed recovery reconciled; final attestation pending — 2026-10-15 11:24 UTC
+
+This resume reconciled concurrent progress before writing or dispatching.
+Timesheets remains `c2aaef44cb7163baee26746b4f6ddc25ba29c08d`; the separate
+Platform owner checkout remains `55bee680e6901a45946dd8bf1e4a4060952bd7ea`
+with existing local changes. The 10:20 absence observations below remain dated
+evidence. The replacement signer completed all four delegated signatures and
+publication at **11:01:09 UTC**, then stopped its temporary agent. Its earlier
+expired-agent/unlock checkpoint requires no replacement or competing signer.
+
+**The existing manifest and all three restore proofs are signed and published.**
+Independent read-only reconciliation finished at **2026-10-15T11:22:08.728445Z**,
+exit **0**. Seven original input signatures authenticate under the pinned
+Administrator ED25519 key, principal `jpiquot@itaneo.com`, namespace
+`hexalith-recovery`. Fresh validator HEAD/GET/retention reads match all eight
+requested exact original provider versions and local bytes:
+
+| Record beneath `evidence/4-0/20261014t112353z/` | Record version | Signature version | Record bytes |
+| --- | --- | --- | --- |
+| `manifest/evidence-manifest.json` | `1792062057504562` | `1792062058507534` | 4,479,435 |
+| `keycloak/keycloak-restore-proof.json` | `1792062056899533` | `1792062057280661` | 11,113 |
+| `openbao/openbao-restore-proof.json` | `1792062059912492` | `1792062061083724` | 10,858 |
+| `memories/memories-restore-proof.json` | `1792062058977015` | `1792062059296317` | 11,940 |
+
+Each signature is 314 bytes. The eight readbacks at **11:22:01–02 UTC** match
+their unchanged approved record/signature SHA-256 values, AES256, COMPLIANCE
+lock and matching future retention API dates. This resume also freshly matched
+the four original policy/cleanup versions and both signed gate versions:
+**14 exact immutable objects** total, read at **11:22:00–03 UTC**. The ledger
+has 14 entries, SHA-256
+`0037f3c942495d46799725859ecf6f81819e512792e85e228485d86182312850`.
+The [sanitized unsigned receipt](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t112105z-signed-recovery-reconcile/verification.json)
+records every exact hash, length, version and retention result.
+
+Concurrent work already created, signed and published backup gate SHA-256
+`c23f0d12067a4eff0379af8a811ab8ae693b02304b897b570802fccd90356695`
+(record version `1792062557997233`, signature version `1792062558367544`).
+The retained **non-dry** validator completed at **11:12:03 UTC**, exit **0**:
+**4,809/4,809 checks pass**, zero failures/skips; **4,714/4,714 manifest versions**
+reread and matching. Existing validation SHA-256 is
+`b269db6ab85f3a99d27560742921f0192d41925d9a3fe2bebd3adc95c6b234ae`.
+These are inspected concurrent executor outcomes; this resume repeated none
+of those stages and did not rerun the 4,714-version scan.
+
+Approved original bindings (98 files), 73 manifest local evidence files,
+proof results/RPO **29s / 127s / 86s**, isolation and accepted OIDC provenance
+pass. Current native guards preserve four source namespace UIDs, all **15**
+PVC/PV bindings and CNPG identity/watch scope. Recorded isolated namespaces,
+target volume names/UIDs/claims and temporary copies remain absent; Memories
+intake is **2/2** ready. The original failed OIDC bytes and original tools remain
+unchanged. Policy age at completion was **85,286.728436s < 86,400s**.
+
+**Next unresolved prerequisite:** the Administrator's honest current **M1/M2
+attestation and final validation signature**, using the existing
+[guarded protected-terminal action](/home/administrator/hexalith-retirement-investigation-evidence/20261015t110948z-s427-signed-gate-final-validation/NEXT-PROTECTED-SIGNING-ACTION.md),
+SHA-256 `b5e75109e23f2dec7c900ab7d95dc84d5c7e99ebc203a433783d6fce22c65628`.
+Its 118-file local guard and Bash syntax pass. The concurrent current M1
+observation at **11:14:28 UTC** matches both post-copy run IDs; M2 at
+**11:16:14 UTC** passes authenticated IAM policy/group and exact bucket-policy
+checks with zero writes/delete attempts. Their receipts deliberately retain
+`finalManualAttestation=false`. At **11:23:40 UTC**, both M1 source pods still
+match their recorded UIDs, are ready and have zero container restarts. The
+local final signature and owner final-signing preflight remain absent; both
+final-validation provider keys return **404**. Review the existing observations
+and private validation; only an honest Administrator signature supplies the
+required attestation. No protected-terminal action was dispatched here.
+After actual signing/publication, authenticate the final original signature,
+obtain both exact immutable readbacks, and recheck all bindings and freshness
+before accepting recovery.
+
+The policy/gate deadline remains **2026-10-15T11:40:42Z (13:40:42 Europe/Paris)**.
+If it lapses, preserve this RID and stop. The exact refresh prerequisite is
+separate authorization for a fresh recovery policy/bundle with current source,
+capture, isolated restore, cleanup, manifest/proofs, authentic signatures and
+immutable readbacks, non-dry validation and honest M1/M2 evidence. New readbacks,
+re-signing, a later maintenance window or timestamp edits cannot refresh this
+policy. No automatic replacement RID or completed-stage replay is authorized.
+
+This resume issued **zero remote writes, signatures or stage replays**. Raw
+diagnostics remain encrypted, with no recipient-decryption claim. Existing
+changes, scope/incident decisions, October 7–31 window, roles and historical
+failures are preserved. Retirement, upgrades and deployment retain separate
+exact approvals. Fresh recovery is still unaccepted; spec-23 stays draft,
+4.27/Story 3.6/Epic 3 stay in progress, 4.1 stays closed and release stays
+**FAIL**. Earlier checkpoints retain their original capture times and scope.
+
+## Current signature and publication barrier — 2026-10-15 10:20 UTC
+
+At Timesheets `c2aaef44cb7163baee26746b4f6ddc25ba29c08d`, this read-only
+resume reconciled the separate Platform owner checkout
+`55bee680e6901a45946dd8bf1e4a4060952bd7ea` and its concurrent signing-access
+checkpoint before writing. The replacement checkpoint at 10:19:14 UTC reports
+that the earlier empty agent expired, a replacement awaits private key unlock,
+and zero signing attempts ran. That is concurrent owner progress, not an action
+of this Timesheets resume. Platform's existing working changes remain untouched.
+
+**The manifest and three restore proofs are still unsigned and unpublished.**
+Independent checks finished at **2026-10-15T10:20:44.986852Z**. All four local
+signatures are absent, the uploads ledger retains exactly four entries at
+SHA-256 `96cce774cd8888a7aafcf621de554e944b817170c3d56b5a192c26884ca3d195`,
+and validator HEAD requests for all eight prepared record/signature keys return
+**404**. The prior signing claim and the expired-agent failure remain historical
+evidence. A further read-only version-list check at **10:24:21 UTC** confirms
+**zero immutable versions and zero delete markers for all eight exact keys**,
+so the 404 responses conceal no prior publication. Its [separate receipt](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t101936z-recovery-readonly-resume/publication-version-presence.json)
+records each exact-key count. No signing was attempted and no known unlock refusal was replayed.
+
+The original policy and cleanup signatures authenticate under the pinned
+Administrator ED25519 key and `hexalith-recovery` namespace. Fresh validator
+HEAD/GET/retention reads match the exact original versions and bytes:
+
+| Record beneath `evidence/4-0/20261014t112353z/` | Provider version | Bytes | Current readback UTC |
+| --- | --- | --- | --- |
+| `policy/recovery-policy.json` | `1791981906616560` | 17,780 | 10:20:38 |
+| `policy/recovery-policy.json.sig` | `1791981907303892` | 314 | 10:20:38 |
+| `cleanup/restore-target-cleanup.json` | `1792053509510188` | 9,535 | 10:20:38 |
+| `cleanup/restore-target-cleanup.json.sig` | `1792053509947219` | 314 | 10:20:39 |
+
+All four match local SHA-256, AES256 and COMPLIANCE retention with matching,
+future retention API dates. Original exact-byte/custody/freshness guards pass.
+The four protected namespace UIDs, all **15** source PVC/PV bindings and CNPG
+controller UID/watch scope remain unchanged. Recorded isolated namespaces,
+target volume names/UIDs/claims and temporary secret copies remain absent;
+resumed Memories intake has **2/2** ready replicas. The existing manifest's
+**73** local evidence files match; its historical **4,714** object-version
+readback was not replayed. Three existing proof results and exact bindings
+still pass (RPO **29s / 127s / 86s**). No capture, restore, cleanup, manifest or
+proof generation was repeated.
+
+**Next unresolved prerequisite:** complete the existing
+[guarded protected-terminal action](/home/administrator/hexalith-retirement-investigation-evidence/20261015t084001z-s427-signed-cleanup-continuation/NEXT-PROTECTED-SIGNING-ACTION.md)
+for the four exact existing records. Its SHA-256 remains
+`a4cb7d9ce0ff2ccc51332e93bb4ab5525fc42a0417b2a20de0fd3b39d7873bfe`;
+guard SHA-256 remains
+`630f42e092adb467b10fedfce05ec3aa91b6a6f575d55c70c85db378cf119b06`.
+Reconcile any concurrent signing result before starting a signer. The separate
+[replacement unlock handoff](/home/administrator/hexalith-retirement-investigation-evidence/20261015t101550z-s427-delegated-four-signatures-recovery/UNLOCK-AND-CONTINUE.md)
+retains the same four-record delegation and needs only private key unlock;
+this run did not load, replace or use that agent. Never run competing signing
+paths. After actual signing/publication, authenticate all four original
+signatures and obtain all eight exact-version immutable readbacks before
+creating/signing the backup gate. Then run non-dry final validation and require
+**honest current Administrator M1/M2 checks and final attestation/signature**;
+historical preparations cannot substitute. The gate and validation are absent,
+and neither was dispatched at this missing-signature barrier.
+
+Policy age at this check was **81,595.567865 seconds**; the first immutable
+freshness deadline remains **2026-10-15T11:40:42Z (13:40:42 Europe/Paris)**.
+No evidence had expired during this check. If the policy expires, preserve this
+RID and stop: a separately authorized fresh recovery policy/bundle with current
+source/capture/restore/proof evidence is required. A new readback, re-signing,
+maintenance window or timestamp edit cannot refresh this policy; no automatic
+capture/restore replay or replacement RID is authorized here.
+
+The [unsigned verification receipt](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t101936z-recovery-readonly-resume/verification.json)
+retains exact checks, command, source identities and private reconciliation
+hash. Private raw diagnostics are encrypted; no recipient-decryption readback
+is claimed. Current original tool, incident, failed OIDC, source and historical
+checkpoint bytes are preserved. This run issued **zero remote writes**, stage
+replays, signatures, gate or non-dry validation dispatches. Existing scope,
+incident decisions, October 7–31 window and Administrator roles remain in force
+within their existing limits. Accepted fresh recovery remains false. Retirement,
+upgrades, node/etcd work and deployment keep their separate exact approvals.
+Spec-23 stays draft; Platform 4.27 and Timesheets 3.6/Epic 3 stay in progress,
+4.1's operational gate stays closed and Timesheets release remains **FAIL**.
+Earlier checkpoints below retain their capture times and evidence limits.
+
 ## Signed cleanup and concurrent records reconciled — 2026-10-15
 
 This resume starts at Timesheets `c9f71a9fc8db778ab364a955d0b30afde3104204`

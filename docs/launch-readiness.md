@@ -2,6 +2,33 @@
 
 Timesheets is neither story-complete nor launch-complete: Story 3.6 remains in progress, Story 5.2 remains in progress, and the final Story 5.1 reconciliation remains ready for development. This record classifies committed evidence at baseline `b0c41aaa3ad899ca13d49cd66e4f26f3b8e3ae5f` on 2026-06-26 and distinguishes concrete implemented behavior from unavailable defaults, skipped lanes, deferred integrations, package-currency evidence, and post-v1 decisions.
 
+The latest **11:29 UTC** reconciliation authenticates the concurrent final
+Administrator M1/M2 attestation/signature and all eight signed originals, with
+fresh matches for **16** exact immutable record/signature versions. Non-dry
+validation passed **4,809/4,809**, all **4,714** manifest versions matching.
+Fresh Story 4.0 recovery is accepted **only until 2026-10-15T11:40:42Z**.
+The [current handoff](deployed-magic-link-platform-candidate-recheck.md#fresh-signed-recovery-accepted-within-deadline--2026-10-15-1129-utc)
+names fresh 4.1 external-etcd/node/configuration recovery and independent
+recovered-native access as the next separately scoped prerequisite; preparation
+supplies no operational proof. On expiry preserve this RID and obtain separate
+exact authorization for fresh recovery; no timestamp extension or automatic
+replacement/replay. Retirement, upgrades and deployment keep separate exact
+approvals. Story 3.6/Epic 3 and 4.27 stay in progress, 4.1 stays closed, spec-23
+stays draft and release remains **FAIL**. Barriers below retain their dates.
+
+The **2026-10-15 11:24 UTC** recovery reconciliation supersedes the dated
+missing-signature barriers below. All four manifest/proof signatures and
+publications exist; seven input signatures and all eight requested immutable
+versions independently verify. The signed backup gate and concurrent non-dry
+validation (**4,809/4,809**, **4,714** matching manifest versions) are complete.
+Current M1/M2 preparation passes; the Administrator's honest final attestation
+and validation signature remain missing. See [the current barrier](deployed-magic-link-platform-candidate-recheck.md#signed-recovery-reconciled-final-attestation-pending--2026-10-15-1124-utc)
+for exact results and the existing protected action. Deadline remains
+**2026-10-15T11:40:42Z**; expiry requires separately authorized fresh recovery,
+preserving this RID. No completed stage was replayed. Retirement, upgrades and
+deployment retain separate exact approvals. Spec-23 stays draft, Story 3.6/Epic 3
+stay in progress, 4.1 stays closed and release remains **FAIL**.
+
 The 2026-10-15 recovery checkpoint verifies authentic policy/cleanup signatures,
 four current immutable readbacks and preserved source/cleanup identities.
 The existing manifest and three restore proofs still need Administrator
@@ -14,6 +41,14 @@ exact approvals. No deployed acceptance gate closes. Spec-23 remains draft,
 Story 3.6/Epic 3 remain in progress and release remains **FAIL**.
 
 Related evidence:
+
+The newer **10:20 UTC** reconciliation confirms all four manifest/proof
+signatures and publications remain absent (eight provider HEADs **404**).
+Current original signatures/readbacks, all 15 protected storage bindings and
+resumed intake pass. Backup-gate signing, non-dry validation and honest current
+Administrator M1/M2 remain pending. See [the current signature barrier](deployed-magic-link-platform-candidate-recheck.md#current-signature-and-publication-barrier--2026-10-15-1020-utc)
+for exact results, the existing protected action and unchanged freshness limit.
+This supplies no deployed acceptance or release-gate closure.
 
 - `docs/performance-evidence.md` records NFR10/NFR11 measured in-process performance evidence and the deferred EventStore-backed wire-path waiver.
 - `docs/boundary-decision-record.md` records the owns-vs-references boundary and the fail-closed sibling-module integration defaults.

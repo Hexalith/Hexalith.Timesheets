@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-10-15T11:32:51.465949+00:00",
+  "correctedLocalAuditFailure": {
+    "actualFailure": "AssertionError: /home/administrator/hexalith-retirement-investigation-evidence/20261015t112105z-s427-timesheets-signed-records-reconcile/preservation-after.json",
+    "check": "final local evidence preservation/custody script",
+    "command": [
+      "python3",
+      "-"
+    ],
+    "correction": "Set only the newly created unsigned preservation-after.json audit summary to mode 0600; no content or recovery input changed.",
+    "exitCode": 1,
+    "observedFiles": [
+      {
+        "mode": "0o644",
+        "path": "/home/administrator/hexalith-retirement-investigation-evidence/20261015t112105z-s427-timesheets-signed-records-reconcile/preservation-after.json"
+      }
+    ],
+    "operationalCommandsDispatchedAfterFailure": 0,
+    "recordedAt": "2026-10-15T11:32:15.878436+00:00"
+  },
+  "finalRecoveryAcceptedAsOf": "2026-10-15T11:28:43.800962+00:00",
+  "focusedTests": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor",
+    "durationSeconds": 0.122,
+    "errors": 0,
+    "exitCode": 0,
+    "failed": 0,
+    "notRun": 0,
+    "passed": 13,
+    "skipped": 0,
+    "total": 13
+  },
+  "nextUnresolvedPrerequisite": "Separately scoped fresh Story 4.1 external-etcd/node/configuration recovery contract and independent recovered-native access. Later retirement, upgrades and deployment require separate exact approvals.",
+  "noBroadBuildSuiteJourney": true,
+  "noStageReplaySigningOrRemoteWrites": true,
+  "notExpiredAtThisCheck": true,
+  "preservation": {
+    "changedTimesheetsDocuments": [
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/3-6-resume-checkpoint.md",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "/home/administrator/projects/hexalith/timesheets/docs/deployed-magic-link-platform-candidate-recheck.md",
+      "/home/administrator/projects/hexalith/timesheets/docs/launch-readiness.md"
+    ],
+    "concurrentExternalAppendOnlyFiles": [
+      "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/4-27-retire-kubesphere-without-changing-workload-data.md",
+      "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/spec-4-27-retire-kubesphere-without-changing-workload-data.md",
+      "/home/administrator/projects/hexalith/platform/eng/cluster-management/NEXT-OPERATOR-ACTION.md",
+      "/home/administrator/projects/hexalith/platform/eng/cluster-management/STAGING-PREREQUISITES.md",
+      "/home/administrator/projects/hexalith/platform/eng/timesheets-deployment/staging-dependency-handoff.md"
+    ],
+    "indexUnchanged": true,
+    "originalTimesheetsContentPreservedByInsertionsOnly": true,
+    "priorSealedChecksumSetsUnchanged": true,
+    "priorUntrackedUnchanged": true,
+    "privateCustodyModesPass": true,
+    "unchangedSourceSnapshots": [
+      "/home/administrator/hexalith-retirement-investigation-evidence/20261015t084001z-s427-signed-cleanup-continuation/NEXT-PROTECTED-SIGNING-ACTION.md",
+      "/home/administrator/hexalith-retirement-investigation-evidence/20261015t084001z-s427-signed-cleanup-continuation/owner-signing-observation-stop.json",
+      "/home/administrator/hexalith-retirement-investigation-evidence/20261015t084001z-s427-signed-cleanup-continuation/records_signing_guard.py",
+      "/home/administrator/projects/hexalith/platform/eng/cluster-management/RETIRE-KUBESPHERE.md",
+      "/home/administrator/projects/hexalith/platform/eng/cluster-management/retire.py",
+      "/home/administrator/projects/hexalith/platform/eng/kubernetes-upgrade/MAINTENANCE.md",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md",
+      "/home/administrator/projects/hexalith/timesheets/docs/deployed-magic-link-acceptance.md"
+    ]
+  },
+  "validUntil": "2026-10-15T11:40:42Z",
+  "whitespace": {
+    "command": "git diff --check",
+    "exitCode": 0
+  }
+}

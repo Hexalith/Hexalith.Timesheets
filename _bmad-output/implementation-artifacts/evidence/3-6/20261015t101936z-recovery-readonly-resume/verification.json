@@ -1,0 +1,224 @@
+{
+  "AdministratorM1M2FinalAttestationSupplied": false,
+  "Story4_1GateOpen": false,
+  "Story4_27Accepted": false,
+  "Timesheets3_6Accepted": false,
+  "acceptedFreshRecovery": false,
+  "allFourSignaturesAbsent": true,
+  "allReadOnlyChecksPass": true,
+  "approvedIncidentDecisionSha256": "28b45cc0a30de866ad6fc7946256c966897cef3a21265e645404111eab5906c5",
+  "concurrentReplacementCheckpoint": {
+    "notExecutedByThisRun": true,
+    "oldEmptyAgentExpired": true,
+    "path": "/home/administrator/hexalith-retirement-investigation-evidence/20261015t101550z-s427-delegated-four-signatures-recovery/verification.json",
+    "recordedAt": "2026-10-15T10:19:14.825156+00:00",
+    "replacementAgentExpiresNoLaterThan": "2026-10-15T11:40:42Z",
+    "signingAttempts": 0
+  },
+  "diagnosticCiphertextSha256": "9ae87f256cb6f48839523ff574eb21efff969b7d8a006909d219847b45dc09bb",
+  "diagnosticPlaintextSha256": "829419258dc4570d49e9aeb879750d3f2c212a5c0a81ca6564475ab7fc7feac3",
+  "existingManifestObjectVersionsNotReplayed": 4714,
+  "finishedAt": "2026-10-15T10:20:44.986852+00:00",
+  "firstFreshnessDeadline": "2026-10-15T11:40:42+00:00",
+  "freshOriginalImmutableReadbacks": [
+    {
+      "bytes": 17780,
+      "contentLength": 17780,
+      "etag": "90228444fcd20404208e6b00a74737fb",
+      "key": "evidence/4-0/20261014t112353z/policy/recovery-policy.json",
+      "lastModified": "2026-10-14T12:45:06Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-13T12:45:06Z",
+      "readAt": "2026-10-15T10:20:38Z",
+      "readBackSha256": "021a8c773366fc2cc5b36e5407e03fd0e0a4dca363df1da71704725443bdc85a",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-13T12:45:06Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1791981906616560"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "59815675f9ece2fc601c0c0f8ffcb81a",
+      "key": "evidence/4-0/20261014t112353z/policy/recovery-policy.json.sig",
+      "lastModified": "2026-10-14T12:45:07Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-13T12:45:07Z",
+      "readAt": "2026-10-15T10:20:38Z",
+      "readBackSha256": "7f5dc8431113f6f5a993ed7cefda5a427673a3334fff2a380d8a1a3eab715f0e",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-13T12:45:07Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1791981907303892"
+    },
+    {
+      "bytes": 9535,
+      "contentLength": 9535,
+      "etag": "abaffca894f2c8adae72c53be8557aaa",
+      "key": "evidence/4-0/20261014t112353z/cleanup/restore-target-cleanup.json",
+      "lastModified": "2026-10-15T08:38:29Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T08:38:29Z",
+      "readAt": "2026-10-15T10:20:38Z",
+      "readBackSha256": "3ae690daad23e6a0f028ab28ca023ba9a04d4c72f810d9129b117125d08d5b78",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T08:38:29Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792053509510188"
+    },
+    {
+      "bytes": 314,
+      "contentLength": 314,
+      "etag": "d07f22980b65ecbc639dfb194ed70468",
+      "key": "evidence/4-0/20261014t112353z/cleanup/restore-target-cleanup.json.sig",
+      "lastModified": "2026-10-15T08:38:29Z",
+      "objectLockMode": "COMPLIANCE",
+      "objectLockRetainUntil": "2026-11-14T08:38:29Z",
+      "readAt": "2026-10-15T10:20:39Z",
+      "readBackSha256": "c346a6a9692227302e4c804012bb1df2a0b1b3121f1c76a65a77c794bd6d280c",
+      "readBy": "validator",
+      "retentionApi": {
+        "mode": "COMPLIANCE",
+        "retainUntil": "2026-11-14T08:38:29Z"
+      },
+      "serverSideEncryption": "AES256",
+      "versionId": "1792053509947219"
+    }
+  ],
+  "gateAndValidationAbsent": true,
+  "gateDispatches": 0,
+  "isolatedTargetsAndTemporaryCopiesAbsent": true,
+  "kind": "hexalith.timesheets-current-recovery-reconciliation",
+  "manifestLocalEvidenceVerified": 73,
+  "memoriesIntakeReadyReplicas": 2,
+  "nextExpiryPrerequisite": "If the unchanged policy expires at 2026-10-15T11:40:42Z, stop this RID and preserve it. A separately authorized fresh recovery policy/bundle with current source/capture/restore/proof evidence is required; re-signing, new readbacks or a later maintenance window cannot refresh this policy.",
+  "nextUnresolvedPrerequisite": "Administrator protected-terminal signing/publication of the existing manifest and three restore proofs; authenticate original signatures and all eight exact immutable versions before backup-gate creation/signing. Later non-dry validation and honest current Administrator M1/M2 attestation/signature remain required.",
+  "noTimestampExtensions": true,
+  "nonDryValidationDispatches": 0,
+  "observedSeparatePlatformHead": "55bee680e6901a45946dd8bf1e4a4060952bd7ea",
+  "originalPolicyCleanupSignaturesAuthentic": true,
+  "pinnedFingerprint": "SHA256:8XlNQvE3ucPf/e509wU4qtNgiyWA+TKmLei7F7+TCvk",
+  "policyAgeSeconds": 81595.567865,
+  "preparedLocalGuardPass": true,
+  "preparedPairProviderPresence": {
+    "keycloak/keycloak-restore-proof.json": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    },
+    "keycloak/keycloak-restore-proof.json.sig": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    },
+    "manifest/evidence-manifest.json": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    },
+    "manifest/evidence-manifest.json.sig": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    },
+    "memories/memories-restore-proof.json": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    },
+    "memories/memories-restore-proof.json.sig": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    },
+    "openbao/openbao-restore-proof.json": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    },
+    "openbao/openbao-restore-proof.json.sig": {
+      "httpStatus": 404,
+      "present": false,
+      "providerCode": "404"
+    }
+  },
+  "preparedRecordHashes": {
+    "keycloak/keycloak-restore-proof.json": "f6570b31b4f138a2ffe2e44bfbb5c464d0462898ab7f496f795fa52a4c168734",
+    "manifest/evidence-manifest.json": "9d16ecb2c1074fa72e131bd448b1230bee2581d4877c83576c78d8b14365f9d2",
+    "memories/memories-restore-proof.json": "bc9725e06ab30fe02959b2db6370cfc58750e6420d05d9fa2b19f691326c1ee1",
+    "openbao/openbao-restore-proof.json": "fc61e1a0ef9f0a29c47f9c003bef73e7467ce08c35fcbef181d8a14acd481545"
+  },
+  "privateReceiptPath": "/home/administrator/hexalith-retirement-investigation-evidence/20261015t101936z-s427-timesheets-readonly-resume/reconciliation.json",
+  "privateReceiptSha256": "6d96d06f015ade9da3579473662ce24e3fcf4621cfa59167167619e80b334886",
+  "proofs": {
+    "keycloak": {
+      "expiresAt": "2026-10-15T13:06:48Z",
+      "measuredRpoSeconds": 29,
+      "sha256": "f6570b31b4f138a2ffe2e44bfbb5c464d0462898ab7f496f795fa52a4c168734",
+      "verificationResult": "pass"
+    },
+    "memories": {
+      "expiresAt": "2026-10-15T15:13:46Z",
+      "measuredRpoSeconds": 86,
+      "sha256": "bc9725e06ab30fe02959b2db6370cfc58750e6420d05d9fa2b19f691326c1ee1",
+      "verificationResult": "pass"
+    },
+    "openbao": {
+      "expiresAt": "2026-10-15T14:52:05Z",
+      "measuredRpoSeconds": 127,
+      "sha256": "fc61e1a0ef9f0a29c47f9c003bef73e7467ce08c35fcbef181d8a14acd481545",
+      "verificationResult": "pass"
+    }
+  },
+  "protectedAction": {
+    "guardSha256": "630f42e092adb467b10fedfce05ec3aa91b6a6f575d55c70c85db378cf119b06",
+    "path": "/home/administrator/hexalith-retirement-investigation-evidence/20261015t084001z-s427-signed-cleanup-continuation/NEXT-PROTECTED-SIGNING-ACTION.md",
+    "sha256": "a4cb7d9ce0ff2ccc51332e93bb4ab5525fc42a0417b2a20de0fd3b39d7873bfe"
+  },
+  "protectedSource": {
+    "afterCleanup": true,
+    "allPass": true,
+    "controllerUid": "f0a3408a-825a-45ac-82ab-aae0bd792c84",
+    "sourceBindingCount": 15,
+    "targetCount": 0,
+    "watchNamespace": [
+      "keycloak,cnpg-system"
+    ]
+  },
+  "readOnlyCommand": [
+    "env",
+    "-u",
+    "PYTHONOPTIMIZE",
+    "PYTHONDONTWRITEBYTECODE=1",
+    "uv",
+    "run",
+    "--offline",
+    "--quiet",
+    "--no-project",
+    "--with",
+    "boto3",
+    "python",
+    "/home/administrator/hexalith-retirement-investigation-evidence/20261015t101936z-s427-timesheets-readonly-resume/reconcile.py"
+  ],
+  "readOnlyCommandExitCode": 0,
+  "recipientDecryptionReadbackClaimed": false,
+  "recoveryId": "20261014t112353z",
+  "remoteWrites": 0,
+  "scopeWindowRolesIncidentDecisionUnchanged": true,
+  "signingAttempts": 0,
+  "stageReplays": 0,
+  "startedAt": "2026-10-15T10:20:37.431936+00:00",
+  "timesheetsHead": "c2aaef44cb7163baee26746b4f6ddc25ba29c08d",
+  "unsignedOperatorObservation": true,
+  "uploadLedgerEntries": 4,
+  "uploadLedgerSha256": "96cce774cd8888a7aafcf621de554e944b817170c3d56b5a192c26884ca3d195"
+}

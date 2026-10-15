@@ -23,6 +23,72 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+### Fresh signed recovery accepted within deadline — 2026-10-15 11:29 UTC
+
+Concurrent final signing/publication completed at **11:25:38 UTC**. Independent
+verification at **11:28:43 UTC** authenticates eight original signatures,
+including honest final M1/M2 attestation, and freshly matches all **16** exact
+immutable record/signature versions. Full bindings, source preservation and
+freshness pass. Non-dry validation is **4,809/4,809**, all **4,714** manifest
+versions matching. Fresh Story 4.0 recovery is accepted **only until
+2026-10-15T11:40:42Z**; no completed stage or signer was replayed.
+
+The [current handoff](../../docs/deployed-magic-link-platform-candidate-recheck.md#fresh-signed-recovery-accepted-within-deadline--2026-10-15-1129-utc)
+now names separately scoped fresh **4.1 external-etcd/node/configuration recovery
+and independent recovered-native access** as the next prerequisite, before
+current retirement qualification/plan/exact approval. Offline preparation is
+not operational proof. If expired, preserve this RID and require separate exact
+authorization for fresh recovery; no timestamp extension or automatic
+replacement/replay. Scope/incident/window/roles, existing changes and historical
+failures persist. Retirement, upgrades and deployment retain separate exact
+approvals. Spec-23 stays draft; 4.27/Story 3.6/Epic 3 stay in progress, 4.1 stays
+closed and release stays **FAIL**. Earlier barriers below are dated observations.
+
+### Final recovery attestation barrier — 2026-10-15 11:24 UTC
+
+Concurrent work signed/published the manifest and three proofs, signed the
+backup gate and passed non-dry validation **4,809/4,809**, with all **4,714**
+manifest versions matching. Independent reconciliation at **11:22:08 UTC**
+authenticates seven original input signatures and freshly matches all eight
+requested exact immutable versions (14 objects including policy/cleanup/gate).
+Approved bytes and current source/cleanup guards pass. No completed stage was
+replayed; the replacement signer completed and stopped.
+
+The next unresolved prerequisite is the Administrator's honest current M1/M2
+attestation and final validation signature through the existing
+[protected-terminal action](../../docs/deployed-magic-link-platform-candidate-recheck.md#signed-recovery-reconciled-final-attestation-pending--2026-10-15-1124-utc).
+Current M1/M2 preparation passes but remains unattested. At **11:23:40 UTC**,
+the final signature/preflight are absent and both final provider keys return
+**404**. Deadline: **2026-10-15T11:40:42Z**. Expiry requires separate exact
+authorization for a fresh recovery policy/bundle and current evidence; preserve
+this RID, timestamps and all historical failures. Scope/incident/window/roles
+and existing changes remain intact. Retirement, upgrades and deployment retain
+separate approvals. Spec-23 stays draft, 4.27/Story 3.6/Epic 3 stay in progress,
+4.1 stays closed and release stays **FAIL**. Earlier checkpoints below retain
+their original dates and evidence limits.
+
+### Current recovery barrier — 2026-10-15 10:20 UTC
+
+The independent read-only check finished at **2026-10-15T10:20:44.986852Z**:
+the manifest and three restore proofs remain unsigned and unpublished (all
+eight provider HEADs **404**, unchanged four-entry ledger). Policy/cleanup
+signatures authenticate; their four exact immutable versions freshly match.
+All 15 protected storage bindings, source/controller identities, target absence
+and Memories 2/2 readiness pass. Existing records were inspected without replay.
+The next input is the Administrator's existing guarded protected-terminal
+signing/publication action; reconcile the concurrent replacement-agent unlock
+checkpoint before any signer. Gate creation/signing, non-dry validation and
+honest current Administrator M1/M2 attestation/signature remain pending.
+Policy freshness still ends **2026-10-15T11:40:42Z**; preserve expired evidence
+and obtain separately authorized fresh recovery prerequisites if it lapses.
+Existing scope/incident/window/roles, changes and historical failures are
+preserved. Retirement, upgrades and deployment retain separate exact approvals.
+Spec-23 stays draft, 4.27/Story 3.6/Epic 3 stay in progress, 4.1 stays closed and
+release remains **FAIL**.
+
+[Exact results and next protected action](../../docs/deployed-magic-link-platform-candidate-recheck.md#current-signature-and-publication-barrier--2026-10-15-1020-utc)
+retain current source identities and concurrent attribution.
+
 ### Recovery checkpoint — 2026-10-15
 
 The 2026-10-15 recovery resume verified authentic policy/cleanup signatures and

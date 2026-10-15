@@ -1,0 +1,42 @@
+{
+  "allEightKeysHaveNoVersionsOrDeleteMarkers": true,
+  "encryptedDiagnosticsSha256": "dd34d099ee56deaf671bba4ff0ca6ba444127b599c661141cf9faabd21690217",
+  "finishedAt": "2026-10-15T10:24:21.302868+00:00",
+  "keys": {
+    "keycloak/keycloak-restore-proof.json": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    },
+    "keycloak/keycloak-restore-proof.json.sig": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    },
+    "manifest/evidence-manifest.json": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    },
+    "manifest/evidence-manifest.json.sig": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    },
+    "memories/memories-restore-proof.json": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    },
+    "memories/memories-restore-proof.json.sig": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    },
+    "openbao/openbao-restore-proof.json": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    },
+    "openbao/openbao-restore-proof.json.sig": {
+      "deleteMarkers": 0,
+      "immutableVersions": 0
+    }
+  },
+  "kind": "hexalith.prepared-recovery-pairs-immutable-publication-history",
+  "remoteWrites": 0,
+  "startedAt": "2026-10-15T10:24:20.481198+00:00"
+}
