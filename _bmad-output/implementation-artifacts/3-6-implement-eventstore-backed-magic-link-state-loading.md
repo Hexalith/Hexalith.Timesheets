@@ -23,6 +23,31 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+### Expired recovery; offline prerequisite preparation — 2026-10-15
+
+Recovery `20261014t112353z` expired at **11:40:42 UTC**. Offline reconciliation
+at **14:12:04 UTC** authenticates all eight unchanged originals and preserves
+the historical 4,809-check validation, 4,714 manifest readbacks and 16 signed-
+record readbacks. Concurrent preparation, its 13 archived inputs, four October 1
+scripts and 162-file preservation inventory match; no current provider/source
+freshness is claimed. The [current handoff](../../docs/deployed-magic-link-platform-candidate-recheck.md#expired-recovery-and-offline-prerequisite-preparation--2026-10-15)
+names separate exact authorization for fresh **4.0** recovery as the first
+prerequisite, before operational 4.1 external-etcd/node recovery and independent
+recovered-native access. Reuse concurrent offline preparation and preserve all
+old evidence; no timestamp extension, automatic replacement or completed-stage
+replay. Existing scope, incident decisions, window, roles and changes persist.
+Retirement, upgrades and deployment keep separate approvals. Spec-23 stays
+draft; 4.27/Story 3.6/Epic 3 remain in progress, 4.1's operational gate closed
+and Timesheets release **FAIL**. No operational action ran.
+
+The reconciled [reviewed packet](/home/administrator/hexalith-retirement-investigation-evidence/20261015t140709z-s427-expired-recovery-preparation/TIMESHEETS-REVIEWED-PACKET.md)
+now supplies exact frozen source/bindings, custody/readback and stop/cleanup
+requirements, with **26/26 offline tests** and **13/13 existing launch-readiness
+tests** passing. Actual readiness refuses the expired 4.0 prerequisite, exit
+**1**, with no timestamp change. Original concurrent packets and all failures
+are retained. The [next authorization request](evidence/3-6/20261015t141204z-expired-recovery-preparation/NEXT-PREREQUISITE.md)
+is separate fresh 4.0 preparation; no replacement bundle was allocated.
+
 ### Fresh signed recovery accepted within deadline — 2026-10-15 11:29 UTC
 
 Concurrent final signing/publication completed at **11:25:38 UTC**. Independent

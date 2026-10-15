@@ -1,5 +1,39 @@
 # Story 3.6 resume checkpoint — 2026-10-14
 
+## Expired recovery; offline preparation reconciled — 2026-10-15
+
+Resume checkpoint `8f9b405c8de33ded25d018cf59194e5a578fa916`. Recovery
+`20261014t112353z` expired at **2026-10-15T11:40:42Z**; preserve its originals,
+signatures, acceptance/readback history and failures. Offline reconciliation
+at **14:12:04 UTC** authenticates all eight unchanged original signatures,
+matches 16 original/21 supplemental preparation checksums, 13 archived inputs
+and four historical scripts. All 162 concurrent preservation files match at
+**14:14:50 UTC**. These checks perform no current provider or source reads.
+
+The [current handoff](../../docs/deployed-magic-link-platform-candidate-recheck.md#expired-recovery-and-offline-prerequisite-preparation--2026-10-15)
+reuses concurrent preparation and names the next prerequisite: **separate exact
+authorization for fresh 4.0 policy/bundle and current signed recovery**, before
+operational 4.1 external-etcd/node recovery and independent recovered access.
+No replacement bundle is allocated and no completed stage, original preparer
+or expiry audit is replayed. Preserve the October 1 scripts; their hardcoded
+identities preclude reuse. Retain existing scope/incident/window/roles within
+their exact limits; retirement, upgrades and deployment keep separate approvals.
+No capture, restore, decryption, infrastructure mutation, signing or publication
+runs. Spec-23 stays draft; 4.27/Story 3.6/Epic 3 stay in progress, 4.1's
+operational gate closed and release **FAIL**. Earlier checkpoints retain their
+dated meanings.
+
+The final [reviewed packet](/home/administrator/hexalith-retirement-investigation-evidence/20261015t140709z-s427-expired-recovery-preparation/TIMESHEETS-REVIEWED-PACKET.md)
+freezes the reconciled source and binding revision; original packets remain
+unchanged. **26/26 offline tests**, isolated-launcher/startup-hook checks and
+**13/13 existing launch-readiness tests** pass. Actual readiness at
+**14:41:10 UTC** refuses the unchanged expired prerequisite, exit **1**.
+Thirty scoped checksums and all 162 historical files match. Earlier local
+failures, including the intermediate concurrent 19-test/14-failure fixture
+stop, are retained. [Exact results](evidence/3-6/20261015t141204z-expired-recovery-preparation/verification.json)
+and the [fresh 4.0 authorization request](evidence/3-6/20261015t141204z-expired-recovery-preparation/NEXT-PREREQUISITE.md)
+are concrete; no operational acceptance or release-gate closure is supplied.
+
 ## Fresh signed recovery accepted within deadline — 2026-10-15 11:29 UTC
 
 The concurrent Administrator final signature was published at **11:25:38 UTC**.

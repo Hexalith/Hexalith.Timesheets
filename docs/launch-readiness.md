@@ -2,6 +2,20 @@
 
 Timesheets is neither story-complete nor launch-complete: Story 3.6 remains in progress, Story 5.2 remains in progress, and the final Story 5.1 reconciliation remains ready for development. This record classifies committed evidence at baseline `b0c41aaa3ad899ca13d49cd66e4f26f3b8e3ae5f` on 2026-06-26 and distinguishes concrete implemented behavior from unavailable defaults, skipped lanes, deferred integrations, package-currency evidence, and post-v1 decisions.
 
+The **2026-10-15 expired-recovery checkpoint** supersedes current use of the
+historical acceptance below: recovery `20261014t112353z` expired at
+**11:40:42 UTC**. All eight original signatures remain authentic; the actual
+validation/readback and failure history are preserved. Concurrent offline
+preparation is reused and grants no operational acceptance. The [current
+handoff](deployed-magic-link-platform-candidate-recheck.md#expired-recovery-and-offline-prerequisite-preparation--2026-10-15)
+requires separate exact authorization for fresh **4.0** policy/bundle and
+signed recovery before operational **4.1** external-etcd/node/configuration
+recovery and independent recovered-native access. No replacement bundle is
+allocated, no timestamp extended, and no completed stage replayed. Existing
+scope/incident/window/roles and separate retirement/upgrade/deployment approvals
+remain in force within their exact limits. Spec-23 stays draft; 4.27/Story 3.6/
+Epic 3 stay in progress, 4.1's operational gate closed and release **FAIL**.
+
 The latest **11:29 UTC** reconciliation authenticates the concurrent final
 Administrator M1/M2 attestation/signature and all eight signed originals, with
 fresh matches for **16** exact immutable record/signature versions. Non-dry

@@ -1,5 +1,96 @@
 # Story 3.6 Platform candidate recheck — 2026-10-14
 
+## Expired recovery and offline prerequisite preparation — 2026-10-15
+
+This continuation resumes Timesheets checkpoint
+`8f9b405c8de33ded25d018cf59194e5a578fa916` and reconciles the existing owner
+packet before dispatch. Recovery `20261014t112353z` **expired at
+2026-10-15T11:40:42Z**. Its accepted signing/validation history below remains
+valid historical evidence; it supplies no current operational gate.
+
+The concurrent owner-only `20261015t140709z-s427-expired-recovery-preparation`
+audit at **14:08:06 UTC** recomputed that earliest deadline from the signed
+policy, manifest, cleanup and proofs, with basis `policy.preparedAt`. The first
+local harness failure and corrected audit are both preserved. This Timesheets
+continuation independently authenticated all **eight unchanged original
+signatures at 14:12:04 UTC**, verified **16** original and **21** supplemental
+preparation checksums, all **13** archived inputs and all **four** historical
+October 1 scripts. At **14:14:50 UTC**, all **162** concurrent preservation
+inventory files still matched. Historical non-dry validation remains
+**4,809/4,809**, with **4,714** manifest-version readbacks and **16** retained
+independent signed-record readbacks. Current provider/source freshness was not
+revalidated. The [unsigned reconciliation receipt](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t141204z-expired-recovery-preparation/reconciliation.json)
+records these offline checks and their limits.
+
+The concrete [guarded recovery procedure](/home/administrator/projects/hexalith/platform/eng/kubernetes-upgrade/GUARDED-RECOVERY-PREPARATION.md)
+binds the known source and attempt-scoped proposed targets, source-revision
+comparisons, encryption/custody, exact immutable readbacks, recovered authority,
+bounded stops and target-only cleanup. Unmeasured identities and uncovered
+actions remain closed blockers. Its local readiness guard has no operational
+mode: metadata consistency cannot authenticate a signature, grant authority or
+open a gate. Synthetic test signatures and versions supply offline boundary
+coverage only.
+
+The existing unsigned preparation
+`20261015t112841z-post-40-recovery-prerequisite` and concurrent guard preparation
+are reused. Their original records, source archive and checksums are preserved;
+the metadata-only preparer and expiry audit are not replayed. The four October 1
+capture/restore/signing scripts hardcode old identities and remain unusable for
+a new attempt. No replacement recovery bundle has been allocated.
+
+**The next unresolved prerequisite is separate exact authorization for fresh
+Story 4.0 recovery**, including a newly bound policy/bundle and current reviewed
+source/tool/custody bindings. Its required sequence is policy signature and
+independent immutable readback before any capture, then current workload
+capture/isolated restore/verification, approved conditional resume, cleanup,
+actual signed records and readbacks, gate, non-dry validation and honest final
+Administrator M1/M2 attestation/signature/readback. Preserve the accepted OIDC
+correction and split Memories safeguards when preparing new exact bindings;
+old RID approval and completed four-record signing delegation do not authorize
+their reuse or a replacement. Never extend timestamps or replay completed
+stages to refresh this expired RID.
+
+Fresh accepted 4.0 must precede operational use of the prepared **4.1 external-
+etcd point, fenced isolated restore, encrypted node/configuration recovery and
+independent recovered-native/SSH/break-glass access**. Their exact capture,
+decryption, target, publication, signing and cleanup scopes require demonstrable
+authorization. Protected recipient/unlock input belongs in its private terminal;
+no new native grant is inferred. Next come current source-bound retirement
+qualification/plan and exact retirement approval, later fresh post-retirement
+recovery and separately approved upgrade gates, and separately approved
+Timesheets enrollment/deployment. Existing destination/principal, incident
+history, October 7–31 window, roles and scope decisions persist within their
+exact limits. The window ends exclusively **2026-10-31T23:00:00Z** and cannot
+extend recovery freshness.
+
+This continuation performs no capture, restore, decryption, infrastructure
+mutation, signing or publication. Spec-23 stays draft; **4.27/Story 3.6/Epic 3
+remain in progress, 4.1's operational gate closed and Timesheets release FAIL**.
+Production release/provider/source/deployed-acceptance and default-deny gates
+remain unresolved. Earlier dated checkpoints below are preserved.
+
+The final [reviewed packet](/home/administrator/hexalith-retirement-investigation-evidence/20261015t140709z-s427-expired-recovery-preparation/TIMESHEETS-REVIEWED-PACKET.md)
+pins frozen copies of the exact repository procedure/guard/tests and preserves
+the original concurrent bindings/helper. The reviewed binding SHA-256 is
+`80bcbc6592e3c5918bf79b2b689c8d27bf53d9faa49d73e2dd1fda23dd9db08e`.
+Its **30 scoped checksums** match. All **26 offline tests passed in 1.142s**,
+zero skips, with unchanged source hashes before/after. The hash-checked
+`-I -S -B` helper passes syntax and blocks a synthetic Python startup hook.
+Actual readiness at **14:41:10 UTC** exits **1** with
+`workload recovery expired or future`, the unchanged **11:40:42 UTC** deadline
+and a closed gate. No current source or provider evidence is inferred.
+
+At **14:43:26 UTC**, all 162 historical files and eight signed original pairs
+still match, including the failed OIDC original. The existing Timesheets
+launch-readiness lane passed **13/13 in 0.126s** on SDK **10.0.401**, matching
+`global.json`. Three independent review layers were triaged; metadata safety
+and coverage gaps are corrected. Preliminary assertion failures and the
+concurrent **19-test / 14-failure** intermediate fixture stop remain preserved
+alongside the final passing frozen-source run. The [sanitized final receipt](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t141204z-expired-recovery-preparation/verification.json)
+records exact hashes, results, attribution and limits. The [remaining authorization request](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t141204z-expired-recovery-preparation/NEXT-PREREQUISITE.md)
+is for fresh 4.0 preparation; no new signing unlock is requested before that
+actual prerequisite. Original retirement acceptance remains incomplete.
+
 ## Fresh signed recovery accepted within deadline — 2026-10-15 11:29 UTC
 
 Concurrent Administrator progress completed the existing final guarded action:

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "kind": "hexalith.final-offline-preparation-preservation",
+  "timesheets": {
+    "observedAt": "2026-10-15T14:49:21.864352+00:00",
+    "head": "8f9b405c8de33ded25d018cf59194e5a578fa916",
+    "indexSha256": "e5a99a3967d5f1c476b2ff1b2f3cebeecb67f751f723be531aede83e4c4f7c87",
+    "indexUnchanged": true,
+    "trackedFilesCompared": 3047,
+    "unchangedTrackedFiles": 3042,
+    "modified": [
+      "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "_bmad-output/implementation-artifacts/3-6-resume-checkpoint.md",
+      "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "docs/deployed-magic-link-platform-candidate-recheck.md",
+      "docs/launch-readiness.md"
+    ],
+    "documentsPreservedByInsertions": 5,
+    "checks": {
+      "git diff --check": 0,
+      "git diff --cached --exit-code": 0
+    },
+    "missing": []
+  },
+  "platform": {
+    "observedAt": "2026-10-15T14:51:13.995232+00:00",
+    "checks": {
+      "git diff --check": 0,
+      "git diff --cached --exit-code": 0
+    },
+    "ownerDocumentsPreservedByInsertions": 5,
+    "historicalFilesMatching": 162,
+    "privateChecksumsMatching": 30,
+    "repositoryMatchesFrozenTestedSources": true,
+    "recoveryDirectoriesUnchanged": true,
+    "currentOfflineChecklistComplete": true,
+    "originalProductionAcceptanceIncomplete": true,
+    "story427": "in-progress",
+    "story41OperationalGate": "closed",
+    "release": "FAIL"
+  },
+  "actualOperationalRequests": 0,
+  "stageCommitPushOrDependencyUpdatePerformed": false
+}

@@ -6,6 +6,66 @@
 
 ## Current Verification
 
+### Expired recovery; reconciled reviewed offline packet (2026-10-15)
+
+Recovery `20261014t112353z` expired at **11:40:42 UTC**. Independent offline
+reconciliation at **14:12:04 UTC** authenticates all eight unchanged original
+signatures and matches 16 original/21 supplemental preparation checksums,
+13 archived inputs and four historical October 1 scripts. At **14:43:26 UTC**,
+all 162 historical preservation files, eight signed original pairs and the
+failed OIDC original still match. Historical 4,809-check validation, 4,714
+manifest readbacks and 16 independent signed-record readbacks are preserved;
+no current provider/source freshness or operational acceptance is claimed.
+
+Three independent reviews identified metadata/coverage gaps. The final guard
+requires current identities and authority lineage/custody, complete source and
+tool bindings, both-target confinement, a separate pre-run execution plan and
+scope approval, retained-window containment, exact immutable destination and
+30-day retention, dependent-record timing and named cleanup absence. Metadata
+size/depth are bounded; diagnostics are sanitized and tool hashes stream.
+The helper pins its interpreter/source/inputs and uses **`-I -S -B`**. Original
+concurrent helpers/bindings are preserved; frozen source matches the repository.
+
+The exact final command passed **26/26 in 1.142s**, no failures or skips:
+
+```bash
+/usr/bin/python3.14 -I -S -B -m unittest discover -s /home/administrator/hexalith-retirement-investigation-evidence/20261015t140709z-s427-expired-recovery-preparation/timesheets-reviewed-source -p test_recovery_readiness.py -v
+```
+
+Source hashes matched before/after. The reviewed helper's Bash syntax passed;
+an actual execution with synthetic malicious `PYTHONPATH`/`sitecustomize` and
+`PYTHONSTARTUP` inputs created no startup marker. Actual readiness at
+**14:41:10 UTC** exits **1**, `operationalGate=closed`, with
+`workload recovery expired or future` and unchanged earliest expiry
+**2026-10-15T11:40:42Z**. It made no remote request, loaded no credential and
+performed no cryptographic verification. Synthetic signatures/provider versions
+prove metadata refusals only. All **30 scoped private checksum entries** match.
+
+The existing document fitness lane passed **13/13 in 0.126s**, zero errors,
+failures, skips or not-run; SDK **10.0.401** matches current `global.json`:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+```
+
+The original audit dictionary-key failure, preliminary refusal-text/order
+assertion failures and concurrent **19-test / 14-failure** intermediate
+schema/fixture stop remain preserved, followed by the independent passing
+frozen-source run. No historical executable or completed operational stage was
+replayed. No broad build/suite, AppHost or local/deployed journey ran.
+
+[Exact final receipt](../evidence/3-6/20261015t141204z-expired-recovery-preparation/verification.json),
+[triage](../evidence/3-6/20261015t141204z-expired-recovery-preparation/review-triage.json)
+and [remaining prerequisite](../evidence/3-6/20261015t141204z-expired-recovery-preparation/NEXT-PREREQUISITE.md)
+retain hashes, results and attribution. The next input is separate exact
+authorization for fresh **4.0 preparation**, before current signed recovery and
+separately covered operational **4.1** external-etcd/node recovery and recovered
+independent access. No replacement bundle, capture, restore, decryption,
+infrastructure mutation, signing, publication or Git mutation occurred.
+4.27/Story 3.6/Epic 3 remain in progress, 4.1's operational gate closed,
+spec-23 draft and Timesheets release **FAIL**.
+
 ### Fresh signed recovery accepted within deadline (2026-10-15 11:29 UTC)
 
 Concurrent final validation signing/publication completed **11:25:38 UTC**.

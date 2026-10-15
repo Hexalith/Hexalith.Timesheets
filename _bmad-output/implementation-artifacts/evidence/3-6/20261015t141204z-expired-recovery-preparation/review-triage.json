@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "kind": "hexalith.scoped-offline-preparation-review-triage",
+  "diff": "/tmp/timesheets-427-offline-review-zxsqva0t.diff",
+  "operationalGate": "closed",
+  "storyStatusPreserved": "in-progress",
+  "findings": [
+    {
+      "id": "B01",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Document and actual target bindings require zero host mounts; guard and positive fixture require three. Align the current schema with the documented topology."
+    },
+    {
+      "id": "B02",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Guard omits PID/IPC/device/capability/no-new-privileges assertions promised by the procedure. Require them for both isolated targets."
+    },
+    {
+      "id": "B03",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Source current-observation flag, node UID and CA fingerprint are not required. Explicit historical or missing measurements must refuse."
+    },
+    {
+      "id": "B04",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Authority current-lineage/custody fields are ignored and fingerprints use truthiness. Require typed identities and exact accepted custody/lineage."
+    },
+    {
+      "id": "B05",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Only final approval window is tested; retained attempt window and record containment are omitted. Validate both."
+    },
+    {
+      "id": "B06",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Final acceptance reference does not prove separately required pre-capture scope approval. Add a distinct bound approval checked before record chronology."
+    },
+    {
+      "id": "B07",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Future retainUntil alone accepts less than the required 30 days from creation. Bind creation, retention API agreement and interval for records and payloads."
+    },
+    {
+      "id": "B08",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Payload digest/readback checks omit exact endpoint, bucket, region and object key/prefix. Require destination/version lineage."
+    },
+    {
+      "id": "B09",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Nonempty list does not establish completeness of the eleven existing local tool roles. Require each role and exact file binding."
+    },
+    {
+      "id": "B10",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Cleanup checks omit source temporary, child-process and mount absence. Require those explicit outcomes for owned resources."
+    },
+    {
+      "id": "B11",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Image, engine/context/daemon and capacity qualification are not checked. Require measured identifiers and explicit qualification."
+    },
+    {
+      "id": "B12",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Original launcher inherits Python startup hooks. Preserve it as historical and supply a create-only reviewed launcher using -I -S -B with exact hash checks."
+    },
+    {
+      "id": "B13",
+      "verdict": "low",
+      "route": "patch",
+      "evidence": "Deep JSON can raise uncaught RecursionError and reads are unbounded. Bound metadata size and sanitize parser resource refusals."
+    },
+    {
+      "id": "E01",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Same verified topology mismatch as B01; independently filed source/mount declarations do not fix inconsistent schemas."
+    },
+    {
+      "id": "E02",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Same verified isolation omission as B02; network=none does not establish host namespace/capability isolation."
+    },
+    {
+      "id": "E03",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Truthiness admits whitespace/non-string authority/source identities and unknown writer identity. Require typed nonempty values."
+    },
+    {
+      "id": "E04",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "node.archiveSha256 lacks an independent digest-format check; matching null plaintext digests can pass. Require a SHA-256 value."
+    },
+    {
+      "id": "E05",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Same verified 30-day retention omission as B07."
+    },
+    {
+      "id": "V01",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Pre-verified test gap: bypassing either verification-receipt or immutable-readback check leaves all 13 tests passing. Add complete-envelope negative cases with rehashed references."
+    },
+    {
+      "id": "V02",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Same independently verified zero-versus-three mount contradiction as B01."
+    },
+    {
+      "id": "O01",
+      "verdict": "medium",
+      "route": "patch",
+      "evidence": "Original private bindings pin earlier guard/tests/procedure hashes. Preserve originals and create a reviewed revision after source stabilization; no original timestamp or operational record changes."
+    }
+  ],
+  "notes": [
+    "Three independent review layers ran with no operational execution.",
+    "Findings concern active offline metadata/procedure checks; original production retirement acceptance remains incomplete.",
+    "Corrections preserve concurrent edits and sealed originals; no Git index staging or code rollback is authorized."
+  ]
+}
