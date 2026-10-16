@@ -45,6 +45,20 @@ release PASS.
 
 ## Qualification Result
 
+The 2026-10-16 build resume at Timesheets
+`43dbc281a42c7bda3fe84e9a2765c91e894c7f33` verifies the unchanged native
+supplement at **07:51:58 UTC**: 55 payloads, 140 v4 files, 495 preservation
+files, six sources and 1,337 runtime files match. Existing LaunchReadiness
+assets pass **13/13**. Independent investigation of owning Platform
+`6020c583c5644952a11312715020ce2b050c0218` finds the same recorded offline
+qualification and no newer operational bindings or independent Timesheets
+runtime fix. [The resume receipt](evidence/3-6/20261016t075158z-build-resume-recheck/README.md)
+records the exact commands and remaining dependencies. Server/client/TLS,
+independent authority/revocation, protected delivery and live runtime/response
+qualification still fail the readiness sufficiency standard. No executable
+approval is ready; keep this spec draft. Ceiling remains
+**2026-10-16T16:27:56Z**, with no policy refresh or operational stage.
+
 The 2026-10-15 recovery resume verified authentic policy/cleanup signatures and
 four fresh exact immutable provider readbacks at 08:49:13 UTC. Protected source
 bindings and cleanup absence passed. Concurrent owner progress prepared the

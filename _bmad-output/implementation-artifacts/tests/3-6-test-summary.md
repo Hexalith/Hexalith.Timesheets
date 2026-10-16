@@ -6,6 +6,18 @@
 
 ## Current Verification
 
+### Build resume integrity recheck (2026-10-16 07:51 UTC)
+
+At Timesheets `43dbc281a42c7bda3fe84e9a2765c91e894c7f33`, the exact
+offline supplement verifier exits **0**, matching 55 payloads, 140 v4 files,
+495 preservation files, six sources and 1,337 runtime files. Its observation
+at **07:51:58 UTC** reports `candidateExpired=false`, `executionApprovalReady=false`
+and operational gate closed. The unchanged ceiling is **2026-10-16T16:27:56Z**.
+The existing ArchitectureTests executable passes **13/13 LaunchReadiness**
+checks in **0.130s**, without failures, errors or skips. No build, synthetic
+rerun or live/deployed test is claimed. [Exact commands and results](../evidence/3-6/20261016t075158z-build-resume-recheck/README.md)
+record the independent investigation and unchanged external blockers.
+
 ### Offline native measurement qualification (2026-10-16)
 
 Platform source/test commands used `/usr/bin/python3.14 -I -S -B`:

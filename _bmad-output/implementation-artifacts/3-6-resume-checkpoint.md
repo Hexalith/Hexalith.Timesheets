@@ -1,5 +1,23 @@
 # Story 3.6 resume checkpoint — 2026-10-14
 
+## Build resume recheck — 2026-10-16 07:51 UTC
+
+At clean Timesheets `43dbc281a42c7bda3fe84e9a2765c91e894c7f33`, the
+offline verifier again matches all 55 supplemental payloads, 140 v4 files,
+495 preservation files, six sources and 1,337 runtime files. Existing
+LaunchReadiness assets pass **13/13**. The newer owning Platform commit
+`6020c583c5644952a11312715020ce2b050c0218` records the same native qualification;
+independent investigation finds no later authority handoff or separate Timesheets
+runtime fix. [Exact commands, results and limits](evidence/3-6/20261016t075158z-build-resume-recheck/README.md)
+retain this read-only planning result separately from the earlier qualification.
+
+No executable measurement approval is ready. The [existing prerequisite](evidence/3-6/20261016t065614z-native-measurement-qualification/NEXT-PREREQUISITE.md)
+still requires independent server/client/TLS and authority/revocation evidence,
+protected credential delivery and live runtime/response qualification. The
+candidate was unexpired at **07:51:58 UTC**; its unchanged ceiling is
+**2026-10-16T16:27:56Z**. Spec-23 stays draft; Story 3.6/Epic 3/4.27 remain in
+progress, 4.1 closed and release **FAIL**. No operational stage ran.
+
 ## Native measurement adapter qualified offline — 2026-10-16
 
 Explicit offline authorization produced a separate create-only supplemental
