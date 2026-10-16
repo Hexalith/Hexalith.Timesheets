@@ -1,0 +1,50 @@
+{
+  "checkedAt": "2026-10-15T17:16:14.133326+00:00",
+  "independentVerifierImplementation": true,
+  "manifest": "packet-v4.json",
+  "manifestSha256": "1ed5eec5579adeedf7e49519fcba125656caacbaaeaffb6509c49b6575714b14",
+  "boundPayloadsChecked": 139,
+  "packetFiles": 140,
+  "mismatches": 0,
+  "priorFilesPreserved": {
+    "packet.json": 119,
+    "packet-v2.json": 124,
+    "packet-v3.json": 132
+  },
+  "historicalRoots": 5,
+  "historicalFiles": 348,
+  "frozenSources": 107,
+  "localBinaryRoles": 11,
+  "preparationSources": {
+    "readme": {
+      "bytes": 4204,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/README.md",
+      "sha256": "f8d0515fc664e137076c57adce54436986714b414476c12981f561224276c7e4"
+    },
+    "staticPreflight": {
+      "bytes": 12720,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/static_transport_preflight.py",
+      "sha256": "30da6f0002d02a2fd3c47b720d74299ad4352cd2de49e2486ec982bd8b36ff9a"
+    },
+    "staticPreflightTests": {
+      "bytes": 14185,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/test_static_transport_preflight.py",
+      "sha256": "458e96711941dab75ff528d2b7aa3b8b9c1f25c2f8824f5de9ad5a1b5088cc59"
+    },
+    "tests": {
+      "bytes": 33916,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/test_verify_packet.py",
+      "sha256": "ef0bc400d60f3140bd580a2ec9a05beca666d45634104ba7c8128c5b444d9996"
+    },
+    "verifier": {
+      "bytes": 32835,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/verify_packet.py",
+      "sha256": "19d535eead357a609fb9a3cefe41615b1f148569dafebf08b65fa37f6938cb5a"
+    }
+  },
+  "expiredOriginalUnchanged": true,
+  "actualKubeconfigOpened": false,
+  "actualPreflightRun": false,
+  "operationalGate": "closed",
+  "networkRequests": 0
+}

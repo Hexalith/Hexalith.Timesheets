@@ -6,6 +6,91 @@
 
 ## Current Verification
 
+### Offline native measurement qualification (2026-10-16)
+
+Platform source/test commands used `/usr/bin/python3.14 -I -S -B`:
+`test_native_measurement_adapter.py` **27/27**,
+`test_native_https_transport.py` **17/17**,
+`test_verify_native_supplement.py` **26/26**. All inputs were synthetic;
+source/dependency inventories were hashed without real config/credential reads.
+Independent follow-up closed 24 findings, including mutation detection for
+selector omission, incorrect PostgreSQL values and unbound bytecode caches.
+The full verifier caller tests detect late history/source/runtime changes.
+
+The offline integrity command `eng/recovery-preparation/verify_native_supplement.py
+--sha256 a7b9bf06139cec3022fbced5fe182b42c773b9a7099c40c84162893a766e2631` exits0:55 payloads/56 packet files,
+140 v4 files and 495 preservation files unchanged, 1,337 runtime files,
+six sources. At 06:56:14 UTC candidateExpired=false; unchanged ceiling
+2026-10-16T16:27:56Z. Built LaunchReadiness passes13/13. Initial failures,
+reviewed source snapshots and all packet revisions remain retained.
+
+[Receipt](../evidence/3-6/20261016t065614z-native-measurement-qualification/verification.json)
+and [current prerequisite](../evidence/3-6/20261016t065614z-native-measurement-qualification/NEXT-PREREQUISITE.md)
+record exact bindings and unresolved blockers. No executable measurement approval
+is ready; live activation is unconditionally closed. Story3.6/Epic3/4.27 remain
+in progress, spec-23 draft,4.1 closed,release FAIL. No operational evidence added.
+
+### Fresh 4.0 unsigned policy/bundle preparation (2026-10-15)
+
+Preparation resumes Timesheets `7db070f90d727889a3f431d6ea32f7a3c1dace2d`;
+Platform owns sources and sanitized evidence at observed HEAD
+`3a29fe039320ab13d95ff7d9801761dad72bfed9`. Existing/concurrent changes are
+preserved. Fresh RID `20261015t162756z` uses explicit `packet-v4.json`, SHA-256
+`1ed5eec5579adeedf7e49519fcba125656caacbaaeaffb6509c49b6575714b14`.
+The [exact next approval](../evidence/3-6/20261015t162631z-fresh40-offline-preparation/NEXT-PREREQUISITE.md)
+is **Administrator protected local static transport preflight only**; no
+actual config/preflight, authentication or API/provider/IAM work has run.
+
+Independent parent commands in the owning Platform checkout passed:
+
+```bash
+/usr/bin/python3.14 -I -S -B -m unittest discover -s eng/recovery-preparation -p test_verify_packet.py -v
+/usr/bin/python3.14 -I -S -B -m unittest discover -s eng/recovery-preparation -p test_static_transport_preflight.py -v
+/usr/bin/python3.14 -I -S -B eng/recovery-preparation/verify_packet.py --packet /home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z --manifest packet-v4.json --sha256 1ed5eec5579adeedf7e49519fcba125656caacbaaeaffb6509c49b6575714b14
+```
+
+Packet tests pass **34/34 in 2.404s** and synthetic preflight tests **12/12 in
+0.151s**, with no failures/skips. Actual packet verification exits **0**,
+`offline-preparation-pass`, gate **closed**, approval unauthenticated and no
+current recovery claimed. A separate standard-library checksum/custody pass
+matches all **139 payloads** / **140 packet files**, all **132** prior packet
+files, **107** frozen sources, **348** historical files over five roots,
+eleven local binary roles and five preparation source files. Binary hashing
+made no operational invocation; isolated Python and offline ssh-keygen signature
+verification were executed. Docker custody remains unqualified. All **31**
+operational blockers persist; current measurements/results remain null.
+
+Three review layers and targeted follow-up addressed **19** findings, with
+regressions for source pins/authority, retained anchors, metadata races,
+nonfinite JSON, malformed roots, exact active plan, local transport privacy,
+future init-image/storage selectors and Memories omission/value checks.
+Independent mutations detect removed Memories guard (**16 assertion failures**)
+and keys-only guard (**8 assertion failures**), both without errors. Child
+output is bounded while streaming; overflow/timeout kills and reaps its owned
+process group without raw diagnostics. Tests use synthetic input only.
+
+All initial failures, v1 refusal and v1/v2/v3 bytes remain preserved. V3 is an
+intermediate retained revision; v4 alone is the final explicit recommendation.
+No revision changes policy time: prepared **2026-10-15T16:27:56Z**, ceiling ends
+**2026-10-16T16:27:56Z**. Expired `20261014t112353z` is unchanged; all eight
+original signatures authenticate and the failed canonical OIDC hash matches.
+The old 162-file inventory has 161 matches; pre-existing Platform sprint drift
+is recorded rather than overwritten or reported clean. The dated v2 receipt
+remains separate from the [final verification](../evidence/3-6/20261015t162631z-fresh40-offline-preparation/verification.json).
+
+In Timesheets, SDK **10.0.401** matches `global.json`. The existing executable
+passed **13/13 LaunchReadiness tests in 0.127s**, no failures/errors/skips:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor
+```
+
+No broad build/suite, AppHost, live/deployed journey, provider/API request,
+authentication, capture, restore, decryption, infrastructure mutation, signing,
+publication or completed-stage replay ran. Spec-23 stays draft, Story 3.6/Epic
+3/4.27 in progress, 4.1 closed and release **FAIL**.
+
 ### Expired recovery; reconciled reviewed offline packet (2026-10-15)
 
 Recovery `20261014t112353z` expired at **11:40:42 UTC**. Independent offline

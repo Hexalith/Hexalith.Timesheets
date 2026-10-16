@@ -1,0 +1,68 @@
+{
+  "checkedAt": "2026-10-15T16:27:00.553181+00:00",
+  "signatures": [
+    {
+      "record": "cleanup/restore-target-cleanup.json",
+      "sha256": "3ae690daad23e6a0f028ab28ca023ba9a04d4c72f810d9129b117125d08d5b78",
+      "signatureSha256": "c346a6a9692227302e4c804012bb1df2a0b1b3121f1c76a65a77c794bd6d280c",
+      "authentic": true
+    },
+    {
+      "record": "gate/backup-gate.json",
+      "sha256": "c23f0d12067a4eff0379af8a811ab8ae693b02304b897b570802fccd90356695",
+      "signatureSha256": "8f21e993071501b4e3783ee6c965ab3de7967b32bce6566bf2fdcf68f8eedb94",
+      "authentic": true
+    },
+    {
+      "record": "keycloak/keycloak-restore-proof.json",
+      "sha256": "f6570b31b4f138a2ffe2e44bfbb5c464d0462898ab7f496f795fa52a4c168734",
+      "signatureSha256": "d14444c6105402d35bcd0e6a29f7870f7ba66ce646c12afd212b973b1199076e",
+      "authentic": true
+    },
+    {
+      "record": "manifest/evidence-manifest.json",
+      "sha256": "9d16ecb2c1074fa72e131bd448b1230bee2581d4877c83576c78d8b14365f9d2",
+      "signatureSha256": "e81bb6d612782c578ab889c90983af853ef7d2d66ee0dba4e9eb817b1f81e404",
+      "authentic": true
+    },
+    {
+      "record": "memories/memories-restore-proof.json",
+      "sha256": "bc9725e06ab30fe02959b2db6370cfc58750e6420d05d9fa2b19f691326c1ee1",
+      "signatureSha256": "7af3e5048b9c9f577ee3a44762a110898dba0591819e022f6220f4a5d6289c41",
+      "authentic": true
+    },
+    {
+      "record": "openbao/openbao-restore-proof.json",
+      "sha256": "fc61e1a0ef9f0a29c47f9c003bef73e7467ce08c35fcbef181d8a14acd481545",
+      "signatureSha256": "5c2c82769da9a29ec29fee51c0cf204a3c98c3cecb6536a14b0f68fe1dd34783",
+      "authentic": true
+    },
+    {
+      "record": "policy/recovery-policy.json",
+      "sha256": "021a8c773366fc2cc5b36e5407e03fd0e0a4dca363df1da71704725443bdc85a",
+      "signatureSha256": "7f5dc8431113f6f5a993ed7cefda5a427673a3334fff2a380d8a1a3eab715f0e",
+      "authentic": true
+    },
+    {
+      "record": "validation/validation.json",
+      "sha256": "b269db6ab85f3a99d27560742921f0192d41925d9a3fe2bebd3adc95c6b234ae",
+      "signatureSha256": "aa7b56e6f4ae938342d1de1d77b99f57c760f1b562fcf0fa188da5d99e7b27c7",
+      "authentic": true
+    }
+  ],
+  "historicalPreservationFiles": 162,
+  "historicalMismatches": [
+    "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/sprint-status.yaml"
+  ],
+  "failedOriginalOidcSha256": "014463ef76fd99431f6c268edbc41274b5031157f683a1630011956cb5738578",
+  "providerRequests": 0,
+  "credentialLoadingForAuthentication": false,
+  "initialCommandExitCode": 1,
+  "interpretation": "161 of 162 historical inventory files match. Platform sprint-status.yaml has pre-existing unrelated working-tree changes; do not overwrite it. All eight signed originals authenticate. No operational action occurred.",
+  "preExistingSprintDrift": {
+    "path": "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/sprint-status.yaml",
+    "currentSha256": "1d66b846fb554deefa67acb44711671376d5d354f74558ffb9b34a87a638283d",
+    "initialTrackedBaselineSha256": "1d66b846fb554deefa67acb44711671376d5d354f74558ffb9b34a87a638283d",
+    "unchangedSinceRunBaseline": true
+  }
+}

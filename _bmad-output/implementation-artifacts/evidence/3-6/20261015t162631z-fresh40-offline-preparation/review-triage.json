@@ -1,0 +1,152 @@
+{
+  "layers": 3,
+  "findings": [
+    {
+      "id": "B1",
+      "verdict": "medium",
+      "evidence": "Historical source pins only validate two flags, permitting omission of concrete endpoints/UIDs/storage. Reconstruct exact inventoried historical sources; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B2",
+      "verdict": "medium",
+      "evidence": "Nested independent-authority current/lineage fields are unchecked. Compare the complete historical authority record, retaining false/null current evidence; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B3",
+      "verdict": "medium",
+      "evidence": "Active checksums do not enforce the retained manifest payload map, permitting an internally inconsistent original packet. Validate retained maps against active files; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B4",
+      "verdict": "medium",
+      "evidence": "Metadata is reopened after initial checksums and there is no final complete recheck. Revalidate parsed bytes and final inventory, with race regressions; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B5",
+      "verdict": "low",
+      "evidence": "parse_constant does not reject exponent overflow such as 1e999. Add finite parsed-float validation and regression; direct patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B6",
+      "verdict": "low",
+      "evidence": "Stage one names the original approval file while the active handoff names v2. Add the reviewed plan revision with explicit active approval filename/digest; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B7",
+      "verdict": "low",
+      "evidence": "The Timesheets receipt is pending and its linked verification.json does not yet exist. Complete the already planned sibling receipt before handoff; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B8",
+      "verdict": "medium",
+      "evidence": "The unopened kubeconfig has no reviewed static transport gate before proposed GETs. Bind a local-only preflight and restrict the immediate request to its protected local run; network lanes remain blocked; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B9",
+      "verdict": "medium",
+      "evidence": "The future pod selector omits init-container names/imageIDs, leaving dependency image inventory incomplete. Correct the inert future selector; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B10",
+      "verdict": "medium",
+      "evidence": "The future PV output omits local/host/CSI backing identities needed for comparison with retained storage pins. Correct the inert selector; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "B11",
+      "verdict": "medium",
+      "evidence": "Provider methods lack a bound executor/runtime and cannot be an immediately executable approval. Explicitly block that lane and narrow the concrete next action to the prepared local preflight; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "E1",
+      "verdict": "medium",
+      "evidence": "Synthetic replacement between checksum and semantic load returns a pass for changed bindings. Same metadata race as B4; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "E2",
+      "verdict": "low",
+      "evidence": "A list of historical root strings passes set equality and reaches uncaught .items AttributeError. Require an object and structured refusal; direct patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "E3",
+      "verdict": "medium",
+      "evidence": "The second metadata-race claim independently reproduces a manifest mismatch after semantic reopen. Same defect as B4/E1; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "E4",
+      "verdict": "low",
+      "evidence": "Malformed nested roots can omit the promised structured closed-gate report. Same nested-shape defect as E2; direct patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "V1",
+      "verdict": "medium",
+      "evidence": "Pre-verified mutation evidence: deleting the Memories guard leaves all 24 tests green because the named combined test changes only OIDC. Add rejection subtests for every Memories requirement and active revision; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "F1",
+      "verdict": "medium",
+      "evidence": "Follow-up mutation replaced the Memories comparison with a key-only check and all 33 packet tests still passed. Add value changes for every boolean/drain/store requirement, plus value-guard mutation detection; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "F2",
+      "verdict": "medium",
+      "evidence": "Follow-up jointly rewrote original README, SHA256SUMS and packet.json and resealed the active map; preservation still passed. Pin prior manifests to independently retained reviewed digests; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    },
+    {
+      "id": "F3",
+      "verdict": "medium",
+      "evidence": "Local preflight collects child pipes with communicate before applying caps. Enforce streaming byte/deadline bounds and kill/reap the owned child on overflow; patch.",
+      "route": "patch",
+      "resolution": "patched-and-verified-in-final-v4"
+    }
+  ],
+  "preservation": "Additive final revision; v1/v2/v3 and expired originals retained; no operational stage",
+  "finalReview": {
+    "findings": 19,
+    "remainingDefects": 0,
+    "packetTests": 34,
+    "syntheticPreflightTests": 12,
+    "targetedIndependentFollowup": "clear",
+    "memoriesMutationDetection": {
+      "removedGuardAssertionFailures": 16,
+      "keysOnlyGuardAssertionFailures": 8,
+      "errors": 0
+    },
+    "actualConfigOrPreflightRun": false
+  }
+}

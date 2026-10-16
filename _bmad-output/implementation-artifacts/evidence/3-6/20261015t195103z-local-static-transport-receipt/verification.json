@@ -1,0 +1,45 @@
+{
+  "kind": "timesheets.user-reported-static-transport-receipt-handoff",
+  "recordedAt": "2026-10-15T19:54:50.908574+00:00",
+  "platformEvidence": "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-0/20261015t195103z-local-static-transport-receipt",
+  "platformValidationSha256": "84f14845bffa7ddd32ce8f1b476942fd855e0628ff3c8c46acd9837fa01744e4",
+  "userReceiptSha256": "d089af8354c6f39df2e6c109cf5a309bab021210d75fff5fbdd690b6fe27f603",
+  "reportedObservedAt": "2026-10-15T19:51:03.842182Z",
+  "reportedSchema": "pass",
+  "inputBindingsMatched": 5,
+  "packetManifestSha256": "1ed5eec5579adeedf7e49519fcba125656caacbaaeaffb6509c49b6575714b14",
+  "offlinePacketRecheck": {
+    "exitCode": 0,
+    "packetFiles": 140,
+    "historicalFilesUnchanged": 348,
+    "frozenSources": 107,
+    "closedBlockers": 31
+  },
+  "provenance": "User-supplied receipt; runtime not observed by agent; no authority or approval authenticated",
+  "kubeconfigReopened": false,
+  "preflightReplayed": false,
+  "apiProviderIamCallsByValidation": 0,
+  "nextPrerequisite": "offline qualification/review of exact read-only measurement adapter, dependencies, transport, custody and authority-check plan; then separate exact bounded measurement approval. No executable network approval is ready.",
+  "policyCeilingEnds": "2026-10-16T16:27:56Z",
+  "policyOrCaptureTimesRefreshed": false,
+  "status": {
+    "story36": "in-progress",
+    "epic3": "in-progress",
+    "story427": "in-progress",
+    "spec23": "draft",
+    "story41OperationalGate": "closed",
+    "release": "FAIL"
+  },
+  "launchReadiness": {
+    "passed": 13,
+    "errors": 0,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.114,
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor"
+  },
+  "diffCheckExitCodes": {
+    "timesheets": 0,
+    "platformOwnedReceiptPath": 0
+  }
+}

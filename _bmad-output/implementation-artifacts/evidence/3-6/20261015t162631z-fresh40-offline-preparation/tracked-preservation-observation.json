@@ -1,0 +1,41 @@
+{
+  "observedAt": "2026-10-15T17:19:03.333723+00:00",
+  "repositories": {
+    "/home/administrator/projects/hexalith/timesheets": {
+      "baselineHead": "7db070f90d727889a3f431d6ea32f7a3c1dace2d",
+      "currentHead": "7db070f90d727889a3f431d6ea32f7a3c1dace2d",
+      "baselineTrackedFiles": 3053,
+      "changedSinceBaseline": [
+        "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+        "_bmad-output/implementation-artifacts/3-6-resume-checkpoint.md",
+        "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+        "docs/deployed-magic-link-platform-candidate-recheck.md",
+        "docs/launch-readiness.md"
+      ],
+      "missingTrackedFiles": []
+    },
+    "/home/administrator/projects/hexalith/platform": {
+      "baselineHead": "3a29fe039320ab13d95ff7d9801761dad72bfed9",
+      "currentHead": "3a29fe039320ab13d95ff7d9801761dad72bfed9",
+      "baselineTrackedFiles": 4229,
+      "changedSinceBaseline": [
+        "DaprSelfHostedMtls.cs",
+        "Hexalith.Platform.slnx",
+        "_bmad-output/implementation-artifacts/deferred-work.md",
+        "_bmad-output/implementation-artifacts/spec-1-7-ratify-local-dapr-conventions-and-bind-component-names.md",
+        "_bmad-output/planning-artifacts/architecture/architecture-platform-2026-09-27/.memlog.md",
+        "_bmad-output/planning-artifacts/architecture/architecture-platform-2026-09-27/ARCHITECTURE-SPINE.md",
+        "docs/platform-apphost-form.md",
+        "eng/ext-secrets-1/README.md",
+        "eng/ext-secrets-1/qualify.py",
+        "eng/ext-secrets-1/test_qualify.py",
+        "src/Hexalith.Platform.Composition/PlatformAppModel.cs",
+        "tests/Hexalith.Platform.Composition.Tests/BuildsSourceStartupTests.cs",
+        "tests/Hexalith.Platform.Composition.Tests/PlatformAppModelReviewTests.cs",
+        "tests/Hexalith.Platform.Composition.Tests/PlatformAppModelTests.cs"
+      ],
+      "missingTrackedFiles": []
+    }
+  },
+  "interpretation": "Timesheets changes are the five owned tracked handoff documents. Platform tracked changes since baseline belong to concurrent work; preparation writes only new recovery-preparation and offline evidence directories. Existing staged/unstaged work was not reverted, staged, committed or overwritten by this task."
+}

@@ -1,6 +1,50 @@
 # Launch Readiness Record
 
+## Native measurement adapter qualified offline — 2026-10-16
+
+Explicit offline authorization produced a separate create-only supplemental
+packet for RID `20261015t162756z`; original v4, signed originals, expired recovery
+and all historical files remain unchanged. Supplemental SHA-256:
+`a7b9bf06139cec3022fbced5fe182b42c773b9a7099c40c84162893a766e2631`. All **70 synthetic tests**, **13 LaunchReadiness** and
+independent follow-up pass; **24 findings** were addressed. Six source/test files,
+1,337 runtime files/nine libraries, 23 fixed GET selectors, typed suppression,
+output custody, authority plan and stop/limit contracts are bound. Five selector
+families remain unsupported. Earlier packet revisions and failure history persist.
+
+The [current next prerequisite](../_bmad-output/implementation-artifacts/evidence/3-6/20261016t065614z-native-measurement-qualification/NEXT-PREREQUISITE.md) names unresolved server/client/TLS,
+independent native authority/revocation, protected credential delivery and live
+runtime/response bindings. **No executable measurement approval is ready**;
+public live activation refuses before real config, credentials or sockets.
+No authentication, network/API/provider/IAM request, preflight replay or
+operational stage ran. The first integrity check at **06:56:14 UTC** matched
+56 supplemental files, 140 v4 files and all 495 preservation files; candidate
+was not expired. Its ceiling stays **2026-10-16T16:27:56Z** without refresh.
+Story 3.6/Epic 3/4.27 stay in progress, spec-23 draft, 4.1 closed, release **FAIL**.
+Earlier checkpoint entries retain their dated meaning.
+
 Timesheets is neither story-complete nor launch-complete: Story 3.6 remains in progress, Story 5.2 remains in progress, and the final Story 5.1 reconciliation remains ready for development. This record classifies committed evidence at baseline `b0c41aaa3ad899ca13d49cd66e4f26f3b8e3ae5f` on 2026-06-26 and distinguishes concrete implemented behavior from unavailable defaults, skipped lanes, deferred integrations, package-currency evidence, and post-v1 decisions.
+
+The **2026-10-15 19:51 UTC user-reported local preflight receipt** matches all
+five reviewed v4 input bindings and reports schema pass with zero API calls;
+authority, provider/IAM and execution gates remain closed. The unchanged packet
+passes its offline recheck. The [current next prerequisite](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t195103z-local-static-transport-receipt/NEXT-PREREQUISITE.md)
+is offline qualification of exact measurement adapters before separate bounded
+measurement approval. All 31 blockers persist; Story 3.6 remains in progress
+and release **FAIL**. The receipt refreshes no policy/capture time; earlier
+entries below retain their dated meanings.
+
+The **2026-10-15 fresh 4.0 preparation** allocates unsigned candidate
+`20261015t162756z` under explicit preparation-only authorization. It binds
+local sources/tools/custody and preserves expired `20261014t112353z` unchanged.
+The [current handoff](deployed-magic-link-platform-candidate-recheck.md#fresh-40-offline-policy-and-bundle-preparation--2026-10-15)
+requires exact approval for the Administrator protected local static transport
+preflight next. It grants no authentication or API/provider/IAM work. Missing
+current measurements and fresh operational adapters remain blockers before
+distinct measurement and signing/publication/execution approvals. The explicit
+v4 packet passes offline checks; no operational stage ran.
+Spec-23 stays draft, Story 3.6/Epic 3/4.27 stay in progress, 4.1's operational
+gate stays closed and release remains **FAIL**. Historical entries below
+retain their dated meanings.
 
 The **2026-10-15 expired-recovery checkpoint** supersedes current use of the
 historical acceptance below: recovery `20261014t112353z` expired at

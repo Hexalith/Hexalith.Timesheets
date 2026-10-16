@@ -23,6 +23,66 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+### Native measurement adapter qualified offline — 2026-10-16
+
+Explicit offline authorization produced a separate create-only supplemental
+packet for RID `20261015t162756z`; original v4, signed originals, expired recovery
+and all historical files remain unchanged. Supplemental SHA-256:
+`a7b9bf06139cec3022fbced5fe182b42c773b9a7099c40c84162893a766e2631`. All **70 synthetic tests**, **13 LaunchReadiness** and
+independent follow-up pass; **24 findings** were addressed. Six source/test files,
+1,337 runtime files/nine libraries, 23 fixed GET selectors, typed suppression,
+output custody, authority plan and stop/limit contracts are bound. Five selector
+families remain unsupported. Earlier packet revisions and failure history persist.
+
+The [current next prerequisite](evidence/3-6/20261016t065614z-native-measurement-qualification/NEXT-PREREQUISITE.md) names unresolved server/client/TLS,
+independent native authority/revocation, protected credential delivery and live
+runtime/response bindings. **No executable measurement approval is ready**;
+public live activation refuses before real config, credentials or sockets.
+No authentication, network/API/provider/IAM request, preflight replay or
+operational stage ran. The first integrity check at **06:56:14 UTC** matched
+56 supplemental files, 140 v4 files and all 495 preservation files; candidate
+was not expired. Its ceiling stays **2026-10-16T16:27:56Z** without refresh.
+Story 3.6/Epic 3/4.27 stay in progress, spec-23 draft, 4.1 closed, release **FAIL**.
+Earlier checkpoint entries retain their dated meaning.
+
+### User-reported local transport schema pass — 2026-10-15 19:51 UTC
+
+The user-supplied sanitized receipt matches all five reviewed v4 input bindings
+and reports local schema pass with zero API/authentication and all authority/
+provider/execution gates closed. Current local binding/tool/source bytes match;
+the packet recheck preserves all 140 files and 348 historical files. This agent
+did not read the kubeconfig or replay the local preflight. The
+[current next prerequisite](evidence/3-6/20261015t195103z-local-static-transport-receipt/NEXT-PREREQUISITE.md)
+is offline qualification of exact measurement adapters before separate bounded
+measurement approval. All 31 blockers remain closed. Prior decisions, originals,
+failures and policy ceiling are preserved; Story 3.6/Epic 3/4.27 remain in
+progress, spec-23 draft, 4.1 closed and release **FAIL**.
+
+### Fresh 4.0 preparation completed — 2026-10-15
+
+From `7db070f90d727889a3f431d6ea32f7a3c1dace2d`, explicit offline authorization
+produced fresh unsigned candidate `20261015t162756z` with reviewed source/tool/
+custody bindings and an inert plan in the owning Platform repository/private
+custody. Explicit final `packet-v4.json` verifies 140 files and 31 closed
+operational blockers. Independent checks pass 34 packet tests, 12 synthetic
+preflight tests and 13 LaunchReadiness tests; 19 review findings were addressed.
+Expired `20261014t112353z`, all 348 historical files, signed originals, failed
+OIDC evidence and completed history remain unchanged. All eight signatures
+authenticate; the older 161/162 preservation result records pre-existing
+Platform sprint drift without overwriting it. Prior packet revisions/failures
+remain intact. Accepted private OIDC and split Memories safeguards persist as
+requirements, without transferring old grants or executors.
+
+See the [current handoff](../../docs/deployed-magic-link-platform-candidate-recheck.md#fresh-40-offline-policy-and-bundle-preparation--2026-10-15)
+and [exact next prerequisite](evidence/3-6/20261015t162631z-fresh40-offline-preparation/NEXT-PREREQUISITE.md).
+The next requested approval is **Administrator protected local static transport
+preflight only**; actual config/preflight, authentication and API/provider/IAM
+work have not run. Current source/storage/incarnation/authority/provider/runtime/
+capacity measurements and fresh adapters remain blockers before distinct
+measurement and signing/publication/execution approvals. Existing roles, scope,
+incident history/channel and window retain their exact limits. Spec-23 stays
+draft, Story 3.6/Epic 3/4.27 in progress, 4.1 closed and release **FAIL**.
+
 ### Expired recovery; offline prerequisite preparation — 2026-10-15
 
 Recovery `20261014t112353z` expired at **11:40:42 UTC**. Offline reconciliation

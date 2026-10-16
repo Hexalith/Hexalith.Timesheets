@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-10-15T17:20:21.252205+00:00",
+  "currentSourcesAndDocsWhitespace": {
+    "filesChecked": 12,
+    "defects": 0
+  },
+  "jsonFilesParsed": 22,
+  "addedMarkdownLocalLinks": {
+    "checked": 18,
+    "missing": 0
+  },
+  "timesheetsGitDiffCheck": 0,
+  "platformOwnedPathsGitDiffCheck": 0,
+  "historicalSnapshotsWhitespace": "preserved verbatim; no normalization applied",
+  "finalReviewDiff": {
+    "path": "/tmp/timesheets-fresh40-final-review-5sobwh6n/review.diff",
+    "sha256": "672875ee499f5f3dd6b798e49a3552eac765e5afa50b3760a9f1e7710e3249db",
+    "bytes": 937205,
+    "untrackedFilesIncluded": 94
+  },
+  "signedOrOperationalInputsIncluded": false,
+  "note": "Private packet metadata only; no credentials, private keys, recovered material or historical payload contents in review diff. Existing historical public source snapshots are inert reference text."
+}

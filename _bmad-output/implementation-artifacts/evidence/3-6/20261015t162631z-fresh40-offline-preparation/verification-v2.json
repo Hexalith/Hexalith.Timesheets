@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "kind": "hexalith.timesheets.offline-preparation-observation",
+  "recordedAt": "2026-10-15T16:57:05.747148+00:00",
+  "timesheetsCheckpoint": "7db070f90d727889a3f431d6ea32f7a3c1dace2d",
+  "platformHead": "3a29fe039320ab13d95ff7d9801761dad72bfed9",
+  "candidateRecoveryId": "20261015t162756z",
+  "manifest": "packet-v2.json",
+  "manifestSha256": "70a721ca7ced74281029c480419d08889658dc07f83844cdcefd10c7f8f99d59",
+  "scope": "dated pre-review v2 observation; final correction remains pending",
+  "actualVerifier": {
+    "exitCode": 0,
+    "result": "offline-preparation-pass",
+    "operationalGate": "closed",
+    "approvalAuthenticated": false,
+    "currentRecoveryClaimed": false,
+    "packetFiles": 124,
+    "boundPayloads": 123,
+    "frozenSources": 107,
+    "historicalFiles": 348,
+    "closedBlockers": 31
+  },
+  "independentParentChecksums": {
+    "checked": 123,
+    "mismatches": 0
+  },
+  "parentTests": {
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.145
+  },
+  "launchReadiness": {
+    "passed": 13,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 0.172,
+    "sdk": "10.0.401"
+  },
+  "offlineVerifierSources": {
+    "readme": {
+      "bytes": 2643,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/README.md",
+      "sha256": "29f9d73ddcca70dd04198bc9f7cd98bb895dcd8cc7400ed73fc46b5fdb2e3460"
+    },
+    "tests": {
+      "bytes": 19150,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/test_verify_packet.py",
+      "sha256": "661d52b6d0285fde9a428d30e66cc5b65e3ad161b5adaaa2d4b4d24c23345203"
+    },
+    "verifier": {
+      "bytes": 25574,
+      "path": "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/verify_packet.py",
+      "sha256": "45d32439f53ed28e09a9c7e952bf48753732908304d7455a26e43f0854772bbd"
+    }
+  },
+  "recipientPublicFingerprintIndependentlyMatched": true,
+  "originalSignaturesAuthentic": 8,
+  "historicalPriorInventory": {
+    "matching": 161,
+    "total": 162,
+    "exception": "pre-existing unrelated Platform sprint-status.yaml change"
+  },
+  "policyPreparedAt": "2026-10-15T16:27:56Z",
+  "policyCeilingEnds": "2026-10-16T16:27:56Z",
+  "expiredOriginalId": "20261014t112353z",
+  "expiredOriginalUnchanged": true,
+  "operationalStagesRun": 0,
+  "networkRequests": 0,
+  "credentialLoadingForAuthentication": false,
+  "signing": false,
+  "publication": false,
+  "infrastructureMutation": false,
+  "gitMutation": false,
+  "review": {
+    "layers": 3,
+    "individuallyTriagedFindings": 16,
+    "patchesPending": true
+  },
+  "status": {
+    "story36": "in-progress",
+    "epic3": "in-progress",
+    "story427": "in-progress",
+    "story41Gate": "closed",
+    "spec23": "draft",
+    "release": "FAIL"
+  }
+}

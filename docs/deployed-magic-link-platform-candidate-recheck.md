@@ -1,5 +1,107 @@
 # Story 3.6 Platform candidate recheck — 2026-10-14
 
+## Native measurement adapter qualified offline — 2026-10-16
+
+Explicit offline authorization produced a separate create-only supplemental
+packet for RID `20261015t162756z`; original v4, signed originals, expired recovery
+and all historical files remain unchanged. Supplemental SHA-256:
+`a7b9bf06139cec3022fbced5fe182b42c773b9a7099c40c84162893a766e2631`. All **70 synthetic tests**, **13 LaunchReadiness** and
+independent follow-up pass; **24 findings** were addressed. Six source/test files,
+1,337 runtime files/nine libraries, 23 fixed GET selectors, typed suppression,
+output custody, authority plan and stop/limit contracts are bound. Five selector
+families remain unsupported. Earlier packet revisions and failure history persist.
+
+The [current next prerequisite](../_bmad-output/implementation-artifacts/evidence/3-6/20261016t065614z-native-measurement-qualification/NEXT-PREREQUISITE.md) names unresolved server/client/TLS,
+independent native authority/revocation, protected credential delivery and live
+runtime/response bindings. **No executable measurement approval is ready**;
+public live activation refuses before real config, credentials or sockets.
+No authentication, network/API/provider/IAM request, preflight replay or
+operational stage ran. The first integrity check at **06:56:14 UTC** matched
+56 supplemental files, 140 v4 files and all 495 preservation files; candidate
+was not expired. Its ceiling stays **2026-10-16T16:27:56Z** without refresh.
+Story 3.6/Epic 3/4.27 stay in progress, spec-23 draft, 4.1 closed, release **FAIL**.
+Earlier checkpoint entries retain their dated meaning.
+
+## User-reported local transport schema pass — 2026-10-15 19:51 UTC
+
+A user-supplied receipt observed at **2026-10-15T19:51:03.842182Z** reports
+static transport schema pass, zero API calls, no authentication and no accepted
+authority, provider/IAM qualification or execution permission. All five hashes
+match reviewed v4 bindings. Current local binding/source/interpreter/kubectl
+bytes match; the kubeconfig was not reopened and the preflight was not replayed
+by this agent. This receipt is recorded as user-reported local schema evidence.
+
+The unchanged v4 packet still passes offline verification: 140 files, 107 frozen
+sources and 348 historical files unchanged; all 31 operational blockers remain
+closed. See the [validation and current next prerequisite](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t195103z-local-static-transport-receipt/NEXT-PREREQUISITE.md).
+Next comes offline qualification/review of exact read-only measurement adapters,
+runtime/transport/output custody and authority-check bindings, followed by a
+distinct bounded measurement approval. No executable network approval is ready.
+The local-only request below retains its historical meaning; do not repeat it.
+Policy ceiling remains **2026-10-16T16:27:56Z**. Earlier packets, expired recovery,
+signed originals and failures remain unchanged. Story 3.6/Epic 3/4.27 stay in
+progress, spec-23 draft, 4.1 closed and release **FAIL**.
+
+## Fresh 4.0 offline policy and bundle preparation — 2026-10-15
+
+This continuation starts at Timesheets
+`7db070f90d727889a3f431d6ea32f7a3c1dace2d` and the owning Platform checkout
+`3a29fe039320ab13d95ff7d9801761dad72bfed9`, preserving existing/concurrent
+changes. Preparation-only authorization produced fresh unsigned candidate
+`20261015t162756z` at
+`/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z`.
+The explicit [README-v4.md](/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/README-v4.md)
+explains the packet; `packet-v4.json` SHA-256 is
+`1ed5eec5579adeedf7e49519fcba125656caacbaaeaffb6509c49b6575714b14`.
+It binds exact reviewed source/tool/custody, candidate policy, inert plan,
+local preflight proposal and prior revisions. No latest/fallback lookup exists.
+Current measurements/results remain null and no authority is authenticated.
+
+Independent actual offline verification passes with **140 packet files**,
+**139 payload hashes**, **107 frozen sources**, **348 historical files** and
+**31 closed blockers**. All **132** prior packet files are unchanged, with
+independent v1/v2/v3 manifest anchors. The initial custody failure, constructor
+errors, v1 refusal and intermediate v3 are retained as history. Three review
+layers plus targeted follow-up resolved all **19** findings, including metadata
+races, retained-manifest rewriting, Memories value enforcement and child output
+bounds. Independent tests pass **34/34** packet checks and **12/12** synthetic
+preflight checks. LaunchReadiness passes **13/13** on SDK **10.0.401**.
+See the [final receipt](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t162631z-fresh40-offline-preparation/verification.json).
+Policy preparation/ceiling remain **2026-10-15T16:27:56Z** /
+**2026-10-16T16:27:56Z**; revisions do not refresh that ceiling.
+
+All eight original signatures authenticate; the canonical failed OIDC original
+matches. The older 162-file inventory has 161 matches and one recorded
+pre-existing Platform sprint-status change, preserved without overwrite.
+Expired `20261014t112353z` and completed operational history remain unchanged;
+historical 4,809/4,809 validation supplies no current freshness. The historical
+37-file tool manifest also matches. Its old policy command uploads, preflight
+mutates before dry-run, unsigned writes overwrite, and OIDC/continuation guards
+hardcode expired identities. Those tools remain inert `.txt` references.
+Accepted OIDC loopback checks and split Memories actual-C3/pre/census/drain/
+paired-store/restore/approved conditional-resume requirements remain binding.
+
+The [exact next approval](../_bmad-output/implementation-artifacts/evidence/3-6/20261015t162631z-fresh40-offline-preparation/NEXT-PREREQUISITE.md)
+covers **only the Administrator's protected local static transport preflight**.
+It checks the fixed kubeconfig digest/custody and static schema using the bound
+local parser, emits a sanitized receipt, and leaves every operational gate
+closed. Preparation has not opened the config or run this actual preflight.
+No authentication or API/provider/IAM request is granted. All network lanes
+need separately qualified executors/runtime/authority and distinct measurement
+approval; future selectors remain inert. Current source UIDs/incarnations/PVC/PV,
+health/canaries, authority/trust, provider/IAM/object versions, target absence,
+isolation/capacity and image/runtime identities remain blockers. Docker custody
+also remains unqualified. No signing unlock is requested now.
+
+No capture, restore, decryption, infrastructure mutation, signing, publication,
+retirement, upgrade, deployment or completed-stage replay ran. Fresh accepted
+4.0 precedes separately approved 4.1 recovery/access, retirement qualification,
+post-retirement recovery, upgrades and Timesheets enrollment/deployment. Existing
+destination/principals/key, roles, incident history/channel and October 7–31
+window retain their exact limits. The window ends exclusively at
+**2026-10-31T23:00:00Z** and extends no policy freshness ceiling.
+Spec-23 stays draft, Story 3.6/Epic 3/4.27 in progress, 4.1 closed, release **FAIL**.
+
 ## Expired recovery and offline prerequisite preparation — 2026-10-15
 
 This continuation resumes Timesheets checkpoint
