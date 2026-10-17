@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "eng/timesheets-deployment/observe_native.py",
+    "--output",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261017t142841z-deployment-authority-runtime/native-observation-sealed-context.json"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform",
+  "exitCode": 0,
+  "stdout": "{\"output\": \"/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261017t142841z-deployment-authority-runtime/native-observation-sealed-context.json\", \"completedAt\": \"2026-10-17T14:51:33.603758+00:00\", \"story36Accepted\": false}\n",
+  "stderr": "",
+  "sourceSha256": "fbd8534c7e5f1324e4ecc875851f3cd4bbdf6ffc1d76f0e68ead688afa2dc095"
+}

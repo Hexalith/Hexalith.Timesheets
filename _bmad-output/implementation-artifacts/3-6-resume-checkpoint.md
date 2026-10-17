@@ -910,3 +910,51 @@ Frozen intent and all prior checkpoint bytes remain preserved; Platform sources,
 packets, failures and gitlinks receive no writes. Spec-23 stays **draft**;
 Story **3.6/Epic 3/4.27 in progress**; **4.1 operational gate closed**;
 release **FAIL**. Earlier entries retain their dated meaning.
+
+
+## Deployment/authority implementation and actual observations — 2026-10-17
+
+The user authorized implementation, local tests, fresh offline recovery preparation
+and existing-access read-only inspection, with sole-owner document self-review.
+[Current acceptance and owning code](../../docs/deployed-magic-link-2026-10-17.md)
+and [sanitized packet](evidence/3-6/20261017t142841z-deployment-authority-runtime/README.md)
+record actual native TLS/client identity and current wildcard permissions,
+absent Timesheets/staging/Gateway installation, Platform maintained Helm candidates,
+and EventStore's default-disabled production RSA resource-binding authority with
+separate human/workload trust. No real signer, client grant or endpoint was enrolled.
+
+SDK 10.0.401 source-reference Debug build passes zero warnings/errors. Six individual
+default suites pass 1,899 tests with five declared skips and zero failures. A fresh
+disposable Dapr run passes 1/1 in 126.032s using existing host assets, with Fresh
+catalog, persisted confirm/adjust, one concurrent winner, replay denial, composed
+rebuild and restart assertions. Captured processes exited; owned services were
+removed; shared broker/state/TTL/scheduler preservation matches. This is local proof,
+not deployed subscriber/shared-rebuild acceptance. A local SDK Debug archive is
+prepared without registry publication; source and focused review checks are separate.
+
+Fresh offline RID 20261017t143202z is prepared at 2026-10-17T14:32:02Z with exclusive
+ceiling 2026-10-18T14:32:02Z; packet SHA-256
+`d14efe6e8e82d983187416392ccc77207b446827f149caf3b45ed4b1ae90939a`.
+It is unsigned/incomplete preparation, not current accepted recovery. The expired
+candidate, original verifier exit 1, all prior checkpoint bytes and original pinned
+qualification remain unchanged. Review fixes retain previous source/test/package
+records separately, without resealing the fresh packet or rerunning the old verifier.
+
+An exact argv/effects/forward-only recovery proposal is retained as blocked; absent
+qualified Release/environment/issuer/provider/legacy-continuity/recovery facts prevent
+an executable operational approval. No live deployment, recovery, migration,
+permission/domain mutation, publication or Git operation ran. Story 3.6/Epic 3/4.27
+remain in progress, spec-23 draft, 4.1 operational gate closed and release FAIL.
+
+
+## Platform environment ownership clarified — 2026-10-17
+
+The owner confirms that Hexalith.Platform manages both staging and production.
+Platform owns provisioning/configuration, identity and secret delivery, retained
+release composition, deployment, promotion and recovery. Timesheets owns its
+module contracts, authoritative inventory and domain acceptance checks. The
+[current Platform-owned handoff](../../references/Hexalith.Platform/eng/timesheets-deployment/platform-managed-operations.md)
+and blocked proposal keep future values paths in Platform. Earlier Timesheets
+packet/proposal bytes remain unchanged as historical preparation; no environment
+fact, recovery time, authorization or acceptance result changed. No live action
+occurred. Story 3.6 remains in progress pending deployed acceptance.

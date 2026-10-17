@@ -1,0 +1,17 @@
+{
+  "pinnedOriginalQualificationSha256": "f3fa3e844f0e23f732371e80258945feede0866b0608e5768457433ebacb2118",
+  "originalVerifierRefusalSha256": "38610efadcc9e0358a806e9178c9de75cb737079e864e5186cee21c744d6f810",
+  "originalVerifierExitCode": 1,
+  "PLAN-v3.md": {
+    "referenceSha256": "e9e159442a69b8726ad725cc35689096d68f2ba61094910d99c7d7d29345ce73",
+    "standaloneSha256": "e9e159442a69b8726ad725cc35689096d68f2ba61094910d99c7d7d29345ce73",
+    "bytesEqual": true
+  },
+  "sole-owner-policy.json": {
+    "referenceSha256": "d3c654d2e9c9f91a236fde5751f28a29ff02b8580dbb029cfc4fdd2e7b0bcbd7",
+    "standaloneSha256": "d3c654d2e9c9f91a236fde5751f28a29ff02b8580dbb029cfc4fdd2e7b0bcbd7",
+    "bytesEqual": true
+  },
+  "newerStandalonePlatformRevision": "2749ad8abdafc038ded44f6154d7182c2fd71422",
+  "newerCommitScope": "readiness fixture/test evidence and gitattributes; no Timesheets hosting, policy, authority or deployment change"
+}

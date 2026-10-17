@@ -1,0 +1,19 @@
+{
+  "command": [
+    "dotnet",
+    "publish",
+    "src/Hexalith.Timesheets/Hexalith.Timesheets.csproj",
+    "--configuration",
+    "Debug",
+    "--no-build",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=true",
+    "-t:PublishContainer",
+    "-p:ContainerBaseImage=mcr.microsoft.com/dotnet/aspnet:10.0-alpine",
+    "-p:ContainerUser=app",
+    "-p:ContainerArchiveOutputPath=/tmp/timesheets-story36-20261017-reviewed-debug.tar.gz"
+  ],
+  "exitCode": 0,
+  "seconds": 1.852,
+  "scope": "Reviewed Debug source; no production artifact or registry publication"
+}

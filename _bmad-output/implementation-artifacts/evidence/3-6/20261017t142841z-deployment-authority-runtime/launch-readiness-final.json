@@ -1,0 +1,9 @@
+{
+  "command": [
+    "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+    "-class",
+    "*LaunchReadinessTests",
+    "-noColor"
+  ],
+  "exitCode": 0
+}

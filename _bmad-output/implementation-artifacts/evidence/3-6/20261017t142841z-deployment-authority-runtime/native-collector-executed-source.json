@@ -1,0 +1,6 @@
+{
+  "sourcePath": "references/Hexalith.Platform/eng/timesheets-deployment/observe_native.py",
+  "sha256": "5f449aedffe4226cfb8a2d1d2ca4f06d6edc09bbae4c656e221cb472f27dfe81",
+  "observation": "native-observation.json",
+  "scope": "Source executed for initial native observation before review patches"
+}

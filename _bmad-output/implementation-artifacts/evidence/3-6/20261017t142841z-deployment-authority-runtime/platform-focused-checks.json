@@ -1,0 +1,46 @@
+[
+  {
+    "label": "native-collector",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "eng/timesheets-deployment",
+      "-p",
+      "test_inspect.py",
+      "-v"
+    ],
+    "exitCode": 0,
+    "log": "native-collector-reviewed.log"
+  },
+  {
+    "label": "fresh-prerequisite",
+    "command": [
+      "/usr/bin/python3.14",
+      "-I",
+      "-S",
+      "-B",
+      "eng/recovery-preparation/test_fresh_prerequisite.py"
+    ],
+    "exitCode": 0,
+    "log": "fresh-prerequisite-reviewed.log"
+  },
+  {
+    "label": "hosted-charts",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "eng/timesheets-deployment",
+      "-p",
+      "test_hosted_chart.py",
+      "-v"
+    ],
+    "exitCode": 0,
+    "log": "hosted-charts-reviewed.log"
+  }
+]

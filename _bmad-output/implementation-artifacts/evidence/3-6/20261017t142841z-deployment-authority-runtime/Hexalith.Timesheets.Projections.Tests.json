@@ -1,0 +1,8 @@
+{
+  "command": [
+    "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+    "-noColor"
+  ],
+  "exitCode": 0,
+  "seconds": 441.473
+}

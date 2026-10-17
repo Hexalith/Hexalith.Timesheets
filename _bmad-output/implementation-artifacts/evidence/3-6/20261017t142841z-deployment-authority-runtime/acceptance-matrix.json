@@ -1,0 +1,68 @@
+{
+  "kind": "story-3-6-current-acceptance-assessment",
+  "nativeObservation": "native-observation.json",
+  "story36Complete": false,
+  "release": "FAIL",
+  "operationalApprovalReady": false,
+  "liveMutations": [],
+  "deployment": {
+    "targetClusterUid": "b5860674-1d1e-4a3b-b413-e1bb3b9a4557",
+    "inspectedStatus": "no-identifiable-timesheets-deployment",
+    "artifactRevision": null,
+    "publicEndpointInstalled": false,
+    "internalEndpointInstalled": false,
+    "installedSubscriberAndSharedRebuildAccepted": false,
+    "hostingImplementation": "Platform maintained Helm application/environment candidates"
+  },
+  "identityAndRights": {
+    "nativeTlsVerifiedAtCut": true,
+    "configuredPublicClientMatchesAuthenticatedCredentialId": true,
+    "currentNativeRulesObserved": true,
+    "nativeBinding": "jpiquot-cluster-admin",
+    "historicalGrantRevocationLineageEstablished": false,
+    "timesheetsProductionGrantsEnrolled": false
+  },
+  "authority": {
+    "productionBrokerAndClientImplemented": true,
+    "dedicatedWorkloadTrustImplemented": true,
+    "liveSignerGrantEndpointEnrolled": false,
+    "defaultDisabled": true,
+    "legacyInventoryCertified": false,
+    "sourceContinuityVerified": false,
+    "writerDeliveryQuiescenceEnforced": false,
+    "pendingLegacyDeliveryRecoveryVerified": false,
+    "migrationAuthorized": false
+  },
+  "runtime": {
+    "localJourney": "local-runtime-result.json",
+    "freshCatalogLocal": true,
+    "persistedConfirmAdjustLocal": true,
+    "singleRaceWinnerLocal": true,
+    "replayDenialLocal": true,
+    "restartPersistenceLocal": true,
+    "deployedJourneyRun": false
+  },
+  "freshPrerequisite": {
+    "rid": "20261017t143202z",
+    "expiresAtExclusive": "2026-10-18T14:32:02Z",
+    "manifestSha256": "d14efe6e8e82d983187416392ccc77207b446827f149caf3b45ed4b1ae90939a",
+    "offlinePrepared": true,
+    "actualRecoveryCurrent": false,
+    "originalExpiredCandidateChanged": false,
+    "originalVerifierExitCode": 1
+  },
+  "latestNativeObservation": "native-observation-sealed-context.json",
+  "nativeCurrentCut": "2026-10-17T14:51:33.603758+00:00",
+  "nativeContextImmutableDuringQueries": true,
+  "localSoftwareReview": {
+    "independentLayers": 3,
+    "initialFindings": 19,
+    "additionalPullSecretFinding": 1,
+    "focusedPlatformCases": 45,
+    "initialAuthenticationCases": 187,
+    "reviewedAuthorityFocusedCases": 83,
+    "additionalFollowupFindings": 4
+  },
+  "reviewedSourceArchive": "container-identity-reviewed.json",
+  "operationalProposal": "operational-plan.json"
+}

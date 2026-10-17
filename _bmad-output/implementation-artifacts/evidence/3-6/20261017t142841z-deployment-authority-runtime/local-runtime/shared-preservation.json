@@ -1,0 +1,10 @@
+{
+  "matches": true,
+  "confirmed_natural_expirations": {
+    "0": 0,
+    "13": 0,
+    "14": 0
+  },
+  "method": "Atomic read-only Redis KEYS/DUMP/PTTL/TIME DB0/13/14; etcd v3 all-key range on loopback:2379",
+  "ttl_rule": "Retained expiring values and deadlines match; absent keys allowed only after their captured deadline"
+}

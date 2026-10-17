@@ -2,6 +2,9 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <IsPublishable>true</IsPublishable>
+    <EnableContainer>true</EnableContainer>
+    <EnableSdkContainerSupport>true</EnableSdkContainerSupport>
+    <ContainerRepository>timesheets</ContainerRepository>
   </PropertyGroup>
 
   <ItemGroup>

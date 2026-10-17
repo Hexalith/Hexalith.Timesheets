@@ -2947,3 +2947,16 @@ three-container/component cleanup proofs are retained. Final `git diff --check`
 passed. No stage/commit/push or dependency/gitlink update occurred. The scoped
 startup-hardening spec is done; Story 3.6/Epic 3 stay in progress and release
 readiness stays **FAIL** pending legacy and deployed certification.
+
+
+## Deployment/authority continuation — 2026-10-17
+
+[Exact new commands, outcomes, source identities and limits](../evidence/3-6/20261017t142841z-deployment-authority-runtime/README.md)
+record pinned-SDK Debug build success (zero warnings/errors), all six individual
+default suites (1,899 passed / five declared skips / zero failures), and a fresh
+isolated persistence journey (1/1, 126.032s, existing host assets). Owned cleanup
+and shared-state preservation passed. Initial build/collector failures and the
+broader Platform fixture-input blocker remain recorded. Focused post-review
+technical checks are retained separately from these original receipts. Production
+issuer enrollment, legacy certification/maintenance and deployed acceptance remain
+unproven; Story 3.6 remains in progress and release FAIL. No live mutation occurred.

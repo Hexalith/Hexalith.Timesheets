@@ -1,0 +1,64 @@
+{
+  "suites": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "total": 57,
+      "passed": 57,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1.862
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "total": 92,
+      "passed": 92,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 0.503
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "total": 732,
+      "passed": 727,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 5,
+      "seconds": 472.526
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "total": 389,
+      "passed": 389,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 441.244
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "total": 558,
+      "passed": 558,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 1.813
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "total": 76,
+      "passed": 76,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 0.286
+    }
+  ],
+  "passed": 1899,
+  "skipped": 5,
+  "failed": 0,
+  "total": 1904,
+  "buildPhase": "post-initial-authority implementation, before review transport patches",
+  "scope": "six individual default suites, opt-in local runtime separate; no deployed acceptance"
+}

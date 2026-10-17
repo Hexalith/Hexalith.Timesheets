@@ -1,0 +1,12 @@
+{
+  "priorRefusalSha256": "38610efadcc9e0358a806e9178c9de75cb737079e864e5186cee21c744d6f810",
+  "firstCollectorStartup": {
+    "exitCode": 1,
+    "reason": "inspect.py shadowed Python stdlib inspect before any native query; renamed observe_native.py; no output published"
+  },
+  "firstBuild": {
+    "exitCode": 1,
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "reason": "Interim EventStore authority edit WorkloadAuthorizationDetails.cs(31,24) CA1062 twice; 0 warnings, 2 errors in 9.02s; fix and final recheck pending"
+  }
+}

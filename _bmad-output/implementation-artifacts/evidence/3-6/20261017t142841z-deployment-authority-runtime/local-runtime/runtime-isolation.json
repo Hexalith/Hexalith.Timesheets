@@ -1,0 +1,88 @@
+{
+  "redis": "127.0.0.1:49642",
+  "placement": "127.0.0.1:49644",
+  "scheduler": "127.0.0.1:39609",
+  "components": "/tmp/timesheets-live-dapr-components-8y67u5in",
+  "bound_processes": [
+    {
+      "pid": 20276,
+      "start": "11104531",
+      "state": "S"
+    },
+    {
+      "pid": 20297,
+      "start": "11104534",
+      "state": "S"
+    },
+    {
+      "pid": 20614,
+      "start": "11104600",
+      "state": "S"
+    },
+    {
+      "pid": 21050,
+      "start": "11104671",
+      "state": "S"
+    },
+    {
+      "pid": 21143,
+      "start": "11104679",
+      "state": "S"
+    },
+    {
+      "pid": 21256,
+      "start": "11104736",
+      "state": "S"
+    },
+    {
+      "pid": 21258,
+      "start": "11104736",
+      "state": "S"
+    },
+    {
+      "pid": 21263,
+      "start": "11104737",
+      "state": "S"
+    },
+    {
+      "pid": 21264,
+      "start": "11104737",
+      "state": "S"
+    },
+    {
+      "pid": 21339,
+      "start": "11104740",
+      "state": "S"
+    },
+    {
+      "pid": 21342,
+      "start": "11104743",
+      "state": "S"
+    },
+    {
+      "pid": 21373,
+      "start": "11104743",
+      "state": "S"
+    },
+    {
+      "pid": 21426,
+      "start": "11104748",
+      "state": "S"
+    },
+    {
+      "pid": 21465,
+      "start": "11104753",
+      "state": "S"
+    },
+    {
+      "pid": 21531,
+      "start": "11104796",
+      "state": "R"
+    },
+    {
+      "pid": 21550,
+      "start": "11104797",
+      "state": "R"
+    }
+  ]
+}

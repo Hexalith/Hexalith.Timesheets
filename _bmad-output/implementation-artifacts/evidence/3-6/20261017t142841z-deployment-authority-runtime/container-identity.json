@@ -1,0 +1,29 @@
+{
+  "archive": "/tmp/timesheets-story36-20261017-source-debug.tar.gz",
+  "bytes": 61386240,
+  "archiveSha256": "ba02223104839a33ea1d6031f7f329accda2ce2c3d4de775d410c3f81ce1c41c",
+  "metadata": {
+    "manifest.json": [
+      {
+        "Config": "97b2ea56091f255817ea7a4de522bc7207df62a66b828625677a292d367f8943.json",
+        "RepoTags": [
+          "timesheets:latest"
+        ],
+        "Layers": [
+          "e2de96513ba9eb53b431787ec8a65cdde380ac4772a3e4c4b714dcfde2a102b5/layer.tar",
+          "346376b3fc78b0a24fb48c98012c36c3ce5dec0fe2cc5f787ab5fd51d9507f90/layer.tar",
+          "1451a302e1649d5edc2ef79d1098968caf4f9b3a3b890668a71ada5394c2cf88/layer.tar",
+          "1a6d3dfc8c9c4fac706d998123c93a7f76c824dabfa38e8fe8cd0fc519e216d0/layer.tar",
+          "157307ca74e06f8d9676b7c2c45905e900d8e7b92a7fa9b02a8f6f480de91067/layer.tar",
+          "59e79965787ca37b67fece1ae8b29e4c3e2ad52f7a91be3d4b10fde644f983f3/layer.tar",
+          "af9aaa8fc30e283506cb71407cafc1af476f096c56d771ba98072e52c4c2c0a5/layer.tar"
+        ]
+      }
+    ]
+  },
+  "scope": "Local Debug source candidate, not a released or deployed production image",
+  "configurationDigest": "sha256:97b2ea56091f255817ea7a4de522bc7207df62a66b828625677a292d367f8943",
+  "containerUser": "app",
+  "architecture": "amd64",
+  "os": "linux"
+}

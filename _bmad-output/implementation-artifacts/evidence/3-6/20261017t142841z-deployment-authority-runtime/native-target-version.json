@@ -1,0 +1,63 @@
+[
+  {
+    "command": [
+      "kubectl",
+      "--context",
+      "jpiquot@local",
+      "--request-timeout=15s",
+      "version",
+      "-o",
+      "json"
+    ],
+    "observedAt": "2026-10-17T14:34:44.230368+00:00",
+    "exitCode": 0,
+    "rawRetained": false,
+    "serverVersion": {
+      "major": "1",
+      "minor": "34",
+      "emulationMajor": "1",
+      "emulationMinor": "34",
+      "minCompatibilityMajor": "1",
+      "minCompatibilityMinor": "33",
+      "gitVersion": "v1.34.9",
+      "gitCommit": "ad7c7374b74c04d07ea041d367ecb1a526bdf758",
+      "gitTreeState": "clean",
+      "buildDate": "2026-06-11T17:37:10Z",
+      "goVersion": "go1.25.11",
+      "compiler": "gc",
+      "platform": "linux/amd64"
+    }
+  },
+  {
+    "command": [
+      "kubectl",
+      "--context",
+      "jpiquot@local",
+      "--request-timeout=15s",
+      "get",
+      "nodes",
+      "-o",
+      "json"
+    ],
+    "observedAt": "2026-10-17T14:34:44.435060+00:00",
+    "exitCode": 0,
+    "rawRetained": false,
+    "nodes": [
+      {
+        "name": "node1",
+        "uid": "46d8d528-420d-4501-a6d8-12680d8a6ac6",
+        "kubeletVersion": "v1.34.9",
+        "conditions": [
+          {
+            "lastHeartbeatTime": "2026-10-17T14:31:51Z",
+            "lastTransitionTime": "2026-07-16T15:48:44Z",
+            "message": "kubelet is posting ready status",
+            "reason": "KubeletReady",
+            "status": "True",
+            "type": "Ready"
+          }
+        ]
+      }
+    ]
+  }
+]

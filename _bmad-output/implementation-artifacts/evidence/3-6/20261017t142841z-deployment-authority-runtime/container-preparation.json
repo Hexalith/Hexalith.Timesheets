@@ -1,0 +1,24 @@
+{
+  "command": [
+    "dotnet",
+    "publish",
+    "src/Hexalith.Timesheets/Hexalith.Timesheets.csproj",
+    "--configuration",
+    "Debug",
+    "--no-build",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=true",
+    "-t:PublishContainer",
+    "-p:ContainerBaseImage=mcr.microsoft.com/dotnet/aspnet:10.0-alpine",
+    "-p:ContainerUser=app",
+    "-p:ContainerArchiveOutputPath=/tmp/timesheets-story36-20261017-source-debug.tar.gz"
+  ],
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "exitCode": 0,
+  "seconds": 2.081,
+  "scope": "Local Debug source candidate only; no registry push or production artifact claim",
+  "archive": "/tmp/timesheets-story36-20261017-source-debug.tar.gz",
+  "archiveExists": true
+}

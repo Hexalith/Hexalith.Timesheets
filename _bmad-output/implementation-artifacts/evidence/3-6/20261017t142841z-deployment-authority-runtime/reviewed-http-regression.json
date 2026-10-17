@@ -1,0 +1,10 @@
+{
+  "command": [
+    "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "-method",
+    "*ComposedNamedCapabilityRoutePersistsIssuedAndUsedSelectedRow*",
+    "-noColor"
+  ],
+  "exitCode": 0,
+  "seconds": 1.35
+}

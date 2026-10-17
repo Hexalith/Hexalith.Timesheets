@@ -1,5 +1,21 @@
 # Launch Readiness Record
 
+## Deployment and authority implementation — 2026-10-17
+
+[Current acceptance](deployed-magic-link-2026-10-17.md) and the
+[sanitized packet](../_bmad-output/implementation-artifacts/evidence/3-6/20261017t142841z-deployment-authority-runtime/README.md)
+record actual native TLS/client identity and current access rights, absent Timesheets
+installation, implemented Platform hosting packages and default-disabled EventStore
+production resource binding. Six default suites pass 1,899 tests with five skips;
+a fresh isolated persistence journey passes 1/1 with cleanup/preservation. Those
+results do not supply deployed acceptance or certified legacy continuity/maintenance.
+Fresh unsigned prerequisite 20261017t143202z expires 2026-10-18T14:32:02Z; the old
+candidate remains expired and original verifier exit 1 is retained. Exact live argv
+and forward-only recovery are prepared as blocked while qualified Release,
+environment, issuer/provider and current recovery/legacy facts are unavailable.
+Story 3.6/Epic 3/4.27 remain in progress, spec-23 draft, 4.1 closed and release FAIL.
+No live mutation or operational approval occurred. Earlier entries are dated history.
+
 ## Owner policy and expired candidate — 2026-10-17
 
 [Current reconciliation](../_bmad-output/implementation-artifacts/evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md)

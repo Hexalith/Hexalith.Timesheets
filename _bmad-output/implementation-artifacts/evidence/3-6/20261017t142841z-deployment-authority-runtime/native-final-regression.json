@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-10-17T14:57:14.627081+00:00",
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "eng/timesheets-deployment",
+    "-p",
+    "test_inspect.py",
+    "-v"
+  ],
+  "exitCode": 0,
+  "passed": 16,
+  "failed": 0,
+  "seconds": 0.019,
+  "evidenceBasis": "Observed final execution after defaultBackend assertion in tool transcript; no repeated execution for receipt creation",
+  "sources": {
+    "references/Hexalith.Platform/eng/timesheets-deployment/observe_native.py": "d565bdf441242463ba0fb7d4ddaf656be0484daf7d672bad2ed6e8c6b4e67155",
+    "references/Hexalith.Platform/eng/timesheets-deployment/test_inspect.py": "36acc6abbdf3694c289e77d175a38c58847b83fae9756159915d8acb4b232735"
+  }
+}

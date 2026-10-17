@@ -1,0 +1,13 @@
+{
+  "archive": "/tmp/timesheets-story36-20261017-reviewed-debug.tar.gz",
+  "bytes": 61394432,
+  "archiveSha256": "0dd15a4de359b8f644fd156d5844168bbd7ce2dd53fa884c4fcc661375953aa3",
+  "scope": "Reviewed local Debug source candidate; not released/deployed",
+  "configurationDigest": "sha256:8e34744a38e2d723ef209dcf3b9d9fbee4cc17f4392680a0c1e4a503d0212032",
+  "user": "app",
+  "architecture": "amd64",
+  "os": "linux",
+  "retainedCopy": "/home/administrator/hexalith-recovery-evidence/timesheets-3-6/20261017t142841z-deployment-authority-runtime/reviewed-source-debug.tar.gz",
+  "retainedMode": "0600",
+  "retainedDirectoryMode": "0700"
+}

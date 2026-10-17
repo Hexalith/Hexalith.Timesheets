@@ -1,0 +1,79 @@
+{
+  "recordedAt": "2026-10-17T14:59:45.181404+00:00",
+  "repositories": [
+    {
+      "repository": "/home/administrator/projects/hexalith/timesheets",
+      "head": "a376b71d43330a716f836c3086e562e505511dd3",
+      "branch": "main",
+      "stagedChanges": [],
+      "changedTechnicalFilesSha256": {
+        "src/Hexalith.Timesheets/Hexalith.Timesheets.csproj": "acfde47ecea5f5c68e4f7a1fbba8d084b444cf481914a5a0d7b104acad05127e"
+      },
+      "diffCheckExitCode": 0,
+      "diffCheckOutput": ""
+    },
+    {
+      "repository": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform",
+      "head": "d186ad667639b9d629f7de51921e9600e7f7f992",
+      "branch": "main",
+      "stagedChanges": [],
+      "changedTechnicalFilesSha256": {
+        "eng/recovery-preparation/FRESH-PREREQUISITE.md": "d5979d5db8202991e40b111462f405ce4f4629527d2fd2d04bfb722180b25f0c",
+        "eng/recovery-preparation/fresh_prerequisite.py": "ced52b51b6a44ede182a42b8e09a164354b6b7f2575211615ea097d2d6724266",
+        "eng/recovery-preparation/test_fresh_prerequisite.py": "c551a27914cd451b1c876079e23f2cfd95b8738a30f281597880d9a88b26df59",
+        "eng/timesheets-deployment/README.md": "6b65a13fb9b4231f2f0fc7331d7df21dc24ac76c1da12c5c4e5e6351b2877aa3",
+        "eng/timesheets-deployment/chart/Chart.yaml": "fb4ef7fd5e02c4ade9282da5618df9d54a00a857b161cf9ce1ad56b3739e10ca",
+        "eng/timesheets-deployment/chart/templates/_helpers.tpl": "8441398a63fbc9092fffa61ae39247d75c2a4d8d6a65ca13388deea37d60ed48",
+        "eng/timesheets-deployment/chart/templates/application.yaml": "28100146a465c578b1747f5f617b29cb58a5e8c189e6648f7630ea0d07361956",
+        "eng/timesheets-deployment/chart/values.schema.json": "a6aad501ebf2b1fc91e7d9553f98b73344649d410eac4db3b9a74bb867d2684c",
+        "eng/timesheets-deployment/chart/values.yaml": "ddcbdd46d46517217cab8a45b229bf7934465eb3225d42bd95e5005bbb453c71",
+        "eng/timesheets-deployment/environment-chart/Chart.yaml": "eb8e277cf47796945c90d5ab2996fbcda8508c1c363d6daa72bdbbc289925ce5",
+        "eng/timesheets-deployment/environment-chart/templates/prerequisites.yaml": "ebd2ee4f27c4d0922a6a2075ca058fec8beff5fddf52cb8b0c548e81af29a679",
+        "eng/timesheets-deployment/environment-chart/values.schema.json": "32e4c5bd8e33ebba8a7ec265ccdaf2685ac7471b7356357d3748d0af3ad5062c",
+        "eng/timesheets-deployment/environment-chart/values.yaml": "696a9f3540f6fa5cbf991b4da82353a54672a19fdcff0ef83bf3b730b12efc88",
+        "eng/timesheets-deployment/hosted-package-preparation.md": "6fc5ca9a0716c65d058d6b1b3dc516b8192339c1edd8ee59db18732badb7b77f",
+        "eng/timesheets-deployment/observe_native.py": "d565bdf441242463ba0fb7d4ddaf656be0484daf7d672bad2ed6e8c6b4e67155",
+        "eng/timesheets-deployment/test_hosted_chart.py": "eda244163c7b706a6aedaebdbdf94884ea832240947c3526b22c9efc0d4ae45c",
+        "eng/timesheets-deployment/test_inspect.py": "36acc6abbdf3694c289e77d175a38c58847b83fae9756159915d8acb4b232735"
+      },
+      "diffCheckExitCode": 0,
+      "diffCheckOutput": ""
+    },
+    {
+      "repository": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "head": "77d9af18a54d92506e310fe5a45021a395e66f60",
+      "branch": "main",
+      "stagedChanges": [],
+      "changedTechnicalFilesSha256": {
+        "docs/security/workload-binding-authority.md": "f8cab6a90a2d191f8176ebe06d280fdb6cbbe5e74b6714d4331751ccf1bf0660",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/EventStoreWorkloadAuthenticationDefaults.cs": "d5f678108f436a7027d44d8ecb5d23ae204353b23324f5217c674c325031c272",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/EventStoreWorkloadAuthenticationExtensions.cs": "3ec0bdd770539634d72f76207c2a796428bfd2ad61a506a48c7e0862433000eb",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/JwtWorkloadAssertionIssuer.ResourceBindings.cs": "640ff82b45256e5797bc24fce7002b71a38186b4505016596c4d06e239df3970",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/JwtWorkloadAssertionIssuer.cs": "6b9206c966d03dac17cee1aa71d78d895f36f8160c12aee1a23d2ba4126d987b",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadAssertionIssuerOptions.cs": "f1a014638a20e2ef9c3bfbd7480b7165ea233a8d0b12fd68ac341e33ce824b21",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadAuthenticationOptions.cs": "6657d76484574922e569428848356063e0d2bee3ac3e8dd813e5fe1f45b03055",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadAuthorityEndpointMetadata.cs": "20d75d2f1e45d8d4b3e2f94a5038890b1e5e3f03f1281220fb177dc90468b7f4",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadAuthorityGrant.cs": "a7ca59a57c15771f146fbe739771a0a6c23c1550c9d299e9e0bb4419e5de9d28",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadAuthorityOptions.cs": "a144b3c591121dd08796e6ff2c7bf114c9586f5dd8dcd8775abb585bdd317a65",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadAuthorizationDetails.cs": "43311da4e4df3d1ce9c8516a6decdc65f27490305a851f18068692c784240167",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadBindingAuthority.cs": "fb00370407126d940a3daa2c0519c173d3bdb0d579c1471233599c4c3f7bfcd0",
+        "src/Hexalith.EventStore.ServiceDefaults/Authentication/WorkloadBindingAuthorityExtensions.cs": "cde7ce79a6379681e060f9c94ff7ed8f25f27f71f5356b75cc9518f1ec9bafc6",
+        "src/Hexalith.EventStore/Extensions/ServiceCollectionExtensions.cs": "48cfec334d1e31fa68ba4eb4f1a260d031ba2743a4c424260f525fa5b2d4f542",
+        "src/Hexalith.EventStore/Program.cs": "01a749a9928db93f1053c86979d29fc4e07e6764009cd5c036e9387c3a217605",
+        "tests/Hexalith.EventStore.Server.Tests/Authentication/JwtWorkloadAssertionIssuerTests.cs": "a78e83e2e7f54dc0b035b921bca3f65c58b051b7605400d196e890cd6d29d2e4",
+        "tests/Hexalith.EventStore.Server.Tests/Authentication/SyntheticBindingAuthorityHandler.cs": "705206e710f52dfc53233be87bbffaca80077036763ffb47d0246f36e870fd4a",
+        "tests/Hexalith.EventStore.Server.Tests/Authentication/SyntheticOversizedTokenStream.cs": "9a724eca698b5f769d71fb3dc689508f09abc02adf5c032eddeaae07abd8cb34",
+        "tests/Hexalith.EventStore.Server.Tests/Authentication/WorkloadBindingAuthorityTests.cs": "b9aac41d52cda59e20dc4988941d90ed0b533cd736b489869da8e89bcc9d42e6",
+        "tests/Hexalith.EventStore.Server.Tests/Configuration/EventStoreWorkloadRateLimitTests.cs": "65c58c9a02852ee5efdbb3eefa1afba55fcd8cc47d96b0c4578fc880d38362d2"
+      },
+      "diffCheckExitCode": 0,
+      "diffCheckOutput": ""
+    }
+  ],
+  "priorEntryPointsOriginalQualificationSpec23AndCheckpointPrefixPreserved": true,
+  "brokenPacketLinks": [],
+  "credentialPatternHitsInPacket": [],
+  "story36Complete": false,
+  "release": "FAIL",
+  "liveApprovalReady": false
+}

@@ -1,0 +1,8 @@
+{
+  "command": [
+    "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "-noColor"
+  ],
+  "exitCode": 0,
+  "seconds": 472.74
+}
