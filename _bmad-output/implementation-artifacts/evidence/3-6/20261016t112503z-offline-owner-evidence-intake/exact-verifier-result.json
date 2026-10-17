@@ -1,0 +1,19 @@
+{
+  "authorityAccepted": false,
+  "command": [
+    "/usr/bin/python3.14",
+    "-I",
+    "-S",
+    "-B",
+    "/home/administrator/projects/hexalith/platform/eng/recovery-preparation/verify_enrollment_revision.py",
+    "--sha256",
+    "c71f38517e02ea5bc7fa176cfb1abe8f12b43b499fbe6f74fbdc339d91f0b23d"
+  ],
+  "executionApprovalReady": false,
+  "exitCode": 1,
+  "kind": "offline-intake-exact-verifier-result",
+  "observedAt": "2026-10-16T11:25:36.164697+00:00",
+  "operationalGate": "closed",
+  "stderr": "",
+  "stdout": "{\"status\": \"refused\", \"operationalGate\": \"closed\", \"reason\": \"offline-revision-integrity-or-custody-refusal\"}\n"
+}

@@ -23,6 +23,50 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+### Offline owner-evidence intake — 2026-10-16 11:26 UTC
+
+[Current intake](evidence/3-6/20261016t112503z-offline-owner-evidence-intake/README.md)
+lists the exact public artifacts and independent owner attestations still missing.
+Final sealed SHA-256 remains `c71f38517e02ea5bc7fa176cfb1abe8f12b43b499fbe6f74fbdc339d91f0b23d`;
+two independent reviews close no authority gap. The exact offline verifier now
+exits 1 for additional concurrent Platform Story 1.8 sprint-status drift; separate
+matching packet/source/runtime hashes do not override its refusal. Both preparation
+directories and history remain preserved. No implementation/tests were repeated
+and no operational stage or approval prompt is ready. The 16:27:56Z ceiling is
+unchanged and was unexpired at 11:26:41Z. Story 3.6/Epic 3/4.27 stay in progress,
+spec-23 draft, 4.1 operational gate closed, release FAIL.
+
+### Native enrollment/execution offline revision — 2026-10-16 11:09 UTC
+
+Offline enrollment/execution safeguards and a separately sealed create-only
+revision are complete: **135 synthetic tests**, **13 built LaunchReadiness**,
+three independent review layers/follow-ups and **19 addressed finding rows**.
+Final manifest SHA-256: `c71f38517e02ea5bc7fa176cfb1abe8f12b43b499fbe6f74fbdc339d91f0b23d`; active binding v4. The original supplement
+`a7b9bf06139cec3022fbced5fe182b42c773b9a7099c40c84162893a766e2631` remains unchanged.
+[Exact source, packet, commands, review and missing evidence](evidence/3-6/20261016t103632z-native-enrollment-execution-bindings/README.md).
+
+At **2026-10-16T11:09:28Z** the new offline verifier exits 0: 89 packet files,
+56 original supplement files, 140 v4 files, 348 historical files, six original
+sources and 1,337 runtime files match. Of 557 initial preservation files,
+**556 are unchanged**; the one concurrent Platform sprint-status change is
+explicitly pinned and reported. The original full verifier remains refused.
+Another process committed current files under Platform
+`114e08830da2d8cca0e77cd870b8867506b4c68b`; this task performed no Git mutation.
+The 75-file unsealed preparation and its original modes remain untouched; the
+final revision copies their bytes into 0700/0600 custody and retains all failures.
+
+**No executable operational approval is ready.** Current independent server/CA/
+peer/client identity, native grants, full revocation/current rights, protected
+credential delivery and live runtime/OpenSSL/response qualification remain
+missing. Real enrollment fields stay null; public live activation and the real
+output slots stay closed/absent. All 23 selectors, limits, stop conditions,
+unsupported exclusions and 31 v4 prerequisites remain unchanged. No actual
+config/private credential access, authentication, network/API/provider/IAM request,
+preflight replay or operational stage ran. Policy preparation/ceiling stay
+**2026-10-15T16:27:56Z / 2026-10-16T16:27:56Z**; no timestamp refresh or replacement
+recovery allocation. Spec-23 stays draft, Story 3.6/Epic 3/4.27 in progress,
+4.1 operational gate closed, release **FAIL**. Earlier entries remain dated history.
+
 ### Native measurement adapter qualified offline — 2026-10-16
 
 Explicit offline authorization produced a separate create-only supplemental

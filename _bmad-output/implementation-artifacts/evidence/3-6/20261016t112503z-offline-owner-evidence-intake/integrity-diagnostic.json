@@ -1,0 +1,85 @@
+{
+  "allEnrollmentFieldsRemainNull": true,
+  "authorityAccepted": false,
+  "candidateExpired": false,
+  "canonicalVerifierPassed": false,
+  "executionApprovalReady": false,
+  "kind": "offline-intake-local-hash-diagnostic-not-authority",
+  "observedAt": "2026-10-16T11:26:41.191632+00:00",
+  "operationalGate": "closed",
+  "original557Preservation": {
+    "compared": 557,
+    "differences": [
+      {
+        "actual": {
+          "bytes": 12183,
+          "mode": 420,
+          "sha256": "c94f8fedcc4d9e362985c3056c2a2b3e6628ef74b525ed377b92f7cf920a12c5",
+          "uid": 1000
+        },
+        "expected": {
+          "bytes": 12181,
+          "mode": 420,
+          "sha256": "2d0c7c85dc259481180cd9c65fb327c32706e9ddbfa0c1a01fcd848da2d2d41e",
+          "uid": 1000
+        },
+        "path": "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/sprint-status.yaml"
+      }
+    ],
+    "matched": 556
+  },
+  "policyCeilingEnds": "2026-10-16T16:27:56Z",
+  "policyPreparedAt": "2026-10-15T16:27:56Z",
+  "policyTimesRefreshed": false,
+  "priorSources": {
+    "compared": 6,
+    "differences": [],
+    "matched": 6
+  },
+  "priorSupplement": {
+    "compared": 55,
+    "differences": [],
+    "manifest": {
+      "bytes": 12131,
+      "mode": 384,
+      "sha256": "a7b9bf06139cec3022fbced5fe182b42c773b9a7099c40c84162893a766e2631",
+      "uid": 1000
+    },
+    "matched": 55
+  },
+  "realOutputSlotPresent": false,
+  "revisionSources": {
+    "compared": 4,
+    "differences": [],
+    "matched": 4
+  },
+  "runtimeBytes": {
+    "compared": 1337,
+    "differences": [],
+    "dynamicLibraries": 9,
+    "liveProviderConfigurationQualified": false,
+    "matched": 1337
+  },
+  "sealedPacket": {
+    "actualFileCount": 89,
+    "compared": 88,
+    "custodyMismatches": [],
+    "differences": [],
+    "exactFileLayout": true,
+    "manifest": {
+      "bytes": 18506,
+      "mode": 384,
+      "sha256": "c71f38517e02ea5bc7fa176cfb1abe8f12b43b499fbe6f74fbdc339d91f0b23d",
+      "uid": 1000
+    },
+    "matched": 88
+  },
+  "unsealedPreparation": {
+    "actualFileCount": 75,
+    "compared": 75,
+    "copiesEqual": true,
+    "differences": [],
+    "matched": 75,
+    "rootMode": 448
+  }
+}

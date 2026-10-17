@@ -1,0 +1,85 @@
+{
+  "kind": "offline-owner-evidence-metadata-delta",
+  "sourceManifestSha256": "c71f38517e02ea5bc7fa176cfb1abe8f12b43b499fbe6f74fbdc339d91f0b23d",
+  "observedAt": "2026-10-16T11:35:57.735105Z",
+  "relativeTo": "2026-10-16T11:29:23.791504Z",
+  "primaryScope": [
+    {"root": "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z", "regularFiles": 140},
+    {"root": "/home/administrator/hexalith-recovery-evidence/4-0/20261016t063900z-native-measurement-supplement", "regularFiles": 56},
+    {"root": "/home/administrator/hexalith-recovery-evidence/4-0/20261016t103632z-native-enrollment-execution-revision", "regularFiles": 75},
+    {"root": "/home/administrator/hexalith-recovery-evidence/4-0/20261016t103632z-native-enrollment-execution-revision-sealed", "regularFiles": 89},
+    {"root": "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-0", "regularFiles": 109},
+    {"root": "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-26", "regularFiles": 1140},
+    {"root": "/home/administrator/projects/hexalith/platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-27", "regularFiles": 85},
+    {"root": "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6", "regularFiles": 63}
+  ],
+  "requestedOwnerNamesPresent": [],
+  "newerOwnerFileMetadata": [],
+  "priorIntakeDocumentationWithNewerMetadata": [
+    {"path": "../20261016t112503z-offline-owner-evidence-intake/README.md", "bytes": 15927, "mtimeUtc": "2026-10-16T11:30:00.418487Z", "ctimeUtc": "2026-10-16T11:30:00.418487Z"},
+    {"path": "../20261016t112503z-offline-owner-evidence-intake/independent-reviews.json", "bytes": 2846, "mtimeUtc": "2026-10-16T11:30:00.418487Z", "ctimeUtc": "2026-10-16T11:30:00.418487Z"}
+  ],
+  "priorIntakeDocumentationClassification": "Already-read prior final documentation correction; no new signed owner payload or attestation",
+  "independentInvestigation": {
+    "reviewer": "offline_evidence_delta",
+    "regularFilesInspectedByMetadataOnly": 1821,
+    "samePlatformOwnerRoots": true,
+    "recoveryRootsAndFileCounts": {
+      "20261014t112353z": 89,
+      "20261015t162756z": 140,
+      "20261016t063900z-native-measurement-supplement": 56,
+      "20261016t103632z-native-enrollment-execution-revision": 75,
+      "20261016t103632z-native-enrollment-execution-revision-sealed": 89,
+      "final-run-tools": 38
+    },
+    "recoveryFilenameAdditionsOrDeletionsAgainstPriorInventory": [],
+    "requestedOwnerNamesOrPublicTrustRootsFound": [],
+    "newerOwnerFileMetadata": [],
+    "directRecoveryRootChildren": 8,
+    "directRecoveryRootFilesOrSymlinks": 0,
+    "olderRecoveryDirectoriesNotTraversed": ["20260929t124806z", "20261001t061620z"],
+    "clockObservedAt": "2026-10-16T11:36:21Z",
+    "payloadOrCredentialReads": false,
+    "mutations": false
+  },
+  "metadataEstablishesAuthorityOrByteIntegrity": false,
+  "searchLimit": "Known explicit roots and requested names only; no conclusion about undisclosed locations or renamed unknown payloads",
+  "symlinksTraversed": false,
+  "applicableIndependentTrustRootSupplied": false,
+  "newSignedOwnerPayloadSupplied": false,
+  "signatureVerificationPerformed": false,
+  "implementationOrTestsRepeated": false,
+  "packetSourceRuntimeHashSweepsRepeated": false,
+  "exactVerifierRerun": false,
+  "preservedExactVerifierResult": {
+    "path": "../20261016t112503z-offline-owner-evidence-intake/exact-verifier-result.json",
+    "observedAt": "2026-10-16T11:25:36.164697Z",
+    "exitCode": 1,
+    "reason": "offline-revision-integrity-or-custody-refusal"
+  },
+  "unresolvedGapIds": [
+    "serverTrustSource", "apiCaPublicIdentity", "tlsPeerIdentity",
+    "singlePublicClientIdentity", "independentNativeGrant", "completeRevocationLineage",
+    "currentReadRights", "protectedDeliveryCustody", "runtimeOpenSslBehavior",
+    "actualResponseCompatibility", "priorPreservationDrift", "exactOperationalApproval"
+  ],
+  "additionalStory18DispositionMissing": true,
+  "exactActivationRevisionAndIndependentReviewMissing": true,
+  "policyPreparedAt": "2026-10-15T16:27:56Z",
+  "policyCeilingEnds": "2026-10-16T16:27:56Z",
+  "primaryClockObservedAt": "2026-10-16T11:36:48Z",
+  "expiredAtClockObservations": false,
+  "policyOrCaptureTimesRefreshed": false,
+  "replacementRecoveryAllocated": false,
+  "authorityAccepted": false,
+  "executionApprovalReady": false,
+  "operationalGate": "closed",
+  "spec23Status": "draft",
+  "story36Epic3Platform427Status": "in-progress",
+  "platform41OperationalGate": "closed",
+  "release": "FAIL",
+  "checkpointBeforeAppend": {
+    "bytes": 59059,
+    "sha256": "84598a65e92b0be93bd51aa1b8948b841b73e61588f21c514a35d89446555fe9"
+  }
+}

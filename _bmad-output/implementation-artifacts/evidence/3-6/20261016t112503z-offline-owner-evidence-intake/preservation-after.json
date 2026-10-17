@@ -1,0 +1,137 @@
+{
+  "authorityAccepted": false,
+  "candidateExpired": false,
+  "differences": [],
+  "executionApprovalReady": false,
+  "filesCompared": 725,
+  "filesUnchanged": 725,
+  "kind": "offline-intake-session-preservation-after",
+  "observedAt": "2026-10-16T11:29:23.791504+00:00",
+  "operationalGate": "closed",
+  "policyCeilingEnds": "2026-10-16T16:27:56Z",
+  "policyPreparedAt": "2026-10-15T16:27:56Z",
+  "policyTimesRefreshed": false,
+  "protectedStatusChecks": {
+    "epic3InProgress": true,
+    "platform427InProgress": true,
+    "releaseFailAnd41ClosedDeclared": true,
+    "spec23Draft": true,
+    "sprintStory36InProgress": true,
+    "story36InProgress": true
+  },
+  "repositories": {
+    "/home/administrator/projects/hexalith/platform": {
+      "after": {
+        "branch": "main",
+        "gitlinks": [
+          "160000 3f194e17174994d308ec84af9ee2b5aa68674d0d 0\treferences/Hexalith.AI.Tools",
+          "160000 bc3acde828ebf6ef5f897080629db8deb2219813 0\treferences/Hexalith.Agents",
+          "160000 5636b7f36e28e2731111b049f974b1fa951d1c36 0\treferences/Hexalith.Builds",
+          "160000 839aee31e2a9be11feab3fb726006bb4c2f890b5 0\treferences/Hexalith.ChatBot",
+          "160000 9e874b1a3c6e7b6ff07b6f40b81d36e4e1403798 0\treferences/Hexalith.Commons",
+          "160000 58f158413df4e3d6b97190b2458e323eab6029c4 0\treferences/Hexalith.Conversations",
+          "160000 5f23688a1ed96fd327803baf0dbf3ff294747436 0\treferences/Hexalith.EventStore",
+          "160000 ea1e9ac9745ad86aac7f2bf6ea84ee3741fea0ed 0\treferences/Hexalith.Folders",
+          "160000 b06f86d554363ea5b8192cbc149a75c820dab2b8 0\treferences/Hexalith.FrontComposer",
+          "160000 7e99305a621e1bdf7119b6e924348857e2b5a5a4 0\treferences/Hexalith.McpCli",
+          "160000 923ded6abdd3b2efcceb074292bf01b48cc6aabe 0\treferences/Hexalith.Memories",
+          "160000 493730941329d1bca3b4f6b2f6a67ffe305c2443 0\treferences/Hexalith.Parties",
+          "160000 98de6e013840ece9f0fa7c68ab7dcdf2bba3b375 0\treferences/Hexalith.PolymorphicSerializations",
+          "160000 42c8e7bc3a58d78e7c6ea4273711d697e81175e7 0\treferences/Hexalith.Projects",
+          "160000 a0c087a3a2010b923d26128ccb558272d8b408f0 0\treferences/Hexalith.Tenants",
+          "160000 c2aaef44cb7163baee26746b4f6ddc25ba29c08d 0\treferences/Hexalith.Timesheets",
+          "160000 ceef28532550061dd361dfe7df9c2a93582b2aa5 0\treferences/Hexalith.Works"
+        ],
+        "head": "9256c675186b020929d67230a22892bb13488bc2",
+        "indexSha256": "c370c725c7f64a557af4a6745f97ba6540ed6eb3cabae6b897448014867f7fab",
+        "stagedDiff": ""
+      },
+      "before": {
+        "branch": "main",
+        "gitlinks": [
+          "160000 3f194e17174994d308ec84af9ee2b5aa68674d0d 0\treferences/Hexalith.AI.Tools",
+          "160000 bc3acde828ebf6ef5f897080629db8deb2219813 0\treferences/Hexalith.Agents",
+          "160000 5636b7f36e28e2731111b049f974b1fa951d1c36 0\treferences/Hexalith.Builds",
+          "160000 839aee31e2a9be11feab3fb726006bb4c2f890b5 0\treferences/Hexalith.ChatBot",
+          "160000 9e874b1a3c6e7b6ff07b6f40b81d36e4e1403798 0\treferences/Hexalith.Commons",
+          "160000 58f158413df4e3d6b97190b2458e323eab6029c4 0\treferences/Hexalith.Conversations",
+          "160000 5f23688a1ed96fd327803baf0dbf3ff294747436 0\treferences/Hexalith.EventStore",
+          "160000 ea1e9ac9745ad86aac7f2bf6ea84ee3741fea0ed 0\treferences/Hexalith.Folders",
+          "160000 b06f86d554363ea5b8192cbc149a75c820dab2b8 0\treferences/Hexalith.FrontComposer",
+          "160000 7e99305a621e1bdf7119b6e924348857e2b5a5a4 0\treferences/Hexalith.McpCli",
+          "160000 923ded6abdd3b2efcceb074292bf01b48cc6aabe 0\treferences/Hexalith.Memories",
+          "160000 493730941329d1bca3b4f6b2f6a67ffe305c2443 0\treferences/Hexalith.Parties",
+          "160000 98de6e013840ece9f0fa7c68ab7dcdf2bba3b375 0\treferences/Hexalith.PolymorphicSerializations",
+          "160000 42c8e7bc3a58d78e7c6ea4273711d697e81175e7 0\treferences/Hexalith.Projects",
+          "160000 a0c087a3a2010b923d26128ccb558272d8b408f0 0\treferences/Hexalith.Tenants",
+          "160000 c2aaef44cb7163baee26746b4f6ddc25ba29c08d 0\treferences/Hexalith.Timesheets",
+          "160000 ceef28532550061dd361dfe7df9c2a93582b2aa5 0\treferences/Hexalith.Works"
+        ],
+        "head": "9256c675186b020929d67230a22892bb13488bc2",
+        "indexSha256": "c370c725c7f64a557af4a6745f97ba6540ed6eb3cabae6b897448014867f7fab",
+        "stagedDiff": ""
+      },
+      "unchanged": true
+    },
+    "/home/administrator/projects/hexalith/timesheets": {
+      "after": {
+        "branch": "main",
+        "gitlinks": [
+          "160000 3f194e17174994d308ec84af9ee2b5aa68674d0d 0\treferences/Hexalith.AI.Tools",
+          "160000 0e3775b8b00685d8bc87b09135b2475ae867e131 0\treferences/Hexalith.Builds",
+          "160000 9e874b1a3c6e7b6ff07b6f40b81d36e4e1403798 0\treferences/Hexalith.Commons",
+          "160000 58f158413df4e3d6b97190b2458e323eab6029c4 0\treferences/Hexalith.Conversations",
+          "160000 746b843a24f18b17a7572be25b76b735fa8e4ca6 0\treferences/Hexalith.EventStore",
+          "160000 b06f86d554363ea5b8192cbc149a75c820dab2b8 0\treferences/Hexalith.FrontComposer",
+          "160000 3e02d1e85c8aef119191cac53d3a1b3230de3a66 0\treferences/Hexalith.McpCli",
+          "160000 493730941329d1bca3b4f6b2f6a67ffe305c2443 0\treferences/Hexalith.Parties",
+          "160000 c75e680f5460c411aa922696605f18039bd2a77d 0\treferences/Hexalith.Platform",
+          "160000 98de6e013840ece9f0fa7c68ab7dcdf2bba3b375 0\treferences/Hexalith.PolymorphicSerializations",
+          "160000 42c8e7bc3a58d78e7c6ea4273711d697e81175e7 0\treferences/Hexalith.Projects",
+          "160000 a3f43655d68370389439c7d2c212ab7939bd164e 0\treferences/Hexalith.Tenants",
+          "160000 8679d7d700925a870e9931b3c43c745c063e459b 0\treferences/Hexalith.Works"
+        ],
+        "head": "ee95f90f529812c744761090691a23196c971c78",
+        "indexSha256": "1ccdd87b6783adbc166a7923c4be61d64574fa86e6a7af4073d78b02f0d04979",
+        "stagedDiff": ""
+      },
+      "before": {
+        "branch": "main",
+        "gitlinks": [
+          "160000 3f194e17174994d308ec84af9ee2b5aa68674d0d 0\treferences/Hexalith.AI.Tools",
+          "160000 0e3775b8b00685d8bc87b09135b2475ae867e131 0\treferences/Hexalith.Builds",
+          "160000 9e874b1a3c6e7b6ff07b6f40b81d36e4e1403798 0\treferences/Hexalith.Commons",
+          "160000 58f158413df4e3d6b97190b2458e323eab6029c4 0\treferences/Hexalith.Conversations",
+          "160000 746b843a24f18b17a7572be25b76b735fa8e4ca6 0\treferences/Hexalith.EventStore",
+          "160000 b06f86d554363ea5b8192cbc149a75c820dab2b8 0\treferences/Hexalith.FrontComposer",
+          "160000 3e02d1e85c8aef119191cac53d3a1b3230de3a66 0\treferences/Hexalith.McpCli",
+          "160000 493730941329d1bca3b4f6b2f6a67ffe305c2443 0\treferences/Hexalith.Parties",
+          "160000 c75e680f5460c411aa922696605f18039bd2a77d 0\treferences/Hexalith.Platform",
+          "160000 98de6e013840ece9f0fa7c68ab7dcdf2bba3b375 0\treferences/Hexalith.PolymorphicSerializations",
+          "160000 42c8e7bc3a58d78e7c6ea4273711d697e81175e7 0\treferences/Hexalith.Projects",
+          "160000 a3f43655d68370389439c7d2c212ab7939bd164e 0\treferences/Hexalith.Tenants",
+          "160000 8679d7d700925a870e9931b3c43c745c063e459b 0\treferences/Hexalith.Works"
+        ],
+        "head": "ee95f90f529812c744761090691a23196c971c78",
+        "indexSha256": "1ccdd87b6783adbc166a7923c4be61d64574fa86e6a7af4073d78b02f0d04979",
+        "stagedDiff": ""
+      },
+      "unchanged": true
+    }
+  },
+  "scopedDiffCheck": {
+    "command": [
+      "git",
+      "diff",
+      "--check",
+      "--",
+      "_bmad-output/implementation-artifacts/3-6-resume-checkpoint.md",
+      "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md",
+      "docs/deployed-magic-link-platform-candidate-recheck.md"
+    ],
+    "exitCode": 0,
+    "stderr": "",
+    "stdout": ""
+  }
+}

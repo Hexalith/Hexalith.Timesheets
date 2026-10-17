@@ -65,6 +65,87 @@ context:
 
 ## Implementation Notes
 
+### Read-only prerequisite investigation — 2026-10-16
+
+Implementation is blocked by the approved Works-publication prerequisite. No CI/CD
+implementation assets, dependency configuration, workflow activation, commit, push,
+release dispatch, repository setting, or submodule pointer was changed by this
+investigation. Preparing dependent local assets before Works publication would
+change the approved execution order and remains pending an explicit user decision.
+The frozen intent, baseline commit, status, and acceptance checkboxes remain intact.
+
+Observed source identities:
+
+| Repository | Exact revision |
+|---|---|
+| Timesheets investigation HEAD | `ee95f90f529812c744761090691a23196c971c78` |
+| Root-pinned Hexalith.Builds | `0e3775b8b00685d8bc87b09135b2475ae867e131` |
+| Root-pinned Hexalith.Works | `8679d7d700925a870e9931b3c43c745c063e459b` |
+| Root-pinned Hexalith.EventStore | `746b843a24f18b17a7572be25b76b735fa8e4ca6` |
+
+The current Works manifest, read from
+`references/Hexalith.Works/tools/release-packages.json`, declares **Contracts,
+Server, Projections, Reactor, and Testing**. It does not declare a Client package.
+At **2026-10-16T12:53:51Z**, every manifest ID returned **HTTP 404** from its
+official NuGet v3 flat-container index. In particular, no exact published
+`Hexalith.Works.Contracts` version can currently be selected. All five intended
+Timesheets IDs also returned HTTP 404 during the initial registry probe; absence
+is recorded as unpublished, never successful publication.
+
+At **2026-10-16T12:55:11Z**, the official indexes for
+`Hexalith.EventStore.{Aspire,Client,Contracts,DomainService,Server,ServiceDefaults,Testing}`
+all returned HTTP 200 and contained exact version **3.122.0**, matching the pinned
+Builds catalog. API inspection of published DomainService 3.122.0 found
+`IAsyncDomainSharedProjectionStreamedOwnerHandler` and
+`IAsyncDomainSharedProjectionRebuildHandler`. This proves those named types are
+published; it does not prove whole-solution compilation or runtime compatibility.
+
+Read-only MSBuild evaluation of all 15 solution projects with
+`Configuration=Release` and `UseHexalithProjectReferences=false` succeeded, but
+still selected **19 cross-repository ProjectReference edges** and reported
+`NuGetAudit=false` in every project. Exactly Contracts, Client, Server,
+Projections, and Testing are already packable. The SDK resolves to **10.0.401**;
+the local Node/npm versions are **26.4.0 / 11.18.0**. No restore, build, or test
+acceptance result is claimed by these evaluation-only checks.
+
+Proposed adjustments after the execution order permits implementation:
+
+- Define one validated Debug/source versus Release/package dependency mode in
+  `Directory.Build.props`, including consistent configuration-free restore
+  behavior, and enable NuGet auditing. Convert every affected source and test
+  project edge to a conditional ProjectReference/PackageReference pair. Preserve
+  local Timesheets layer edges and the existing Contracts/Works ownership rules.
+  Add the eventual exact published Works Contracts version through Central
+  Package Management; the current imported catalog has no Works entry. Do not
+  invent a version or use a temporary Works source exception.
+- Explicitly include
+  `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj` in any
+  approved Code Map adjustment. Its two current unconditional EventStore source
+  edges target the Aspire library and gateway executable. Package-mode compilation
+  needs a published Aspire PackageReference and must avoid the executable source
+  edge. Preserve `Program.cs`, declared resources, and topology. Verify the
+  published Aspire integration's runtime expectations before claiming Release
+  AppHost compatibility. No AppHost edit is authorized by these notes alone.
+- Select `Microsoft.Testing.Platform` in `global.json` before using the shared
+  `test-platform: microsoft-testing-platform` contract; the current root
+  `global.json` pins only the SDK. Keep all six projects explicit, including
+  Works.Tests. The current default IntegrationTests inventory contains **five**
+  declared skips: two static reservations, two `TIMESHEETS_PERF` opt-ins, and the
+  newer `TIMESHEETS_LIVE_DAPR` opt-in. Reconcile the Verification section's older
+  four-skip expectation with the human-owned acceptance intent before completion;
+  do not remove or hide a skip to match the stale count.
+- Call the shared CI and release workflows at immutable Builds revision
+  `0e3775b8b00685d8bc87b09135b2475ae867e131`. Its CI contract supports individual
+  MTP project lists, missing-result failure checks, and the three package scripts.
+  Its release contract supports `production`, an explicit five-package count,
+  `NUGET_API_KEY`, and the exact-string publication freeze. Use
+  `require-publication-authority: false` for this spec's protected-environment
+  minimum; the default `true` requires additional issue-bound reservation
+  governance outside this spec. A NuGet-only caller must supply its own source,
+  inventory, destination-collision, and publication verification scripts: the
+  shared container action installs its preflight helper only when containers are
+  enabled, and containers are outside this spec.
+
 ## Spec Change Log
 
 ## Review Triage Log
@@ -74,6 +155,65 @@ context:
 Tenants supplies the closest domain-module shape, EventStore demonstrates larger package-boundary validation, and FrontComposer supplies NuGet-only publication plus independent evidence. Timesheets should use their common minimum, with five packages and no container, rather than clone repository-specific governance. Repository order is Works implementation, Works publication verification, Timesheets implementation, then separately authorized Timesheets publication. Before publication, dry-run semantic-release, validate the exact pinned Builds input contract, verify repository settings, and poll NuGet with bounded retries. Detect and report partial publication; do not build recovery automation unless it occurs.
 
 ## Verification
+
+**Read-only prerequisite commands and results (2026-10-16):**
+
+The following manifest-driven registry probe was run at
+`2026-10-16T12:53:51.673886+00:00`; it reported HTTP 404 for all five current Works
+manifest IDs. A 404 means unpublished and does not satisfy the prerequisite.
+
+```bash
+python3 - <<'PY'
+import datetime, json, urllib.error, urllib.request
+from pathlib import Path
+
+print('checkedAtUtc=' + datetime.datetime.now(datetime.UTC).isoformat())
+manifest = json.loads(Path('references/Hexalith.Works/tools/release-packages.json').read_text())
+for package in manifest['packages']:
+    url = 'https://api.nuget.org/v3-flatcontainer/' + package['id'].lower() + '/index.json'
+    try:
+        with urllib.request.urlopen(url, timeout=30) as response:
+            data = json.load(response)
+            print(package['id'], response.status, data['versions'])
+    except urllib.error.HTTPError as error:
+        print(package['id'], error.code)
+PY
+```
+
+The exact-version EventStore probe below returned HTTP 200 and `True` for each
+of the seven IDs at `2026-10-16T12:55:11.437218+00:00`:
+
+```bash
+python3 - <<'PY'
+import json, urllib.request
+
+for area in ['Aspire', 'Client', 'Contracts', 'DomainService', 'Server', 'ServiceDefaults', 'Testing']:
+    package_id = 'Hexalith.EventStore.' + area
+    url = 'https://api.nuget.org/v3-flatcontainer/' + package_id.lower() + '/index.json'
+    with urllib.request.urlopen(url, timeout=30) as response:
+        print(package_id, response.status, '3.122.0' in json.load(response)['versions'])
+PY
+```
+
+- `dotnet --version` → `10.0.401`; `node --version` → `v26.4.0`;
+  `npm --version` → `11.18.0`.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild <each of the 15 solution project paths> -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:NuGetAudit,IsPackable -getItem:ProjectReference`
+  → all evaluations exited 0; audit remained false everywhere and 19 sibling
+  ProjectReference edges remained. This is existing-state evidence, not an
+  implementation pass.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dnx dotnet-inspect -y -- find '*SharedProjection*' --package Hexalith.EventStore.DomainService@3.122.0 -n 35`
+  → exited 0 and listed the streamed-owner and rebuild interfaces above. The
+  initial invocation with `--oneline` exited 1 with
+  `Error: Unrecognized command or argument '--oneline'.`; the supported command
+  above supplied the evidence.
+- All three frontmatter context files were read fully. `.editorconfig`, root
+  build/package configuration, the 15-project solution/test inventory, current
+  architecture fitness rules, and pinned reusable-workflow contracts were
+  inspected. Root `.gitattributes` and `Directory.Build.targets` do not exist.
+- Required Release restore/build, six-suite execution, packing, isolated
+  consumers, semantic-release dry-run, and hosted repository-settings validation
+  have **not run**. The separately owned Works publication prerequisite is the
+  current blocker, and the implementation task remains incomplete.
 
 **Commands:**
 - `npm ci && npm audit signatures && npx commitlint --from HEAD~1 --to HEAD` -- Node release tooling and commit policy are reproducible.
