@@ -439,7 +439,7 @@ public sealed class MagicLinkV1MigrationTests
         await Should.ThrowAsync<UnauthorizedAccessException>(() => migration.MigrateAsync("explicit-v1", inventory.Receipt.ReceiptId, Token));
         await Should.ThrowAsync<UnauthorizedAccessException>(() => new MagicLinkTokenHashCapabilityIndexV1Migration(coordinator,
             faultStore, new DenyAllMagicLinkIndexMigrationAuthority(), inventory).MigrateAsync("explicit-v1", inventory.Receipt.ReceiptId, Token));
-        (await coordinator.GetStatusAsync(Scope(), Token)).ShouldBe(before);
+        AssertStatusEqual(await coordinator.GetStatusAsync(Scope(), Token), before);
         (await store.GetAsync<MagicLinkV1MigrationCheckpoint>(Scope().StoreName,
             PhysicalKey(before.Epoch, MagicLinkTokenHashCapabilityIndexV1Migration.CheckpointKey(before.Epoch, 1)), Token)).ETag.ShouldBe(checkpoint.ETag);
         (await store.GetAsync<MagicLinkV1MigrationAbortWitness>(Scope().StoreName,
@@ -462,7 +462,7 @@ public sealed class MagicLinkV1MigrationTests
         SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(Scope(), Token);
         inventory.Receipt = original with { ExpectedContributionDigest = "", InstallationCoverageReceiptId = "" };
         await Should.ThrowAsync<InvalidOperationException>(() => Migration(coordinator, faultStore, inventory).MigrateAsync("explicit-v1", original.ReceiptId, Token));
-        (await coordinator.GetStatusAsync(Scope(), Token)).ShouldBe(before);
+        AssertStatusEqual(await coordinator.GetStatusAsync(Scope(), Token), before);
         inventory.Receipt = original;
         await Migration(new(faultStore, faultStore), faultStore, inventory).MigrateAsync("explicit-v1", original.ReceiptId, Token);
         await AssertCandidatesAsync(coordinator, Rows());
@@ -739,4 +739,18 @@ public sealed class MagicLinkV1MigrationTests
     private static string PhysicalKey(long generation, string logicalKey)
         => "shared-generation:" + Scope().ComputeHash() + ":" + generation + ":"
             + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(logicalKey)));
+
+    private static void AssertStatusEqual(SharedProjectionEpochStatus actual, SharedProjectionEpochStatus expected)
+    {
+        actual.Epoch.ShouldBe(expected.Epoch);
+        actual.ActiveGeneration.ShouldBe(expected.ActiveGeneration);
+        actual.OperationId.ShouldBe(expected.OperationId);
+        actual.StageFingerprint.ShouldBe(expected.StageFingerprint);
+        actual.IsBuilding.ShouldBe(expected.IsBuilding);
+        actual.IsAborting.ShouldBe(expected.IsAborting);
+        actual.PendingDeliveryCount.ShouldBe(expected.PendingDeliveryCount);
+        actual.IsOffboarded.ShouldBe(expected.IsOffboarded);
+        actual.OperationTenantId.ShouldBe(expected.OperationTenantId);
+        actual.IsCapacityLimited.ShouldBe(expected.IsCapacityLimited);
+    }
 }
