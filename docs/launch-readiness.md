@@ -1,5 +1,17 @@
 # Launch Readiness Record
 
+## Owner policy and expired candidate — 2026-10-17
+
+[Current reconciliation](../_bmad-output/implementation-artifacts/evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md)
+records Platform's newer sole-owner documentary policy: the owner prepares and
+reviews their own project documents without a distinct human reviewer, external
+authority registry or new certificate/key. Deployed authorization and factual
+acceptance requirements remain unchanged. Candidate `20261015t162756z` expired
+at **2026-10-16T16:27:56Z**; no replacement or operational approval is ready.
+The historical exact-verifier exit 1 is preserved. Story 3.6/Epic 3/4.27 remain
+in progress, spec-23 draft, 4.1 operational gate closed and release **FAIL**.
+Earlier observations below remain dated history.
+
 ## Native measurement adapter qualified offline — 2026-10-16
 
 Explicit offline authorization produced a separate create-only supplemental

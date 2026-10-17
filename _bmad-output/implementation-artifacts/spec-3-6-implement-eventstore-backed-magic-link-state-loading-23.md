@@ -45,6 +45,20 @@ release PASS.
 
 ## Qualification Result
 
+### Owner policy and expired candidate — 2026-10-17
+
+[Current reconciliation](evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md)
+consumes Platform's newer production plan, A0 drafts and sole-owner documentary
+policy. The owner prepares and reviews their own project documents without a
+distinct human reviewer, external authority registry or new certificate/key.
+This supersedes earlier documentary process requirements within that scope;
+deployed authorization and factual acceptance requirements remain unchanged.
+The candidate expired at **2026-10-16T16:27:56Z**. No replacement is allocated,
+no operational approval is ready and the historical verifier exit 1 is retained.
+No separate Timesheets runtime fix was established. This spec stays draft;
+Story 3.6/Epic 3/4.27 remain in progress, 4.1 closed and release FAIL.
+Earlier observations below remain dated history.
+
 ### Offline intake — 2026-10-16 11:26 UTC
 
 [Current intake and exact owner-evidence requirements](evidence/3-6/20261016t112503z-offline-owner-evidence-intake/README.md)
@@ -220,6 +234,12 @@ discovery is answered; no repeated deployment-information question is needed.
 
 ## Code Map
 
+- `references/Hexalith.Platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-27/20261017t093206z-sole-owner-documentary-policy/sole-owner-policy.json`
+  — current owner-side documentary policy; owner self-review is permitted.
+  Deployed authorization and factual acceptance rules remain unchanged.
+- `evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md`
+  — current Timesheets intake of Platform's production plan, A0 drafts and
+  documentary policy; records expiry and the remaining factual prerequisites.
 - `references/Hexalith.Platform/src/Hexalith.Platform.Identity/PlatformIdentityGatewayAdmission.cs`,
   `PlatformIdentityJwtReader.cs`, and `PlatformIdentityOptions.cs` — configured
   Party-read admission only; do not mistake it for a Timesheets resource-binding

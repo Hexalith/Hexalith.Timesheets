@@ -884,3 +884,29 @@ bounded operational approval prompt. Both preparation directories, originals,
 failures, concurrent changes and gitlinks received no writes from this task.
 Spec-23 stays **draft**; Story **3.6/Epic 3/4.27 in progress**; **4.1 operational
 gate closed**; release **FAIL**. This entry is appended; all earlier bytes remain.
+
+## Owner policy and expired candidate — 2026-10-17
+
+Resumed from clean Timesheets `148498fc6167211a8e86f2396445723666d490d3`,
+observing Platform `d186ad667639b9d629f7de51921e9600e7f7f992`.
+[The current reconciliation](evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md)
+links new public production-plan, A0-draft and sole-owner-policy records.
+The owner prepares and reviews their own project documents without a distinct
+human reviewer, external authority registry or new certificate/key. Earlier
+documentary requirements are superseded within that scope; deployed authority
+and factual acceptance requirements remain unchanged.
+
+Clock observation **2026-10-17T10:02:51Z** is past the unchanged exclusive
+**2026-10-16T16:27:56Z** ceiling. Candidate `20261015t162756z` is expired;
+preparation remains **2026-10-15T16:27:56Z**, with no replacement allocation.
+Current PKI/native authority/rights/custody/runtime evidence and preservation
+disposition remain missing, together with broader deployed Timesheets proof.
+No separate Timesheets runtime fix was established. The original verifier's
+exit 1 is preserved without replay or rebasing. No operational approval is ready.
+
+Only Timesheets evidence/tracking text changes. No completed implementation,
+synthetic suite, live journey or unchanged packet/runtime hash sweep is repeated.
+Frozen intent and all prior checkpoint bytes remain preserved; Platform sources,
+packets, failures and gitlinks receive no writes. Spec-23 stays **draft**;
+Story **3.6/Epic 3/4.27 in progress**; **4.1 operational gate closed**;
+release **FAIL**. Earlier entries retain their dated meaning.

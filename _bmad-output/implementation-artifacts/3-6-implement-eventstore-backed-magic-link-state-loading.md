@@ -23,6 +23,18 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+### Owner policy and expired candidate — 2026-10-17
+
+[Current reconciliation](evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md)
+records Platform's new sole-owner documentary policy and A0 drafts. The owner
+can prepare and review their own project documents; factual deployed authority,
+runtime, continuity and subscriber/shared-rebuild evidence remain required.
+Candidate `20261015t162756z` expired at **2026-10-16T16:27:56Z**. No replacement
+or operational approval is ready; the historical exact-verifier exit 1 persists.
+No separate Timesheets runtime fix was established. Story 3.6/Epic 3/4.27 stay
+in progress, spec-23 draft, 4.1 closed and release FAIL. Earlier entries retain
+their dated meaning.
+
 ### Offline owner-evidence intake — 2026-10-16 11:26 UTC
 
 [Current intake](evidence/3-6/20261016t112503z-offline-owner-evidence-intake/README.md)

@@ -1,5 +1,17 @@
 # Story 3.6 Platform candidate recheck — 2026-10-14
 
+## Owner policy and expired candidate — 2026-10-17
+
+[Current reconciliation](../_bmad-output/implementation-artifacts/evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md)
+consumes Platform's new production plan, A0 drafts and sole-owner documentary
+policy at `d186ad667639b9d629f7de51921e9600e7f7f992`. Owner self-review replaces
+the earlier distinct-reviewer/external-registry process for owner-side documents;
+deployed authority and factual evidence requirements remain unchanged.
+Candidate `20261015t162756z` expired at **2026-10-16T16:27:56Z**. No replacement,
+operational approval or new live observation is claimed. The historical verifier
+exit 1 remains. Spec-23 stays draft, Story 3.6/Epic 3/4.27 in progress,
+4.1 operational gate closed and release FAIL. Earlier entries remain history.
+
 ## Offline owner-evidence intake — 2026-10-16 11:26 UTC
 
 [Exact missing public artifacts and independent owner attestations](../_bmad-output/implementation-artifacts/evidence/3-6/20261016t112503z-offline-owner-evidence-intake/README.md)
