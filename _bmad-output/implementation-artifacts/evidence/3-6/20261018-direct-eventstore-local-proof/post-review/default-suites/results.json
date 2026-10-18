@@ -1,0 +1,50 @@
+[
+  {
+    "project": "Hexalith.Timesheets.Contracts.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 0.692,
+    "summary": [
+      "Hexalith.Timesheets.Contracts.Tests  Total: 92, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0.516s"
+    ]
+  },
+  {
+    "project": "Hexalith.Timesheets.Server.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 2.017,
+    "summary": [
+      "Hexalith.Timesheets.Server.Tests  Total: 558, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 1.817s"
+    ]
+  },
+  {
+    "project": "Hexalith.Timesheets.Works.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 0.426,
+    "summary": [
+      "Hexalith.Timesheets.Works.Tests  Total: 76, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0.267s"
+    ]
+  },
+  {
+    "project": "Hexalith.Timesheets.ArchitectureTests",
+    "exit_code": 0,
+    "elapsed_seconds": 11.01,
+    "summary": [
+      "Hexalith.Timesheets.ArchitectureTests  Total: 59, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 10.831s"
+    ]
+  },
+  {
+    "project": "Hexalith.Timesheets.Projections.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 493.266,
+    "summary": [
+      "Hexalith.Timesheets.Projections.Tests  Total: 437, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 493.055s"
+    ]
+  },
+  {
+    "project": "Hexalith.Timesheets.IntegrationTests",
+    "exit_code": 0,
+    "elapsed_seconds": 525.648,
+    "summary": [
+      "Hexalith.Timesheets.IntegrationTests  Total: 732, Errors: 0, Failed: 0, Skipped: 5, Not Run: 0, Time: 525.417s"
+    ]
+  }
+]

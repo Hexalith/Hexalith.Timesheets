@@ -716,3 +716,14 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-implement-timesheets-ci-cd.md`
   summary: Resolve the upstream braces/micromatch semantic-release advisory chain before merging or activating Timesheets CI/CD.
   evidence: On 2026-10-18 the compatible lock refresh and signatures pass, but npm audit still reports eight high findings from GHSA-vfj7-8cjw-p6xm; latest braces 3.0.3 and micromatch 4.0.8 have no compatible fixed release, and the unchanged high-severity dependency-review gate blocks introduction.
+
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-direct-isolated-eventstore-execution.md`
+  summary: Align the existing Works EventStore-version forwarding with the consuming source-build catalog in a separate build increment.
+  evidence: Works Directory.Build.props defaults HexalithEventStoreVersion to 3.124.0 and forwards it on project references, while the current Timesheets catalog selects 3.125.1. Fresh Debug/source outputs contained Contracts 3.124.0.0 beside deps references to 3.125.1.0; an explicit verification property matching the catalog produced a consistent graph and all 1,949 default tests passed. No dependency/configuration file was changed in the direct-execution fix.
+
+## Resolution: isolated EventStore restart timeout (2026-10-18)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-direct-isolated-eventstore-execution.md`
+  summary: The selected local restart timeout now has a reviewed and verified direct-execution correction.
+  evidence: EventStore.Aspire supplies the additive native-launch helper; the existing isolated AppHost delegates to it in Debug/source mode. The checked-in lane verifies native command, direct DCP ownership and PID/start replacement around the unchanged restart. Final verification passed 1,949 default tests with five intentional skips and the live journey 1/1 in 131.536s, with shared preservation and complete cleanup of all 16 captured identities, three containers and component copies. Durable receipts are under evidence/3-6/20261018-direct-eventstore-local-proof/. The existing Works version-forwarding mismatch remains separately deferred; deployment, legacy certification and release readiness are unchanged.

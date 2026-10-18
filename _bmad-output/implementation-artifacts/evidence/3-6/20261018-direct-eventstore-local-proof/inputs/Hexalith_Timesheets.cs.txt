@@ -1,0 +1,7 @@
+namespace Projects;
+/// <summary>Supplies project metadata for a no-resource compilation probe.</summary>
+internal sealed class Hexalith_Timesheets : Aspire.Hosting.IProjectMetadata
+{
+    /// <summary>Gets the existing Timesheets project path.</summary>
+    public string ProjectPath => "/home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets/Hexalith.Timesheets.csproj";
+}

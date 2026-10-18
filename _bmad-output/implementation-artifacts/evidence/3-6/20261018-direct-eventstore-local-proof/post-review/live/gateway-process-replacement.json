@@ -1,0 +1,37 @@
+{
+  "before": {
+    "pid": 10230,
+    "start": "20390107",
+    "state": "S",
+    "parent": 10096,
+    "executable": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "command": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "argument_count": 0,
+    "parent_identity": {
+      "pid": 10096,
+      "start": "20390046",
+      "state": "S",
+      "parent": 10055,
+      "executable": "/home/administrator/.aspire/versions/13.6.1_3751e615ad660621f2a7aa4c390ef48e08a0eed8-50b61dfaaa4e74c7/dcp/dcp"
+    }
+  },
+  "after": {
+    "pid": 41101,
+    "start": "20397845",
+    "state": "S",
+    "parent": 10096,
+    "executable": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "command": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "argument_count": 0,
+    "parent_identity": {
+      "pid": 10096,
+      "start": "20390046",
+      "state": "S",
+      "parent": 10055,
+      "executable": "/home/administrator/.aspire/versions/13.6.1_3751e615ad660621f2a7aa4c390ef48e08a0eed8-50b61dfaaa4e74c7/dcp/dcp"
+    }
+  },
+  "identity_replaced": true,
+  "same_dcp_parent": true,
+  "old_identity_exited": true
+}

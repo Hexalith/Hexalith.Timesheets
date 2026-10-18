@@ -1,0 +1,37 @@
+{
+  "default_passed": 1949,
+  "default_skipped": 5,
+  "default_errors": 0,
+  "default_failed": 0,
+  "individual_project_processes": 6,
+  "maximum_parallel_projects": 2,
+  "solution_build_warnings": 0,
+  "solution_build_errors": 0,
+  "python_passed": 92,
+  "helper_passed": 13,
+  "compiled_guards_passed": 35,
+  "package_branch_probes_passed": 5,
+  "live": {
+    "passed": 1,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "elapsed_seconds": 131.536,
+    "exit_code": 0,
+    "source_run": "/dev/shm/timesheets-direct-corrected-live/run-h1k9tkf_",
+    "native_command": true,
+    "direct_dcp_parent": true,
+    "identity_replaced": true,
+    "old_identity_exited": true,
+    "shared_preservation": true,
+    "complete_cleanup": true,
+    "captured_identities_exited": 16,
+    "private_containers_removed": 3
+  },
+  "interrupted_invocation": "Known listener-fitness failure retained; cancelled by its recorded owning harness. Additional HTTP 500 appeared after SIGTERM; interrupted output is not acceptance evidence.",
+  "final_inventories": {
+    "aspire": [],
+    "dapr": [],
+    "fixture_containers": []
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "redis": {
+    "0": {
+      "keys": 59699,
+      "persistent_keys": 59688,
+      "persistent_sha256": "ccce1d19b3f21134604ff1325340bd01f4976eedb11214d03aaed8d181a92f46",
+      "expiring_keys": 11
+    },
+    "13": {
+      "keys": 0,
+      "persistent_keys": 0,
+      "persistent_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "expiring_keys": 0
+    },
+    "14": {
+      "keys": 0,
+      "persistent_keys": 0,
+      "persistent_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "expiring_keys": 0
+    }
+  },
+  "scheduler": {
+    "cluster_id": "14841639068965178418",
+    "revision": "14822",
+    "keys": 142,
+    "sha256": "9148f22d2252644df977b23c745cab2ba1c7b1593ec393f5834c1b0f07680f29"
+  }
+}

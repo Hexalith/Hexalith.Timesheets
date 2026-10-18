@@ -1,0 +1,79 @@
+"""Read-only process qualification around the unchanged isolated journey."""
+import json
+import os
+from pathlib import Path
+import sys
+import threading
+import time
+
+sys.path.insert(0, "/home/administrator/projects/hexalith/timesheets/scripts")
+import run_isolated_magic_link_dapr as runner
+
+fixture = runner.IsolatedFixture(log_directory="/tmp/timesheets-direct-eventstore-live")
+original = fixture._journey_command
+samples = []
+errors = []
+stop = threading.Event()
+
+def process(directory):
+    stat = (directory / "stat").read_text().rsplit(")", 1)[1].split()
+    arguments = (directory / "cmdline").read_bytes().split(b"\0")
+    return {"pid": int(directory.name), "start": stat[19], "state": stat[0], "parent": int(stat[1]),
+            "executable": os.readlink(directory / "exe"), "command": os.fsdecode(arguments[0]),
+            "argument_count": max(0, len([arg for arg in arguments if arg]) - 1)}, arguments
+
+def observe():
+    selected = str(Path(fixture.environment[runner.GATEWAY_EXECUTABLE_SETTING]).resolve())
+    while not stop.is_set():
+        rows = []
+        try:
+            for identity in fixture.resource_check(fixture.scratch, fixture.placement, fixture.scheduler):
+                try:
+                    row, arguments = process(Path("/proc") / str(identity["pid"]))
+                    native = row["executable"] == selected
+                    wrapper = Path(row["executable"]).name == "dotnet" and any(
+                        str(runner.GATEWAY_PROJECT).encode() in arg or b"Hexalith.EventStore.csproj" in arg
+                        for arg in arguments)
+                    if native or wrapper:
+                        row.update(native=native, dotnet_run_wrapper=wrapper)
+                        parent, _ = process(Path("/proc") / str(row["parent"]))
+                        row["parent_identity"] = {key: parent[key] for key in ("pid", "start", "executable", "command")}
+                        rows.append(row)
+                except (FileNotFoundError, ProcessLookupError):
+                    pass
+            samples.append({"unix_ns": time.time_ns(), "gateway_processes": rows})
+        except Exception as error:
+            errors.append(type(error).__name__)
+        stop.wait(0.1)
+
+def journey(*args, **kwargs):
+    observer = threading.Thread(target=observe, daemon=True)
+    observer.start()
+    try:
+        return original(*args, **kwargs)
+    finally:
+        stop.set()
+        observer.join(timeout=5)
+        fixture.write_evidence("gateway-process-observations.json", runner.sanitized(json.dumps({
+            "samples": samples, "errors": errors, "observer_stopped": not observer.is_alive()}, indent=2)))
+
+fixture._journey_command = journey
+status = fixture.execute()
+identities = {}
+for sample in samples:
+    for row in sample["gateway_processes"]:
+        if row["native"]:
+            identities.setdefault((row["pid"], row["start"]), row)
+ordered = list(identities)
+replaced = len(ordered) == 2 and any(
+    ordered[1] in {(row["pid"], row["start"]) for row in sample["gateway_processes"]}
+    and ordered[0] not in {(row["pid"], row["start"]) for row in sample["gateway_processes"]}
+    for sample in samples)
+proof = {"journey_exit_status": status, "sample_count": len(samples), "observer_errors": errors,
+         "native_processes": list(identities.values()), "old_identity_replaced": replaced,
+         "dotnet_run_wrapper_observed": any(row["dotnet_run_wrapper"] for sample in samples for row in sample["gateway_processes"]),
+         "all_native_parents_are_dcp": bool(identities) and all(Path(row["parent_identity"]["executable"]).name.startswith("dcp")
+                                                               for row in identities.values())}
+fixture.write_evidence("direct-process-proof.json", runner.sanitized(json.dumps(proof, indent=2)))
+print(runner.sanitized(json.dumps(proof, indent=2)), flush=True)
+raise SystemExit(status)

@@ -15,7 +15,8 @@ import subprocess
 import tempfile
 
 from run_isolated_magic_link_dapr import (
-    APPHOST, COMPONENT_FILES, IsolatedFixture, FixtureError, available_control_port, json_output, read_only_shared_snapshot,
+    APPHOST, COMPONENT_FILES, GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
+    IsolatedFixture, FixtureError, available_control_port, json_output, read_only_shared_snapshot,
     require, shared_preservation, write_components,
 )
 
@@ -27,6 +28,7 @@ def run_guards(log_directory=None, configuration_only=False):
     # missing-setting probes actually exercise missing settings.
     controlled = {key.casefold() for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
         "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY", "TIMESHEETS_LIVE_DAPR_REDIS_HOST",
+        GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
         "Dapr:PlacementHostAddress", "Dapr:SchedulerHostAddress", "AppHost:Operation", "Publishing:Publisher")}
     for key in tuple(fixture.environment):
         normalized = key.replace("__", ":").casefold()
@@ -62,7 +64,11 @@ def run_guards(log_directory=None, configuration_only=False):
                  "missing-opt-in", "wrong-scope", "missing-component",
                  "missing-pubsub", "unsafe-pubsub", "missing-placement", "shared-placement",
                  "missing-scheduler", "shared-scheduler", "duplicate-control-endpoint",
-                 "shared-redis", "mismatched-actor-redis", "mismatched-readmodel-redis", "mismatched-pubsub-redis")
+                 "shared-redis", "mismatched-actor-redis", "mismatched-readmodel-redis", "mismatched-pubsub-redis",
+                 "valid-compiled-isolated", "compiled-executable-only", "compiled-directory-only",
+                 "compiled-empty-executable", "compiled-empty-directory", "compiled-blank-executable", "compiled-blank-directory",
+                 "ordinary-compiled", "ordinary-compiled-executable-only", "ordinary-compiled-directory-only",
+                 "publish-compiled", "unsafe-components-compiled", "missing-placement-compiled")
         results = []
         for name in cases:
             with tempfile.TemporaryDirectory(prefix="timesheets-guard-components-") as directory:
@@ -70,12 +76,25 @@ def run_guards(log_directory=None, configuration_only=False):
                 fixture.environment = dict(baseline)
                 fixture.environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"] = directory
                 expected = "Isolated Dapr components are missing or unsafe."
-                mode = "publish" if name in ("publish-fixture", "publish-bare-fixture") else "run"
+                mode = "publish" if name.startswith("publish-") else "run"
                 # Command-line configuration has precedence over every inherited
                 # provider. A regressed admission guard still cannot run resources.
                 arguments = [str(executable), "--guard-probe=" + name,
                              "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", "--AppHost:Operation=" + mode]
-                if name == "ordinary-defaults":
+                if "compiled" in name:
+                    fixture.environment.update({GATEWAY_EXECUTABLE_SETTING: str(executable),
+                                                GATEWAY_DIRECTORY_SETTING: str(executable.parent)})
+                    expected = "Compiled gateway launch requires both executable and working directory."
+                    if name.endswith("executable-only"):
+                        fixture.environment.pop(GATEWAY_DIRECTORY_SETTING)
+                    elif name.endswith("directory-only"):
+                        fixture.environment.pop(GATEWAY_EXECUTABLE_SETTING)
+                    elif name.startswith(("compiled-empty-", "compiled-blank-")):
+                        setting = GATEWAY_EXECUTABLE_SETTING if name.endswith("executable") else GATEWAY_DIRECTORY_SETTING
+                        fixture.environment[setting] = "" if "empty" in name else " \t "
+                    if name.startswith("ordinary-") or name == "publish-compiled":
+                        expected = "Compiled gateway launch requires a validated isolated run-mode fixture."
+                if name == "ordinary-defaults" or name.startswith("ordinary-compiled"):
                     fixture.environment.pop("TIMESHEETS_LIVE_DAPR_COMPONENTS")
                     fixture.environment.pop("TIMESHEETS_LIVE_DAPR_FIXTURE")
                     fixture.environment.pop("Dapr__PlacementHostAddress")
@@ -89,19 +108,26 @@ def run_guards(log_directory=None, configuration_only=False):
                     if name == "bare-fixture-flag":
                         fixture.environment.pop("Dapr__PlacementHostAddress")
                         fixture.environment.pop("Dapr__SchedulerHostAddress")
-                elif name in ("publish-fixture", "publish-bare-fixture"):
+                elif name in ("publish-fixture", "publish-bare-fixture", "publish-compiled"):
                     if name == "publish-bare-fixture":
                         fixture.environment.pop("TIMESHEETS_LIVE_DAPR_COMPONENTS")
                         fixture.environment.pop("Dapr__PlacementHostAddress")
                         fixture.environment.pop("Dapr__SchedulerHostAddress")
                     arguments.extend(["--publisher=manifest", "--output-path=" + str(Path(directory) / "unused-manifest.json")])
-                    expected = "Isolated Dapr components require an explicit run-mode fixture opt-in."
+                    if name != "publish-compiled":
+                        expected = "Isolated Dapr components require an explicit run-mode fixture opt-in."
                 elif name == "missing-opt-in":
                     fixture.environment.pop("TIMESHEETS_LIVE_DAPR_FIXTURE")
                     expected = "Isolated Dapr components require an explicit run-mode fixture opt-in."
                 elif name == "wrong-scope":
                     path = Path(directory) / "Timesheets/timesheets-readmodels.yaml"
                     path.write_text(path.read_text().replace("  - timesheets", "  - eventstore"))
+                elif name == "unsafe-components-compiled":
+                    expected = "Isolated Dapr components are missing or unsafe."
+                    (Path(directory) / "pubsub.yaml").unlink()
+                elif name == "missing-placement-compiled":
+                    expected = "Isolated Dapr placement and scheduler endpoints are missing or unsafe."
+                    fixture.environment.pop("Dapr__PlacementHostAddress")
                 elif name == "missing-component":
                     (Path(directory) / "Timesheets/timesheets-readmodels.yaml").unlink()
                 elif name == "missing-pubsub":
@@ -134,10 +160,12 @@ def run_guards(log_directory=None, configuration_only=False):
                 # Build/Run or resource construction. It is not an AppHost launch.
                 result = fixture.run_command(arguments, check=False)
                 output = (result.stdout or "") + (result.stderr or "")
-                if name in ("valid-isolated", "ordinary-defaults"):
-                    marker = "isolated fixture" if name == "valid-isolated" else "checked-in defaults"
+                if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated"):
+                    marker = "checked-in defaults" if name == "ordinary-defaults" else "isolated fixture"
                     require(result.returncode == 0 and "Dapr component selection: " + marker in output,
                             name + " selection was not verified")
+                    launch = "compiled executable" if name == "valid-compiled-isolated" else "project"
+                    require("Gateway launch selection: " + launch in output, name + " gateway selection was not verified")
                 else:
                     require(result.returncode != 0 and expected in output, name + " did not refuse before resource construction")
                 if not configuration_only:

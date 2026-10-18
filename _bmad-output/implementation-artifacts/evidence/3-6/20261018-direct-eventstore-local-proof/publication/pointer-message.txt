@@ -1,0 +1,1 @@
+build(deps): advance EventStore for compiled gateway launches

@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 import run_isolated_magic_link_dapr as fixture
@@ -30,9 +31,11 @@ class Commands:
         self.redis_attempted = False
         self.containers = {}
         self.owner = None
+        self.run_properties = {"RunCommand": sys.executable, "RunArguments": "",
+                               "RunWorkingDirectory": str(fixture.ROOT)}
 
     def __call__(self, arguments, **kwargs):
-        self.calls.append((arguments, kwargs))
+        self.calls.append((arguments, {**kwargs, "env": dict(kwargs["env"])}))
         if arguments[:2] == ["aspire", "start"]:
             self.started = True
         if arguments[:2] == ["docker", "run"]:
@@ -51,7 +54,9 @@ class Commands:
             if result is not None:
                 return result
         output = ""
-        if arguments[:2] in (["aspire", "ps"], ["dapr", "list"]):
+        if arguments[:2] == ["dotnet", "msbuild"]:
+            output = json.dumps({"Properties": self.run_properties})
+        elif arguments[:2] in (["aspire", "ps"], ["dapr", "list"]):
             output = "[]"
         elif arguments[:2] == ["docker", "inspect"] and arguments[2].startswith("dapr_"):
             output = self.image
@@ -96,6 +101,12 @@ class IsolatedFixtureTests(unittest.TestCase):
         return instance, result
 
     @staticmethod
+    def gateway_identities():
+        parent = {"pid": 999999996, "start": "owner"}
+        return [{"pid": 999999997, "start": "1", "parent_identity": parent},
+                {"pid": 999999998, "start": "2", "parent_identity": parent}]
+
+    @staticmethod
     def guard_commands(failed=False):
         commands = Commands()
         def probe(arguments):
@@ -105,8 +116,9 @@ class IsolatedFixtureTests(unittest.TestCase):
             name = names[0]
             if failed:
                 return subprocess.CompletedProcess(arguments, 42, "Guard failed", "")
-            if name in ("valid-isolated", "ordinary-defaults"):
-                message = "Dapr component selection: " + ("isolated fixture" if name == "valid-isolated" else "checked-in defaults")
+            if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated"):
+                message = "Dapr component selection: " + ("checked-in defaults" if name == "ordinary-defaults" else "isolated fixture")
+                message += "\nGateway launch selection: " + ("compiled executable" if name == "valid-compiled-isolated" else "project")
                 return subprocess.CompletedProcess(arguments, 0, message, "")
             message = "Isolated Dapr components are missing or unsafe."
             if name in ("missing-opt-in", "publish-fixture", "publish-bare-fixture"):
@@ -114,6 +126,12 @@ class IsolatedFixtureTests(unittest.TestCase):
             if name in ("bare-fixture-flag", "missing-components", "empty-components", "whitespace-components"):
                 message = "Isolated Dapr fixture requires an explicit component directory."
             if name in ("missing-placement", "shared-placement", "missing-scheduler", "shared-scheduler", "duplicate-control-endpoint"):
+                message = "Isolated Dapr placement and scheduler endpoints are missing or unsafe."
+            if name.startswith("compiled-"):
+                message = "Compiled gateway launch requires both executable and working directory."
+            if name.startswith("ordinary-compiled") or name == "publish-compiled":
+                message = "Compiled gateway launch requires a validated isolated run-mode fixture."
+            if name == "missing-placement-compiled":
                 message = "Isolated Dapr placement and scheduler endpoints are missing or unsafe."
             return subprocess.CompletedProcess(arguments, -6, "", message)
         commands.failure = probe
@@ -146,6 +164,236 @@ class IsolatedFixtureTests(unittest.TestCase):
                     self.assertEqual(instance.scratch, environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"], arguments)
                 self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
 
+    def test_gateway_resolution_uses_the_pinned_workspace_query_and_discards_inherited_aliases(self):
+        inherited = {key: "inherited unsafe value" for key in (
+            fixture.GATEWAY_EXECUTABLE_SETTING, fixture.GATEWAY_DIRECTORY_SETTING,
+            fixture.GATEWAY_EXECUTABLE_SETTING.lower(), fixture.GATEWAY_DIRECTORY_SETTING.lower(),
+            "ASPIRE_" + fixture.GATEWAY_EXECUTABLE_SETTING, "DOTNET_" + fixture.GATEWAY_DIRECTORY_SETTING)}
+        directory = Path(self.temporary.name) / "gateway workspace with spaces"
+        directory.mkdir()
+        executable = directory / "compiled gateway"
+        executable.symlink_to(sys.executable)
+        commands = Commands()
+        commands.run_properties.update(RunCommand=str(executable), RunWorkingDirectory=str(directory))
+        with patch.dict(os.environ, inherited):
+            caller = dict(os.environ)
+            instance, status = self.run_fixture(commands)
+            self.assertEqual(0, status)
+            self.assertEqual(caller, dict(os.environ))
+        query_index = next(index for index, (args, _) in enumerate(commands.calls) if args[:2] == ["dotnet", "msbuild"])
+        arguments, options = commands.calls[query_index]
+        self.assertEqual(str(fixture.GATEWAY_PROJECT), arguments[2])
+        self.assertEqual(fixture.ROOT, options["cwd"])
+        self.assertIn("-target:ComputeRunArguments", arguments)
+        self.assertIn("-getProperty:RunCommand,RunArguments,RunWorkingDirectory", arguments)
+        for setting in ("Configuration=Debug", "UseHexalithProjectReferences=true", "UseNuGetDeps=false"):
+            self.assertIn("-p:" + setting, arguments)
+        self.assertFalse(set(inherited) & set(options["env"]))
+        creation_index = next(index for index, (args, _) in enumerate(commands.calls) if args[:2] == ["docker", "run"])
+        self.assertLess(query_index, creation_index)
+        for args, options in commands.calls:
+            if args[:2] == ["aspire", "start"] or "-class" in args:
+                self.assertEqual(str(executable), options["env"][fixture.GATEWAY_EXECUTABLE_SETTING])
+                self.assertEqual(str(directory), options["env"][fixture.GATEWAY_DIRECTORY_SETTING])
+                self.assertFalse((set(inherited) - {fixture.GATEWAY_EXECUTABLE_SETTING, fixture.GATEWAY_DIRECTORY_SETTING})
+                                 & set(options["env"]))
+        selected = json.loads((instance.log_directory / "gateway-invocation.json").read_text())
+        self.assertEqual(str(executable), selected["executable"])
+        self.assertEqual(str(directory), selected["working_directory"])
+        self.assertEqual("", selected["arguments"])
+
+    def test_unsupported_gateway_metadata_refuses_before_creating_infrastructure(self):
+        non_executable = Path(self.temporary.name) / "non-executable"
+        non_executable.write_text("not executable")
+        valid = Commands().run_properties
+        payloads = ["not JSON", "null", "[]", "{}", '{"Properties":null}',
+                    json.dumps({"Properties": []})]
+        for field in valid:
+            payloads.append(json.dumps({"Properties": {key: value for key, value in valid.items() if key != field}}))
+            for value in (None, 123, []):
+                payloads.append(json.dumps({"Properties": {**valid, field: value}}))
+        for field, values in (("RunCommand", ("", "relative-command", str(non_executable), str(self.logs), "/missing/gateway")),
+                              ("RunArguments", (" ", "--argument", "gateway.dll")),
+                              ("RunWorkingDirectory", ("", "relative-directory", str(non_executable), "/missing/directory"))):
+            payloads.extend(json.dumps({"Properties": {**valid, field: value}}) for value in values)
+        for payload in payloads:
+            with self.subTest(payload=payload):
+                commands = Commands(lambda args: subprocess.CompletedProcess(args, 0, payload, "")
+                                    if args[:2] == ["dotnet", "msbuild"] else None)
+                instance, status = self.run_fixture(commands)
+                self.assertNotEqual(0, status)
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.redis_attempted)
+                self.assertIsNone(instance.scratch)
+                self.assertNotIn(fixture.GATEWAY_EXECUTABLE_SETTING, instance.environment)
+                self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_gateway_query_failure_retains_sanitized_original_status_without_creating_resources(self):
+        commands = Commands(lambda args: subprocess.CompletedProcess(args, 27, "Authorization: Bearer private-query-token", "")
+                            if args[:2] == ["dotnet", "msbuild"] else None)
+        instance, status = self.run_fixture(commands)
+        self.assertEqual(27, status)
+        self.assertFalse(commands.redis_attempted)
+        self.assertFalse(commands.started)
+        logs = "".join(path.read_text() for path in instance.log_directory.glob("*.log"))
+        self.assertNotIn("private-query-token", logs)
+        self.assertIn("redacted", logs)
+
+    def test_poisoned_sdk_run_and_start_environment_cannot_replace_the_gateway_query(self):
+        poison = {"RunCommand": "/usr/bin/true", "RunArguments": "", "RunWorkingDirectory": "/tmp",
+                  "StartAction": "Program", "StartProgram": "/usr/bin/true", "StartArguments": "",
+                  "StartWorkingDirectory": "/tmp"}
+        aliases = {alias: value for name, value in poison.items()
+                   for alias in (name, name.lower(), "ASPIRE_" + name.upper(), "DOTNET_" + name)}
+        with patch.dict(os.environ, aliases):
+            caller = dict(os.environ)
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            self.assertFalse(set(aliases) & set(instance.environment))
+            instance.resolve_gateway_invocation()
+            self.assertEqual(caller, dict(os.environ))
+        selected = json.loads((instance.log_directory / "gateway-invocation.json").read_text())
+        self.assertEqual("Hexalith.EventStore", Path(selected["executable"]).name)
+        self.assertEqual(str(fixture.GATEWAY_PROJECT.parent), selected["working_directory"])
+        self.assertEqual("", selected["arguments"])
+
+    def test_removing_inherited_launch_overrides_preserves_project_defined_metadata(self):
+        project = Path(self.temporary.name) / "Project.csproj"
+        root = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
+        properties = ET.SubElement(root, "PropertyGroup")
+        for name, value in {"TargetFramework": "net10.0", "OutputType": "Exe", "StartAction": "Program",
+                            "StartProgram": sys.executable, "StartWorkingDirectory": self.temporary.name}.items():
+            ET.SubElement(properties, name).text = value
+        ET.ElementTree(root).write(project, encoding="unicode")
+        with patch.dict(os.environ, {"RunCommand": "/usr/bin/true", "StartProgram": "/usr/bin/false"}), \
+                patch.object(fixture, "GATEWAY_PROJECT", project):
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            instance.resolve_gateway_invocation()
+        self.assertEqual(sys.executable, instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING])
+        self.assertEqual(self.temporary.name, instance.environment[fixture.GATEWAY_DIRECTORY_SETTING])
+
+    def test_gateway_process_checks_require_native_command_and_fixture_bound_dcp_parent(self):
+        directory = Path(self.temporary.name) / "proc"
+        selected = Path(self.temporary.name) / "gateway"
+        selected.touch()
+        dcp = Path(self.temporary.name) / "dcp"
+        dcp.touch()
+        other = Path(self.temporary.name) / "dotnet"
+        other.touch()
+        def process(pid, parent, start, executable, arguments):
+            path = directory / str(pid)
+            path.mkdir(parents=True, exist_ok=True)
+            (path / "stat").write_text(f"{pid} (process) " + " ".join(["S", str(parent), *(["0"] * 17), start]))
+            (path / "cmdline").write_bytes(b"\0".join(os.fsencode(arg) for arg in arguments) + b"\0")
+            (path / "exe").unlink(missing_ok=True)
+            (path / "exe").symlink_to(executable)
+        identities = [{"pid": 1, "start": "native"}, {"pid": 2, "start": "owner"}]
+        process(1, 2, "native", selected, [selected])
+        process(2, 0, "owner", dcp, [dcp])
+        result = fixture.gateway_process_identity(str(selected), identities, directory)
+        self.assertEqual(str(selected), result["command"])
+        self.assertEqual(0, result["argument_count"])
+        self.assertEqual(2, result["parent_identity"]["pid"])
+        for scenario in ("wrapper-command", "arguments", "wrapper-parent", "unbound-parent", "changed-start", "duplicate"):
+            with self.subTest(scenario=scenario):
+                process(1, 2, "native", selected, [selected])
+                process(2, 0, "owner", dcp, [dcp])
+                bound = list(identities)
+                if scenario == "wrapper-command":
+                    process(1, 2, "native", selected, ["dotnet", "run", "PRIVATE-TOKEN"])
+                elif scenario == "arguments":
+                    process(1, 2, "native", selected, [selected, "PRIVATE-TOKEN"])
+                elif scenario == "wrapper-parent":
+                    process(2, 0, "owner", other, [other])
+                elif scenario == "unbound-parent":
+                    bound.pop()
+                elif scenario == "changed-start":
+                    process(1, 2, "changed", selected, [selected])
+                else:
+                    process(3, 2, "second", selected, [selected])
+                    bound.append({"pid": 3, "start": "second"})
+                with self.assertRaises(fixture.FixtureError) as failure:
+                    fixture.gateway_process_identity(str(selected), bound, directory)
+                self.assertNotIn("PRIVATE-TOKEN", str(failure.exception))
+
+    def test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup(self):
+        for status in (0, 42):
+            for proof_failure in (False, True):
+                with self.subTest(status=status, proof_failure=proof_failure):
+                    commands = Commands(lambda args: subprocess.CompletedProcess(args, status,
+                        "Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0", "") if "-class" in args else None)
+                    instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                        ownership_check=lambda: commands.started and not commands.stopped, resource_check=lambda *_: [])
+                    instance.injected_command = False
+                    identities = self.gateway_identities()
+                    if proof_failure:
+                        identities[1] = fixture.FixtureError("native inspection failed")
+                    with patch.object(instance, "_journey_command", commands), \
+                            patch.object(instance, "capture_gateway_process", side_effect=identities) as capture, \
+                            patch.object(fixture, "read_only_shared_snapshot", return_value=self.shared_snapshot()), \
+                            patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), \
+                            contextlib.redirect_stdout(io.StringIO()):
+                        self.assertEqual(status or int(proof_failure), instance.execute())
+                    self.assertEqual([("before",), ("after",)], [call.args for call in capture.call_args_list])
+                    self.assertFalse(commands.containers)
+                    self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+                    self.assertTrue((instance.log_directory / ("gateway-process-proof-failure.json" if proof_failure
+                        else "gateway-process-replacement.json")).is_file())
+
+    def test_gateway_replacement_requires_new_identity_same_dcp_and_exited_old_identity(self):
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        before, after = self.gateway_identities()
+        for unchanged, moved_owner, old_alive in ((True, False, False), (False, True, False), (False, False, True)):
+            with self.subTest(unchanged=unchanged, moved_owner=moved_owner, old_alive=old_alive):
+                candidate = before if unchanged else dict(after)
+                if moved_owner:
+                    candidate["parent_identity"] = {"pid": 999999995, "start": "other"}
+                with patch.object(fixture, "recorded_process_exits", return_value={"all_gone": not old_alive}), \
+                        self.assertRaises(fixture.FixtureError):
+                    instance.verify_gateway_replacement(before, candidate)
+
+    def test_gateway_capture_retains_sanitized_evidence_and_all_cleanup_identities(self):
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = sys.executable
+        before, after = self.gateway_identities()
+        parent = {"pid": 999999996, "start": "owner", "state": "S"}
+        before = {**before, "state": "S", "parent_identity": parent}
+        after = {**after, "state": "S", "parent_identity": parent}
+        with patch.object(instance, "resource_check", return_value=[]), \
+                patch.object(fixture, "gateway_process_identity", side_effect=(before, after)):
+            self.assertEqual(before, instance.capture_gateway_process("before"))
+            self.assertEqual(after, instance.capture_gateway_process("after"))
+        self.assertEqual({(row["pid"], row["start"]) for row in (before, after, parent)},
+                         {(row["pid"], row["start"]) for row in instance.captured_processes})
+        for phase in ("before", "after"):
+            self.assertTrue((instance.log_directory / ("gateway-process-" + phase + ".json")).is_file())
+        failed = fixture.IsolatedFixture(log_directory=self.logs)
+        failed.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = sys.executable
+        with patch.object(failed, "resource_check", return_value=[]), \
+                patch.object(fixture, "gateway_process_identity", return_value=after), \
+                patch.object(failed, "write_evidence", return_value=False), self.assertRaises(fixture.FixtureError):
+            failed.capture_gateway_process("after")
+        self.assertEqual({(after["pid"], after["start"]), (parent["pid"], parent["start"])},
+                         {(row["pid"], row["start"]) for row in failed.captured_processes})
+
+    def test_gateway_before_proof_refuses_journey_and_after_cancellation_preserves_existing_failure(self):
+        for original_status, before_failure in ((0, True), (0, False), (42, False)):
+            with self.subTest(original_status=original_status, before_failure=before_failure):
+                commands = Commands(lambda args: subprocess.CompletedProcess(args, original_status,
+                    "Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0", "") if "-class" in args else None)
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                    ownership_check=lambda: commands.started and not commands.stopped, resource_check=lambda *_: [])
+                instance.injected_command = False
+                identities = [fixture.FixtureError("native ownership failed")] if before_failure else [self.gateway_identities()[0], KeyboardInterrupt()]
+                with patch.object(instance, "_journey_command", commands), \
+                        patch.object(instance, "capture_gateway_process", side_effect=identities), \
+                        patch.object(fixture, "read_only_shared_snapshot", return_value=self.shared_snapshot()), \
+                        patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(1 if before_failure else original_status or 130, instance.execute())
+                self.assertEqual(not before_failure, any("-class" in args for args, _ in commands.calls))
+                self.assertFalse(commands.containers)
+                self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
     def test_aspire_resolves_current_assets_instead_of_reusing_another_configuration(self):
         # Aspire 13.6.1 reads this escape hatch from the project configuration,
         # not the environment. Its cached launch command omits ambient MSBuild
@@ -167,7 +415,7 @@ class IsolatedFixtureTests(unittest.TestCase):
             self.assertEqual(0, guards.run_guards())
         probes = {arguments[1].split("=", 1)[1]: (arguments, kwargs["env"])
                   for arguments, kwargs in commands.calls if arguments[0] == str(executable)}
-        self.assertEqual(22, len(probes))
+        self.assertEqual(35, len(probes))
         for name, (arguments, environment) in probes.items():
             self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"], name)
             self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", arguments)
@@ -207,7 +455,7 @@ class IsolatedFixtureTests(unittest.TestCase):
                 patch.object(guards, "read_only_shared_snapshot", side_effect=AssertionError("Unexpected storage read")), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, guards.run_guards(configuration_only=True))
-        self.assertEqual(22, len(commands.calls))
+        self.assertEqual(35, len(commands.calls))
         for arguments, kwargs in commands.calls:
             self.assertEqual(str(executable), arguments[0])
             self.assertEqual("1", kwargs["env"]["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"])
@@ -1031,6 +1279,7 @@ class IsolatedFixtureTests(unittest.TestCase):
                     ownership_check=lambda: commands.started and not commands.stopped, resource_check=lambda *_: [])
                 instance.injected_command = False
                 with patch.object(instance, "_journey_command", commands), \
+                        patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                         patch.object(fixture, "read_only_shared_snapshot", side_effect=(before, before, after)), \
                         patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), \
                         contextlib.redirect_stdout(io.StringIO()) as output:
@@ -1213,6 +1462,7 @@ time.sleep(60)
                             raise PermissionError("late evidence write blocked")
                         return original_write(path, *args, **kwargs)
                     with patch.object(instance, "_journey_command", commands), \
+                            patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                             patch.object(fixture, "read_only_shared_snapshot", return_value=snapshot), \
                             patch.object(fixture, "verify_runtime_components"), \
                             patch.object(Path, "write_text", write), contextlib.redirect_stdout(io.StringIO()):
@@ -1390,6 +1640,7 @@ time.sleep(60)
                     log_directory=self.logs, ownership_check=lambda: commands.started and not commands.stopped)
                 instance.injected_command = False
                 with patch.object(instance, "_journey_command", commands), \
+                        patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                         patch.object(fixture, "read_only_shared_snapshot", side_effect=(snapshot, snapshot, KeyboardInterrupt())), \
                         patch.object(fixture, "verify_runtime_components"), contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(original_exit or 130, instance.execute())
@@ -1462,6 +1713,7 @@ time.sleep(60)
             ownership_check=lambda: commands.started and not commands.stopped, resource_check=lambda *_: [])
         instance.injected_command = False
         with patch.object(instance, "_journey_command", commands), \
+                patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                 patch.object(instance, "resource_check", side_effect=([identity], [])), \
                 patch.object(fixture, "read_only_shared_snapshot", return_value=snapshot), \
                 patch.object(fixture, "verify_runtime_components"), contextlib.redirect_stdout(io.StringIO()):

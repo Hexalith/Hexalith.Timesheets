@@ -1,0 +1,17 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: Hexalith.Timesheets.IntegrationTests
+  Discovered:  Hexalith.Timesheets.IntegrationTests
+  Starting:    Hexalith.Timesheets.IntegrationTests
+    Hexalith.Timesheets.IntegrationTests.PerformanceEvidenceLaneTests.Performance_lane_is_reserved_for_launch_latency_evidence [SKIP]
+      Performance evidence requires realistic EventStore-backed command/report fixtures in a later data-bearing story.
+    Hexalith.Timesheets.IntegrationTests.MagicLinkLiveDaprTests.Recorded_magic_links_commit_one_use_and_survive_actor_restart [SKIP]
+      Set TIMESHEETS_LIVE_DAPR=1 to run the local EventStore/Dapr acceptance journey.
+    Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests.Capture_and_governance_command_acknowledgements_record_nfr10_p95_evidence [SKIP]
+      Set TIMESHEETS_PERF=1 to run the command performance lane.
+    Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests.Report_export_and_dashboard_query_latency_records_nfr11_p95_evidence [SKIP]
+      Set TIMESHEETS_PERF=1 to run the report/export/dashboard performance lane.
+    Hexalith.Timesheets.IntegrationTests.InfrastructureLaneTests.Runtime_integration_lane_is_reserved_for_eventstore_state_store_evidence [SKIP]
+      Infrastructure-dependent EventStore/Dapr/Aspire tests are isolated until a data-bearing story adds runtime fixtures.
+  Finished:    Hexalith.Timesheets.IntegrationTests (ID = '32f65c821a355e56a6b399a747027e8f06d6a6c65791661c7f82c5c5d8b8c422')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.IntegrationTests  Total: 732, Errors: 0, Failed: 0, Skipped: 5, Not Run: 0, Time: 525.417s

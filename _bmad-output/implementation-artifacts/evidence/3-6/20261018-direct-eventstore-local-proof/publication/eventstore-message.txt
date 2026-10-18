@@ -1,0 +1,1 @@
+feat(aspire): support direct execution of compiled projects

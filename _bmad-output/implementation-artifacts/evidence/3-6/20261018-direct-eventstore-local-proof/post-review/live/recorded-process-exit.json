@@ -1,0 +1,101 @@
+{
+  "all_gone": true,
+  "processes": [
+    {
+      "pid": 8937,
+      "start": "20389844",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 8994,
+      "start": "20389849",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 9450,
+      "start": "20389963",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10055,
+      "start": "20390037",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10096,
+      "start": "20390046",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10230,
+      "start": "20390107",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10231,
+      "start": "20390107",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10253,
+      "start": "20390108",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10254,
+      "start": "20390108",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10328,
+      "start": "20390116",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10348,
+      "start": "20390116",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10349,
+      "start": "20390116",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10402,
+      "start": "20390119",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10451,
+      "start": "20390124",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 10773,
+      "start": "20390177",
+      "state": "R",
+      "gone": true
+    },
+    {
+      "pid": 41101,
+      "start": "20397845",
+      "state": "S",
+      "gone": true
+    }
+  ]
+}

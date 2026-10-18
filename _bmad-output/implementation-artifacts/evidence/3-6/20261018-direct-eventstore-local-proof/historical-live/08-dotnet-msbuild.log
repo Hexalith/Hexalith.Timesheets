@@ -1,0 +1,11 @@
+Command: dotnet msbuild /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj -nologo -target:ComputeRunArguments -getProperty:RunCommand,RunArguments,RunWorkingDirectory -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false -m:1 /nr:false
+Exit: 0
+Stdout:
+{
+  "Properties": {
+    "RunCommand": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "RunArguments": "",
+    "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore"
+  }
+}
+Stderr:

@@ -1,0 +1,11 @@
+Command: /home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class *MagicLinkLiveDaprTests -noColor
+Exit: 0
+Stdout:
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: Hexalith.Timesheets.IntegrationTests
+  Discovered:  Hexalith.Timesheets.IntegrationTests
+  Starting:    Hexalith.Timesheets.IntegrationTests
+  Finished:    Hexalith.Timesheets.IntegrationTests (ID = '32f65c821a355e56a6b399a747027e8f06d6a6c65791661c7f82c5c5d8b8c422')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.IntegrationTests  Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 131.536s
+Stderr:

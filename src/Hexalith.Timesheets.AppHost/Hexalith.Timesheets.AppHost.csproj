@@ -6,6 +6,10 @@
     <IsPublishable>true</IsPublishable>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(UseHexalithProjectReferences)' == 'true'">
+    <DefineConstants>$(DefineConstants);TIMESHEETS_COMPILED_GATEWAY</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="$(HexalithEventStoreRoot)/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj" IsAspireProjectResource="false" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
     <ProjectReference Include="$(HexalithEventStoreRoot)/src/Hexalith.EventStore/Hexalith.EventStore.csproj" ReferenceOutputAssembly="false" IsAspireProjectResource="false" Condition="'$(UseHexalithProjectReferences)' == 'true'" />

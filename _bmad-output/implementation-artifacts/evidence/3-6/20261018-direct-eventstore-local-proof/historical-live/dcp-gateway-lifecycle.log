@@ -1,0 +1,12 @@
+[2026-10-18 15:19:32.394] [INFO] [AppHost]       Started monitoring process	{"MonitorPID": 85083, "ChildPID": 85299, "PID": 85083}
+[2026-10-18 15:19:32.394] [INFO] [AppHost]       Started monitoring process	{"MonitorPID": 85083, "ChildPID": 85299, "PID": 85299}
+[2026-10-18 15:19:32.390] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 85083, "ChildPID": 85299, "PID": 85083}
+[2026-10-18 15:19:32.390] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 85083, "ChildPID": 85299, "PID": 85299}
+[2026-10-18 15:20:42.095] [INFO] [AppHost]       Root process has stopped	{"Root": 85299}
+[2026-10-18 15:20:42.095] [DBUG] [AppHost/os-executor] Root process has stopped	{"Root": 85299}
+[2026-10-18 15:20:42.451] [INFO] [AppHost]       Monitor process exited, shutting down	{"MonitorPID": 85083, "ChildPID": 85299, "PID": 85299}
+[2026-10-18 15:20:42.450] [DBUG] [AppHost/ProcessMonitor] Monitor process exited, shutting down	{"MonitorPID": 85083, "ChildPID": 85299, "PID": 85299}
+[2026-10-18 15:20:42.966] [INFO] [AppHost]       Started monitoring process	{"MonitorPID": 85083, "ChildPID": 17630, "PID": 85083}
+[2026-10-18 15:20:42.966] [INFO] [AppHost]       Started monitoring process	{"MonitorPID": 85083, "ChildPID": 17630, "PID": 17630}
+[2026-10-18 15:20:42.965] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 85083, "ChildPID": 17630, "PID": 85083}
+[2026-10-18 15:20:42.966] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 85083, "ChildPID": 17630, "PID": 17630}

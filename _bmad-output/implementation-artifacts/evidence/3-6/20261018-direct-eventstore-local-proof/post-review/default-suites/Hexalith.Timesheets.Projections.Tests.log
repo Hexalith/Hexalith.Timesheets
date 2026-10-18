@@ -1,0 +1,8 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: Hexalith.Timesheets.Projections.Tests
+  Discovered:  Hexalith.Timesheets.Projections.Tests
+  Starting:    Hexalith.Timesheets.Projections.Tests
+Measured migration: max physical page bytes=194660; max roster bytes=155722; byte-split pages=156; owners=10000.
+  Finished:    Hexalith.Timesheets.Projections.Tests (ID = '71a8c72b9d8d9e56fe75932ce95e7dc344d2c8845f6930a99f88efa1003d95f0')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.Projections.Tests  Total: 437, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 493.055s

@@ -1,0 +1,204 @@
+{
+  "created_utc": "2026-10-18T15:52:01.463038+00:00",
+  "source_identities": {
+    "timesheets": "72d9fdaa813daf9d39d296e268fd2e1086a8dd87",
+    "eventstore": "d55c6f7c11e9bce6f17d490a84c83f1561979d63",
+    "uncommitted_changes": true
+  },
+  "build_inputs": {
+    "sdk": "10.0.402",
+    "Configuration": "Debug",
+    "UseHexalithProjectReferences": "true",
+    "UseNuGetDeps": "false",
+    "HexalithEventStoreVersion": "3.125.1"
+  },
+  "candidate_after_review_input_sha256": {
+    "global.json": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652",
+    "scripts/run_isolated_magic_link_dapr.py": "282ddf4e67df8105b00dfb254a045c60d4879187a97f996900271bb6350544c9",
+    "scripts/test_isolated_magic_link_dapr.py": "f62bca12a1170e619644bf1fa9bf677b41ca49fc6e493f713f58a0ae266d90f0",
+    "scripts/check_magic_link_apphost_guards.py": "cf41753c91846a67378d55c6a620abfdd13b3e479cdfed2dff7e41a14f4be264",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "9ce37ab78de8e8e8cc221254021cdf5cbcbb9eeb277edd6f4fbad36a59ee7194",
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj": "a418ec24e0ee3532ea5ff1fc01e11b937e29bada95c50b17fc5af323c137b498",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/HexalithEventStoreExecutableExtensions.cs": "e1a327e2d11eab203c75779f67cfa157e8f135b26002481697f62e09525f0557",
+    "references/Hexalith.EventStore/tests/Hexalith.EventStore.AppHost.Tests/Configuration/CompiledProjectExecutableTests.cs": "af0bf84eeaefbf9374484cabda21969a564e92cdda1ece661b14df1cfe1ab469",
+    "src/Hexalith.Timesheets.AppHost/IsolatedGatewayLaunch.cs": "02b0b6c0813757b4307bcf2ef2d5e62b3c138a45bd223d99497e4df474ef7d29"
+  },
+  "unchanged_journey_and_component_input_sha256": {
+    "scripts/local_aspire_magic_link_journey.py": "bbe59debadf0ccea48feeb4cd03358ea22ace68d0780044c42d57ddee45a8f3e",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs": "9fafd955074c0709d476a3463aa1ba1551583cbd3c7b1dee11ab511cc430768e",
+    "src/Hexalith.Timesheets.AppHost/DaprComponents/statestore.yaml": "0e7ccb51ab54403d6ed06fab9607e60c35c6dd34f9e47ecb7ff02fa4bd666fd6",
+    "src/Hexalith.Timesheets.AppHost/DaprComponents/Timesheets/timesheets-readmodels.yaml": "5a2519d743ef4a4b7bda99a597937f6104df3ecdd55a30d2e8929631b81aaace"
+  },
+  "historical_receipts": {
+    "historical-live/08-dotnet-msbuild.log": {
+      "input_sha256": "cd79e5a1cf9609c3da4b761cedc03e6cc41013187fb79dec8af62d7274665292",
+      "retained_sha256": "286e71e8a554e49d6dc07347d965b98518e28ca2a03e2eee7efbc32687c75365"
+    },
+    "historical-live/gateway-invocation.json": {
+      "input_sha256": "b8523426f66cdbc94e77c69ad86fcdf633f97c7dd5e64e62e62b03b0d2a2f06e",
+      "retained_sha256": "95a7ee41343109b36cb0a456810f6f163672e600a848e906be03e219fcac6086"
+    },
+    "historical-live/direct-process-proof.json": {
+      "input_sha256": "b0798c40a2d1a010248e274c8b87f326f9ac133bdd28842a0a54078f2e1b1c32",
+      "retained_sha256": "b0798c40a2d1a010248e274c8b87f326f9ac133bdd28842a0a54078f2e1b1c32"
+    },
+    "historical-live/dcp-gateway-lifecycle.log": {
+      "input_sha256": "c5e2b664e033558bc1e8d1ce0c5d56517d5b52be32b635e2399d374661880422",
+      "retained_sha256": "c5e2b664e033558bc1e8d1ce0c5d56517d5b52be32b635e2399d374661880422"
+    },
+    "historical-live/gateway-process-exit.json": {
+      "input_sha256": "b0dbdd7dccb21b243d2910be320f317cfb2cc64d5764ca95c4be3f2745e9b830",
+      "retained_sha256": "b0dbdd7dccb21b243d2910be320f317cfb2cc64d5764ca95c4be3f2745e9b830"
+    },
+    "historical-live/shared-baseline-before.json": {
+      "input_sha256": "21411b8dd6dbc10fd1dab217a853c8b9d958e33d6eb3ae11f98ecb0d4a2c514e",
+      "retained_sha256": "21411b8dd6dbc10fd1dab217a853c8b9d958e33d6eb3ae11f98ecb0d4a2c514e"
+    },
+    "historical-live/shared-before.json": {
+      "input_sha256": "21411b8dd6dbc10fd1dab217a853c8b9d958e33d6eb3ae11f98ecb0d4a2c514e",
+      "retained_sha256": "21411b8dd6dbc10fd1dab217a853c8b9d958e33d6eb3ae11f98ecb0d4a2c514e"
+    },
+    "historical-live/shared-after.json": {
+      "input_sha256": "21411b8dd6dbc10fd1dab217a853c8b9d958e33d6eb3ae11f98ecb0d4a2c514e",
+      "retained_sha256": "21411b8dd6dbc10fd1dab217a853c8b9d958e33d6eb3ae11f98ecb0d4a2c514e"
+    },
+    "historical-live/shared-baseline-preservation.json": {
+      "input_sha256": "907d790f16cf8db92c29c3777129b265252d004d74cbaae2136200fda3cfde52",
+      "retained_sha256": "907d790f16cf8db92c29c3777129b265252d004d74cbaae2136200fda3cfde52"
+    },
+    "historical-live/shared-preservation.json": {
+      "input_sha256": "9e879c2542b0a8073ac9282e9bbb893928852ed31f3c3eb8912eababef8e27c2",
+      "retained_sha256": "9e879c2542b0a8073ac9282e9bbb893928852ed31f3c3eb8912eababef8e27c2"
+    },
+    "historical-live/cleanup.json": {
+      "input_sha256": "7f37877c4951a156f679ef061325078147223b9407cfdeaad114ddf34c92ec3e",
+      "retained_sha256": "7f37877c4951a156f679ef061325078147223b9407cfdeaad114ddf34c92ec3e"
+    },
+    "historical-live/recorded-process-exit.json": {
+      "input_sha256": "5e159c91846eb892e9d39e2943bf3aa1b509f593b2fd17404901e8ad5fe79c2f",
+      "retained_sha256": "5e159c91846eb892e9d39e2943bf3aa1b509f593b2fd17404901e8ad5fe79c2f"
+    },
+    "historical-live/28-Hexalith.Timesheets.IntegrationTests--class.log": {
+      "input_sha256": "b03bad52b1b0fb7dddc065dd0d25ce98917ce9c7dc0b67ca63e57fa9fdd88586",
+      "retained_sha256": "b1a8210fcaf7b94188976ff4b8a4d582b2b7d904df18b244958797d6a4531694"
+    }
+  },
+  "published_package_probe": {
+    "package": "Hexalith.EventStore.Aspire",
+    "version": "3.125.1",
+    "dll_sha256": "72596ea21b69df619a3f5d9dbc24ef200a1d29c696faad19076fd673c152a754",
+    "new_api_absent": true,
+    "configuration": "Debug",
+    "ordinary_cases_passed": 2,
+    "unsupported_direct_cases_refused": 3
+  },
+  "qualification": {
+    "scope": "Local Debug/source direct-process proof and focused review corrections only.",
+    "historical_live_run": "The retained 128.350s live run predates the review corrections; current candidate hashes are separate.",
+    "historical_full_source_hash_coverage": "Base repository identities and unchanged inputs are retained; uncommitted launch source and binary bytes were not hash-captured at run time.",
+    "post_review_full_verification": "Passed: clean Debug/source solution build, six individual default suites (1,949 passed, five intentional skips), compiled guards and the checked-in live lane (1/1, 131.536s) with native replacement, shared preservation and complete cleanup. See post-review/verification.json.",
+    "excluded": [
+      "deployment",
+      "legacy migration",
+      "Story 3.6 completion",
+      "release readiness"
+    ]
+  },
+  "focused_review_results": {
+    "python_module": {
+      "passed": 92,
+      "seconds": 20.17
+    },
+    "cleanup_proof_after_final_ordering": {
+      "passed": 3
+    },
+    "compiled_apphost_guards": {
+      "passed": 35
+    },
+    "published_package_branch": {
+      "passed": 5
+    },
+    "platform_helper_tests": {
+      "passed": 13,
+      "seconds": 3.274
+    },
+    "apphost_and_platform_focused_builds": "Debug/source, BuildProjectReferences=false, zero warnings/errors",
+    "full_post_review_verification": "Parent will run after handoff; no full suite or live rerun performed in this correction pass."
+  },
+  "unchanged_listener_fitness_test_sha256": {
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs": "e9b807d41a313928d2cec98b2ce0bb4ca7efd79d583cc6ebb3df007cbee07e9c"
+  },
+  "listener_fitness_correction": {
+    "original_failure": "AppHostExportsTheInternalListenerPortToTheHostOptionsSection line 32 rejected conditional compilation in Program.cs. Parent retains the original default-suite failure and interrupted invocation.",
+    "change": "Only private gateway build-mode refusal and SDK delegation moved to internal IsolatedGatewayLaunch. Listener wiring and fixture validation remain unconditional in Program.cs.",
+    "public_api_added": false,
+    "reflection_used": false,
+    "fitness_test_edited": false,
+    "focused_results": {
+      "apphost_only_build": {
+        "configuration": "Debug",
+        "build_project_references": false,
+        "warnings": 0,
+        "errors": 0,
+        "seconds": 7.79
+      },
+      "existing_built_integration_method": {
+        "passed": 1,
+        "seconds": 0.102
+      },
+      "compiled_guards": {
+        "passed": 35
+      },
+      "published_package_probes": {
+        "passed": 5,
+        "configuration": "Debug",
+        "new_helper_explicitly_included": true
+      },
+      "integration_or_broad_suites_rebuilt": false
+    },
+    "full_verification": "Owned by parent after source handoff; these focused results do not replace full verification."
+  },
+  "post_review_retained_sha256": {
+    "post-review/admission-refused/cleanup.json": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+    "post-review/admission-refused/runner-output.log": "5c7dbff206a4191895fb1cd4b873e9a29a140117e79269a926271a5e1e6dc532",
+    "post-review/compiled-guards.json": "ed79334860841837f112f218f9508da2f881549b8133f8526a2e0a635c1742a2",
+    "post-review/compiled-guards.log": "32ecb9279c8eb10c868134e09c316d9bb190779cdaed5d976ae149ed7b37c129",
+    "post-review/default-suites/Hexalith.Timesheets.ArchitectureTests.log": "ef41fded2774990d7824750415662113021029697fb10086bab7dab6b88b4671",
+    "post-review/default-suites/Hexalith.Timesheets.Contracts.Tests.log": "0d0aa1c8febd7d5f066635c93e31554408ab03b972a0f1f1a32afacc33cc258c",
+    "post-review/default-suites/Hexalith.Timesheets.IntegrationTests.log": "d4a53611445cbc4b7c0f663da694d8c32293092d5447e9c504a0b7731c5fc726",
+    "post-review/default-suites/Hexalith.Timesheets.Projections.Tests.log": "3973d7a900e74d420086fd8966cfd1e06b7d0b287b09f73415e3cc6a7bee98fe",
+    "post-review/default-suites/Hexalith.Timesheets.Server.Tests.log": "252c7fd0de0d9b7c0d3d7bc8a0154de608064c7efc827f11a82fd71af5fcf46f",
+    "post-review/default-suites/Hexalith.Timesheets.Works.Tests.log": "fca6726a948ab1efd51fdc789d62e9c8fe4d22d84fa37db4e050cf813e81f0c0",
+    "post-review/default-suites/results.json": "021c881e771e50683d89e9ab6692ddab5db13e7871001a5a6ccd3cc3ac713d52",
+    "post-review/interrupted-before-listener-correction/Hexalith.Timesheets.IntegrationTests.log": "c0e2dbb3f093ca1ca45a7a20f94d4da2f69fe0009b95f48746423afe2ba3703d",
+    "post-review/interrupted-before-listener-correction/results.json": "22d967bb1affabd90585125f374907c353d1c7475757b75c76eb83c29870294f",
+    "post-review/live/28-Hexalith.Timesheets.IntegrationTests--class.log": "9074afd16b85c8e5d84552966895beea6b1aba87eea093469214a77abfcc5872",
+    "post-review/live/cleanup.json": "7f37877c4951a156f679ef061325078147223b9407cfdeaad114ddf34c92ec3e",
+    "post-review/live/gateway-invocation.json": "95a7ee41343109b36cb0a456810f6f163672e600a848e906be03e219fcac6086",
+    "post-review/live/gateway-process-after.json": "a0fe8544e0f157e5ae8c9cd356f6ccf28fb0eae9e63b825d7754eef21f72d051",
+    "post-review/live/gateway-process-before.json": "0894f18902abf6cc3c20add8319212285dc64122122a79b1b89d857453847b87",
+    "post-review/live/gateway-process-replacement.json": "f7d0e2f5d0c8c0c7a702632fe6a7b5676cdc92756acfa81019c386624f226cc0",
+    "post-review/live/recorded-process-exit.json": "7e34b57e7a928ed3dbb14ef5a20bbe6a9978d3117305da8580d392dbda4ce3d2",
+    "post-review/live/resource-exit.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+    "post-review/live/runner-output.log": "97b18d9f8b2855e9dabc38388e541edde5b6496ca1bf73220f43dda8068b01d0",
+    "post-review/live/shared-after.json": "77c810cff1a126fe7faa14f00332fa8cb8405682072d03270083a67cd891d426",
+    "post-review/live/shared-baseline-before.json": "77c810cff1a126fe7faa14f00332fa8cb8405682072d03270083a67cd891d426",
+    "post-review/live/shared-baseline-preservation.json": "c5dbc9d3a645f816683d3398c2a2816761d12f0e227354004fdf9f6f31aa7cfc",
+    "post-review/live/shared-before.json": "77c810cff1a126fe7faa14f00332fa8cb8405682072d03270083a67cd891d426",
+    "post-review/live/shared-preservation.json": "51a20fc89415b27d657d546f8aca048ae9609c528e62bf0767c90c1d06190c46",
+    "post-review/python-tests.log": "063e287fa16cf27d5f02fd4272cc7482bc2d341d8c20e572afdd12e802706e47",
+    "post-review/solution-build.log": "8766cee93483e11bdf7117a5ce5030182f4ab0651485f06297605774371f42a8",
+    "post-review/verification.json": "065cf8e6288af8aab2e79b863294b42e8622cfb7a9bccd056638664c66bda2a9"
+  },
+  "publication_receipt_normalization": {
+    "change": "Removed only surplus terminal blank lines from five retained receipts for the Git whitespace check; payloads and original run files are unchanged.",
+    "paths": [
+      "historical-live/08-dotnet-msbuild.log",
+      "historical-live/28-Hexalith.Timesheets.IntegrationTests--class.log",
+      "historical-live/gateway-invocation.json",
+      "post-review/live/28-Hexalith.Timesheets.IntegrationTests--class.log",
+      "post-review/live/gateway-invocation.json"
+    ],
+    "original_historical_input_hashes_preserved": true
+  }
+}

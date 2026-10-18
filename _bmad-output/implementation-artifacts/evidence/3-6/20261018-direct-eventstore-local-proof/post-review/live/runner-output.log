@@ -1,0 +1,10 @@
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: Hexalith.Timesheets.IntegrationTests
+  Discovered:  Hexalith.Timesheets.IntegrationTests
+  Starting:    Hexalith.Timesheets.IntegrationTests
+  Finished:    Hexalith.Timesheets.IntegrationTests (ID = '32f65c821a355e56a6b399a747027e8f06d6a6c65791661c7f82c5c5d8b8c422')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.IntegrationTests  Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 131.536s
+Retained broker/state persistent values, unexpired TTL values and scheduler KV match
+Sanitized fixture evidence: /dev/shm/timesheets-direct-corrected-live/run-h1k9tkf_

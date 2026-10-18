@@ -2960,3 +2960,137 @@ broader Platform fixture-input blocker remain recorded. Focused post-review
 technical checks are retained separately from these original receipts. Production
 issuer enrollment, legacy certification/maintenance and deployed acceptance remain
 unproven; Story 3.6 remains in progress and release FAIL. No live mutation occurred.
+
+## Restart investigation continuation — 2026-10-18
+
+The completed [Debug/source selection correction](../spec-pin-isolated-restart-debug-assets.md)
+keeps isolated commands on current local assets even when the caller selects Release
+or Aspire retains stale Release launch metadata. The Python module passes **82/82**;
+independent review verified all findings addressed. A real validation-only CLI probe
+launched Debug while retaining two stale Release cache entries and returned before
+resource creation. Explicit Debug/source solution restore/build passed with zero
+warnings/errors under SDK 10.0.402.
+
+Fresh evidence is mixed and retained without replacing the failed result:
+
+- `/tmp/timesheets-restart-observed-baseline/run-bl0mn9el`: journey **0/1**,
+  85.377 seconds. Normal restart exited 16 after preceding persisted assertions passed.
+  Process sampling captured the live gateway child retaining wrapper output pipes
+  through DCP's timeout. Shared preservation and exact owned cleanup passed.
+- `/tmp/timesheets-restart-observed-baseline/run-jilrm2ix`: requested retry **1/1**,
+  130.510 seconds, unchanged assertions including normal restart and post-restart use.
+  All 16 recorded identities exited; three private containers and component copies
+  were removed. Shared persistent/TTL contents and scheduler identity/content/revision
+  matched. This passing retry does not close the intermittent stop fault.
+
+Exact timeline, diagnostic limits, built-source identities and separately preserved
+external reference updates are in the [investigation](../eventstore-restart-timeout-investigation-2026-10-18.md).
+The separate [direct-execution spec](../spec-direct-isolated-eventstore-execution.md)
+is awaiting its bmad-build checkpoint; no platform restart repair is implemented yet.
+Default integration verification passed **727**, with five intentional skips and
+zero errors/failures in 498.939 seconds. This is local evidence only; legacy/deployed
+qualification, Story 3.6 and release readiness remain unchanged.
+
+Final default executable-suite totals are **1,949 passed, five intentional skips,
+zero errors/failures**: Architecture 59, Contracts 92, Server 558, Works 76,
+Projections 437, Integration 727 passed plus five skips. Each test project ran
+individually from its Debug executable with `-noColor` and
+`DOTNET_CLI_HOME=/tmp/dotnet-cli-home`. Logs are
+`/tmp/timesheets-restart-final-Hexalith.Timesheets.<Project>.log`, except the final
+Projections log ends in `Projections.Tests-rerun.log`. The first Projections
+invocation exceeded the outer diagnostic script's 180-second timeout; the same
+executable was rerun without that short wrapper and passed 437/437 in 459.692 seconds.
+These are the previously built source assets, not a rebuild of external commit
+`72d9fdaa813daf9d39d296e268fd2e1086a8dd87`. Final read-only `aspire ps` and `dapr list`
+returned empty inventories; `docker ps -a --filter label=hexalith.timesheets.fixture`
+returned no containers. Python compilation and `git diff --check` passed.
+
+## Direct EventStore executable implementation — 2026-10-18
+
+The user approved the [direct-execution spec](../spec-direct-isolated-eventstore-execution.md). The additive EventStore.Aspire helper, private SDK resolution and pre-resource AppHost guards are implemented against Timesheets `72d9fdaa813daf9d39d296e268fd2e1086a8dd87` and EventStore `d55c6f7c11e9bce6f17d490a84c83f1561979d63`, plus the uncommitted changes. SDK 10.0.402 is the current `global.json` pin. Existing investigation, prerequisite-spec and test-summary edits are preserved; no stage/commit/push, dependency update or gitlink update occurred.
+
+Focused commands/results:
+
+```bash
+python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py
+python3 -m py_compile scripts/run_isolated_magic_link_dapr.py scripts/test_isolated_magic_link_dapr.py scripts/check_magic_link_apphost_guards.py
+# From references/Hexalith.EventStore:
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.EventStore.AppHost.Tests/Hexalith.EventStore.AppHost.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false -m:1 /nr:false -v:q
+tests/Hexalith.EventStore.AppHost.Tests/bin/Debug/net10.0/Hexalith.EventStore.AppHost.Tests -class '*CompiledProjectExecutableTests' -noColor
+# From the Timesheets workspace:
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --configuration-only --log-directory /tmp/timesheets-direct-eventstore-guards
+```
+
+Python passed **85/85** in 20.178s; py_compile passed. The platform build passed with zero warnings/errors in 41.69s; its focused tests passed **13/13** in 0.400s. Logs: `/tmp/timesheets-direct-eventstore-platform-build.log` and `-platform-tests.log`. Compiled guards passed **35/35**, including ordinary project selection, valid isolated direct selection, incomplete/blank settings, unsafe component/control-plane contexts and publish/ordinary refusals. All probes returned before constructing resources; evidence is `/tmp/timesheets-direct-eventstore-guards/run-arlw43qd`.
+
+Initial broad verification (retained as failed evidence):
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false -m:1 /nr:false -v:q
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false -warnaserror -m:1 /nr:false -v:q
+tests/Hexalith.Timesheets.<Project>/bin/Debug/net10.0/Hexalith.Timesheets.<Project> -noColor
+```
+
+Restore/build exited 0; build reported zero warnings/errors in 33.51s. Architecture **59/59**, Contracts **92/92** and Works **76/76** passed. Server failed **135/558**, Projections failed **351/437**, Integration failed **249/732** with five declared skips. All Server/Integration failures report inability to load Contracts 3.125.1.0; the copied DLL is 3.124.0.0 at informational source `d55c6f7c`. Projections also has secondary assertion failures. The logs remain `/tmp/timesheets-direct-eventstore-{ArchitectureTests,Contracts.Tests,Server.Tests,Projections.Tests,IntegrationTests,Works.Tests}.log`; they must not be counted as a passing broad gate.
+
+The exact rebuild command added `-t:Rebuild` to the initial build command. The first attempt aborted with **exit 134**, empty `/tmp/timesheets-direct-eventstore-source-rebuild.log`, while `df -h /tmp` reported zero available bytes. Work paused without deleting external files or signaling external processes. Capacity recovered externally to about 3.5 GB; the repeated rebuild then passed with zero warnings/errors in 54.81s (`-source-rebuild-space-restored.log`) but retained the assembly mismatch. Works forwards its 3.124.0 default through project references while the existing root catalog selects 3.125.1. Subsequent verification supplies `-p:HexalithEventStoreVersion=3.125.1` consistently and carries `HexalithEventStoreVersion=3.125.1` in the live child environment. This does not update dependencies or certify the unqualified mixed-version source graph. Other active builds were observed; their causal role is unproved.
+
+Consistent current-source verification uses:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false -p:HexalithEventStoreVersion=3.125.1 -m:1 /nr:false -v:q
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -t:Rebuild -p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false -p:HexalithEventStoreVersion=3.125.1 -warnaserror -m:1 /nr:false -v:q
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home HexalithEventStoreVersion=3.125.1 tests/Hexalith.Timesheets.<Project>/bin/Debug/net10.0/Hexalith.Timesheets.<Project> -noColor
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home HexalithEventStoreVersion=3.125.1 python3 /tmp/timesheets-direct-eventstore-observe.py
+```
+
+Restore passed; Rebuild passed with **zero warnings/errors in 19.18s**. The copied Contracts DLL now reports AssemblyVersion **3.125.1.0** and informational version **3.125.1+d55c6f7c11e9bce6f17d490a84c83f1561979d63**, matching the three previously affected deps files. The temporary observer invokes the unchanged `IsolatedFixture.execute` and only reads process identities, executable/command paths and parent identities during the original journey. It does not signal gateway processes, alter restart commands or retry failures. The final Python module rerun passed **85/85 in 19.624s** (`/tmp/timesheets-direct-eventstore-python-tests.log`).
+
+The candidate live journey passed **1/1 in 128.350s**, exit **0**. Evidence: `/tmp/timesheets-direct-eventstore-live/run-4v47r76d`; outer command output: `/tmp/timesheets-direct-eventstore-live.log`. The existing normal restart/readiness and all persisted confirm/adjust/race/rebuild/readback, fresh post-restart use and replay-denial assertions passed unchanged. There was no retry of a failed restart.
+
+The retained metadata query is `08-dotnet-msbuild.log`, with selected command in `gateway-invocation.json`. `direct-process-proof.json` and `gateway-process-observations.json` contain **1,088 samples**, no observer errors and confirmed observer shutdown. Actual gateway commands were the selected native Debug executable with **zero arguments**, directly parented by DCP PID/start **85083/20039664**. Gateway PID/start **85299/20039729** exited and was replaced by **17630/20046788**, with no gateway dotnet-run wrapper observed. Sanitized `dcp-gateway-lifecycle.log` confirms old-root stop **15:20:42.095 UTC**, old monitor completion **15:20:42.450**, then new-process monitoring **15:20:42.965**. This verifies direct ownership rather than inferring a repair from a passing retry.
+
+Shared preservation reports `matches=true`, no mismatches, preserved persistent/TTL values and scheduler identity/content/revision. Cleanup reports complete, journey descendants gone, all three private containers removed and component copies removed. All 14 initial captured process identities are gone; `gateway-process-exit.json` separately confirms both gateway identities are gone. Story 3.6, deployed/legacy qualification and release readiness remain unchanged. The mixed-version build limitation above remains separate from this locally qualified explicit-property run.
+
+
+Final consistent current-source default suites passed **1,949 tests**, with **five intentional skips**, zero errors and zero failures. All six projects ran individually: Architecture 59, Contracts 92, Server 558, Works 76, Projections 437 in 458.888s, and Integration 727 passed plus five skips in 491.347s. Logs are `/tmp/timesheets-direct-eventstore-consistent-<Project>.log`. The explicit verification property resolves the observed assembly mismatch for this run; the initial failures and separate mixed-version configuration limitation remain recorded above. The local direct-process live journey also passed, with shared preservation and complete owned cleanup. Deployed/legacy certification, Story 3.6 and release readiness are unchanged.
+
+Final artifact appending also encountered ENOSPC. After exact SHA-256 verification, only the three completed initial failed-suite logs were relocated to `/dev/shm/timesheets-direct-eventstore-retained-failures/`, with symlinks retaining their original `/tmp` paths. The small final appendices then completed and were flushed. No external files were deleted and no external processes were signaled.
+
+
+## Direct-execution review corrections — 2026-10-18
+
+The AppHost now compiles the new API only when `Configuration=Debug` and source references are enabled; unsupported direct-launch settings refuse before any resources. A temporary Debug consumer compiled the actual Program.cs against published EventStore.Aspire 3.125.1 (confirmed to lack the helper), and all five ordinary/unsupported no-resource probes passed. No local Release assets were produced. The fixture discards inherited SDK RunCommand/RunArguments/RunWorkingDirectory and StartAction/StartProgram/StartArguments/StartWorkingDirectory, including casing/provider aliases, while retaining project-defined metadata and the caller environment. Native command, fixture-bound direct DCP ownership and old/new PID/start replacement are now checked and recorded by the checked-in lane around the unchanged journey. Primary failures and exact cleanup are preserved; newly observed identities are retained before diagnostic writes. All new public helper-test methods have XML summaries and parameter documentation.
+
+Focused verification passed: Python 92/92; three final cleanup/proof regressions; Debug/source AppHost and helper-test builds with zero warnings/errors; compiled guards 35/35; helper tests 13/13; published-package branch probes 5/5. Only focused checks ran during these corrections. The parent owns the complete solution/six-suite/checked-in-live rerun. Earlier full and live success receipts remain historical, with their qualification limits preserved.
+
+[Sanitized durable local proof, input hashes and exact package qualification](../evidence/3-6/20261018-direct-eventstore-local-proof/README.md).
+
+
+## Preserve unconditional listener fitness — 2026-10-18
+
+The parent's default Integration run exposed `MagicLinkConfirmationCapabilityEndpointTests.AppHostExportsTheInternalListenerPortToTheHostOptionsSection` at line 32 because Program.cs contained private gateway compilation directives. The test was not changed. Only gateway build-mode refusal and delegation moved to the internal `IsolatedGatewayLaunch.cs` file; Program.cs, fixture validation and listener wiring remain unconditional. EventStore.Aspire still owns all executable-annotation plumbing, and the same early package-mode refusal and native launch remain.
+
+Focused verification used only the AppHost build with `BuildProjectReferences=false` (Debug/source, zero warnings/errors), the existing built Integration method (1/1 in 0.102s), compiled guards (35/35), and a temporary Debug/published-package compilation plus five guards (5/5), explicitly including the new helper. No Integration or broad-suite rebuild ran in this correction pass; the parent retains the original failed/interrupted invocation and owns complete re-verification. No local Release assets were produced.
+
+The exact focused method command was:
+
+```bash
+tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -method Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationCapabilityEndpointTests.AppHostExportsTheInternalListenerPortToTheHostOptionsSection -noColor
+```
+
+[Durable correction receipts, package inputs and refreshed input hashes](../evidence/3-6/20261018-direct-eventstore-local-proof/README.md#listener-fitness-correction).
+
+## Final direct-execution qualification — 2026-10-18
+
+After the listener adapter correction, a fresh Debug/source solution build passed with zero warnings/errors in 4.38s. All six individual default suites then passed **1,949 tests**, **five intentional skips**, zero errors/failures: Architecture 59, Contracts 92, Server 558, Works 76, Projections 437 (493.055s), Integration 727 plus five skips (525.417s). At most two independent test-project processes ran concurrently. The earlier known-failing listener invocation was deliberately interrupted using its recorded test-child identity; its failed/interrupted log is retained separately and is not acceptance evidence. The complete corrected Integration run passed, including the unchanged listener-security fitness test.
+
+The checked-in runner then passed the unchanged live journey **1/1 in 131.536s**, exit **0**, at `/dev/shm/timesheets-direct-corrected-live/run-h1k9tkf_`. Its permanent receipts confirm the selected zero-argument native executable, direct DCP ownership and PID/start replacement **10230/20390107 → 41101/20397845**, under DCP **10096/20390046**, with the old identity exited. Shared persistent/TTL contents and scheduler identity/content/revision matched. All **16** captured process identities exited; three private containers and component copies were removed. Final Aspire/Dapr inventories and the fixture-container query were empty.
+
+A preceding admission attempt refused a separate six-application Dapr run and created no resources. The successful attempt began only after that run ended and repeated admission/stability checks passed. No failed restart was retried. Python 92/92, helper tests 13/13, compiled guards 35/35 and package probes 5/5 also passed. Exact commands, source hashes, current full-suite and checked-in runtime receipts are retained in the [durable local proof packet](../evidence/3-6/20261018-direct-eventstore-local-proof/README.md#final-corrected-source-verification).
+
+The explicit verification property remains `HexalithEventStoreVersion=3.125.1`, matching the current catalog; the pre-existing Works version-forwarding mismatch is recorded separately in deferred work. No dependency/gitlink update, staging, commit, push, shared-state mutation or unrelated runtime stop occurred. The selected local restart correction is verified; Story 3.6, deployment/legacy certification and release readiness are unchanged.
+
+## Git publication checks — 2026-10-18
+
+The later user request to push all changes authorizes Git publication after the completed qualification. EventStore fast-forwarded existing upstream commits, then published the additive helper as `9b66153515687463fc1b1e929f8b0e73d8145e2c`; the parent pointer is a separate commit. Each exact commit message passed the owning repository's pinned commitlint. An additional dependency rebuild failed on duplicate `Hexalith.Commons.UniqueIds` imports (**CS1704/MSB3243**); the documented focused-build fallback passed with zero warnings/errors and helper tests **13/13**. [Exact commands and retained publication receipts](../evidence/3-6/20261018-direct-eventstore-local-proof/README.md#publication-follow-up--2026-10-18) distinguish this extra check from the prior successful full Timesheets/live qualification. No dependency configuration was changed to hide that failure.

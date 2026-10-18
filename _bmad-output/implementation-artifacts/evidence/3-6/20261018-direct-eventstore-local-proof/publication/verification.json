@@ -1,0 +1,35 @@
+{
+  "authorization": "User requested push all changes after the completed implementation qualification.",
+  "timesheets_base_before_publication": "9ee782c2a4202fd063156112f8683a9acd0f4c4f",
+  "eventstore_upstream_fast_forward": "2490f4f409e015155c046afa55b37997b04a271d",
+  "eventstore_published_commit": "9b66153515687463fc1b1e929f8b0e73d8145e2c",
+  "timesheets_pointer_commit": "88f4ae0c3268cbe43e6feb9ff649133c5c03ae83",
+  "commitlint_versions": {
+    "timesheets": "21.2.2",
+    "eventstore": "21.1.0"
+  },
+  "all_three_messages_validated": true,
+  "dependency_build": {
+    "exit_code": 1,
+    "errors": [
+      "CS1704",
+      "MSB3243"
+    ],
+    "cause_observed": "Duplicate Hexalith.Commons.UniqueIds references; no dependency configuration fix attempted."
+  },
+  "focused_build": {
+    "exit_code": 0,
+    "warnings": 0,
+    "errors": 0,
+    "seconds": 1.24,
+    "BuildProjectReferences": false
+  },
+  "focused_tests": {
+    "exit_code": 0,
+    "passed": 13,
+    "errors": 0,
+    "failed": 0,
+    "seconds": 3.28
+  },
+  "historical_qualification": "Full default-suite/live receipts keep their original source identities; publication does not relabel those runs."
+}

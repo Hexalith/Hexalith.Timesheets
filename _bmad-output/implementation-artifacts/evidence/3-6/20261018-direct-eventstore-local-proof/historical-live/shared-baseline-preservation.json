@@ -1,0 +1,73 @@
+{
+  "matches": true,
+  "confirmed_natural_expirations": {
+    "0": 0,
+    "13": 0,
+    "14": 0
+  },
+  "redis": {
+    "0": {
+      "persistent": {
+        "matches": true,
+        "keys_before": 59688,
+        "keys_after": 59688
+      },
+      "expiring": {
+        "matches": true,
+        "added": 0,
+        "missing_unexpired": 0,
+        "value_changes": 0,
+        "deadline_changes": 0,
+        "confirmed_natural_expirations": 0
+      }
+    },
+    "13": {
+      "persistent": {
+        "matches": true,
+        "keys_before": 0,
+        "keys_after": 0
+      },
+      "expiring": {
+        "matches": true,
+        "added": 0,
+        "missing_unexpired": 0,
+        "value_changes": 0,
+        "deadline_changes": 0,
+        "confirmed_natural_expirations": 0
+      }
+    },
+    "14": {
+      "persistent": {
+        "matches": true,
+        "keys_before": 0,
+        "keys_after": 0
+      },
+      "expiring": {
+        "matches": true,
+        "added": 0,
+        "missing_unexpired": 0,
+        "value_changes": 0,
+        "deadline_changes": 0,
+        "confirmed_natural_expirations": 0
+      }
+    }
+  },
+  "scheduler": {
+    "identity_matches": true,
+    "contents_match": true,
+    "keys_before": 127,
+    "keys_after": 127,
+    "revision_before": "14717",
+    "revision_after": "14717",
+    "baseline_revision_matches": true
+  },
+  "mismatches": [],
+  "method": "Atomic read-only Redis KEYS/DUMP/PTTL/TIME DB0/13/14; etcd v3 all-key range on loopback:2379",
+  "ttl_rule": "Retained expiring values and deadlines match; absent keys allowed only after their captured deadline",
+  "observation": {
+    "before_unix_ns": 1792336762315684893,
+    "after_unix_ns": 1792336764632555520,
+    "elapsed_seconds": 2.3168710680038203,
+    "requested_pause_seconds": 1
+  }
+}

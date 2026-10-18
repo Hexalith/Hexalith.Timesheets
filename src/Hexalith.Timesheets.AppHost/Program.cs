@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Aspire.Hosting.ApplicationModel;
 
 using Hexalith.EventStore.Aspire;
+using Hexalith.Timesheets.AppHost;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
@@ -11,6 +12,19 @@ string defaultComponentsDirectory = Path.Combine(builder.AppHostDirectory, "Dapr
 string componentsDirectory = defaultComponentsDirectory;
 bool fixtureEnabled = builder.Configuration["TIMESHEETS_LIVE_DAPR_FIXTURE"] == "1";
 string? fixtureComponents = builder.Configuration["TIMESHEETS_LIVE_DAPR_COMPONENTS"];
+string? gatewayExecutable = builder.Configuration["TIMESHEETS_LIVE_DAPR_GATEWAY_EXECUTABLE"];
+string? gatewayWorkingDirectory = builder.Configuration["TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY"];
+IsolatedGatewayLaunch.ValidateBuildMode(gatewayExecutable, gatewayWorkingDirectory);
+if ((gatewayExecutable is not null || gatewayWorkingDirectory is not null)
+    && (!builder.ExecutionContext.IsRunMode || !fixtureEnabled || string.IsNullOrWhiteSpace(fixtureComponents)))
+{
+    throw new InvalidOperationException("Compiled gateway launch requires a validated isolated run-mode fixture.");
+}
+if ((gatewayExecutable is not null || gatewayWorkingDirectory is not null)
+    && (string.IsNullOrWhiteSpace(gatewayExecutable) || string.IsNullOrWhiteSpace(gatewayWorkingDirectory)))
+{
+    throw new InvalidOperationException("Compiled gateway launch requires both executable and working directory.");
+}
 if (fixtureEnabled || fixtureComponents is not null)
 {
     if (!builder.ExecutionContext.IsRunMode || !fixtureEnabled)
@@ -41,6 +55,7 @@ if (builder.ExecutionContext.IsRunMode
 if (builder.Configuration["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"] == "1")
 {
     Console.WriteLine(fixtureComponents is null ? "Dapr component selection: checked-in defaults." : "Dapr component selection: isolated fixture.");
+    Console.WriteLine(gatewayExecutable is null ? "Gateway launch selection: project." : "Gateway launch selection: compiled executable.");
     return;
 }
 
@@ -98,6 +113,11 @@ if (builder.ExecutionContext.IsRunMode)
         .WithEnvironment("EventStore__DomainServices__Registrations__*|timesheets|v1__Domain", "timesheets")
         .WithEnvironment("EventStore__DomainServices__Registrations__*|timesheets|v1__Version", "v1")
         .WithEventStoreTrustedEffectSubmitter("timesheets");
+
+    if (fixtureEnabled && gatewayExecutable is not null)
+    {
+        IsolatedGatewayLaunch.Apply(eventStore, gatewayExecutable, gatewayWorkingDirectory!);
+    }
 
     HexalithEventStoreResources resources = builder.AddHexalithEventStore(
         eventStore,

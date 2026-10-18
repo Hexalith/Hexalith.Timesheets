@@ -1,0 +1,63 @@
+{
+  "configuration": "Debug",
+  "symbol_defined": false,
+  "published_sdk_version": "3.125.1",
+  "published_sdk_lacks_new_api": true,
+  "probes": [
+    {
+      "case": "ordinary-run",
+      "command": [
+        "dotnet",
+        "/dev/shm/timesheets-package-branch-943n6z1g/bin/Debug/net10.0/PackageBranchProbe.dll",
+        "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "case": "ordinary-publish",
+      "command": [
+        "dotnet",
+        "/dev/shm/timesheets-package-branch-943n6z1g/bin/Debug/net10.0/PackageBranchProbe.dll",
+        "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+        "--AppHost:Operation=publish"
+      ],
+      "exit": 0,
+      "passed": true
+    },
+    {
+      "case": "executable-only",
+      "command": [
+        "dotnet",
+        "/dev/shm/timesheets-package-branch-943n6z1g/bin/Debug/net10.0/PackageBranchProbe.dll",
+        "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+        "--TIMESHEETS_LIVE_DAPR_GATEWAY_EXECUTABLE=/usr/bin/true"
+      ],
+      "exit": -6,
+      "passed": true
+    },
+    {
+      "case": "directory-only",
+      "command": [
+        "dotnet",
+        "/dev/shm/timesheets-package-branch-943n6z1g/bin/Debug/net10.0/PackageBranchProbe.dll",
+        "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+        "--TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY=/tmp"
+      ],
+      "exit": -6,
+      "passed": true
+    },
+    {
+      "case": "pair",
+      "command": [
+        "dotnet",
+        "/dev/shm/timesheets-package-branch-943n6z1g/bin/Debug/net10.0/PackageBranchProbe.dll",
+        "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+        "--TIMESHEETS_LIVE_DAPR_GATEWAY_EXECUTABLE=/usr/bin/true",
+        "--TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY=/tmp"
+      ],
+      "exit": -6,
+      "passed": true
+    }
+  ]
+}

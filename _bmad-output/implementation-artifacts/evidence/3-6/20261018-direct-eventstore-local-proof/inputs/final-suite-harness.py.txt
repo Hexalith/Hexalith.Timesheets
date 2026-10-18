@@ -1,0 +1,24 @@
+import concurrent.futures, json, os, subprocess, tempfile, time
+from pathlib import Path
+root=Path('/home/administrator/projects/hexalith/timesheets')
+output=Path(tempfile.mkdtemp(prefix='timesheets-direct-corrected-suites-',dir='/dev/shm'))
+environment=dict(os.environ, DOTNET_CLI_HOME='/tmp/dotnet-cli-home', HexalithEventStoreVersion='3.125.1')
+print('Evidence:',output,flush=True)
+def run(suffix):
+    project='Hexalith.Timesheets.'+suffix
+    command=[str(root/'tests'/project/'bin/Debug/net10.0'/project),'-noColor']
+    started=time.monotonic()
+    print('Running '+project,flush=True)
+    with (output/(project+'.log')).open('w') as log:
+        result=subprocess.run(command,cwd=root,env=environment,stdout=log,stderr=subprocess.STDOUT)
+    summaries=[line.strip() for line in (output/(project+'.log')).read_text().splitlines() if 'Total:' in line]
+    return {'project':project,'exit_code':result.returncode,'elapsed_seconds':round(time.monotonic()-started,3),'summary':summaries}
+results=[]
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+    futures=[pool.submit(run,suffix) for suffix in ('ArchitectureTests','Contracts.Tests','Server.Tests','Works.Tests','Projections.Tests','IntegrationTests')]
+    for future in concurrent.futures.as_completed(futures):
+        row=future.result()
+        results.append(row)
+        (output/'results.json').write_text(json.dumps(results,indent=2)+'\n')
+        print(json.dumps(row),flush=True)
+raise SystemExit(int(any(row['exit_code'] for row in results)))

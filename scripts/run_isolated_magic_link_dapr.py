@@ -26,6 +26,11 @@ import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 APPHOST = ROOT / "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj"
+GATEWAY_PROJECT = ROOT / "references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj"
+GATEWAY_EXECUTABLE_SETTING = "TIMESHEETS_LIVE_DAPR_GATEWAY_EXECUTABLE"
+GATEWAY_DIRECTORY_SETTING = "TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY"
+SDK_LAUNCH_OVERRIDES = ("RunCommand", "RunArguments", "RunWorkingDirectory", "StartAction",
+                        "StartProgram", "StartArguments", "StartWorkingDirectory")
 DEFAULT_COMPONENTS = APPHOST.parent / "DaprComponents"
 COMPONENT_FILES = (Path("statestore.yaml"), Path("Timesheets/timesheets-readmodels.yaml"), Path("pubsub.yaml"))
 REQUIRED_PORTS = (8080, 8081, 8082, 3501)
@@ -410,6 +415,42 @@ def running_dapr_processes(directory=Path("/proc")):
     return found
 
 
+def gateway_process_identity(executable, bound_identities, directory=Path("/proc")):
+    """Verify the selected native process and its exact fixture-bound DCP parent."""
+    message = "Gateway native command and direct DCP ownership could not be verified"
+    selected = Path(executable).resolve()
+    identities = {(row["pid"], row["start"]) for row in bound_identities}
+
+    def read_process(pid):
+        process = Path(directory) / str(pid)
+        fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+        arguments = (process / "cmdline").read_bytes().split(b"\0")
+        if arguments[-1] == b"":
+            arguments.pop()
+        return {"pid": pid, "start": fields[19], "state": fields[0], "parent": int(fields[1]),
+                "executable": str((process / "exe").resolve(strict=True))}, arguments
+
+    try:
+        candidates = []
+        for identity in bound_identities:
+            try:
+                process, arguments = read_process(identity["pid"])
+            except FileNotFoundError:
+                continue
+            if process["executable"] == str(selected):
+                require((process["pid"], process["start"]) in identities, message)
+                require(arguments == [os.fsencode(executable)] and process["state"] != "Z", message)
+                parent, _ = read_process(process["parent"])
+                require((parent["pid"], parent["start"]) in identities
+                        and Path(parent["executable"]).name in ("dcp", "dcpctrl") and parent["state"] != "Z", message)
+                candidates.append({**process, "command": os.fsdecode(arguments[0]), "argument_count": 0,
+                                   "parent_identity": parent})
+        require(len(candidates) == 1, message)
+        return candidates[0]
+    except (OSError, ValueError, IndexError, KeyError, TypeError):
+        raise FixtureError(message) from None
+
+
 def recorded_process_exits(identities):
     """Check every captured PID/start pair even if its resource binding changed."""
     exits = []
@@ -625,8 +666,18 @@ class IsolatedFixture:
         self.scheduler = None
         # MSBuild treats environment property names case-insensitively, while
         # the process environment on Linux can contain differently cased keys.
-        self.environment = {name: value for name, value in os.environ.items()
-                            if name.casefold() not in ("configuration", "usehexalithprojectreferences", "usenugetdeps")}
+        controlled = {name.casefold() for name in ("Configuration", "UseHexalithProjectReferences", "UseNuGetDeps",
+                                                  GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
+                                                  *SDK_LAUNCH_OVERRIDES)}
+        self.environment = {}
+        for name, value in os.environ.items():
+            normalized = name.replace("__", ":").casefold()
+            aliases = [normalized]
+            for prefix in ("aspire_", "dotnet_"):
+                if normalized.startswith(prefix):
+                    aliases.append(normalized[len(prefix):])
+            if not any(alias in controlled for alias in aliases):
+                self.environment[name] = value
         # Aspire resolves --no-build assets through MSBuild. Keep the owned
         # runtime on the Debug source graph built for this local journey even
         # when the repository or caller defaults to Release/package mode.
@@ -726,6 +777,31 @@ class IsolatedFixture:
         require(isinstance(apps, list) and not apps, "An AppHost is already running; no AppHost started")
         self.port_check()
 
+    def resolve_gateway_invocation(self):
+        """Resolve the exact source project's native launch without creating resources."""
+        result = self.run_command(["dotnet", "msbuild", str(GATEWAY_PROJECT), "-nologo",
+            "-target:ComputeRunArguments", "-getProperty:RunCommand,RunArguments,RunWorkingDirectory",
+            "-p:Configuration=Debug", "-p:UseHexalithProjectReferences=true", "-p:UseNuGetDeps=false",
+            "-m:1", "/nr:false"])
+        message = "Gateway SDK run metadata is unsupported; no resources started"
+        try:
+            metadata = json.loads(result.stdout)
+            properties = metadata["Properties"]
+            executable = properties["RunCommand"]
+            arguments = properties["RunArguments"]
+            directory = properties["RunWorkingDirectory"]
+            require(all(isinstance(value, str) for value in (executable, arguments, directory)), message)
+            require(arguments == "" and Path(executable).is_absolute() and Path(executable).is_file()
+                    and os.access(executable, os.X_OK) and Path(directory).is_absolute()
+                    and Path(directory).is_dir(), message)
+        except (ValueError, KeyError, TypeError, OSError):
+            raise FixtureError(message) from None
+        require(self.write_evidence("gateway-invocation.json", sanitized(json.dumps({
+            "project": str(GATEWAY_PROJECT), "configuration": "Debug", "source_references": True,
+            "executable": executable, "arguments": arguments, "working_directory": directory}, indent=2)) + "\n"),
+            "Gateway invocation evidence is incomplete; no resources started")
+        self.environment.update({GATEWAY_EXECUTABLE_SETTING: executable, GATEWAY_DIRECTORY_SETTING: directory})
+
     def capture_shared_baseline(self, snapshot_reader=None):
         """Admit only two matching read-only observations before creating resources."""
         reader = snapshot_reader or read_only_shared_snapshot
@@ -755,6 +831,29 @@ class IsolatedFixture:
         require(preservation["matches"], "Retained shared services changed before fixture startup; no resources started: "
                 + "; ".join(preservation["mismatches"]))
         self.shared_before = after
+
+    def capture_gateway_process(self, phase):
+        """Retain validated native ownership and include its identity in exact cleanup."""
+        process = gateway_process_identity(self.environment[GATEWAY_EXECUTABLE_SETTING],
+            self.resource_check(self.scratch, self.placement, self.scheduler))
+        for identity in (process, process["parent_identity"]):
+            if not any(row["pid"] == identity["pid"] and row["start"] == identity["start"] for row in self.captured_processes):
+                self.captured_processes.append({key: identity[key] for key in ("pid", "start", "state")})
+        require(self.write_evidence("gateway-process-" + phase + ".json", sanitized(json.dumps(process, indent=2))),
+                "Gateway process evidence is incomplete")
+        return process
+
+    def verify_gateway_replacement(self, before, after):
+        """Require the unchanged journey to replace the native PID/start identity."""
+        proof = {"before": before, "after": after,
+                 "identity_replaced": (before["pid"], before["start"]) != (after["pid"], after["start"]),
+                 "same_dcp_parent": all(before["parent_identity"][key] == after["parent_identity"][key]
+                                        for key in ("pid", "start")),
+                 "old_identity_exited": recorded_process_exits([before])["all_gone"]}
+        require(self.write_evidence("gateway-process-replacement.json", sanitized(json.dumps(proof, indent=2))),
+                "Gateway replacement evidence is incomplete")
+        require(all(proof[key] for key in ("identity_replaced", "same_dcp_parent", "old_identity_exited")),
+                "Gateway native PID/start replacement could not be verified")
 
     def _owned_apphost(self):
         rows = target_apphosts(json_output(self.run_command(
@@ -930,6 +1029,7 @@ class IsolatedFixture:
             if not self.injected_command:
                 self.capture_shared_baseline()
                 self.preflight()
+            self.resolve_gateway_invocation()
             self.start_infrastructure()
             self.preflight()
             self.start_attempted = True
@@ -945,12 +1045,24 @@ class IsolatedFixture:
                     "redis": self.environment["TIMESHEETS_LIVE_DAPR_REDIS_HOST"],
                     "placement": self.placement, "scheduler": self.scheduler,
                     "components": str(self.scratch), "bound_processes": self.captured_processes}, indent=2) + "\n")
+            before = self.capture_gateway_process("before") if not self.injected_command else None
             executable = ROOT / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
-            result = self.run_command([str(executable), "-class", "*MagicLinkLiveDaprTests", "-noColor"], timeout=510, check=False, journey=True)
-            exit_code = result.returncode
-            print(sanitized((result.stdout or "") + (result.stderr or "")), end="", flush=True)
-            if exit_code == 0:
-                require_one_passing_test(result)
+            try:
+                result = self.run_command([str(executable), "-class", "*MagicLinkLiveDaprTests", "-noColor"], timeout=510, check=False, journey=True)
+                exit_code = result.returncode
+                print(sanitized((result.stdout or "") + (result.stderr or "")), end="", flush=True)
+                if exit_code == 0:
+                    require_one_passing_test(result)
+            finally:
+                if before is not None:
+                    try:
+                        self.verify_gateway_replacement(before, self.capture_gateway_process("after"))
+                    except (FixtureError, OSError, KeyboardInterrupt) as error:
+                        self.write_evidence("gateway-process-proof-failure.json", json.dumps({
+                            "verified": False, "message": "Gateway native PID/start replacement could not be verified"}) + "\n")
+                        print("Gateway native PID/start replacement could not be verified", flush=True)
+                        if exit_code == 0:
+                            exit_code = 130 if isinstance(error, KeyboardInterrupt) else 1
         except KeyboardInterrupt:
             exit_code = 130
             print("Isolated fixture interrupted; cleaning up owned resources", flush=True)
