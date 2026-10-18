@@ -36,9 +36,13 @@ jobs:
   release:
     needs: verify-source
     if: needs.verify-source.outputs.publish-enabled == 'true'
+    # GitHub checks nested job permissions statically. governed-release stays
+    # disabled, but the caller must still allow its id-token and attestations scopes.
     permissions:
       actions: read
+      attestations: write
       contents: write
+      id-token: write
       issues: write
       pull-requests: write
     uses: Hexalith/Hexalith.Builds/.github/workflows/domain-release.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9
