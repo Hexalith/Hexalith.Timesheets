@@ -1,0 +1,9 @@
+{
+  "packages": [
+    { "id": "Hexalith.Timesheets.Contracts", "project": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj" },
+    { "id": "Hexalith.Timesheets.Client", "project": "src/Hexalith.Timesheets.Client/Hexalith.Timesheets.Client.csproj" },
+    { "id": "Hexalith.Timesheets.Server", "project": "src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj" },
+    { "id": "Hexalith.Timesheets.Projections", "project": "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj" },
+    { "id": "Hexalith.Timesheets.Testing", "project": "src/Hexalith.Timesheets.Testing/Hexalith.Timesheets.Testing.csproj" }
+  ]
+}

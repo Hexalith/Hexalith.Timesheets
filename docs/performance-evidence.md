@@ -118,6 +118,6 @@ TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home \
   -xml /tmp/timesheets-nfr11-performance.xml
 ```
 
-Use the direct executables for the current SDK `10.0.401`: the repository's `dotnet test` configuration fails with the unsupported Microsoft.Testing.Platform VSTest-target error. Keep `TIMESHEETS_PERF=1` on the executable invocation that runs the selected lane.
+Use the direct executables for the current SDK `10.0.402`: the repository's `dotnet test` configuration fails with the unsupported Microsoft.Testing.Platform VSTest-target error. Keep `TIMESHEETS_PERF=1` on the executable invocation that runs the selected lane.
 
 Without `TIMESHEETS_PERF=1` the test dynamically skips (`Assert.Skip`) and the fast baseline is unaffected. The per-scenario p95/min/median/max are emitted via `ITestOutputHelper` (timing aggregates and scenario names only — no command bodies, payloads, comments, or personal data, per NFR12); the two distinct `-xml` reports above capture that output for copy-pasting into this document.

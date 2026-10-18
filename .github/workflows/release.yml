@@ -1,0 +1,87 @@
+name: Release
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: release-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify-source:
+    name: Verify exact green main and release settings
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    outputs:
+      publish-enabled: ${{ steps.preflight.outputs.publish-enabled }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+      - id: preflight
+        name: Require current main with successful exact-source CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEXALITH_RELEASE_PUBLISH_ENABLED: ${{ vars.HEXALITH_RELEASE_PUBLISH_ENABLED }}
+        run: python3 scripts/release-preflight.py source --allow-frozen
+
+  release:
+    needs: verify-source
+    if: needs.verify-source.outputs.publish-enabled == 'true'
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+      pull-requests: write
+    uses: Hexalith/Hexalith.Builds/.github/workflows/domain-release.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9
+    with:
+      solution: Hexalith.Timesheets.slnx
+      test-platform: microsoft-testing-platform
+      # Exact-source CI ran all six suites. Release rebuilds and validates the
+      # final-version packages and isolated consumers before creating a tag.
+      environment-name: production
+      builds-execution-sha: 544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9
+      source-branch: main
+      source-ci-workflow: ci.yml
+      package-manifest: tools/release-packages.json
+      expected-package-count: 5
+      require-publication-authority: false
+      publish-containers: false
+      timeout-minutes: 30
+    secrets:
+      NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+
+  verify-publication:
+    name: Verify exact-version official NuGet publication
+    needs: [verify-source, release]
+    # Also inspect partial writes after failure, but never enter a protected
+    # environment or run verification for a source/freeze-skipped release.
+    if: always() && needs.verify-source.result == 'success' && needs.release.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+      - name: Require all manifest IDs at the exact source-tagged version
+        env:
+          RELEASE_RESULT: ${{ needs.release.result }}
+        run: python3 scripts/verify-publication.py --source-sha "$GITHUB_SHA" --release-result "$RELEASE_RESULT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: publication-verification
+          path: artifacts/publication-verification.json
+          if-no-files-found: ignore

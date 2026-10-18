@@ -1,0 +1,13 @@
+<Project>
+  <!-- Some root-declared dependencies have no Directory.Build.targets and MSBuild
+       searches upward. This module's policy must never govern their own tool builds. -->
+  <Target Name="ValidateTimesheetsDependencyMode" BeforeTargets="CollectPackageReferences;CoreCompile"
+          Condition="$(MSBuildProjectName.StartsWith('Hexalith.Timesheets'))">
+    <Error Condition="'$(UseHexalithProjectReferences)' != 'true' and '$(UseHexalithProjectReferences)' != 'false'"
+           Code="HXT0001" Text="UseHexalithProjectReferences must be true or false." />
+    <Error Condition="'$(UseHexalithProjectReferences)' == 'true' and '$(Configuration)' != 'Debug'"
+           Code="HXT0002" Text="Sibling source references require Configuration=Debug. Release uses published NuGet packages." />
+    <Error Condition="'$(UseHexalithProjectReferences)' == 'false' and '$(Configuration)' != 'Release'"
+           Code="HXT0002" Text="Package references require Configuration=Release. Local source builds use Configuration=Debug." />
+  </Target>
+</Project>

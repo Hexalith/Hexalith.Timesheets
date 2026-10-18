@@ -143,8 +143,9 @@ public sealed class DependencyDirectionTests
             "Hexalith.Works");
     }
 
+    /// <summary>Preserves sibling boundaries while allowing the conditional published-package graph.</summary>
     [Fact]
-    public void Sibling_modules_are_not_consumed_as_hexalith_nuget_packages()
+    public void Sibling_modules_use_conditional_source_and_published_package_references()
     {
         string repositoryRoot = RepositoryRoot.Find().FullName;
         string[] projectFiles =
@@ -158,14 +159,25 @@ public sealed class DependencyDirectionTests
         foreach (string projectFile in projectFiles)
         {
             XDocument project = XDocument.Load(projectFile);
-            string[] packageReferences = project
+            XElement[] packageReferences = project
                 .Descendants("PackageReference")
-                .Select(static reference => reference.Attribute("Include")?.Value)
-                .Where(static value => value is not null)
-                .Cast<string>()
+                .Where(static reference => reference.Attribute("Include")?.Value.StartsWith("Hexalith.", StringComparison.Ordinal) == true)
                 .ToArray();
 
-            packageReferences.ShouldNotContain(package => package.StartsWith("Hexalith.", StringComparison.Ordinal), projectFile);
+            foreach (XElement reference in packageReferences)
+            {
+                string package = reference.Attribute("Include")!.Value;
+                (package.StartsWith("Hexalith.EventStore.", StringComparison.Ordinal)
+                    || package == "Hexalith.Works.Contracts").ShouldBeTrue(projectFile);
+                string.Join(";", reference.AncestorsAndSelf().Attributes("Condition").Select(static value => value.Value))
+                    .Contains("'$(UseHexalithProjectReferences)' != 'true'", StringComparison.Ordinal).ShouldBeTrue(projectFile);
+            }
+
+            foreach (XElement reference in project.Descendants("ProjectReference")
+                .Where(static reference => reference.Attribute("Include")?.Value.StartsWith("$(Hexalith", StringComparison.Ordinal) == true))
+            {
+                reference.Attribute("Condition")?.Value.ShouldBe("'$(UseHexalithProjectReferences)' == 'true'", projectFile);
+            }
         }
     }
 

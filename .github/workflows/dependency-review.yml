@@ -1,0 +1,12 @@
+name: Dependency Review
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  dependency-review:
+    uses: Hexalith/Hexalith.Builds/.github/workflows/dependency-review.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9
+    permissions:
+      contents: read
+      pull-requests: write

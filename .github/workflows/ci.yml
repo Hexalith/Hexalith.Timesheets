@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: Hexalith/Hexalith.Builds/.github/workflows/domain-ci.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9
+    with:
+      solution: Hexalith.Timesheets.slnx
+      test-platform: microsoft-testing-platform
+      run-consumer-validation: true
+      build-timeout-minutes: 30
+      # Every project is blocking. The live Dapr and performance facts retain their
+      # existing explicit opt-ins; ordinary composed-host integration needs no Dapr.
+      unit-test-projects: |
+        tests/Hexalith.Timesheets.ArchitectureTests
+        tests/Hexalith.Timesheets.Contracts.Tests
+        tests/Hexalith.Timesheets.Server.Tests
+        tests/Hexalith.Timesheets.Projections.Tests
+        tests/Hexalith.Timesheets.Works.Tests
+        tests/Hexalith.Timesheets.IntegrationTests
+
+  verify-test-evidence:
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: blocking-test-results
+          path: TestResults
+      - name: Require successful results from every test project
+        run: python3 scripts/validate-test-results.py TestResults
+
+  release-tooling:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Exercise package and release failure paths
+        run: python3 -m unittest discover -s scripts/tests -v

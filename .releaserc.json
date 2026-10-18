@@ -1,0 +1,21 @@
+{
+  "branches": ["main"],
+  "tagFormat": "v${version}",
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    ["@semantic-release/exec", {
+      "verifyReleaseCmd": "python3 scripts/release-preflight.py verify ${nextRelease.version} >&2",
+      "prepareCmd": "python3 scripts/pack-release-packages.py ./nupkgs ${nextRelease.version} && python3 scripts/validate-nuget-packages.py ./nupkgs && python3 scripts/validate-consumer-package-references.py ./nupkgs && python3 scripts/release-preflight.py prepare ${nextRelease.version}",
+      "publishCmd": "python3 scripts/push-release-packages.py ${nextRelease.version} >&2"
+    }],
+    ["@semantic-release/github", {
+      "assets": ["nupkgs/*.nupkg", "nupkgs/*.snupkg", "nupkgs/release-artifacts.sha256", ".hexalith/release/identity.json"],
+      "failTitle": false,
+      "failComment": false,
+      "labels": [],
+      "successCommentCondition": false,
+      "releasedLabels": false
+    }]
+  ]
+}

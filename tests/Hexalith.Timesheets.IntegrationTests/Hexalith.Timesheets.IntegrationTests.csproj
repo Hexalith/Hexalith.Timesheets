@@ -22,14 +22,21 @@
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Projections\Hexalith.Timesheets.Projections.csproj" />
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" AdditionalProperties="NuGetAudit=false" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Contracts\Hexalith.EventStore.Contracts.csproj" AdditionalProperties="NuGetAudit=false" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.DomainService\Hexalith.EventStore.DomainService.csproj" AdditionalProperties="NuGetAudit=false" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Server\Hexalith.EventStore.Server.csproj" AdditionalProperties="NuGetAudit=false" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Testing\Hexalith.EventStore.Testing.csproj" AdditionalProperties="NuGetAudit=false" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Contracts\Hexalith.EventStore.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.DomainService\Hexalith.EventStore.DomainService.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Server\Hexalith.EventStore.Server.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Testing\Hexalith.EventStore.Testing.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseHexalithProjectReferences)' != 'true'">
+    <PackageReference Include="Hexalith.EventStore.Client" />
+    <PackageReference Include="Hexalith.EventStore.Contracts" />
+    <PackageReference Include="Hexalith.EventStore.DomainService" />
+    <PackageReference Include="Hexalith.EventStore.Server" />
+    <PackageReference Include="Hexalith.EventStore.Testing" />
   </ItemGroup>
 </Project>

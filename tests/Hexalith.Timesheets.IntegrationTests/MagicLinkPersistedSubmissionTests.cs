@@ -851,6 +851,24 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var entryId = new TimeEntryId("time-entry-delayed-submit-receipt");
         await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
             capabilityId, entryId);
+        // Both requests must load the unused capability before either commits. Starting
+        // two HTTP tasks alone can let the first commit finish before the second loader.
+        TaskCompletionSource bothCommitsEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        int commitCount = 0;
+        factory.Gateway.BeforeSubmitAsync = async (request, cancellationToken) =>
+        {
+            if (request.CommandType != typeof(CommitMagicLinkUse).FullName)
+            {
+                return;
+            }
+
+            if (Interlocked.Increment(ref commitCount) == 2)
+            {
+                bothCommitsEntered.TrySetResult();
+            }
+
+            await bothCommitsEntered.Task.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
+        };
         factory.Gateway.AfterStoredBeforeResponseAsync = (request, cancellationToken) =>
             request.CommandType == typeof(CommitMagicLinkUse).FullName
                 ? Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken)

@@ -698,3 +698,21 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-shared-state-preservation-checks.md`
   summary: Diagnose the EventStore process-stop timeout that prevents the isolated journey's restart assertion.
   evidence: The unchanged journey passed record/issue/index/display/confirm/adjust/replay/race/rebuild checks, then `aspire resource eventstore restart --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive` exited 16 after the EventStore process failed to stop in time. The 2026-10-18 failed retry log is `/tmp/timesheets-checkpoint-tenant-live-projects-complete/run-f0qmfl8y/25-Hexalith.Timesheets.IntegrationTests--class.log`; AppHost logs report `timed out waiting for process to stop`. No runtime restart repair is included in this preservation-only increment.
+
+## Deferred from: EventStore restart timeout scope selection (2026-10-18)
+
+- source_spec: none
+  summary: Harden BMAD hooks and remove obsolete hook references in a separate increment.
+  evidence: The user selected the recommended EventStore restart timeout investigation and repair; hook input handling and event-file containment have independent tooling validation.
+
+- source_spec: none
+  summary: Address projection storage and migration hardening in separate increments.
+  evidence: The user selected the EventStore restart timeout; deployed inventory, migration authorization, and storage cleanup require their own evidence.
+
+- source_spec: none
+  summary: Refresh synchronized repository guidance in a separate increment.
+  evidence: The user selected the EventStore restart timeout; SDK, projection-wiring, and launch-posture guidance can be reviewed and shipped independently.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-implement-timesheets-ci-cd.md`
+  summary: Resolve the upstream braces/micromatch semantic-release advisory chain before merging or activating Timesheets CI/CD.
+  evidence: On 2026-10-18 the compatible lock refresh and signatures pass, but npm audit still reports eight high findings from GHSA-vfj7-8cjw-p6xm; latest braces 3.0.3 and micromatch 4.0.8 have no compatible fixed release, and the unchanged high-severity dependency-review gate blocks introduction.

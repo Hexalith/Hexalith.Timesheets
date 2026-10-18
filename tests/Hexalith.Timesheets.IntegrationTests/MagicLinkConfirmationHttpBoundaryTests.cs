@@ -2583,6 +2583,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         public Func<StreamReadEvent, StreamReadEvent>? StoredEventTransform { get; set; }
 
+        /// <summary>Optionally coordinates a test's submissions before any events are stored.</summary>
+        public Func<SubmitCommandRequest, CancellationToken, Task>? BeforeSubmitAsync { get; set; }
+
         public Func<SubmitCommandRequest, CancellationToken, Task>? AfterStoredBeforeResponseAsync { get; set; }
 
         public int TransientWorkloadStatusFailures { get; set; }
@@ -2782,6 +2785,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             SubmitCommandRequest request,
             CancellationToken cancellationToken = default)
         {
+            if (BeforeSubmitAsync is { } beforeSubmit)
+            {
+                await beforeSubmit(request, cancellationToken);
+            }
+
             SubmitCommandResponse receipt = await SubmitScriptedCommandAsync(request, cancellationToken);
             if (AfterStoredBeforeResponseAsync is { } afterStored)
             {

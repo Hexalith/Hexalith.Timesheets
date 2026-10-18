@@ -17,8 +17,13 @@
   <ItemGroup>
     <ProjectReference Include="..\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
     <ProjectReference Include="..\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" AdditionalProperties="NuGetAudit=false" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Contracts\Hexalith.EventStore.Contracts.csproj" AdditionalProperties="NuGetAudit=false" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.DomainService\Hexalith.EventStore.DomainService.csproj" AdditionalProperties="NuGetAudit=false" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Contracts\Hexalith.EventStore.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.DomainService\Hexalith.EventStore.DomainService.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseHexalithProjectReferences)' != 'true'">
+    <PackageReference Include="Hexalith.EventStore.Client" />
+    <PackageReference Include="Hexalith.EventStore.Contracts" />
+    <PackageReference Include="Hexalith.EventStore.DomainService" />
   </ItemGroup>
 </Project>

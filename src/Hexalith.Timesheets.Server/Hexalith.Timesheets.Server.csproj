@@ -9,7 +9,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" AdditionalProperties="NuGetAudit=false" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
     <ProjectReference Include="..\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseHexalithProjectReferences)' != 'true'">
+    <PackageReference Include="Hexalith.EventStore.Client" />
   </ItemGroup>
 </Project>

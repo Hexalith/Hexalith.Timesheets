@@ -86,7 +86,7 @@ public sealed class ScaffoldGovernanceTests
         using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
         JsonElement sdk = globalJson.RootElement.GetProperty("sdk");
 
-        sdk.GetProperty("version").GetString().ShouldBe("10.0.401");
+        sdk.GetProperty("version").GetString().ShouldBe("10.0.402");
         sdk.GetProperty("rollForward").GetString().ShouldBe("latestPatch");
     }
 

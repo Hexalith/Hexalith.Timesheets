@@ -323,7 +323,7 @@ were preserved.
 
 ## Previous isolated local verification (2026-10-12)
 
-The current SDK is `10.0.401`, as pinned by `global.json`. The source-reference
+The current SDK is `10.0.402`, as pinned by `global.json`. The source-reference
 solution restore and Debug build with `HexalithCommonsRoot=/tmp/no-commons`
 exited 0; the build reported zero warnings and errors in 15.96 seconds.
 The narrow Python suite passed 9/9 and `py_compile` passed. A supplementary

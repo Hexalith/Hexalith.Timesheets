@@ -15,11 +15,21 @@
     <HexalithFrontComposerRoot Condition="'$(HexalithFrontComposerRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.FrontComposer\src\Hexalith.FrontComposer.Contracts')">$(MSBuildThisFileDirectory)..\Hexalith.FrontComposer</HexalithFrontComposerRoot>
     <HexalithCommonsRoot Condition="'$(HexalithCommonsRoot)' == '' and Exists('$(MSBuildThisFileDirectory)..\Hexalith.Commons\src\libraries\Hexalith.Commons')">$(MSBuildThisFileDirectory)..\Hexalith.Commons</HexalithCommonsRoot>
 
+    <!-- Shared CI restores without a configuration before building Release. Keep both
+         evaluations on the package graph; local source work selects Debug explicitly. -->
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <UseHexalithProjectReferences Condition="'$(UseHexalithProjectReferences)' == '' and '$(Configuration)' == 'Debug'">true</UseHexalithProjectReferences>
+    <UseHexalithProjectReferences Condition="'$(UseHexalithProjectReferences)' == ''">false</UseHexalithProjectReferences>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NuGetAudit>false</NuGetAudit>
+    <NuGetAudit>true</NuGetAudit>
+    <NuGetAuditMode>all</NuGetAuditMode>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
 
     <IsPackable>true</IsPackable>
     <IsPublishable>false</IsPublishable>

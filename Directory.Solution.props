@@ -1,0 +1,7 @@
+<Project>
+  <!-- Keep the shared workflow's configuration-free solution restore on the
+       same graph as its subsequent Release build. Explicit Debug remains local. -->
+  <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+  </PropertyGroup>
+</Project>

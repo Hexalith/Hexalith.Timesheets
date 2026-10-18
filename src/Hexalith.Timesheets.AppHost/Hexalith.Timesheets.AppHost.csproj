@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="$(HexalithEventStoreRoot)/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj" IsAspireProjectResource="false" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)/src/Hexalith.EventStore/Hexalith.EventStore.csproj" ReferenceOutputAssembly="false" IsAspireProjectResource="false" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj" IsAspireProjectResource="false" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)/src/Hexalith.EventStore/Hexalith.EventStore.csproj" ReferenceOutputAssembly="false" IsAspireProjectResource="false" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
     <ProjectReference Include="..\Hexalith.Timesheets\Hexalith.Timesheets.csproj" />
   </ItemGroup>
 
@@ -16,5 +16,8 @@
     <Content Include="KeycloakRealms/**/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseHexalithProjectReferences)' != 'true'">
+    <PackageReference Include="Hexalith.EventStore.Aspire" />
   </ItemGroup>
 </Project>

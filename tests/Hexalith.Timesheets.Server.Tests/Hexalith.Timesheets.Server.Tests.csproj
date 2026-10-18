@@ -18,10 +18,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
-    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Testing\Hexalith.EventStore.Testing.csproj" AdditionalProperties="NuGetAudit=false" />
+    <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Testing\Hexalith.EventStore.Testing.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup>
     <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UseHexalithProjectReferences)' != 'true'">
+    <PackageReference Include="Hexalith.EventStore.Testing" />
   </ItemGroup>
 </Project>
