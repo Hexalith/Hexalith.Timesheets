@@ -78,6 +78,7 @@ development_status:
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
   3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
   # wait for platform 4.14
+  # needs Platform epics 1 to 5
   # Platform Development/source host binding exists; staging namespaces, production providers and deployed acceptance remain absent
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: in-progress
   epic-3-retrospective: done
