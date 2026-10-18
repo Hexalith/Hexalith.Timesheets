@@ -48,8 +48,8 @@ def run_guards(log_directory=None, configuration_only=False):
                 "Dapr__SchedulerHostAddress": fixture.scheduler})
         else:
             fixture.preflight()
-            fixture.shared_before = read_only_shared_snapshot()
-            fixture.write_evidence("shared-before.json", json.dumps(fixture.shared_before, indent=2) + "\n")
+            fixture.capture_shared_baseline(read_only_shared_snapshot)
+            fixture.preflight()
             fixture.start_infrastructure()
             fixture.preflight()
         fixture.write_evidence("guards-mode.json", json.dumps({"configuration_only": configuration_only,
@@ -142,7 +142,7 @@ def run_guards(log_directory=None, configuration_only=False):
                     require(result.returncode != 0 and expected in output, name + " did not refuse before resource construction")
                 if not configuration_only:
                     require(not json_output(fixture.run_command(["aspire", "ps", "--non-interactive", "--format", "Json"]).stdout),
-                            "A guard probe constructed an AppHost")
+                            "An AppHost appeared during guard checks; verification cannot continue")
                     fixture.preflight()
                 results.append({"case": name, "exit": result.returncode, "passed": True})
                 print(name + ": compiled configuration check passed; exit " + str(result.returncode), flush=True)
@@ -162,11 +162,13 @@ def run_guards(log_directory=None, configuration_only=False):
                 fixture.write_evidence("shared-after.json", json.dumps(after, indent=2) + "\n")
                 preservation = shared_preservation(fixture.shared_before, after)
                 fixture.write_evidence("shared-preservation.json", json.dumps(preservation, indent=2) + "\n")
-                require(preservation["matches"], "Retained shared-service preservation was not established")
+                require(preservation["matches"], "Shared-service preservation failed: " + "; ".join(preservation["mismatches"]))
             except KeyboardInterrupt:
                 print("Shared-service preservation interrupted; preservation is unproved", flush=True)
                 status = status or 130
-            except (FixtureError, OSError, ValueError):
+            except (FixtureError, OSError, ValueError) as error:
+                print(str(error) if isinstance(error, FixtureError)
+                      else "Shared-service preservation could not be established; see evidence", flush=True)
                 status = status or 1
         print("Sanitized compiled guard evidence: " + str(fixture.log_directory), flush=True)
         if fixture.evidence_write_failed and status == 0:

@@ -51,7 +51,7 @@ class Commands:
             if result is not None:
                 return result
         output = ""
-        if arguments[:2] == ["aspire", "ps"]:
+        if arguments[:2] in (["aspire", "ps"], ["dapr", "list"]):
             output = "[]"
         elif arguments[:2] == ["docker", "inspect"] and arguments[2].startswith("dapr_"):
             output = self.image
@@ -81,6 +81,10 @@ class IsolatedFixtureTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.logs = Path(self.temporary.name) / "logs"
+        self.native_dapr_inventory = fixture.running_dapr_processes
+        inventory = patch.object(fixture, "running_dapr_processes", return_value=[])
+        inventory.start()
+        self.addCleanup(inventory.stop)
 
     def run_fixture(self, commands, port_check=lambda: None, owned=None):
         instance = fixture.IsolatedFixture(command=commands, port_check=port_check,
@@ -223,7 +227,7 @@ class IsolatedFixtureTests(unittest.TestCase):
 
     def test_matching_dapr_id_refuses_start_and_foreign_cleanup(self):
         commands = Commands(lambda args: subprocess.CompletedProcess(args, 0,
-            "eventstore 3501 50001 8082 foreign\n", "") if args[:2] == ["dapr", "list"] else None)
+            '[{"appId":"eventstore"}]', "") if args[:2] == ["dapr", "list"] else None)
         _, result = self.run_fixture(commands)
         self.assertEqual(1, result)
         self.assertFalse(any(args[:2] in (["aspire", "start"], ["aspire", "stop"], ["docker", "run"], ["docker", "rm"])
@@ -747,6 +751,260 @@ class IsolatedFixtureTests(unittest.TestCase):
         after["redis"]["0"]["persistent_sha256"] = "changed"
         self.assertFalse(fixture.shared_preservation(before, after)["matches"])
 
+    @staticmethod
+    def shared_snapshot():
+        snapshot = fixture.SharedSnapshot()
+        snapshot["redis"] = {"0": {"persistent_keys": 1, "persistent_sha256": "fixed"}}
+        snapshot.expiring = {"0": {"PRIVATE-KEY": ("PRIVATE-VALUE", 1000)}}
+        snapshot.captured_at = {"0": 900}
+        snapshot["scheduler"] = {"cluster_id": "1", "revision": "3", "keys": 2, "sha256": "fixed"}
+        return snapshot
+
+    def test_preservation_reports_actual_changed_services_without_keys_or_values(self):
+        before, after = self.shared_snapshot(), self.shared_snapshot()
+        after["redis"]["0"].update(persistent_keys=15, persistent_sha256="changed")
+        after["scheduler"].update(revision="17", sha256="changed")
+        result = fixture.shared_preservation(before, after)
+        self.assertFalse(result["matches"])
+        self.assertEqual(["Redis DB 0 persistent content changed", "Scheduler contents changed"], result["mismatches"])
+        self.assertEqual({"matches": False, "keys_before": 1, "keys_after": 15}, result["redis"]["0"]["persistent"])
+        self.assertTrue(result["scheduler"]["identity_matches"])
+        self.assertFalse(result["scheduler"]["contents_match"])
+        self.assertEqual("3", result["scheduler"]["revision_before"])
+        self.assertEqual("17", result["scheduler"]["revision_after"])
+        self.assertNotIn("PRIVATE-KEY", json.dumps(result))
+        self.assertNotIn("PRIVATE-VALUE", json.dumps(result))
+
+    def test_preservation_reports_expiring_mutations_and_confirmed_expiry_separately(self):
+        before, after = self.shared_snapshot(), self.shared_snapshot()
+        before.expiring["0"].update({"expired": ("old", 910), "missing": ("old", 2000)})
+        after.captured_at["0"] = 950
+        after.expiring["0"] = {"PRIVATE-KEY": ("changed", 1100), "added": ("new", 2000)}
+        result = fixture.shared_preservation(before, after)
+        self.assertFalse(result["matches"])
+        self.assertEqual(["Redis DB 0 expiring content or deadlines changed"], result["mismatches"])
+        self.assertEqual({"matches": False, "added": 1, "missing_unexpired": 1,
+                          "value_changes": 1, "deadline_changes": 1, "confirmed_natural_expirations": 1},
+                         result["redis"]["0"]["expiring"])
+        self.assertEqual({"0": 1}, result["confirmed_natural_expirations"])
+
+    def test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json(self):
+        for output in ('[{"appId":"standalone-other"}]', '{}', 'null', '', 'not-json []'):
+            with self.subTest(output=output):
+                commands = Commands(lambda args: subprocess.CompletedProcess(args, 0, output, "")
+                                    if args[:2] == ["dapr", "list"] else None)
+                instance, result = self.run_fixture(commands)
+                self.assertEqual(1, result)
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.stopped)
+                self.assertFalse(commands.containers)
+                self.assertIn(["dapr", "list", "--output", "json"], [args for args, _ in commands.calls])
+                self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_unstable_baseline_refuses_live_and_guard_resources_before_creation(self):
+        before, after = self.shared_snapshot(), self.shared_snapshot()
+        after["redis"]["0"]["persistent_sha256"] = "changed"
+        for mode in ("live", "guards"):
+            with self.subTest(mode=mode):
+                commands = self.guard_commands() if mode == "guards" else Commands()
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
+                instance.injected_command = False
+                reader_owner = guards if mode == "guards" else fixture
+                with patch.object(reader_owner, "read_only_shared_snapshot", side_effect=(before, after)), \
+                        patch.object(fixture.time, "sleep"), contextlib.redirect_stdout(io.StringIO()) as output:
+                    if mode == "guards":
+                        with patch.object(guards, "IsolatedFixture", return_value=instance):
+                            result = guards.run_guards()
+                    else:
+                        result = instance.execute()
+                self.assertEqual(1, result)
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.stopped)
+                self.assertFalse(commands.containers)
+                self.assertIsNone(instance.scratch)
+                self.assertIn("before fixture startup", output.getvalue())
+                report = json.loads((instance.log_directory / "shared-baseline-preservation.json").read_text())
+                self.assertFalse(report["matches"])
+                self.assertTrue((instance.log_directory / "shared-baseline-before.json").is_file())
+                self.assertTrue((instance.log_directory / "shared-before.json").is_file())
+
+    def test_stable_baseline_selects_latest_observation_and_requires_evidence(self):
+        before, after = self.shared_snapshot(), self.shared_snapshot()
+        after.captured_at["0"] = 950
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture, "read_only_shared_snapshot", side_effect=(before, after)), \
+                patch.object(fixture.time, "sleep") as pause, \
+                patch.object(fixture.time, "time_ns", side_effect=(1000000000, 2250000000)), \
+                patch.object(fixture.time, "monotonic", side_effect=(10, 11.25)):
+            instance.capture_shared_baseline()
+        pause.assert_called_once_with(1)
+        self.assertIs(after, instance.shared_before)
+        report = json.loads((instance.log_directory / "shared-baseline-preservation.json").read_text())
+        self.assertTrue(report["matches"])
+        self.assertEqual({"before_unix_ns": 1000000000, "after_unix_ns": 2250000000,
+                          "elapsed_seconds": 1.25, "requested_pause_seconds": 1}, report["observation"])
+        for failed_name in ("shared-baseline-before.json", "shared-before.json", "shared-baseline-preservation.json"):
+            with self.subTest(failed_name=failed_name):
+                refused = fixture.IsolatedFixture(log_directory=self.logs)
+                original_write = refused.write_evidence
+                refused.write_evidence = lambda name, content: False if name == failed_name else original_write(name, content)
+                with patch.object(fixture, "read_only_shared_snapshot", return_value=before), \
+                        patch.object(fixture.time, "sleep"), self.assertRaises(fixture.FixtureError):
+                    refused.capture_shared_baseline()
+                self.assertIsNone(refused.shared_before)
+
+    def test_guard_refuses_a_new_foreign_apphost_without_blame_or_foreign_stop(self):
+        commands = self.guard_commands()
+        probe = commands.failure
+        checks = 0
+        def appear(arguments):
+            nonlocal checks
+            if arguments[:2] == ["aspire", "ps"]:
+                checks += 1
+                if checks > 3:
+                    return subprocess.CompletedProcess(arguments, 0,
+                        '[{"appHostPath":"/foreign/Other.AppHost.csproj"}]', "")
+            return probe(arguments)
+        commands.failure = appear
+        instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                patch.object(guards, "read_only_shared_snapshot", return_value=self.shared_snapshot()), \
+                patch.object(fixture.time, "sleep"), \
+                patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(1, guards.run_guards())
+        self.assertIn("An AppHost appeared during guard checks", output.getvalue())
+        self.assertNotIn("probe constructed", output.getvalue())
+        self.assertFalse(commands.started)
+        self.assertFalse(commands.stopped)
+        self.assertFalse(commands.containers)
+        self.assertTrue(json.loads((instance.log_directory / "shared-preservation.json").read_text())["matches"])
+
+    def test_baseline_rejects_revision_activity_even_when_final_contents_match(self):
+        before, after = self.shared_snapshot(), self.shared_snapshot()
+        after["scheduler"]["revision"] = "4"
+        self.assertTrue(fixture.shared_preservation(before, after)["matches"])
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture, "read_only_shared_snapshot", side_effect=(before, after)), \
+                patch.object(fixture.time, "sleep"), self.assertRaises(fixture.FixtureError):
+            instance.capture_shared_baseline()
+        report = json.loads((instance.log_directory / "shared-baseline-preservation.json").read_text())
+        self.assertFalse(report["matches"])
+        self.assertFalse(report["scheduler"]["baseline_revision_matches"])
+        self.assertEqual(["Scheduler revision changed during baseline observation"], report["mismatches"])
+        self.assertIsNone(instance.shared_before)
+
+    def test_runtime_arriving_during_baseline_refuses_infrastructure_creation(self):
+        for mode in ("live", "guards"):
+            with self.subTest(mode=mode):
+                commands = self.guard_commands() if mode == "guards" else Commands()
+                original_probe = commands.failure
+                checks = 0
+                def appear(arguments):
+                    nonlocal checks
+                    if arguments[:2] == ["aspire", "ps"]:
+                        checks += 1
+                        if checks > 1:
+                            return subprocess.CompletedProcess(arguments, 0, '[{"appHostPath":"/foreign/AppHost.csproj"}]', "")
+                    return original_probe(arguments) if original_probe else None
+                commands.failure = appear
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
+                instance.injected_command = False
+                reader_owner = guards if mode == "guards" else fixture
+                with patch.object(reader_owner, "read_only_shared_snapshot", return_value=self.shared_snapshot()), \
+                        patch.object(fixture.time, "sleep"), contextlib.redirect_stdout(io.StringIO()):
+                    if mode == "guards":
+                        with patch.object(guards, "IsolatedFixture", return_value=instance):
+                            result = guards.run_guards()
+                    else:
+                        result = instance.execute()
+                self.assertEqual(1, result)
+                self.assertIsNone(instance.scratch)
+                self.assertFalse(commands.redis_attempted)
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.stopped)
+
+    def test_native_dapr_inventory_refuses_visible_unlisted_and_unverifiable_sidecars(self):
+        directory = Path(self.temporary.name) / "proc"
+        process = directory / "123"
+        process.mkdir(parents=True)
+        (process / "comm").write_text("daprd\n")
+        (process / "stat").write_text("123 (daprd) S " + " ".join(["0"] * 18 + ["77"]))
+        self.assertEqual([{"pid": 123, "start": "77"}], self.native_dapr_inventory(directory))
+        commands = Commands()
+        with patch.object(fixture, "running_dapr_processes", side_effect=lambda: self.native_dapr_inventory(directory)):
+            _, result = self.run_fixture(commands)
+        self.assertEqual(1, result)
+        self.assertFalse(commands.started)
+        self.assertFalse(commands.redis_attempted)
+        (process / "stat").write_text("123 (daprd) Z " + " ".join(["0"] * 18 + ["77"]))
+        self.assertEqual([], self.native_dapr_inventory(directory))
+        (process / "stat").write_text("malformed")
+        with self.assertRaises(fixture.FixtureError):
+            self.native_dapr_inventory(directory)
+        with patch.object(Path, "read_text", side_effect=PermissionError()), self.assertRaises(fixture.FixtureError):
+            self.native_dapr_inventory(directory)
+
+    def test_native_dapr_inventory_detects_a_real_process_without_cli_metadata(self):
+        script = "import ctypes,time;assert ctypes.CDLL(None).prctl(15,b'daprd',0,0,0)==0;print('ready',flush=True);time.sleep(60)"
+        process = subprocess.Popen([sys.executable, "-c", script], stdout=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual("ready\n", process.stdout.readline())
+            self.assertIn(process.pid, [row["pid"] for row in self.native_dapr_inventory()])
+            with patch.object(fixture, "running_dapr_processes", self.native_dapr_inventory):
+                commands = Commands()
+                _, result = self.run_fixture(commands)
+            self.assertEqual(1, result)
+            self.assertFalse(commands.started)
+            self.assertFalse(commands.redis_attempted)
+        finally:
+            process.terminate()
+            process.wait(timeout=5)
+            process.stdout.close()
+
+    def test_guard_final_mutation_is_reported_after_success_or_existing_failure(self):
+        for failed in (False, True):
+            with self.subTest(failed=failed):
+                before, after = self.shared_snapshot(), self.shared_snapshot()
+                after["scheduler"]["sha256"] = "changed"
+                commands = self.guard_commands(failed)
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
+                executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+                original_is_file = Path.is_file
+                with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                        patch.object(guards, "read_only_shared_snapshot", side_effect=(before, before, after)), \
+                        patch.object(fixture.time, "sleep"), \
+                        patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                        contextlib.redirect_stdout(io.StringIO()) as output:
+                    self.assertEqual(1, guards.run_guards())
+                self.assertIn("Scheduler contents changed", output.getvalue())
+                if failed:
+                    self.assertIn("selection was not verified", output.getvalue())
+                self.assertFalse(commands.containers)
+                self.assertFalse(Path(instance.scratch).exists())
+                self.assertFalse(json.loads((instance.log_directory / "shared-preservation.json").read_text())["matches"])
+
+    def test_final_mutation_diagnostics_keep_original_journey_result(self):
+        for original_exit in (0, 42):
+            with self.subTest(original_exit=original_exit):
+                before, after = self.shared_snapshot(), self.shared_snapshot()
+                after["scheduler"]["sha256"] = "changed"
+                commands = Commands(lambda args: subprocess.CompletedProcess(args, original_exit,
+                    "Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0", "") if "-class" in args else None)
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                    ownership_check=lambda: commands.started and not commands.stopped, resource_check=lambda *_: [])
+                instance.injected_command = False
+                with patch.object(instance, "_journey_command", commands), \
+                        patch.object(fixture, "read_only_shared_snapshot", side_effect=(before, before, after)), \
+                        patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), \
+                        contextlib.redirect_stdout(io.StringIO()) as output:
+                    self.assertEqual(original_exit or 1, instance.execute())
+                self.assertIn("Scheduler contents changed", output.getvalue())
+                self.assertFalse(commands.containers)
+                self.assertFalse(Path(instance.scratch).exists())
+
     def test_timeout_retains_both_sanitized_streams(self):
         def timeout(arguments, **_):
             raise subprocess.TimeoutExpired(arguments, 1, output=b'progress\n{"token": "SECRET"}',
@@ -1098,7 +1356,7 @@ time.sleep(60)
                     log_directory=self.logs, ownership_check=lambda: commands.started and not commands.stopped)
                 instance.injected_command = False
                 with patch.object(instance, "_journey_command", commands), \
-                        patch.object(fixture, "read_only_shared_snapshot", side_effect=(snapshot, KeyboardInterrupt())), \
+                        patch.object(fixture, "read_only_shared_snapshot", side_effect=(snapshot, snapshot, KeyboardInterrupt())), \
                         patch.object(fixture, "verify_runtime_components"), contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(original_exit or 130, instance.execute())
                 self.assertFalse(Path(instance.scratch).exists())
@@ -1113,7 +1371,7 @@ time.sleep(60)
                 instance = fixture.IsolatedFixture(command=self.guard_commands(failed), port_check=lambda: None,
                     log_directory=self.logs)
                 with patch.object(guards, "IsolatedFixture", return_value=instance), \
-                        patch.object(guards, "read_only_shared_snapshot", side_effect=(snapshot, KeyboardInterrupt())), \
+                        patch.object(guards, "read_only_shared_snapshot", side_effect=(snapshot, snapshot, KeyboardInterrupt())), \
                         patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
                         contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(1 if failed else 130, guards.run_guards())

@@ -389,6 +389,27 @@ def bound_resource_processes(directory, placement, scheduler):
     return found
 
 
+def running_dapr_processes(directory=Path("/proc")):
+    """Cross-check visible sidecars without relying on CLI metadata or signaling them."""
+    found = []
+    try:
+        for process in Path(directory).iterdir():
+            if not process.name.isdigit():
+                continue
+            try:
+                if (process / "comm").read_text().strip() != "daprd":
+                    continue
+                fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+                require(len(fields) > 19, "Dapr process inventory is unavailable; no resources started")
+                if fields[0] != "Z":
+                    found.append({"pid": int(process.name), "start": fields[19]})
+            except (FileNotFoundError, ProcessLookupError):
+                continue
+    except (OSError, ValueError, IndexError):
+        raise FixtureError("Dapr process inventory is unavailable; no resources started") from None
+    return found
+
+
 def recorded_process_exits(identities):
     """Check every captured PID/start pair even if its resource binding changed."""
     exits = []
@@ -415,28 +436,53 @@ class SharedSnapshot(dict):
 def shared_preservation(before, after):
     """Allow only a previously captured, elapsed Redis TTL to remove a key."""
     expires = {}
+    redis = {}
+    mismatches = []
     scheduler_fields = ("cluster_id", "keys", "sha256")
     require(all(field in snapshot["scheduler"] for snapshot in (before, after) for field in scheduler_fields),
             "Scheduler preservation identity is unavailable")
-    matches = all(before["scheduler"][field] == after["scheduler"][field] for field in scheduler_fields)
+    identity_matches = before["scheduler"]["cluster_id"] == after["scheduler"]["cluster_id"]
+    contents_match = all(before["scheduler"][field] == after["scheduler"][field] for field in ("keys", "sha256"))
+    scheduler = {"identity_matches": identity_matches, "contents_match": contents_match,
+                 "keys_before": before["scheduler"]["keys"], "keys_after": after["scheduler"]["keys"],
+                 "revision_before": before["scheduler"].get("revision"),
+                 "revision_after": after["scheduler"].get("revision")}
+    require(before["redis"].keys() == after["redis"].keys(), "Redis preservation database coverage changed")
     for database in before["redis"]:
         previous, current = before["redis"][database], after["redis"][database]
-        matches &= (previous["persistent_keys"], previous["persistent_sha256"]) == (
+        persistent_matches = (previous["persistent_keys"], previous["persistent_sha256"]) == (
             current["persistent_keys"], current["persistent_sha256"])
         old, new = before.expiring[database], after.expiring[database]
-        allowed = 0
+        allowed = missing = value_changes = deadline_changes = 0
         for key, (value, deadline) in old.items():
             if key not in new:
                 if deadline <= after.captured_at[database]:
                     allowed += 1
                 else:
-                    matches = False
+                    missing += 1
             else:
                 new_value, new_deadline = new[key]
-                matches &= value == new_value and abs(deadline - new_deadline) <= 2
-        matches &= not (new.keys() - old.keys())
+                value_changes += value != new_value
+                deadline_changes += abs(deadline - new_deadline) > 2
+        added = len(new.keys() - old.keys())
+        expiring_matches = not any((added, missing, value_changes, deadline_changes))
+        redis[database] = {
+            "persistent": {"matches": persistent_matches, "keys_before": previous["persistent_keys"],
+                           "keys_after": current["persistent_keys"]},
+            "expiring": {"matches": expiring_matches, "added": added, "missing_unexpired": missing,
+                         "value_changes": value_changes, "deadline_changes": deadline_changes,
+                         "confirmed_natural_expirations": allowed}}
+        if not persistent_matches:
+            mismatches.append(f"Redis DB {database} persistent content changed")
+        if not expiring_matches:
+            mismatches.append(f"Redis DB {database} expiring content or deadlines changed")
         expires[database] = allowed
-    return {"matches": bool(matches), "confirmed_natural_expirations": expires,
+    if not identity_matches:
+        mismatches.append("Scheduler cluster identity changed")
+    if not contents_match:
+        mismatches.append("Scheduler contents changed")
+    return {"matches": not mismatches, "confirmed_natural_expirations": expires,
+            "redis": redis, "scheduler": scheduler, "mismatches": mismatches,
             "method": "Atomic read-only Redis KEYS/DUMP/PTTL/TIME DB0/13/14; etcd v3 all-key range on loopback:2379",
             "ttl_rule": "Retained expiring values and deadlines match; absent keys allowed only after their captured deadline"}
 
@@ -662,12 +708,45 @@ class IsolatedFixture:
         return result
 
     def preflight(self):
-        dapr = self.run_command(["dapr", "list"]).stdout
-        require(not any(row.split() and row.split()[0] in ("eventstore", "timesheets")
-                        for row in dapr.splitlines()), "Matching Dapr app ID exists; no AppHost started")
+        try:
+            dapr = json.loads(self.run_command(["dapr", "list", "--output", "json"]).stdout)
+        except ValueError:
+            raise FixtureError("Dapr application inventory is unavailable; no AppHost started") from None
+        require(isinstance(dapr, list) and not dapr, "A Dapr application is already running or inventory is unsafe; no AppHost started")
+        require(not running_dapr_processes(), "A Dapr sidecar is present outside the empty CLI inventory; no resources started")
         apps = json_output(self.run_command(["aspire", "ps", "--non-interactive", "--format", "Json"]).stdout)
         require(isinstance(apps, list) and not apps, "An AppHost is already running; no AppHost started")
         self.port_check()
+
+    def capture_shared_baseline(self, snapshot_reader=None):
+        """Admit only two matching read-only observations before creating resources."""
+        reader = snapshot_reader or read_only_shared_snapshot
+        before = reader()
+        before_observed = time.time_ns()
+        observation_started = time.monotonic()
+        require(self.write_evidence("shared-baseline-before.json", json.dumps(before, indent=2) + "\n"),
+                "Shared baseline evidence is incomplete; no resources started")
+        time.sleep(1)
+        after = reader()
+        after_observed = time.time_ns()
+        elapsed = time.monotonic() - observation_started
+        require(self.write_evidence("shared-before.json", json.dumps(after, indent=2) + "\n"),
+                "Shared baseline evidence is incomplete; no resources started")
+        preservation = shared_preservation(before, after)
+        require(all(snapshot["scheduler"].get("revision") is not None for snapshot in (before, after)),
+                "Scheduler baseline revision is unavailable; no resources started")
+        revision_matches = before["scheduler"]["revision"] == after["scheduler"]["revision"]
+        preservation["scheduler"]["baseline_revision_matches"] = revision_matches
+        if not revision_matches:
+            preservation["matches"] = False
+            preservation["mismatches"].append("Scheduler revision changed during baseline observation")
+        preservation["observation"] = {"before_unix_ns": before_observed, "after_unix_ns": after_observed,
+                                       "elapsed_seconds": elapsed, "requested_pause_seconds": 1}
+        require(self.write_evidence("shared-baseline-preservation.json", json.dumps(preservation, indent=2) + "\n"),
+                "Shared baseline evidence is incomplete; no resources started")
+        require(preservation["matches"], "Retained shared services changed before fixture startup; no resources started: "
+                + "; ".join(preservation["mismatches"]))
+        self.shared_before = after
 
     def _owned_apphost(self):
         rows = target_apphosts(json_output(self.run_command(
@@ -841,8 +920,8 @@ class IsolatedFixture:
             self.run_command(["docker", "version", "--format", "{{.Server.Version}}"])
             self.preflight()
             if not self.injected_command:
-                self.shared_before = read_only_shared_snapshot()
-                self.write_evidence("shared-before.json", json.dumps(self.shared_before, indent=2) + "\n")
+                self.capture_shared_baseline()
+                self.preflight()
             self.start_infrastructure()
             self.preflight()
             self.start_attempted = True
@@ -881,13 +960,14 @@ class IsolatedFixture:
                     self.write_evidence("shared-after.json", json.dumps(after, indent=2) + "\n")
                     preservation = shared_preservation(self.shared_before, after)
                     self.write_evidence("shared-preservation.json", json.dumps(preservation, indent=2) + "\n")
-                    require(preservation["matches"], "Shared-service fingerprints changed; preservation is unproved")
+                    require(preservation["matches"], "Shared-service preservation failed: " + "; ".join(preservation["mismatches"]))
                     print("Retained broker/state persistent values, unexpired TTL values and scheduler KV match", flush=True)
                 except KeyboardInterrupt:
                     print("Shared-service preservation interrupted; preservation is unproved", flush=True)
                     exit_code = exit_code or 130
-                except (FixtureError, OSError, ValueError):
-                    print("Shared-service preservation could not be established; see evidence", flush=True)
+                except (FixtureError, OSError, ValueError) as error:
+                    print(str(error) if isinstance(error, FixtureError)
+                          else "Shared-service preservation could not be established; see evidence", flush=True)
                     if exit_code == 0:
                         exit_code = 1
             print(f"Sanitized fixture evidence: {self.log_directory}", flush=True)

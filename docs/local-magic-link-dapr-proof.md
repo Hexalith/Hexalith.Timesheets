@@ -821,8 +821,25 @@ for before/after preservation snapshots; these addresses are used only for
 read-only snapshots, never as fixture service targets. A missing or invalid
 snapshot fails verification.
 
-The runner refuses every existing AppHost, either matching Dapr ID and any
-occupied application port. It creates three owned disposable services:
+The runner refuses every existing AppHost, every running Dapr application
+(including standalone applications with other IDs), an unverifiable Dapr
+JSON inventory, any visible live `daprd` omitted from that inventory, and any
+occupied application port. Unavailable process inspection also refuses startup.
+Before creating resources,
+it compares two read-only shared-service observations one second apart.
+`shared-baseline-before.json`, `shared-before.json` and
+`shared-baseline-preservation.json` retain those observations and the result.
+A changing baseline or missing baseline evidence refuses startup. Matching
+observations establish only a sampled baseline; the final preservation check
+still must pass, and a later writer still invalidates the run.
+The baseline report records wall-clock sample times, monotonic elapsed time,
+and the requested pause. Scheduler revision activity also refuses baseline
+admission even when the range returns to the same contents. The final
+end-state comparison continues to compare scheduler identity and contents.
+Runtime admission is checked again after sampling and before infrastructure
+creation, then again before AppHost startup.
+
+It creates three owned disposable services:
 loopback-only Redis, placement and scheduler. Scheduler advertisement points
 to its private endpoint. Three scoped component copies select the private
 Redis for actor/command DB13, read-model DB14 and pub/sub DB0.
@@ -849,6 +866,17 @@ owned containers and component copies. Unknown ownership retains dependencies.
 Sanitized stdout/stderr, including timeout streams, stay in a unique evidence
 directory per invocation. Cleanup/evidence failures preserve a journey's
 original nonzero status. Ordinary starts retain checked-in defaults.
+
+`shared-preservation.json` reports each Redis database's persistent-key counts
+and whether its persistent content matches. Expiring-key diagnostics distinguish
+added keys, missing unexpired keys, changed values, changed expiry deadlines,
+and confirmed natural expirations. Scheduler diagnostics distinguish cluster
+identity from range contents and include before/after key counts and revisions.
+Console failures name the changed services. Reports contain no state keys or
+values, and genuine mutations remain failures; unrelated writes are not
+ignored or attributed to the fixture without evidence. The compiled guard
+driver uses the same admission and preservation checks, while its
+`--configuration-only` mode continues to avoid storage and runtime startup.
 
 The fixture reads the per-run Development signing key, app-channel token and
 Timesheets Dapr endpoint from the unique Timesheets process environment on
