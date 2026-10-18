@@ -295,7 +295,7 @@ public sealed class LaunchReadinessTests
         transitive[3].ShouldContain("without a compatibility, security, or deterministic-build reason");
 
         string[] platform = ReadPackageVerdictRow(packageVerdict, "Platform and submodule alignment");
-        platform[1].ShouldBe("waived");
+        platform[1].ShouldBe("waived / open divergence");
         platform[2].ShouldContain($"SDK `{sdkVersion}`");
         platform[2].ShouldContain($"AppHost SDK `{appHostVersion}`");
         platform[2].ShouldContain($"Aspire packages at stable `{aspireVersion}`");
@@ -344,22 +344,27 @@ public sealed class LaunchReadinessTests
 
     /// <summary>
     /// Verifies the documented invariant that the Timesheets-owned AppHost SDK follows the imported catalog's
-    /// canonical AppHost SDK contract, so the restored AppHost graph cannot mix two Aspire hosting versions.
+    /// canonical AppHost SDK contract and, per the platform's consumer rule, its <c>Aspire.Hosting</c> version, so
+    /// the SDK-added AppHost, orchestration, and dashboard packages cannot mix with a second Aspire hosting line.
     /// </summary>
     [Fact]
     public void AppHostSdkTracksTheImportedStableAspireCatalogLine()
     {
         string appHostVersion = ReadAppHostSdkVersion();
-        string catalogAppHostSdkVersion = GetCatalogProperty(LoadImportedPackageCatalog(), "HexalithAspireAppHostSdkVersion");
+        XDocument centralCatalog = LoadImportedPackageCatalog();
+        string catalogAppHostSdkVersion = GetCatalogProperty(centralCatalog, "HexalithAspireAppHostSdkVersion");
 
         appHostVersion.ShouldBe(
             catalogAppHostSdkVersion,
             "Align Aspire.AppHost.Sdk with the imported catalog's HexalithAspireAppHostSdkVersion in the same change.");
+        appHostVersion.ShouldBe(
+            GetPackageVersion(centralCatalog, "Aspire.Hosting"),
+            "Aspire.AppHost.Sdk must equal the imported Aspire.Hosting version, or the restored AppHost graph mixes two Aspire lines.");
     }
 
     /// <summary>
-    /// Verifies that architecture version notes and every restated version line match the executable SDK,
-    /// AppHost, and imported-catalog pins.
+    /// Verifies that architecture version notes and the restated version lines listed here match the executable
+    /// SDK, AppHost, and imported-catalog pins.
     /// </summary>
     [Fact]
     public void ArchitectureVersionNotesMatchExecutableConfiguration()
@@ -402,6 +407,13 @@ public sealed class LaunchReadinessTests
             [
                 $"`Microsoft.AspNetCore.OpenApi` at `{GetPackageVersion(centralCatalog, "Microsoft.AspNetCore.OpenApi")}`",
                 $"`Swashbuckle.AspNetCore` at `{GetPackageVersion(centralCatalog, "Swashbuckle.AspNetCore")}`",
+            ]),
+            ("- The imported catalog pins `ModelContextProtocol.AspNetCore` ",
+                [$"`ModelContextProtocol.AspNetCore` at `{GetPackageVersion(centralCatalog, "ModelContextProtocol.AspNetCore")}`"]),
+            ("The intended Timesheets UI policy is Fluent UI V5 components only. ",
+            [
+                $"Icons package at stable `{GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components")}`",
+                $"Icons package at stable `{GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components.Icons")}`",
             ]),
             ("The imported catalog's Dapr package family is stable ", [$"family is stable `{daprVersion}`", $"`Dapr.Client` `{daprVersion}`"]),
             ("- Use the imported Dapr SDK ", [$"Dapr SDK `{daprVersion}` family"]),

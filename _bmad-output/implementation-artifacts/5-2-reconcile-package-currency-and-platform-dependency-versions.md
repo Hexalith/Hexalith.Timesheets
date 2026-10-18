@@ -506,6 +506,8 @@ workflow owner.
 - `_bmad-output/implementation-artifacts/epic-5-context.md`
 - `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
   (also carries Jerome's pre-existing 2026-10-18 renegotiation edits)
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` (added by the 2026-10-18 code review: the finalization
+  status sync `in-progress` -> `review` ran after this list was generated and is part of commit `b85e810`)
 - `_bmad-output/planning-artifacts/architecture.md`
 - `docs/ci-cd.md`
 - `docs/launch-readiness.md`

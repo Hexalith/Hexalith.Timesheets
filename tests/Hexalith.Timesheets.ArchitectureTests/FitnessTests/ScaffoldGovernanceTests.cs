@@ -153,6 +153,18 @@ public sealed class ScaffoldGovernanceTests
     }
 
     /// <summary>
+    /// Keeps the CI/CD guide's SDK statement aligned with the <c>global.json</c> pin.
+    /// </summary>
+    [Fact]
+    public void CiCdGuideNamesThePinnedDotnetSdk()
+    {
+        using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
+        string sdkVersion = globalJson.RootElement.GetProperty("sdk").GetProperty("version").GetString().ShouldNotBeNull();
+
+        File.ReadAllText(RepositoryRoot.PathTo("docs", "ci-cd.md")).ShouldContain($"The repository uses SDK `{sdkVersion}`");
+    }
+
+    /// <summary>
     /// Protects the no-resource boundary used by unsafe fixture configuration probes.
     /// </summary>
     [Fact]

@@ -745,3 +745,11 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
   summary: Reconcile the launch record's classification vocabulary (`implemented`, `waived`, `post-v1`, `blocked`) with the approved `implemented/unfinished/waived/post-v1` dispositions.
   evidence: `sprint-change-proposal-2026-09-12.md` §3 approves the `unfinished` disposition, while `docs/launch-readiness.md` uses `blocked` and compound labels; `epic-5-context.md` (2026-10-18) now names both sets and assigns the reconciliation to Story 5.1, but no ledger entry tracked that hand-off.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+  summary: Point Story 5.1's version ground truth at the re-baselined Story 5.2 package state (owner: Story 5.1).
+  evidence: Post-commit code review of `180d9fd..b85e810` (2026-10-18). `5-1-final-launch-readiness-gate-and-documentation-sync.md:295` still lists SDK `10.0.301`, `Aspire.Hosting` `13.4.6`, and `Microsoft.FluentUI.Components` `4.11.6`; `sprint-change-proposal-2026-09-12.md` (lines 21, 39-40, 64) names SDK `10.0.401`, AppHost `13.5.3`, and npm not applicable. The 2026-10-18 option-A renegotiation (SDK `10.0.402`, AppHost `13.6.1`, root npm applicable) is recorded only in the Story 5.2 spec. Refresh Story 5.1's context from `docs/launch-readiness.md` before it runs; the fix edits another story spec and the approved proposal.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+  summary: Extend the `HexalithEventStoreVersion` verification qualification (entry above) to the agent entry points' "Running and verifying" instructions.
+  evidence: Post-commit code review of `180d9fd..b85e810` (2026-10-18). `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` tell agents to restore, build, and run the built Debug test executables without `-p:HexalithEventStoreVersion=3.125.1`. Unverified whether that flow reproduces the 735 source-reference failures; settle by running those exact steps. Agent-context edits belong to Story 5.1's guidance sync.
