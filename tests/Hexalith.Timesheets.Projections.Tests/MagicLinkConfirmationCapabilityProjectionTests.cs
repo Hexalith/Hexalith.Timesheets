@@ -16,6 +16,65 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class MagicLinkConfirmationCapabilityProjectionTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("tenant-2")]
+    [InlineData("TENANT-1")]
+    [InlineData("tenant-1 ")]
+    public void CapabilityRejectsCheckpointTenantDifferentFromIssuance(string? checkpointTenant)
+    {
+        foreach (ProjectionFreshness freshness in Enum.GetValues<ProjectionFreshness>())
+        {
+            var checkpoint = new TimesheetsProjectionCheckpoint(
+                checkpointTenant!, MagicLinkConfirmationCapabilityProjection.ProjectionName, 1, freshness);
+            InvalidOperationException exception = Should.Throw<InvalidOperationException>(() => Projector().Project(
+                CapabilityId(), [Event("m1", 1, Issued())], checkpoint, ObservedAtUtc()));
+            exception.Message.ShouldNotContain("tenant-1");
+            if (!string.IsNullOrWhiteSpace(checkpointTenant))
+            {
+                exception.Message.ShouldNotContain(checkpointTenant);
+            }
+        }
+    }
+
+    [Fact]
+    public void CapabilityWithoutIssuanceStillReturnsNoModel()
+    {
+        Projector().Project(CapabilityId(), [],
+            FreshCheckpoint(0) with { TenantId = "tenant-2" }, ObservedAtUtc()).ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CapabilityValidatesCheckpointAgainstSelectedIssuance(bool unrelatedFirst)
+    {
+        MagicLinkConfirmationCapabilityIssued unrelated = Issued() with
+        {
+            CapabilityId = new MagicLinkCapabilityId("other-capability"),
+            Tenant = new TenantReference("tenant-2")
+        };
+        MagicLinkProjectionEvent[] events =
+        [
+            Event("unrelated", unrelatedFirst ? 1 : 2, unrelated),
+            Event("selected", unrelatedFirst ? 2 : 1, Issued())
+        ];
+        TimesheetsProjectionCheckpoint checkpoint = FreshCheckpoint(2);
+
+        MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
+            CapabilityId(), events, checkpoint, ObservedAtUtc());
+
+        model.ShouldNotBeNull();
+        model.CapabilityId.ShouldBe(CapabilityId());
+        model.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            CapabilityId(), events, checkpoint with { TenantId = "tenant-2" }, ObservedAtUtc()));
+        Projector().Project(CapabilityId(), [Event("unrelated", 1, unrelated)],
+            checkpoint, ObservedAtUtc()).ShouldBeNull();
+    }
+
     [Fact]
     public void Projection_exposes_issued_state_with_text_badges_and_freshness()
     {

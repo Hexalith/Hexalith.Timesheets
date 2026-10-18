@@ -17,6 +17,61 @@ public sealed class TimeEntryEvidenceProjectionTests
 {
     [Theory]
     [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("tenant-2")]
+    [InlineData("TENANT-1")]
+    [InlineData("tenant-1 ")]
+    public void EvidenceAndListRejectMismatchedCheckpointTenant(string? checkpointTenant)
+    {
+        TimeEntryProjectionEvent recording = Event("m1", 1, Recorded("time-entry-1", 45));
+        TimeEntryProjectionEvent[][] histories = [[], [recording]];
+        foreach (ProjectionFreshness freshness in Enum.GetValues<ProjectionFreshness>())
+        {
+            var checkpoint = new TimesheetsProjectionCheckpoint(
+                checkpointTenant!, TimeEntryEvidenceProjection.ProjectionName, 1, freshness);
+            foreach (TimeEntryProjectionEvent[] events in histories)
+            {
+                Should.Throw<InvalidOperationException>(() => Projector().Project(
+                    "tenant-1", TimeEntryId(), events, checkpoint));
+                Should.Throw<InvalidOperationException>(() => ListProjector().Project(
+                    "tenant-1", events, checkpoint, new QueryTimeEntries()));
+            }
+
+            Should.Throw<InvalidOperationException>(() => Projector().ProjectNext(
+                "tenant-1", TimeEntryId(), null, recording, checkpoint));
+        }
+    }
+
+    [Fact]
+    public void IncrementalEvidenceValidatesCheckpointTenantAndPreservesVerifiedPrefix()
+    {
+        TimeEntryEvidenceReadModel current = Projector().Project(
+            "tenant-1", TimeEntryId(), [Event("m1", 1, Recorded("time-entry-1", 45))], FreshCheckpoint(1))!;
+        TimeEntryProjectionEvent suffix = Event("m2", 2, Submitted("time-entry-1"));
+        TimesheetsProjectionCheckpoint checkpoint = FreshCheckpoint(2);
+
+        InvalidOperationException exception = Should.Throw<InvalidOperationException>(() => Projector().ProjectNext(
+            "tenant-1", TimeEntryId(), current, suffix, checkpoint with { TenantId = "tenant-2" }));
+
+        exception.Message.ShouldNotContain("tenant-1");
+        exception.Message.ShouldNotContain("tenant-2");
+        current.ApprovalState.ShouldBe(TimeEntryApprovalState.Draft);
+        current.EventLineage.ShouldHaveSingleItem().EventName.ShouldBe(nameof(TimeEntryRecorded));
+
+        TimeEntryEvidenceReadModel? next = Projector().ProjectNext("tenant-1", TimeEntryId(), current, suffix, checkpoint);
+
+        next.ShouldNotBeNull();
+        next.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
+        next.DurationMinutes.ShouldBe(45);
+        next.EventLineage.Select(static item => item.EventName).ShouldBe(
+            [nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted)]);
+        next.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        next.ProjectionFreshness.Cursor.ShouldBe("2");
+    }
+
+    [Theory]
+    [InlineData(null)]
     [InlineData("tenant-2")]
     public void Recording_without_matching_delivery_scope_is_rejected(string? deliveryTenant)
     {

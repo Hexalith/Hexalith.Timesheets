@@ -24,6 +24,8 @@ public sealed class TimeEntryEvidenceProjection
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(checkpoint);
 
+        checkpoint.ValidateTenant(tenantId);
+
         TimeEntryEvidenceReadModel? model = null;
         List<TimeEntryEventLineageItem> lineage = [];
 
@@ -111,6 +113,7 @@ public sealed class TimeEntryEvidenceProjection
         ArgumentNullException.ThrowIfNull(timeEntryId);
         ArgumentNullException.ThrowIfNull(item);
         ArgumentNullException.ThrowIfNull(checkpoint);
+        checkpoint.ValidateTenant(tenantId);
         if (!string.Equals(item.TenantId, tenantId, StringComparison.Ordinal)
             || !MatchesTenant(item.Payload, tenantId))
             throw new InvalidOperationException("The Time Entry suffix has another tenant.");

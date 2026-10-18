@@ -18,6 +18,8 @@ public sealed class TenantActivityTypeCatalogProjection
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(checkpoint);
 
+        checkpoint.ValidateTenant(tenantId);
+
         Dictionary<string, ActivityTypeCatalogItem> items = new(StringComparer.Ordinal);
         HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
 
@@ -51,6 +53,8 @@ public sealed class TenantActivityTypeCatalogProjection
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(checkpoint);
+
+        checkpoint.ValidateTenant(tenantId);
 
         Dictionary<string, ActivityTypeCatalogItem> items = new(StringComparer.Ordinal);
         Dictionary<string, ProjectActivityTypeRestrictionState> restrictions = new(StringComparer.Ordinal);

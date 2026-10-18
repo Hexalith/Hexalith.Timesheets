@@ -17,6 +17,34 @@ public sealed class TimesheetPeriodSummaryProjectionTests
 {
     [Theory]
     [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("tenant-2")]
+    [InlineData("TENANT-1")]
+    [InlineData("tenant-1 ")]
+    public void PeriodRejectsMismatchedCheckpointTenantEvenWithoutIncludedEntries(string? checkpointTenant)
+    {
+        TimesheetPeriodProjectionEvent[][] histories =
+        [
+            [],
+            [Event("m1", 1, PeriodSubmitted())],
+            [Event("m1", 1, Recorded(new TimeEntryId("time-entry-1"))),
+                Event("m2", 2, PeriodSubmitted(new TimeEntryId("time-entry-1")))]
+        ];
+        foreach (ProjectionFreshness freshness in Enum.GetValues<ProjectionFreshness>())
+        {
+            var checkpoint = new TimesheetsProjectionCheckpoint(
+                checkpointTenant!, TimesheetPeriodSummaryProjection.ProjectionName, 2, freshness);
+            foreach (TimesheetPeriodProjectionEvent[] events in histories)
+            {
+                Should.Throw<InvalidOperationException>(() => Projector().Project(
+                    "tenant-1", PeriodId(), events, checkpoint));
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
     [InlineData("tenant-2")]
     public void Period_rejects_unscoped_or_cross_tenant_recording(string? deliveryTenant)
     {

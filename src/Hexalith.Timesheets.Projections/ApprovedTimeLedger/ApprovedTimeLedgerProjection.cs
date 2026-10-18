@@ -31,6 +31,8 @@ public sealed class ApprovedTimeLedgerProjection
         ArgumentNullException.ThrowIfNull(checkpoint);
         ArgumentNullException.ThrowIfNull(query);
 
+        checkpoint.ValidateTenant(tenantId);
+
         TimeEntryProjectionEvent[] eventList = [.. TimeEntryStoredEventNormalizer.Normalize(events)];
 
         List<ApprovedTimeLedgerRowReadModel> rows = [];

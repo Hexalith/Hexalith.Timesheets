@@ -30,6 +30,8 @@ public sealed class TimeEntryEvidenceListProjection
         ArgumentNullException.ThrowIfNull(checkpoint);
         ArgumentNullException.ThrowIfNull(query);
 
+        checkpoint.ValidateTenant(tenantId);
+
         TimeEntryProjectionEvent[] eventList = [.. TimeEntryStoredEventNormalizer.Normalize(events)];
 
         List<TimeEntryQueryRowReadModel> rows = [];

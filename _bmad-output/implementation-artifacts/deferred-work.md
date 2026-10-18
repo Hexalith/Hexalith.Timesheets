@@ -669,3 +669,21 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-redact-diagnostic-telemetry-credentials.md`
   summary: The deferred local OTLP/API-key diagnostic sanitization gap is closed.
   evidence: The existing sanitizer now redacts OTLP exporter headers (including traces, metrics, and logs) and API keys in plain headers, assignments, direct/nested/encoded JSON, named JSON/YAML records in either field order, and multiline quoted values. Interrupted named JSON records are discarded without consuming unrelated earlier braced log text. Synthetic tests verify command-argument and stdout/stderr evidence, timeout byte streams, YAML comments/quoted keys, and retained safe progress. `python3 -m unittest discover -s scripts -p 'test_isolated_magic_link_dapr.py'` passes all 68 tests; the original 56-test baseline also passed. Independent review findings were patched with regressions. This diagnostic increment supplies no new deployed journey or launch-acceptance evidence.
+
+
+## Deferred from: projection checkpoint scope selection (2026-10-18)
+
+- source_spec: none
+  summary: Harden the deferred BMAD hooks in a separate increment.
+  evidence: The user selected projection checkpoint tenant isolation as the next independently shippable goal. Event-filename containment and obsolete hook references have separate tooling verification requirements.
+
+- source_spec: none
+  summary: Refresh stale repository guidance in a separate increment.
+  evidence: The user selected projection checkpoint tenant isolation. SDK, projection-wiring, and launch-status guidance reconciliation is independent of checkpoint validation and must preserve the synchronized agent entry points.
+
+
+## Resolution: Projection checkpoint tenant isolation (2026-10-18)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-enforce-projection-checkpoint-tenant-scope.md`
+  summary: The deferred cross-tenant checkpoint freshness gap is closed across Timesheets projection folds.
+  evidence: A shared internal ordinal tenant guard now protects Time Entry evidence (full and incremental), evidence lists, period summaries, approved ledgers, both actual-report targets, both activity-catalog views, and capability projections using their selected issuance. Explicit-tenant history paths reject before enumeration, including empty histories; no model is returned for a capability without its issuance. Parent checkpoint reuse and matching-tenant freshness/export behavior remain covered. All 36 new mismatch cases failed before the production fix. The Debug solution build passed with zero warnings/errors, and all six executable suites passed (1,936 passed, five intentional skips). After review, a zero-diagnostic test-project rebuild and 151/151 focused tests covered 11 additional cases, bringing distinct passing cases to 1,947. The independent reviewer confirmed all four test-gap findings addressed, with no unresolved findings or additional review deferrals. Another workspace's running AppHost blocked the read-only runtime preflight; no runtime was started or stopped. This local fold correction supplies no deployed journey or launch-acceptance evidence.

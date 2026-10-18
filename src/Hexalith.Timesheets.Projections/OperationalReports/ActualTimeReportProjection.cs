@@ -33,6 +33,8 @@ public sealed class ActualTimeReportProjection
         ArgumentNullException.ThrowIfNull(checkpoint);
         ArgumentNullException.ThrowIfNull(query);
 
+        checkpoint.ValidateTenant(tenantId);
+
         TimeEntryProjectionEvent[] eventList = events
             .OrderBy(static projectionEvent => projectionEvent.SequenceNumber)
             .ToArray();
@@ -55,6 +57,8 @@ public sealed class ActualTimeReportProjection
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(checkpoint);
         ArgumentNullException.ThrowIfNull(query);
+
+        checkpoint.ValidateTenant(tenantId);
 
         TimeEntryProjectionEvent[] eventList = events
             .OrderBy(static projectionEvent => projectionEvent.SequenceNumber)

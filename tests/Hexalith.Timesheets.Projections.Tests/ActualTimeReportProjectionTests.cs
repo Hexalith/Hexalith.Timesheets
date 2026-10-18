@@ -14,6 +14,46 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class ActualTimeReportProjectionTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("tenant-2")]
+    [InlineData("TENANT-1")]
+    [InlineData("tenant-1 ")]
+    public void ReportsRejectMismatchedCheckpointTenantForBothTargetsAndApprovalFilters(string? checkpointTenant)
+    {
+        TimeEntryProjectionEvent[][] histories =
+        [
+            [],
+            [Event("m1", 1, Recorded("time-entry-1", 45, ProjectTarget())),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Approved("time-entry-1"))]
+        ];
+        TimeEntryApprovalState?[] approvalStates = [null, TimeEntryApprovalState.Approved, TimeEntryApprovalState.Draft];
+        foreach (ProjectionFreshness freshness in Enum.GetValues<ProjectionFreshness>())
+        {
+            var checkpoint = new TimesheetsProjectionCheckpoint(
+                checkpointTenant!, ActualTimeReportProjection.ProjectionName, 3, freshness);
+            foreach (TimeEntryProjectionEvent[] events in histories)
+            {
+                foreach (TimeEntryApprovalState? approvalState in approvalStates)
+                {
+                    Should.Throw<InvalidOperationException>(() => Projector().ProjectByProject(
+                        "tenant-1", events, checkpoint, new QueryProjectActualTimeReport
+                        {
+                            Project = Project(), ApprovalState = approvalState
+                        }));
+                    Should.Throw<InvalidOperationException>(() => Projector().ProjectByWork(
+                        "tenant-1", events, checkpoint, new QueryWorkActualTimeReport
+                        {
+                            Work = Work(), ApprovalState = approvalState
+                        }));
+                }
+            }
+        }
+    }
+
     [Fact]
     public void Project_report_rolls_up_approved_actuals_by_required_dimensions_without_replayed_duplicates()
     {

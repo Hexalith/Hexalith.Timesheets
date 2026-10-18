@@ -85,6 +85,8 @@ public sealed class MagicLinkConfirmationCapabilityProjection
             throw new InvalidOperationException("Capability issuance history is contradictory.");
         }
 
+        checkpoint.ValidateTenant(issuance.Tenant.TenantId);
+
         MagicLinkConfirmationCapabilityReadModel model = Apply(issuance, checkpoint, observedAtUtc);
 
         foreach (MagicLinkProjectionEvent projectionEvent in ordered)

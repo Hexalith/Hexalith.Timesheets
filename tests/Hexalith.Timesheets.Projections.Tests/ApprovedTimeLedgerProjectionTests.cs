@@ -14,6 +14,34 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class ApprovedTimeLedgerProjectionTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("tenant-2")]
+    [InlineData("TENANT-1")]
+    [InlineData("tenant-1 ")]
+    public void LedgerRejectsMismatchedCheckpointTenantBeforeExportReadiness(string? checkpointTenant)
+    {
+        TimeEntryProjectionEvent[][] histories =
+        [
+            [],
+            [Event("m1", 1, Recorded("time-entry-1", 45)),
+                Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Approved("time-entry-1"))]
+        ];
+        foreach (ProjectionFreshness freshness in Enum.GetValues<ProjectionFreshness>())
+        {
+            var checkpoint = new TimesheetsProjectionCheckpoint(
+                checkpointTenant!, ApprovedTimeLedgerProjection.ProjectionName, 3, freshness);
+            foreach (TimeEntryProjectionEvent[] events in histories)
+            {
+                Should.Throw<InvalidOperationException>(() => Projector().Project(
+                    "tenant-1", events, checkpoint, new QueryApprovedTimeLedger()));
+            }
+        }
+    }
+
     [Fact]
     public void Ledger_rejects_unscoped_recording()
     {

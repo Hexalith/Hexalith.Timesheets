@@ -22,6 +22,8 @@ public sealed class TimesheetPeriodSummaryProjection
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(checkpoint);
 
+        checkpoint.ValidateTenant(tenantId);
+
         TimesheetPeriodProjectionEvent[] delivered = [.. events];
         if (delivered.Any(item => !StringComparer.Ordinal.Equals(item.TenantId, tenantId)
             || item.Payload is TimesheetPeriodSubmitted submittedPayload

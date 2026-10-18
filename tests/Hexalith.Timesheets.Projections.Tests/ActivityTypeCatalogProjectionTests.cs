@@ -11,6 +11,29 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class ActivityTypeCatalogProjectionTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("tenant-2")]
+    [InlineData("TENANT-1")]
+    [InlineData("tenant-1 ")]
+    public void CatalogViewsRejectMismatchedCheckpointTenant(string? checkpointTenant)
+    {
+        ActivityTypeProjectionEvent[][] histories = [[], [Event("m1", 1, Created("delivery", "Delivery"))]];
+        foreach (ProjectionFreshness freshness in Enum.GetValues<ProjectionFreshness>())
+        {
+            var checkpoint = new TimesheetsProjectionCheckpoint(
+                checkpointTenant!, TenantActivityTypeCatalogProjection.ProjectionName, 1, freshness);
+            foreach (ActivityTypeProjectionEvent[] events in histories)
+            {
+                Should.Throw<InvalidOperationException>(() => Projector().Project("tenant-1", events, checkpoint));
+                Should.Throw<InvalidOperationException>(() => Projector().ProjectForProject(
+                    "tenant-1", new ProjectReference("project-1"), events, checkpoint));
+            }
+        }
+    }
+
     [Fact]
     public void Projection_returns_fresh_catalog_with_active_and_inactive_status_text()
     {
