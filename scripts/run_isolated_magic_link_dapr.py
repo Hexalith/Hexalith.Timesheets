@@ -623,7 +623,15 @@ class IsolatedFixture:
         self.container_id = None
         self.placement = None
         self.scheduler = None
-        self.environment = dict(os.environ)
+        # MSBuild treats environment property names case-insensitively, while
+        # the process environment on Linux can contain differently cased keys.
+        self.environment = {name: value for name, value in os.environ.items()
+                            if name.casefold() not in ("configuration", "usehexalithprojectreferences", "usenugetdeps")}
+        # Aspire resolves --no-build assets through MSBuild. Keep the owned
+        # runtime on the Debug source graph built for this local journey even
+        # when the repository or caller defaults to Release/package mode.
+        self.environment.update({"Configuration": "Debug", "UseHexalithProjectReferences": "true",
+                                 "UseNuGetDeps": "false"})
         self.ownership_check = ownership_check or self._owned_apphost
         self.resource_check = resource_check
         self.start_attempted = False

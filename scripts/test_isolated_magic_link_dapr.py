@@ -119,6 +119,40 @@ class IsolatedFixtureTests(unittest.TestCase):
         commands.failure = probe
         return commands
 
+    def test_live_commands_use_debug_sources_without_mutating_the_caller_environment(self):
+        for inherited in ({}, {"Configuration": "Release", "UseHexalithProjectReferences": "false",
+                               "UseNuGetDeps": "true"},
+                          {"configuration": "Release", "CONFIGURATION": "Release",
+                           "usehexalithprojectreferences": "false", "USEHEXALITHPROJECTREFERENCES": "false",
+                           "usenugetdeps": "true", "USENUGETDEPS": "true"}):
+            with self.subTest(inherited=inherited), patch.dict(os.environ, inherited, clear=True):
+                caller = dict(os.environ)
+                commands = Commands()
+                instance, result = self.run_fixture(commands)
+                self.assertEqual(0, result)
+                self.assertEqual(caller, dict(os.environ))
+                runtime_commands = [(arguments, kwargs["env"]) for arguments, kwargs in commands.calls
+                                    if arguments[:2] in (["aspire", "start"], ["aspire", "wait"])
+                                    or "-class" in arguments]
+                self.assertEqual(4, len(runtime_commands))
+                for arguments, environment in runtime_commands:
+                    self.assertEqual({"Configuration", "UseHexalithProjectReferences", "UseNuGetDeps"},
+                                     {key for key in environment if key.casefold() in
+                                      ("configuration", "usehexalithprojectreferences", "usenugetdeps")})
+                    self.assertEqual("Debug", environment["Configuration"], arguments)
+                    self.assertEqual("true", environment["UseHexalithProjectReferences"], arguments)
+                    self.assertEqual("false", environment["UseNuGetDeps"], arguments)
+                    self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_FIXTURE"], arguments)
+                    self.assertEqual(instance.scratch, environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"], arguments)
+                self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_aspire_resolves_current_assets_instead_of_reusing_another_configuration(self):
+        # Aspire 13.6.1 reads this escape hatch from the project configuration,
+        # not the environment. Its cached launch command omits ambient MSBuild
+        # properties from the cache fingerprint and can otherwise select Release.
+        config = json.loads((fixture.ROOT / "aspire.config.json").read_text())
+        self.assertIn(config.get("dotnetAppHostInfoCacheDisabled"), (True, "true"))
+
     def test_compiled_guard_driver_covers_incomplete_fixture_settings_with_harmless_probes(self):
         commands = self.guard_commands()
         instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
