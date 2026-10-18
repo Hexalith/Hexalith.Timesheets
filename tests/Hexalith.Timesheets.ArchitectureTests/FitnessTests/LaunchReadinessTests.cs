@@ -234,57 +234,92 @@ public sealed class LaunchReadinessTests
     {
         // Story 5.2: package evidence must distinguish direct package currency, root npm applicability,
         // transitive drift, and platform/submodule alignment so release readiness cannot overstate currency.
+        // Assertions are scoped to the current verdict paragraph and its table rows; dated historical
+        // paragraphs in the same section cannot satisfy them.
         string readiness = File.ReadAllText(RepositoryRoot.PathTo("docs", "launch-readiness.md"));
-        string packageVerdict = ReadSection(readiness, "## Package-Currency Verdict", "## Works Checkout Ownership");
+        string packageVerdict = ReadMarkdownSection(readiness, "## Package-Currency Verdict");
+        string currentVerdict = ReadParagraph(packageVerdict, "Current package-currency verdict");
         using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
         JsonElement sdk = globalJson.RootElement.GetProperty("sdk");
         string sdkVersion = sdk.GetProperty("version").GetString().ShouldNotBeNull();
         string rollForward = sdk.GetProperty("rollForward").GetString().ShouldNotBeNull();
+        string appHostVersion = ReadAppHostSdkVersion();
 
-        XElement appHost = XDocument.Load(RepositoryRoot.PathTo(
-            "src",
-            "Hexalith.Timesheets.AppHost",
-            "Hexalith.Timesheets.AppHost.csproj")).Root.ShouldNotBeNull();
-        string appHostSdk = appHost.Attribute("Sdk").ShouldNotBeNull().Value;
-        const string appHostSdkPrefix = "Aspire.AppHost.Sdk/";
-        appHostSdk.ShouldStartWith(appHostSdkPrefix);
-        string appHostVersion = appHostSdk[appHostSdkPrefix.Length..];
-
-        XDocument centralCatalog = XDocument.Load(RepositoryRoot.PathTo(
-            "references",
-            "Hexalith.Builds",
-            "Props",
-            "Directory.Packages.props"));
+        XDocument centralCatalog = LoadImportedPackageCatalog();
         string aspireVersion = GetPackageVersion(centralCatalog, "Aspire.Hosting");
         string daprVersion = GetPackageVersion(centralCatalog, "Dapr.Client");
         string keycloakVersion = GetPackageVersion(centralCatalog, "Aspire.Hosting.Keycloak");
         string communityToolkitDaprVersion = GetPackageVersion(centralCatalog, "CommunityToolkit.Aspire.Hosting.Dapr");
         string fluentUiVersion = GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components");
 
-        packageVerdict.ShouldContain("Package-Currency Verdict");
-        packageVerdict.ShouldContain("Direct Timesheets NuGet package currency");
-        packageVerdict.ShouldContain("Root npm applicability");
-        packageVerdict.ShouldContain("Transitive drift");
-        packageVerdict.ShouldContain("Platform and submodule alignment");
-        packageVerdict.ShouldContain("no direct package updates");
-        packageVerdict.ShouldContain("not applicable");
-        packageVerdict.ShouldContain("reviewed, no pin");
-        packageVerdict.ShouldContain("waived");
-        packageVerdict.ShouldContain($"SDK `{sdkVersion}`");
-        packageVerdict.ShouldContain($"`rollForward: {rollForward}`");
-        packageVerdict.ShouldContain($"`Aspire.AppHost.Sdk` `{appHostVersion}`");
-        packageVerdict.ShouldContain($"Aspire packages at stable `{aspireVersion}`");
-        packageVerdict.ShouldContain($"Dapr family at stable `{daprVersion}`");
-        packageVerdict.ShouldContain($"`Aspire.Hosting.Keycloak` `{keycloakVersion}`");
-        packageVerdict.ShouldContain($"`CommunityToolkit.Aspire.Hosting.Dapr` `{communityToolkitDaprVersion}`");
-        packageVerdict.ShouldContain($"Fluent UI V5 policy-surface catalog entry is `{fluentUiVersion}`");
-        packageVerdict.ShouldContain("sprint-change-proposal-2026-09-12.md");
-        packageVerdict.ShouldContain("Historical AppHost smoke evidence last passed on 2026-09-15");
-        packageVerdict.ShouldContain("it does not validate the current restored graph");
-        packageVerdict.ShouldContain("Current runtime-smoke evidence remains deferred");
-        packageVerdict.ShouldContain("error: Sequence contains no matching element");
-        packageVerdict.ShouldContain("this lane is not reported clean");
-        packageVerdict.ShouldContain("without a compatibility, security, or deterministic-build reason");
+        currentVerdict.ShouldContain($"SDK `{sdkVersion}`");
+        currentVerdict.ShouldContain($"`rollForward: {rollForward}`");
+        currentVerdict.ShouldContain($"`Aspire.AppHost.Sdk` `{appHostVersion}`");
+        currentVerdict.ShouldContain("`AspireUseCliBundle=false`");
+        currentVerdict.ShouldContain("`ASPIRE010`");
+        currentVerdict.ShouldContain("sprint-change-proposal-2026-09-12.md");
+        currentVerdict.ShouldContain("Historical AppHost smoke evidence last passed on 2026-09-15");
+        currentVerdict.ShouldContain("it does not validate the current restored graph");
+        currentVerdict.ShouldContain("Current runtime-smoke evidence remains deferred");
+
+        string[] direct = ReadPackageVerdictRow(packageVerdict, "Direct Timesheets NuGet package currency");
+        direct[1].ShouldBe("PASS");
+        direct[2].ShouldContain("no direct package updates");
+        direct[2].ShouldContain($"`{appHostVersion}`");
+
+        string[] vulnerable = ReadPackageVerdictRow(packageVerdict, "Vulnerable and deprecated packages");
+        vulnerable[1].ShouldBe("PASS");
+        vulnerable[2].ShouldContain("--vulnerable --include-transitive");
+        vulnerable[2].ShouldContain("--deprecated --include-transitive");
+
+        // Root npm is applicable exactly when the Timesheets root carries an npm manifest.
+        string[] npm = ReadPackageVerdictRow(packageVerdict, "Root npm applicability");
+        if (File.Exists(RepositoryRoot.PathTo("package.json")))
+        {
+            npm[1].ShouldStartWith("applicable");
+            npm[2].ShouldContain("`npm outdated`");
+            npm[2].ShouldContain("`npm audit`");
+            npm[3].ShouldContain("Owner:");
+            npm[3].ShouldContain("Risk:");
+            npm[3].ShouldContain("Revisit condition:");
+        }
+        else
+        {
+            npm[1].ShouldBe("not applicable");
+        }
+
+        string[] transitive = ReadPackageVerdictRow(packageVerdict, "Transitive drift");
+        transitive[1].ShouldStartWith("reviewed, no pin");
+        transitive[2].ShouldContain("error: Sequence contains no matching element");
+        transitive[2].ShouldContain("this lane is not reported clean");
+        transitive[3].ShouldContain("without a compatibility, security, or deterministic-build reason");
+
+        string[] platform = ReadPackageVerdictRow(packageVerdict, "Platform and submodule alignment");
+        platform[1].ShouldBe("waived");
+        platform[2].ShouldContain($"SDK `{sdkVersion}`");
+        platform[2].ShouldContain($"AppHost SDK `{appHostVersion}`");
+        platform[2].ShouldContain($"Aspire packages at stable `{aspireVersion}`");
+        platform[2].ShouldContain($"Dapr family at stable `{daprVersion}`");
+        platform[2].ShouldContain($"`Aspire.Hosting.Keycloak` `{keycloakVersion}`");
+        platform[2].ShouldContain($"`CommunityToolkit.Aspire.Hosting.Dapr` `{communityToolkitDaprVersion}`");
+        platform[2].ShouldContain($"Fluent UI V5 policy-surface catalog entry is `{fluentUiVersion}`");
+        platform[3].ShouldContain("Owner:");
+        platform[3].ShouldContain("sprint-change-proposal-2026-09-12.md");
+        platform[3].ShouldContain("Risk:");
+        platform[3].ShouldContain("Revisit condition:");
+
+        // The launch-scope waiver row must name the same current prerelease lines as the verdict table.
+        string[] prerelease = ReadClassificationRow(readiness, "Platform prerelease dependency exception");
+        prerelease[1].ShouldContain($"Aspire `{aspireVersion}`");
+        prerelease[1].ShouldContain($"Dapr `{daprVersion}`");
+        prerelease[1].ShouldContain($"Keycloak `{keycloakVersion}`");
+        prerelease[1].ShouldContain($"CommunityToolkit Aspire Dapr `{communityToolkitDaprVersion}`");
+        prerelease[1].ShouldContain($"Fluent UI V5 policy-surface catalog entry is `{fluentUiVersion}`");
+        prerelease[2].ShouldBe("waived");
+
+        string[] packageGate = ReadReleaseGateRow(readiness, "Package currency");
+        packageGate[2].ShouldContain($"SDK `{sdkVersion}`");
+        packageGate[2].ShouldContain($"`Aspire.AppHost.Sdk` `{appHostVersion}`");
 
         string historicalSmoke = ReadSection(
             readiness,
@@ -305,6 +340,89 @@ public sealed class LaunchReadinessTests
         buildGate[3].ShouldContain("HXW0002");
         buildGate[3].ShouldContain("not current-graph runtime evidence");
         buildGate[3].ShouldContain("current automated AppHost smoke remains deferred");
+    }
+
+    /// <summary>
+    /// Verifies the documented invariant that the Timesheets-owned AppHost SDK follows the imported catalog's
+    /// canonical AppHost SDK contract, so the restored AppHost graph cannot mix two Aspire hosting versions.
+    /// </summary>
+    [Fact]
+    public void AppHostSdkTracksTheImportedStableAspireCatalogLine()
+    {
+        string appHostVersion = ReadAppHostSdkVersion();
+        string catalogAppHostSdkVersion = GetCatalogProperty(LoadImportedPackageCatalog(), "HexalithAspireAppHostSdkVersion");
+
+        appHostVersion.ShouldBe(
+            catalogAppHostSdkVersion,
+            "Align Aspire.AppHost.Sdk with the imported catalog's HexalithAspireAppHostSdkVersion in the same change.");
+    }
+
+    /// <summary>
+    /// Verifies that architecture version notes and every restated version line match the executable SDK,
+    /// AppHost, and imported-catalog pins.
+    /// </summary>
+    [Fact]
+    public void ArchitectureVersionNotesMatchExecutableConfiguration()
+    {
+        string architecture = File.ReadAllText(RepositoryRoot.PathTo(
+            "_bmad-output",
+            "planning-artifacts",
+            "architecture.md"));
+        string versionNotes = ReadSection(
+            ReadMarkdownSection(architecture, "### Data Architecture"),
+            "**Version notes:**",
+            "**Aggregate boundaries:**");
+        using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
+        JsonElement sdk = globalJson.RootElement.GetProperty("sdk");
+        string appHostVersion = ReadAppHostSdkVersion();
+        XDocument centralCatalog = LoadImportedPackageCatalog();
+
+        versionNotes.ShouldContain($"pinned to `{sdk.GetProperty("version").GetString()}`");
+        versionNotes.ShouldContain($"`rollForward: {sdk.GetProperty("rollForward").GetString()}`");
+        versionNotes.ShouldContain($"aligned at stable `{appHostVersion}`");
+        versionNotes.ShouldContain("`AspireUseCliBundle=false`");
+        versionNotes.ShouldContain("`ASPIRE010`");
+        versionNotes.ShouldContain($"family at stable `{GetPackageVersion(centralCatalog, "Dapr.Client")}`");
+        versionNotes.ShouldContain(
+            $"V5 package family at `{GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components")}`");
+        versionNotes.ShouldContain($"`Aspire.Hosting.Keycloak` `{GetPackageVersion(centralCatalog, "Aspire.Hosting.Keycloak")}`");
+        versionNotes.ShouldContain(
+            $"`CommunityToolkit.Aspire.Hosting.Dapr` `{GetPackageVersion(centralCatalog, "CommunityToolkit.Aspire.Hosting.Dapr")}`");
+        versionNotes.ShouldNotContain("AspireUseCliBundle=true");
+
+        string sdkVersion = sdk.GetProperty("version").GetString().ShouldNotBeNull();
+        string daprVersion = GetPackageVersion(centralCatalog, "Dapr.Client");
+        (string Prefix, string[] Expected)[] restatedLines =
+        [
+            ("- Infrastructure: Aspire AppHost ", [$"Aspire AppHost `{appHostVersion}`", $"Dapr SDK policy target `{daprVersion}`"]),
+            ("- ASP.NET Core auth/data-protection package line ",
+                [$"currently `{GetPackageVersion(centralCatalog, "Microsoft.AspNetCore.Authentication.JwtBearer")}`"]),
+            ("- Dapr SDK target remains the imported stable ", [$"stable `{daprVersion}` family"]),
+            ("- The imported catalog pins `Microsoft.AspNetCore.OpenApi` ",
+            [
+                $"`Microsoft.AspNetCore.OpenApi` at `{GetPackageVersion(centralCatalog, "Microsoft.AspNetCore.OpenApi")}`",
+                $"`Swashbuckle.AspNetCore` at `{GetPackageVersion(centralCatalog, "Swashbuckle.AspNetCore")}`",
+            ]),
+            ("The imported catalog's Dapr package family is stable ", [$"family is stable `{daprVersion}`", $"`Dapr.Client` `{daprVersion}`"]),
+            ("- Use the imported Dapr SDK ", [$"Dapr SDK `{daprVersion}` family"]),
+            ("The technology choices work together: ",
+                [$".NET SDK `{sdkVersion}`", $"Dapr SDK `{daprVersion}` family", $"Aspire AppHost SDK `{appHostVersion}`"]),
+            ("Critical decisions are documented with versions ",
+                [$"SDK `{sdkVersion}`", $"Dapr SDK family `{daprVersion}`", $"Aspire AppHost SDK `{appHostVersion}`"]),
+            ("- Dapr version policy ambiguity is resolved ", [$"package family `{daprVersion}`"]),
+        ];
+
+        string[] architectureLines = architecture.Replace("\r\n", "\n", StringComparison.Ordinal).Split('\n');
+        foreach ((string prefix, string[] expected) in restatedLines)
+        {
+            string line = architectureLines
+                .Where(candidate => candidate.StartsWith(prefix, StringComparison.Ordinal))
+                .ShouldHaveSingleItem($"Expected exactly one architecture line starting with '{prefix}'.");
+            foreach (string value in expected)
+            {
+                line.ShouldContain(value);
+            }
+        }
     }
 
     [Fact]
@@ -365,10 +483,89 @@ public sealed class LaunchReadinessTests
             return version;
         }
 
+        return GetCatalogProperty(centralCatalog, propertyReference.Groups["name"].Value);
+    }
+
+    private static string GetCatalogProperty(XDocument centralCatalog, string propertyName)
         // Read the shared default; the catalog's conditional Folders override does not apply to Timesheets.
-        return centralCatalog.Descendants(propertyReference.Groups["name"].Value)
+        => centralCatalog.Descendants(propertyName)
             .Single(element => element.AncestorsAndSelf().All(ancestor => ancestor.Attribute("Condition") is null))
-            .Value;
+            .Value
+            .Trim();
+
+    /// <summary>
+    /// Loads the first existing catalog among the root <c>Directory.Packages.props</c> import candidates, in
+    /// document order, after substituting that file's <c>PropertyGroup</c> values (last assignment wins) and the
+    /// repository directory for <c>$(MSBuildThisFileDirectory)</c>. Import and property conditions and global properties are
+    /// not evaluated; this approximates, rather than proves, the catalog MSBuild imports.
+    /// </summary>
+    private static XDocument LoadImportedPackageCatalog()
+    {
+        XElement rootProps = XDocument.Load(RepositoryRoot.PathTo("Directory.Packages.props")).Root.ShouldNotBeNull();
+        string repositoryDirectory = RepositoryRoot.Find().FullName + Path.DirectorySeparatorChar;
+        Dictionary<string, string> properties = rootProps.Elements("PropertyGroup")
+            .Elements()
+            .GroupBy(static element => element.Name.LocalName, StringComparer.Ordinal)
+            .ToDictionary(static group => group.Key, static group => group.Last().Value.Trim(), StringComparer.Ordinal);
+
+        string[] candidates = rootProps.Elements("Import")
+            .Select(static import => import.Attribute("Project")?.Value ?? string.Empty)
+            .Select(project => Regex.Replace(
+                project,
+                @"\$\((?<name>[^)]+)\)",
+                match => properties.TryGetValue(match.Groups["name"].Value, out string? value) ? value : match.Value))
+            .Select(path => path.Replace("$(MSBuildThisFileDirectory)", repositoryDirectory, StringComparison.Ordinal))
+            .ToArray();
+        candidates.ShouldNotBeEmpty("Directory.Packages.props must import the shared central package catalog.");
+
+        string catalogPath = candidates.FirstOrDefault(File.Exists)
+            .ShouldNotBeNull($"None of the imported catalog candidates exists: {string.Join(", ", candidates)}");
+        return XDocument.Load(catalogPath);
+    }
+
+    private static string ReadAppHostSdkVersion()
+    {
+        const string appHostSdkPrefix = "Aspire.AppHost.Sdk/";
+        XElement appHost = XDocument.Load(RepositoryRoot.PathTo(
+            "src",
+            "Hexalith.Timesheets.AppHost",
+            "Hexalith.Timesheets.AppHost.csproj")).Root.ShouldNotBeNull();
+        string appHostSdk = appHost.Attribute("Sdk").ShouldNotBeNull().Value;
+        appHostSdk.ShouldStartWith(appHostSdkPrefix);
+        return appHostSdk[appHostSdkPrefix.Length..];
+    }
+
+    /// <summary>
+    /// Reads a Markdown section from its exact heading line to the next heading of the same or higher level.
+    /// </summary>
+    private static string ReadMarkdownSection(string document, string heading)
+    {
+        string[] lines = document.Split('\n');
+        int start = Array.FindIndex(lines, line => string.Equals(line.TrimEnd('\r'), heading, StringComparison.Ordinal));
+        start.ShouldBeGreaterThanOrEqualTo(0, $"Missing heading line '{heading}'.");
+
+        int level = heading.TakeWhile(static character => character == '#').Count();
+        level.ShouldBeGreaterThan(0, $"'{heading}' is not a Markdown heading.");
+        int end = Array.FindIndex(lines, start + 1, line =>
+        {
+            int lineLevel = line.TakeWhile(static character => character == '#').Count();
+            return lineLevel > 0 && lineLevel <= level && line.Length > lineLevel && line[lineLevel] == ' ';
+        });
+
+        return string.Join('\n', lines[start..(end < 0 ? lines.Length : end)]);
+    }
+
+    /// <summary>
+    /// Reads the single paragraph that starts with <paramref name="prefix"/>.
+    /// </summary>
+    private static string ReadParagraph(string document, string prefix)
+    {
+        string[] paragraphs = document.Replace("\r\n", "\n", StringComparison.Ordinal).Split("\n\n")
+            .Select(static paragraph => paragraph.Trim())
+            .Where(paragraph => paragraph.StartsWith(prefix, StringComparison.Ordinal))
+            .ToArray();
+
+        return paragraphs.ShouldHaveSingleItem($"Expected exactly one paragraph starting with '{prefix}'.");
     }
 
     private static string ReadSection(string document, string heading, string nextHeading)
@@ -397,16 +594,22 @@ public sealed class LaunchReadinessTests
     }
 
     private static string[] ReadReleaseGateRow(string document, string gate)
+        => ReadFourColumnRow(document, gate, "release-gate");
+
+    private static string[] ReadPackageVerdictRow(string packageVerdictSection, string dimension)
+        => ReadFourColumnRow(packageVerdictSection, dimension, "package-verdict");
+
+    private static string[] ReadFourColumnRow(string document, string key, string table)
     {
         string row = document.Split('\n')
-            .Single(line => line.StartsWith($"| {gate} |", StringComparison.Ordinal));
-        string[] delimitedCells = row.Split('|', StringSplitOptions.TrimEntries);
-        delimitedCells[0].ShouldBeEmpty($"The '{gate}' release-gate row must start with a table delimiter.");
-        delimitedCells[^1].ShouldBeEmpty($"The '{gate}' release-gate row must end with a table delimiter.");
+            .Single(line => line.StartsWith($"| {key} |", StringComparison.Ordinal));
+        string[] delimitedCells = row.TrimEnd('\r').Split('|', StringSplitOptions.TrimEntries);
+        delimitedCells[0].ShouldBeEmpty($"The '{key}' {table} row must start with a table delimiter.");
+        delimitedCells[^1].ShouldBeEmpty($"The '{key}' {table} row must end with a table delimiter.");
         string[] cells = delimitedCells[1..^1];
 
-        cells.Length.ShouldBe(4, $"The '{gate}' release gate must contain exactly four structured columns.");
-        cells[0].ShouldBe(gate);
+        cells.Length.ShouldBe(4, $"The '{key}' {table} row must contain exactly four structured columns.");
+        cells[0].ShouldBe(key);
         return cells;
     }
 }

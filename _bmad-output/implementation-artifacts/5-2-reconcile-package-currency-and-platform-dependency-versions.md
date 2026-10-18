@@ -1,6 +1,7 @@
 ---
 baseline_commit: b0c41aaa3ad899ca13d49cd66e4f26f3b8e3ae5f
 reopened_baseline_commit: 72be616918e0ae80fadf56fa152dbd561955e22d
+rebaseline_commit: 180d9fd9a635ed44ba896688d6a06e38a33e9f28
 ---
 
 # Story 5.2: Reconcile Package Currency and Platform Dependency Versions
@@ -368,6 +369,9 @@ applied and verified separately on 2026-09-12 from worktree baseline
   substring `60` collided with rendered diagnostic content. Both focused retries passed (2/2), then the complete
   IntegrationTests executable rerun passed (87 total / 83 passed / 4 skipped). No unrelated test/runtime behavior
   was changed; the intermittent substring collision remains visible as a test-quality risk.
+  Correction (2026-10-18): the focused retries did not establish determinism and were not a fix. The false positive is
+  owned by the 2026-10-09 spec-16 deferred-work entry "Replace substring-based numeric privacy exclusions with
+  assertions that distinguish business values from permitted diagnostic correlation and timestamp fields".
 
 ### Reopened Intended File List
 
@@ -386,3 +390,125 @@ includes the delivered untracked workflow spec:
 - `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
   (delivered workflow spec; intentionally included even while untracked and therefore absent from
   `git diff --name-only`)
+
+Correction (2026-10-18): the list above is wrong in three ways. `git show --name-status ee76a92` shows that the
+commit changed 11 files: (1) it also modified `_bmad-output/implementation-artifacts/deferred-work.md`, which the list
+omits; (2) it modified `epic-5-context.md` and `sprint-status.yaml` itself, so they were not pre-existing changes; and
+(3) it added (`A`) the spec rather than leaving it untracked. The 2026-09-12 list is otherwise retained as written.
+
+## Re-baselined Story 5.2 Implementation Evidence (2026-10-18)
+
+The June and 2026-09-12 records above are retained as dated history. On 2026-10-18 Jerome renegotiated the frozen
+intent (option A): SDK `10.0.402`, AppHost SDK aligned with the imported stable Aspire `13.6.1` using the decided Option 2
+orchestration shape, and root npm applicable. This iteration starts at `180d9fd9a635ed44ba896688d6a06e38a33e9f28`.
+Story status remains `in-progress`. `docs/launch-readiness.md` (pinned by `LaunchReadinessTests`) still says "Story 5.2
+remains in progress", and Story 5.1 owns the overall-decision text, so the review/done transition is left to the
+workflow owner.
+
+### Re-baselined implementation decisions
+
+- `global.json` stays at SDK `10.0.402` with `rollForward: latestPatch`. CI/CD owns it, and this iteration does not edit it.
+- `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj`: `Aspire.AppHost.Sdk/13.5.3` -> `13.6.1`,
+  `AspireUseCliBundle` `true` -> `false`, and an unconditional `<NoWarn>$(NoWarn);ASPIRE010</NoWarn>`. This is the
+  2026-09-13 Option 2 decision, matching `Hexalith.EventStore`. The compiled-gateway constant, project references, and
+  package references are unchanged. Before the change, the AppHost assets mixed `Aspire.Hosting.AppHost` `13.5.3` with
+  `Aspire.Hosting` `13.6.1` and had no orchestration or dashboard package. After the forced no-cache restore, both the
+  package-mode and the source-reference graphs hold `Aspire.Hosting`, `Aspire.Hosting.AppHost`, `Aspire.Hosting.Redis`,
+  `Aspire.Hosting.Orchestration.linux-x64`, and `Aspire.Dashboard.Sdk.linux-x64` at `13.6.1`, plus the waived
+  `Aspire.Hosting.Keycloak` `13.6.1-preview.1.26506.6` and `CommunityToolkit.Aspire.Hosting.Dapr` `13.6.1-beta.935`.
+  They hold no Aspire `13.5.x` package. The build raised no Aspire diagnostic.
+- `Directory.Packages.props` is unchanged: the direct audit found no update, so no CPM edit was needed. No inline version
+  was added, and no transitive pin was added.
+- Root npm is now applicable. `package.json`, `package-lock.json`, and npm versions are unchanged.
+- Fitness tests: the AppHost guard is split into security-helper, approved-SDK-pin, and NuGet-orchestration/`ASPIRE010`-only
+  tests. `LaunchReadinessTests` now resolves the imported catalog through the root import candidates, scopes the
+  package assertions to the current-verdict paragraph and named rows, and derives npm applicability from the presence of
+  a root `package.json`. It also adds an AppHost-SDK/catalog alignment test and an architecture version-notes guard.
+  Six temporary mutations (CLI bundle `true`, an extra `ASPIRE004` suppression, AppHost SDK `13.6.0`, a stale
+  current-verdict AppHost version, a stale architecture Dapr version, and the npm row reverted to `not applicable`) were
+  each caught by the intended tests. The files were restored byte-identical afterwards.
+- Documents: the launch-readiness package section now leads with the 2026-10-18 verdict and a five-row table. The
+  2026-10-03/04 paragraphs and a superseded 2026-09-17 verdict paragraph follow, still dated. The prerelease waiver row and
+  the `Package currency` gate row were refreshed, and the preamble no longer scopes the whole record to the June baseline.
+  `architecture.md` version notes and summaries now say SDK `10.0.402`, AppHost `13.6.1`, Dapr `1.18.10`, and Fluent UI V5
+  `5.0.1`; the earlier values are kept as dated history. `docs/ci-cd.md` now says SDK `10.0.402`. `epic-5-context.md`
+  received the Works-checkout, dropped-constraint, vocabulary, npm, and baseline updates.
+- The Works-owned `HexalithEventStoreVersion` default (`3.124.0`) still diverges from the catalog's EventStore `3.125.1`.
+  It is recorded in launch readiness as an open, unwaived divergence with owner (Hexalith.Works), risk, and revisit
+  condition, tracked by the deferred-work entry "Align the existing Works EventStore-version forwarding with the
+  consuming source-build catalog in a separate build increment". Only the platform prereleases are waived (§7 recorded
+  exceptions). The SDK `10.0.402` and AppHost `13.6.1` baseline is approved by the 2026-10-18 option-A renegotiation in
+  the Story 5.2 spec's Spec Change Log. No submodule or Timesheets build file was changed for the divergence.
+- All fifteen 2026-09-12 review patches were re-validated against HEAD and marked in the spec's Review Findings; the
+  Story 5.2-owned deferred-work entries were resolved or refreshed.
+
+### Re-baselined verification commands and results
+
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version` -> `10.0.402`.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx --force --no-cache -m:1 /nr:false` ->
+  exit 0, 15 projects restored (configuration-free package mode). It was rerun on the final tree with the same result.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false`
+  -> exit 0, 0 warnings, 0 errors (Release package mode). It was rerun on the final tree with the same result.
+- The four solution audits and the 14 project fallbacks below read the package-mode graph produced by the forced no-cache
+  configuration-free restore above.
+- `dotnet list Hexalith.Timesheets.slnx package --outdated --no-restore` -> exit 0; all 15 projects report no updates.
+- `dotnet list Hexalith.Timesheets.slnx package --vulnerable --include-transitive --no-restore` -> exit 0; 15 projects,
+  no vulnerable packages.
+- `dotnet list Hexalith.Timesheets.slnx package --deprecated --include-transitive --no-restore` -> exit 0; 15 projects,
+  no deprecated packages.
+- `dotnet list Hexalith.Timesheets.slnx package --outdated --include-transitive --no-restore` -> exit 1,
+  `error: Sequence contains no matching element`. The per-project `--format json` fallbacks: AppHost exit 1 with the
+  same error, and 14 exit 0 with 21 distinct transitive drift items and no direct update.
+  On the source-reference graph (after the Debug `-p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false
+  -p:HexalithEventStoreVersion=3.125.1` restore), `dotnet package list --project <AppHost> --outdated
+  --include-transitive --no-restore` fails with the same error. A manual AppHost fallback on that same source-reference
+  graph (`dotnet list <AppHost> package --include-transitive --no-restore --format json`, then a nuget.org flat-container
+  comparison) checked 82 packages and found 22 stable packages behind latest, all Aspire hosting or orchestration
+  dependencies, plus the two waived prereleases. The package-mode AppHost transitive graph was not separately compared.
+  No pin was added.
+- `npm ci` -> exit 0 (added 361 packages, audited 505). `npm outdated` -> exit 1: `@commitlint/cli` and
+  `@commitlint/config-conventional` at current/wanted `21.2.2`, latest `21.2.4`. `npm audit` -> exit 1: 8 high,
+  0 critical, 0 moderate, 0 low, all from braces `GHSA-vfj7-8cjw-p6xm`. The only offered fix is `npm audit fix --force`,
+  which is breaking. No npm file changed.
+- README source-reference mode (`dotnet restore ... -p:Configuration=Debug -p:UseHexalithProjectReferences=true --force
+  --no-cache` plus the README Debug build) -> restore and build passed with 0 warnings and 0 errors. The test executables
+  then failed on the existing Works EventStore-version forwarding mismatch: ArchitectureTests 61 total / 1 failed (an
+  intermediate tree: the split AppHost guards were in place, but the later LaunchReadinessTests and document edits
+  were not, so the count matches neither HEAD's 59 nor the final 63, and the failure was the then-stale package-verdict
+  document), Contracts.Tests 92/92, Server.Tests 558 / 135 failed,
+  Projections.Tests 437 / 351 failed, IntegrationTests 732 / 249 failed / 5 skipped, and Works.Tests 76/76. Every failure in
+  the three lanes was `FileNotFoundException` for `Hexalith.EventStore.Contracts, Version=3.125.1.0`, beside a copied
+  `3.124.0.0` assembly.
+- Established verification mode, from the 2026-10-18 direct-execution test summary:
+  `dotnet restore ... -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:UseNuGetDeps=false
+  -p:HexalithEventStoreVersion=3.125.1 -m:1 /nr:false`, then `dotnet build ... --configuration Debug --no-restore
+  -t:Rebuild` with the same properties and `-warnaserror` -> 0 warnings, 0 errors. A final incremental build of the
+  finished tree also had 0 warnings and 0 errors.
+- Built executables, run individually with `HexalithEventStoreVersion=3.125.1`: ArchitectureTests 63/63 (final tree);
+  Contracts.Tests 92/92; Server.Tests 558/558; Projections.Tests 437/437 (606.8 s); IntegrationTests 732 total /
+  727 passed / 5 skipped (558.4 s); Works.Tests 76/76. Total: 1,958 tests, 1,953 passed, 5 intentional skips, 0 failed.
+  The five non-ArchitectureTests lanes ran on the Rebuild output; their sources did not change afterwards.
+- AppHost/DCP lanes: `python3 scripts/check_magic_link_apphost_guards.py --configuration-only` -> exit 0; all 35 compiled
+  no-resource probes passed. `python3 scripts/run_isolated_magic_link_dapr.py` -> exit 1 at preflight with
+  `A Dapr application is already running or inventory is unsafe; no AppHost started`. At that point a foreign Tenants
+  AppHost and 13 foreign Dapr applications (including two `eventstore` IDs) were running. An ordinary `aspire start` was not
+  attempted because it would add a duplicate `eventstore` ID on the shared placement. No foreign runtime was started or
+  stopped. Current runtime smoke therefore remains deferred.
+- `git diff --check` -> clean. No `references/` path or gitlink, `global.json`, npm manifest or lockfile, inline version,
+  `.sln`, UI, topology, persistence, or product-behavior change.
+
+### Re-baselined file list
+
+`git diff --name-only 180d9fd9a635ed44ba896688d6a06e38a33e9f28` after implementation:
+
+- `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+- `_bmad-output/implementation-artifacts/deferred-work.md`
+- `_bmad-output/implementation-artifacts/epic-5-context.md`
+- `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+  (also carries Jerome's pre-existing 2026-10-18 renegotiation edits)
+- `_bmad-output/planning-artifacts/architecture.md`
+- `docs/ci-cd.md`
+- `docs/launch-readiness.md`
+- `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj`
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs`
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs`

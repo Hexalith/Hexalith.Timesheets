@@ -2,10 +2,11 @@
 title: 'Story 5.2: Reconcile Package Currency and Platform Dependency Versions'
 type: 'chore'
 created: '2026-09-12'
-status: 'in-progress'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: '72be616918e0ae80fadf56fa152dbd561955e22d'
+rebaseline_commit: '180d9fd9a635ed44ba896688d6a06e38a33e9f28'
 context:
   - '_bmad-output/implementation-artifacts/epic-5-context.md'
   - '_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md'
@@ -13,58 +14,65 @@ context:
 
 <frozen-after-approval reason="human-owned intent — do not modify unless human renegotiates">
 
+<!-- Renegotiated 2026-10-18 by Jerome (option A): re-baseline to SDK 10.0.402 and Aspire 13.6.1; root npm now applicable. -->
+
 ## Intent
 
-**Problem:** Story 5.2 was closed against an obsolete SDK and AppHost baseline. Timesheets still pins .NET SDK `10.0.400` and `Aspire.AppHost.Sdk/13.4.6`, while the approved release baseline is SDK `10.0.401`, AppHost SDK `13.5.3`, and the latest stable direct packages compatible with `net10.0`.
+**Problem:** Story 5.2 still records the September baseline. Since then `global.json` moved to SDK `10.0.402`, the imported `Hexalith.Builds` catalog moved Aspire to stable `13.6.1` (sibling AppHosts pin `Aspire.AppHost.Sdk/13.6.1`), and release tooling added a root `package.json` + `package-lock.json`. The Timesheets AppHost still pins `Aspire.AppHost.Sdk/13.5.3` with `AspireUseCliBundle=true`, so its restored graph mixes `Aspire.Hosting.AppHost/13.5.3` with `Aspire.Hosting/13.6.1` and omits NuGet orchestration packages. Launch readiness still calls root npm not applicable and cites 2026-09-17 audits of an earlier graph. Fifteen 2026-09-12 review patches remain open.
 
-**Approach:** Update the two Timesheets-owned pins, regenerate restore assets, rerun package and full test evidence, and reconcile the current architecture and launch-readiness package claims without rewriting dated historical evidence.
+**Approach:** Keep SDK `10.0.402`. Align the AppHost SDK to the imported stable `13.6.1` with NuGet-backed orchestration (`AspireUseCliBundle=false` plus `NoWarn` `ASPIRE010`, the decided Option 2 shape used by `Hexalith.EventStore`). Rerun all four NuGet audit dimensions and root npm outdated/audit on the current graph. Re-validate each open review patch against HEAD and apply those still valid. Reconcile current package claims without rewriting dated historical evidence.
 
 ## Boundaries & Constraints
 
-**Always:** Keep NuGet versions under Central Package Management with no inline `PackageReference` versions; prefer stable `net10.0`-compatible direct packages; audit direct, transitive, vulnerable, and deprecated packages after a clean SDK `10.0.401` restore; retain root npm as not applicable while no root manifest exists; preserve Story 5.3's dated SDK `10.0.400` evidence; record unavailable tooling and any remaining platform exception with owner, risk, and revisit condition.
+**Always:** Keep NuGet versions under Central Package Management with no inline `PackageReference` versions; prefer stable `net10.0`-compatible direct packages; audit direct, transitive, vulnerable, and deprecated NuGet packages after a clean SDK `10.0.402` restore; record root npm as applicable with `npm outdated` and `npm audit` results, keeping findings visible with owner, risk, and revisit condition; keep historical evidence (Story 5.3 SDK `10.0.400` run, 2026-09-17 audits, 2026-10-03 catalog observation) explicitly dated; record unavailable tooling and remaining platform exceptions with owner, risk, and revisit condition; rerun AppHost/DCP-starting lanes when their prerequisites exist and record exactly what could not run.
 
-**Never:** Edit `references/*`, sibling package manifests, or gitlinks; add a transitive pin without a compatibility, security, or deterministic-build reason; adopt a new prerelease package without explicit approval; add a `.sln`, inline version, npm manifest, UI, topology, persistence, or product behavior; fold Story 5.1's final launch-verdict and synchronized agent-guidance reconciliation into this story.
+**Never:** Edit `references/*`, sibling manifests, or gitlinks; change `global.json`, `package.json`, `package-lock.json`, or npm dependency versions (CI/CD release tooling owns them); suppress any Aspire diagnostic other than `ASPIRE010`; add a transitive pin without a compatibility, security, or deterministic-build reason; adopt a new prerelease package without explicit approval; add a `.sln`, inline version, UI, topology, persistence, or product behavior; fold Story 5.1's final launch verdict or `AGENTS.md`/`CLAUDE.md`/Copilot guidance sync into this story.
 
 ## I/O & Edge-Case Matrix
 
 | Scenario | Input / State | Expected Output / Behavior | Error Handling |
 |----------|--------------|---------------------------|----------------|
-| Approved baseline | SDK `10.0.400`; AppHost SDK `13.4.6` | Pins become `10.0.401` and `13.5.3`; clean restore removes mixed Aspire assets | Build/test failure blocks completion and remains recorded |
+| Approved baseline | SDK `10.0.402`; AppHost SDK `13.5.3` with CLI bundle | SDK unchanged; AppHost becomes `13.6.1`, `AspireUseCliBundle=false`, `NoWarn` adds only `ASPIRE010`; restored AppHost graph has one Aspire `13.6.1` line including orchestration and dashboard packages | Build/test failure or a new Aspire diagnostic blocks completion and remains recorded |
 | Direct update found | New stable, compatible direct version | Apply only through Timesheets-owned CPM configuration | Do not edit the imported catalog or use an inline version |
 | Transitive-only drift | Closest direct packages are current and audit-clean | Record drift and add no pin | Pin only with documented compatibility/security/determinism evidence |
+| Root npm manifest present | Root `package.json` + `package-lock.json` | npm recorded applicable; `npm outdated` and `npm audit` results recorded with counts | High/critical findings stay visible as CONCERNS with owner, risk, revisit; no npm edits |
 | Audit-tool failure | Package listing cannot evaluate a graph | Preserve exact failure and run per-project fallback checks | Never report the failed lane as clean |
+| Stale review patch | 2026-09-12 patch whose target moved or no longer exists | Re-validated against HEAD: applied if still valid, otherwise marked obsolete with reason | Never apply a patch by its original line numbers alone |
 
 </frozen-after-approval>
 
 ## Code Map
 
-- `global.json` -- executable SDK source of truth; update `10.0.400` to `10.0.401`, retaining `latestPatch` roll-forward.
-- `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj` -- Timesheets-owned `Aspire.AppHost.Sdk` pin; align `13.4.6` to imported stable `13.5.3` without changing topology.
-- `Directory.Packages.props` -- root CPM/import policy; currently needs no edit because the `Hexalith.Builds` catalog already supplies the approved direct matrix.
-- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs` -- reuse the existing AppHost guard and add an exact `global.json` SDK/roll-forward guard.
-- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/BuildConfigurationTests.cs` -- existing `.slnx`, CPM, and no-inline-version guards; do not weaken them.
-- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs` -- existing four-dimension package-evidence guard; change only if current evidence needs a durable new assertion.
-- `docs/launch-readiness.md` -- append SDK `10.0.401` package-audit/build/test evidence and replace stale current-package claims while preserving the dated Story 5.3 run.
-- `_bmad-output/planning-artifacts/architecture.md` -- reconcile current SDK, Aspire, Dapr, and Fluent UI catalog claims; leave historical observations explicitly dated.
-- `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md` -- preserve the June record and append the reopened-story work, exact commands, counts, and file list.
-- `_bmad-output/implementation-artifacts/sprint-status.yaml` -- use the resolved `5-2-reconcile-package-currency-and-platform-dependency-versions` key for workflow status transitions.
+- `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj` -- SDK `13.5.3` → `13.6.1`; `AspireUseCliBundle` `true` → `false`; add unconditional `<NoWarn>$(NoWarn);ASPIRE010</NoWarn>`. Leave the conditional compiled-gateway constant and the project/package references untouched. Precedent: `references/Hexalith.EventStore/src/Hexalith.EventStore.AppHost/Hexalith.EventStore.AppHost.csproj` (read-only).
+- `global.json` -- already `10.0.402` + `latestPatch`, guarded by `Repository_pins_approved_dotnet_sdk`; read-only.
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs` -- `AppHost_initializes_security_through_eventstore_aspire_helper` asserts `13.5.3` and CLI bundle `true`; flip to `13.6.1`/`false` plus an `ASPIRE010`-only suppression, and split the unrelated rules per the open patch.
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs` -- package-verdict guard reads `references/Hexalith.Builds/Props/Directory.Packages.props` and searches the whole `## Package-Currency Verdict` section; the open patches on hard-bound catalog path, section scoping, and AppHost/catalog alignment land here.
+- `docs/launch-readiness.md` -- `## Package-Currency Verdict` (npm row says no `package.json`) and the release-gate `Package currency` row: new dated evidence, npm applicable, AppHost `13.6.1`. The old preamble patch targets text that has since moved; re-validate.
+- `_bmad-output/planning-artifacts/architecture.md` -- version notes and the two later summaries still say SDK `10.0.401`, Aspire `13.5.3`, `AspireUseCliBundle=true`, Dapr `1.18.7`; reconcile to current, keep dated observations dated.
+- `docs/ci-cd.md` -- current SDK claim says `10.0.401`; correct that claim only.
+- `_bmad-output/implementation-artifacts/epic-5-context.md` -- two open patches (Works checkout rule, dropped constraints).
+- `_bmad-output/implementation-artifacts/deferred-work.md` -- resolve or refresh Story 5.2-owned entries: the 5.3-review catalog misstatement, the spec-6 waiver-row/fitness-scope entry, the spec-15 catalog-observation entry, the "re-run audits against the current 13.6.1 catalog graph" entry, and the two open ledger-convention patches. Leave the full-suite fitness entry and Story 5.1-deferred items open.
+- `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs` -- nondeterministic privacy-assertion patch; the file changed since review, re-validate.
+- `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md` -- append the re-baselined iteration without erasing earlier records.
+- `_bmad-output/implementation-artifacts/sprint-status.yaml` -- key `5-2-reconcile-package-currency-and-platform-dependency-versions`.
 
 ## Tasks & Acceptance
 
 **Execution:**
-- [x] `global.json`, `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj` -- apply the approved SDK/AppHost pins, then perform a clean restore before judging resolved packages.
-- [x] `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs` -- update the AppHost expectation and guard SDK `10.0.401` plus `latestPatch`.
-- [x] `docs/launch-readiness.md`, `_bmad-output/planning-artifacts/architecture.md` -- record the current package matrix and honest direct/npm/transitive/platform verdicts, preserving historical evidence and explicit remaining exceptions.
-- [x] `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md` -- append reopened implementation evidence, exact test counts, decisions, and a `git diff --name-only` file list without erasing the June record.
-- [x] Run restore, warnings-as-errors build, ArchitectureTests, every project under `tests/`, and all four package-audit dimensions; record fallbacks and failures honestly.
+- [x] `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj` -- apply SDK `13.6.1` with NuGet-backed orchestration, then a forced no-cache restore; confirm the AppHost assets hold one Aspire `13.6.1` line including `Aspire.Hosting.Orchestration.*` and `Aspire.Dashboard.Sdk.*`.
+- [x] `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs` -- update and split the AppHost guard for `13.6.1`, CLI bundle `false`, and an `ASPIRE010`-only suppression.
+- [x] `### Review Findings` below -- re-validate each open patch against HEAD; apply valid ones; mark each `[x]` as "applied" or "obsolete: <reason>".
+- [x] `docs/launch-readiness.md`, `_bmad-output/planning-artifacts/architecture.md`, `docs/ci-cd.md` -- record the current package matrix and verdicts; keep historical runs dated.
+- [x] `deferred-work.md`, `epic-5-context.md`, story record -- resolve or refresh the Story 5.2-owned entries; append iteration evidence, exact counts, and a `git diff --name-only` file list.
+- [x] Run restore, warnings-as-errors build, every test-project executable, all four NuGet audit dimensions, `npm ci` + `npm outdated` + `npm audit`, and AppHost/DCP-starting lanes when available; record exact commands, counts, and failures.
 
 **Acceptance Criteria:**
-- Given the approved release baseline, when configuration and fitness tests are inspected, then SDK `10.0.401`, `rollForward: latestPatch`, and `Aspire.AppHost.Sdk/13.5.3` agree.
-- Given restored package assets, when direct, transitive, vulnerable, and deprecated audits run, then compatible direct updates use CPM only, unjustified transitive pins are absent, and unavailable audit lanes are visible.
-- Given package evidence is published, when launch-readiness and architecture are compared with current files, then direct currency, npm applicability, transitive drift, platform alignment, and dated historical runs are non-contradictory.
-- Given repository boundaries, when the final diff is inspected, then no sibling content/gitlink, inline version, legacy solution, UI, topology, or runtime behavior changed.
-- Given verification completes, when every test executable is run, then all non-skipped tests pass with warnings as errors and exact totals are recorded.
-
+- Given current configuration, when `global.json`, the AppHost project, and fitness tests are inspected, then SDK `10.0.402`/`latestPatch`, `Aspire.AppHost.Sdk/13.6.1`, `AspireUseCliBundle=false`, and an `ASPIRE010`-only suppression agree, and the restored AppHost graph contains no Aspire `13.5.x` package.
+- Given restored assets, when NuGet direct/transitive/vulnerable/deprecated audits and root npm outdated/audit run, then compatible direct NuGet updates use CPM only, unjustified transitive pins are absent, and every finding or unavailable lane is recorded verbatim.
+- Given evidence is published, when launch readiness, architecture, CI/CD docs, and Epic 5 context are compared with current files, then SDK, Aspire, Dapr, npm applicability, transitive drift, platform waivers, and dated historical runs are non-contradictory.
+- Given the 2026-09-12 review patches, when the Review Findings section is inspected, then each is marked applied or obsolete with a reason.
+- Given repository boundaries, when the final diff is inspected, then no sibling content/gitlink, `global.json`, npm manifest/lockfile, inline version, legacy solution, UI, topology, or product behavior changed.
+- Given verification completes, when every test executable runs, then all non-skipped tests pass with warnings as errors and exact totals are recorded.
 
 ### Review Findings
 
@@ -77,21 +85,36 @@ Code review 2026-09-12 (layers: blind-hunter, edge-case-hunter, verification-gap
 
 **Patch**
 
-- [ ] [Review][Patch] Revert to NuGet-backed Aspire orchestration: `AspireUseCliBundle=false` + `NoWarn=$(NoWarn);ASPIRE010`, flip the fitness guard, and correct the `ASPIRE010` narrative in architecture/launch-readiness/story record [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4]
-- [ ] [Review][Patch] Regenerated Epic 5 context outlaws the repository's own test-enforced Works checkout [_bmad-output/implementation-artifacts/epic-5-context.md:27]
-- [ ] [Review][Patch] Regenerating Epic 5 context dropped ratified constraints and prerequisite traceability [_bmad-output/implementation-artifacts/epic-5-context.md]
-- [ ] [Review][Patch] Classification vocabulary contradicts itself across two files changed in the same commit [docs/launch-readiness.md:36]
-- [ ] [Review][Patch] New doc guard hard-binds ArchitectureTests to submodule-owned catalog state by hardcoded path [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:159-169]
-- [ ] [Review][Patch] Section guard can pass on the wrong text, and one assertion can never fail [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:171]
-- [ ] [Review][Patch] Nondeterministic privacy assertion accepted with retry-to-green, no fix and no ledger entry [tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs:370]
-- [ ] [Review][Patch] `architecture.md` version claims remain the only unguarded ones [_bmad-output/planning-artifacts/architecture.md:357-362]
-- [ ] [Review][Patch] Launch-readiness preamble still scopes the whole record to the June baseline [docs/launch-readiness.md:3]
-- [ ] [Review][Patch] Story record's reopened file list is wrong three ways [_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md:372-388]
-- [ ] [Review][Patch] New deferred-work entry breaks ledger conventions and is filed under the wrong story [_bmad-output/implementation-artifacts/deferred-work.md:48]
-- [ ] [Review][Patch] A deferred-work entry this change resolves is left standing [_bmad-output/implementation-artifacts/deferred-work.md:45]
-- [ ] [Review][Patch] Nothing asserts the documented AppHost-SDK/catalog `13.5.3` alignment invariant [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:165]
-- [ ] [Review][Patch] Security-helper test now asserts three unrelated rules, with two conventions for one version [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs:54-80]
-- [ ] [Review][Patch] Architecture version note points "below" at content that is above it [_bmad-output/planning-artifacts/architecture.md:362]
+- [x] [Review][Patch] Revert to NuGet-backed Aspire orchestration: `AspireUseCliBundle=false` + `NoWarn=$(NoWarn);ASPIRE010`, flip the fitness guard, and correct the `ASPIRE010` narrative in architecture/launch-readiness/story record [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — the AppHost now declares `Aspire.AppHost.Sdk/13.6.1`, an unconditional `AspireUseCliBundle=false`, and an unconditional `NoWarn` of exactly `$(NoWarn);ASPIRE010`; the split `ScaffoldGovernanceTests` guards assert that shape; the architecture version notes, the launch-readiness current verdict, and the story record's 2026-10-18 section describe NuGet-backed orchestration, while the 2026-09-12 CLI-bundle narrative stays as dated history.
+- [x] [Review][Patch] Regenerated Epic 5 context outlaws the repository's own test-enforced Works checkout [_bmad-output/implementation-artifacts/epic-5-context.md:27]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — the Works paragraph now states the `references/Hexalith.Works` umbrella pin enforced by `WorksCheckoutGovernanceTests`, forbids only a repository-root checkout, gitlink, or `$(MSBuildThisFileDirectory)Hexalith.Works` probe, and resolves `references/` first and `../Hexalith.Works` second.
+- [x] [Review][Patch] Regenerating Epic 5 context dropped ratified constraints and prerequisite traceability [_bmad-output/implementation-artifacts/epic-5-context.md]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — restored the ratified launch classifications (including the legal-hold v1 default and post-v1 secondary verification for high-value or billable entries), story-complete versus launch-complete, evidence-only export language, factual copy, the V4-icon fallback, the no-pointer-mixing rule, Docker/Dapr/Aspire lanes in the gate, and story-numbered prerequisites (3.6, 1.10, 4.8, 4.9, 1.11/4.10, 1.4, 2.7/4.6). The logging and time-zone invariants (BH10/BH11) were already present at HEAD.
+- [x] [Review][Patch] Classification vocabulary contradicts itself across two files changed in the same commit [docs/launch-readiness.md:36]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — the record's vocabulary has since moved (now `implemented`, `waived`, `post-v1`, `blocked` plus compound labels). `epic-5-context.md` now names both the approved `implemented/unfinished/waived/post-v1` dispositions and the record's actual labels, defines `blocked` as never a waiver, and leaves vocabulary reconciliation in `docs/launch-readiness.md` to Story 5.1.
+- [x] [Review][Patch] New doc guard hard-binds ArchitectureTests to submodule-owned catalog state by hardcoded path [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:159-169]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — `LoadImportedPackageCatalog` follows the root `Directory.Packages.props` import candidates in order (`references/`, `../Hexalith.Builds`, `../../references/`) and loads the first existing catalog, so the guard reads whichever catalog the build imports instead of a hard-coded path.
+- [x] [Review][Patch] Section guard can pass on the wrong text, and one assertion can never fail [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:171]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — removed the always-true `ShouldContain("Package-Currency Verdict")`; the section is read from its exact heading line to the next same-level heading, and assertions now target only the single `Current package-currency verdict` paragraph, the named verdict rows, the prerelease waiver row, and the `Package currency` gate row, so dated paragraphs cannot satisfy them.
+- [x] [Review][Patch] Nondeterministic privacy assertion accepted with retry-to-green, no fix and no ledger entry [tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs:370]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied (record), with the ledger part obsolete. The helper moved (the generic `"60"` term is now in `AssertSensitiveMaterialAbsent`, about line 1519) and still matches substrings. The "no ledger entry" part is obsolete: the 2026-10-09 spec-16 entry ("Replace substring-based numeric privacy exclusions...") owns the field-aware fix with a named owner, and the launch-readiness privacy and no-disclosure gates keep the false-positive risk visible. Applied here: the 2026-09-12 story record now cross-references that entry and states that the focused retries did not establish determinism. This iteration did not retry to green; the full IntegrationTests executable passed once (727 passed, 5 skipped, 732 total). The test-design fix stays with the spec-16 owner because it changes HTTP privacy assertion semantics outside package currency.
+- [x] [Review][Patch] `architecture.md` version claims remain the only unguarded ones [_bmad-output/planning-artifacts/architecture.md:357-362]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — new `ArchitectureVersionNotesMatchExecutableConfiguration` derives the SDK, roll-forward, AppHost, Dapr, Fluent UI, Keycloak, and CommunityToolkit values from `global.json`, the AppHost project, and the imported catalog, and rejects a CLI-bundle opt-in in the Data Architecture version notes.
+- [x] [Review][Patch] Launch-readiness preamble still scopes the whole record to the June baseline [docs/launch-readiness.md:3]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied at the moved target — the sentence now sits after the dated 2026-10-15 to 2026-10-17 entries; it describes `b0c41aa` as the original 2026-06-26 anchor, states that later sections carry their own baselines, and cites the 2026-10-18 package-verdict anchor while keeping the pinned open-story wording.
+- [x] [Review][Patch] Story record's reopened file list is wrong three ways [_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md:372-388]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — a dated correction under that list records the actual `git show --name-status ee76a92` set: `deferred-work.md` was omitted, `epic-5-context.md` and `sprint-status.yaml` were changed by that commit rather than pre-existing, and the spec was added (`A`) by it rather than left untracked.
+- [x] [Review][Patch] New deferred-work entry breaks ledger conventions and is filed under the wrong story [_bmad-output/implementation-artifacts/deferred-work.md:48]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — the entry moved from the Story 5.3 review section into the Story 5.2 review section with a repository-relative `source_spec`, names Story 5.1 as owner, and stays open for Story 5.1's final classification.
+- [x] [Review][Patch] A deferred-work entry this change resolves is left standing [_bmad-output/implementation-artifacts/deferred-work.md:45]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — the Story 5.3 review's catalog-misstatement bullet now carries a 2026-10-18 resolution note.
+- [x] [Review][Patch] Nothing asserts the documented AppHost-SDK/catalog `13.5.3` alignment invariant [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:165]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — new `AppHostSdkTracksTheImportedStableAspireCatalogLine` asserts that the AppHost SDK version equals the imported `Aspire.Hosting` version (`13.6.1` today).
+- [x] [Review][Patch] Security-helper test now asserts three unrelated rules, with two conventions for one version [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs:54-80]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — split into `AppHost_initializes_security_through_eventstore_aspire_helper`, `AppHost_pins_approved_aspire_apphost_sdk`, and `AppHost_retains_nuget_orchestration_and_suppresses_only_aspire010`. The approved pin is one literal constant, like the `global.json` guard, while documentation guards derive the version from the project. Project references are checked through XML rather than raw text.
+- [x] [Review][Patch] Architecture version note points "below" at content that is above it [_bmad-output/planning-artifacts/architecture.md:362]
+  2026-10-18 re-validation against HEAD `180d9fd`: applied — the historical template note now points "above" to the current AppHost baseline.
 
 **Deferred**
 
@@ -111,6 +134,25 @@ Code review 2026-09-12 (layers: blind-hunter, edge-case-hunter, verification-gap
 - `Directory.Build.props` or `-p:` could override `AspireUseCliBundle` outside the csproj — low; detecting it needs an evaluated-property probe, and the substantive concern is carried by the decision-needed item above.
 ## Implementation Notes
 
+_2026-10-18 re-baselined iteration:_
+
+- The AppHost now pins `Aspire.AppHost.Sdk/13.6.1` with `AspireUseCliBundle=false` and an unconditional
+  `NoWarn` of `$(NoWarn);ASPIRE010`. The forced no-cache restore yields one Aspire `13.6.1` line, including orchestration
+  and dashboard packages, in both the package-mode and the source-reference graphs. The build raised no new Aspire diagnostic.
+- No direct NuGet update was available, so `Directory.Packages.props` is unchanged and no transitive pin was added. Root
+  npm is recorded as applicable, with eight high `npm audit` findings visible as CONCERNS; no npm file changed.
+- The default README source-reference test run still hits the deferred Works `HexalithEventStoreVersion` forwarding
+  mismatch (`3.124.0` versus catalog `3.125.1`). Verification therefore used the established
+  `-p:HexalithEventStoreVersion=3.125.1` mode, and launch readiness records the divergence as open and unwaived, with owner, risk, and revisit
+  condition (review patch P1).
+- The isolated DCP journey refused at preflight because foreign AppHosts and Dapr applications were running. The 35
+  compiled no-resource AppHost probes passed. Current runtime smoke stays deferred.
+- Story status stays `in-progress`: the review transition needs the launch-readiness open-story sentences (pinned by
+  `LaunchReadinessTests`, with the overall decision owned by Story 5.1) to change in the same step.
+
+_2026-09-12 iteration (historical; the CLI-bundle choice was reversed by the Option 2 decision):_
+
+
 - The Aspire 13.5.3 update introduced warnings-as-errors diagnostic `ASPIRE010`. The AppHost now opts into the
   version-aligned CLI bundle with `AspireUseCliBundle=true`; resource topology is unchanged.
 - The imported central catalog already supplies every current stable direct package, so `Directory.Packages.props`
@@ -123,6 +165,13 @@ Code review 2026-09-12 (layers: blind-hunter, edge-case-hunter, verification-gap
 
 - 2026-09-12 -- Implemented the approved SDK/AppHost baseline, reconciled package evidence, completed every task, and
   recorded verification plus remaining tooling/platform risks.
+- 2026-10-18 -- Human renegotiated the frozen intent (option A): the SDK baseline is `10.0.402` (moved in `c4695a5`),
+  the AppHost SDK follows the imported stable Aspire `13.6.1` with the decided Option 2 orchestration shape, and root npm
+  is applicable since release tooling added `package.json`. Tasks were reset for the re-baselined iteration; this
+  iteration's diff starts at `rebaseline_commit`. The 2026-09-12 Implementation Notes and Results below are historical.
+- 2026-10-18 -- Implemented the re-baselined tasks: AppHost `13.6.1` with NuGet-backed orchestration, split fitness guards,
+  re-validated and applied all fifteen 2026-09-12 review patches, reconciled package evidence, and recorded verification,
+  the open Works EventStore-version divergence, and the unavailable DCP lane. The frozen intent is unchanged.
 
 ## Review Triage Log
 
@@ -146,18 +195,81 @@ Code review 2026-09-12 (layers: blind-hunter, edge-case-hunter, verification-gap
 | EH3 | medium | Independent edge tracing confirms inactive/commented XML can satisfy the new AppHost substring assertions. | patch |
 | EH4 | medium | Independent edge tracing confirms historical prose can satisfy global string assertions even when the current package-verdict section regresses. | patch |
 | EH5 | medium | CLI-bundle opt-in deliberately changes orchestration dependency resolution, so an unqualified no-runtime-change claim is too broad; topology and domain/product behavior are what remain unchanged. | patch |
+| R2-BH1 | false | Spec `in-review` vs story/sprint `in-progress` is the workflow's own step-04 transition; finalization syncs status (accepted precedent), and the fix would edit this spec. | rejected |
+| R2-BH2 | low | `deferred-work.md` Story 5.2-review bullets still say "approved `10.0.401`" and "`docs/launch-readiness.md:78` still records `CONCERNS`" although `global.json` is `10.0.402` and the record says `FAIL`; the second now duplicates the moved Story 5.1 entry. | patch (P7) |
+| R2-BH3 | false | The full-suite fitness entry is pre-existing, still accurate, and outside the package-currency intent; leaving it open produces no wrong outcome. | rejected |
+| R2-BH4 | medium | Release-gate `Build`/`Tests (full suite)` rows say PASS citing round-20 runs, while the default README source-reference test mode fails 735 cases without `-p:HexalithEventStoreVersion=3.125.1`; the Works forwarding mismatch predates this story and was already ledgered. | defer (D2) |
+| R2-BH5 | medium | The platform row, current verdict, and gate notes present the Works EventStore-version divergence as waived under proposal §7, but §7 approves only bounded Story 5.2 SDK/package updates and recorded prerelease exceptions; the 2026-10-18 option-A renegotiation is not cited as approval for the `13.6.1` baseline. | patch (P1) |
+| R2-BH6 | medium | `architecture.md:402` says ASP.NET Core auth/data-protection "currently `10.0.12`" and `:495` says OpenApi `10.0.12`/Swashbuckle `10.2.3`; the imported catalog has `10.0.13`/`10.3.0`, contradicting the new launch-readiness direct row. | patch (P2) |
+| R2-BH7 | medium | `ArchitectureVersionNotesMatchExecutableConfiguration` guards only the Data Architecture notes; the hand-edited restatements at `architecture.md:331`, `:402-403`, `:581`, `:756`, `:1077`, `:1099`, `:1121` are unguarded, and `:402` has already drifted. | patch (P3) |
+| R2-BH8 | low | `AppHostSdkTracksTheImportedStableAspireCatalogLine` compares with `Aspire.Hosting` instead of the catalog's canonical `HexalithAspireAppHostSdkVersion` (`Directory.Packages.props:20`), which platform tests treat as the AppHost SDK contract; a hosting-only hotfix would force the wrong SDK. | patch (P4) |
+| R2-BH9 | low | A Builds catalog bump fails several guards at once, but each fails loudly with a remediation message; this is the tripwire the 2026-09-12 alignment patch requested, and documenting a cross-repo procedure is more than a direct correction. | rejected |
+| R2-BH10 | low | The `Package currency` gate verdict cell and the paragraph's `**CONCERNS**` are not asserted; flipping them is unlikely in everyday use and the fix adds assertions. | rejected |
+| R2-BH11 | low | `ReadParagraph` splits on `"\n\n"` without normalizing `\r`, so a CRLF checkout (no `.gitattributes`) fails the package-verdict test on a correct document; sibling helpers in the same diff already trim `\r`. | patch (P5) |
+| R2-BH12 | low | The security-helper guard checks only the source-mode `ProjectReference`, as the pre-split test did; package-mode coverage is a pre-existing gap and the fix adds assertions. | rejected |
+| R2-BH13 | medium | `AppHost_retains_nuget_orchestration_and_suppresses_only_aspire010` reads only the csproj, so an Aspire suppression in root `Directory.Build.props`/`.targets`, `.editorconfig`, or an AppHost `#pragma`/`SuppressMessage` passes despite the test's "No other Aspire diagnostic may be suppressed" message. | patch (P6) |
+| R2-BH14 | low | Audit rows do not say which restore graph each `--no-restore` audit read (package-mode vs source-reference), and the package-mode AppHost transitive graph was not separately compared, so "audits are clean" overstates graph coverage. | patch (P8) |
+| R2-BH15 | low | The README-mode "ArchitectureTests 61 total / 1 failed" run matches neither HEAD (59) nor the final tree (63) and the record does not say it was an intermediate tree. | patch (P9) |
+| R2-BH16 | low | The privacy patch's `[x] applied` mark and Change Log "applied all fifteen" overstate a record-only correction, but the fix edits this spec. | rejected |
+| R2-BH17 | low | The vocabulary reconciliation handed to Story 5.1 in `epic-5-context.md` has no ledger entry; the record/approved vocabulary contradiction is pre-existing. | defer (D3) |
+| R2-BH18 | low | `LoadImportedPackageCatalog`'s comment claims it reads "the catalog the build actually imports" but it ignores `Import`/property conditions and global properties and picks the first existing candidate. | patch (P10) |
+| R2-BH19 | low | Double blank line in the spec's Implementation Notes; the fix edits this spec. | rejected |
+| R2-VG1 | medium | Pre-verified gap: no automated or manual run starts the `13.6.1` AppHost with NuGet `Aspire.Hosting.Orchestration`/`Aspire.Dashboard.Sdk`; the 9523d94 DCP-parent proof ran on the CLI-bundle DCP, and the isolated journey refused at preflight because foreign runtimes were active. | defer (D1) |
+| R2-VG2a | medium | Pre-verified gap: same root cause as R2-BH13 — the suppression guard does not scan root build props/targets, `.editorconfig`, or AppHost sources. | patch (P6) |
+| R2-VG2b | low | Pre-verified gap: no test reads `obj/project.assets.json` for the restored orchestration line; such a test depends on build mode and RID, and `AppHostSdkTracksTheImportedStableAspireCatalogLine` already enforces the version invariant, so the guard is not worth its brittleness. | rejected |
+| R2-VG3 | low | Same root cause as R2-BH8 (alignment compared with `Aspire.Hosting`, not `HexalithAspireAppHostSdkVersion`). | patch (P4) |
+| R2-EH1 | low | Same root cause as R2-BH11 (`ReadParagraph` CRLF). | patch (P5) |
+| R2-EH2 | low | The alignment test does not reject a prerelease `Aspire.Hosting`; a prerelease stable catalog line is unlikely and the fix adds a guard. | rejected |
+| R2-EH3 | medium | Same root cause as R2-BH7 (unguarded architecture restatements). | patch (P3) |
+| R2-EH4 | low | A root lockfile without `package.json` would demand `not applicable`; that layout is unlikely and the fix adds a condition. | rejected |
+| R2-EH5 | low | An escaped or code-span pipe would split a row into more than four cells; the guard fails loudly, no current row contains one, and the fix adds regex complexity. | rejected |
+| R2-EH6 | medium | Same root cause as R2-BH13 (suppression surfaces outside the csproj). | patch (P6) |
+| R2-EH7 | false | A backslash `ProjectReference` would fail loudly, which is correct behavior; the AppHost uses forward slashes and nothing shows the backslash form is reachable. | rejected |
+| R2-EH8 | medium | Same root cause as R2-BH4 (unqualified `Tests (full suite)` PASS row). | defer (D2) |
+| R2-EH9 | low | Same root cause as R2-BH14 (restore graph per audit unnamed). | patch (P8) |
+| R2-EH10 | medium | Same root cause as R2-BH6 (`architecture.md:402` stale ASP.NET Core line). | patch (P2) |
+| R2-EH11 | medium | `epic-5-context.md:35` still says fitness tests reject "a Timesheets-owned Works declaration/gitlink", contradicting the corrected Works paragraph and `WorksCheckoutGovernanceTests`, which require the `references/Hexalith.Works` declaration. | patch (P11) |
+| R2-EH12 | low | Same root cause as R2-BH2 (stale Story 5.2-review ledger bullets). | patch (P7) |
+| R2-EH13 | low | Same root cause as R2-BH18 (`LoadImportedPackageCatalog` overclaims build-equivalent evaluation). | patch (P10) |
 
 ## Verification
 
 **Commands:**
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version` -- expected: `10.0.401`.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false` -- expected: success with regenerated assets.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet --version` -- expected: `10.0.402`.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx --force --no-cache -m:1 /nr:false` -- expected: success with regenerated assets.
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false` -- expected: zero warnings and errors.
-- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --outdated` plus transitive, vulnerable, and deprecated variants -- expected: direct/vulnerability/deprecation clean; any graph-tool failure recorded with per-project fallback evidence.
-- Run each built executable under `tests/*/bin/Debug/net10.0/` -- expected: all non-skipped tests pass and exact project totals are captured.
-- `git diff --check` and `git diff --name-only` -- expected: clean patch and an in-scope file list.
+- `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet list Hexalith.Timesheets.slnx package --outdated --no-restore` plus `--include-transitive`, `--vulnerable --include-transitive`, and `--deprecated --include-transitive` variants -- expected: direct/vulnerability/deprecation clean; any graph-tool failure recorded with per-project fallback evidence.
+- `npm ci`, `npm outdated`, `npm audit` at the repository root -- expected: results recorded verbatim; nonzero exits are evidence, not blockers.
+- Run each built executable under `tests/*/bin/Debug/net10.0/` (`dotnet test` fails under Microsoft.Testing.Platform, see `README.md`) -- expected: all non-skipped tests pass and exact project totals are captured.
+- `git diff --check` and `git diff --name-only 180d9fd9a635ed44ba896688d6a06e38a33e9f28` -- expected: clean patch and an in-scope file list.
 
-**Results:**
+**2026-10-18 results (SDK 10.0.402 / AppHost 13.6.1):**
+
+- `dotnet --version` returned `10.0.402`. The forced no-cache bare restore passed for 15 projects, and the bare
+  warnings-as-errors Release build passed with 0 warnings and 0 errors; both were rerun on the final tree. The AppHost
+  assets hold one Aspire `13.6.1` line, including `Aspire.Hosting.Orchestration.linux-x64` and
+  `Aspire.Dashboard.Sdk.linux-x64`, and no `13.5.x` package.
+- The direct, vulnerable, and deprecated solution audits covered 15 projects and were clean. The solution-level and
+  AppHost transitive lanes fail with `error: Sequence contains no matching element`. The 14 project fallbacks (21 drift
+  items) and a manual AppHost registry fallback (22 stable items behind latest, plus 2 waived prereleases) were reviewed
+  with no pin.
+- `npm ci` exit 0. `npm outdated` exit 1 (2 exact-pinned `@commitlint` packages, `21.2.2` -> `21.2.4`). `npm audit`
+  exit 1 (8 high, 0 critical, braces `GHSA-vfj7-8cjw-p6xm`).
+- The README source-reference build passed with 0 warnings and 0 errors, but its tests failed on the deferred Works
+  EventStore-version forwarding mismatch (Server 135, Projections 351, and Integration 249 failures). With
+  `-p:HexalithEventStoreVersion=3.125.1` (Rebuild, then a final incremental build, each with 0 warnings and 0 errors):
+  ArchitectureTests 63/63; Contracts.Tests 92/92; Server.Tests 558/558; Projections.Tests 437/437; IntegrationTests
+  727 passed / 5 skipped / 732 total; Works.Tests 76/76. Total: 1,953 passed, 5 intentional skips, 0 failed, 1,958 total.
+- The compiled AppHost guard probes passed 35/35. The isolated DCP journey refused at preflight (`A Dapr application is
+  already running or inventory is unsafe; no AppHost started`) because foreign runtimes were active; no foreign runtime
+  was touched.
+- Six temporary mutations of the AppHost project, launch readiness, and architecture were each caught by the new guards
+  and then restored byte-identical.
+- `git diff --check` passed. `git diff --name-only 180d9fd9a635ed44ba896688d6a06e38a33e9f28` lists only the story
+  record, `deferred-work.md`, `epic-5-context.md`, this spec, `architecture.md`, `docs/ci-cd.md`,
+  `docs/launch-readiness.md`, the AppHost project, and the two ArchitectureTests fitness files.
+
+**2026-09-12 results (historical, SDK 10.0.401 / AppHost 13.5.3):**
 
 - SDK `10.0.401`; forced/no-cache restore succeeded; warnings-as-errors build succeeded with 0 warnings and 0 errors.
 - Direct, vulnerable, and deprecated solution audits covered all 15 projects and were clean. Solution/AppHost

@@ -8,6 +8,12 @@ namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 
 public sealed class ScaffoldGovernanceTests
 {
+    private const string ApprovedAspireAppHostSdkVersion = "13.6.1";
+
+    private static readonly Regex AspireDiagnosticCode = new(
+        @"\bASPIRE[A-Z]*\d{3}\b",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
     private static readonly string[] ForbiddenSourcePatterns =
     [
         "SqlConnection",
@@ -55,29 +61,85 @@ public sealed class ScaffoldGovernanceTests
     public void AppHost_initializes_security_through_eventstore_aspire_helper()
     {
         string program = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Program.cs"));
-        string projectPath = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Hexalith.Timesheets.AppHost.csproj");
-        string projectText = File.ReadAllText(projectPath);
-        XElement project = XDocument.Load(projectPath).Root.ShouldNotBeNull();
-        XAttribute sdk = project.Attributes()
-            .Where(static attribute => attribute.Name.LocalName == "Sdk")
-            .ShouldHaveSingleItem("The AppHost must declare one local project SDK attribute.");
-        XElement cliBundle = project.Descendants()
-            .Where(static element => element.Name.LocalName == "AspireUseCliBundle")
-            .ShouldHaveSingleItem("The AppHost must declare one unambiguous CLI-bundle setting.");
+        XElement project = LoadAppHostProject();
+        XElement eventStoreAspire = project.Descendants()
+            .Where(static element => element.Name.LocalName == "ProjectReference")
+            .Where(static element => (element.Attribute("Include")?.Value ?? string.Empty)
+                .EndsWith("/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj", StringComparison.Ordinal))
+            .ShouldHaveSingleItem("The AppHost must reference the EventStore Aspire helper once in source mode.");
 
         program.ShouldContain("AddHexalithEventStoreSecurity(");
         program.ShouldNotContain("AddKeycloak(");
-        project.Name.LocalName.ShouldBe("Project");
-        sdk.Value.ShouldBe("Aspire.AppHost.Sdk/13.5.3");
-        project.Elements().Where(static element => element.Name.LocalName == "Sdk").ShouldBeEmpty();
-        cliBundle.Value.Trim().ShouldBe("true");
-        cliBundle.AncestorsAndSelf()
-            .SelectMany(static element => element.Attributes())
-            .Where(static attribute => attribute.Name.LocalName == "Condition")
-            .ShouldBeEmpty("The required CLI-bundle setting must be unconditional.");
-        projectText.ShouldContain("Hexalith.EventStore.Aspire.csproj");
-        projectText.ShouldContain("IsAspireProjectResource=\"false\"");
+        eventStoreAspire.Attribute("IsAspireProjectResource").ShouldNotBeNull().Value.ShouldBe("false");
         File.Exists(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "KeycloakRealms", "hexalith-realm.json")).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void AppHost_pins_approved_aspire_apphost_sdk()
+    {
+        // Approved pins are literal here, like the global.json SDK pin below; documentation guards derive
+        // the same value from this project instead of restating it.
+        XElement project = LoadAppHostProject();
+        XAttribute sdk = project.Attributes()
+            .Where(static attribute => attribute.Name.LocalName == "Sdk")
+            .ShouldHaveSingleItem("The AppHost must declare one local project SDK attribute.");
+
+        project.Name.LocalName.ShouldBe("Project");
+        sdk.Value.ShouldBe($"Aspire.AppHost.Sdk/{ApprovedAspireAppHostSdkVersion}");
+        project.Elements().Where(static element => element.Name.LocalName == "Sdk").ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void AppHost_retains_nuget_orchestration_and_suppresses_only_aspire010()
+    {
+        // Decided 2026-09-13 (Option 2): keep the SDK-added Aspire.Hosting.Orchestration and
+        // Aspire.Dashboard.Sdk packages so restore/build stay self-contained, and suppress only the
+        // ASPIRE010 notice that the CLI bundle is disabled.
+        XElement project = LoadAppHostProject();
+        XElement cliBundle = project.Descendants()
+            .Where(static element => element.Name.LocalName == "AspireUseCliBundle")
+            .ShouldHaveSingleItem("The AppHost must declare one unambiguous CLI-bundle setting.");
+        XElement noWarn = project.Descendants()
+            .Where(static element => element.Name.LocalName == "NoWarn")
+            .ShouldHaveSingleItem("The AppHost must declare one unambiguous diagnostic suppression.");
+
+        cliBundle.Value.Trim().ShouldBe("false");
+        ConditionsOf(cliBundle).ShouldBeEmpty("The NuGet-orchestration setting must be unconditional.");
+        noWarn.Value.Trim().ShouldBe("$(NoWarn);ASPIRE010");
+        ConditionsOf(noWarn).ShouldBeEmpty("The ASPIRE010 suppression must be unconditional.");
+        AspireDiagnosticCode.Matches(File.ReadAllText(AppHostProjectPath()))
+            .Select(static match => match.Value)
+            .ShouldHaveSingleItem("The AppHost project may name only the ASPIRE010 suppression.")
+            .ShouldBe("ASPIRE010");
+
+        // Other Timesheets-owned surfaces may not suppress or downgrade any Aspire diagnostic.
+        foreach (string buildFile in new[] { "Directory.Build.props", "Directory.Build.targets" }
+            .Select(static name => RepositoryRoot.PathTo(name))
+            .Where(File.Exists))
+        {
+            AspireDiagnosticCode.IsMatch(File.ReadAllText(buildFile))
+                .ShouldBeFalse($"{buildFile} must not suppress or downgrade an Aspire diagnostic.");
+        }
+
+        foreach (string editorConfig in new[] { ".editorconfig", ".globalconfig" }
+            .SelectMany(static name => new[] { RepositoryRoot.PathTo(name), RepositoryRoot.PathTo("src", name), RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", name) })
+            .Where(File.Exists))
+        {
+            Regex.IsMatch(File.ReadAllText(editorConfig), @"dotnet_diagnostic\.ASPIRE", RegexOptions.IgnoreCase)
+                .ShouldBeFalse($"{editorConfig} must not configure an Aspire diagnostic severity.");
+        }
+
+        string appHostDirectory = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost");
+        foreach (string sourceFile in Directory.GetFiles(appHostDirectory, "*.cs", SearchOption.AllDirectories)
+            .Where(path => !Path.GetRelativePath(appHostDirectory, path).Split(Path.DirectorySeparatorChar)
+                .Any(static segment => segment is "bin" or "obj")))
+        {
+            string source = File.ReadAllText(sourceFile);
+            Regex.IsMatch(source, @"#pragma\s+warning\s+disable[^\r\n]*\bASPIRE", RegexOptions.IgnoreCase)
+                .ShouldBeFalse($"{sourceFile} must not disable an Aspire diagnostic.");
+            Regex.IsMatch(source, @"SuppressMessage(Attribute)?\s*\([^)]*\bASPIRE", RegexOptions.IgnoreCase)
+                .ShouldBeFalse($"{sourceFile} must not suppress an Aspire diagnostic.");
+        }
     }
 
     [Fact]
@@ -141,4 +203,17 @@ public sealed class ScaffoldGovernanceTests
             nestedGitEntries.ShouldBeEmpty($"Nested submodule initialized under {submodulePath}.");
         }
     }
+
+    private static string AppHostProjectPath()
+        => RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Hexalith.Timesheets.AppHost.csproj");
+
+    private static XElement LoadAppHostProject()
+        => XDocument.Load(AppHostProjectPath()).Root.ShouldNotBeNull();
+
+    private static string[] ConditionsOf(XElement element)
+        => element.AncestorsAndSelf()
+            .SelectMany(static node => node.Attributes())
+            .Where(static attribute => attribute.Name.LocalName == "Condition")
+            .Select(static attribute => attribute.Value)
+            .ToArray();
 }

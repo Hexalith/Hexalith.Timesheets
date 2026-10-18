@@ -7,7 +7,7 @@ Hexalith.Builds domain workflows at immutable commit
 
 ## Dependency and test modes
 
-The repository uses SDK `10.0.401`, Central Package Management, NuGet auditing of
+The repository uses SDK `10.0.402`, Central Package Management, NuGet auditing of
 direct and transitive dependencies, and warnings as errors. Local source work
 selects Debug explicitly:
 
