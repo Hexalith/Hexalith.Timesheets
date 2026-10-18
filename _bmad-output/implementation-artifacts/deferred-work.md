@@ -649,3 +649,23 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md`
   summary: Extend the local diagnostic sanitizer to redact OTLP/API-key headers before retaining or displaying monitoring output.
   evidence: A manual baseline Aspire describe/monitoring dump passed through scripts/run_isolated_magic_link_dapr.py sanitized() but still displayed the runtime's temporary OTEL_EXPORTER_OTLP_HEADERS credential. Subsequent output used selected non-sensitive fields; no raw dump was saved as acceptance evidence, and all owning runtime identities exited. The current sanitizer vocabulary covers domain/signing/channel credentials but misses this telemetry header. Add structured and plain-header regression cases in the separate diagnostic follow-up without broadening or weakening journey evidence.
+
+## Deferred from: diagnostic credential-redaction scope selection (2026-10-18)
+
+- source_spec: none
+  summary: Address deferred projection storage and migration hardening in separate increments.
+  evidence: The user selected diagnostic credential redaction as the first independently shippable goal; storage and migration changes require their own investigation and verification.
+
+- source_spec: none
+  summary: Address deferred BMAD hook and test-coverage maintenance in separate increments.
+  evidence: The user selected diagnostic credential redaction; the remaining tooling items are independent of the local diagnostic sanitizer.
+
+- source_spec: none
+  summary: Refresh stale repository guidance and reconcile launch documentation separately.
+  evidence: The user selected diagnostic credential redaction; guidance and launch reconciliation require separate evidence and do not establish sanitizer correctness.
+
+## Resolution: Local diagnostic telemetry and API-key redaction (2026-10-18)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-redact-diagnostic-telemetry-credentials.md`
+  summary: The deferred local OTLP/API-key diagnostic sanitization gap is closed.
+  evidence: The existing sanitizer now redacts OTLP exporter headers (including traces, metrics, and logs) and API keys in plain headers, assignments, direct/nested/encoded JSON, named JSON/YAML records in either field order, and multiline quoted values. Interrupted named JSON records are discarded without consuming unrelated earlier braced log text. Synthetic tests verify command-argument and stdout/stderr evidence, timeout byte streams, YAML comments/quoted keys, and retained safe progress. `python3 -m unittest discover -s scripts -p 'test_isolated_magic_link_dapr.py'` passes all 68 tests; the original 56-test baseline also passed. Independent review findings were patched with regressions. This diagnostic increment supplies no new deployed journey or launch-acceptance evidence.

@@ -389,6 +389,144 @@ class IsolatedFixtureTests(unittest.TestCase):
             + "dashboardLoginToken: " + secret + "\n")
         self.assertNotIn(secret, result)
 
+    def test_telemetry_headers_and_api_keys_are_redacted_from_plain_output(self):
+        for field in ("OTEL_EXPORTER_OTLP_HEADERS", "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
+                      "OTEL_EXPORTER_OTLP_METRICS_HEADERS", "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+                      "X-API-Key", "api-key", "API_KEY", "apiKey"):
+            for separator in (": ", "="):
+                with self.subTest(field=field, separator=separator):
+                    output = field + separator + "SYNTHETIC-CREDENTIAL\nsafe progress"
+                    redacted = fixture.sanitized(output.encode())
+                    self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+                    self.assertIn("safe progress", redacted)
+
+    def test_telemetry_and_api_key_json_values_are_completely_redacted(self):
+        for field in ("OTEL_EXPORTER_OTLP_HEADERS", "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
+                      "OTEL_EXPORTER_OTLP_METRICS_HEADERS", "OTEL_EXPORTER_OTLP_LOGS_HEADERS",
+                      "X-API-Key", "api-key", "API_KEY", "apiKey"):
+            for value in ('SYNTHETIC-CREDENTIAL with "quoted" parts\nand another line',
+                          {"nested": ["SYNTHETIC-CREDENTIAL", "SYNTHETIC-CREDENTIAL-two"]}):
+                structured = json.dumps({field: value}, indent=2)
+                for output in (structured, json.dumps({"embedded": structured})):
+                    with self.subTest(field=field, value=value, output=output):
+                        redacted = fixture.sanitized(output + "\nsafe progress")
+                        self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+                        self.assertIn("safe progress", redacted)
+
+    def test_named_telemetry_and_api_key_json_records_are_redacted_in_either_order(self):
+        for field in ("OTEL_EXPORTER_OTLP_HEADERS", "OTEL_EXPORTER_OTLP_TRACES_HEADERS",
+                      "OTEL_EXPORTER_OTLP_METRICS_HEADERS", "OTEL_EXPORTER_OTLP_LOGS_HEADERS", "X-API-Key"):
+            for name_field in ("name", "Name", "key"):
+                for name_first in (True, False):
+                    pairs = [(name_field, field), ("value", {"nested": ["SYNTHETIC-CREDENTIAL"]})]
+                    record = dict(pairs if name_first else reversed(pairs))
+                    output = json.dumps({"environmentVariables": [record,
+                        {"name": "OTEL_EXPORTER_OTLP_ENDPOINT", "value": "http://localhost:4317"}],
+                        "progress": "safe progress"}, indent=2)
+                    with self.subTest(field=field, name_field=name_field, name_first=name_first):
+                        redacted = fixture.sanitized(output)
+                        self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+                        self.assertIn("safe progress", redacted)
+                        self.assertIn("http://localhost:4317", redacted)
+
+    def test_multiline_telemetry_and_api_key_yaml_values_are_redacted(self):
+        for output in (
+                "OTEL_EXPORTER_OTLP_HEADERS: |\n  SYNTHETIC-CREDENTIAL\n  continuation\nsafe progress",
+                "X-API-Key: >-\n  SYNTHETIC-CREDENTIAL\n  continuation\nsafe progress",
+                "environment:\n  - name: OTEL_EXPORTER_OTLP_LOGS_HEADERS\n"
+                "    value: SYNTHETIC-CREDENTIAL\nsafe progress"):
+            with self.subTest(output=output):
+                redacted = fixture.sanitized(output)
+                self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+                self.assertNotIn("continuation", redacted)
+                self.assertIn("safe progress", redacted)
+
+    def test_truncated_named_credential_json_is_discarded(self):
+        for name_first in (True, False):
+            pairs = [("name", "OTEL_EXPORTER_OTLP_HEADERS"), ("value", "SYNTHETIC-CREDENTIAL")]
+            record = json.dumps(dict(pairs if name_first else reversed(pairs)), indent=2).rstrip("}")
+            with self.subTest(name_first=name_first):
+                redacted = fixture.sanitized("safe progress\n" + record)
+                self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+                self.assertIn("safe progress", redacted)
+
+    def test_harmless_braced_text_does_not_discard_later_diagnostics(self):
+        output = 'starting {phase}\n' + json.dumps({"name": "OTEL_EXPORTER_OTLP_HEADERS",
+            "value": "SYNTHETIC-CREDENTIAL"}, indent=2) + "\nsafe completion"
+        redacted = fixture.sanitized(output)
+        self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+        self.assertIn("starting {phase}", redacted)
+        self.assertIn("safe completion", redacted)
+
+    def test_truncated_json_string_braces_do_not_end_the_credential_record(self):
+        for ending in ("", "\\"):
+            output = 'safe progress\n{\n  "name": "OTEL_EXPORTER_OTLP_HEADERS",\n  "value": "' \
+                + "SYNTHETIC-PREFIX}SYNTHETIC-SUFFIX" + ending
+            with self.subTest(ending=ending):
+                redacted = fixture.sanitized(output)
+                self.assertNotIn("SYNTHETIC-", redacted)
+                self.assertIn("safe progress", redacted)
+
+    def test_named_yaml_credentials_are_redacted_regardless_of_field_order_or_indentation(self):
+        for record in (
+                "environment:\n  - value: SYNTHETIC-CREDENTIAL\n    name: OTEL_EXPORTER_OTLP_HEADERS",
+                "environment:\n  name: OTEL_EXPORTER_OTLP_HEADERS\n  value: SYNTHETIC-CREDENTIAL",
+                "environment:\n  value: SYNTHETIC-CREDENTIAL\n  name: OTEL_EXPORTER_OTLP_HEADERS",
+                "environment:\n  - value: SYNTHETIC-CREDENTIAL\n    # setting\n    name: OTEL_EXPORTER_OTLP_HEADERS",
+                "environment:\n  - name: OTEL_EXPORTER_OTLP_HEADERS\n    # setting\n    value: SYNTHETIC-CREDENTIAL",
+                'environment:\n  - "value": SYNTHETIC-CREDENTIAL\n    "name": OTEL_EXPORTER_OTLP_HEADERS'):
+            with self.subTest(record=record):
+                redacted = fixture.sanitized(record + "\nsafe progress")
+                self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+                self.assertIn("safe progress", redacted)
+
+    def test_unicode_escaped_json_credential_keys_are_redacted(self):
+        for structured in ('{"api\\u004bey": "SYNTHETIC-CREDENTIAL"}',
+                           '{"\\u004fTEL_EXPORTER_OTLP_HEADERS": "SYNTHETIC-CREDENTIAL"}'):
+            for output in (structured, json.dumps(structured), json.dumps({"embedded": structured})):
+                with self.subTest(output=output):
+                    redacted = fixture.sanitized(output + "\nsafe progress")
+                    self.assertNotIn("SYNTHETIC-CREDENTIAL", redacted)
+                    self.assertIn("safe progress", redacted)
+
+    def test_multiline_quoted_environment_credentials_are_completely_redacted(self):
+        for field in ("OTEL_EXPORTER_OTLP_HEADERS", "API_KEY"):
+            for quote in ('"', "'"):
+                output = field + "=" + quote + "SYNTHETIC-FIRST\nSYNTHETIC-CONTINUATION" + quote
+                with self.subTest(field=field, quote=quote):
+                    redacted = fixture.sanitized(output + "\nsafe progress")
+                    self.assertNotIn("SYNTHETIC-", redacted)
+                    self.assertIn("safe progress", redacted)
+
+    def test_command_evidence_redacts_telemetry_and_api_keys_in_arguments_and_streams(self):
+        arguments = ["diagnostic", "inspect", "--api-key=SYNTHETIC-ARGUMENT"]
+        stdout = json.dumps({"environmentVariables": [
+            {"name": "OTEL_EXPORTER_OTLP_HEADERS", "value": "SYNTHETIC-STDOUT"}]}, indent=2)
+        stderr = "X-API-Key: SYNTHETIC-STDERR\nsafe stderr progress"
+        command_result = subprocess.CompletedProcess(arguments, 0, stdout, stderr)
+        instance = fixture.IsolatedFixture(command=lambda *args, **kwargs: command_result,
+            log_directory=self.logs)
+        self.assertIs(command_result, instance.run_command(arguments))
+        evidence = (instance.log_directory / "01-diagnostic-inspect.log").read_text()
+        self.assertNotIn("SYNTHETIC-", evidence)
+        self.assertIn("safe stderr progress", evidence)
+        self.assertIn("Exit: 0", evidence)
+
+    def test_timeout_evidence_discards_truncated_named_credentials_from_both_streams(self):
+        arguments = ["diagnostic", "inspect"]
+        stdout = b'safe stdout progress\n{\n  "name": "OTEL_EXPORTER_OTLP_HEADERS",\n  "value": "SYNTHETIC-STDOUT"'
+        stderr = b'safe stderr progress\n{\n  "value": "SYNTHETIC-STDERR",\n  "name": "X-API-Key"'
+        def timeout(*args, **kwargs):
+            raise subprocess.TimeoutExpired(arguments, 1, output=stdout, stderr=stderr)
+        instance = fixture.IsolatedFixture(command=timeout, log_directory=self.logs)
+        with self.assertRaises(fixture.FixtureError):
+            instance.run_command(arguments)
+        evidence = (instance.log_directory / "01-diagnostic-inspect.log").read_text()
+        self.assertNotIn("SYNTHETIC-", evidence)
+        self.assertIn("safe stdout progress", evidence)
+        self.assertIn("safe stderr progress", evidence)
+        self.assertIn("Command could not complete safely.", evidence)
+
     def test_every_running_apphost_refuses_preflight(self):
         commands = Commands(lambda args: subprocess.CompletedProcess(args, 0,
             json.dumps([{"appHostPath": "/some/unrelated/Folders.AppHost.csproj", "pid": 123}]), "")

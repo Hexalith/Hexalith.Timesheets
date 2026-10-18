@@ -172,28 +172,131 @@ def sanitized(output):
     # Consume complete JSON values before line handling: a field's string,
     # object, or array can span arbitrarily many lines. Keep the line fallback
     # for embedded/escaped JSON, environment variables, and YAML scalars.
-    credential = re.compile(
+    credential_names = (
         r"signing.?key|(?:app|dapr).?api.?token|one.?time.?token|token.?hash|redis.?password|"
         r"dashboard.?login.?token|authorization|workload.?assertion|"
-        r"(?:[\"']|\\\")?(?:access.?token|refresh.?token|token|password|secret)(?:[\"']|\\\")?\s*[:=]",
+        r"otel.?exporter.?otlp(?:.?(?:traces|metrics|logs))?.?headers|(?:x.?)?api.?key")
+    generic_names = r"access.?token|refresh.?token|token|password|secret"
+    credential = re.compile(
+        credential_names + rf'''|(?:["']|\\")?(?:{generic_names})(?:["']|\\")?\s*[:=]''',
         re.IGNORECASE)
     decoder = json.JSONDecoder()
-    value_fields = re.compile(r'''(?i)["']?(?:signing.?key|(?:app|dapr).?api.?token|one.?time.?token|token.?hash|redis.?password|dashboard.?login.?token|authorization|workload.?assertion|access.?token|refresh.?token|token|password|secret)["']?\s*[:=]\s*''')
+    named_credential = re.compile(rf"(?:{credential_names}|{generic_names})", re.IGNORECASE)
+    json_tokens = re.compile(r'"(?:[^"\\]|\\.)*(?:"|\\?$)|[{}]', re.DOTALL)
+    field_separator = re.compile(r"\s*:\s*")
+
+    def redact_json(text):
+        # Track object boundaries independently of complete JSON decoding so
+        # interrupted records are removed without consuming earlier log text.
+        objects = []
+        spans = []
+        for match in json_tokens.finditer(text):
+            token = match.group()
+            if token == "{":
+                objects.append([match.start(), False])
+                continue
+            if token == "}":
+                if objects:
+                    start, sensitive = objects.pop()
+                    if sensitive:
+                        spans.append((start, match.end(), '"[redacted]"'))
+                continue
+            try:
+                name = decoder.decode(token)
+            except ValueError:
+                continue
+            if name.lstrip().startswith(("{", "[")):
+                redacted = redact_json(name)
+                if redacted != name:
+                    spans.append((match.start(), match.end(), json.dumps(redacted)))
+            separator = field_separator.match(text, match.end())
+            if not objects or separator is None:
+                continue
+            sensitive = named_credential.fullmatch(name)
+            try:
+                value, end = decoder.raw_decode(text, separator.end())
+            except ValueError:
+                if sensitive:
+                    spans.append((separator.end(), len(text), '"[redacted]"'))
+                continue
+            if sensitive:
+                spans.append((separator.end(), end, '"[redacted]"'))
+            elif name.lower() in ("name", "key") and isinstance(value, str) and named_credential.fullmatch(value):
+                objects[-1][1] = True
+        spans.extend((start, len(text), '"[redacted]"') for start, sensitive in objects if sensitive)
+        retained = []
+        previous_end = 0
+        for start, end, replacement in sorted(spans, key=lambda span: (span[0], -span[1])):
+            if start >= previous_end:
+                retained.extend((text[previous_end:start], replacement))
+                previous_end = end
+        retained.append(text[previous_end:])
+        return "".join(retained)
+
+    output = redact_json(output)
+    value_fields = re.compile(rf'''(?i)["']?(?:{credential_names}|{generic_names})["']?\s*[:=]\s*''')
+    quoted_value = re.compile(r'''"(?:[^"\\]|\\.)*(?:"|$)|'(?:[^'\\]|\\.)*(?:'|$)''', re.DOTALL)
     spans = []
     for match in value_fields.finditer(output):
         if spans and match.start() < spans[-1][1]:
             continue
         try:
-            _, length = decoder.raw_decode(output[match.end():])
-            spans.append((match.end(), match.end() + length))
+            _, end = decoder.raw_decode(output, match.end())
+            spans.append((match.end(), end))
         except ValueError:
-            pass
+            quoted = quoted_value.match(output, match.end())
+            if quoted:
+                spans.append((match.end(), quoted.end()))
     for start, end in reversed(spans):
         output = output[:start] + '"[redacted]"' + output[end:]
     lines = output.splitlines()
+    # YAML environment records may also put value before name or use equal
+    # indentation. Remove their mapping block, bounded by the next list item,
+    # parent indentation, or unrelated plain log line.
+    yaml_field = re.compile(r'''^([ \t]*)(-[ \t]+)?["']?([A-Za-z][A-Za-z0-9_-]*)["']?:[ \t]*(.*)$''')
+    yaml_redacted = set()
+    for index, line in enumerate(lines):
+        field = yaml_field.match(line)
+        if not field or field[3].lower() not in ("name", "key") or not named_credential.fullmatch(
+                field[4].split(" #", 1)[0].strip().strip("\"'")):
+            continue
+        indentation = len(field[1]) + len(field[2] or "")
+        start, end = index, index + 1
+        if not field[2]:
+            while start > 0:
+                previous = lines[start - 1]
+                if previous.lstrip().startswith("#"):
+                    start -= 1
+                    continue
+                sibling = yaml_field.match(previous)
+                leading = len(previous) - len(previous.lstrip())
+                if previous.strip() and leading < indentation:
+                    if sibling and sibling[2] and len(sibling[1]) + len(sibling[2]) == indentation:
+                        start -= 1
+                    break
+                if previous.strip() and leading == indentation and (not sibling or sibling[2]):
+                    break
+                start -= 1
+        while end < len(lines):
+            following = lines[end]
+            if following.lstrip().startswith("#"):
+                end += 1
+                continue
+            sibling = yaml_field.match(following)
+            leading = len(following) - len(following.lstrip())
+            if following.strip() and (leading < indentation
+                    or leading == indentation and (not sibling or sibling[2])):
+                break
+            end += 1
+        yaml_redacted.update(range(start, end))
     retained = []
     index = 0
     while index < len(lines):
+        if index in yaml_redacted:
+            if index - 1 not in yaml_redacted:
+                retained.append("[credential record redacted]")
+            index += 1
+            continue
         line = lines[index]
         index += 1
         if not credential.search(line):
