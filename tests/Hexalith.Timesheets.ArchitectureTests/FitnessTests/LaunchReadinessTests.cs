@@ -252,9 +252,9 @@ public sealed class LaunchReadinessTests
         string communityToolkitDaprVersion = GetPackageVersion(centralCatalog, "CommunityToolkit.Aspire.Hosting.Dapr");
         string fluentUiVersion = GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components");
 
-        currentVerdict.ShouldContain($"SDK `{sdkVersion}`");
-        currentVerdict.ShouldContain($"`rollForward: {rollForward}`");
-        currentVerdict.ShouldContain($"`Aspire.AppHost.Sdk` `{appHostVersion}`");
+        // Anchored to the baseline sentence: the approval-evidence sentence also names both versions.
+        currentVerdict.ShouldContain(
+            $"baseline is .NET SDK `{sdkVersion}` (`rollForward: {rollForward}`) and `Aspire.AppHost.Sdk` `{appHostVersion}`");
         currentVerdict.ShouldContain("`AspireUseCliBundle=false`");
         currentVerdict.ShouldContain("`ASPIRE010`");
         currentVerdict.ShouldContain("sprint-change-proposal-2026-09-12.md");
@@ -267,7 +267,7 @@ public sealed class LaunchReadinessTests
         direct[2].ShouldContain("no direct package updates");
         direct[2].ShouldContain($"`{appHostVersion}`");
 
-        string[] vulnerable = ReadPackageVerdictRow(packageVerdict, "Vulnerable and deprecated packages");
+        string[] vulnerable = ReadPackageVerdictRow(packageVerdict, "Vulnerable and deprecated NuGet packages");
         vulnerable[1].ShouldBe("PASS");
         vulnerable[2].ShouldContain("--vulnerable --include-transitive");
         vulnerable[2].ShouldContain("--deprecated --include-transitive");

@@ -160,8 +160,11 @@ dispatch, settings changes and actual publication require separate authorization
 On 2026-10-18, the official NuGet v3 flat-container indexes returned HTTP 200 with
 exact version `1.0.1` for the Works manifest's Contracts, Server, Projections,
 Reactor and Testing packages. Timesheets centrally pins Works Contracts `1.0.1`.
-The imported Builds catalog selects EventStore `3.124.0`; package-only Release
-restore/build and candidate consumers validate that published dependency graph.
+The imported Builds catalog then selected EventStore `3.124.0` (Builds `544fd2e`);
+package-only Release restore/build and candidate consumers validate that published
+dependency graph. Correction (2026-10-19): the current Builds pin `332b2c1` selects
+EventStore `3.125.1`, while Works still forwards `3.124.0` into source-reference
+builds; `docs/launch-readiness.md` records that open divergence.
 Timesheets' five package IDs remain unpublished until a separately authorized
 release; a 404 is absence and never publication evidence. Official index URLs use
 `https://api.nuget.org/v3-flatcontainer/<lowercase-package-id>/index.json`.

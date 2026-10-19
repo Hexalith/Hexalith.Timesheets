@@ -492,7 +492,10 @@ workflow owner.
   the round-2 review patch added `CiCdGuideNamesThePinnedDotnetSdk`; the suite total is therefore 1,959 tests. On
   2026-10-19, after the round-3 review patches, the Release ArchitectureTests build (`--no-restore -warnaserror`) had
   0 warnings and 0 errors and its executable ran 64/64. The other five lanes were not rerun; their sources did not
-  change.
+  change. Later on 2026-10-19, after the round-4 review patches (one `LaunchReadinessTests` assertion and one row key
+  changed), a package-mode solution restore (needed to bring back the evicted `xunit.analyzers` `2.2.0`), then the
+  Release ArchitectureTests build (`--no-restore -warnaserror`) had 0 warnings and 0 errors and its executable ran
+  64/64. The other five lanes were not rerun; their sources did not change.
 - AppHost/DCP lanes: `python3 scripts/check_magic_link_apphost_guards.py --configuration-only` -> exit 0; all 35 compiled
   no-resource probes passed. `python3 scripts/run_isolated_magic_link_dapr.py` -> exit 1 at preflight with
   `A Dapr application is already running or inventory is unsafe; no AppHost started`. At that point a foreign Tenants
