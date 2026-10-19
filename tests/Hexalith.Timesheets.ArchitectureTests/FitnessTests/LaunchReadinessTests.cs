@@ -412,7 +412,7 @@ public sealed class LaunchReadinessTests
                 [$"`ModelContextProtocol.AspNetCore` at `{GetPackageVersion(centralCatalog, "ModelContextProtocol.AspNetCore")}`"]),
             ("The intended Timesheets UI policy is Fluent UI V5 components only. ",
             [
-                $"Icons package at stable `{GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components")}`",
+                $"`Microsoft.FluentUI.AspNetCore.Components` and its Icons package at stable `{GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components")}`",
                 $"Icons package at stable `{GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components.Icons")}`",
             ]),
             ("The imported catalog's Dapr package family is stable ", [$"family is stable `{daprVersion}`", $"`Dapr.Client` `{daprVersion}`"]),

@@ -488,6 +488,11 @@ workflow owner.
   Contracts.Tests 92/92; Server.Tests 558/558; Projections.Tests 437/437 (606.8 s); IntegrationTests 732 total /
   727 passed / 5 skipped (558.4 s); Works.Tests 76/76. Total: 1,958 tests, 1,953 passed, 5 intentional skips, 0 failed.
   The five non-ArchitectureTests lanes ran on the Rebuild output; their sources did not change afterwards.
+- Post-review totals: on 2026-10-18 the Release ArchitectureTests executable built from `62ec574` ran 64/64, because
+  the round-2 review patch added `CiCdGuideNamesThePinnedDotnetSdk`; the suite total is therefore 1,959 tests. On
+  2026-10-19, after the round-3 review patches, the Release ArchitectureTests build (`--no-restore -warnaserror`) had
+  0 warnings and 0 errors and its executable ran 64/64. The other five lanes were not rerun; their sources did not
+  change.
 - AppHost/DCP lanes: `python3 scripts/check_magic_link_apphost_guards.py --configuration-only` -> exit 0; all 35 compiled
   no-resource probes passed. `python3 scripts/run_isolated_magic_link_dapr.py` -> exit 1 at preflight with
   `A Dapr application is already running or inventory is unsafe; no AppHost started`. At that point a foreign Tenants
@@ -514,3 +519,7 @@ workflow owner.
 - `src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj`
 - `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs`
 - `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs`
+- `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/BuildConfigurationTests.cs` and
+  `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/RepositoryRoot.cs` (added by the round-3 code review
+  patches, which moved both project scans to one shared Timesheets-owned project list; the earlier
+  `BuildConfigurationTests.cs` change in `55e2955` is a separate CI commit)

@@ -186,6 +186,57 @@ Code review 2026-10-18 of `180d9fd..b85e810` (layers: blind-hunter, edge-case-hu
 - A future non-Aspire `NoWarn` would fail the guard (EH9) — false: a loud failure on an unreached state is correct.
 - `Choose`/`When` placement escapes the unconditional check (EH10) — low and speculative; rejected on the same grounds in the 2026-09-12 review.
 - Commit message says the AppHost "keeps" NuGet-backed orchestration though it switches from the CLI bundle (EH14) — low: needs a history rewrite; the story record, spec, and D1 entry describe the switch.
+
+Code review 2026-10-18 (round 3) of `180d9fd..62ec574`, including the separate CI commit `55e2955` (layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor; 29 raw findings). ArchitectureTests at `62ec574`: 64/64.
+
+**Patch**
+
+- [x] [Review][Patch] Fluent UI v4 package scan still selects projects by the `Hexalith.Timesheets` name match that `55e2955` replaced [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs:49]
+  `No_fluent_ui_v4_component_package_is_introduced` keeps `path.Contains("Hexalith.Timesheets")`. In the Actions checkout (`.../Hexalith.Timesheets/Hexalith.Timesheets/`) every `references/**/*.csproj` matches, so a sibling adding `Microsoft.Fast.Components.FluentUI` fails Timesheets CI, the failure `55e2955` fixed for the inline-version scan. Locally it skips the tracked `_bmad-output/.../3-6-privacy-assertion-verifier/Verifier.csproj`. Fix: one shared Timesheets-owned project enumeration (for example in `RepositoryRoot`) used by both scans. [verification-gap+blind-hunter]
+  Applied 2026-10-19: `RepositoryRoot.TimesheetsProjectFiles()` now feeds both scans. A temporary `_bmad-output` probe project carrying the v4 package failed the v4 test and was removed.
+- [x] [Review][Patch] Inline-version scan excludes only the top-level `references/`, so submodule projects in in-repo worktrees are scanned [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/BuildConfigurationTests.cs:56-60]
+  Worktrees under the gitignored `.bmad-loop/runs/*/worktrees/` or `.claude/worktrees/` with initialized submodules expose sibling evidence projects that carry inline versions (for example `references/Hexalith.EventStore/_bmad-output/.../Consumer.csproj`). The pre-`55e2955` `/Hexalith.` name filter excluded them locally, and the root-prefix filter does not. Fix: exclude any root-relative path with a `references` segment, in the same shared helper as the item above. [edge-case-hunter]
+  Applied 2026-10-19: the shared list drops any root-relative path with a `references` segment. A temporary `.claude/worktrees/.../references/` probe with an inline version and the v4 package passed both scans and was removed.
+- [x] [Review][Patch] Fluent UI restated-line guard checks the Components version against the Icons phrase [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:415]
+  Both expectations are `Icons package at stable `{version}``, so the `Microsoft.FluentUI.AspNetCore.Components` version is never anchored to its own name: a wrong Components version beside a correct Icons version passes. Fix: expect ``Microsoft.FluentUI.AspNetCore.Components` and its Icons package at stable `{components}``, matching `architecture.md:533`. [blind-hunter+edge-case-hunter]
+  Applied 2026-10-19: the Components version is anchored to its own name. A temporary `5.0.0` Components claim at `architecture.md:533` failed the test and was restored byte-identical.
+- [x] [Review][Patch] AppHost source-suppression regexes match the word "Aspire" in comments and justifications [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs:138-141]
+  `#pragma\s+warning\s+disable[^\r\n]*\bASPIRE` and `SuppressMessage(...)\bASPIRE` are case-insensitive, so `#pragma warning disable CA2000 // Aspire owns disposal` or `Justification = "Aspire ..."` fails as an Aspire suppression. Fix: match the existing `AspireDiagnosticCode` pattern (`\bASPIRE[A-Z]*\d{3}\b`) instead of the bare word. [edge-case-hunter]
+  Applied 2026-10-19: both regexes require an Aspire diagnostic ID, and the pragma match stops at a `//` comment. Temporary AppHost probes: a CA2000 pragma and justification that mention Aspire passed; `#pragma warning disable ASPIRE001` and a `SuppressMessage` naming `ASPIREHOSTINGPYTHON001` each failed; the probe file was removed.
+- [x] [Review][Patch] Story record test totals predate the review-patch commit [_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md:487-489]
+  The record says ArchitectureTests 63/63 and 1,958 total from `b85e810`. `62ec574` added `CiCdGuideNamesThePinnedDotnetSdk`, and the review-time run at `62ec574` gives 64/64 (1,959 total). Fix: append a dated post-review line; keep the `b85e810` totals as recorded. [blind-hunter+acceptance-auditor]
+  Applied 2026-10-19: the story record adds a dated post-review totals line (64/64, 1,959 total) and lists `BuildConfigurationTests.cs` and `RepositoryRoot.cs` in the re-baselined file list.
+- [x] [Review][Patch] Epic 5 context omits the open, unwaived Works EventStore-version divergence [_bmad-output/implementation-artifacts/epic-5-context.md:34]
+  The divergence bullet names Dapr, Fluent UI, Aspire, and Hexalith.Builds only. Story 5.1 classifies divergences from this context, while launch readiness records the Works `HexalithEventStoreVersion` forwarding (`3.124.0` versus catalog `3.125.1`) as open and unwaived. Fix: name it in that bullet and point at the existing Works forwarding ledger entry. [blind-hunter]
+  Applied 2026-10-19: the divergence bullet names the Works `HexalithEventStoreVersion` forwarding (`3.124.0` versus `3.125.1`), the `-p:HexalithEventStoreVersion=3.125.1` lane parameter, and the Works forwarding ledger entry.
+- [x] [Review][Patch] D1 ledger entry cites its evidence path relative to the ledger, not the repository [_bmad-output/implementation-artifacts/deferred-work.md:739]
+  `evidence/3-6/20261018-direct-eventstore-local-proof/...` does not resolve from the repository root; the file is under `_bmad-output/implementation-artifacts/`. Fix: use the repository-relative path, like `source_spec`. (The D1/D2/P1 labels exist only in this spec; adding them would edit the spec under review.) [blind-hunter]
+  Applied 2026-10-19: the evidence path is repository-relative and resolves.
+
+**Deferred**
+
+- [x] [Review][Defer] No default lane starts the `13.6.1` AppHost with NuGet `Aspire.Hosting.Orchestration`/`Aspire.Dashboard.Sdk` [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4] — deferred: repeat of the round-2 deferral; already ledgered as the 2026-10-18 Story 5.2 DCP-proof entry (D1), so no new ledger entry. [verification-gap]
+
+**Rejected** (18)
+
+- Prerelease waiver row must name stable Aspire/Dapr/Fluent versions (BH3) — false: the row deliberately lists the restored graph's lines to explain why only Keycloak and CommunityToolkit Dapr remain prerelease; the guard keeps those values current.
+- `README.md:16` SDK claim unguarded (BH5) — low: currently `10.0.402` and updated alongside `global.json` in `c4695a5`; the fix adds a guard.
+- Works EventStore divergence versions hard-coded rather than derived (BH6) — low: the text is dated 2026-10-18 evidence, and a guard needs a new helper for the conditional catalog property.
+- Architecture "aligned at stable" note and Dapr/Aspire family claims guarded through one representative package (BH7, EH4) — low: Aspire and Dapr ship each family in lockstep, the round-2 patch now ties the representative to `Aspire.Hosting`, and the fix adds per-member assertions.
+- Rejected round-2 spec defects have no ledger entry (BH8) — fix edits the spec under review; already rejected on that ground.
+- Regenerating Epic 5 context would revert corrections from stale sources (BH10) — already ledgered: the Story 5.3 historical-planning entry covers `epics.md` and the 2026-07-20 proposal, and the Story 5.1 ground-truth entry covers the 2026-09-12 proposal.
+- Source-reference graph not audited for vulnerable/deprecated packages (BH12) — low: CI/CD ships the package-mode graph, which was audited, and each row names its graph; rerunning audits is evidence work.
+- Current-verdict paragraph is overloaded and fragile to reflow (BH13) — low: a reflow fails loudly through `ReadParagraph`, which is the guard's intent; no other harm named.
+- Spec `done` while the README test mode fails 735 cases (AA1) — settled: sprint status stays `review` per the 2026-10-05 precedent, and the 735 failures are the round-2 D2 deferral; the spec half edits the spec under review.
+- `55e2955` absent from the story record (AA3) — false: it is a separate CI increment, not a Story 5.2 change, so the story file list correctly omits it; the "lists only" Verification sentence is spec-only.
+- Privacy and vocabulary patches marked "applied" though partly deferred (AA4) — fix edits the spec under review; rejected as R2-BH16.
+- Inconsistent catalog makes both SDK assertions unsatisfiable (EH2) — low: the test fails loudly and the second assertion names the conflict; the fix adds an assertion for wording.
+- `ReadParagraph` misses whitespace-only separator lines (EH5) — false: `.editorconfig` `[*]` trims trailing whitespace and `docs/launch-readiness.md` has no such line.
+- Fenced `# ` line inside the section truncates it (EH6) — false: the result is a loud lookup failure, and the section has no fenced block.
+- `LoadImportedPackageCatalog` relative or unresolved token paths (EH7) — low and speculative; rejected as R2-EH5.
+- `Directory.Build.rsp` not scanned for Aspire suppressions (EH9) — low and speculative: no such file exists; adds a guard (same as R2-EH8).
+- Redis-only catalog bump mixes Aspire lines with a green test (EH10) — false: with `CentralPackageTransitivePinningEnabled`, `Aspire.Hosting.Redis` above the pinned `Aspire.Hosting` fails restore with a downgrade error, and the reverse bump is compatible.
+
 ## Implementation Notes
 
 _2026-10-18 re-baselined iteration:_

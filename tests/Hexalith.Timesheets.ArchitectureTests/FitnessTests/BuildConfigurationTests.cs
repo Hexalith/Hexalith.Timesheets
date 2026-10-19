@@ -50,14 +50,7 @@ public sealed class BuildConfigurationTests
     [Fact]
     public void Project_files_do_not_use_inline_package_versions()
     {
-        DirectoryInfo root = RepositoryRoot.Find();
-        // The Actions checkout directory is named Hexalith.Timesheets, so a name
-        // match cannot keep sibling modules under references/ out of this scan.
-        string referencesRoot = Path.GetFullPath(Path.Combine(root.FullName, "references"))
-            + Path.DirectorySeparatorChar;
-        string[] projectFiles = Directory.GetFiles(root.FullName, "*.csproj", SearchOption.AllDirectories)
-            .Where(path => !Path.GetFullPath(path).StartsWith(referencesRoot, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
+        string[] projectFiles = RepositoryRoot.TimesheetsProjectFiles();
 
         projectFiles.ShouldNotBeEmpty();
 

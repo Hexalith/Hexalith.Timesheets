@@ -47,11 +47,7 @@ public sealed class ScaffoldGovernanceTests
     [Fact]
     public void No_fluent_ui_v4_component_package_is_introduced()
     {
-        string[] projectFiles = Directory.GetFiles(RepositoryRoot.Find().FullName, "*.csproj", SearchOption.AllDirectories)
-            .Where(static path => path.Contains("Hexalith.Timesheets", StringComparison.Ordinal))
-            .ToArray();
-
-        foreach (string projectFile in projectFiles)
+        foreach (string projectFile in RepositoryRoot.TimesheetsProjectFiles())
         {
             File.ReadAllText(projectFile).ShouldNotContain("Microsoft.Fast.Components.FluentUI");
         }
@@ -135,9 +131,10 @@ public sealed class ScaffoldGovernanceTests
                 .Any(static segment => segment is "bin" or "obj")))
         {
             string source = File.ReadAllText(sourceFile);
-            Regex.IsMatch(source, @"#pragma\s+warning\s+disable[^\r\n]*\bASPIRE", RegexOptions.IgnoreCase)
+            // Match diagnostic IDs only, so comments and justifications that mention Aspire do not count.
+            Regex.IsMatch(source, @"#pragma\s+warning\s+disable[^/\r\n]*\bASPIRE[A-Z]*\d{3}\b", RegexOptions.IgnoreCase)
                 .ShouldBeFalse($"{sourceFile} must not disable an Aspire diagnostic.");
-            Regex.IsMatch(source, @"SuppressMessage(Attribute)?\s*\([^)]*\bASPIRE", RegexOptions.IgnoreCase)
+            Regex.IsMatch(source, @"SuppressMessage(Attribute)?\s*\([^)]*\bASPIRE[A-Z]*\d{3}\b", RegexOptions.IgnoreCase)
                 .ShouldBeFalse($"{sourceFile} must not suppress an Aspire diagnostic.");
         }
     }
