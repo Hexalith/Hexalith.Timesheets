@@ -486,6 +486,85 @@ Code review 2026-10-20 (round 8) of `180d9fd..c5ac600`, excluding the unrelated 
 - The spec-2 Review Triage Log puts severities in its Verdict column and has no IDs (R8-BH10) — false on the format: a severity in the verdict column is the triage format this spec's own log uses (`| R2-BH11 | low | …`). The missing IDs are cosmetic, and the fix edits a completed spec.
 - Superseded 2026-10-18 decisions carry no forward pointer to the round-7 `1.0.2` adoption (R8-BH11) — the story record is append-only with dated sections, and its round-7 section names the `Directory.Packages.props` change (same ground as R6-BH9). The spec parts would edit the spec under review.
 
+Code review 2026-10-20 (round 9) of `180d9fd..5258598`, excluding the unrelated commits `aa49fda` (`.github/workflows/release.yml`) and `969d32a` (`epic-3-context.md`) and the gitlink-only workspace sync `929ea22` (layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor; 27 raw findings). This round's IDs carry an `R9-` prefix. Release ArchitectureTests at `5258598`: 64/64 (verification-gap run). The round-8 receipt's `docs/launch-readiness.md` and `docs/ci-cd.md` hashes match `5258598`, not `929ea22`; its package and test inputs match both.
+
+**Patch**
+
+- [x] [Review][Patch] The round-8 refresh missed four statements that `929ea22` made stale [docs/launch-readiness.md:679; _bmad-output/implementation-artifacts/deferred-work.md:740, :756, :772]
+  - The current verdict says the 2026-10-18 isolated journey "ran on the current Builds catalog". Its source worktree `72d9fda` and publication commit `9523d94` both pin Builds `332b2c1`, while HEAD pins `6a38cb0`, and the same paragraph's round-8 update names `6a38cb0`. Round 7 kept the clause only because `332b2c1` was then also the HEAD catalog (R7-BH1).
+  - The D1 entry (`:740`) tells the isolated-journey rerun to set `HexalithEventStoreVersion=3.125.1`. The Story 5.1 agent entry-point entry (`:756`) says to build the Debug source-reference mode with `-p:HexalithEventStoreVersion=3.125.1`. Round 8 found that this value "now forces an older EventStore than both HEAD defaults" and replaced it in launch readiness, `docs/ci-cd.md` and `epic-5-context.md`, but not in these two entries.
+  - The round-7 Story 5.1 handoff (`:772`) says "HEAD pins `references/Hexalith.EventStore` at `9b66153`". Since `929ea22`, the pin is `6c56c27`.
+
+  Fix:
+  - Reword the verdict to "It ran on the then-current Builds catalog `332b2c1`, but with the pre-change …". The asserted substring after "but with" is unchanged.
+  - Append dated round-9 updates to `:740` and `:756`. They replace `3.125.1` with the catalog's EventStore version, passed only when the Works default differs (as `-p:HexalithEventStoreVersion=<catalog version>`).
+  - Append a dated update to `:772` naming `6c56c27` as the pin since `929ea22`.
+  - Leave D2's dated 2026-10-18 sentence (`:744`, "only `-p:HexalithEventStoreVersion=3.125.1` passes") unchanged.
+
+  [R9-AA1, R9-BH1, R9-AA2, R9-BH2, R9-AA5, R9-BH3, acceptance-auditor+blind-hunter]
+  Applied 2026-10-20: the verdict now says "the then-current Builds catalog `332b2c1`". Dated round-9 updates on the D1 and agent entry-point entries replace `3.125.1` with the catalog version, passed only when the Works default differs. The D1 update also records that a foreign `eventstore` Dapr app was running at this review. The round-7 handoff names `6c56c27` as the pin since `929ea22`. D2's dated sentence is unchanged.
+- [x] [Review][Patch] The round-8 evidence anchor names "HEAD `929ea22`" and not the commit that published the round-8 documents [docs/launch-readiness.md:53, :679, :683, :688, :689, :691, :692, :834; docs/ci-cd.md:176; _bmad-output/implementation-artifacts/epic-5-context.md:34; _bmad-output/implementation-artifacts/deferred-work.md:728; _bmad-output/implementation-artifacts/evidence/5-2/20261020-round8/README.md:9]
+  - Twelve durable statements say "HEAD `929ea22`", but HEAD is already `5258598`. This is the same pattern as the "Current Timesheets HEAD pins EventStore `3099cb27`" defect handed to Story 5.1.
+  - The receipt's documentation hashes match `5258598`. R8-AA3 fixed the same gap for round 7 with "committed as `c5ac600`".
+  - Fix: anchor round 8 as "the worktree based on `929ea22c977385590d77d95f73af86e8b051c4fc` (documentation and ledger edits only), committed as `5258598…`" in the preamble, the verdict's round-8 update and the packet README, following the round-7 form. Replace the remaining "HEAD `929ea22`" with "`929ea22`".
+
+  [R9-BH4, R9-BH5, blind-hunter]
+  Applied 2026-10-20: the preamble, the verdict's round-8 update and the packet README anchor round 8 as the worktree based on `929ea22…`, committed as `525859841e3dc329f65970b7067d3ef3bd1a91fa`. The gate row adds "committed as `5258598`". No "HEAD `929ea22`" wording remains in launch readiness, `docs/ci-cd.md`, `epic-5-context.md`, the ledger or the packet.
+- [x] [Review][Patch] "1,959 passing Release tests" counts the 5 skips as passes [docs/launch-readiness.md:679, :834; _bmad-output/implementation-artifacts/deferred-work.md:779; _bmad-output/implementation-artifacts/evidence/5-2/20261020-round8/README.md:23]
+  - The receipt records `tests_total` 1959, `tests_failed` 0 and `tests_skipped` 5, so 1,954 passed.
+  - The gate row says "1,959 passing Release tests with 5 intentional skips". The verdict, the ledger resolution note and the README say "passed 1,959 tests with 0 failures and 5 intentional skips".
+  - The story record's "1,959 tests, 0 failures and 5 intentional skips" is correct.
+  - Fix: "ran 1,959 tests: 1,954 passed, 5 intentional skips, 0 failures".
+
+  [R9-AA3, acceptance-auditor]
+  Applied 2026-10-20: the verdict, the gate row, the ledger resolution note and the packet README say "1,959 tests: 1,954 passed, 5 intentional skips, 0 failures".
+- [x] [Review][Patch] The Direct row states the round-7 drift in the present tense with no round label [docs/launch-readiness.md:688]
+  - "On 2026-10-20 … The only reported direct update is catalog-owned `Hexalith.EventStore.*` `3.125.1 -> 3.126.0`" is followed by a second "On 2026-10-20" run at `929ea22` that reported no direct update. Only the cell's last clause identifies the first sentence as round-7 evidence.
+  - Fix: label the first run "round 7, committed as `c5ac600`" and use the past tense. Keep the phrase "no Timesheets-owned direct package updates", which `LaunchReadinessTests.cs:269` asserts.
+
+  [R9-AA4, R9-BH7, acceptance-auditor+blind-hunter]
+  Applied 2026-10-20: the first run is labelled "in round 7 (committed as `c5ac600`)" and the second "in round 8 at `929ea22`". The drift sentence is in the past tense, and the asserted phrase is unchanged.
+- [x] [Review][Patch] The Direct row's resolved-version list omits the six direct EventStore packages [docs/launch-readiness.md:688]
+  - The round-8 package listing resolves `Hexalith.EventStore.Aspire`, `.Client`, `.Contracts`, `.DomainService`, `.Server` and `.Testing` at `3.126.0`. These are the packages that drove the round-7 and round-8 direct results.
+  - The row lists every other direct package, and the Aspire line is covered by "AppHost-generated direct assets resolve at `13.6.1`".
+  - Fix: add "the six catalog-owned `Hexalith.EventStore.*` direct packages `3.126.0` (dated observation at `929ea22`)".
+
+  [R9-BH6, blind-hunter]
+  Applied 2026-10-20: the list adds the six catalog-owned `Hexalith.EventStore.*` direct packages at `3.126.0` as a dated observation at `929ea22`.
+- [x] [Review][Patch] The transitive row does not say that the manual AppHost registry fallback was not rerun after 2026-10-18 [docs/launch-readiness.md:691]
+  - The risk cell says AppHost-only drift "depends on the manual registry fallback". That fallback last ran on 2026-10-18, on the source-reference graph with EventStore `3.125.1`.
+  - The round-7 and round-8 updates report only the failing solution/AppHost lane and the 14 project fallbacks. The "Not rerun" lists do not mention the manual fallback.
+  - Fix: add one sentence to the round-8 update: the manual AppHost registry fallback was not rerun in rounds 7 or 8, and its 2026-10-18 result remains the latest AppHost-only drift evidence.
+
+  [R9-BH9, blind-hunter]
+  Applied 2026-10-20: the round-8 update says the manual AppHost registry fallback was not rerun in round 7 or round 8, so its 2026-10-18 result remains the latest AppHost-only drift evidence.
+- [x] [Review][Patch] `TimesheetsProjectFiles()` skips any `References` path segment case-insensitively [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/RepositoryRoot.cs:39]
+  - `StringComparer.OrdinalIgnoreCase` also matches the Timesheets-owned `src/Hexalith.Timesheets.Server/References` and `src/Hexalith.Timesheets.Contracts/References` folders.
+  - A project file added under either folder would be silently skipped by the inline-version and Fluent UI V4 guards.
+  - The submodule and worktree directories are lowercase `references`.
+  - Fix: `StringComparer.Ordinal`, then rebuild and rerun the ArchitectureTests.
+
+  [R9-VG2, verification-gap]
+  Applied 2026-10-20: the helper uses `StringComparer.Ordinal`. It selects the same 16 project files as before on the current tree. A non-incremental `-warnaserror` Release ArchitectureTests build passed with 0 warnings and 0 errors, and the executable passed 64/64 (exit 0).
+
+**Deferred**
+
+- [x] [Review][Defer] Round 8 reran only the package-mode graph, not the source-reference or live lanes, and did not record whether live-lane prerequisites existed [_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md:657] — deferred: disclosed. The round-8 record and the Works forwarding entry say the README source-reference default lane and the live AppHost lanes were not rerun, and D1, D2 and the Works forwarding entry own those lanes, so no new ledger entry. At this review (2026-10-20, about 13:00 local), a foreign Projects AppHost holding Dapr app ID `eventstore` and five other Dapr apps were running, so the isolated journey's preflight would refuse. [R9-AA6, R9-BH8, acceptance-auditor+blind-hunter]
+- [x] [Review][Defer] No normally run lane starts the `13.6.1` AppHost with NuGet `Aspire.Hosting.Orchestration`/`Aspire.Dashboard.Sdk` [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4] — deferred: this repeats R8-VG1 and is already ledgered (D1 at `deferred-work.md:739` and the automated AppHost runtime smoke entry at `:233`), so no new ledger entry. [R9-VG1, verification-gap]
+- [x] [Review][Defer] `CLAUDE.md:93` still says "There is no `.github/workflows`" [CLAUDE.md:93] — deferred: outside this diff. It is already ledgered for Story 5.1's agent entry-point sync (round-4 deferral), and agent-context edits belong there, so no new ledger entry. [R9-VG3, verification-gap]
+
+**Rejected** (9 findings)
+
+- `architecture.md:365` points to the launch-readiness verdict "(2026-10-18)" (R9-AA7) — false: the verdict is still introduced as "audited on 2026-10-18" and carries its dated 2026-10-20 updates, so the pointer reaches the current state.
+- The round-8 test receipts have no `exit_code` (R9-BH10) — low: each summary records 0 failed and 0 errors, and the packet README claims "test summaries", not test exit codes. Adding exit codes would mean running the suites again.
+- `R7-BH2` names two findings (R9-BH11) — the fix edits the spec under review.
+- The spec Change Log stops at 2026-10-18 (R9-BH12) — the fix edits the spec under review. The story record carries the round-7 and round-8 decisions.
+- The dated prerelease-waiver row is checked against the live catalog (R9-BH13) — false: this is the intended tripwire (R2-BH9). A catalog move fails loudly and prompts a new dated observation. The round-8 dating decision covered the unguarded EventStore and Works values only.
+- The round-7 Builds handoff was resolved with its checks after the catalog adoption (R9-BH14) — false: the resolution note says the sync moved the catalog and the review "then ran" the checks, so it records the order. The entry required only package-mode checks, and all of them ran and passed.
+- The Direct row's phrase assertion can be satisfied by an older dated sentence (R9-EH1) — low: it needs a contradicting PASS update that nobody has written, and the fix adds segment parsing to a prose guard. R2-BH8 and R2-EH4 already scoped this guard to its section.
+- An XML comment naming `ASPIRE010` in the AppHost project breaks the suppression guard (R9-EH2) — low: it fails loudly with a clear message, the project has no such comment, and the fix adds comment stripping.
+- A backslash `ProjectReference` to the EventStore Aspire helper fails the security-helper guard (R9-EH3) — low: the same ground as R2-EH7. It fails loudly, and that reference uses forward slashes.
+
 
 ## Implementation Notes
 

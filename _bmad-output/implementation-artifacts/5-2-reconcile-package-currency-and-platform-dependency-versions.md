@@ -671,3 +671,52 @@ The [round-8 verification packet](evidence/5-2/20261020-round8/README.md) retain
 raw audit, package-listing and fallback output, restore/build logs, test summaries,
 input and assets hashes, and derived counts. No package, project, test, gitlink, SDK,
 npm manifest/lockfile, or workflow file changed.
+
+## Round-9 Review Patches (2026-10-20)
+
+The round-9 code review covered `180d9fd..5258598`. It excluded `aa49fda`, `969d32a`,
+and the gitlink-only workspace sync `929ea22`. Its main finding was that the round-8
+refresh missed several statements that `929ea22` had made stale.
+
+Jerome chose to apply all seven patches; their dispositions are in the original Story
+5.2 spec.
+
+- **Stale statements:**
+  - The current verdict now names the 2026-10-18 journey's catalog as the then-current `332b2c1`.
+  - The ledger's D1 and agent entry-point instructions no longer force `HexalithEventStoreVersion=3.125.1`.
+  - The round-7 Story 5.1 handoff now names the current EventStore pin, `6c56c27`.
+- **Round-8 anchor:** round 8 is anchored as the worktree based on `929ea22`, committed as
+  `525859841e3dc329f65970b7067d3ef3bd1a91fa`. The receipt's documentation hashes match that commit.
+- **Test count:** "1,959 tests" now reads 1,954 passed, 5 intentional skips and 0 failures.
+- **Direct row:**
+  - The round-7 result is labelled and in the past tense.
+  - The row lists the six direct `Hexalith.EventStore.*` packages at `3.126.0`.
+- **Transitive row:** the row says the manual AppHost registry fallback was last run on 2026-10-18.
+- **Project filter:** `RepositoryRoot.TimesheetsProjectFiles()` now excludes only lowercase `references`
+  segments. On the current tree it selects the same 16 project files as before.
+
+Verification (SDK `10.0.402`, Release package-mode assets restored in round 8):
+
+- **Build:** `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Release --no-restore --no-incremental -warnaserror -m:1 /nr:false`
+  passed with 0 warnings and 0 errors.
+- **Tests:** `tests/Hexalith.Timesheets.ArchitectureTests/bin/Release/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor`
+  exited 0, with 64/64 passed after the final edits.
+- **Not rerun:** the other five suites, the NuGet audits and npm. No package, production source or other test
+  source changed.
+- **Live lanes:** the README source-reference and live AppHost lanes were not rerun. At this review a foreign
+  Projects AppHost holding Dapr app ID `eventstore` and five other Dapr applications were running, so the
+  isolated journey's preflight would refuse.
+
+Changed files for this round:
+
+- `docs/launch-readiness.md`
+- `docs/ci-cd.md`
+- `epic-5-context.md`
+- `deferred-work.md`
+- the round-8 packet README
+- `RepositoryRoot.cs`
+- the original Story 5.2 spec (round-9 findings and dispositions)
+- `sprint-status.yaml` (timestamp only; the status stays `review`)
+- this record
+
+No package, gitlink, SDK, npm manifest/lockfile, or workflow file changed.

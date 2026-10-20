@@ -36,7 +36,7 @@ internal static class RepositoryRoot
         return Directory.GetFiles(root, "*.csproj", SearchOption.AllDirectories)
             .Where(path => !Path.GetRelativePath(root, path)
                 .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                .Contains("references", StringComparer.OrdinalIgnoreCase))
+                .Contains("references", StringComparer.Ordinal))
             .ToArray();
     }
 }

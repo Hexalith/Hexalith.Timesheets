@@ -6,11 +6,14 @@ per-project transitive-outdated fallbacks, plus restore/build logs, test summari
 exact commands, dependency-input and project-assets hashes, the observed catalog
 and Works EventStore values, and derived audit and test counts.
 
-The source was Timesheets HEAD `929ea22c977385590d77d95f73af86e8b051c4fc`, the
-workspace sync commit that moved the `references/*` gitlinks after the round-7
-audit. The tracked worktree had only the round-8 review's documentation and ledger
-edits; no package, project, test or gitlink file was modified. The SDK was
-`10.0.402`; all builds used Release/package mode.
+The source was the Timesheets worktree based on
+`929ea22c977385590d77d95f73af86e8b051c4fc`, the workspace sync commit that moved
+the `references/*` gitlinks after the round-7 audit, committed as
+`525859841e3dc329f65970b7067d3ef3bd1a91fa` (the receipt's documentation hashes
+match that commit; its package, project and test inputs match both). The tracked
+worktree had only the round-8 review's documentation and ledger edits; no package,
+project, test or gitlink file was modified. The SDK was `10.0.402`; all builds used
+Release/package mode.
 
 At that commit the `references/Hexalith.Builds` catalog
 `6a38cb0f2e74977d7457fc59e6af79457ed8196a` selected EventStore `3.126.0`, Commons
@@ -20,8 +23,8 @@ At that commit the `references/Hexalith.Builds` catalog
 workspace syncs can move them.
 
 The forced no-cache restore covered 15 projects and the non-incremental solution
-build passed with no warnings/errors. All six Release suites passed 1,959 tests with
-0 failures and 5 intentional skips. ArchitectureTests ran after the final
+build passed with no warnings/errors. All six Release suites ran 1,959 tests: 1,954
+passed, 5 intentional skips, 0 failures. ArchitectureTests ran after the final
 documentation edits. The direct audit reported no package update across 15 projects;
 vulnerability and deprecation audits were clean. Transitive-outdated still failed
 for the solution and AppHost with `error: Sequence contains no matching element`;

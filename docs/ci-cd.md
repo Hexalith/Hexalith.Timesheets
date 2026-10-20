@@ -173,7 +173,7 @@ Contracts `1.0.2`, with unchanged nuspec dependencies from `1.0.1`. Package-mode
 restore and warnings-as-errors Release build pass. The direct audit reports only
 the catalog-owned EventStore `3.125.1 -> 3.126.0` update, published after the
 2026-10-18 audit; changing that line belongs to the Builds catalog owner.
-Update (2026-10-20, Story 5.2 round 8): at HEAD `929ea22c977385590d77d95f73af86e8b051c4fc`,
+Update (2026-10-20, Story 5.2 round 8): at `929ea22c977385590d77d95f73af86e8b051c4fc`,
 after the workspace sync moved the gitlinks, the `references/Hexalith.Builds` catalog pin
 `6a38cb0f2e74977d7457fc59e6af79457ed8196a` selected EventStore `3.126.0` and Works
 `64602575b902c0f8d3bfaa41a27565eee5682639` forwarded `3.126.0`. The package-mode
