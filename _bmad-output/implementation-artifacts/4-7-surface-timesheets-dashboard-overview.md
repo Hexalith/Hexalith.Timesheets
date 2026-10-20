@@ -8,6 +8,10 @@ Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
+## Accepted Evidence Boundary — approved 2026-09-12, reconciled 2026-10-20
+
+Status remains done for dashboard contracts, metadata, authorization/freshness-aware server composition, and in-process tests. Rendered Fluent UI V5 components, focus/keyboard/responsive behavior, and WCAG 2.2 AA evidence belong to a consuming FrontComposer host and were not verified here. Do not add a Timesheets UI project. Historical test receipts below retain their original scope and dates.
+
 ## Story
 
 As an internal Timesheets user,
@@ -22,9 +26,9 @@ so that I can start common capture, review, and finance workflows from one opera
 4. Given a user lacks approver or finance authority, when the dashboard is rendered, then approval workload, ledger, and export actions are hidden or disabled according to policy, and no protected tenant, contributor, Project, Work, or Time Entry details are disclosed.
 5. Given the dashboard has no current entries, approvals, or exportable ledger data, when empty states are shown, then the page provides the single most relevant action, such as `Record time`, and avoids misleading finance/export affordances.
 6. Given users navigate from dashboard shortcuts to capture, period review, approvals, reports, or ledger, when they drill in and return, then filters, period context, and projection status are preserved where applicable, and navigation remains keyboard accessible.
-7. Given dashboard UI is tested, when accessibility and conformance checks run, then FrontComposer/Fluent UI V5 components, status badges with text, message bars, focus order, and WCAG 2.2 AA behavior are verified, and hover-only controls or color-only statuses are not introduced.
+7. Given dashboard contracts and metadata are tested here, when conformance checks run, then status, action, context, and freshness semantics are verified. A consuming FrontComposer host owns rendered Fluent UI V5, focus/keyboard/responsive behavior, and WCAG 2.2 AA checks; no rendered conformance is claimed by this repository.
 
-## Tasks / Subtasks
+## Reconciled Tasks / Subtasks — 2026-10-20
 
 - [x] Add dashboard contracts and metadata without creating new write authority (AC: 1, 3, 5, 6)
   - [x] Add a read-only dashboard query contract under `src/Hexalith.Timesheets.Contracts/Queries/Reporting/`, for example `QueryTimesheetsDashboardOverview`, carrying only filter/context inputs such as current tenant-local period key/date range and optional Project/Work context. Do not accept caller-supplied tenant, user, authorization, correlation, or server-controlled freshness values.
@@ -42,7 +46,7 @@ so that I can start common capture, review, and finance workflows from one opera
   - [x] Show ledger/export shortcuts only when ledger access and export readiness allow them. Do not show `Export approved ledger` when the user lacks finance/export authority, when projection freshness is not fresh enough, or when no exportable approved rows exist.
   - [x] Empty dashboard states must prefer one safe action such as `Record time`; they must not advertise export, approval, or finance shortcuts without data and authority.
 - [x] Keep UI implementation inside FrontComposer/Fluent UI V5 conventions (AC: 1, 6, 7)
-  - [x] Prefer metadata-driven FrontComposer composition. If `Hexalith.Timesheets.UI` is scaffolded in this story, follow the architecture UI project structure and add the paired UI test project; otherwise keep the surface contract/metadata-only.
+  - [x] Keep the surface contracts and metadata only; a consuming FrontComposer host owns rendering and component tests. Do not add a Timesheets UI project.
   - [x] Do not build a custom landing page, marketing hero, custom shell, decorative cards, raw HTML/CSS component system, JavaScript, Fluent UI V4 components, custom palette, custom typography, or Timesheets-specific theme.
   - [x] Use `FluentMessageBar` for stale/rebuilding/degraded/unavailable projections, permission-denied states, policy blocks, or unavailable authority; use text-bearing status badges for period, approval, billable, correction, freshness, and export readiness states.
   - [x] Preserve period/filter context in shortcut intents so dashboard drill-in to `Record time`, `My Timesheet Period`, `Approvals Queue`, Project/Work reports, AI effort report, and Approved-Time Ledger can return without losing context.
@@ -51,12 +55,14 @@ so that I can start common capture, review, and finance workflows from one opera
   - [x] Add dashboard query/read-model serialization tests proving no caller authority fields, no raw EventStore terms, no copied sibling-owned state, and no invoice/payroll/rate/tax/revenue-recognition language.
   - [x] Add server tests proving denied tenant access fails closed before projection reads; insufficient-role rows are filtered; unsafe denials fail closed; stale/degraded/unavailable freshness becomes persistent status; and hidden/disabled shortcuts never disclose protected IDs.
   - [x] Add integration tests proving the dashboard composes current period, pending corrections/submissions, approval workload, report shortcuts, ledger readiness, and empty states from existing projection fixtures.
-  - [x] If UI components are added, add UI/accessibility/conformance tests for keyboard focus order, message bars, text-bearing status badges, no hover-only controls, and Fluent UI V5/FrontComposer usage.
+  - [x] Record consumer-host ownership of UI/accessibility/conformance tests; this repository verifies metadata semantics only.
   - [x] Run `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false`.
   - [x] Run `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore -warnaserror -m:1 /nr:false`.
-  - [x] Run affected test projects individually: Contracts, Server, Integration, Architecture, and UI tests if a UI project is added. If VSTest socket permissions block `dotnet test`, use the repository's direct xUnit v3 executable fallback and record the reason.
+  - [x] Run affected test projects individually: Contracts, Server, Integration, and Architecture. If VSTest socket permissions block `dotnet test`, use the repository's direct xUnit v3 executable fallback and record the reason.
 
-## Dev Notes
+## Historical Discovery with Reconciled Guidance — 2026-10-20
+
+Discovery observations below come from the original implementation context. Ownership and disclosure guidance was reconciled on 2026-10-20; it is not a verbatim historical execution record. Dated Dev Agent Record and review receipts below remain unchanged.
 
 ### Source Documents Loaded
 
@@ -111,7 +117,7 @@ so that I can start common capture, review, and finance workflows from one opera
 - Likely UPDATE: `src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs` to register dashboard service/readers.
 - Likely NEW: `tests/Hexalith.Timesheets.Server.Tests/TimesheetsDashboardOverviewQueryServiceTests.cs`.
 - Likely NEW or UPDATE: `tests/Hexalith.Timesheets.IntegrationTests/TimesheetsDashboardOverviewIntegrationTests.cs` and `HostMetadataEndpointTests.cs`.
-- Possible NEW: `src/Hexalith.Timesheets.UI/` and `tests/Hexalith.Timesheets.UI.Tests/` only if this story implements hand-authored UI beyond metadata. If added, follow architecture UI project timing and Fluent UI V5-only rules.
+- No Timesheets UI or UI test project: the consuming FrontComposer host owns rendered composition and accessibility evidence.
 
 For every UPDATE file above, preserve existing behavior:
 

@@ -8,6 +8,10 @@ Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
+## Accepted Evidence Boundary — approved 2026-09-12, reconciled 2026-10-20
+
+Status remains done for confirmation contracts, domain/service behavior, and metadata. Comment display is policy-conditional and omitted by default; no unconditional external disclosure is accepted. A consuming FrontComposer host owns rendered Fluent UI V5, phone/keyboard/focus behavior, and WCAG evidence; no Timesheets UI project may be added. Story 3.6 owns unfinished deployed FR14 acceptance; local and in-process proof does not close that gate.
+
 ## Story
 
 As an external contributor,
@@ -16,13 +20,13 @@ so that my effort can be attributed and reviewed without internal account access
 
 ## Acceptance Criteria
 
-1. Given a magic-link token is valid, unexpired, unused, and scoped to one confirmation, when the external contributor opens the confirmation page, then Timesheets validates the token before displaying details and shows only the proposed date, duration, Activity Type, comment, Billable Flag, and minimal target context needed for this confirmation.
+1. Given a magic-link token is valid, unexpired, unused, and scoped to one confirmation, when the external contributor opens the confirmation page, then Timesheets validates the token before displaying details and shows only the proposed date, duration, Activity Type, Billable Flag, and minimal target context needed for this confirmation, with comment text included only when explicit external-confirmation policy allows it; otherwise comments are omitted.
 2. Given the external contributor confirms the proposed entry, when they submit confirmation, then the entry is attributed to the scoped Contributor Party and confirmation use, timestamp, source, and resulting Time Entry state are recorded through EventStore-backed audit events.
 3. Given the external contributor confirms scoped time, when the confirmation succeeds, then confirmation is recorded as contributor evidence, not approval, and the Time Entry still enters the configured Timesheets approval workflow.
 4. Given the confirmation has been accepted, when the same token is used again, then reuse is rejected with the generic no-disclosure invalid-link response and no previous confirmation details are shown.
-5. Given the external confirmation page is used on a phone viewport, when the contributor reviews or confirms the proposed entry, then the page remains fully usable with Fluent UI V5 components, clear duration units, accessible focus order, keyboard/touch reachable controls, and no internal shell navigation.
+5. Given a consuming FrontComposer host renders the external confirmation page, when phone, focus, keyboard, and touch checks run in that host, then it verifies Fluent UI V5, duration units, accessible controls, and no internal navigation. This repository supplies contracts/metadata and claims no rendered-page conformance.
 
-## Tasks / Subtasks
+## Reconciled Tasks / Subtasks — 2026-10-20
 
 - [x] Add magic-link confirmation-use contracts and events (AC: 1-4)
   - [x] Add a narrow command/request contract for token-scoped confirmation under `src/Hexalith.Timesheets.Contracts/Commands/MagicLinks`, for example `ConfirmTimeThroughMagicLink`.
@@ -45,7 +49,7 @@ so that my effort can be attributed and reviewed without internal account access
   - [x] The display endpoint validates the token before returning details and returns only proposed date, duration with units, Activity Type, comment when policy allows it, Billable Flag, and minimal target context needed for the contributor to decide.
   - [x] The submit endpoint consumes the token and records confirmation; it must not expose a generic token inspection endpoint or a broader browse/query API.
   - [x] Invalid and already-used states use the same ProblemDetails/no-disclosure result text and status family as other invalid-link states; no response may reveal tenant, Project, Work, Party, Time Entry, duration, comment, expiry reason, revocation state, or token existence.
-  - [x] If a Blazor/UI slice is added for the external page, add `src/Hexalith.Timesheets.UI` only as a story-owned UI-bearing package and use Fluent UI V5 components with no internal shell navigation.
+  - [x] Supply UI-neutral contracts/metadata; the consuming FrontComposer host owns the external Fluent UI V5 page and its accessibility tests. Do not add a Timesheets UI project.
 - [x] Project safe used state and metadata (AC: 2, 4)
   - [x] Extend `MagicLinkConfirmationCapabilityProjection` and `MagicLinkConfirmationCapabilityReadModel` to represent `Used`, used-at UTC instant, safe use metadata, text status badge, and projection freshness.
   - [x] Exclude raw token, token hash, decoded capability material, command bodies, comments beyond policy, Party personal data, target names, EventStore envelopes, and protected identifiers from projections/read models.
@@ -59,7 +63,7 @@ so that my effort can be attributed and reviewed without internal account access
   - [x] Server tests: valid token confirms the scoped Time Entry and emits capability-used plus contributor-confirmed events; used/revoked/expired/unknown/malformed/hash-mismatch/wrong-action/wrong-scope/non-UTC paths fail closed without confirmation.
   - [x] Reuse `ExternalContributionCommandServiceTests` patterns for contributor evidence and no approval events; add tests proving approval/submission/lock/export events are not emitted by magic-link confirmation.
   - [x] Projection tests: used state, duplicate delivery, replay ordering, terminal-state handling after use, text badges, projection freshness, and absence of token material.
-  - [x] Endpoint/integration tests: narrow routes, no token-inspection route, token not accepted in logs/read models, no request-body authority fields, opaque invalid-link copy, and phone/external page metadata or component conformance if UI is added.
+  - [x] Endpoint/integration tests: narrow routes, no token-inspection route, token not accepted in logs/read models, no request-body authority fields, opaque invalid-link copy, and phone/external page contracts and FrontComposer metadata. Rendered Fluent UI V5 component, browser, and WCAG conformance tests belong to the consuming FrontComposer host.
   - [x] Extend diagnostics/privacy tests so new code does not log raw tokens, token hashes where disallowed, decoded material, command bodies, comments, personal data, target names, EventStore envelopes, or protected identifiers.
 - [x] Verify affected build and test lanes (AC: 1-5)
   - [x] Run `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -m:1 /nr:false`.
@@ -67,7 +71,9 @@ so that my effort can be attributed and reviewed without internal account access
   - [x] Run affected tests individually: Contracts.Tests, Server.Tests, Projections.Tests, ArchitectureTests, and IntegrationTests.
   - [x] If `dotnet test` is blocked by local VSTest socket permissions, use the README direct xUnit v3 executable fallback and record the reason in Debug Log References.
 
-## Dev Notes
+## Historical Discovery with Reconciled Guidance — 2026-10-20
+
+Discovery observations below come from the original implementation context. Ownership and disclosure guidance was reconciled on 2026-10-20; it is not a verbatim historical execution record. Dated Dev Agent Record and review receipts below remain unchanged.
 
 ### Source Documents Loaded
 
@@ -109,12 +115,12 @@ so that my effort can be attributed and reviewed without internal account access
 - Magic-link routes are capability-specific and must never expose a general token inspection endpoint. [Source: `_bmad-output/planning-artifacts/architecture.md#API-Naming-Conventions`]
 - Contracts stays infrastructure-free. Server owns aggregate decisions, validation orchestration, and magic-link capability logic. Projections are rebuildable, idempotent, and non-authoritative for writes. [Source: `_bmad-output/planning-artifacts/architecture.md#Component-Boundaries`]
 - Logs/traces must not include comments, tokens, secrets, command bodies, event payloads, magic-link values, personal data, target names, or protected identifiers. [Source: `_bmad-output/planning-artifacts/architecture.md#Data-Exchange-Formats`]
-- If a UI package is introduced, it must follow the documented `UI/` structure, Fluent UI V5-only rule, and external surface scope; Story 1.1 intentionally did not scaffold UI. [Source: `_bmad-output/planning-artifacts/architecture.md#Project-Structure-Boundaries`]
+- The consuming FrontComposer host owns rendered Fluent UI V5 and external-page accessibility; Timesheets owns contracts/metadata and must not add a UI project. [Source: `_bmad-output/planning-artifacts/architecture.md#Project-Structure-Boundaries`]
 
 ### UX And External Surface Constraints
 
 - The external magic-link surface is single-purpose and may sit outside full internal shell navigation, but it must use the same Fluent UI component family and no-disclosure security behavior.
-- Validate the token before showing details. A valid view may show only proposed date, duration, Activity Type, comment, Billable Flag, and minimal target context needed for confirmation.
+- Validate the token before showing details. A valid view may show proposed date, duration, Activity Type, Billable Flag, and minimal target context; comments remain omitted unless external-confirmation policy explicitly permits disclosure.
 - Invalid, expired, used, revoked, unauthorized, or unknown states must all use the same no-disclosure failure surface. Provide one safe recovery path without exposing whether the token, tenant, target, contributor, or entry exists.
 - Phone viewport usability is in scope: clear duration units, reachable controls, accessible focus order, keyboard/touch operation, and no hover-only controls.
 - Do not create a full external portal, internal shell navigation, broad browse experience, Party profile surface, Project/Work lifecycle view, approval UI, or adjustment flow. Story 3.4 owns adjustment.
@@ -177,7 +183,7 @@ so that my effort can be attributed and reviewed without internal account access
 - Expected host additions belong under `src/Hexalith.Timesheets/Endpoints/MagicLinks`, registered from `src/Hexalith.Timesheets/Program.cs`.
 - Expected projection additions belong under `src/Hexalith.Timesheets.Projections/MagicLinks`.
 - Expected tests belong under `tests/Hexalith.Timesheets.Contracts.Tests`, `tests/Hexalith.Timesheets.Server.Tests`, `tests/Hexalith.Timesheets.Projections.Tests`, `tests/Hexalith.Timesheets.ArchitectureTests`, and `tests/Hexalith.Timesheets.IntegrationTests`.
-- If a UI-bearing package is introduced, follow the architecture's `src/Hexalith.Timesheets.UI` and `tests/Hexalith.Timesheets.UI.Tests` target structure. Do not use `docs/` as scratch space.
+- Do not add a Timesheets UI or UI test project. Supply metadata to the consuming FrontComposer host; its owner verifies rendered behavior.
 
 ### References
 

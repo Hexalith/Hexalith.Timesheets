@@ -2,7 +2,7 @@
 title: "Hexalith.Timesheets — Product Requirements Document"
 status: draft
 created: 2026-06-18
-updated: 2026-06-19
+updated: 2026-10-20
 ---
 
 # PRD: Hexalith.Timesheets
@@ -51,11 +51,11 @@ Primary sources used for the landscape check are captured in `addendum.md`.
 
 - **UJ-2. Nadia approves the week and rejects one entry.** Nadia is a project manager reviewing submitted time for a client project. She filters pending Time Entries by Project, opens Camille's weekly Timesheet Period, approves valid entries, and rejects one vague billable entry with a reason. The value lands when approved entries are locked into the Approved-Time Ledger and the rejected entry returns to Camille for correction. **Edge case:** if Camille corrects the rejected entry after period submission, the period shows a pending correction instead of silently changing the approved record.
 
-- **UJ-3. Simon confirms supplier time through Magic-Link Confirmation.** Simon is an external supplier who is not a tenant user. He receives a scoped magic link for a Work item, reviews the proposed date, duration, Activity Type, comment, and Billable Flag, then confirms or adjusts the entry. The value lands when the tenant sees a Party-attributed Time Entry that can enter approval without granting Simon broader access. **Edge case:** if the link expired or was already used, Simon sees no data and must request a new confirmation link.
+- **UJ-3. Simon confirms supplier time through Magic-Link Confirmation.** Simon is an external supplier who is not a tenant user. He receives a scoped magic link for a Work item, reviews the proposed date, duration, Activity Type, Billable Flag, minimal target context, and comment only when external-confirmation policy explicitly allows it; otherwise comment text is omitted. He then confirms or adjusts the entry. The value lands when the tenant sees a Party-attributed Time Entry that can enter approval without granting Simon broader access. **Edge case:** if the link expired or was already used, Simon sees no data and must request a new confirmation link.
 
 - **UJ-4. Ada the AI agent records execution evidence.** Ada is an AI agent assigned through Hexalith.Works. After completing a Work item step, Ada records wall-clock execution time, model/tool runtime, billable effort, and token consumption against the Work reference. The value lands when the Work item report shows AI effort beside human effort without treating tokens as human hours. **Edge case:** if token metrics are unavailable from the provider, the entry records the missing metrics explicitly rather than fabricating values.
 
-- **UJ-5. Marc exports approved billable evidence.** Marc is a finance consumer preparing billing evidence. He filters approved billable time by tenant, Project, period, and Activity Type, then exports the Approved-Time Ledger with entry IDs, Contributor Party references, Approval State, correction lineage, and comments. The value lands when downstream billing can consume trusted time without needing Timesheets to generate invoices.
+- **UJ-5. Marc exports approved billable evidence.** Marc is a finance consumer preparing billing evidence. He filters approved billable time by tenant, Project, period, and Activity Type, then exports the Approved-Time Ledger with entry IDs, Contributor Party references, Approval State and correction lineage, with comments excluded from CSV by default. The value lands when downstream billing can consume trusted time without needing Timesheets to generate invoices.
 
 ## 4. Glossary
 
@@ -220,6 +220,7 @@ External contributors can confirm or adjust a specific Time Entry through Magic-
 **Consequences (testable):**
 - Magic links are single-use, scoped to one contribution confirmation, expire by policy, and require no full account login. `[ASSUMPTION: single-use scoped links are v1 security baseline, not a later hardening item.]`
 - Expired, invalid, or already-used links reveal no tenant, Project, Work, Party, or Time Entry details.
+- Valid-link details include comment text only when explicit external-confirmation policy allows it with the required redaction; otherwise it is omitted, including when policy is missing.
 - Confirmed Magic-Link Confirmation entries are attributed to the external Contributor Party and retain link-use audit metadata.
 
 #### FR-15: Record AI Effort Metrics
@@ -298,7 +299,7 @@ Timesheets persists all domain state changes through EventStore.
 Timesheets exposes command and query contracts usable by internal UI, API clients, automation, and downstream finance consumers.
 
 **Consequences (testable):**
-- v1 ships REST/SDK command/query contracts plus FrontComposer-compatible metadata for admin/internal surfaces; it does not ship a bespoke mobile app. `[ASSUMPTION: FrontComposer-generated/admin UI is acceptable for v1 internal operations unless later UX work says otherwise.]`
+- v1 ships REST/SDK command/query contracts plus FrontComposer-compatible metadata for admin/internal surfaces. This repository does not ship or add a Timesheets UI project; rendered internal and external experiences are composed and verified by a consuming FrontComposer host using Fluent UI V5. It does not ship a bespoke mobile app.
 - API contracts do not accept server-controlled tenant/user/authorization context from callers.
 - Public contracts hide EventStore envelope mechanics, aggregate internals, and projection rebuild mechanics.
 
@@ -334,7 +335,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - Weekly and monthly Timesheet Period submission and approval.
 - Magic-link confirmation and API-only external-party submission/confirmation.
 - Query/report read models by Contributor, Project, Work item, period, Activity Type, Billable Flag, Approval State, and contributor category.
-- Approved-Time Ledger and approved billable-time export.
+- Approved-Time Ledger and deterministic CSV v1 approved billable-time export.
 - AI-agent reporting for wall-clock execution time, model/tool runtime, billable effort, and token consumption.
 - EventStore-backed persistence, replayable projections, tenant isolation, and Party-based actor references.
 
@@ -347,6 +348,8 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - AI interpretation of natural-language time notes.
 - Full external-party portal UX.
 - Native mobile app.
+- Structured API/webhook export and richer tenant comment classification/redaction schemes.
+- Timesheets-owned rendering projects; consuming FrontComposer hosts own rendered UI/accessibility.
 - Replacing Project or Work ownership of their own state.
 
 ## 8. Integration and Dependencies
@@ -374,7 +377,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Reliability.** Projections tolerate at-least-once delivery, duplicate events, replay, and rebuild. Reads expose stale/rebuilding/unavailable states instead of pretending data is fresh.
 - **Performance.** Common command acknowledgements should complete within 500 ms p95 in a warmed local service, and common report queries should return within 2 seconds p95 for tenant/project/period filters. `[ASSUMPTION: these are v1 launch targets subject to architecture sizing.]`
 - **Observability.** Logs and traces use structured metadata and correlation IDs without logging event payloads, comments, personal data, tokens, secrets, or full command bodies.
-- **Accessibility.** Any internal UI surface follows the Hexalith/FrontComposer/Fluent UI rules and targets WCAG 2.2 AA where applicable.
+- **Accessibility.** Any rendered Timesheets surface in a consuming FrontComposer host follows Hexalith/FrontComposer/Fluent UI V5 rules and targets WCAG 2.2 AA (NFR13). Timesheets contracts and metadata express accessible semantics; component and browser conformance require consumer-host evidence.
 - **Compatibility.** Event and contract evolution is additive and serialization-tolerant. Do not remove or rename previously emitted event fields.
 - **Localization and time zones.** Dates, periods, and approval cutoffs must be tenant-policy aware. **[RESOLVED 2026-06-19]** Canonical v1 policy: **tenant time zone** — store UTC audit instants and tenant-local period keys; DST/period-boundary cases proven by golden-file tests (owned by Stories 2.7/4.6).
 
@@ -415,7 +418,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Phase 4 — Finance evidence.** Harden Approved-Time Ledger export and reconciliation flows for downstream billing/accounting consumers.
 - **Phase 5 — Release-readiness verification.** Aggregate evidence, waivers, documentation sync, and launch decision records after feature behavior has already been implemented in the phase that introduced it. Phase 5 must not be the first implementation location for Magic-Link state loading, Work-reference validation, planned-effort reporting, export preview behavior, or performance evidence required by earlier phases.
 
-Launch readiness requires: passing tenant-isolation tests, approval/correction evidence tests, projection rebuild tests, export contract tests, privacy/logging scans, a documented owns-vs-references boundary decision, concrete launch-scope integration adapters implemented in their owning feature phases, and performance evidence for the stated command/report targets. Story-complete evidence is not the same as launch-complete evidence: unresolved host wiring, runtime fixtures, UI, deployment, stakeholder acceptance, legal-hold sign-off, or formally accepted waivers must remain visible in the launch-readiness record.
+Launch readiness requires: passing tenant-isolation tests, approval/correction evidence tests, projection rebuild tests, export contract tests, privacy/logging scans, a documented owns-vs-references boundary decision, concrete launch-scope integration adapters implemented in their owning feature phases, and performance evidence for the stated command/report targets. Story-complete evidence is not the same as launch-complete evidence: unresolved host wiring, runtime fixtures, consumer-host rendering/accessibility, deployment, stakeholder acceptance, legal-hold sign-off, or formally accepted waivers must remain visible in the launch-readiness record.
 
 ## 14. Open Questions
 
@@ -424,9 +427,9 @@ Launch readiness requires: passing tenant-isolation tests, approval/correction e
 3. **Correction model detail** — **[RESOLVED 2026-06-19]** v1 uses additive correction events with superseding correction lineage for rejected-entry and approved-entry correction. Offset-entry correction remains deferred unless finance/export decisions require it at launch.
 4. **Magic-Link Confirmation issuance** — Story 3.2 owns issuance authority. **[RESOLVED 2026-06-19]** v1 baseline = single-use scoped expiring links (FR-14); **secondary identity verification for high-value/billable entries is deferred to post-v1** (explicit assumption, not silently closed).
 5. **Retention and legal hold** — **[RESOLVED 2026-06-19]** v1 default retention per §9; **legal-hold override is a launch-readiness gate** pending tenant/legal sign-off (owned by Story 1.4).
-6. **Activity Type governance** — Who can define project-level Activity Types, and can a project restrict tenant-level defaults?
-7. **Export format** — Is CSV sufficient for v1, or does downstream billing need a structured API/webhook contract at launch?
-8. **Comment sensitivity** — Are comments allowed to contain customer/private data, and do they need classification/redaction rules?
+6. **Activity Type governance (Q6)** — **[RESOLVED 2026-09-12]** Tenant Activity Types require tenant-authorized command access. Project Activity Types and catalog restrictions require both tenant and Project authority resolved through server-side gates; role names remain provider policy, not caller input. Projects may explicitly restrict selectable tenant/project IDs. The default is unrestricted active tenant types plus active types for the selected Project. Implemented by Stories 1.5/1.6.
+7. **Export format (Q7)** — **[RESOLVED 2026-09-12]** Deterministic approved-time CSV v1 is the launch export, implemented by Stories 4.5/4.6. Structured API/webhook export is post-v1 and needs a named downstream consumer and contract story.
+8. **Comment sensitivity (Q8)** — **[RESOLVED 2026-09-12]** Comments are sensitive unstructured evidence. Authorized internal display is policy-controlled; external confirmation display, diagnostics, and export are excluded by default. External disclosure requires explicit policy/redaction; missing comment policy fails trust-bearing actions closed. Richer tenant classification/redaction schemes are post-v1. Story 1.4 implements the baseline; legal-hold and tenant-policy configuration remain separate launch concerns.
 
 ## 15. Assumptions Index
 
@@ -437,8 +440,16 @@ Launch readiness requires: passing tenant-isolation tests, approval/correction e
 - §5.2 FR-7 — A Timesheet Period is scoped to one Contributor, one Tenant, and one weekly or monthly period.
 - §5.2 FR-8 — Period approval is not an irreversible freeze; corrections remain possible with audit evidence.
 - §5.2 FR-9 — Exact approver role names remain provider/policy decisions; v1 precedence behavior is resolved in §14.
-- §5.3 FR-11 — Project-level catalog restrictions are opt-in; default is tenant plus project Activity Types.
+- §5.3 FR-11 / Q6 — [RESOLVED 2026-09-12] Project-level catalog restrictions are explicit and opt-in; default is active tenant plus selected-Project Activity Types, with server-resolved tenant and Project authority.
 - §5.4 FR-14 — Single-use scoped magic links are v1 security baseline.
+- §5.5 FR-19 / Q7 — [RESOLVED 2026-09-12] Deterministic CSV v1 is the launch export; structured API/webhook export is post-v1.
+- §9 / Q8 — [RESOLVED 2026-09-12] Comments are sensitive; external disclosure requires explicit policy/redaction; diagnostics/export exclude them by default.
 - §5.4 FR-15 — Provider metric gaps are represented as unavailable/unknown, not zero.
-- §5.6 FR-22 — FrontComposer-generated/admin UI is acceptable for v1 internal operations unless later UX work says otherwise.
+- §5.6 FR-22 — Timesheets supplies contracts/metadata; a consuming FrontComposer host owns rendered Fluent UI V5 and accessibility verification (approved 2026-09-12).
 - §10 — Performance targets are v1 launch targets subject to architecture sizing.
+
+## 16. Decision History and Current Acceptance — 2026-10-20
+
+The approved [2026-09-12 course correction](../../sprint-change-proposal-2026-09-12.md) §4.6 resolves Q6–Q8 and consumer-host UI ownership as recorded above. CSV is the v1 contract; richer comment classification and structured API/webhook export are post-v1. These are decisions, not open assumptions.
+
+FR14 remains unfinished at the deployed acceptance boundary. Projection handlers and EventStore processing are registered; in-process and historical isolated local persisted journeys pass. The latest local pass (2026-10-18) predates the current NuGet-orchestration AppHost graph, and does not certify deployed authority, legacy inventory/continuity, or shared rebuild. The overall release verdict remains **FAIL**; [launch readiness](../../../../docs/launch-readiness.md) owns the dated gates and waivers. Story 5.2's later approved SDK/package baseline remains in force.

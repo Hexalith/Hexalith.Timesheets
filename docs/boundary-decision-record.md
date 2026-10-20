@@ -35,3 +35,9 @@ Aggregates stay pure. Authorization, tenant lookup, sibling validation, HTTP cal
 - Work references are validated through the `Hexalith.Works` `get-work-item` consumer query, consumed by `WorksQueryWorkReferenceValidator` (in `src/Hexalith.Timesheets.Works`) over the Timesheets-owned `IWorksQueryChannel` port (Story 1.10, 2026-06-22). The validator is fail-closed by default and copies no Works-owned state; the host opts in with `AddTimesheetsWorksReferenceValidation()`, otherwise the `DenyAllWorkReferenceValidator` default keeps Work writes closed.
 - Works planned-effort reporting is concrete behind `WorksQueryWorkPlannedEffortProvider` (Story 4.8, 2026-06-22), but the default host keeps `UnavailableWorkPlannedEffortProvider` until a live Works channel is bound and `AddTimesheetsWorksPlannedEffortReporting()` is called.
 - Launch-readiness classifications, owner-named waivers, and the overall release-gate decision are recorded in `docs/launch-readiness.md`.
+
+## Rendering and Runtime Acceptance — 2026-10-20
+
+Timesheets owns UI-neutral contracts, action/status semantics, and FrontComposer-compatible metadata. A consuming FrontComposer host owns rendered Fluent UI V5 composition and browser/WCAG 2.2 AA evidence; no Timesheets UI project may be added.
+
+The HTTP host registers the projection assembly and EventStore processing, including canonical token-hash capability index, tenant Activity Type catalog, and Time Entry evidence handlers. Mapped in-process and historical isolated local persistence proof exist. The latest local journey passed on 2026-10-18 using the earlier AppHost graph; current-graph runtime qualification and deployed authority, inventory/continuity, and shared-rebuild acceptance remain unfinished under Story 3.6. Works host channels still require explicit opt-in, and export preview still has no dedicated HTTP route. [Launch readiness](launch-readiness.md) records approval sources and the overall **FAIL** verdict.

@@ -1,0 +1,102 @@
+{
+  "recorded_utc": "2026-10-20T13:13:55.841632+00:00",
+  "limitation": "Earlier output hashes bind outputs only. The base revisions and dependency observations do not prove the exact then-edited source bytes. No later source archive is retroactively attributed to these runs.",
+  "runs": [
+    {
+      "manifest": "execution.json",
+      "label": "Hexalith.Timesheets.ArchitectureTests",
+      "start_utc": "2026-10-20T12:12:34.391445+00:00",
+      "end_utc": "2026-10-20T12:12:58.743208+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "execution.json",
+      "label": "Hexalith.Timesheets.Contracts.Tests",
+      "start_utc": "2026-10-20T12:12:58.748632+00:00",
+      "end_utc": "2026-10-20T12:13:00.147073+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "execution.json",
+      "label": "Hexalith.Timesheets.Server.Tests",
+      "start_utc": "2026-10-20T12:13:00.147344+00:00",
+      "end_utc": "2026-10-20T12:13:03.250369+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "execution.json",
+      "label": "Hexalith.Timesheets.Works.Tests",
+      "start_utc": "2026-10-20T12:13:03.250739+00:00",
+      "end_utc": "2026-10-20T12:13:04.209926+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "execution.json",
+      "label": "Hexalith.Timesheets.Projections.Tests",
+      "start_utc": "2026-10-20T12:13:04.213543+00:00",
+      "end_utc": "2026-10-20T12:22:16.765377+00:00",
+      "exit_code": 1,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "execution.json",
+      "label": "Hexalith.Timesheets.IntegrationTests",
+      "start_utc": "2026-10-20T12:22:16.765924+00:00",
+      "end_utc": "2026-10-20T12:31:44.299447+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "projection-followup.json",
+      "label": "projection-cleanup-focused",
+      "start_utc": "2026-10-20T12:32:24.156829+00:00",
+      "end_utc": "2026-10-20T12:32:43.664792+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "projection-followup.json",
+      "label": "projection-retry",
+      "start_utc": "2026-10-20T12:32:43.665400+00:00",
+      "end_utc": "2026-10-20T12:40:55.100011+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "final-verification.json",
+      "label": "launch-readiness-final",
+      "start_utc": "2026-10-20T12:41:43.638455+00:00",
+      "end_utc": "2026-10-20T12:41:44.271540+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "final-verification.json",
+      "label": "architecture-final",
+      "start_utc": "2026-10-20T12:41:44.271809+00:00",
+      "end_utc": "2026-10-20T12:41:56.465810+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "history-correction-verification.json",
+      "label": "history-correction-readiness",
+      "start_utc": "2026-10-20T12:50:43.311483+00:00",
+      "end_utc": "2026-10-20T12:50:44.358903+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    },
+    {
+      "manifest": "history-correction-verification.json",
+      "label": "history-correction-architecture",
+      "start_utc": "2026-10-20T12:50:44.364499+00:00",
+      "end_utc": "2026-10-20T12:51:03.089153+00:00",
+      "exit_code": 0,
+      "source_capture_at_execution": null
+    }
+  ]
+}

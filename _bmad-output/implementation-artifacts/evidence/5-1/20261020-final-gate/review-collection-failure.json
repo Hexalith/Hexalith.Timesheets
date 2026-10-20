@@ -1,0 +1,14 @@
+{
+  "recorded_utc": "2026-10-20T13:21:26.691304+00:00",
+  "stage": "after successful targeted build, before test process launch",
+  "source_binding": "source-binding.json",
+  "build_exit_code": 0,
+  "build_log": "review-correction-build.log.gz",
+  "error": "Receipt runner used Path.with_suffix on dotted executable name, yielding missing Hexalith.Timesheets.dll. Corrected to append .dll. No test ran during this attempt.",
+  "build_start_utc": null,
+  "build_end_utc": null,
+  "timing_limitation": "The runner stopped before persisting its in-memory start/end values. The source capture and retained build-log filesystem timestamp bound this stage; exact command timings are not reconstructed.",
+  "source_capture_completed_utc": "2026-10-20T13:13:55.764801+00:00",
+  "build_log_last_modified_utc": "2026-10-20T13:13:57.013289+00:00",
+  "subsequent_precisely_timed_run": "review-correction-retry-verification.json"
+}

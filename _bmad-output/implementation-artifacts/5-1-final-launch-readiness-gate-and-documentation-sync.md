@@ -14,76 +14,17 @@ As a release owner,
 I want final readiness evidence to distinguish completed stories from launch-scope integrations,
 so that Timesheets does not ship with hidden unavailable defaults or overstated product claims.
 
-## Scope decision (READ FIRST — this is VERIFY + CLASSIFY + DOC-SYNC, NOT implement)
+## Current Scope and Acceptance — 2026-10-20
 
-This is the **final story of the project** and the only story in Epic 5 ("Release Readiness Verification").
-**Epic 5 verifies evidence already produced by Epics 1–4 — it must never be the first implementation location for
-any feature behavior** ([epics.md:345-349], [prd.md §13:410-418], readiness-repair §4B/§4C). The 2026-06-20
-readiness repair deliberately **rehomed** every launch-scope integration out of Epic 5 into its owning feature story
-(magic-link loader → 3.6, HTTP no-disclosure → 3.7, Work validation → 1.10, planned-effort → 4.8, export preview →
-4.9, command perf → 1.11, report/export/dashboard perf → 4.10). All of those are committed. **Your job is to
-aggregate, classify, sync the docs, and render a defensible release verdict — not to build, host-wire, or "finish"
-any of them.**
+Story 5.1 verifies, classifies, and synchronizes evidence; it implements no feature behavior, hosting, dependency, submodule, or UI change. The approved 2026-09-12 course correction §3/§4.4 supersedes the original completed/CONCERNS framing. Epic 5 also contains Stories 5.2 and 5.3. The spec `spec-5-1-final-launch-readiness-gate-and-documentation-sync.md` controls this increment; the historical task/evidence record below retains its original dates.
 
-Concretely you will produce exactly three things, mapped 1:1 to the three epic ACs:
+1. Given current code and approved decisions, when artifacts are reconciled, then each concern is `implemented`, `unfinished`, `waived`, or `post-v1`, and every waiver names approval evidence, owner, risk, and revisit condition. FR14 deployed acceptance remains unfinished; release remains **FAIL**.
+2. Given executable configuration and sprint tracking, when guidance and fitness checks run, then SDK/package claims and current story states agree. Q6 governance, Q7 CSV v1, Q8 sensitive comments, and consumer-host rendering/accessibility ownership are resolved. No Timesheets UI project may be added.
+3. Given release checks, when results are published, then all six executables have exact pass/fail/skip counts and dated source scope. Historical local proof, current-graph runtime qualification, skipped performance/runtime lanes, and deployed acceptance stay distinct.
 
-1. **A launch-readiness classification record** (`docs/launch-readiness.md`, new) that marks **every** launch-scope
-   item `implemented | waived | post-v1`, where **every waiver names owner, risk, and revisit condition** (AC1).
-2. **A documentation sync pass** across `README.md`, `architecture.md` status notes, `docs/performance-evidence.md`,
-   PRD launch-readiness notes, and sprint artifacts so they **distinguish story-complete from launch-complete** and
-   **do not claim live Works, live magic-link loader, a preview HTTP endpoint, full performance, or UI behavior that
-   is not implemented** (AC2). Fix overstatements/stale claims; you are allowed to edit these docs.
-3. **A final release-gate run + decision** — build, all suites, privacy scans, projection-rebuild tests, export
-   golden files, magic-link HTTP no-disclosure tests, and performance evidence — recorded as **PASS / CONCERNS /
-   FAIL / WAIVED with traceable evidence** (AC3), plus a fitness test that keeps the record honest.
+Reconciliation implementation and checks: `tests/5-1-test-summary.md`. The user accepted and signed off the completed Story 5.1 reconciliation on 2026-10-20: “accept and sign-off”. [Acceptance record](evidence/5-1/20261020-final-gate/story-acceptance.json) closes this story independently of the remaining release prerequisites. Stories 3.6/3.7 deployed acceptance, Story 5.2 review, tenant/legal approval, policy configuration, and product stakeholder UAT remain open; release remains **FAIL**. Old checked tasks below retain their historical evidence scope.
 
-**Do NOT** (these are the items you classify/waive, not build): bind `IWorksQueryChannel` or call
-`AddTimesheetsWorks*` in the host; wire the magic-link `MagicLinkTokenHashCapabilityIndexProjection` projection host;
-map an HTTP route for export preview; scaffold a Timesheets UI project; add EventStore/Dapr/Aspire runtime fixtures
-or perf wire-path measurement; edit any sibling submodule (`Hexalith.Builds`, `Hexalith.EventStore`, etc.); weaken,
-skip, or delete any existing test or the two reserved `[Fact(Skip=…)]` placeholders.
-
-**Honest expected verdict:** because real launch-scope integrations are legitimately **waived** (live Works host
-activation, live magic-link end-to-end resolution, preview HTTP endpoint, perf wire path, NFR13 UI, deployment /
-stakeholder-acceptance evidence, legal-hold sign-off), the defensible overall decision is **CONCERNS** (feature work
-is story-complete with explicit, owner-named waivers; the system is **not** launch-complete until the waivers are
-resolved or formally accepted). **PASS would be an overstatement and is the exact failure this story exists to
-prevent**; **FAIL is wrong** because every item is story-complete with a documented waiver. Let the evidence set the
-verdict, but do not manufacture a PASS.
-
-## Acceptance Criteria
-
-1. **Launch-scope classification with owner/risk/revisit on every waiver (epic AC1 — NFR7).**
-   **Given** the launch-readiness review runs over the verified state of Epics 1–4
-   **When** Timesheets is assessed for v1 release
-   **Then** a durable record (`docs/launch-readiness.md`) marks **each** of — unavailable defaults, skipped lanes,
-   deferred integrations, legal-hold policy, comment sensitivity, export format, secondary magic-link identity
-   verification, and performance evidence — as exactly one of `implemented`, `waived`, or `post-v1`,
-   **and** every `waived` / `post-v1` item names an **owner**, a **risk**, and a **revisit condition**, traceable to
-   the owning story (no item left unclassified, no waiver left anonymous).
-
-2. **Documentation sync: story-complete vs launch-complete, no overstated claims (epic AC2 — NFR12, NFR13, NFR15).**
-   **Given** `README.md`, `architecture.md`, `docs/performance-evidence.md`, the PRD launch-readiness notes, and the
-   sprint artifacts are compared against the actual committed code
-   **When** each doc is reconciled
-   **Then** the docs explicitly **distinguish story-complete from launch-complete**, **do not claim** live Works
-   planned-effort/validation in the running host, a live magic-link loader that resolves valid links end-to-end, a
-   dedicated export-preview HTTP endpoint, full (wire-path) performance evidence, or any Timesheets UI behavior —
-   **and** every stale or overstated claim found (e.g. `architecture.md` status notes that still call Stories
-   4.8/4.9/4.10 "backlog") is corrected to match committed reality, with remaining divergences recorded in
-   `docs/launch-readiness.md`.
-
-3. **Final release gates run, decision recorded with traceable evidence, and fitness-guarded (epic AC3).**
-   **Given** the final release gates run
-   **When** build, the full test suites, privacy/logging scans, projection-rebuild/idempotency tests, export
-   golden-file tests, magic-link HTTP no-disclosure tests, and performance evidence are each checked
-   **Then** `docs/launch-readiness.md` records a per-gate and an **overall** release decision of `PASS`, `CONCERNS`,
-   `FAIL`, or `WAIVED`, each backed by **traceable evidence** (test class / evidence file / commit), with **exact
-   test counts taken from the built executables** (no estimates), **and** a fitness test asserts the record exists
-   and contains the required classification vocabulary (`implemented`/`waived`/`post-v1`), the verdict vocabulary
-   (`PASS`/`CONCERNS`/`FAIL`/`WAIVED`), and owner/risk/revisit markers on waivers — so the gate cannot silently rot.
-
-## Tasks / Subtasks
+## Historical Tasks / Subtasks (original execution)
 
 - [x] **Task 1 — Author `docs/launch-readiness.md` classification record (AC: 1)**
   - [x] Create `docs/launch-readiness.md` (durable, code-adjacent, alongside `performance-evidence.md` and
@@ -163,7 +104,7 @@ verdict, but do not manufacture a PASS.
     integration tests), Contracts ~**88**, Server ~**420**, Projections ~**77** (re-measure all exactly). Budget for
     ≥1 review-found patch.
 
-## Dev Notes
+## Historical Dev Notes (original context; superseded by current scope)
 
 ### TL;DR — aggregate, classify, sync, decide; do not implement
 

@@ -7,6 +7,12 @@ Launch-relevant targets:
 
 Verdict vocabulary used below: **pass / concern / fail / waived**.
 
+## Current Evidence Scope — 2026-10-20
+
+The measurements below are historical in-process results on their stated SDK/runtime and fixtures; this documentation sync does not remeasure them on SDK `10.0.402`. The default release run leaves `TIMESHEETS_PERF` unset and retains both opt-in skips. The static EventStore-backed wire-path placeholder remains skipped. Historical local persisted magic-link correctness (latest passing journey 2026-10-18 on the earlier AppHost graph) is not latency qualification of the current graph or deployed topology.
+
+Wire-path waiver approval: the approved [2026-09-12 course correction](../_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md) §3 carries forward the existing performance waiver from Stories 1.11/4.10 and the approved 2026-06-20 readiness repair. Owners: Stories 1.11 and 4.10, aggregated by the release owner. Risk: in-process timings exclude persistence, Dapr transport, state store, and deployed contention. Revisit condition: realistic persisted runtime fixtures support NFR10/NFR11 measurements. Local correctness proof does not close this waiver. The overall launch verdict stays **FAIL** for unfinished deployed acceptance; see [launch readiness](launch-readiness.md).
+
 ## NFR10 — Capture and governance command acknowledgement evidence
 
 Story 1.11 makes NFR10 a measured launch-readiness lane so Epic 5 aggregates this evidence instead of creating the first measurement path. The measured lane drives the **real in-process composed command pipeline** (authorization gate → aggregate decision → acknowledgement result) for the capture and governance command surface and records the per-scenario p95. Each measured iteration asserts the real acknowledgement outcome (dispatched / accepted), so a degenerate or no-op path cannot register as "fast".
@@ -37,7 +43,7 @@ Worst-case command acknowledgement p95 across capture/governance: **0.0056 ms** 
 ### NFR10 comparison and verdict
 
 - In-process composed command-decision path vs NFR10 `500 ms p95`: worst-case measured p95 is **0.0056 ms**, roughly five orders of magnitude inside the target. **Verdict: pass** for the in-process command-acknowledgement surface (capture + governance). Per-scenario results are all **pass**.
-- EventStore-backed end-to-end command acknowledgement (persistence + Dapr wire path): **Verdict: waived (deferred)**. This path is the more realistic NFR10 target but needs runtime fixtures that do not exist yet, so it remains reserved (see below). This story owns it and defers it; Epic 5 aggregates this verdict rather than re-measuring.
+- EventStore-backed end-to-end command acknowledgement (persistence + Dapr wire path): **Verdict: waived (deferred)**. This path is the more realistic NFR10 target but needs representative persisted performance fixtures not supplied by the local magic-link correctness journey, so it remains reserved (see below). This story owns it and defers it; Epic 5 aggregates this verdict rather than re-measuring.
 
 ### Scope and honesty constraint
 
@@ -73,7 +79,7 @@ Worst-case report/export/dashboard query p95 across measured scenarios: **6.0908
 
 - In-process report/export/dashboard read path vs NFR11 `2s p95`: worst-case measured p95 is **6.0908 ms**, comfortably inside the target. **Verdict: pass** for the measured in-process Project report, Work report with supplied Works planned effort, Approved-Time Ledger, export generation, export preview, and dashboard overview paths.
 - Functional correctness: every warm-up and measured iteration asserts disclosure/readiness plus expected row counts. Report scenarios assert disclosed row counts, ledger asserts fresh export-ready page data, export and preview assert full 60-row scope, and dashboard asserts composed section counts.
-- Infrastructure availability: measured path is **in-process** only. Seeded projection readers and the static supplied Works planned-effort provider exercise the service composition that is runnable today without EventStore, Dapr, Aspire, or persisted fixtures.
+- Infrastructure availability: measured path is **in-process** only. Seeded projection readers and the static supplied Works planned-effort provider exercise the service composition that is runnable without an EventStore/Dapr/Aspire runtime or representative persisted performance fixtures.
 - EventStore-backed wire path: **Verdict: waived (deferred)**. Owner: Story 4.10 evidence, aggregated by Epic 5. Risk: the in-process p95 does not prove EventStore-backed persistence, Dapr transport, projection-host topology, or state-store latency. Revisit condition: run a runtime EventStore-backed report/export/dashboard lane when realistic persisted tenant, project, work, contributor, period, ledger, export, and dashboard fixtures exist.
 
 ### Scope and honesty constraint

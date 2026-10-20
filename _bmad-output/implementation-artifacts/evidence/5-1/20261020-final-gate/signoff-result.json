@@ -1,0 +1,112 @@
+{
+  "raw_directory": "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt",
+  "architecture_attributes": {
+    "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+    "id": "d39cfc92-80cb-4519-8eaf-221d2fe08c2d",
+    "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll",
+    "run-date": "2026-10-20",
+    "run-time": "14:16:53",
+    "start-rtf": "2026-10-20T14:16:53.0884178+00:00",
+    "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+    "target-framework": ".NETCoreApp,Version=v10.0",
+    "errors": "0",
+    "failed": "0",
+    "finish-rtf": "2026-10-20T14:17:04.2804592+00:00",
+    "not-run": "0",
+    "passed": "65",
+    "skipped": "0",
+    "time": "11.192",
+    "time-rtf": "00:00:11.1920000",
+    "total": "65"
+  },
+  "executions": [
+    {
+      "label": "signoff-build",
+      "argv": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "TIMESHEETS_PERF": null,
+        "TIMESHEETS_LIVE_DAPR": null
+      },
+      "start_utc": "2026-10-20T14:16:51.218875+00:00",
+      "end_utc": "2026-10-20T14:16:52.378824+00:00",
+      "exit_code": 0,
+      "compressed_log_receipt": "signoff-build.log.gz",
+      "source_binding": "signoff-source-binding.json",
+      "source_binding_sha256": "8bfc9fc8473a1476a28b4504cf850f9248e4a9bee357b5f09d584f817d0c462f",
+      "raw_log": "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-build.log",
+      "story_acceptance_sha256": "38b827421eb6acc6d36675e1f3a0e7c07857186b8e2795c6fc5fc863b6d6cf4f"
+    },
+    {
+      "label": "signoff-readiness",
+      "argv": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-class",
+        "*LaunchReadinessTests",
+        "-xml",
+        "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-readiness.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "TIMESHEETS_PERF": null,
+        "TIMESHEETS_LIVE_DAPR": null
+      },
+      "start_utc": "2026-10-20T14:16:52.379818+00:00",
+      "end_utc": "2026-10-20T14:16:52.938714+00:00",
+      "exit_code": 0,
+      "compressed_log_receipt": "signoff-readiness.log.gz",
+      "source_binding": "signoff-source-binding.json",
+      "source_binding_sha256": "8bfc9fc8473a1476a28b4504cf850f9248e4a9bee357b5f09d584f817d0c462f",
+      "raw_log": "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-readiness.log",
+      "compressed_xml_receipt": "signoff-readiness.xml.gz",
+      "raw_xml": "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-readiness.xml",
+      "binary_sha256": {
+        "Hexalith.Timesheets.ArchitectureTests": "c94697e4cecf20f81c0dd8cad17e32a9798cb7decd52b8ee0f9834bbfc2b1b80",
+        "Hexalith.Timesheets.ArchitectureTests.dll": "9e32890932399875c619e274069f42ef4b430f23d1a17891be9ba71f9eee20a2",
+        "Hexalith.Timesheets.ArchitectureTests.deps.json": "6c33901a4cb2944b3f1c9c229dd4304646b60c337fd4b3bca598daa6db712f2f",
+        "Hexalith.Timesheets.ArchitectureTests.runtimeconfig.json": "47006289392cc2d570cfeaf8f92b5c06d9d3ad0c33faf63316ef9b6edac73963"
+      },
+      "story_acceptance_sha256": "38b827421eb6acc6d36675e1f3a0e7c07857186b8e2795c6fc5fc863b6d6cf4f"
+    },
+    {
+      "label": "signoff-architecture",
+      "argv": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-xml",
+        "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-architecture.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "TIMESHEETS_PERF": null,
+        "TIMESHEETS_LIVE_DAPR": null
+      },
+      "start_utc": "2026-10-20T14:16:52.939159+00:00",
+      "end_utc": "2026-10-20T14:17:04.311756+00:00",
+      "exit_code": 0,
+      "compressed_log_receipt": "signoff-architecture.log.gz",
+      "source_binding": "signoff-source-binding.json",
+      "source_binding_sha256": "8bfc9fc8473a1476a28b4504cf850f9248e4a9bee357b5f09d584f817d0c462f",
+      "raw_log": "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-architecture.log",
+      "compressed_xml_receipt": "signoff-architecture.xml.gz",
+      "raw_xml": "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-architecture.xml",
+      "binary_sha256": {
+        "Hexalith.Timesheets.ArchitectureTests": "c94697e4cecf20f81c0dd8cad17e32a9798cb7decd52b8ee0f9834bbfc2b1b80",
+        "Hexalith.Timesheets.ArchitectureTests.dll": "9e32890932399875c619e274069f42ef4b430f23d1a17891be9ba71f9eee20a2",
+        "Hexalith.Timesheets.ArchitectureTests.deps.json": "6c33901a4cb2944b3f1c9c229dd4304646b60c337fd4b3bca598daa6db712f2f",
+        "Hexalith.Timesheets.ArchitectureTests.runtimeconfig.json": "47006289392cc2d570cfeaf8f92b5c06d9d3ad0c33faf63316ef9b6edac73963"
+      },
+      "story_acceptance_sha256": "38b827421eb6acc6d36675e1f3a0e7c07857186b8e2795c6fc5fc863b6d6cf4f"
+    }
+  ]
+}

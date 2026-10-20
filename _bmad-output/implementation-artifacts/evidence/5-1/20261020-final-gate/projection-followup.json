@@ -1,0 +1,40 @@
+[
+  {
+    "label": "projection-cleanup-focused",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-method",
+      "*TenantReplacementPreservesCandidatesBeyondFourHundredGlobalPages",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/projection-cleanup-focused.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "TIMESHEETS_PERF": null,
+      "TIMESHEETS_LIVE_DAPR": null
+    },
+    "start_utc": "2026-10-20T12:32:24.156829+00:00",
+    "end_utc": "2026-10-20T12:32:43.664792+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "projection-cleanup-focused.xml.gz",
+    "compressed_log_receipt": "projection-cleanup-focused.log.gz"
+  },
+  {
+    "label": "projection-retry",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/projection-retry.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "TIMESHEETS_PERF": null,
+      "TIMESHEETS_LIVE_DAPR": null
+    },
+    "start_utc": "2026-10-20T12:32:43.665400+00:00",
+    "end_utc": "2026-10-20T12:40:55.100011+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "projection-retry.xml.gz",
+    "compressed_log_receipt": "projection-retry.log.gz"
+  }
+]

@@ -1,0 +1,87 @@
+[
+  {
+    "label": "review-correction-retry-build",
+    "argv": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "start_utc": "2026-10-20T13:14:39.104018+00:00",
+    "source_binding": "source-binding.json",
+    "source_binding_sha256": "f6d4fcb79dd8db8f6eb4a7815bfca0a9743851c6123d9918ac1d5ee169029daa",
+    "source_inputs_match_before": true,
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "TIMESHEETS_PERF": null,
+      "TIMESHEETS_LIVE_DAPR": null
+    },
+    "end_utc": "2026-10-20T13:14:40.278706+00:00",
+    "exit_code": 0,
+    "source_inputs_match_after": true,
+    "log": {
+      "file": "review-correction-retry-build.log.gz",
+      "raw_bytes": 272,
+      "raw_sha256": "9837a35641a10698be3fa59d969ca475189457c874494ebc9825104e6b07364e",
+      "compressed_bytes": 173,
+      "compressed_sha256": "5f048d064901d9f4f3108a19da34666657de38ac62d1c0d4b7ab5a1d20147088"
+    },
+    "raw_log_retained_at": "/tmp/timesheets-5-1-review-raw-v4aue3bc/review-correction-retry-build.log"
+  },
+  {
+    "label": "review-correction-retry-readiness",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-class",
+      "*LaunchReadinessTests",
+      "-xml",
+      "/tmp/timesheets-5-1-review-raw-v4aue3bc/review-correction-retry-readiness.xml"
+    ],
+    "start_utc": "2026-10-20T13:14:40.287213+00:00",
+    "source_binding": "source-binding.json",
+    "source_binding_sha256": "f6d4fcb79dd8db8f6eb4a7815bfca0a9743851c6123d9918ac1d5ee169029daa",
+    "source_inputs_match_before": true,
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "TIMESHEETS_PERF": null,
+      "TIMESHEETS_LIVE_DAPR": null
+    },
+    "end_utc": "2026-10-20T13:14:40.838631+00:00",
+    "exit_code": 0,
+    "source_inputs_match_after": true,
+    "log": {
+      "file": "review-correction-retry-readiness.log.gz",
+      "raw_bytes": 611,
+      "raw_sha256": "359d0614afd62ac7c57eae1890ced82718ad50ec2b8e9c239c16f5070084ca94",
+      "compressed_bytes": 362,
+      "compressed_sha256": "0982a48ea7d494ad1f8f008bc8bbbf518d782534a60c7b61d491d9a27f56e199"
+    },
+    "raw_log_retained_at": "/tmp/timesheets-5-1-review-raw-v4aue3bc/review-correction-retry-readiness.log",
+    "build_artifact_sha256": {
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests": "c94697e4cecf20f81c0dd8cad17e32a9798cb7decd52b8ee0f9834bbfc2b1b80",
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll": "0593a94d9d804c6b585bb64de9fb49176f7551adb38363120e5c29ce10c47a6f",
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.deps.json": "6c33901a4cb2944b3f1c9c229dd4304646b60c337fd4b3bca598daa6db712f2f",
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.runtimeconfig.json": "47006289392cc2d570cfeaf8f92b5c06d9d3ad0c33faf63316ef9b6edac73963"
+    },
+    "xml": {
+      "file": "review-correction-retry-readiness.xml.gz",
+      "raw_bytes": 11923,
+      "raw_sha256": "584870a658cd01e4449822e7a939d0567e1bbd5b8b7ff71bd19edc956cf9eeb2",
+      "compressed_bytes": 2189,
+      "compressed_sha256": "539052584dcf9a8fb1c9c1f0561489ca89ded20e86b6a79fffcb5e5313a8b35a"
+    },
+    "raw_xml_retained_at": "/tmp/timesheets-5-1-review-raw-v4aue3bc/review-correction-retry-readiness.xml",
+    "counts": {
+      "total": 16,
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0
+    }
+  }
+]

@@ -1,0 +1,16 @@
+{
+  "checked_utc": "2026-10-20T14:17:04.320806+00:00",
+  "source_file_count": 603,
+  "changed_source_files": [],
+  "evidence_input_count": 7,
+  "changed_evidence_inputs": [],
+  "source_binding": "signoff-source-binding.json",
+  "source_binding_sha256": "8bfc9fc8473a1476a28b4504cf850f9248e4a9bee357b5f09d584f817d0c462f",
+  "binary_sha256": {
+    "Hexalith.Timesheets.ArchitectureTests": "c94697e4cecf20f81c0dd8cad17e32a9798cb7decd52b8ee0f9834bbfc2b1b80",
+    "Hexalith.Timesheets.ArchitectureTests.dll": "9e32890932399875c619e274069f42ef4b430f23d1a17891be9ba71f9eee20a2",
+    "Hexalith.Timesheets.ArchitectureTests.deps.json": "6c33901a4cb2944b3f1c9c229dd4304646b60c337fd4b3bca598daa6db712f2f",
+    "Hexalith.Timesheets.ArchitectureTests.runtimeconfig.json": "47006289392cc2d570cfeaf8f92b5c06d9d3ad0c33faf63316ef9b6edac73963"
+  },
+  "story_acceptance_sha256": "38b827421eb6acc6d36675e1f3a0e7c07857186b8e2795c6fc5fc863b6d6cf4f"
+}

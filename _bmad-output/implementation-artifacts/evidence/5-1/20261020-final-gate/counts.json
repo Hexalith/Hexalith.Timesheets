@@ -1,0 +1,70 @@
+{
+  "suites": {
+    "Hexalith.Timesheets.ArchitectureTests": {
+      "total": 65,
+      "passed": 65,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": "11.192",
+      "receipt": "signoff-architecture.xml",
+      "compressed_receipt": "signoff-architecture.xml.gz",
+      "raw_retained_at": "/tmp/timesheets-5-1-signoff-raw-mh6h6hzt/signoff-architecture.xml"
+    },
+    "Hexalith.Timesheets.Contracts.Tests": {
+      "total": 92,
+      "passed": 92,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": "1.067",
+      "receipt": "Hexalith.Timesheets.Contracts.Tests.xml",
+      "compressed_receipt": "Hexalith.Timesheets.Contracts.Tests.xml.gz",
+      "raw_retained_at": "/tmp/timesheets-5-1-20261020-raw-wqfjh6oi/Hexalith.Timesheets.Contracts.Tests.xml"
+    },
+    "Hexalith.Timesheets.Server.Tests": {
+      "total": 558,
+      "passed": 558,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": "2.420",
+      "receipt": "Hexalith.Timesheets.Server.Tests.xml",
+      "compressed_receipt": "Hexalith.Timesheets.Server.Tests.xml.gz",
+      "raw_retained_at": "/tmp/timesheets-5-1-20261020-raw-wqfjh6oi/Hexalith.Timesheets.Server.Tests.xml"
+    },
+    "Hexalith.Timesheets.Works.Tests": {
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": "0.460",
+      "receipt": "Hexalith.Timesheets.Works.Tests.xml",
+      "compressed_receipt": "Hexalith.Timesheets.Works.Tests.xml.gz",
+      "raw_retained_at": "/tmp/timesheets-5-1-20261020-raw-wqfjh6oi/Hexalith.Timesheets.Works.Tests.xml"
+    },
+    "Hexalith.Timesheets.Projections.Tests": {
+      "total": 437,
+      "passed": 437,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": "491.085",
+      "receipt": "projection-retry.xml",
+      "compressed_receipt": "projection-retry.xml.gz",
+      "raw_retained_at": "/tmp/timesheets-5-1-20261020-raw-wqfjh6oi/projection-retry.xml"
+    },
+    "Hexalith.Timesheets.IntegrationTests": {
+      "total": 732,
+      "passed": 727,
+      "failed": 0,
+      "skipped": 5,
+      "seconds": "567.297",
+      "receipt": "Hexalith.Timesheets.IntegrationTests.xml",
+      "compressed_receipt": "Hexalith.Timesheets.IntegrationTests.xml.gz",
+      "raw_retained_at": "/tmp/timesheets-5-1-20261020-raw-wqfjh6oi/Hexalith.Timesheets.IntegrationTests.xml"
+    }
+  },
+  "totals": {
+    "total": 1960,
+    "passed": 1955,
+    "failed": 0,
+    "skipped": 5
+  }
+}

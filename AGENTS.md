@@ -65,18 +65,18 @@ Before working in a Hexalith repository, locate, read, and follow
   below, not in the shared baseline text above the markers.
 
 <!-- bmad:context -->
-<!-- Verified 2026-09-08 against e3ea9ce2629e01745d7b9cdb451e302fd5162f6c. Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
+<!-- Verified 2026-10-20 against d72899b4489aaca0b9a9b96d0ac267165920caf8. Managed by bmad-project-context; edits inside this block are replaced on refresh. Keep anything you want preserved outside the markers. -->
 
 ## timesheets
 
-Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, approval, confirmation, reporting, and finance export. Persistence and hosting start from `hexalith-llm-instructions.md` and `hexalith-state-instructions.md`. Planning lives in `_bmad-output/planning-artifacts/`. Boundaries are in `docs/boundary-decision-record.md`; launch posture is `docs/launch-readiness.md` (CONCERNS, not PASS).
+Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, approval, confirmation, reporting, and finance export. Persistence and hosting start from `hexalith-llm-instructions.md` and `hexalith-state-instructions.md`. Planning lives in `_bmad-output/planning-artifacts/`. Boundaries are in `docs/boundary-decision-record.md`; the overall launch verdict in `docs/launch-readiness.md` is **FAIL** while deployed acceptance remains unfinished.
 
 ## Policy
 
 - Never persist Timesheets domain state through SQL, EF, Redis, Dapr `SaveStateAsync`/`GetStateAsync`, local JSON, or direct projection mutation; add write paths through Hexalith.EventStore.
 - Store sibling Tenant, Party, Project, and Work identifiers only; never copy their owned data into events or read models.
 - Treat JWT claims and caller-submitted context as evidence; authorize through server-side gates.
-- Do not add a Timesheets UI project; future UI goes through FrontComposer and Fluent UI V5.
+- Do not add a Timesheets UI project. Timesheets supplies contracts and FrontComposer metadata; a consuming FrontComposer host owns rendered Fluent UI V5 behavior and browser/WCAG evidence.
 - This repo ships `Hexalith.Timesheets.AppHost` and `Hexalith.Timesheets.ServiceDefaults` (architecture tests require them). Do not delete them, do not add topology or a second host, and change them only when a story names those projects.
 
 ## Where things are
@@ -84,25 +84,25 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 - Aggregates and command services: `src/Hexalith.Timesheets.Server` (`src/Hexalith.Timesheets` is the HTTP host).
 - Works ports and opt-in DI: `src/Hexalith.Timesheets.Works`
 - Rebuildable projections: `src/Hexalith.Timesheets.Projections`
-- Launch waivers and deferred wiring: `docs/launch-readiness.md`
-- Perf measurements: `docs/performance-evidence.md`
+- Launch classifications, approval sources, and gates: `docs/launch-readiness.md`
+- Historical performance measurements and wire-path waiver: `docs/performance-evidence.md`
 
 ## Running and verifying
 
-- Use the SDK in `global.json` (`10.0.302`, `rollForward: latestPatch`); do not trust the machine SDK.
-- Restore and build `Hexalith.Timesheets.slnx`; test each project under `tests/` individually, including `Hexalith.Timesheets.Works.Tests` (README omits it). There is no `.github/workflows`.
-- In restricted environments, prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home`. If `dotnet test` fails on VSTest sockets, run the built `tests/<Project>/bin/Debug/net10.0/<Project>` executable.
-- Perf lanes stay skipped unless `TIMESHEETS_PERF=1` is set on the IntegrationTests invocation.
+- Use the SDK in `global.json` (`10.0.402`, `rollForward: latestPatch`). The AppHost SDK is `13.6.1`; package pins come from the imported Builds catalog plus root CPM overrides.
+- Restore/build `Hexalith.Timesheets.slnx` with matching local Debug/source-reference mode: `dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false`, then `dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false`.
+- CI workflows exist under `.github/workflows/`; CI/CD uses Release/published packages. Never mix these restore/build graphs. Works forwards its own EventStore default; when it differs from the consuming catalog, pass the catalog version as `-p:HexalithEventStoreVersion=<catalog version>` to both local commands until the owned build follow-up closes.
+- Prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home` in restricted environments. Run all six built xUnit v3 executables individually under `tests/<Project>/bin/Debug/net10.0/<Project>`, including `Hexalith.Timesheets.Works.Tests`. SDK 10.0.402 rejects this repository's `dotnet test` VSTest target; see README commands.
+- Performance lanes require `TIMESHEETS_PERF=1`; the local Dapr journey requires `TIMESHEETS_LIVE_DAPR=1` and its isolated fixture. Default skips are not runtime acceptance.
 
 ## Conventions that differ from defaults
 
-- Leave `AddTimesheetsServerKernel` fail-closed (`DenyAll*` / `Unavailable*`). Bind Works validation or planned-effort only via `AddTimesheetsWorksReferenceValidation` / `AddTimesheetsWorksPlannedEffortReporting` after an `IWorksQueryChannel` is registered.
+- Leave `AddTimesheetsServerKernel` fail-closed (`DenyAll*` / `Unavailable*`). Bind Works validation or planned effort only via `AddTimesheetsWorksReferenceValidation` / `AddTimesheetsWorksPlannedEffortReporting` after an `IWorksQueryChannel` is registered.
 - Keep aggregates pure (`Handle`/`Apply`); I/O stays in services and the host.
 
 ## Known pitfalls
 
 - Do not stage `references/` submodule gitlinks unless the change owns that pointer.
-- Empty magic-link resolution is not a loader bug: `MagicLinkTokenHashCapabilityIndexProjection` has no projection-host wiring; valid links fail closed until a story wires it.
+- The HTTP host registers the projection assembly and EventStore processing. Capability-index, Time Entry evidence, and tenant Activity Type catalog handlers have composed and historical isolated local persistence proof. Missing state still fails closed; deployed authority/shared-rebuild acceptance and current-graph AppHost runtime qualification remain unfinished (Story 3.6). Do not restore the obsolete unwired-index diagnosis or infer deployed acceptance from local proof.
 
 <!-- /bmad:context -->
-

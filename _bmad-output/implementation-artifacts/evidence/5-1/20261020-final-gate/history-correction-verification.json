@@ -1,0 +1,40 @@
+[
+  {
+    "label": "history-correction-readiness",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-class",
+      "*LaunchReadinessTests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/history-correction-readiness.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "TIMESHEETS_PERF": null,
+      "TIMESHEETS_LIVE_DAPR": null
+    },
+    "start_utc": "2026-10-20T12:50:43.311483+00:00",
+    "end_utc": "2026-10-20T12:50:44.358903+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "history-correction-readiness.xml.gz",
+    "compressed_log_receipt": "history-correction-readiness.log.gz"
+  },
+  {
+    "label": "history-correction-architecture",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/history-correction-architecture.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "TIMESHEETS_PERF": null,
+      "TIMESHEETS_LIVE_DAPR": null
+    },
+    "start_utc": "2026-10-20T12:50:44.364499+00:00",
+    "end_utc": "2026-10-20T12:51:03.089153+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "history-correction-architecture.xml.gz",
+    "compressed_log_receipt": "history-correction-architecture.log.gz"
+  }
+]

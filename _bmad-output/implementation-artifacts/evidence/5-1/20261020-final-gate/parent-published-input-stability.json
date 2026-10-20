@@ -1,0 +1,9 @@
+{
+  "source_binding": "parent-published-source-binding.json",
+  "source_binding_sha256": "aeb3c319662b6a78fe0da4e69de3adbbe41452f938c6a63b4d634f7da07a3ee6",
+  "source_file_count": 603,
+  "changed_source_files": [],
+  "evidence_input_count": 7,
+  "changed_evidence_inputs": [],
+  "checked_utc": "2026-10-20T13:26:39.089328+00:00"
+}

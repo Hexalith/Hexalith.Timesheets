@@ -1,0 +1,50 @@
+{
+  "execution": {
+    "label": "parent-published-readiness",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-class",
+      "*LaunchReadinessTests",
+      "-xml",
+      "/tmp/timesheets-5-1-published-raw-0pl5sicb/parent-published-readiness.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "TIMESHEETS_PERF": null,
+      "TIMESHEETS_LIVE_DAPR": null
+    },
+    "start_utc": "2026-10-20T13:26:38.468840+00:00",
+    "end_utc": "2026-10-20T13:26:39.081231+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "parent-published-readiness.xml.gz",
+    "compressed_log_receipt": "parent-published-readiness.log.gz",
+    "source_binding": "parent-published-source-binding.json",
+    "source_binding_sha256": "aeb3c319662b6a78fe0da4e69de3adbbe41452f938c6a63b4d634f7da07a3ee6",
+    "binary_sha256": {
+      "Hexalith.Timesheets.ArchitectureTests": "c94697e4cecf20f81c0dd8cad17e32a9798cb7decd52b8ee0f9834bbfc2b1b80",
+      "Hexalith.Timesheets.ArchitectureTests.dll": "41971f042a513b86a8680e9bd3e39819d1a0643010ede4ec988a0e408699a2a2",
+      "Hexalith.Timesheets.ArchitectureTests.deps.json": "6c33901a4cb2944b3f1c9c229dd4304646b60c337fd4b3bca598daa6db712f2f",
+      "Hexalith.Timesheets.ArchitectureTests.runtimeconfig.json": "47006289392cc2d570cfeaf8f92b5c06d9d3ad0c33faf63316ef9b6edac73963"
+    }
+  },
+  "assembly_attributes": {
+    "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+    "id": "47b8ecae-cf5c-4408-aa47-2c282591438b",
+    "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll",
+    "run-date": "2026-10-20",
+    "run-time": "13:26:38",
+    "start-rtf": "2026-10-20T13:26:38.6830694+00:00",
+    "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+    "target-framework": ".NETCoreApp,Version=v10.0",
+    "errors": "0",
+    "failed": "0",
+    "finish-rtf": "2026-10-20T13:26:39.0552052+00:00",
+    "not-run": "0",
+    "passed": "16",
+    "skipped": "0",
+    "time": "0.372",
+    "time-rtf": "00:00:00.3720000",
+    "total": "16"
+  },
+  "raw_directory": "/tmp/timesheets-5-1-published-raw-0pl5sicb"
+}

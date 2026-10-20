@@ -1,0 +1,25 @@
+{
+  "inventory_captured_utc": "2026-10-20T13:10:18.569629+00:00",
+  "attempts": [
+    {
+      "compressed_receipt": "Hexalith.Timesheets.Projections.Tests.xml.gz",
+      "passed": 436,
+      "failed": 1,
+      "skipped": 0,
+      "total": 437,
+      "original_outcome": "failed",
+      "execution_manifest": "execution.json",
+      "note": "Original full-suite execution exit 1 is recorded in execution.json; later complete retry is a separate receipt."
+    },
+    {
+      "compressed_receipt": "launch-readiness-initial.xml.gz",
+      "passed": 12,
+      "failed": 1,
+      "skipped": 0,
+      "total": 13,
+      "original_outcome": "failed",
+      "execution_manifest": null,
+      "note": "Original failed output retained. Initial focused readiness execution was not separately timestamped in a JSON manifest; XML and log retain its run timestamps and failed result."
+    }
+  ]
+}

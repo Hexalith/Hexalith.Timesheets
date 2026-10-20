@@ -1,0 +1,15 @@
+[
+  {
+    "observed_utc": "2026-10-20T12:20:54.685962+00:00",
+    "owned_process_only": true,
+    "argv": [
+      "ps",
+      "-p",
+      "2201198",
+      "-o",
+      "pid,etime,time,pcpu,rss,stat"
+    ],
+    "exit_code": 0,
+    "output": "    PID     ELAPSED     TIME %CPU   RSS STAT\n2201198       07:50 00:07:49 99.8 698672 Sl\n"
+  }
+]

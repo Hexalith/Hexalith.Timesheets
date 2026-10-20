@@ -4,7 +4,7 @@ project: timesheets
 document: EXPERIENCE.md
 status: draft
 created: 2026-06-18
-updated: 2026-06-18
+updated: 2026-10-20
 sources:
   - ../../prds/prd-timesheets-2026-06-18/prd.md
   - ../../prds/prd-timesheets-2026-06-18/addendum.md
@@ -15,6 +15,12 @@ sources:
 # Hexalith.Timesheets - Experience Spine
 
 This spine owns how the product works. `DESIGN.md` owns how it looks. The spines win on conflict with mockups, generated UI, or imported references.
+
+## Implementation Boundary — approved 2026-09-12, reconciled 2026-10-20
+
+This document is a rendering contract for a consuming FrontComposer host. Hexalith.Timesheets publishes contracts and FrontComposer-compatible metadata and does not ship or add a Timesheets UI project. The consuming host owns rendered Fluent UI V5 components, browser interactions, responsive behavior, keyboard/focus tests, and WCAG 2.2 AA evidence. These specifications do not prove rendered components exist here. Timesheets tests verify contracts, metadata, and server behavior only.
+
+Comments are sensitive unstructured evidence. Internal display requires policy and authorization; external comment disclosure requires explicit policy/redaction and is excluded by default, as are diagnostics and CSV export. Missing policy fails trust-bearing actions closed. Q6 governance and Q7 CSV v1 are resolved by the approved course correction; structured API/webhook export and richer classification are post-v1. Legal-hold sign-off remains a separate launch gate. FR14 deployed acceptance remains unfinished; see [launch readiness](../../../../docs/launch-readiness.md) for dated local proof and release **FAIL**.
 
 ## Foundation
 
@@ -122,7 +128,7 @@ Visual specs live in `DESIGN.md.Components`.
 | Approver authority unresolved | Approval surfaces | Block approval and explain authority cannot be resolved. Do not allow optimistic approval. |
 | Export no results | Approved-Time Ledger | Show filters and `No approved entries match these filters.` No export action. |
 | Export requested | Export Review Dialog, Ledger | Confirm requested scope, then toast for request accepted; export audit remains visible if surfaced. |
-| Magic link valid | Magic-Link Confirmation | Show only the scoped proposed entry details needed to confirm or adjust. |
+| Magic link valid | Magic-Link Confirmation | Show only the scoped proposed entry details needed to confirm or adjust. Comment text appears only when explicit external-confirmation policy allows it; otherwise it is omitted. |
 | Magic link expired/used/invalid | Magic-Link Invalid State | No tenant, Project, Work, Party, Time Entry, or duration details. Provide one safe recovery path. |
 | AI token metrics unavailable | AI Effort Report, Time Entry Detail | Show `Unavailable` or `Not reported by provider`; never show zero unless provider reported zero. |
 | Offline/interrupted command | Command forms | Preserve entered values. Show retry path. Do not claim persistence until command accepted. |
@@ -186,12 +192,12 @@ No native mobile app is in v1. No separate external-party portal is in v1.
 
 ## Open Assumptions
 
-- [ASSUMPTION] Internal UI is responsive web in `FrontComposerShell`; external magic-link confirmation is a minimal responsive web page.
+- [BOUNDARY 2026-09-12] The consuming FrontComposer host owns responsive internal shell and external magic-link rendering; this repository supplies contracts/metadata.
 - [ASSUMPTION] Product stakes are regulated-adjacent because approval, correction, and billing evidence require audit-quality behavior.
-- [ASSUMPTION] Tenant time zone controls period boundaries until a more specific policy is provided.
-- [ASSUMPTION] Self-approval is denied unless policy explicitly allows it.
-- [ASSUMPTION] CSV export is sufficient as a v1 UI affordance unless architecture selects API/webhook export at launch.
-- [ASSUMPTION] Corrections are shown as superseding lineage by default; offset entries can be added later if architecture supports both.
+- [RESOLVED 2026-06-19] Tenant time zone controls business dates and period keys; UTC instants preserve audit truth.
+- [RESOLVED 2026-06-19] Self-approval is denied unless policy explicitly allows it.
+- [RESOLVED 2026-09-12] Deterministic CSV v1 is the launch export; structured API/webhook export is post-v1.
+- [RESOLVED 2026-06-19] Corrections use additive superseding lineage; offset-entry semantics are deferred unless an approved finance/export decision requires them.
 
 ## Key Flows
 
@@ -224,7 +230,7 @@ Failure path: Camille later corrects the rejected entry after period submission.
 
 1. Simon opens a scoped magic link from email or another tenant-approved delivery channel.
 2. The Magic-Link Confirmation page validates the token before showing details.
-3. If valid, Simon sees only the proposed date, duration, Activity Type, comment, Billable Flag, and target context needed for this confirmation.
+3. If valid, Simon sees only the proposed date, duration, Activity Type, Billable Flag, and minimal target context; comment text appears only when external-confirmation policy explicitly allows it, otherwise it is omitted.
 4. Simon chooses `Confirm time` or `Adjust`.
 5. If adjusting, a focused `FluentDialog` shows editable allowed fields.
 6. **Climax:** the tenant receives a Party-attributed Time Entry that can enter the same approval workflow as internal entries, without Simon receiving broader access.
@@ -250,6 +256,6 @@ Failure path: provider token metrics are unavailable. The entry shows `Unavailab
 4. Marc selects `Export approved ledger`.
 5. `Export Review Dialog` summarizes filters, output scope, included evidence fields, and what Timesheets will not calculate.
 6. Marc confirms export.
-7. **Climax:** downstream finance receives approved billable evidence with entry IDs, Contributor Party references, Approval State, correction lineage, and comments, without Timesheets becoming an invoicing system.
+7. **Climax:** downstream finance receives approved billable evidence with entry IDs, Contributor Party references, Approval State and correction lineage, with comments excluded by default, without Timesheets becoming an invoicing system.
 
 Failure path: no approved entries match the filters. Export is disabled and the ledger shows `No approved entries match these filters.`

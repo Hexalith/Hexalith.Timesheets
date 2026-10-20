@@ -27,6 +27,8 @@ date: '2026-06-18'
 
 # Architecture Decision Document
 
+**Current acceptance boundary (2026-10-20):** Timesheets publishes contracts and FrontComposer-compatible metadata. A consuming FrontComposer host owns rendered Fluent UI V5 components and browser/WCAG evidence; no Timesheets UI project may be added. The architecture design is complete, but FR14 deployed acceptance, current-graph runtime qualification, legal-hold sign-off, and final release acceptance remain unfinished. The launch verdict is **FAIL**; dated implementation and performance receipts retain their original scopes.
+
 **Approved McpCli course correction (2026-09-27):** `Hexalith.McpCli` is the target Hexalith-owned CLI/MCP surface for Timesheets operations that pass contract enrollment and authorization. Any proprietary module CLI, MCP host, plug-in, or planned adapter described below is an obsolete migration source or historical design, not a new target. The module retains its domain, UI, and security semantics; replacement or approved withdrawal and parity evidence precede retirement. External development CLIs are unaffected.
 
 
@@ -224,7 +226,7 @@ xUnit v3, Shouldly, NSubstitute, bUnit for UI surfaces, Testcontainers/Aspire te
 
 **Code Organization:**
 
-Initial project families should include `Contracts`, `Client`, host/domain service, `Server`, `Projections`, `ServiceDefaults`, `AppHost`, `Testing`, and focused test projects. Optional `UI`, `Mcp`, or export-specific packages should be added only when the architecture decisions prove they are needed.
+Initial project families should include `Contracts`, `Client`, host/domain service, `Server`, `Projections`, `ServiceDefaults`, `AppHost`, `Testing`, and focused test projects. Timesheets does not add a UI project; contracts and metadata feed a consuming FrontComposer host. Any MCP migration follows the approved McpCli boundary.
 
 **Development Experience:**
 
@@ -257,7 +259,7 @@ Use sibling modules as architectural exemplars by concern, not as copy/paste sou
 - `dotnet new xunit` output must be normalized to Hexalith test conventions, including xUnit v3, Shouldly, NSubstitute, Central Package Management, and no inline package versions.
 - Aspire template output must be aligned to the currently pinned Aspire version in `Directory.Packages.props` / AppHost SDK, not accepted blindly.
 - The chosen sibling-module baseline should be explicit: `Hexalith.Conversations` for greenfield shape, with `Hexalith.Works` / `Hexalith.Projects` consulted for Project/Work integration patterns.
-- UI packages should not be scaffolded automatically unless an architecture decision confirms whether Timesheets needs a dedicated `UI`, generated FrontComposer metadata only, or both.
+- Do not scaffold Timesheets UI packages. Contracts/Client/Server provide UI-neutral semantics and FrontComposer metadata; the consuming host owns rendering.
 - Root-declared `references/` submodule rules are preserved; no recursive initialization or repository-root Works checkout is introduced.
 - EventStore remains the only authoritative persistence path for domain state.
 - The API host does not become the place where domain logic or direct CRUD persistence lives.
@@ -343,7 +345,7 @@ Use public templates only for empty project shells. Use Hexalith sibling modules
 **Deferred Decisions (Post-MVP or Later Architecture Category):**
 
 - Offset-entry correction support beyond superseding lineage.
-- `Mcp` or export-specific package creation. (The `UI`/`UI.Tests` projects are **not** deferred indefinitely — see "UI project timing (decided 2026-06-19)" under Gap Analysis — but are scaffolded with the first UI-bearing story, not in Story 1.1.)
+- Export-specific packaging and approved McpCli enrollment remain separate decisions. UI composition belongs to a consuming FrontComposer host; no Timesheets UI project is permitted.
 - Full external-party portal.
 - Invoice/rate/payroll/revenue integrations.
 - Native mobile app.
@@ -427,7 +429,7 @@ Magic links are scoped capabilities, not login sessions. Baseline design:
 
 **Readiness repair (approved 2026-06-20):** the concrete `IMagicLinkConfirmationCapabilityStateLoader` is owned by Epic 3 follow-up Story 3.6, not by a final hardening bucket. The loader must resolve token hashes without token disclosure, fold capability state from EventStore-backed events, fold the scoped Time Entry state, load a fresh Activity Type catalog, and preserve the same no-disclosure response for malformed, unknown, expired, used, revoked, unauthorized, wrong-recipient, wrong-action, and replayed links. Epic 5 verifies the evidence only after the owning feature work is complete.
 
-**Status update (2026-06-22):** Stories 3.6 and 3.7 closed the loader and HTTP-boundary gaps above. The concrete `EventStoreMagicLinkConfirmationCapabilityStateLoader` is now the registered (Scoped) implementation: it resolves the token hash, folds capability and scoped Time Entry state via `IEventStoreGatewayClient.ReadStreamAsync`, and loads a fresh Activity Type catalog with deterministic (clock-free) projection freshness. Token→capability resolution uses a new rebuildable, **non-authoritative** candidate index (`MagicLinkTokenHashCapabilityIndexProjection`, folded only from `MagicLinkConfirmationCapabilityIssued` events, storing only the token hash); single-use/revoked/expired truth still comes from folding the authoritative capability aggregate. A new `ITimesheetsTrustedContextAccessor` seam supplies tenant context (host wires `HttpContextTimesheetsTrustedContextAccessor`; kernel default stays fail-closed `Unavailable`). Story 3.7 added `MagicLinkConfirmationHttpBoundaryTests`, the module's first over-the-wire `WebApplicationFactory<Program>` proof (11 invalid cases × 4 external routes), and wired denial diagnostics (`LogExternalLinkDenial`, EventId 37001) carrying only correlation id, timestamp, and outcome category. **Remaining launch-readiness work (Epic 5):** the token-hash candidate index has no live projection-host wiring yet, so a valid magic link does not resolve end-to-end in the running topology (the index reads empty); invalid-link no-disclosure is fully proven regardless.
+**Current magic-link acceptance (2026-10-20):** Story 3.6 remains unfinished for deployed FR14 acceptance. The host registers the projection assembly, canonical token-hash index and tenant Activity Type catalog projection handlers, Time Entry evidence handlers, and EventStore processing. Valid in-process routes and historical isolated persisted local journeys pass; no test-injected index is required in those mapped-delivery journeys. The latest local pass on 2026-10-18 used the earlier AppHost graph; current-graph runtime qualification and deployed authority, certified inventory/continuity, and shared-rebuild acceptance remain open. The candidate index is rebuildable and non-authoritative; use-time EventStore folds and server gates enforce authority. Invalid-link no-disclosure evidence remains independently valid. See `docs/launch-readiness.md`; release remains **FAIL**.
 
 **Data protection and secrets:**
 
@@ -534,7 +536,7 @@ The intended Timesheets UI policy is Fluent UI V5 components only. Current Times
 
 **Component architecture:**
 
-Use generated command/projection surfaces for standard create, submit, approve, reject, correct, catalog, report, and export workflows. Hand-authored Blazor components are allowed only for behavior not expressible through FrontComposer metadata or existing Fluent UI V5 components.
+Use generated command/projection surfaces for standard create, submit, approve, reject, correct, catalog, report, and export workflows. Any hand-authored Blazor components belong to the consuming FrontComposer host and require its rendering and accessibility verification.
 
 **State and data freshness:**
 
@@ -570,7 +572,7 @@ This follows the accepted UX spine and Hexalith FrontComposer rules: Timesheets 
 
 **Local topology:**
 
-Use Aspire AppHost as the local topology owner. Timesheets AppHost should compose Timesheets with EventStore, Tenants, Parties, Projects, Works, Dapr components, Redis/state/pubsub resources, Keycloak when enabled, and any required UI host.
+Retain the existing run-only Timesheets AppHost and ServiceDefaults projects. The AppHost provides local development orchestration; deployed composition and production bindings belong to the platform owner. This documentation does not authorize added topology, a second host, or a Timesheets UI host.
 
 Aspire owns orchestration and observability wiring only; it does not define domain architecture.
 
@@ -582,7 +584,7 @@ The imported catalog's Dapr package family is stable `1.18.10`. Current root pac
 
 **Deployment shape:**
 
-The Timesheets host is the deployable domain service. Library packages such as `Contracts`, `Client`, `Server`, `Projections`, `Testing`, and any future `UI` package ship as NuGet/package artifacts according to Hexalith conventions.
+The Timesheets host is the deployable domain service. Library packages such as `Contracts`, `Client`, `Server`, `Projections`, and `Testing` ship as NuGet/package artifacts according to Hexalith conventions.
 
 Use .NET SDK container support where containers are needed; do not introduce Dockerfiles unless a later deployment decision explicitly requires one.
 
@@ -627,7 +629,7 @@ This keeps Timesheets aligned with Hexalith deployment patterns while preserving
 5. Implement projections and replay/idempotency tests.
 6. Add tenant/resource authorization gates and reference validation adapters.
 7. Add Magic-Link Confirmation capability and abuse/no-disclosure tests.
-8. Add FrontComposer metadata and Fluent UI V5 surfaces.
+8. Publish FrontComposer-compatible metadata; the consuming host composes and verifies Fluent UI V5 surfaces.
 9. Add exports, audit metadata, and export golden-file tests.
 10. Wire Aspire AppHost topology and integration tests.
 
@@ -682,7 +684,7 @@ This keeps Timesheets aligned with Hexalith deployment patterns while preserving
 - Projection handlers and read models live in `src/Hexalith.Timesheets.Projections`.
 - Test helpers live in `src/Hexalith.Timesheets.Testing`.
 - Aspire composition lives in `src/Hexalith.Timesheets.AppHost`.
-- Internal UI, when implemented, lives in a Timesheets UI project and uses FrontComposer plus Blazor Fluent UI V5 components only.
+- Timesheets owns contracts and FrontComposer metadata in Contracts/Client/Server. A consuming FrontComposer host owns rendered Fluent UI V5 behavior and browser/accessibility evidence; do not add Timesheets UI projects.
 - Tests live under `tests/Hexalith.Timesheets.*.Tests`; test files use `{Subject}Tests.cs`.
 
 **File Structure Patterns:**
@@ -765,7 +767,7 @@ This keeps Timesheets aligned with Hexalith deployment patterns while preserving
 - Add architecture/fitness tests for forbidden package references, inline package versions, `.sln` files, direct persistence bypass, and Contracts infrastructure references.
 - Add projection replay/idempotency tests for every projection.
 - Add security tests for tenant isolation, magic-link no-disclosure behavior, and fail-closed authorization.
-- Add UI package checks preventing Fluent UI V4 components while allowing V4 icons only when needed.
+- Keep contract metadata free of UI runtime dependencies; the consuming host checks Fluent UI V5 components and any V4 icons-only fallback.
 - Document any pattern exception in this architecture before implementation.
 
 ### Pattern Examples
@@ -903,7 +905,7 @@ the sole default checkout. The tree must not contain a repository-root
 `references/` pin, the sibling `../Hexalith.Works` fallback, or an explicit
 `HexalithWorksRoot` supplied by a controlled build.
 
-Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, `Security.Tests`, or `PropertyTests` project exists on disk. Security, tenant-isolation, property-like invariants, and architecture fitness coverage currently live in `ArchitectureTests`, `Server.Tests`, `IntegrationTests`, `Projections.Tests`, and `Works.Tests`. The UI projects remain deferred to the first UI-bearing story.
+Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, `Security.Tests`, or `PropertyTests` project exists on disk. Security, tenant-isolation, property-like invariants, and architecture fitness coverage currently live in `ArchitectureTests`, `Server.Tests`, `IntegrationTests`, `Projections.Tests`, and `Works.Tests`. Do not add Timesheets UI projects; the consuming FrontComposer host owns component/browser accessibility evidence.
 
 ### Architectural Boundaries
 
@@ -921,7 +923,7 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 - `Client` wraps command/query/magic-link interaction for consumers and UI.
 - `Server` owns aggregate decisions, command handlers, policies, validation orchestration, export orchestration, and magic-link capability logic.
 - `Projections` owns read-model handlers, replay behavior, freshness, Approved-Time Ledger, and operational report models.
-- `UI` owns FrontComposer metadata and Blazor Fluent UI V5 component composition only.
+- `Contracts`/`Client`/`Server` own UI-neutral contracts, action/status semantics, and FrontComposer metadata. A consuming FrontComposer host owns rendered Fluent UI V5 composition and WCAG evidence.
 - `AppHost` owns local topology and observability wiring, not domain rules.
 
 **Service Boundaries:**
@@ -1044,8 +1046,8 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 
 **Asset Organization:**
 
-- UI static assets stay under `src/Hexalith.Timesheets.UI/wwwroot`.
-- FrontComposer descriptors and UI registration stay in `UI/Composition`.
+- Rendered UI assets and component tests live in the consuming FrontComposer host, outside this repository.
+- FrontComposer descriptors stay in Contracts; any rendered registration belongs to the consuming FrontComposer host.
 - No static assets are required for backend-only packages.
 
 ### Development Workflow Integration
@@ -1066,7 +1068,7 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 **Deployment Structure:**
 
 - `Hexalith.Timesheets` is the deployable service.
-- Library packages ship from `Contracts`, `Client`, `Server`, `Projections`, `Testing`, and `UI` when enabled.
+- Library packages ship from `Contracts`, `Client`, `Server`, `Projections`, and `Testing`; rendered UI packaging belongs to the consuming FrontComposer host.
 - Containers use .NET SDK container support unless a later decision explicitly requires Dockerfiles.
 
 ## Architecture Validation Results
@@ -1080,7 +1082,7 @@ The technology choices work together: .NET SDK `10.0.402`, Hexalith.EventStore, 
 Implementation patterns support the decisions. Commands, events, queries, projections, magic links, exports, and UI all have consistent naming, structure, error, freshness, and enforcement rules.
 
 **Structure Alignment:**
-The project structure supports all architecture decisions with distinct host, contracts, client, server, projections, UI, testing, service defaults, and AppHost packages.
+The project structure supports all architecture decisions with distinct host, contracts, client, server, projections, testing, service defaults, and AppHost packages, with rendering owned by the consuming FrontComposer host.
 
 ### Requirements Coverage Validation ✅
 
@@ -1091,7 +1093,7 @@ All six requirement areas are mapped to components: Time Entry Ledger, Submissio
 All 23 functional requirements are architecturally supported through EventStore-backed commands/events, projections, authorization gates, reference validation, magic-link capability boundaries, and export/reporting structures.
 
 **Non-Functional Requirements Coverage:**
-Security, tenant isolation, auditability, data minimization, projection reliability, observability privacy, compatibility, accessibility, and performance targets are addressed by explicit decisions and enforcement tests.
+Security, tenant isolation, auditability, data minimization, projection reliability, observability privacy, compatibility, accessibility, and performance targets are mapped to explicit decisions and owned verification. This repository proves contracts/metadata and in-process behavior; consumer-host rendering/accessibility, full wire-path performance, deployed privacy/authority, and stakeholder/legal acceptance retain the classifications in launch readiness.
 
 ### Implementation Readiness Validation ✅
 
@@ -1114,12 +1116,12 @@ Naming, structure, API format, data format, event communication, projection beha
 
 - Exact Dapr component manifest names can be refined during AppHost implementation.
 - No Timesheets-owned MCP/CLI helper package is planned. A future concrete machine-access requirement enrolls eligible Timesheets Contracts in `Hexalith.McpCli`.
-- **UI project timing (decided 2026-06-19):** `Hexalith.Timesheets.UI` and `Hexalith.Timesheets.UI.Tests` are part of the target project tree but are scaffolded with the **first UI-bearing story, not in scaffold Story 1.1** (which creates host/Contracts/Client/Server/Projections/Testing/ServiceDefaults/AppHost only). When added, UI must follow the documented `UI/` structure and the Fluent UI V5-only rule.
+- **Consumer-host rendering ownership (approved 2026-09-12):** Timesheets does not own or add `Hexalith.Timesheets.UI` or `Hexalith.Timesheets.UI.Tests`. FrontComposer-compatible metadata remains here; rendered components, assets, responsive behavior, and WCAG 2.2 AA evidence belong to a consuming FrontComposer host.
 
 ### Validation Issues Addressed
 
 - Dapr version policy ambiguity is resolved against the imported stable SDK package family `1.18.10`; actual root/submodule and prerelease platform pins are separately tracked by launch-readiness package-currency evidence.
-- Fluent UI generation ambiguity resolved as a Timesheets policy: V5 components only and V4 allowed only for icons when V5 icons are unavailable; current package pins remain separate until a Timesheets UI package exists or platform build props are reconciled.
+- Fluent UI generation ambiguity resolved as a Timesheets policy: V5 components only and V4 allowed only for icons when V5 icons are unavailable; current package pins remain separate under the consuming FrontComposer host and platform-owned build policy.
 - Persistence ambiguity resolved: EventStore is the sole authoritative persistence path.
 - Projection trust ambiguity resolved: projections are rebuildable read models and cannot authorize trust-bearing writes.
 
@@ -1170,7 +1172,7 @@ Naming, structure, API format, data format, event communication, projection beha
 **Areas for Future Enhancement:**
 
 - Use `Hexalith.McpCli` for future Hexalith-owned MCP/CLI access if product requirements demand it; do not add a Timesheets-owned MCP/CLI package.
-- Expand export format details when the first export story is written.
+- Deterministic CSV v1 is implemented; any structured API/webhook export needs a named post-v1 consumer and contract story.
 - Add deployment-specific manifests after the target deployment environment is selected.
 
 ### Implementation Handoff

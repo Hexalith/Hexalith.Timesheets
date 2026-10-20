@@ -1,0 +1,45 @@
+{
+  "recorded_utc": "2026-10-20T13:28:05.892703+00:00",
+  "baseline_commit": "d72899b4489aaca0b9a9b96d0ac267165920caf8",
+  "checks": {
+    "historical_launch_groups_verbatim_except_heading_nesting": true,
+    "historical_package_section_unchanged": true,
+    "dated_story_dev_agent_and_review_receipts_unchanged": {
+      "3-3-confirm-time-through-magic-link": true,
+      "4-7-surface-timesheets-dashboard-overview": true,
+      "5-1-final-launch-readiness-gate-and-documentation-sync": true,
+      "5-2-reconcile-package-currency-and-platform-dependency-versions": true
+    },
+    "story_5_1_original_tasks_restored": true,
+    "story_5_1_original_dev_notes_unchanged": true,
+    "active_statuses": {
+      "3-3-confirm-time-through-magic-link": "done",
+      "3-6-implement-eventstore-backed-magic-link-state-loading": "in-progress",
+      "3-7-prove-magic-link-no-disclosure-at-the-http-boundary": "in-progress",
+      "4-7-surface-timesheets-dashboard-overview": "done",
+      "5-1-final-launch-readiness-gate-and-documentation-sync": "review",
+      "5-2-reconcile-package-currency-and-platform-dependency-versions": "review"
+    },
+    "NFR10_measurement_section_unchanged": true,
+    "NFR11_measurement_section_unchanged": true,
+    "original_qa_receipt_unchanged_except_heading_nesting": true,
+    "source_archive_count": 6,
+    "all_source_archive_and_diff_hashes_match": true,
+    "published_binary_matches_full_run": true,
+    "current_binary_still_matches_full_run": true,
+    "parent-final_inputs_stable_during_execution": true,
+    "parent-published_inputs_stable_during_execution": true,
+    "post_full_run_changed_inputs": [
+      "_bmad-output/implementation-artifacts/5-1-final-launch-readiness-gate-and-documentation-sync.md",
+      "_bmad-output/implementation-artifacts/sprint-status.yaml",
+      "_bmad-output/implementation-artifacts/tests/5-1-test-summary.md",
+      "docs/launch-readiness.md"
+    ],
+    "test_source_and_build_inputs_unchanged_after_full_run": true,
+    "root_dependencies_still_clean_and_pinned": 13,
+    "story_5_1_status": "review",
+    "spec_status": "done",
+    "head_and_staging_unchanged": true
+  },
+  "current_scope": "Implementation spec done and Story 5.1 review; release FAIL and owning prerequisites remain open. Post-full-run changes are the published counts, review status, and reporting prose; executable and test source are unchanged."
+}

@@ -6,9 +6,13 @@ rebaseline_commit: 180d9fd9a635ed44ba896688d6a06e38a33e9f28
 
 # Story 5.2: Reconcile Package Currency and Platform Dependency Versions
 
-Status: in-progress
+Status: review
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
+
+## Current Status — 2026-10-20
+
+Sprint tracking records this story as `review`; acceptance is not marked complete. The approved SDK `10.0.402` / AppHost `13.6.1` baseline and dated round-8 Release evidence (1,954 passed, five skipped, zero failures) remain valid at their recorded graph. Package verdict stays CONCERNS for root npm findings, transitive audit tooling limits, accepted platform prereleases, and the open Works EventStore-version forwarding issue. The Story 5.1 source-reference rerun is recorded separately in `tests/5-1-test-summary.md` and does not refresh package audits or establish current-graph runtime compatibility. Overall release remains **FAIL** pending owning-story acceptance.
 
 ## Story
 
@@ -25,10 +29,10 @@ so that launch-readiness does not overstate dependency versions or hide transiti
    **And** no inline package versions or `.sln` files are introduced.
 
 2. **Root npm status is recorded honestly.**
-   **Given** the Timesheets root has no npm manifest today
+   **Given** the Timesheets root now has release-tooling npm manifests
    **When** package currency is recorded
-   **Then** root npm status is documented as not applicable unless a root manifest is added
-   **And** package-update evidence does not imply npm work that cannot be performed.
+   **Then** root npm is documented as applicable, with dated outdated/audit findings and release-tooling ownership
+   **And** package-update evidence preserves npm findings without implying this documentation increment changes npm dependencies.
 
 3. **Transitive drift is reviewed before any explicit transitive pin is added.**
    **Given** transitive dependency drift is reported by package tooling
@@ -60,7 +64,7 @@ so that launch-readiness does not overstate dependency versions or hide transiti
    **Then** `docs/launch-readiness.md` records the final package-currency verdict
    **And** the verdict distinguishes direct package currency, root npm applicability, transitive drift, and platform/submodule alignment.
 
-## Tasks / Subtasks
+## Historical Tasks / Subtasks (original audit; dated reruns below)
 
 - [x] **Task 1 - Re-run and record the root package audits (AC: 1, 2, 3, 6, 7)**
   - [x] Run direct NuGet currency over the Timesheets solution:

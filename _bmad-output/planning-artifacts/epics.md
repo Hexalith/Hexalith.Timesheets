@@ -30,6 +30,12 @@ This document provides the complete epic and story breakdown for timesheets, dec
 - **Finance export evidence** - Approved billable evidence exported for downstream consumers. It excludes rates, invoices, payroll, taxes, and revenue-recognition decisions.
 - **No-disclosure response** - A neutral response for invalid, expired, used, revoked, unauthorized, malformed, or unknown magic links that does not reveal whether a tenant, contributor, target, period, or entry exists.
 
+## Evidence Boundary — approved 2026-09-12, reconciled 2026-10-20
+
+All UI/UX criteria below describe downstream consumer-host rendering requirements. Timesheets owns contracts, FrontComposer-compatible metadata, authorization/freshness semantics, and in-process service evidence. A consuming FrontComposer host owns rendered Fluent UI V5 composition, browser/keyboard/focus/responsive tests, and WCAG 2.2 AA evidence (NFR13). Do not add Timesheets UI or UI.Tests projects. Story 4.7 remains done for contracts, metadata, server composition, and in-process tests; rendered conformance is not claimed here.
+
+FR14 deployed acceptance remains unfinished under Story 3.6. Projection-host registration and historical local persisted journeys now exist; current-graph runtime qualification and deployed authority/inventory/shared-rebuild acceptance remain open. Stories 3.6/3.7 remain in progress and Story 5.2 remains review. The user accepted and signed off Story 5.1’s completed reconciliation on 2026-10-20; that story is done without closing these release prerequisites. Launch remains **FAIL**. Launch classifications are `implemented`, `unfinished`, `waived`, and `post-v1`; waivers require approval evidence, owner, risk, and revisit condition.
+
 ## Requirements Inventory
 
 ### Functional Requirements
@@ -76,7 +82,7 @@ FR20: Reports show AI-agent effort separately from human/external effort while a
 
 FR21: Timesheets persists all Time Entry, Timesheet Period, Activity Type, approval, rejection, and correction state changes through Hexalith.EventStore, with replayable aggregates/projections and domain rejections represented through Hexalith-compatible rejection patterns.
 
-FR22: Timesheets exposes REST/SDK command and query contracts plus FrontComposer-compatible metadata for internal UI, API clients, automation, and downstream consumers; contracts must not accept server-controlled tenant/user/authorization context or expose EventStore internals.
+FR22: Timesheets exposes REST/SDK command and query contracts plus FrontComposer-compatible metadata for internal UI, API clients, automation, and downstream consumers; contracts must not accept server-controlled tenant/user/authorization context or expose EventStore internals. Rendering and browser/accessibility evidence belong to a consuming FrontComposer host; no Timesheets UI project is permitted.
 
 FR23: Timesheets keeps sibling responsibilities outside its boundary by storing only Project IDs, Work IDs, Party IDs, tenant scope, and approval/correction facts, while excluding project planning, work lifecycle, identity/profile, tenant membership, invoicing, payroll, and rate-card ownership.
 
@@ -106,7 +112,7 @@ NFR11: Common report queries should return within 2 seconds p95 for tenant, proj
 
 NFR12: Logs and traces use structured metadata and correlation IDs without logging event payloads, comments, personal data, tokens, secrets, or full command bodies.
 
-NFR13: Internal and external web UI surfaces follow Hexalith FrontComposer/Fluent UI rules and target WCAG 2.2 AA where applicable.
+NFR13: Rendered internal and external surfaces in a consuming FrontComposer host follow Fluent UI V5 and target WCAG 2.2 AA. Timesheets verifies accessible contract/metadata semantics; component/browser conformance requires that host's evidence.
 
 NFR14: Event and contract evolution must be additive and serialization-tolerant; previously emitted event fields must not be removed or renamed.
 
@@ -210,7 +216,7 @@ UX-DR29: Approved-Time Ledger must show approved evidence with stable IDs, appro
 
 UX-DR30: Export Review Dialog must summarize filters, output scope, included evidence fields, and explicitly avoid invoice, payroll, rate, tax, and revenue-recognition language.
 
-UX-DR31: Magic-Link Confirmation must validate the token before showing details and, when valid, show only the proposed date, duration, Activity Type, comment, Billable Flag, and target context needed for confirmation or adjustment.
+UX-DR31: Magic-Link Confirmation must validate the token before showing details and, when valid, show only the proposed date, duration, Activity Type, Billable Flag, and target context needed for confirmation or adjustment. Comment text is included only when explicit external-confirmation policy allows it; otherwise it is omitted, including when policy is missing.
 
 UX-DR32: Magic-Link invalid, expired, used, revoked, unauthorized, or unknown states must use the same no-disclosure failure surface and reveal no tenant, Project, Work, Party, Time Entry, duration, or comment details.
 
@@ -268,7 +274,7 @@ _Added 2026-06-19. All 15 NFRs trace to ≥1 story by acceptance-criteria substa
 | NFR10 | Command ack <=500 ms p95 | 1.11 | 1.1 |
 | NFR11 | Report query <=2 s p95 | 4.10 | 1.1, 4.3 |
 | NFR12 | Privacy-safe logging | 1.4 | 1.1, 1.7, 1.9, 3.1, 3.4, 3.5, 3.7, 4.9 |
-| NFR13 | WCAG 2.2 AA / FrontComposer+Fluent UI | 4.7 | 1.5, 1.6, 1.7, 1.8, 2.1, 2.3, 2.4, 3.3, 3.4, 4.1–4.5 |
+| NFR13 | WCAG 2.2 AA / FrontComposer+Fluent UI V5 | 4.7 contracts/metadata; consuming host rendering | 1.5, 1.6, 1.7, 1.8, 2.1, 2.3, 2.4, 3.3, 3.4, 4.1–4.5 |
 | NFR14 | Additive, serialization-tolerant evolution | 1.3 | 1.9, 4.6 |
 | NFR15 | Time-zone / period policy (launch gate) | 2.7 | 4.6 |
 
@@ -1151,7 +1157,7 @@ So that my effort can be attributed and reviewed without internal account access
 **Given** a magic-link token is valid, unexpired, unused, and scoped to one confirmation
 **When** the external contributor opens the confirmation page
 **Then** Timesheets validates the token before displaying details
-**And** shows only the proposed date, duration, Activity Type, comment, Billable Flag, and minimal target context needed for this confirmation.
+**And** shows only the proposed date, duration, Activity Type, Billable Flag, and minimal target context needed for this confirmation; comment text is included only when explicit external-confirmation policy allows it and is otherwise omitted.
 
 **Given** the external contributor confirms the proposed entry
 **When** they submit confirmation
@@ -1273,6 +1279,15 @@ So that confirmation and adjustment work outside service-only tests without weak
 **When** the request is evaluated
 **Then** the host fails closed with the same external no-disclosure response
 **And** internal diagnostics record only correlation-safe outcome categories.
+
+**Given** issuance events are delivered through the configured projection path
+**When** the host processes or rebuilds them
+**Then** the candidate index is persisted through EventStore IReadModelStore at the address consumed by the loader, without direct test seeding
+**And** valid Fresh-catalog describe/confirm/adjust routes succeed with exact stored-event receipts; authoritative folds retain single-use/revoke/expire checks.
+
+**Given** local persistence proof has passed
+**When** release acceptance is assessed
+**Then** current-graph runtime qualification and deployed authority, complete inventory/continuity, and shared-rebuild proof remain separately required under Story 3.6.
 
 ### Story 3.7: Prove Magic-Link No-Disclosure at the HTTP Boundary
 
@@ -1575,10 +1590,10 @@ So that I can start common capture, review, and finance workflows from one opera
 **Then** filters, period context, and projection status are preserved where applicable
 **And** navigation remains keyboard accessible.
 
-**Given** dashboard UI is tested
-**When** accessibility and conformance checks run
-**Then** FrontComposer/Fluent UI V5 components, status badges with text, message bars, focus order, and WCAG 2.2 AA behavior are verified
-**And** hover-only controls or color-only statuses are not introduced.
+**Given** dashboard contracts and metadata are tested in this repository
+**When** conformance checks run
+**Then** status/action/freshness semantics and metadata are verified without claiming rendered component or browser evidence
+**And** a consuming FrontComposer host owns Fluent UI V5 rendering, keyboard/focus/responsive behavior, and WCAG 2.2 AA verification.
 
 ### Story 4.8: Implement Works Planned-Effort Reporting Adapter
 
@@ -1677,11 +1692,11 @@ So that Timesheets does not ship with hidden unavailable defaults or overstated 
 
 **Given** launch-readiness review runs
 **When** Timesheets is assessed for v1 release
-**Then** unavailable defaults, skipped lanes, deferred integrations, legal-hold policy, comment sensitivity, export format, secondary magic-link identity verification, and performance evidence are each marked implemented, waived, or post-v1
-**And** every waiver names owner, risk, and revisit condition.
+**Then** unavailable defaults, skipped lanes, deferred integrations, legal-hold policy, comment sensitivity, export format, secondary magic-link identity verification, and performance evidence are each marked implemented, unfinished, waived, or post-v1
+**And** every waiver names approval evidence, owner, risk, and revisit condition; unfinished v1 requirements cannot become waivers without an approved scope change.
 
 **Given** documentation is reviewed
-**When** README, architecture, performance evidence, PRD launch-readiness notes, and sprint artifacts are compared against code
+**When** README, architecture, epics, affected story records, UX documents, PRD decisions Q6–Q8, synchronized agent guidance, performance evidence, and sprint artifacts are compared against code
 **Then** docs distinguish story-complete from launch-complete and do not claim live Works, live magic-link loader, preview endpoint, performance, or UI behavior that is not implemented.
 
 **Given** final release gates run
@@ -1703,10 +1718,10 @@ So that launch-readiness does not overstate dependency versions or hide transiti
 **Then** direct Timesheets package pins are updated only when compatible
 **And** no inline package versions or `.sln` files are introduced.
 
-**Given** the Timesheets root has no npm manifest today
+**Given** the Timesheets root has release-tooling npm manifests
 **When** package currency is recorded
-**Then** root npm status is documented as not applicable unless a root manifest is added
-**And** package-update evidence does not imply npm work that cannot be performed.
+**Then** root npm is documented as applicable with dated outdated/audit findings and release-tooling ownership
+**And** package-update evidence preserves npm findings without implying this documentation increment changes npm dependencies.
 
 **Given** transitive dependency drift is reported by package tooling
 **When** update options are evaluated

@@ -1,11 +1,11 @@
 ---
 name: Hexalith.Timesheets
-description: Actor-neutral effort evidence UX for Hexalith, implemented through FrontComposer and Blazor Fluent UI.
+description: Actor-neutral effort evidence rendering contract for a consuming FrontComposer host using Blazor Fluent UI V5.
 project: timesheets
 document: DESIGN.md
 status: draft
 created: 2026-06-18
-updated: 2026-06-18
+updated: 2026-10-20
 sources:
   - ../../prds/prd-timesheets-2026-06-18/prd.md
   - ../../prds/prd-timesheets-2026-06-18/addendum.md
@@ -76,6 +76,12 @@ components:
     use: 'Approval, projection freshness, billable, contributor category, and correction state.'
 ---
 
+## Implementation Boundary — approved 2026-09-12, reconciled 2026-10-20
+
+This document is a rendering contract for a consuming FrontComposer host. Hexalith.Timesheets publishes contracts and FrontComposer-compatible metadata and does not ship or add a Timesheets UI project. The consuming host owns rendered Fluent UI V5 components, browser interactions, responsive behavior, keyboard/focus tests, and WCAG 2.2 AA evidence. These specifications do not prove rendered components exist here. Timesheets tests verify contracts, metadata, and server behavior only.
+
+Comments are sensitive unstructured evidence. Internal display requires policy and authorization; external comment disclosure requires explicit policy/redaction and is excluded by default, as are diagnostics and CSV export. Missing policy fails trust-bearing actions closed. Q6 governance and Q7 CSV v1 are resolved by the approved course correction; structured API/webhook export and richer classification are post-v1. Legal-hold sign-off remains a separate launch gate. FR14 deployed acceptance remains unfinished; see [launch readiness](../../../../docs/launch-readiness.md) for dated local proof and release **FAIL**.
+
 ## Brand & Style
 
 Hexalith.Timesheets is a professional evidence tool inside the Hexalith ecosystem. It should read as operational software for capture, approval, audit, and reporting, not as a consumer timer app or finance product.
@@ -115,7 +121,7 @@ Rules:
 - When a page, dialog, or panel has two or more sibling titled content sections, group them in one `FluentAccordion` with one `FluentAccordionItem` per section and expand the primary section by default.
 - Filter-heavy report pages use a `FilterBar` above `FluentDataGrid`; the grid remains the main visual object.
 - Detail pages can use a summary header followed by accordion sections for evidence, approval, correction lineage, and audit metadata.
-- External magic-link confirmation is a single-purpose surface with the proposed entry details and confirm/adjust choices visible without broad navigation.
+- External magic-link confirmation is a single-purpose surface with the proposed entry details and confirm/adjust choices visible without broad navigation. Comment text appears only when explicit external-confirmation policy allows it with required redaction; otherwise it is omitted.
 
 ## Elevation & Depth
 

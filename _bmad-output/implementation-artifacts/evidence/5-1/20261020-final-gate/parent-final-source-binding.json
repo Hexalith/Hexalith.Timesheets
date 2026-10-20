@@ -1,0 +1,2525 @@
+{
+  "capture_start_utc": "2026-10-20T13:23:39.777964+00:00",
+  "capture_end_utc": "2026-10-20T13:23:40.145773+00:00",
+  "root_revision": "d72899b4489aaca0b9a9b96d0ac267165920caf8",
+  "root_branch": "main",
+  "root_tracked_status": " M .github/copilot-instructions.md\n M AGENTS.md\n M CLAUDE.md\n M README.md\n M _bmad-output/implementation-artifacts/3-3-confirm-time-through-magic-link.md\n M _bmad-output/implementation-artifacts/4-7-surface-timesheets-dashboard-overview.md\n M _bmad-output/implementation-artifacts/5-1-final-launch-readiness-gate-and-documentation-sync.md\n M _bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md\n M _bmad-output/implementation-artifacts/sprint-status.yaml\n M _bmad-output/implementation-artifacts/tests/5-1-test-summary.md\n M _bmad-output/planning-artifacts/architecture.md\n M _bmad-output/planning-artifacts/epics.md\n M _bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/prd.md\n M _bmad-output/planning-artifacts/ux-designs/ux-timesheets-2026-06-18/DESIGN.md\n M _bmad-output/planning-artifacts/ux-designs/ux-timesheets-2026-06-18/EXPERIENCE.md\n M docs/boundary-decision-record.md\n M docs/launch-readiness.md\n M docs/performance-evidence.md\n M tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs\n",
+  "capture_scope": "Exact source/configuration and Markdown inputs for the later correction build/readiness run only. Earlier runs had no contemporaneous source capture. Archive excludes generated outputs and dependencies; dependency full revisions and any tracked diff are recorded separately.",
+  "source_archive": {
+    "file": "parent-final-sources.tar.gz",
+    "raw_bytes": 5867520,
+    "raw_sha256": "70ce8edfd18d1d8a863b9d29ded72d3bd1048a592d858f6caf9b4b3bbf2a3ff6",
+    "compressed_bytes": 965675,
+    "compressed_sha256": "705d822ece4c3cc558af642c5e3ad235150944c54647d11defd4853672ec72d4"
+  },
+  "baseline_diff": {
+    "file": "parent-final-source.diff.gz",
+    "raw_bytes": 314407,
+    "raw_sha256": "ad40129a7c6ebd08d18be2e1b7fe9a054ba5421185fc7f36201701effa14908f",
+    "compressed_bytes": 81740,
+    "compressed_sha256": "b0557b11e160de36a02a1a316ead3a12a8b4402ff605c0e5807222e5aa5c129a"
+  },
+  "files": [
+    {
+      "path": ".agents/skills/aspire-deployment/references/github-actions-azure-csharp.yml",
+      "sha256": "edd51e0076ba1a0c6d2cbf79e101d0c9b025a43ce2d1ceef0accb68a168bd719"
+    },
+    {
+      "path": ".agents/skills/aspire-deployment/references/github-actions-azure-typescript.yml",
+      "sha256": "ed159b42af22cd5f005fe3a92de59fffcb4516bb678f2b236db3748dd6bb7d11"
+    },
+    {
+      "path": ".agents/skills/bmad-bmb-setup/assets/module.yaml",
+      "sha256": "d9cb53ff118c5c45d393b5a0f3498cdfc20d7f47acf491970157d36a7e9f5462"
+    },
+    {
+      "path": ".agents/skills/bmad-loop-setup/assets/module.yaml",
+      "sha256": "4213bcfce3f0c36c5375060bcfa86fbdf0c8b6e0f33a65ee661bf8def4d87e4c"
+    },
+    {
+      "path": ".agents/skills/bmad-module-builder/assets/setup-skill-template/assets/module.yaml",
+      "sha256": "9ebacf189dcd2e353509bfa0fa70c90b84d5fe749022a3571e5321598e1ae9fa"
+    },
+    {
+      "path": ".agents/skills/bmad-retrospective/scripts/tests/fixtures/sprint-status-template.yaml",
+      "sha256": "64b1a937e1fe03b8b8d158e3b1caeb89e7d51692a56c16038e2af091decc553a"
+    },
+    {
+      "path": ".agents/skills/bmad-sprint-planning/sprint-status-template.yaml",
+      "sha256": "64b1a937e1fe03b8b8d158e3b1caeb89e7d51692a56c16038e2af091decc553a"
+    },
+    {
+      "path": ".agents/skills/bmad-teach-me-testing/data/curriculum.yaml",
+      "sha256": "8c06984ef28c317b454214ecb821a8bda637d4edf49d4f93ce5345231c0f7a67"
+    },
+    {
+      "path": ".agents/skills/bmad-teach-me-testing/data/quiz-questions.yaml",
+      "sha256": "42c5e6c8703e22992cfcbbeb23d871054b15257153010efe53bf44dbc1f27b4f"
+    },
+    {
+      "path": ".agents/skills/bmad-teach-me-testing/data/role-paths.yaml",
+      "sha256": "8cf13b5649736b736accf5f99971c9713cf5c3c3d6f0d749fb42f58b3cbcd04b"
+    },
+    {
+      "path": ".agents/skills/bmad-teach-me-testing/data/session-content-map.yaml",
+      "sha256": "3dc470eb246b8f1582e09d413df66b01970cd2ea012a7b433486bc703a65b260"
+    },
+    {
+      "path": ".agents/skills/bmad-teach-me-testing/data/tea-resources-index.yaml",
+      "sha256": "244c6e09a2971d807ad34ff62dd31341505d8872ef74da6016b3b06355cf87ab"
+    },
+    {
+      "path": ".agents/skills/bmad-teach-me-testing/templates/progress-template.yaml",
+      "sha256": "1000c7df2fdab3752f2c6af4ef3c72677817666ccd7e795a96e2afae663b9b4d"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-atdd/workflow.yaml",
+      "sha256": "7f0ed54ed25cc51e4ecf3dd0e9298613a679982865473d82b81c117342a51a71"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-automate/workflow.yaml",
+      "sha256": "812166a75f88418ecfba92f43e293ce33476275218a6b874f9d3ab3b3eb34a02"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-ci/azure-pipelines-template.yaml",
+      "sha256": "e53405833b819cd70b7226ea624236ff2490659985b0512244303dc9676acb34"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-ci/github-actions-template.yaml",
+      "sha256": "dbf33e640d9017650b5eed7af28f8914172a0dcfd04552a0342ef61b459b28c2"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-ci/gitlab-ci-template.yaml",
+      "sha256": "af7d7e50802c1f4cbdfdfc20b0cd8a86ba5cec5b9eaedaec29e4c8aec6049ae6"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-ci/harness-pipeline-template.yaml",
+      "sha256": "243aa43a5139a9bca9e5300070e2efeb97c13f0bb94d166f84b035025d5c4f8d"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-ci/workflow.yaml",
+      "sha256": "e32ab0b461dc951b66864d701bb27e4ebab959498689bf28fa4838210a120b83"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-framework/workflow.yaml",
+      "sha256": "13f99eb56accb5e8da5f28aabe4041b2a736472f92edd241f3f7ce3294b1f29f"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-nfr/workflow.yaml",
+      "sha256": "2e980a1b8f3e3fc954784fc9750ebd5d1703a6171005116a7c4fb202d664f978"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-test-design/workflow.yaml",
+      "sha256": "28e61166a437ccef0a3e72e8860bdee446d92e2e6dea3e0330b34b52a12c2a0b"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-test-review/workflow.yaml",
+      "sha256": "74fa54b4009c2bd8d538a3ca1a64cb1155812a51c3d6d5c24a16a4c5ab87302b"
+    },
+    {
+      "path": ".agents/skills/bmad-testarch-trace/workflow.yaml",
+      "sha256": "d7db4d39bd03cf14b60fba88a0e9f26e485221fae0a9b256271df2e1a37cc2b9"
+    },
+    {
+      "path": ".claude/skills/aspire-deployment/references/github-actions-azure-csharp.yml",
+      "sha256": "edd51e0076ba1a0c6d2cbf79e101d0c9b025a43ce2d1ceef0accb68a168bd719"
+    },
+    {
+      "path": ".claude/skills/aspire-deployment/references/github-actions-azure-typescript.yml",
+      "sha256": "ed159b42af22cd5f005fe3a92de59fffcb4516bb678f2b236db3748dd6bb7d11"
+    },
+    {
+      "path": ".claude/skills/bmad-bmb-setup/assets/module.yaml",
+      "sha256": "d9cb53ff118c5c45d393b5a0f3498cdfc20d7f47acf491970157d36a7e9f5462"
+    },
+    {
+      "path": ".claude/skills/bmad-loop-setup/assets/module.yaml",
+      "sha256": "4213bcfce3f0c36c5375060bcfa86fbdf0c8b6e0f33a65ee661bf8def4d87e4c"
+    },
+    {
+      "path": ".claude/skills/bmad-module-builder/assets/setup-skill-template/assets/module.yaml",
+      "sha256": "9ebacf189dcd2e353509bfa0fa70c90b84d5fe749022a3571e5321598e1ae9fa"
+    },
+    {
+      "path": ".claude/skills/bmad-retrospective/scripts/tests/fixtures/sprint-status-template.yaml",
+      "sha256": "64b1a937e1fe03b8b8d158e3b1caeb89e7d51692a56c16038e2af091decc553a"
+    },
+    {
+      "path": ".claude/skills/bmad-sprint-planning/sprint-status-template.yaml",
+      "sha256": "64b1a937e1fe03b8b8d158e3b1caeb89e7d51692a56c16038e2af091decc553a"
+    },
+    {
+      "path": ".claude/skills/bmad-teach-me-testing/data/curriculum.yaml",
+      "sha256": "8c06984ef28c317b454214ecb821a8bda637d4edf49d4f93ce5345231c0f7a67"
+    },
+    {
+      "path": ".claude/skills/bmad-teach-me-testing/data/quiz-questions.yaml",
+      "sha256": "42c5e6c8703e22992cfcbbeb23d871054b15257153010efe53bf44dbc1f27b4f"
+    },
+    {
+      "path": ".claude/skills/bmad-teach-me-testing/data/role-paths.yaml",
+      "sha256": "8cf13b5649736b736accf5f99971c9713cf5c3c3d6f0d749fb42f58b3cbcd04b"
+    },
+    {
+      "path": ".claude/skills/bmad-teach-me-testing/data/session-content-map.yaml",
+      "sha256": "3dc470eb246b8f1582e09d413df66b01970cd2ea012a7b433486bc703a65b260"
+    },
+    {
+      "path": ".claude/skills/bmad-teach-me-testing/data/tea-resources-index.yaml",
+      "sha256": "244c6e09a2971d807ad34ff62dd31341505d8872ef74da6016b3b06355cf87ab"
+    },
+    {
+      "path": ".claude/skills/bmad-teach-me-testing/templates/progress-template.yaml",
+      "sha256": "1000c7df2fdab3752f2c6af4ef3c72677817666ccd7e795a96e2afae663b9b4d"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-atdd/workflow.yaml",
+      "sha256": "7f0ed54ed25cc51e4ecf3dd0e9298613a679982865473d82b81c117342a51a71"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-automate/workflow.yaml",
+      "sha256": "812166a75f88418ecfba92f43e293ce33476275218a6b874f9d3ab3b3eb34a02"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-ci/azure-pipelines-template.yaml",
+      "sha256": "e53405833b819cd70b7226ea624236ff2490659985b0512244303dc9676acb34"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-ci/github-actions-template.yaml",
+      "sha256": "dbf33e640d9017650b5eed7af28f8914172a0dcfd04552a0342ef61b459b28c2"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-ci/gitlab-ci-template.yaml",
+      "sha256": "af7d7e50802c1f4cbdfdfc20b0cd8a86ba5cec5b9eaedaec29e4c8aec6049ae6"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-ci/harness-pipeline-template.yaml",
+      "sha256": "243aa43a5139a9bca9e5300070e2efeb97c13f0bb94d166f84b035025d5c4f8d"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-ci/workflow.yaml",
+      "sha256": "e32ab0b461dc951b66864d701bb27e4ebab959498689bf28fa4838210a120b83"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-framework/workflow.yaml",
+      "sha256": "13f99eb56accb5e8da5f28aabe4041b2a736472f92edd241f3f7ce3294b1f29f"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-nfr/workflow.yaml",
+      "sha256": "2e980a1b8f3e3fc954784fc9750ebd5d1703a6171005116a7c4fb202d664f978"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-test-design/workflow.yaml",
+      "sha256": "28e61166a437ccef0a3e72e8860bdee446d92e2e6dea3e0330b34b52a12c2a0b"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-test-review/workflow.yaml",
+      "sha256": "74fa54b4009c2bd8d538a3ca1a64cb1155812a51c3d6d5c24a16a4c5ab87302b"
+    },
+    {
+      "path": ".claude/skills/bmad-testarch-trace/workflow.yaml",
+      "sha256": "d7db4d39bd03cf14b60fba88a0e9f26e485221fae0a9b256271df2e1a37cc2b9"
+    },
+    {
+      "path": ".editorconfig",
+      "sha256": "61b744ffae7925fa1f647b737011df766c0e1ad00a44baa83beb3b16cdc01732"
+    },
+    {
+      "path": ".github/copilot-instructions.md",
+      "sha256": "95b85ec0411bfaff708d717bebedc382a46072aa50baca506ff61f32973cf428"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "sha256": "631a68a2d9f0210f00b4a1ca41a6c633c8b998313fa1a16a39f05d53ea02e0c0"
+    },
+    {
+      "path": ".github/skills/aspire-deployment/references/github-actions-azure-csharp.yml",
+      "sha256": "edd51e0076ba1a0c6d2cbf79e101d0c9b025a43ce2d1ceef0accb68a168bd719"
+    },
+    {
+      "path": ".github/skills/aspire-deployment/references/github-actions-azure-typescript.yml",
+      "sha256": "ed159b42af22cd5f005fe3a92de59fffcb4516bb678f2b236db3748dd6bb7d11"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "9d8771ac042a5f8c6c2a2984c25ff5831d311c6826d0e578a76277c75f7f2e4b"
+    },
+    {
+      "path": ".github/workflows/codeql.yml",
+      "sha256": "f2995c49eb91b8126df4f9248b740ebfde874bcc3ca43d20604e85cced03bc65"
+    },
+    {
+      "path": ".github/workflows/commitlint.yml",
+      "sha256": "d2fb62dee17f24caa545682b7f470568430bee4181c15eb7e62726511b33bfd9"
+    },
+    {
+      "path": ".github/workflows/dependency-review.yml",
+      "sha256": "7e2a610bcd0bf4fc83f9891bfacbcb63767cb3269796690a630c21780ed4b7b3"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "sha256": "16f76fde6a38e4b5cb0a94526abaf61ab099f331fd5b95493a1baa5502b1f6c2"
+    },
+    {
+      "path": ".gitmodules",
+      "sha256": "36afaa28da32811ec492b2663ec1d50b48a101a6c34bb30efbad0c9100f0c495"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "95b85ec0411bfaff708d717bebedc382a46072aa50baca506ff61f32973cf428"
+    },
+    {
+      "path": "CLAUDE.md",
+      "sha256": "95b85ec0411bfaff708d717bebedc382a46072aa50baca506ff61f32973cf428"
+    },
+    {
+      "path": "Directory.Build.props",
+      "sha256": "92945c259d86f53f490dc26376a26aadd6dca0e7d93b24c74853979efb0d8f4c"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "sha256": "149ba0c5377430abd79652a53c0b6c4b7de79b2a9ef882b405ecbb6735ddb104"
+    },
+    {
+      "path": "Directory.Packages.props",
+      "sha256": "35cd66b52362a6cf9d8e284bf65d55cef6e5e7b115d82c3f31a66ef37ade930a"
+    },
+    {
+      "path": "Directory.Solution.props",
+      "sha256": "c733d5bf824fda814c81b041fe97e493a7adeeed9a9b241510ff0b7d1b880c60"
+    },
+    {
+      "path": "Hexalith.Timesheets.slnx",
+      "sha256": "f74e2478f7b1443bf96d69b5762c4a4885a63d48185350312b6e0bf3de2f1f24"
+    },
+    {
+      "path": "README.md",
+      "sha256": "cd57ab1029c64099ff270428051708d801efcf8920d5c73e195244f81a5f9c7d"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/3-3-confirm-time-through-magic-link.md",
+      "sha256": "37bf6d1a6e0659814e8b91b339a24fd357b1248ace23bb1f9970a4ad248203a0"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "sha256": "04c92824c7802b74b298c08708518f90e63b8813606ddf16e1c1131d586dd537"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/3-7-prove-magic-link-no-disclosure-at-the-http-boundary.md",
+      "sha256": "5b66760c7b1de10a74e1e51d67ad9dec7a4b70d3fa617402cc7ba710900d96d2"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/4-7-surface-timesheets-dashboard-overview.md",
+      "sha256": "76cd2527a6b9971287bce08dc4fb5aee514d7480f71a669cae2d2f081ec2cc4c"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/5-1-final-launch-readiness-gate-and-documentation-sync.md",
+      "sha256": "5b52415a7b75ff1e120a4ba99d770e612f79f3c5efea4e320855ad3f2ac056c7"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md",
+      "sha256": "978c6a5ebc70df1a100e88232de723ee309c904f992c3e2cee6c01442534998b"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/sprint-status.yaml",
+      "sha256": "3603d4dbb2cfe79db1c6e81ecd9244bb92f608bd94ebb9f8c2b4dc7e888f28f7"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/tests/3-6-privacy-assertion-verifier/Program.cs",
+      "sha256": "98a1596345bc7465d69dedcd1adfdacf2971298bc0f17ecc06026b31d995a5c0"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/tests/3-6-privacy-assertion-verifier/Verifier.csproj",
+      "sha256": "6c0bcd3ab9e552437378e2aa05e5acfa10cd887b3a71bd750d7ea0f863eab91d"
+    },
+    {
+      "path": "_bmad-output/implementation-artifacts/tests/5-1-test-summary.md",
+      "sha256": "258f45293b2ccb4fa12329d3eb47c6ca2f14d7ebfcd73b6fbf39109c21db6b68"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/architecture.md",
+      "sha256": "18f260f33cdec9f62512b126b4a04d612adc580b39e3c0a3f2537db75bda59e7"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/epics.md",
+      "sha256": "33e303cf538d33e2f370acf9a614a9cbee34a1edc20acd1a03f1715367d612fc"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/prd.md",
+      "sha256": "591acc56e6a199585e27fc3232d57f47188007f7933d89b29cb8e4b402e82c42"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/sprint-change-proposal-2026-06-26.md",
+      "sha256": "44773e877ff7b1e6c48e1e1ef610a2b1627e8f7e4590e13ac04cf31d159bee12"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md",
+      "sha256": "257987f31e48b63b105db68b0ec5f40b39422d10e705685b5480d1210ae21a14"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/ux-designs/ux-timesheets-2026-06-18/DESIGN.md",
+      "sha256": "7272350e7a1aa342593ce13c52f9b2cbf69b73f9e1b5fb038216f3d8aba574b2"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/ux-designs/ux-timesheets-2026-06-18/EXPERIENCE.md",
+      "sha256": "38006ec45dae8b3eb279a32c322479a30dcf8dd23c4fa8ec62d05c7986f3cce9"
+    },
+    {
+      "path": "_bmad/_config/manifest.yaml",
+      "sha256": "e5f9fdae49eee73298074d0f7eb5e5288c04579efc53b849ffa2e0bd385a7105"
+    },
+    {
+      "path": "_bmad/bmad-loop/config.yaml",
+      "sha256": "eb1e10b06629ee1207be8e149aed5a336ba9486a49934f1f5c04e562dce3d8f7"
+    },
+    {
+      "path": "_bmad/bmb/config.yaml",
+      "sha256": "58de71c443b8ea61d1dc03197865583074722ed1d9534661490cb0faa4786d27"
+    },
+    {
+      "path": "_bmad/bmm/config.yaml",
+      "sha256": "4499f4bb5ba0a58059852d246378d17728334b0834fe2c385ceaddf2f833c7aa"
+    },
+    {
+      "path": "_bmad/cis/config.yaml",
+      "sha256": "2f409bd3ba46796f924aa9a8e64d030a99e786eac412cf635defbcf08789b4ab"
+    },
+    {
+      "path": "_bmad/core/config.yaml",
+      "sha256": "bc8f71aa05127582b2e948c197e26114e00d8a6922e048b74c4a4f26de28acbd"
+    },
+    {
+      "path": "_bmad/tea/config.yaml",
+      "sha256": "3fb0aae16fac95c103542601cde26b97e4533dc46244bfc86c71487d75b7ac2f"
+    },
+    {
+      "path": "docs/boundary-decision-record.md",
+      "sha256": "43608362b9c3e41b0fdc68c711aeeaf22d12d4280179249fa46ca39855e0bd17"
+    },
+    {
+      "path": "docs/launch-readiness.md",
+      "sha256": "807a34be4cddb1a4bae81b712379ef019fc0b30d4d22caaa375bb9a2406175b4"
+    },
+    {
+      "path": "docs/performance-evidence.md",
+      "sha256": "80db800f31979bc0ddb164225053bd74e9a0c3002e3e7806d55efe624cd4a584"
+    },
+    {
+      "path": "global.json",
+      "sha256": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "0a79816042b7558a43a22384246358fa8fbaac134fb4e3854141384806ac4ae7"
+    },
+    {
+      "path": "package.json",
+      "sha256": "bb79fe1fa554249a1fdbf38bd1d8fb6754c4845e46d92605ace5ba5e077cc4b8"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.AppHost/DaprComponents/Timesheets/timesheets-readmodels.yaml",
+      "sha256": "5a2519d743ef4a4b7bda99a597937f6104df3ecdd55a30d2e8929631b81aaace"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.AppHost/DaprComponents/statestore.yaml",
+      "sha256": "0e7ccb51ab54403d6ed06fab9607e60c35c6dd34f9e47ecb7ff02fa4bd666fd6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj",
+      "sha256": "f40e33834c47ecc348e72a29dd498c2fa0af2c44e85c2f26852679124e8b7f08"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.AppHost/IsolatedGatewayLaunch.cs",
+      "sha256": "02b0b6c0813757b4307bcf2ef2d5e62b3c138a45bd223d99497e4df474ef7d29"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.AppHost/Program.cs",
+      "sha256": "9ce37ab78de8e8e8cc221254021cdf5cbcbb9eeb277edd6f4fbad36a59ee7194"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Client/Hexalith.Timesheets.Client.csproj",
+      "sha256": "b57d65d7235bc9e0277ce73c17be98892f7cd1a4a1855cf5d0d135b3d92f301d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Client/ITimesheetsClient.cs",
+      "sha256": "b03302ae4196966bd7e001525a1f115039828d92e32f8e057a90f1d916435d7c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Client/TimesheetsClientOptions.cs",
+      "sha256": "7c09b400fc86e15bcd556710f8809881d4f9867aa47932d2458946362ec1262a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/ConfigureProjectActivityTypeCatalogRestriction.cs",
+      "sha256": "fbf203e9ed568ef85e6cd5b8d56f21095d8fadae4b6f529b8450c61bf754eb22"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/CreateProjectActivityType.cs",
+      "sha256": "febbe5b46f16df9ff223e0d1c553a220a61865d2c8cab9eed9876bc17353b209"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/CreateTenantActivityType.cs",
+      "sha256": "7e0192e7f8b843c931070957e8368a48ab0f2ce82bc748fa8dbdf49786d3b0f3"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/DeactivateActivityType.cs",
+      "sha256": "859af3ea3b6a41b9c7e60e0890847678eecbb1fc83b643f4512f20a100efadb9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/DeactivateProjectActivityType.cs",
+      "sha256": "372e41199e9d6c795b7c4c510a2de22520ccd901e6cf48e73d1018db0a80e49e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/ReactivateActivityType.cs",
+      "sha256": "cfc72657f239677324efd90edce1e3ae441d00fa5d873d32e3aead7a69c753de"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/ReactivateProjectActivityType.cs",
+      "sha256": "d536c22e62aa51a4f6873930a66035a1a827025357e0aec5fbc86e2ae2a17f13"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/RenameActivityType.cs",
+      "sha256": "8fe32ad3c308b1b60a3d6a91aea8dc962a6cd5ab47eac47ec6af410fe5e84625"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/RenameProjectActivityType.cs",
+      "sha256": "e4de77625340301d81e1158e221206bec2a59fad519245216f2028c02fd05ad4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/UpdateActivityTypeMetadata.cs",
+      "sha256": "1fe1158c3464dfd76ea6e8d79f90f66e22e28beede8e6d14b4978c24fdae4387"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ActivityTypes/UpdateProjectActivityTypeMetadata.cs",
+      "sha256": "be748f48c7d46e89001d5939ec184b8d8b0abea5bce4345f22d279b4211e33d1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/Exports/GenerateApprovedTimeExport.cs",
+      "sha256": "33f7d889da1152a097483ab28c5370cb7ec946a929f784e5d2c1338f3e8d6aab"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ExternalContributions/ConfirmExternalTimeEntry.cs",
+      "sha256": "f4d55465ef51b4a4a343e5cd8e707ef851f4858871a3559bdff013ec0ba84df0"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/ExternalContributions/SubmitExternalTimeEntry.cs",
+      "sha256": "686f4bfd6122948792d4f9fdacf792b1b9c05d70076201dd85a8ad1eca25d64c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/MagicLinks/AdjustTimeThroughMagicLink.cs",
+      "sha256": "5c9c2eb4748a8f86523d8d59f47d61d6bfbf829b499dcff1bc232331d90aead5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/MagicLinks/ConfirmTimeThroughMagicLink.cs",
+      "sha256": "6a857a541e562028a6468a30134f5bfda5be61c429f04f48eef1f61d02136963"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/MagicLinks/ExpireMagicLinkConfirmationCapability.cs",
+      "sha256": "be775afc0976164ee1a183ea9237a4489fe48cce7f55d25cc7549ea6f6863a46"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/MagicLinks/IssueMagicLinkConfirmationCapability.cs",
+      "sha256": "5d0c631965c902b007cd3ba8b573c0587a8ff87cc1b61c0500e23d1c3e23493a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/MagicLinks/RevokeMagicLinkConfirmationCapability.cs",
+      "sha256": "7c7c79ddc4acb8082f0d905e025e8aa3b19af2c07a1b640cfb784d64d9a59625"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimeEntries/ApproveTimeEntry.cs",
+      "sha256": "590ccf6e8bfe375a93111dad7f330d96f511f46750f62188ee819d2ac8172ada"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimeEntries/CorrectApprovedTimeEntry.cs",
+      "sha256": "b3a6ad58b6dced1fc8a959cff88dde6e5192c7699545a387d655f20574bbd25d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimeEntries/CorrectRejectedTimeEntry.cs",
+      "sha256": "29b5c0c7afb2f33e17256cb5cb5bfac7d38393e3cf3ccb78f79b30401d54376e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimeEntries/RecordTimeEntry.cs",
+      "sha256": "6edf03039aced1bfa48092b790173937ebc26db5a0fd9ddfca8faf0f14533680"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimeEntries/RejectTimeEntry.cs",
+      "sha256": "f60004117ceeeff828c2db90affd4103f400cc8ea8f2efeda0148a0606a427f1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimeEntries/SubmitTimeEntriesForApproval.cs",
+      "sha256": "cbbe36f619b551122fe7ef70944c89d3cf7911791bab4fbff33a28b7c9d0b2d5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimesheetPeriods/ApproveTimesheetPeriod.cs",
+      "sha256": "b033634a668fabe1c7bd728260bbd635db23930d7dfb3fe0d9e1e3a450570516"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimesheetPeriods/RejectTimesheetPeriod.cs",
+      "sha256": "f60aef3940c893304f5edb7d351d55fe9ac103e9bd954a932137c1fb7ce9f3ee"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Commands/TimesheetPeriods/SubmitTimesheetPeriod.cs",
+      "sha256": "e6c1f684a1754bbabcfd8d0492f6a4f00f944d71959719b0215fb143b18b8a38"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/ActivityTypes/ActivityTypeCreated.cs",
+      "sha256": "3a409ec1e0f4152d5d482043ee8a727e4741eaa5a744a06c314e9bfa6a6f15e4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/ActivityTypes/ActivityTypeDeactivated.cs",
+      "sha256": "ad30475d9c77039ae5c6bf94fd87fa721af6d22db9b734ccd6fa7e41dd24f4c5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/ActivityTypes/ActivityTypeMetadataUpdated.cs",
+      "sha256": "48c9f238a21101e88a9984eb2f70fe132ca73fc1f05184c4ea5ad7bf544493c6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/ActivityTypes/ActivityTypeReactivated.cs",
+      "sha256": "4c3f258911af4eac2d8a71e427d5ef012356652c374adc5f4d07e2cd90a9bfda"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/ActivityTypes/ActivityTypeRenamed.cs",
+      "sha256": "64cf5328f4fd1d8d0a644db6ba826aae4d610b2b6e7a44e0429046fd39bbfdb3"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/ActivityTypes/ProjectActivityTypeCatalogRestrictionConfigured.cs",
+      "sha256": "77b6345b80abd541cbaa3c70d61af322f230b773407b01468201b8b2ac919531"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/Exports/ApprovedTimeExported.cs",
+      "sha256": "e44ce9a2ed1dabbca4d4cf3d62751ed2a59add76a92a98866333feba48156418"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/MagicLinks/MagicLinkConfirmationCapabilityExpired.cs",
+      "sha256": "52d108e3ea75e66823ce1be15525763006b781373894fa7b6f66b21c02591f59"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/MagicLinks/MagicLinkConfirmationCapabilityIssued.cs",
+      "sha256": "b61c8195f30aed557738fc5eb9a605506639527f4564ed9b23e71441f62cfcce"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/MagicLinks/MagicLinkConfirmationCapabilityRevoked.cs",
+      "sha256": "830b7e224e60465e33ec087aa5ac551b6c69a9a484200d4c3bcf7a79740845ce"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/MagicLinks/MagicLinkConfirmationCapabilityUsed.cs",
+      "sha256": "1759c6fac0057603306651b87bb231ee1b0991936964f06a144d835a82179f58"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/Rejections/TimesheetsFieldError.cs",
+      "sha256": "eb1ceb85f9c2ff9247d4c0b2db24480471b7050098462106fdfd994a9d5847e9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/Rejections/TimesheetsRejection.cs",
+      "sha256": "23f645c2d9ef743b674f21614542e86f1d1bdd5ce72a0a77685699b2b357f741"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/Rejections/TimesheetsRejectionCode.cs",
+      "sha256": "8b74741a9e58dc4fe463faa799b4160f4f93caed4669d4cb0401000bdefc0b2f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntryAdjustedThroughMagicLink.cs",
+      "sha256": "f301007f783ae5873ed5faa4e439f29b5536f3b81d8e9047bf78384e21f08b31"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntryApproved.cs",
+      "sha256": "9e232666a26af41a65aa1a06881931fac726484f2b90641d55e0ef4493c0357e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntryApprovedCorrected.cs",
+      "sha256": "46613c6062669a852af8da648a27f9895b0dd357225a42caaba66aaaaf083fe3"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntryContributorConfirmed.cs",
+      "sha256": "e739754f8f4c9e87ef2b856c5697df1dc215963c465775c99fdc67baa3d107ae"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntryCorrected.cs",
+      "sha256": "a02a8cad892739d7ba864600d7f2cb9d68f1d8d1d4dd7a8e9dceeb75a862adb9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntryRecorded.cs",
+      "sha256": "dac7623b610bd79db70a996ec8e4051d9466b89f092a7cb8edaa3a4910a487e8"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntryRejected.cs",
+      "sha256": "8fd5f9c6f4054d7834ebc66925482bf6351d108445b19b7b3f006ff26488c814"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimeEntries/TimeEntrySubmitted.cs",
+      "sha256": "c5085e3aea3a87c6ea342bcbe9b540edc5c171e5098f4f45bb516bb2e59416ef"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimesheetPeriods/TimesheetPeriodApproved.cs",
+      "sha256": "97622a1a47486c2f19003d01a8ebed2fbe5280831293c253900f9fa083750d8b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimesheetPeriods/TimesheetPeriodRejected.cs",
+      "sha256": "8106ae9c012904d2112faf36ee39f6e1bafa049ee9372c7e516e60b7914359b4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Events/TimesheetPeriods/TimesheetPeriodSubmitted.cs",
+      "sha256": "9151ef588907478bcc41b909518ef87e0d43f4ef77f31783909f32cb00cd3c4e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+      "sha256": "395846df4e74922574cbdb757b094d52480552087ac36330b3c2b29e94a29211"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ActivityTypeCatalogItem.cs",
+      "sha256": "0db448a42c4ba408cbb641b2ae2629284ee2f87ea6dce48ad0be2f65ae81be69"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ActivityTypeCatalogReadModel.cs",
+      "sha256": "de19620e1937d132727cb7d6036130994ccb023bb0c1dbe34600cd8853986a97"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ActualTimeReferenceStateMetadata.cs",
+      "sha256": "72ceedd5b1cc17e9a8403b87034d35e3b6d830ef28217c0c8564fa0cd646cfc1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ActualTimeReportReadModel.cs",
+      "sha256": "57996e9b4fa9ba58fb38265a68ff5f15230f7719cd61f0f9d7f8c6c5af98ec3b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ActualTimeReportRowReadModel.cs",
+      "sha256": "0b8016a988d6c43199d013332ea73ceeed57106b4294a60149ad797891bed5ec"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/AiEffortMetricSourceMetadata.cs",
+      "sha256": "29c7ac7dd7796ffc92308417494673e20861bb3ddcd5139e74a9711961382f7c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/AiEffortMetrics.cs",
+      "sha256": "dd88600f01ce84d45ce837f7e622badf8769b824b742a3fd295b114049fd8229"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovalAuthoritySourceAttribution.cs",
+      "sha256": "ae3e56b1d424c0bda2c019be9e1d1a5bb41d3f624dce0ce65168a8f483e4d47b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportAuditMetadata.cs",
+      "sha256": "9a0056f8ccfb549a910db9d7c6db8cba92cf305ec62b8672fb31819292a5531a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportPreviewReadModel.cs",
+      "sha256": "a0c269612374882d4d7eefaab9b17752b62fe9751dac5491a52c796cc662b40a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportReadModel.cs",
+      "sha256": "bf3eaa9f3cd4bfe818393efecf676654f5bcb481a1fc3eddc0490e7ac0ccc62c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportRowReadModel.cs",
+      "sha256": "05219274c99490c0befae92f866e68aadf1dd47fc742fed7e837bc52d7f3687f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportScope.cs",
+      "sha256": "099a5dde9135b25d4cb94d5a2cb8bae24eb1338b9a8b678ad096fb8f3ae249d5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeLedgerReadModel.cs",
+      "sha256": "b0d884cbe8b07ef981fa87b7e0e33520464fcfd1508760acc03eec78a095e3ab"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeLedgerRowReadModel.cs",
+      "sha256": "a0388aec1a7469e59da337cb347f0d2fac6eac3467b07314e2a8eb10f3f352bb"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ExternalContributionSource.cs",
+      "sha256": "fe4d4edbaf783901f1e7bb684a966deebe2e4907f41aafd12d5419e15aab9518"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkAdjustmentDisplayResponse.cs",
+      "sha256": "3d0c205ef41e3a7a0aa2eb39b7bbec653ac412454febfaa23aac25c1abffb8fe"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkAuditMetadata.cs",
+      "sha256": "85eba32f8c2bec1671bb8cf506bb3eeca9d37b6b5647361e591862dc475a880d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkCapabilityReadModelAddress.cs",
+      "sha256": "b5b26c29e1a4c74d78e7652553d9bf33c7dd0e8d22c391ad251f954578768c98"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkConfirmationCapabilityReadModel.cs",
+      "sha256": "e8786628e696a9aa222859136fe6468a3d64c6f8e17192290e0940b8ba69d760"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkConfirmationDisplayResponse.cs",
+      "sha256": "bf90b07e4b0c901e64d54f7fe72e1f0eb0bb3cc6c18216267483e830de53ad97"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkConfirmationScope.cs",
+      "sha256": "73aac06641958d4f54207d147146f625f65e455cbe54d893c5ea4cd9335a1ee5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkInvalidLinkDenial.cs",
+      "sha256": "273bf00486c72a6a916b38863bd91430f2293d3b2bc8532c1aa7edbe0e18559e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/MagicLinks/MagicLinkIssueResponse.cs",
+      "sha256": "daa7b71370fa067c6872ba4933df47f6fd5f76044a23284b481776f513f3f4fd"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/ProjectionFreshnessMetadata.cs",
+      "sha256": "eb390f56202dc8fadc9aaed21b00e2b831bb90c48f4cfdccf94d226d4c246139"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryApprovalDecisionEvidence.cs",
+      "sha256": "34c0b06d8d64303acda1384b5bd2d6dae63a7ea87210acfa3fdc3b6f26b069d6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryApprovedCorrectionEvidence.cs",
+      "sha256": "ab0127cf3fa614cba6dee3aa49a0e2cb36eb2607734459f588bf30e9bc0ffa3f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryContributorConfirmationEvidence.cs",
+      "sha256": "1183b19327a4e1b5cb8556f6f084be8396bbc1a37dc8100e839edc84d003e76a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryCorrectionEvidence.cs",
+      "sha256": "33b3041ffea2e4d737bba61d2cc4d037ca195ef617233de537dbfc81e90869d7"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryCorrectionValues.cs",
+      "sha256": "eebaa16176fdd7c247ac75a951ee0b53c39296608b42d05e78e266c5b78fd694"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryDisplayHydration.cs",
+      "sha256": "e36bc5c2b1355f813c6e3f946edce8fb59dd6095bbcc596ecbd11bef755eac7e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryEventLineageItem.cs",
+      "sha256": "f6efcb184dad00f7b2a53b9d29d207b819cf23b56446e4f68e39eb100014a76f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryEvidenceLineageCodec.cs",
+      "sha256": "382be68db5512370b77c642c68ce16946f06f16de69514742a5d55ae54b59181"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryEvidenceReadModel.cs",
+      "sha256": "6b482833a2ebba8d6e1f1dffa409da90ac5cac365114c22e44bb85304aa75467"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryEvidenceReadModelAddress.cs",
+      "sha256": "4089a72be9541e6c926263ce1b87c68d405c1e7fbc137437067d684321f2cda8"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryExternalAdjustmentEvidence.cs",
+      "sha256": "78b7dbf2e27b546939b4958d252cbe45f3ba34928a2cdea4aef6a8c8491fa002"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryHydratedDisplayLabel.cs",
+      "sha256": "079090ac77c85f9ecbd7d9747e6598c762550bfe2db60e64e2b0dabdeb506321"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryLockEvidence.cs",
+      "sha256": "a33458c13bb680876d0ed201d75ced2b8b8c102bd43bcdfacccfc7072b977548"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryQueryReadModel.cs",
+      "sha256": "19ec0c74fbbbe6c68a4f3a49f5a0483a249aa784ea0daf37927603edb2b2b159"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimeEntryQueryRowReadModel.cs",
+      "sha256": "f1e634499ef196f421a28f48ddfc1cc465545aa48415f84e51b2d3bebba9c391"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimesheetPeriodApprovalDecisionEvidence.cs",
+      "sha256": "29e8388ade8f0d6e1cc27d66395f4f43cc4843db6d2f27909594cc45f058034d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimesheetPeriodBlockingEntryGuidance.cs",
+      "sha256": "850505cdf4802ad7a235305c925439be9836171011518c53c1dc9a8a85dc1d14"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimesheetPeriodEntrySummary.cs",
+      "sha256": "4a26e7f76f2b04212b28f62bbaa19d89fbdcf000c52b376232d0651600140415"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimesheetPeriodSelectedEntryRejectionEvidence.cs",
+      "sha256": "831be4ea6049beb2e3abe6603b062167e4eba16bfeb1e063e94635a825862f54"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimesheetPeriodSubmissionEvidence.cs",
+      "sha256": "76e9898bf299904aa30e05f21b65285011042b8f8f34a255cdcde7b9f8ef18bf"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimesheetPeriodSummaryReadModel.cs",
+      "sha256": "b6543629d849aecccc49577a22789be7580f0db53737c149aaf4160c72dd57c8"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/TimesheetsDashboardOverviewReadModel.cs",
+      "sha256": "b63a3d430d566fac5f0b580613046b9f719d709df36596bb12b15d4415f927ed"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Models/WorkPlannedEffortReadModel.cs",
+      "sha256": "963038b100cfc33c8b29545d3f4bfca003e0b29ebc762dfada493d5af6179a5a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Policies/CommentSensitivityRule.cs",
+      "sha256": "84dc8163680d9abf336d5cb71391c9842fba8ff840057cf012dc06e58e1de2b7"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Policies/EvidenceRetentionRule.cs",
+      "sha256": "949f6b14c7e07d249375410cdc3219034ae41d9fed29cdeb90c1f31809a22f0a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Policies/TimeEntryCommentPolicy.cs",
+      "sha256": "47780a239233d7b85a5045039d6811fcc824a3589a1ddbc4b56e0929a9452988"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Policies/TimesheetsEvidencePolicyDescriptor.cs",
+      "sha256": "5a24a7f0a147b64d531ec307e78adf8b340239987d609ab9ee241f035826ff75"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Policies/TimesheetsPolicyEnums.cs",
+      "sha256": "ba250b068bfc538a7313010beb9320161ca86882f2eede5faee02923197f8fab"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/ActivityTypes/ListActivityTypes.cs",
+      "sha256": "a6a216a3db94f7e8f7b902818a1cc5809fe81330b1537a5aa0b10755adf57348"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/Exports/PreviewApprovedTimeExport.cs",
+      "sha256": "b9d218776971dc664127b7ebb9c13101df7f8697a70598f349bb1ffa1c75d45a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/Reporting/QueryApprovedTimeLedger.cs",
+      "sha256": "28e822fad95fe0d9eb08fbd4688a99ad3582f7ff619710670307eb961ec3727b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/Reporting/QueryProjectActualTimeReport.cs",
+      "sha256": "93818d00a1e871fc4f2708ffa6612aab81355d63eea55203691c666ea7221a36"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/Reporting/QueryTimesheetsDashboardOverview.cs",
+      "sha256": "92017bad266e696a3b6f5b9eb15bf0b2b8ed3750c0c52ffcdf0addd89fa90110"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/Reporting/QueryWorkActualTimeReport.cs",
+      "sha256": "65107c1716f95d09a2bf4477b91f9b8ef04bccbe581d3b61f4de8c4578ff803a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/TimeEntries/QueryTimeEntries.cs",
+      "sha256": "d8e36e224bdbc5fa0ebf0e9adc5aa0310f3470e799e6a2e7469ec83dd99c3556"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Queries/TimeEntries/ReadTimeEntryEvidence.cs",
+      "sha256": "3ee0820210b2cf1fea223012f427f6df14aeb4986498f1d3ba14bca7d057635d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/References/PartyReference.cs",
+      "sha256": "954889b205ffa83a90387956edee56b8e294326041d2cfd2ef3d381e51cbc6dd"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/References/ProjectReference.cs",
+      "sha256": "253785c03d32b1303a1fccb2de4a343e8b0d0585e5655dc75fea2c71aec7fc45"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/References/TenantReference.cs",
+      "sha256": "7de11f9e7dac1f7a7ed37727753eb778f15020f451f77c110712b2b97db3ff20"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/References/WorkReference.cs",
+      "sha256": "a545866c6db9f37e8a2d54f6874f787401771826bbd229ff01d09ce6ac68a3dc"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/TimesheetsAssemblyMarker.cs",
+      "sha256": "f566f60e14184de206363527116f8fefc92cabf7bfae6e415d3e73ad3f6bf482"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/TimesheetsMetadataCatalog.cs",
+      "sha256": "2d9e6bc82d766c1ac66f2601318406c8884880ce8ba3e9535a6665f9ea6ec705"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Ui/TimesheetsCompositionPattern.cs",
+      "sha256": "f8e358e963a286dd60925bc678510640e96992cc88e1bdc950a4a2b813b3059d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Ui/TimesheetsMetadataActionDescriptor.cs",
+      "sha256": "01d94d8644236a76314e6816359083593a73c0716d5d4cb21f87f9355bc05142"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Ui/TimesheetsMetadataDescriptor.cs",
+      "sha256": "5e8708dd1e0531f6f7ebc25c338c7a789f98cca598b9a055c5776362da06f92e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Ui/TimesheetsMetadataFieldDescriptor.cs",
+      "sha256": "6d438a6ba26065732788f1f98968c6c773481ed105ba9933315fd396d5c29601"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Ui/TimesheetsMetadataStateBadgeDescriptor.cs",
+      "sha256": "70837cb96f0cf62d729c4bc85fdd5feebe6fd8d84ce56fe92427525301e843fb"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/Ui/TimesheetsSurfaceKind.cs",
+      "sha256": "5aa8e2a7eb36df6d305ab1663eb59d77057fdc83ee6c1a3a1d7bd70a93833a52"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/ActivityTypeId.cs",
+      "sha256": "bd2b0fbc2d8a6405c2f0d90c77d4b3d6652cc2ef384dc03eb75114c2a36c576d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/MagicLinkCapabilityId.cs",
+      "sha256": "84fdda6476ab0e91cbfe1c7aea820ac4610116f02162cde492d1714d96340480"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/MagicLinkEnums.cs",
+      "sha256": "2646300573341e800087b437b62c1280cf3cf83205e352d7b0d737ae89bfb2f1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/MagicLinkTokenHash.cs",
+      "sha256": "66e4e53d4e13cd107aa193bf36f4369b90522fb6a5b078e6a376cc6102f23dc4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TenantLocalPeriodBoundary.cs",
+      "sha256": "e4711cb79eca185a26884962c24d037255b4369967c5f4cc289ced46bf0f6cc5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntryApprovalDecisionId.cs",
+      "sha256": "9601fe4ec93261d505f31330756eed32c1e86efdbb9125e368c93a14b0533609"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntryComment.cs",
+      "sha256": "9798eca03bbedeb3532a2e23088dd675173ab02e794d7b1ec8e14ff196688c97"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntryCorrectionId.cs",
+      "sha256": "c814ecbf73d7b0a5390d0059f1719f0e0d475d8ff668460cad3d8ebdde7ee6f5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntryCorrectionReason.cs",
+      "sha256": "54ed2d7f030adaf8613ec35e78277c4cbd17d24e52615ff7da243b42b3e39fef"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntryId.cs",
+      "sha256": "e0e81df1a81b2324e05494d34f72d07459bfcc3e2c497e27568b9aa79df167fe"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntryRejectionReason.cs",
+      "sha256": "7065105128c7c49b089151e9cc495cff2c5a6a9bba6ec121eaca066f25e12a9c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntrySubmissionId.cs",
+      "sha256": "5cd8444e6afb7a90947606e4a9d583528080d84b8e86aa3ef1d8a4a02f21358f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimeEntryTargetReference.cs",
+      "sha256": "15b66dc82ad12a2928871833ffc97f0dd62eea9838ed96e7b8ab6c7735b1b00b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimesheetPeriodApprovalDecisionId.cs",
+      "sha256": "22ab6e626f158c50956a45b12c232dce1bc13a09049aefe4e4fca752ef751e90"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimesheetPeriodId.cs",
+      "sha256": "2b9e10a1ab47624cb07c632555a492283ef323fa98410b17bf5cb302202ac872"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimesheetPeriodRejectionReason.cs",
+      "sha256": "576230cd4c67efc263d04cd2abae2117a22d148013f8620356cca4768ebc4de2"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimesheetPeriodRequest.cs",
+      "sha256": "d766b236efb5cec417566ef4a98e0483b9626113a6ae3d1cc18fd6e4db3a565f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Contracts/ValueObjects/TimesheetsEnums.cs",
+      "sha256": "4ca797f7aa868cbeecb7f32c10b19d5b1f8e4e2c7de8980eb4d487160c02c6ac"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ActivityTypes/ActivityTypeProjectionEvent.cs",
+      "sha256": "ed88e6e811435fa145d0e77dbf14bdd71acf1f6f3d6e4b66014aca79386fb50b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ActivityTypes/TenantActivityTypeCatalogProjection.cs",
+      "sha256": "ff4b569c3904bcfa1a0250b4dbf6a8ce0394bcfed2ceeb66d91b5ca2c8b8e138"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ActivityTypes/TenantActivityTypeCatalogProjectionHandler.cs",
+      "sha256": "0a91f02630fed49f11f1198a494335e15399dbf0443df08b8000c156d43498a1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ApprovedTimeLedger/ApprovedTimeLedgerProjection.cs",
+      "sha256": "fd551bad5f72e8f5619cab64c5d63fb57bfcd06a1130b8f36ea53dd50bca34a6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+      "sha256": "780a971dea2236d4953a50dc6e0267fcbe36fef3f0668dba55a6b516950ede84"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/IProjectionReplayGuard.cs",
+      "sha256": "7c8ab93fea1fa4f417f8fd77e75b18abbf7337d3b8957e52c2fa6549ee7efe87"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/IMagicLinkIndexMigrationAuthority.cs",
+      "sha256": "fa3e40e78cddd0a7ba25048468a331a6802ca9487b2c6456163d2d55528be507"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/IMagicLinkV1VerifiedInventoryProvider.cs",
+      "sha256": "09754071ab02f3a9558fe628b4f38fc4b068fcb416db7723703fefee2ff9a7da"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/IndexCandidateConflictException.cs",
+      "sha256": "5382f5fce7733cbf36e44f6fd05990365a7c2dafcb39a42935606aee1f52f265"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/IndexRebuildCandidate.cs",
+      "sha256": "5714900a405327a87414c2778e6db21e0fa0ae34280fcd780ea104b5cd4eef05"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/IndexRebuildCandidateEntry.cs",
+      "sha256": "d6a37111b7726d894cfb11b40e6b6f0c92e8ca1be85bd94fa51cf6832fa676a0"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkCapabilityProjectionStorage.cs",
+      "sha256": "ccfd8850cac56f5dd8b8de9f31c5bcbc43e9bddd0c72354fcc241f56d2741cc3"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkCapabilityProjectionView.cs",
+      "sha256": "dc39ae0d808304a4a61ff2ae925f708bc55f2de1515d542f38f47351507b4a1d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkConfirmationCapabilityProjection.cs",
+      "sha256": "edcb3ae829a9504dbb1c3e5122d60dd3efd35a66af39f73b8bc6af20b8f8ea02"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkConfirmationCapabilityProjectionHandler.cs",
+      "sha256": "3f96cd0515b090bad3a670e23f6a0db67166fbec8974146914255fe255ec5c57"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkProjectionEvent.cs",
+      "sha256": "b69ee229daf2aeb0de5f16323bfeed4abb090d374810368a60d6d55b2060f742"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexProjectionHandler.cs",
+      "sha256": "0fa7fc6d8f5ec523e2ba8d81f884d410a5f5b4b810664de8c152f8dc40c1f7e1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV1Migration.cs",
+      "sha256": "b6cd09b83922182a675953b4d373006edab244dd33f418750139d986719557c5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV6Migration.cs",
+      "sha256": "0ee3323d504bfb79751efa1d9bf40b845f3111db41f74966c50d70a4196c267b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV1InventoryDigest.cs",
+      "sha256": "fa86701e20038ce3ff32d5d66dc68d90628e7709c6a0cb4b379dc0d642e4e2bb"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV1InventoryReceipt.cs",
+      "sha256": "f9779c48a3ff6cc8820e1417ae645c76fa6c0cf7e398a69c440b6aec058f7d3e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV1MigrationAbortWitness.cs",
+      "sha256": "31f08985f4b2b5ec079a165adc7d16b6e1960ae112965b55baa09ed525de2639"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV1MigrationCheckpoint.cs",
+      "sha256": "dfcb07102fb7cfa94106cecfbc30d53797a05b123914414197f34bcac1f03fa6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV1MigrationValidationException.cs",
+      "sha256": "74e45afd8eea02d44fdf39d5df10a11acc8872029d8c63b868bd2a888a1db650"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/MagicLinks/UnavailableMagicLinkV1VerifiedInventoryProvider.cs",
+      "sha256": "0746b5806fdeaaa2219438176cd682c780dd3315ee94e8ed3bb62683b573b91f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/OperationalReports/ActualTimeReportProjection.cs",
+      "sha256": "ae1ef7b8ef09739a0f5322b6a88bf52c6578240aa3bcdb02d98e7feaccd35a8d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ProjectionEventReader.cs",
+      "sha256": "1ea767c6883650ec7bcb2b5ee278f28da87a5f6dcc2f1592da01d503d7bccb3e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ProjectionFoldException.cs",
+      "sha256": "9d0cb0009fec17c99843ff8678c737cccf71680c21ed31c113e60c8d69dd54f2"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ProjectionFreshness.cs",
+      "sha256": "9b78112f1cccc3d3bf2f76ac48a5b0608d4c581a8127ac0e6065f03a5db1391a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ProjectionFreshnessMetadataMapper.cs",
+      "sha256": "46616b5b8164f4eb5049d1dd4ccd372f27e45d996c5ef2445066e350e1e013ba"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/ReadModelRebuildConcurrency.cs",
+      "sha256": "9957c717e1b25c6c68c27dc3e9f92c08903db3faa1414deaec5f422e09533367"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceCommentPolicy.cs",
+      "sha256": "445644c5883c55158e54fd6c5ca8abb396f3a2e2520026aeda9d45bff77b689e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceCompactStorage.cs",
+      "sha256": "0a670ddbf48f89ee760cb50c837c649e260bd68306ec87a1fe2d119a07a70a4e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceListProjection.cs",
+      "sha256": "57e07e15a8496e817e3521b9a95c13f7bff42f218dae804287ee5426965aabb7"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceProjection.cs",
+      "sha256": "a9790006f8970788028d8aaa71c05780f50fde504a4c33b656e86b0c7acc75ea"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceProjectionHandler.cs",
+      "sha256": "c2be80f0c1cc50d2c3035939b97c073726e76ca8121b63b748dd8b1e556ddccd"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryProjectionEvent.cs",
+      "sha256": "0f8966e1502e02f83cfd93e4960da00e591bee2987ec4b9ae9c2d6f131b987bf"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryStoredEventNormalizer.cs",
+      "sha256": "2952c3cd64992b876f3e85ee1571db7ffb37a2180875f280b67b1433f1f1e77b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimesheetPeriods/TimesheetPeriodProjectionEvent.cs",
+      "sha256": "4794660cb4f516969af0ad4d6222c305f87391418bd15dd563c0f0ef48fbaf6a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimesheetPeriods/TimesheetPeriodSummaryProjection.cs",
+      "sha256": "e160b7bd75b7494fcc892e6ee8bc2b9eb08ee67a2e94fd88a68543fa10e01bcc"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimesheetsProjectionCheckpoint.cs",
+      "sha256": "091d99ea963f489a0d4a9434c5b10f9b2bdfc8fb4017cb302cca3fecac7b4fd9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Projections/TimesheetsProjectionsMarker.cs",
+      "sha256": "e45e47807b47d1fdf08478201903aab19ca4c220270c4ed082cf38b0ee21bf48"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/ActivityTypeCatalogState.cs",
+      "sha256": "f27ed4793b474c66622767cb43477af033a333618c34bbc784a19520cfe93aee"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/ActivityTypeCommandResult.cs",
+      "sha256": "f019f0f443e3e588c53b37cbe9dd57dd4e7a747185b4eff5d9c842eb672005e5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/ActivityTypeState.cs",
+      "sha256": "a71bc4e5edda187096ec85f788d78251dfbac0a3829e9bde095297d7c3f58be8"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/ProjectActivityTypeAggregate.cs",
+      "sha256": "ac1bd5ff2cc319ee1299327ef8be040dde088e3992ccc63c3af34a2e34cd7834"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/ProjectActivityTypeCommandService.cs",
+      "sha256": "a2889dde0ce1b1b2eccd69b5514dd2ce496226617a4b24c824c343140c38b22e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/TenantActivityTypeAggregate.cs",
+      "sha256": "7bf861f5d424d69ec60618eeb65c2b011774fe27bc8a56e3fc28fe34c6ea92c9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/TenantActivityTypeCommandService.cs",
+      "sha256": "635061f8e2a5478b2801728b19e53156d6a1b2aee21f5408ffe6cb2bad75bf2b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ActivityTypes/TimesheetsDomainResult.cs",
+      "sha256": "bb7fca55449876b3c490f2e9dd4159ad8ed7345b996f4ea1b464d288b2594018"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/ApprovalAuthorityResolutionRequest.cs",
+      "sha256": "5ffc386ea8366c2ad7bff2a6ba7da7bed7786b9cb0e3b7ab6a2c673dd24a804b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/ApprovalAuthorityResolutionResult.cs",
+      "sha256": "3bae859889bc61f9cf87b9a6c8d75a2873f51c6b34ebe232168a8c873ca334f5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/ApprovalAuthoritySourceResult.cs",
+      "sha256": "b4dbb0b2b4843b94f77d1ce40733e6f9617ea95138212cdb78b515eb5e6eed60"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/DefaultApprovalAuthoritySourceProviders.cs",
+      "sha256": "95d215375d95bd670548dc9887636ecf83782e29d2f077dfe3855fbcb8d8acce"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/IApprovalAuthoritySourceProvider.cs",
+      "sha256": "418bfccfb7c0f8d692c0ed17c0b82ccb6464470abf85013fe22a6110d1e5d3ad"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/ITimesheetsApprovalAuthorityResolver.cs",
+      "sha256": "321a83c5c9bf87f3f14f9d4b03cbec44f9a4cd6895c45576240682a5753ef9c2"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/TimesheetsApprovalAuthorityPolicyOptions.cs",
+      "sha256": "aea1acd8e931bec11a4c04da7311b1456ec9dda3a822b55233ee2628dccafcad"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovalAuthority/TimesheetsApprovalAuthorityResolver.cs",
+      "sha256": "6b7a9e74ece339f84749d179a00de63761132a332a080bd109d763a7e6401bff"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovedTimeLedger/ApprovedTimeLedgerQueryResult.cs",
+      "sha256": "b44d6ffa0d853dee60435f9498f29728e83f72ee03338db79bf6d12a44fe6f29"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovedTimeLedger/ApprovedTimeLedgerQueryService.cs",
+      "sha256": "92aa270e1b9febef2dcec6cc367477f9a31ad250825e5f1f6a91861b052d94d5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovedTimeLedger/IApprovedTimeLedgerProjectionReader.cs",
+      "sha256": "7792921c261073c1f86ab29d7763ceb2a01a17df8c0344cc3e13b7747e74fefc"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/ApprovedTimeLedger/UnavailableApprovedTimeLedgerProjectionReader.cs",
+      "sha256": "fd04cc43f146f23f94b632a966f15e884d6c22532bb923cc0221d7e4baab19c3"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/DenyAllTimesheetsAuthorizationGate.cs",
+      "sha256": "27f97532b019b852a514f564e412b965cdc222d55f4c468e4ec0087494358482"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/DenyAllTimesheetsTenantAccessValidator.cs",
+      "sha256": "cd1ab4342221c7c85b3bb54873c99d68fc4e63dcaf36f8e8f160b9ddf4bce877"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/ITimesheetsAccessGuard.cs",
+      "sha256": "50f390fdfa101ac642762a91a5dce7540367dd09d6a14cf893e1dd8c871e0bc5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/ITimesheetsAuthorizationGate.cs",
+      "sha256": "45351ef782f8aa9895d27094f41b532dba9137bb8e13f4439b669e3b082e3af6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/ITimesheetsPolicyEvaluator.cs",
+      "sha256": "b7a1549f69296754945dc38253f66f378bfe4a71e7a0dd26f71cb734199e5db6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/ITimesheetsTenantAccessValidator.cs",
+      "sha256": "dea42ea6fe19f5a06ae35f7c24d873800c037d4f9ccd673cb4d88b1aafb7eb0f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsAccessGuard.cs",
+      "sha256": "02ac299d8b35ef3e6b2a50017a6561bcbbd62e0f28414f965e76538ad32e16f0"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsAuthorizationDecision.cs",
+      "sha256": "33a086d0de76558de489bf9835f4f8db5718f55138411c634d328d050418645c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsAuthorizationRequest.cs",
+      "sha256": "a8314ce3b5e21e3ec9c4c126da145da80f6484df955c0f4af63e32d854e4e567"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsDenialCategory.cs",
+      "sha256": "becb2ddbcea041961956e7ac5e454877b993f0b03c352cf0d344ca3c5c0e4dce"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsOperation.cs",
+      "sha256": "8956e862e249a82796a88a6a771ddb92f3b49f1f3956863a06dac642852f5f5f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsPolicyEvaluationResult.cs",
+      "sha256": "802143d4d13ed65c71c9423c1a6ac9d213b93bb419d1f4a7c16df0fdf965c319"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsRequestContext.cs",
+      "sha256": "3bfc452678ef49c1c002829d6267ae041e5e75d295e2f28566d28a7e52322274"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsServerRequestContext.cs",
+      "sha256": "8a2a136ac250110148808a49daa51f5a149afa21df510a359b68b1f1faeb1da8"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsTenantAccessResult.cs",
+      "sha256": "8b5451bc4f7e028d979cd28c222aad99af7a15226ccf258011d6ea4ab9ab68f2"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsTenantAccessState.cs",
+      "sha256": "2e859e7560e938b409e3bc9c6e6d89fa872a422cfb6990b27d4e6a58d3e3b194"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsUiAction.cs",
+      "sha256": "106405ce25ba42d818d0b184c82b66097b72db77dbaa2145fb7df29fd273bb28"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsUiActionPolicyOutcome.cs",
+      "sha256": "035fd493c84a1f17b7bb1c34b24d5c616970bbc4997d5aa6aeb241f0f7967519"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Authorization/TimesheetsUiActionVisibility.cs",
+      "sha256": "9a6294fc7c0db5968ffcb9cee075b9484da18e850ebcdb4ab874c21800e13669"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Dashboard/TimesheetsDashboardOverviewQueryResult.cs",
+      "sha256": "283312b444a6980bf1abc233abf88eeab4b281b9fe07725bf18313610d3dfa73"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Dashboard/TimesheetsDashboardOverviewQueryService.cs",
+      "sha256": "b3f4f22cd75e7296209d8dd2ab22152c9653b2e90a53ed2234b8847f7f922c3b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Exports/ApprovedTimeExportCsvWriter.cs",
+      "sha256": "0161b5a5dcedb32090e6ff5cd3cc4f152656117faf2d0d25810bfa42f8062ab0"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Exports/ApprovedTimeExportResult.cs",
+      "sha256": "cca2b37d8875429b34a03329620342d585d117611a801f29efb16008f163a386"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Exports/ApprovedTimeExportService.cs",
+      "sha256": "ac24d4efa861182204511fac0bf563fba3a127b1caedbeb9d7bef050f6cdabba"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Exports/ApprovedTimePreviewResult.cs",
+      "sha256": "cfe5a64c005da687a2e91b1693fa43c52696ca1f75ad0c70ec4ad31a5622a339"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Exports/DomainEventApprovedTimeExportAuditRecorder.cs",
+      "sha256": "d1aaed42fb1fa1d05bdb782a193c8bfaea408a9d2be33fefd8b0ea4992a25e6a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Exports/IApprovedTimeExportAuditRecorder.cs",
+      "sha256": "d4a0319ea2529e97927ac1ecbb8ba38ab0d134c774f47754154f82890c588ff2"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+      "sha256": "aef22bc1efba3a8eb98d4aab1b2a6ace575103f3d632fe460392469a03bf026d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/Commands/CommitMagicLinkIssue.cs",
+      "sha256": "f33c95336c9176ec3e17badb243daf3b667312edd7dfefb747166eea86f8dcc7"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/Commands/CommitMagicLinkTransition.cs",
+      "sha256": "20ed03c4b10b99353da8b2997d9aade766bf4b116194e2fdb9c53d298dfbf5fb"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/Commands/CommitMagicLinkUse.cs",
+      "sha256": "452f185657ad1ff716f89b4fde38e3bd9948b6ad0b0b233b43f52f98884f78bd"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/Commands/MagicLinkTransitionAction.cs",
+      "sha256": "5250c2a4a8821fd7498e3d582eb3906e327a6684a7b749616fde90d403445f5f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/Commands/MagicLinkUseAction.cs",
+      "sha256": "bcb0a67e045e3285989608ea8a67796e72ffb78e3f6f4c6cdd0d4a9075e76ae9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/CryptographicMagicLinkTokenGenerator.cs",
+      "sha256": "0d0aac6177a1736c68adeedae3a0cf4d4ad198f3e1ee7369df1103f6fc9fdb97"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs",
+      "sha256": "b9cfcca1b3ad657257f4a31fa42c606daa238f2b1ac8a136dfd63105ef2b9164"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/IMagicLinkConfirmationCapabilityStateLoader.cs",
+      "sha256": "27de6794800c25f304a1eda455285a3cfacba14d6d7f2bb027754ac0abd31121"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/IMagicLinkTokenGenerator.cs",
+      "sha256": "5f62e6c2d32a81fa93abd9dbff8fcc26796680bc93629ba81d4e7f09fcf54eb6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkActivityTypeCatalogReadModelAddress.cs",
+      "sha256": "9f8d20e191dd981e081ab8afa3ef88f4061585042af52dcb466a033b410182f4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkCapabilityCommandResult.cs",
+      "sha256": "60c55614c10105beee0529ce6238aabd395ccec226919e37316d6adf47c8bed1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkCapabilityState.cs",
+      "sha256": "6f49aee3469596421b07745ec2104b97d3c4fb5cc11266ea5c493f47a73a5e8a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkCommitRejected.cs",
+      "sha256": "b6cb2089c4759cb60228786f8072dbf0393e25486cd45fc8d74142f8ba1f7023"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapability.cs",
+      "sha256": "e13dc0305587cbe816b45c737bb295da5b185d3b9e6e4c0d6fdae29c695145d7"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapabilityCommandService.cs",
+      "sha256": "a3fe893364e06173ff317f46758387fdb7de92736a50ffcdfcc6c7bf4bc0b662"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationUseResult.cs",
+      "sha256": "aacb2ad308ffb0deb264c8d5e381a0b66d4e713256a26b6c7a106018f34e375b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs",
+      "sha256": "affc321e3ac1dff26fea384f67ce32ad1c918ea0114c5ecb9da3806e53772768"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkEndpointTokenState.cs",
+      "sha256": "408bc6b10690688524310b0bfb1b0b42be9e50fa02ca7babd17dd802e7289fea"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkEventStoreDomainProcessor.cs",
+      "sha256": "d8580ca6d67cdb823a072961a28e434973bd781392c5542053b0793ce0568276"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkExternalRequestContext.cs",
+      "sha256": "7183bf9977e90ebaebe16d33f9f7a69a9d7eb76ef613a3029ade6cd56440df81"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkInvalidLinkOutcomeCategory.cs",
+      "sha256": "cee598fe93dad2d458044e7b5473aa4a921b0966fcad38a414ddd6db91b29e62"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkSubmissionPollingOptions.cs",
+      "sha256": "b5f48725cdcb526e9d7cef1e608941195bad6eb0becd4594ff4a67ce785976e8"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexDirectoryEntry.cs",
+      "sha256": "d7df7bd1c3ea8b54d9d81e6f9ed974c00fea073e52a9ad1576a800d5cc00780a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexDirectoryPage.cs",
+      "sha256": "a013677406bf49f71c707124f9ce20ad0b92713a70d2c71ba5c4f6e1f6f98215"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexDirectoryReference.cs",
+      "sha256": "ccddcd0db7d5d690604ce02b27f7bfa954bc877877b37b82a880e0df0699fc89"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexEntry.cs",
+      "sha256": "0094a9f8ed6709bf553655d2a50ebf7bae9749baee0044ef8b0ab5024617432f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexNodeReference.cs",
+      "sha256": "4fd540e78698e93c9244ea262fb410744ad20f0ac896adc10c48423b8e4bfc47"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexOwnerAdmission.cs",
+      "sha256": "545b96f80a5bdbf11fcd1fed33b773137dedd0fa06ef84c5a3e2c0bbc7baf8d9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexPage.cs",
+      "sha256": "f04e8f3b8a63eec546ee57f60a34d7c08e4b88af58382eead1bedd4d7c165aab"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexProjection.cs",
+      "sha256": "0528ca50a7ae3e6c8dda513a739e7fd1c10523e04a0a2bddcd2fef5df1e3e178"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexReadModel.cs",
+      "sha256": "e5e4148efab2351f6e08d774ee5f292751755d1602c63cdd68feb294f478aed9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTenantRoster.cs",
+      "sha256": "4bc213ac5b2ee01b9735025e52661d9f8ca3b5dda1487a629d9850566086391c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTenantRosterPage.cs",
+      "sha256": "92a179fdd9675f1e71f4f2f2e6d169ef564ae0657da8bac30d6455021371837c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTenantRosterPageReference.cs",
+      "sha256": "624ae38917f0e03b1f7efe032708e6947ad999e14ee082c3fe32a746aab13dbd"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTreeBuilder.cs",
+      "sha256": "364fbc72d8315ddc84c14a73cd70f0fa093e05bd6553d44c7aaa313b9d2cd56d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTreeFormat.cs",
+      "sha256": "247383ecb565cc83bf91301b7b90995c1360fa5d5d74184c768904a04d638c1f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTreeNode.cs",
+      "sha256": "210f76c5d5391a215e2a573061c9fa31f97e2e286245679d60b08b3f27e785c9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTreeReader.cs",
+      "sha256": "822d52511ee1e21855a1bc74d9424ffacaa4b26b4a0fd16116fca5a562465b95"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenHashCapabilityIndexTreeRoot.cs",
+      "sha256": "53c37f688d85711c50dae800ee8c2145c01721166f568409df2004aee46feba7"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkTokenMaterial.cs",
+      "sha256": "84b80535a3493e12a2f1e7214dde9c3975c43a9723447f9bf29aed27152764fd"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredMagicLinkExpired.cs",
+      "sha256": "13a5abaaab22c4bdc6d200890aff46b8b3b4b4bcd4829ea0d13ce4f2fd32eab0"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredMagicLinkIssued.cs",
+      "sha256": "aec5f9743996f20d63fddf8ecd0cabd062285af16657a160cad636a0381a0f0a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredMagicLinkRevoked.cs",
+      "sha256": "71c84a7da45594d6a5821e6c41cb3b45dd6133f150b6600143ed93dcf4cf95f1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredMagicLinkUsed.cs",
+      "sha256": "68b39afcada91ed1ffeedc63a28b12378c1eec6ac1f8e72c8f912a8b8665038a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredTimeEntryAdjusted.cs",
+      "sha256": "d3f99fcd1b19c048092acb899e0b2a689b81e4decf4f3ca2f9a376f279aff5b7"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredTimeEntryConfirmed.cs",
+      "sha256": "7348a5a7c4c5f134210945db7eff5640861dea259cfa48f954ef12d242628184"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredTimeEntryRecorded.cs",
+      "sha256": "bde5a43792d97ec5b62720b3ef1911c3833d2803bd67f329fa134de9ed75c69a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/StoredTimeEntrySubmitted.cs",
+      "sha256": "91235f4dd565d767751e77b6522b03a6b6fe1bff5d42a622a96e95766e9be0cf"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/MagicLinks/UnavailableMagicLinkConfirmationCapabilityStateLoader.cs",
+      "sha256": "ee61ce49ffa9b3072405e4eb1655978f8e84045acf0fe4e0e139b908a99ba5ed"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/OperationalReports/ActualTimeReportQueryResult.cs",
+      "sha256": "2cc2f8fb0c17bf707294b9368f70293cd86ce55a4ea23a8a396cb1b43ec83aeb"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/OperationalReports/ActualTimeReportQueryService.cs",
+      "sha256": "8bbab299adb4e8df09b338221371fee38e072fb788add351d5d1606e63ff1386"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/OperationalReports/IActualTimeReportProjectionReader.cs",
+      "sha256": "4c1ace93caa45b91031ee4c3733035b71f2efe89ef5d47fe69779a7b18ad21ea"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/OperationalReports/IWorkPlannedEffortProvider.cs",
+      "sha256": "6dbf6e9fc5f06ceb6b5b7a054034ac736a949cb37ce132d2d3e43bd27721b639"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/OperationalReports/UnavailableActualTimeReportProjectionReader.cs",
+      "sha256": "f1d8b53ac833ae89ebb8260a26ba65bd3ed01637030b8d0e8440a32de7a6aa8a"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/OperationalReports/UnavailableWorkPlannedEffortProvider.cs",
+      "sha256": "1623649d852356e97300a25f05aed6ce0e973dc3a52922aff9c6d20656d7f8fc"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Policies/DenyAllTimeEntryCommentPublicationAuthority.cs",
+      "sha256": "27e02abfaacc4ae14bc76648096dff0d6969cbe521108fa2b7b6969166635e3e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Policies/ITimeEntryCommentPublicationAuthority.cs",
+      "sha256": "cb7f9f494907e113a06e0d7e1682f9fc923abb3461d1d044749af080bf580da5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Policies/TimeEntryCommentPublicationIssuer.cs",
+      "sha256": "cb4bb337386dabec2e2136d82d37ee8619d19dc30c045da413efebb28fe3a203"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Policies/TimesheetsEvidencePolicyEvaluator.cs",
+      "sha256": "5c4226609b64a275e2c60536b941cf15a851895d7f1b57fac67fdd0c6e3e926c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Policies/TimesheetsEvidencePolicyOptions.cs",
+      "sha256": "7fdb2314cbafef968ac27d7a5b6344065f0878ce3916cb7f0bcbfe7abe3ae831"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/DenyAllContributorPartyValidator.cs",
+      "sha256": "dffabcff12fb1775eead9d546002f5a12a8cacc1bc990edb3d38a4da48695268"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/DenyAllProjectReferenceValidator.cs",
+      "sha256": "54f29de24b17da2ef79fc1a91ef32c24d50c00e24f7a2307d46f7d68aad5ac25"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/DenyAllWorkReferenceValidator.cs",
+      "sha256": "db2c2b938a6720aa7e0b32f0460451622def51b917250047eb683d853680f12c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/IContributorPartyValidator.cs",
+      "sha256": "8eb431d748e59110df3189eb5f1f382936f2a60db9f8a48b67fab04bfde03c0c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/IProjectReferenceValidator.cs",
+      "sha256": "fb7f6fbb4f7883ab38dacc0dc293ef5f8afddb5bb17c7c86e9571e1042aeb23c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/IWorkReferenceValidator.cs",
+      "sha256": "4ad62f56e628a54ebc2941924463b658a468e4f8353fce9c3953dc4b640617da"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/ReferenceValidationResult.cs",
+      "sha256": "134325e08de4dca1db878562522afc006923725a0368c3282c6b15e682d1cc0d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/References/ReferenceValidationState.cs",
+      "sha256": "d23a87ea56947bd8127eb87fbc5713869440cb04d70e68e1b56f7b40ac5a4900"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Runtime/ITimesheetsTrustedContextAccessor.cs",
+      "sha256": "fd16b9d2590c6ee02922efccad5ce948e6462f8314b2d60e92a8207d84288fd0"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs",
+      "sha256": "f9290854b23ded46d8ef4d900cb84b843362180dcc36727423c6681007cc91df"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Runtime/TimesheetsEventStoreIntegration.cs",
+      "sha256": "3854b9deb0017c8f8c64137aa680844bbc3c55e167ac51c0ce22d1791e5f8fa4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/Runtime/UnavailableTimesheetsTrustedContextAccessor.cs",
+      "sha256": "5c9f8d8a09d0d281409a8881fc69f38370ab82679fb6df756abb85ab2fc4368b"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/Commands/CommitTimeEntryRecord.cs",
+      "sha256": "792450f57aca670b3f977c6ffa687a1c6c2f9bdf259aac845114a14c48f01660"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/ExternalContributionCommandResult.cs",
+      "sha256": "da3eead2b1e1703c427c91abdcaeb64e43bcca3ce1285fea700ae33e18430cc4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/ExternalContributionCommandService.cs",
+      "sha256": "24412ec5c4f57dec84d9fad78b81bab6a5de62b4488480840822d1a4815cf960"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/ExternalContributionPolicyOptions.cs",
+      "sha256": "932c448e3c233b24b7c87e3bf66f789bb36cc8b0fb80e1f6cc1d15d0fea218f6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/IActivityTypeDisplayHydrationProvider.cs",
+      "sha256": "681db2dcd4755d665038f6c77752533bd1bf7fb330c0242f4cdc4a3e06b848bf"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/IPartyDisplayHydrationProvider.cs",
+      "sha256": "73cf4197c45c78fdb3e83856506ddc5fecc7f3e9b3025a3bad1594610f312814"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/IProjectDisplayHydrationProvider.cs",
+      "sha256": "8eeed41d011ef019f3059f4b9c4666e501ef2a501a6fb602368fd3f8f6c01b76"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/ITimeEntryDisplayHydrator.cs",
+      "sha256": "890a1a9aeab0d0e00bc3d990d352b6236ba8c41683d5188fc03d84ffec04f929"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/ITimeEntryEvidenceListProjectionReader.cs",
+      "sha256": "f8f4bea780e50981c2c5a721d44f7fc72513f04d2ad20d80e1f7d768f61ddab1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/ITimeEntryEvidenceProjectionReader.cs",
+      "sha256": "78390d9189c8da6fabc6b0bd988c1d2b0d554824aae3df5f416a8321dfb29bb4"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/IWorkDisplayHydrationProvider.cs",
+      "sha256": "8ca53abd0cc63a5d70310b80e6af8d39de0685976c5b0dfd1872fca009ed5397"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntry.cs",
+      "sha256": "9ea400039c14c5ffdac943f9d1d13e355d7953ff1b82c2e7f0f55746927bd1bd"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryAdjustmentCommandResult.cs",
+      "sha256": "6f9cd56b552768af5ba245275c14252b3b4710f631dc4c664429b58ffa3d14ff"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryApprovalCommandResult.cs",
+      "sha256": "f4ba8280db86d9b155ee0ce76380d86687f14190ccab8afa5a07e880fa6d8aa0"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryApprovalCommandService.cs",
+      "sha256": "1ef2381addbcfeb8f5c1b2e6051ff6a381c7d184fd03d039782b2f09624a612c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryCommandResult.cs",
+      "sha256": "94592b54e7c7a1f694b567c79bceead00d68d1b504b2e685abd38e457f65a5a6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryCommandService.cs",
+      "sha256": "313d12011fcd511ab17a408e8133132ce7e232645e499019fdb8a65422b76317"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryCorrectionCommandResult.cs",
+      "sha256": "acf0697db556ab5f22fb778f398458ad46d1169ca7384e566165b3644052eef5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryCorrectionCommandService.cs",
+      "sha256": "ddb12b19ca8cc086ceedc91b391ad4db7c88797e664c9e9c31450412533cbd31"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryEvidenceListQueryResult.cs",
+      "sha256": "3705bd7244ddf1854c905cd2fcd3678c9b463a4b2f987483138524554009dd41"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryEvidenceListQueryService.cs",
+      "sha256": "04e3b8386d030216e7b6d9d399cfebcab10a062ff2ebbb634fea5748cecf997d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryEvidenceQueryOutcome.cs",
+      "sha256": "f6a609300d7e77c2341af50bd57664e98240b04f50a31285e403593466edf665"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryEvidenceQueryResult.cs",
+      "sha256": "1d7f596258399e36f30d5437a75a70fc07f222812d4655552db8710332397417"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryEvidenceQueryService.cs",
+      "sha256": "4b7e32a542aa91f2809d5d67671c2bf8e9d8f4b12dabd7800b98040c5af00294"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs",
+      "sha256": "0b76c8332d044579ce94c270a8ca2299942728ac0657840dbeb2e3811eef2c0d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryState.cs",
+      "sha256": "67d265798ca436bde753981cb5c77b3ec5344cd993f894d0c0d5eab1d50f4115"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntrySubmissionCommandResult.cs",
+      "sha256": "1cc8109e5e12724b8f84d38c1eb1af8c028f2b0d7a62e76c4c5491cdf85b548d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntrySubmissionCommandService.cs",
+      "sha256": "7a0a508de1738a573e85d649f2b20375bd573cba5638d69f59b3fcf9c09f0644"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/UnavailableDisplayHydrationProvider.cs",
+      "sha256": "b6df330d1c23764f3c395e2102ea9a389194f611f169178956522c381b5295a1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/UnavailableTimeEntryDisplayHydrator.cs",
+      "sha256": "ef428832eb2e1add9232d989f4a4af7d40b30b36bc4bec90b956631124478196"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/UnavailableTimeEntryEvidenceListProjectionReader.cs",
+      "sha256": "90de863b228fb54bdb90ecfa60a6b90021919834c0b7fa557f44b36c0073b1e2"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimeEntries/UnavailableTimeEntryEvidenceProjectionReader.cs",
+      "sha256": "90e0d04ebfa596d164c1a56d900e07f011e47d9f5ee9b6ccca16be059537fe90"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/ITimesheetPeriodSummaryProjectionReader.cs",
+      "sha256": "c3d765ead97a1c47c2dc1508f0fa53f370fe5f1bd7e4ba3df14bd74022841500"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TenantLocalPeriodBoundaryCalculator.cs",
+      "sha256": "ca7623d32a1550946cfa4bc1698b38712e4c78c7eee283552efb32f574835dad"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TenantTimesheetPeriodPolicy.cs",
+      "sha256": "9069d93f3a6643f7716627629dcb49f310e3d70332314adc5bb4ded4f0d68e46"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriod.cs",
+      "sha256": "9da8cefde0aa530362fc9410d4d8adff7c270761d8247eb1ef740f2ab1b91f45"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodApprovalCommandResult.cs",
+      "sha256": "64e2caf7848355468290f8577bc1ad7cd36c568612650bb13a269eac91082387"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodApprovalCommandService.cs",
+      "sha256": "423d0316946bed2586685f1e61765a8fa23bc0384134762d9dfa78085881578c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodState.cs",
+      "sha256": "262e5b6cf63d8d73bef2a1ac9b2289dafb7dd8dec15e0632aee896f2aa3b5233"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodSubmissionCommandResult.cs",
+      "sha256": "6291df45304ef04bcf377dcf9dc20b94e203a83fdb4e99f6a9ffcfa951d844df"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodSubmissionCommandService.cs",
+      "sha256": "7076c9fa6c9f0b2b3166d5187f56965cf98ee282deb553ddd6cc4ac72b0658ce"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodSummaryQueryResult.cs",
+      "sha256": "0891c390c5e7f108adea720ff7a266c932f1555b89e9c77fcf6f2bc74caf8566"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodSummaryQueryService.cs",
+      "sha256": "372e2d70767eabb9a2f6d1dc634922f4fe385dd4b099414200456eeb161bd43f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetPeriods/UnavailableTimesheetPeriodSummaryProjectionReader.cs",
+      "sha256": "d1333a93262918ea42a5642e74418be995adac562b741473d0b455e8341c02e1"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Server/TimesheetsServerMarker.cs",
+      "sha256": "a13f19bcaea2c7d24624069e52356067f9bf5a1883975ea082f71aa361e1a9bc"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.ServiceDefaults/Extensions.cs",
+      "sha256": "bfcf8c7788d755a586d8cfdbb302c9df2ab0485347d9710281b309dfd3e46767"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj",
+      "sha256": "1da5cd2ab84a32ae8ba924ef9ef11e5d87b63c91d7537c3d2180078888d22179"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Testing/Hexalith.Timesheets.Testing.csproj",
+      "sha256": "14060aae7ec48420cf82b3196cbce19c885a9d1aef7df93b8496a36a8968564e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Testing/TimesheetsTestIds.cs",
+      "sha256": "95aaadbe1606bc78e5929e1eee3e7257fdf2c6a4df49be188b9a91be54cee9b6"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj",
+      "sha256": "8e132005dd6797a5259323611a6bab89a6e2935ca058cd1bfd24ff8452090150"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Works/IWorksQueryChannel.cs",
+      "sha256": "8d241d5fb80db0208a7c993081e5268cb322e36e3c0e72181a945c55bb468876"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Works/WorksPlannedEffortReportingServiceCollectionExtensions.cs",
+      "sha256": "cd363d2a35dcc2042894a1d461f3aa0c8f088b892c0ce6657acec31a6f060622"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Works/WorksQueryWorkPlannedEffortProvider.cs",
+      "sha256": "28d22fe20c386413fbfc559b40827d2c63ac527cd26cbda960a403e3c64cf744"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Works/WorksQueryWorkReferenceValidator.cs",
+      "sha256": "00e9e356382191f15741e12ec6a998b8a445eae9b135cc8e0a0989d7b510b818"
+    },
+    {
+      "path": "src/Hexalith.Timesheets.Works/WorksReferenceValidationServiceCollectionExtensions.cs",
+      "sha256": "31d435fc3f004857d02eee3ba4c749157c95d843c877c176be5a3ade266f8455"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Endpoints/ExternalContributionEndpoints.cs",
+      "sha256": "3aaedc1c6e3fe8c43f54694c8b63caa42219d90d460a417b60e295efc167eea2"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs",
+      "sha256": "2e48f52a8749aef00eb578c4fc1f12880dac53fb8f3dd2f1c0dad6df1abfeb10"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkIndexMigrationEndpoints.cs",
+      "sha256": "3538ac05046239bd8818ccc13337f95d8f7234175aead096ff0bce064de48cf9"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkV1MigrationRequest.cs",
+      "sha256": "55b87e61a036a81f9030b83070cc7b037f8bf2c1af217b85e0d6b3c63b5f652e"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Hexalith.Timesheets.csproj",
+      "sha256": "cb82b25f9f92b09b09415bf2cd500e15659ba335ef84dbc3efa01353679f49e5"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Program.cs",
+      "sha256": "e42d13c1df1e863ffc3faa53ed79c53ce0bc11e05b4a4046cc4fd15faa68d622"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Runtime/EventStoreGatewayWorkloadAssertionSource.cs",
+      "sha256": "7b4a3831ba5a5ab3c452fac0839a829cb69765d10f985ee01066a51adcda119f"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Runtime/HttpContextTimesheetsTrustedContextAccessor.cs",
+      "sha256": "c7e00efbe604841d9fdb96c6faac0c01fdea363e90aa8e8b88f17cfccd4cc325"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Runtime/InternalSurfaceGuard.cs",
+      "sha256": "c7a9c750f790b2ee51c831d8b5e1ba6e1ceaa5307c4576fcd4c5583e92c6081d"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Runtime/InternalSurfaceOptions.cs",
+      "sha256": "0672dd716f25da634c038920e21c9358761f26bc95218f746ce8f1f186345885"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Runtime/LiveDaprFixtureAccessGuard.cs",
+      "sha256": "0525c8150d075bfb3896554b872086f47edbe06d8668b4f6eb2e38fb58ee3b2c"
+    },
+    {
+      "path": "src/Hexalith.Timesheets/Runtime/LiveDaprFixtureClaimsTransformation.cs",
+      "sha256": "6d3b45751cfd32da843e74f87e98d751f363eb7b775c895c79402cc7d35ebb1b"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/BuildConfigurationTests.cs",
+      "sha256": "7981f31c76b11c5b17bd30e566e9f318d6ea824033a597236319011ba9238360"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DependencyDirectionTests.cs",
+      "sha256": "6d187ed07a0f33482a9383aa5951e4a5147d5e9bef006aab339cc9532d1e9594"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DependencyModeTests.cs",
+      "sha256": "65ab20228f171781c2c28bee753bb78ad4170472ec5d2cf1d182b98ba5a7494c"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DiagnosticsPrivacyTests.cs",
+      "sha256": "8f107740f3a969030743ccd2957758ca201f1675722d73b93eb56829adca44f3"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs",
+      "sha256": "35d9b2f4efb139a4d8c517cc618fdb20dacd79ef13a1c1dece0303cde0606192"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/PerformanceEvidenceTests.cs",
+      "sha256": "98396667a0c3bb8be41537ffaba293be88f15de9a97d86a892eec57542fb4c91"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/RepositoryRoot.cs",
+      "sha256": "dda8f6a1b9d812b0527aca6229c8fb333c04164408cb4ca23a055df2b4d844d8"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs",
+      "sha256": "7cd01d0994e30a45cb6306a73e907062e627322afe14bafe34d05b19d86cb661"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/WorksCheckoutGovernanceTests.cs",
+      "sha256": "7ced90b87216aba8f90d2410dce856deff13269b6ececb3afc049a0f54f65f0b"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj",
+      "sha256": "70407e2012d4eb2e093e3084f90901a39af788ec814cf3bbe7f4e15693516f0e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/ActivityTypeCatalogE2ETests.cs",
+      "sha256": "89ed4172e34b9d9ed4a1e3a7e68e0009fda59839d7758f7e6e179c5af8c316dc"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/ActualTimeReportContractTests.cs",
+      "sha256": "54df6b98989a08c1dfa3ef7db625c9313d15a67d0b81ada01e0713833355add5"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/ApprovalAuthorityContractTests.cs",
+      "sha256": "2285442994d03da383b34b7675be4d5bce795358b892f59d5b53a28677cfeb07"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/ApprovedTimeExportContractTests.cs",
+      "sha256": "dd26af86433fc154fecda81a4617254abefd2817725bc283caac85de3055f474"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/ApprovedTimeLedgerContractTests.cs",
+      "sha256": "80ee841c44d4b81aaf8a92510a574b7436489500c44ba8a5992a60a07ee2eff6"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/DashboardContractTests.cs",
+      "sha256": "fe12118d1a3d584d4456489f7d00e4cb0b771bcf50bd5e0a57ddc631301ca02d"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/EvidencePolicyContractTests.cs",
+      "sha256": "5761b9113ee6d3407bc71dece717e0622b431a687f45ea2be5525e864877e4e0"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/ExternalContributionContractTests.cs",
+      "sha256": "66423c954d409bceec24d82e1c55a970c0144e83eeec2186d33dd0f9c4790822"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj",
+      "sha256": "31bea1f4b300897df4f547105d41e200214d93549de8355da0c23322a548a00c"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/MagicLinkContractTests.cs",
+      "sha256": "6971fbff0ec49e7590572bbb9da34fc91c52f379a2a6bc19d6e6dde9d866b031"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/ReferenceContractTests.cs",
+      "sha256": "bacf5ca381a75dc53664b53222c39549a7593db35c35808ba8eb0da901f66ea0"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Contracts.Tests/TimeCaptureContractTests.cs",
+      "sha256": "17b45177157c9cfb95c0c338c156eaba8a623c3e090c3450609a99fc508bb41f"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ActualTimeReportQueryServiceIntegrationTests.cs",
+      "sha256": "c501dcdc98cd436c2619ca457950bc132b6c9d40696b8d5eff170821d33532f1"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/AiAssistedTimeCaptureMetricsE2ETests.cs",
+      "sha256": "211b243887b453474a9635861ef84d1a6155a1610ac0d3bdb88e4e3b6e92930a"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ApprovalAuthorityPolicyE2ETests.cs",
+      "sha256": "1f8e531ce066a010abaac7dfe8a6b987e48e1e82c814af1bf8afa878b5c573cf"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ApproveOrRejectSubmittedTimeEntriesE2ETests.cs",
+      "sha256": "6c5056ba419503f5d5501c059cb7cfb8baf4005f14444fb911de03414ad5021a"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ApproveOrRejectTimesheetPeriodE2ETests.cs",
+      "sha256": "a2f3725079ca587437b5a7f8e02b7479def4fb61b956290ebd8af0313e017488"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ApprovedEntryCorrectionsE2ETests.cs",
+      "sha256": "296394d9381cdaae50db7c6a4f0b9d81780016dbcf1b120bbe944a2efd4e9047"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ApprovedTimeExportIntegrationTests.cs",
+      "sha256": "79b7754c8f8bc8cdbe2f9e203ee7dd78a55ff7fc91942f49cf438c449b08b13d"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ApprovedTimeExportPreviewIntegrationTests.cs",
+      "sha256": "120a5acd3f85448d0bf857cba3c7d50ab142f467395f68001491d430eadb14cf"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ApprovedTimeLedgerQueryServiceIntegrationTests.cs",
+      "sha256": "7d41ae0102adf190d2ffb493077baa83199b7803c2d074dd65fd8bfa8f58b937"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/CaptureAndGovernanceCommandPerformanceLaneTests.cs",
+      "sha256": "b51c9129d747ac5486752bc5366f2692b2f4477687743222d3ef1ff2db6067cf"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ComposedCoordinatorStageTests.cs",
+      "sha256": "1b1de3817e94f57739442b088fce8e52dcb0cc8d69c40adfe43cdeaff7dfbf76"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ComposedOrchestratorDeliveryTests.cs",
+      "sha256": "bc541b68fa3223c0842aea12efcff9414097eaa3bd5a76236fa8ead853326b5a"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/CorrectRejectedTimeEntriesForResubmissionE2ETests.cs",
+      "sha256": "93b8fb0d373ac961abd7cf4365b3c1738804c676d425041559314818659a603d"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/CountingMagicLinkTokenGenerator.cs",
+      "sha256": "f61770166170f1e0b2b8f94fce3cbb00135abe8638f9e8eda375a404ab54dc4e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ExternalContributionEndpointTests.cs",
+      "sha256": "6106c31e5ee858645043c7bd2a7eaa914f8c2fd8162066a1efe73016856dc8c1"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ExternalContributionWorkflowE2ETests.cs",
+      "sha256": "d3e1f8525c19b8d8829cf86d5a6a7535c4adb694f0710801297df1532127e59a"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/GlobalIndexComposedTests.cs",
+      "sha256": "1ff57ad34fe7e503913673685667c021c37320338abb66ea777ce3890f8d672d"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+      "sha256": "da83fc5a1406f5bc53944a133383bf117bf7c6e01a46762d3ec3339bd8df08dc"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/HostMetadataEndpointTests.cs",
+      "sha256": "e724f62054a78955369bc623322642d7063ca53c0bd67387a69901e4a031ae9f"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/InfrastructureLaneTests.cs",
+      "sha256": "0ad6214e471f7ec6b5991b73b30744779ef52a1edbd52113372d5fc2ecf63ccd"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/InternalMagicLinkV1FaultStore.cs",
+      "sha256": "548ea767f4c0a17691569e827055d0b754c2f912a000ede962d330b4e3841b40"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/InternalMagicLinkV1Inventory.cs",
+      "sha256": "24a19aec8b7c0df7865247797782e80fe4f67bcc0ef0c4c8f11d402eb1bf14f1"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/InternalSurfaceGuardTests.cs",
+      "sha256": "f11e413b3da294a6a606ee40fb6f3964a675e318292111fa359788ddfb5c4ab6"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs",
+      "sha256": "e9b807d41a313928d2cec98b2ce0bb4ca7efd79d583cc6ebb3df007cbee07e9c"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityWorkflowE2ETests.cs",
+      "sha256": "aec205821092c4d15a244b697cf69f8b46ce7d0eaf52e0d273a684f323b4f09f"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs",
+      "sha256": "09e13f10f8f6e668c50005073cf280ea333589de89436e1fc2cde8149d1946d7"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkEventStoreActorPersistenceTests.cs",
+      "sha256": "ae1ae5db1f2730307b92a79ccea9d7a8b3bc1fd354d2384b43722c8556a95575"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkFixtureClaimsTransformation.cs",
+      "sha256": "311270f539e469e8dca0d6849d666f324e8f4eb93036a29d1a531f1d56d22a3b"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprFixture.cs",
+      "sha256": "9b3c577cf558f853c668176ceb7dbf94ad1907b4ea79b6427de82baa3e18a3e0"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs",
+      "sha256": "9fafd955074c0709d476a3463aa1ba1551583cbd3c7b1dee11ab511cc430768e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkPersistedSubmissionTests.cs",
+      "sha256": "740d7b7d0ccc98c80bbd80360193a43d0c405992ff3fa70075af28803e7a444f"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/OperationalTimeEntryQueryServiceIntegrationTests.cs",
+      "sha256": "f0275612d691b7ce4a2bf585c0c9faf5ca157a3b63c6b08184f448143d97e016"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/PerformanceEvidenceLaneTests.cs",
+      "sha256": "15e7e77979ecb08fc43373a9ab0bb0c08c402cb868c196940f354adab3df4251"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/PerformanceStatistics.cs",
+      "sha256": "3845bec449a5079c0081655ad5a21e5314a223d795513b2a399e59b76617a13b"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/PerformanceStatisticsTests.cs",
+      "sha256": "6bfbf2391a54ec35520278e444d35cbf6ab331383aac2c1a8942096be7e75caf"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ReportExportDashboardQueryPerformanceLaneTests.cs",
+      "sha256": "65f92e96080cd688f173b841e39dd7625e0ea8256d315de8a5f71521593dbdd1"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/ReportExportDashboardReadJourneyE2ETests.cs",
+      "sha256": "7e536543472a456a78923e1a1436cf3c4459166ecc4c0325725b55cc6bfeb051"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/SharedSourceCapabilityRebuildTests.cs",
+      "sha256": "075619f5f28c1243365a48c6763c70c28195115effd6e2a3bceedd9eecf7c843"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/SubmitTimeEntriesForApprovalE2ETests.cs",
+      "sha256": "ffa508cba068d16d52b25d20553590a987c9d4d565677f486a3053a96f81bc89"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/SubmitTimesheetPeriodE2ETests.cs",
+      "sha256": "0ed04857e0cb87de46a35e9b73c1467af1c4d940331cf953dd715291da39398f"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/TestRepositoryRoot.cs",
+      "sha256": "34d0f4a45ff79af70c9ff1e2558e02be20b7848be143a20652e4be64cd90f2f6"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.IntegrationTests/TimesheetsDashboardOverviewIntegrationTests.cs",
+      "sha256": "3d9637188e31b3bda3454aa84cd724cf629b03beb6cc1071c001d0c60abe8398"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/ActivityTypeCatalogProjectionTests.cs",
+      "sha256": "d25011fec7f08a4f92e9a21f7500ecd4fa3fa6c93c93bbc2351d4004c783896b"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/ActualTimeReportProjectionTests.cs",
+      "sha256": "9aa84f9089380814e11cbaf61b0c9e3ad3c1b3ae4c3da041470a501a5a493d37"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/ApprovedTimeLedgerProjectionTests.cs",
+      "sha256": "3858366830161ceee848cb3259282ac7b3de2e3a2ae00ef422aea81bd64672c3"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/FixedIndexTokenGenerator.cs",
+      "sha256": "a38819590d7d87a53c3de9dcdd94088eaa457926970290648a4f5791a7a6dda2"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/FixedIndexTrustedContextAccessor.cs",
+      "sha256": "ce7332e5b22b408fa28958bed781a9cd1abbebac459119eeb73b1fd591c92b74"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj",
+      "sha256": "2aaae61e55e483cc91c32dd1fc5ec47a9317920bf6bceaddf435d7302dae6d37"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkConfirmationCapabilityProjectionHandlerTests.cs",
+      "sha256": "dbff26d26bd5c14f23e3c5650dce8d182af9bd05aee878245f8fbd72dd8b0371"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkConfirmationCapabilityProjectionTests.cs",
+      "sha256": "906c68d4373af614b65f3aa9e3cf86a93d5bbfe00a2465d1ea29e6627e6a1ce7"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkGlobalIndexEpochTests.cs",
+      "sha256": "c23a3211c95a128a2818d471c22162db9b3d04825da78b60074e6b6cbd6a58cf"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkNumericIndexTests.cs",
+      "sha256": "de86f487013a0294c2682a11777a600f489b37e775da4e1b502b0aef7b4d2cb4"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkStateProjectionHandlerTests.cs",
+      "sha256": "221df1c746e9742e44bdfbc55c1e087d8d3e55591381cea12ab72507669d9770"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV1FaultStore.cs",
+      "sha256": "811ac5e286e742263bce7fb4d27160efe7b9f2fc043440d67ba1d580aafdab98"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV1InventoryDigestTests.cs",
+      "sha256": "292d599c07f570ee18cba41fee3cf9cb2a32bf44d1c0386633a77f275b11c0ff"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV1MigrationTests.cs",
+      "sha256": "2a34f98fb0a06ba6875d532abd1500146307d035d0eee361e30374d876971575"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs",
+      "sha256": "913eec9076ef61f9da4cd931c0491e94fa9ec673e29f38c23987c74e5f8ce100"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/ProjectionCheckpointTenantScopeTests.cs",
+      "sha256": "8bd530bc331823e4aaa56c90e86db5cc7f1f22237274ce8696c11d538fa0d8ec"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/ProjectionPlaceholderTests.cs",
+      "sha256": "a8160cae5ef617e61ffa5dfc9d843ae1bcf2b71c0a54c0e4d836a6d0df26ec7c"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/SimulatedMagicLinkV1Authority.cs",
+      "sha256": "e26090ca45a1f535271ee8ffacac12dfe345464828b543614f9b8eda6b799d4e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/SimulatedMagicLinkV1Inventory.cs",
+      "sha256": "d9b63c014d2959c88b187df91f6afb9991d5e0ca7f2ee32169f0b48ab36904e2"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/TimeEntryEvidenceProjectionHandlerTests.cs",
+      "sha256": "6f90889690c73c1153dfb1a13d10013d9747ef54bf629d31a4266233d56f83de"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/TimeEntryEvidenceProjectionTests.cs",
+      "sha256": "49141d7048cf4776f49d9820ce3bf8a9143234068fe85a2637d644c44e99dd9a"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Projections.Tests/TimesheetPeriodSummaryProjectionTests.cs",
+      "sha256": "fa6ab468ae15d0e418b355919c14eb95a9b4861b5e5e884bd0fc9ce9a2302a50"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAggregateTests.cs",
+      "sha256": "232ff31bd0dee1e174302fb48221014e3f79a12ef14d12f8ba3a7bd1cb20025d"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ActivityTypeAuthorizationTests.cs",
+      "sha256": "711ec10bf98d3834403127a7641263ba9ff44a9a86b7382d5dae095ca29d08ed"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ActualTimeReportAuthorizationTests.cs",
+      "sha256": "689a10906b4a1e310f120ab1a750e516967d09d3e9d6f0f04a947b7670388777"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ApprovalAuthorityPolicyTests.cs",
+      "sha256": "49cf18b1c24615271570766a862bbda3df134b942eebaed2e42ac4532a8e0c0e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ApprovedTimeExportPreviewServiceTests.cs",
+      "sha256": "f7a6ff9a0fc22eb1588331cdd55f73a32502a6af0d29aae7fa48ce892f4bd779"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ApprovedTimeExportServiceTests.cs",
+      "sha256": "5a20471149da9e27dafd830148a898dbe7fee595c4259fd92f9fa1b66eb83afd"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ApprovedTimeLedgerAuthorizationTests.cs",
+      "sha256": "71bb50eed67d90c5d46e49d45020507898e98fa8a76707ca4618a0ace8fbd13c"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/AuthorityBoundaryTests.cs",
+      "sha256": "389606678c9a2f1acedd0929c4848e063197189da6f6f02d50618cf9f2b219af"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/AuthorizationServiceTests.cs",
+      "sha256": "46ce25664bc93a7ec18c88eb06b566571d7f9e8349b8cee99c106239862385b4"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs",
+      "sha256": "2421724fb6025ce4e8eabde1366df78ab80cffbbf859602d04ca95cfeb677c5e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/EvidencePolicyEvaluatorTests.cs",
+      "sha256": "ea5e714b2f65e0e2b8ed7ad674a6c6452775fccb1c60147f28345fff09fd42f4"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/ExternalContributionCommandServiceTests.cs",
+      "sha256": "90de86b20b532f9f620b9d0567b19f975fd3cded523a445bb153e15b68748ca5"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/FailClosedDefaultsTests.cs",
+      "sha256": "1f8329ec32ed3befe15a0d2f747994dc6ebd56e81cc194fa1553917f63c2566c"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj",
+      "sha256": "2ed0f568c38cf62479ccd53ff0205e1256b765485ac03e85e0a173189e2d1f8d"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/MagicLinkConfirmationCapabilityCommandServiceTests.cs",
+      "sha256": "13c2b5ae506590f6f5ab84a508ec67b48bde2d521939cea602820e37c5d77786"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/MagicLinkDurableSubmissionServiceTests.cs",
+      "sha256": "6ddff4f79c09b0afdb02ce61ea0f7d80ff26d2e5202b1cbf0ff05ae9ab92a1ef"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/MagicLinkEventStoreDomainProcessorTests.cs",
+      "sha256": "b9a0dd8c2391aa65fae58ee8e09943861293a24490d1159f3a817906b836723e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/PromotionHookReadModelStore.cs",
+      "sha256": "4667f7d68e1b58dc02fa3b80a0f5f109910fae2a11a120f0ab3c3f1bbcec46ff"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs",
+      "sha256": "a6e0ab55c2f5a3912239fd97a23fa183b323ef3b6ab0aee84ab62e8c787e907e"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TestRepositoryRoot.cs",
+      "sha256": "e3cbf7de80475a604f0d0323d98067ddcea78c506e6f095a63b61c77f8146cae"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimeEntryAggregateTests.cs",
+      "sha256": "9c47884a58faf41915f8394d3a9d7467ecb21e10786a1872af267daeb739aa59"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimeEntryAuthorizationTests.cs",
+      "sha256": "1f2322e5a3c2837a0693566b0c1865b93a522cc7e5b4f7b787bafa7c74b3d289"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimeEntryCommentPublicationIssuerTests.cs",
+      "sha256": "0d2f3d2cbb3062e6b3f0ced49d4eabaaa4c6982843435491d21f92f3ca97aa67"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimeEntryDisplayHydrationTests.cs",
+      "sha256": "45cc71de84ebe7bca7436a02ea216219d8daed1f98b6deb3ad5f1e933ec23bb6"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimeEntryRecordSubmissionServiceTests.cs",
+      "sha256": "e6f46daefc7b4e52b32a0c5dd0580d52c9d7bc1e5a0049c821326e7f9b9c83b9"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimesheetPeriodAggregateTests.cs",
+      "sha256": "370c71bb4dc247f24538405f6905af74b7dae0cd16ceca3491708b2f3fa34742"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimesheetPeriodAuthorizationTests.cs",
+      "sha256": "1bf8ba7b7265a0c5382c3f0a33a73b7e078c0f7400725a672591fd84aefedc93"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Server.Tests/TimesheetsDashboardOverviewQueryServiceTests.cs",
+      "sha256": "5b787b3de53e4fafc601109664942ec84ca12516ce204aeb034e39e671df1176"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.csproj",
+      "sha256": "afca443895f3564935d020f435b37790bc97a429598d0e1c5909f38f7a8fba70"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/WorksPlannedEffortReportingCompositionTests.cs",
+      "sha256": "83131a320dd56539b232333dbc3766f55ddca2639b0c47822558001c9c975ed5"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/WorksQueryTestData.cs",
+      "sha256": "d1b6c3395d2dbf44e21d532d1bafc119221d40c91c62bf5004fb2f820f12b2f7"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/WorksQueryWorkPlannedEffortProviderEdgeCaseTests.cs",
+      "sha256": "fd4b39fc6393bab1b9a65b63d025f5aac2ceca07a95165874238ceebe92b58df"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/WorksQueryWorkPlannedEffortProviderTests.cs",
+      "sha256": "f1a198eb89f1d9af35efed135a9365d6ecf2c71d4e5f84cff92c0a5d3da44561"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/WorksQueryWorkReferenceValidatorEdgeCaseTests.cs",
+      "sha256": "09ad8cc060208027b3b5019168cb02c3fbba674d9dffed1cafede612b16a957d"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/WorksQueryWorkReferenceValidatorTests.cs",
+      "sha256": "0fec1b532d5aeb4b9f7124e26f016f8b31544e4a26e27cc8b05805e627c92115"
+    },
+    {
+      "path": "tests/Hexalith.Timesheets.Works.Tests/WorksReferenceValidationCompositionTests.cs",
+      "sha256": "60fe5f9e033fa3ea431fd2d1ace1c91f1ede36c383ceecc9ec45c2dba274756d"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "references/Hexalith.Commons",
+      "root_gitlink_revision": "5c23c818f639c5bb3175f964c5549440bd5b876d",
+      "checked_out_revision": "5c23c818f639c5bb3175f964c5549440bd5b876d",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.AI.Tools",
+      "root_gitlink_revision": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "checked_out_revision": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.Builds",
+      "root_gitlink_revision": "6a38cb0f2e74977d7457fc59e6af79457ed8196a",
+      "checked_out_revision": "6a38cb0f2e74977d7457fc59e6af79457ed8196a",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.Tenants",
+      "root_gitlink_revision": "ce88a70b6af777c059b5fb4335d429b9272911bd",
+      "checked_out_revision": "ce88a70b6af777c059b5fb4335d429b9272911bd",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.EventStore",
+      "root_gitlink_revision": "6c56c27bc1a8d63c83f9631f7162cf79fdde0a1e",
+      "checked_out_revision": "6c56c27bc1a8d63c83f9631f7162cf79fdde0a1e",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.FrontComposer",
+      "root_gitlink_revision": "a2196fd67d6da3e9e56200847f6ea3b51419fc0a",
+      "checked_out_revision": "a2196fd67d6da3e9e56200847f6ea3b51419fc0a",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.PolymorphicSerializations",
+      "root_gitlink_revision": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "checked_out_revision": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.Projects",
+      "root_gitlink_revision": "5d8f6edf8740e974fec37e40c21c27680b0c7cb4",
+      "checked_out_revision": "5d8f6edf8740e974fec37e40c21c27680b0c7cb4",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.Conversations",
+      "root_gitlink_revision": "cb11f9338179cc0ab8fb5bcd59f7eae6d6292086",
+      "checked_out_revision": "cb11f9338179cc0ab8fb5bcd59f7eae6d6292086",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.Works",
+      "root_gitlink_revision": "64602575b902c0f8d3bfaa41a27565eee5682639",
+      "checked_out_revision": "64602575b902c0f8d3bfaa41a27565eee5682639",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.Parties",
+      "root_gitlink_revision": "836b2ba4aa41cdf8a7812b97a5da7c08896c0c7c",
+      "checked_out_revision": "836b2ba4aa41cdf8a7812b97a5da7c08896c0c7c",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.McpCli",
+      "root_gitlink_revision": "b616db3092a9b1c5af196538a3de37a5c7f2d7ca",
+      "checked_out_revision": "b616db3092a9b1c5af196538a3de37a5c7f2d7ca",
+      "tracked_status": ""
+    },
+    {
+      "path": "references/Hexalith.Platform",
+      "root_gitlink_revision": "bb81fc9e98533246cfeed43ffcce08866a2a57f6",
+      "checked_out_revision": "bb81fc9e98533246cfeed43ffcce08866a2a57f6",
+      "tracked_status": ""
+    }
+  ],
+  "evidence_input_sha256": {
+    "execution.json": "db34934e305abca264889b583f5654bdb898788d609cc0efed9d18600f6df8cf",
+    "history-correction-verification.json": "802c7af142cbc174a29eaa18f2c962854d8591df29ff2a7aa115c5748252f052",
+    "counts.json": "af82efa07f1cdcab8011c0643d94b151623d1fde13a2f58621ac1542683e0b44",
+    "receipt-hashes.json": "8d6f93e0205deb13c4cffb700748ffb174b148166001cbea204ee7ab9c2f815d",
+    "projection-followup.json": "79491b54e9919bbd482fe1fcafd1d2c1aa5b7ecea30469167457438b8f2505d8",
+    "failed-attempts.json": "f2f7dde890d966ff8097b0b53003d49a885169ac09013ac62b787a7366a5824d",
+    "final-verification.json": "3dc28621b740bd4a22f0de93dcc32dfc01b933d58ae71443d394cc2c3da41b05"
+  }
+}

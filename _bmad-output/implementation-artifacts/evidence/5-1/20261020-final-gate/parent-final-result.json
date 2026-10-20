@@ -1,0 +1,79 @@
+{
+  "raw_directory": "/tmp/timesheets-5-1-parent-final-raw-qgdfmblu",
+  "architecture_attributes": {
+    "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+    "id": "a496465a-1466-46cc-a125-eee07c1da7cc",
+    "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll",
+    "run-date": "2026-10-20",
+    "run-time": "13:24:28",
+    "start-rtf": "2026-10-20T13:24:28.9285654+00:00",
+    "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+    "target-framework": ".NETCoreApp,Version=v10.0",
+    "errors": "0",
+    "failed": "0",
+    "finish-rtf": "2026-10-20T13:24:51.8478184+00:00",
+    "not-run": "0",
+    "passed": "65",
+    "skipped": "0",
+    "time": "22.919",
+    "time-rtf": "00:00:22.9190000",
+    "total": "65"
+  },
+  "executions": [
+    {
+      "label": "parent-final-build",
+      "argv": [
+        "dotnet",
+        "build",
+        "Hexalith.Timesheets.slnx",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "TIMESHEETS_PERF": null,
+        "TIMESHEETS_LIVE_DAPR": null
+      },
+      "start_utc": "2026-10-20T13:24:22.422722+00:00",
+      "end_utc": "2026-10-20T13:24:28.740311+00:00",
+      "exit_code": 0,
+      "compressed_log_receipt": "parent-final-build.log.gz",
+      "source_binding": "parent-final-source-binding.json",
+      "source_binding_sha256": "fc56c4b2a97a0e6bfe95c0d1b6ce48270835b5cd730adcef6a9100a1753b8bed",
+      "raw_log": "/tmp/timesheets-5-1-parent-final-raw-qgdfmblu/parent-final-build.log"
+    },
+    {
+      "label": "parent-final-architecture",
+      "argv": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-xml",
+        "/tmp/timesheets-5-1-parent-final-raw-qgdfmblu/parent-final-architecture.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "TIMESHEETS_PERF": null,
+        "TIMESHEETS_LIVE_DAPR": null
+      },
+      "start_utc": "2026-10-20T13:24:28.741478+00:00",
+      "end_utc": "2026-10-20T13:24:51.886417+00:00",
+      "exit_code": 0,
+      "compressed_log_receipt": "parent-final-architecture.log.gz",
+      "source_binding": "parent-final-source-binding.json",
+      "source_binding_sha256": "fc56c4b2a97a0e6bfe95c0d1b6ce48270835b5cd730adcef6a9100a1753b8bed",
+      "raw_log": "/tmp/timesheets-5-1-parent-final-raw-qgdfmblu/parent-final-architecture.log",
+      "compressed_xml_receipt": "parent-final-architecture.xml.gz",
+      "raw_xml": "/tmp/timesheets-5-1-parent-final-raw-qgdfmblu/parent-final-architecture.xml",
+      "binary_sha256": {
+        "Hexalith.Timesheets.ArchitectureTests": "c94697e4cecf20f81c0dd8cad17e32a9798cb7decd52b8ee0f9834bbfc2b1b80",
+        "Hexalith.Timesheets.ArchitectureTests.dll": "41971f042a513b86a8680e9bd3e39819d1a0643010ede4ec988a0e408699a2a2",
+        "Hexalith.Timesheets.ArchitectureTests.deps.json": "6c33901a4cb2944b3f1c9c229dd4304646b60c337fd4b3bca598daa6db712f2f",
+        "Hexalith.Timesheets.ArchitectureTests.runtimeconfig.json": "47006289392cc2d570cfeaf8f92b5c06d9d3ad0c33faf63316ef9b6edac73963"
+      }
+    }
+  ]
+}

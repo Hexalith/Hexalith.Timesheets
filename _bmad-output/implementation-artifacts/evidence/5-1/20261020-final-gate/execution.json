@@ -1,0 +1,80 @@
+[
+  {
+    "project": "Hexalith.Timesheets.ArchitectureTests",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/Hexalith.Timesheets.ArchitectureTests.xml"
+    ],
+    "start_utc": "2026-10-20T12:12:34.391445+00:00",
+    "end_utc": "2026-10-20T12:12:58.743208+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "Hexalith.Timesheets.ArchitectureTests.xml.gz",
+    "compressed_log_receipt": "Hexalith.Timesheets.ArchitectureTests.log.gz"
+  },
+  {
+    "project": "Hexalith.Timesheets.Contracts.Tests",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/Hexalith.Timesheets.Contracts.Tests.xml"
+    ],
+    "start_utc": "2026-10-20T12:12:58.748632+00:00",
+    "end_utc": "2026-10-20T12:13:00.147073+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "Hexalith.Timesheets.Contracts.Tests.xml.gz",
+    "compressed_log_receipt": "Hexalith.Timesheets.Contracts.Tests.log.gz"
+  },
+  {
+    "project": "Hexalith.Timesheets.Server.Tests",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/Hexalith.Timesheets.Server.Tests.xml"
+    ],
+    "start_utc": "2026-10-20T12:13:00.147344+00:00",
+    "end_utc": "2026-10-20T12:13:03.250369+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "Hexalith.Timesheets.Server.Tests.xml.gz",
+    "compressed_log_receipt": "Hexalith.Timesheets.Server.Tests.log.gz"
+  },
+  {
+    "project": "Hexalith.Timesheets.Works.Tests",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/Hexalith.Timesheets.Works.Tests.xml"
+    ],
+    "start_utc": "2026-10-20T12:13:03.250739+00:00",
+    "end_utc": "2026-10-20T12:13:04.209926+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "Hexalith.Timesheets.Works.Tests.xml.gz",
+    "compressed_log_receipt": "Hexalith.Timesheets.Works.Tests.log.gz"
+  },
+  {
+    "project": "Hexalith.Timesheets.Projections.Tests",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/Hexalith.Timesheets.Projections.Tests.xml"
+    ],
+    "start_utc": "2026-10-20T12:13:04.213543+00:00",
+    "end_utc": "2026-10-20T12:22:16.765377+00:00",
+    "exit_code": 1,
+    "compressed_xml_receipt": "Hexalith.Timesheets.Projections.Tests.xml.gz",
+    "compressed_log_receipt": "Hexalith.Timesheets.Projections.Tests.log.gz"
+  },
+  {
+    "project": "Hexalith.Timesheets.IntegrationTests",
+    "argv": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/Hexalith.Timesheets.IntegrationTests.xml"
+    ],
+    "start_utc": "2026-10-20T12:22:16.765924+00:00",
+    "end_utc": "2026-10-20T12:31:44.299447+00:00",
+    "exit_code": 0,
+    "compressed_xml_receipt": "Hexalith.Timesheets.IntegrationTests.xml.gz",
+    "compressed_log_receipt": "Hexalith.Timesheets.IntegrationTests.log.gz"
+  }
+]

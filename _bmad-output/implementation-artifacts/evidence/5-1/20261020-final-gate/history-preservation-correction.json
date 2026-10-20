@@ -1,0 +1,117 @@
+{
+  "opening_historical_receipts_match": true,
+  "historical_release_receipts_match": true,
+  "current_gate_prefix_unchanged": true,
+  "restored_rows": [
+    {
+      "gate": "Tests (full suite)",
+      "baseline_row_sha256": "d447c9f8712d507829f90f9c4082029400364efa28bc75a4470f1665aef68d29",
+      "replaced_row_sha256": "8b680b4ad843201a73157fd363b318d806b6b3eeb03dc663f62c989176c1434c"
+    },
+    {
+      "gate": "Privacy/logging scans",
+      "baseline_row_sha256": "e7d9112e1bfdb349a59b1c9ce88a322502e045b804060d8e77712fd856398e66",
+      "replaced_row_sha256": "49fd395419fa1b01a315be9cbe01b8cc23bb43a2cd7aa0c7b6ff60f29ecf046a"
+    },
+    {
+      "gate": "Projection rebuild/idempotency",
+      "baseline_row_sha256": "c37364591c1daa4a9841a66ae332726a47df864ae897bef1c5b3538b2392bde6",
+      "replaced_row_sha256": "1c46540c45d42a1f53151ae8a4aea72f35b2b5eaa4a8dc1f318bad06dac41ee4"
+    }
+  ],
+  "baseline_commit": "d72899b4489aaca0b9a9b96d0ac267165920caf8",
+  "corrected_utc": "2026-10-20T12:50:04.452151+00:00",
+  "cause": "The temporary evidence-publication helper matched named gate rows across the entire document instead of restricting replacements to the current release-gate section.",
+  "fix": "Restore only the three rows beneath the historical heading from the baseline; scope future helper replacements to the current release-gate section.",
+  "historical_heading_normalization": "Remove one leading # from historical heading lines only; all receipt-body text must match the baseline.",
+  "current_gate_prefix_sha256_before": "9bdd018dd702402273322bd08ef442d73bb4c06f21a75abac89f3fc4d3ac7296",
+  "current_gate_prefix_sha256_after": "9bdd018dd702402273322bd08ef442d73bb4c06f21a75abac89f3fc4d3ac7296",
+  "historical_receipt_groups": [
+    {
+      "receipt": "Opening dated launch receipts",
+      "baseline_sha256": "39772650b59ce86ad386cbabe7174cee8409bbf733235f23cb8b452f2ea2176b",
+      "current_normalized_sha256": "39772650b59ce86ad386cbabe7174cee8409bbf733235f23cb8b452f2ea2176b"
+    },
+    {
+      "receipt": "Earlier release verification and decision table",
+      "baseline_sha256": "3c2f366350074e43050ff9d78b2fe6f90e4746b2fe858f5270384bf4180754ca",
+      "current_normalized_sha256": "3c2f366350074e43050ff9d78b2fe6f90e4746b2fe858f5270384bf4180754ca"
+    }
+  ],
+  "other_preservation_checks": [
+    {
+      "receipt": "Package-Currency Verdict preserved dated audits",
+      "unchanged": true,
+      "baseline_sha256": "1b4f54c7aa8f14a9f6ab6e14b34f29b8a834a31c1232295311ef2ed4fce8535a",
+      "current_sha256": "1b4f54c7aa8f14a9f6ab6e14b34f29b8a834a31c1232295311ef2ed4fce8535a"
+    },
+    {
+      "receipt": "Historical Aspire smoke",
+      "unchanged": true,
+      "baseline_sha256": "60db673d25bd4339ba2a7d8534271eede6b8cc0b8ded3363af3edcf1d7c37976",
+      "current_sha256": "60db673d25bd4339ba2a7d8534271eede6b8cc0b8ded3363af3edcf1d7c37976"
+    },
+    {
+      "receipt": "NFR10 measured run",
+      "unchanged": true,
+      "baseline_sha256": "06a03b9bcc978f507efaf1a010ec584f15779f0fec40466ab3627d4debeebf9c",
+      "current_sha256": "06a03b9bcc978f507efaf1a010ec584f15779f0fec40466ab3627d4debeebf9c"
+    },
+    {
+      "receipt": "NFR11 measured run",
+      "unchanged": true,
+      "baseline_sha256": "5a9f418b5ad952b9250138ee77743df05421b578fa98b9690b4041b27bceabc3",
+      "current_sha256": "5a9f418b5ad952b9250138ee77743df05421b578fa98b9690b4041b27bceabc3"
+    },
+    {
+      "receipt": "Historical 2026-06-23 QA receipt",
+      "unchanged": true,
+      "baseline_sha256": "35157a2e6f887662dda77d912da4bb98d39764d2a59124d2d5f1ca833d79a8b4",
+      "current_sha256": "35157a2e6f887662dda77d912da4bb98d39764d2a59124d2d5f1ca833d79a8b4"
+    },
+    {
+      "receipt": "3-3-confirm-time-through-magic-link original Dev Agent Record/reviews",
+      "unchanged": true,
+      "baseline_sha256": "9aea01115676b3d92831ad984365234301c0e7b2c690b063dce8c6b6b669c097",
+      "current_sha256": "9aea01115676b3d92831ad984365234301c0e7b2c690b063dce8c6b6b669c097"
+    },
+    {
+      "receipt": "4-7-surface-timesheets-dashboard-overview original Dev Agent Record/reviews",
+      "unchanged": true,
+      "baseline_sha256": "78cfc58135d7ca699a61387d28c54c1715572e0df76088265810fae80d122072",
+      "current_sha256": "78cfc58135d7ca699a61387d28c54c1715572e0df76088265810fae80d122072"
+    },
+    {
+      "receipt": "5-1-final-launch-readiness-gate-and-documentation-sync original Dev Agent Record/reviews",
+      "unchanged": true,
+      "baseline_sha256": "04cbd692910e65e17bd1bec1e4668f2966b3f365f4ac62efbced4a2ae5b95a48",
+      "current_sha256": "04cbd692910e65e17bd1bec1e4668f2966b3f365f4ac62efbced4a2ae5b95a48"
+    },
+    {
+      "receipt": "5-2-reconcile-package-currency-and-platform-dependency-versions original Dev Agent Record/reviews",
+      "unchanged": true,
+      "baseline_sha256": "1eb4ed16e41b2424ec8bb61725b784b34c254db39ec3a473451795c9bd5cd76e",
+      "current_sha256": "1eb4ed16e41b2424ec8bb61725b784b34c254db39ec3a473451795c9bd5cd76e"
+    }
+  ],
+  "preexisting_compressed_receipt_count": 29,
+  "preexisting_compressed_receipts_unchanged": true,
+  "handoff_attribution": "The pre-existing sprint-status and spec paths came from the parent workflow handoff, not human/user edits.",
+  "verification_results": {
+    "history-correction-readiness": {
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": "0.526"
+    },
+    "history-correction-architecture": {
+      "total": 62,
+      "passed": 62,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": "18.278"
+    }
+  },
+  "additional_raw_retained_directory": "/tmp/timesheets-5-1-history-correction-raw-ji1lhvbi"
+}
