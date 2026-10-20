@@ -401,6 +401,91 @@ Code review 2026-10-20 (round 7) of `180d9fd..a6cfe69`, including the separate C
 - The waiver row's "Timesheets directly pins only its AppHost SDK and `Hexalith.Works.Contracts`" ignores the exact-pinned npm devDependencies (R7-EH2) — false: the row's subject is the restored NuGet package graph and its platform prereleases; the npm pins have their own row and are not platform prereleases.
 - The ASPIRE010-only guard does not scan `Directory.Packages.props` or a nested `Directory.Build.*` (R7-VG1) — low: settled in round 2 (EH8) and round 5 (R5-VG2); the only Timesheets build files are the three root files, nobody puts `NoWarn` in the package catalog, and the fix adds a directory-walk guard.
 
+Code review 2026-10-20 (round 8) of `180d9fd..c5ac600`, excluding the unrelated commits `aa49fda` (`.github/workflows/release.yml`) and `969d32a` (`epic-3-context.md`) (layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor; 22 raw findings). This round's IDs carry an `R8-` prefix. During the review HEAD moved to the workspace sync commit `929ea22` (2026-10-20 09:50, outside the range; it owns its pointer moves). HEAD re-verification on the Release package-mode graph: forced restore and `-warnaserror` build with 0 warnings and 0 errors (blind-hunter run); all six suites passed 1,959 tests with 0 failures and 5 intentional skips (ArchitectureTests 64, Contracts.Tests 92, Works.Tests 76, Server.Tests 558, Projections.Tests 437, IntegrationTests 732).
+
+**Decision needed**
+
+- [x] [Review][Decision] The current package claims are stale at HEAD `929ea22` [docs/launch-readiness.md:679, :686, :689, :690, :738, :832; docs/ci-cd.md:165-175; _bmad-output/implementation-artifacts/epic-5-context.md:34; _bmad-output/implementation-artifacts/deferred-work.md:727, :777] — After the round-7 audit, `929ea22` moved all 12 `references/*` gitlinks.
+  - **What HEAD now pins.** The `references/Hexalith.Builds` catalog `6a38cb0` sets `HexalithEventStoreVersion` `3.126.0`, Commons `2.30.3` and PolymorphicSerializations `1.19.5`. Works `6460257` defaults and forwards `HexalithEventStoreVersion` `3.126.0`.
+  - **Review audits at HEAD** (package-mode graph):
+    - Direct, vulnerable and deprecated audits are clean across all 15 projects; no direct update remains.
+    - The solution-level and AppHost transitive-outdated runs still fail with `Sequence contains no matching element`.
+    - The 14 project fallbacks report 19 transitive IDs: the earlier 26 minus the five EventStore IDs, `Hexalith.Commons.UniqueIds` and `Hexalith.PolymorphicSerializations`.
+    - The six suites pass (counts above). The README source-reference default lane was not rerun.
+  - **Stale current claims:**
+    - The verdict paragraph and direct row (`:679`, `:686`) say only catalog-owned EventStore `3.125.1 -> 3.126.0` remains.
+    - The transitive row update (`:689`) says 26 IDs.
+    - The platform and gate rows (`:690`, `:832`) call the Works `3.124.0` vs `3.125.1` divergence open and pass `-p:HexalithEventStoreVersion=3.125.1`.
+    - The waiver row (`:738`) says the catalog still selects `3.125.1`.
+    - `docs/ci-cd.md` says catalog pin `332b2c1` selects `3.125.1` while Works forwards `3.124.0`.
+    - `epic-5-context.md:34` keeps the divergence and the `-p` instruction. That instruction now forces an older EventStore than both HEAD defaults.
+  - **Stale ledger entries:**
+    - The round-7 Builds handoff (`:777`) names `332b2c1`, and its revisit condition has fired (catalog update, then a Timesheets rerun).
+    - The Works forwarding entry (`:727`) still describes `3.124.0` vs `3.125.1`. Works still hard-codes its default, so the structural defect remains, although the values now coincide.
+  - **Not stale:** AC4 forbids contradictory version claims, and at HEAD the claims above are contradictory. The Epic 5 context's "latest stable direct packages" claim does hold at HEAD.
+  - **The choice:** refresh the current evidence at HEAD from these reruns now; add dated "superseded at `929ea22`" notes and hand the refresh to Story 5.1; or leave the round-7 evidence as dated and out of range.
+
+  [R8-AA6, R8-BH1, R8-BH2, R8-BH3, R8-EH4, R8-AA4, acceptance-auditor+blind-hunter+edge-case-hunter]
+  **Resolved 2026-10-20 (Jerome): Option 1** — refresh the current package-currency evidence at HEAD `929ea22` from this review's reruns now. Rationale: the verification is already done (same ground as the R7-AA1 rejection of moving a finished verification to a later story), and AC4 then holds at HEAD. Rejected: dated "superseded" notes with a Story 5.1 handoff (stale lines and the `-p` instruction stay current; Story 5.1 redoes the edits), and leaving round 7 as dated evidence (the contradiction stays hidden and a fired ledger condition stays open). Converted to the first patch below.
+- [x] [Review][Decision] No fitness guard derives the catalog EventStore line, the Works forwarding default or the root `Hexalith.Works.Contracts` pin that the current rows restate [tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:267-270, :314-320] — `LaunchReadinessTests` reads Aspire, Dapr, Keycloak, CommunityToolkit and Fluent UI versions from the catalog, but none of these three values.
+  - **The concrete case:** after `929ea22`, five documents carry stale `3.125.1`, `332b2c1` or `3.124.0` claims while ArchitectureTests pass 64/64 at HEAD. R3-BH6, R5-BH9 and R7-BH13 rejected similar guards as unlikely; this sync is that case.
+  - **The cost of a guard:** an EventStore guard would fail ArchitectureTests on every sync that moves that line, and the line moved `3.124.0` -> `3.125.1` -> `3.126.0` within three days.
+  - **The choice** is a policy call: guard the values, date them instead of guarding, or keep the precedent.
+
+  [R8-EH1, R8-EH2, R8-BH8, edge-case-hunter+blind-hunter]
+  **Resolved 2026-10-20 (Jerome): date the values, no new guard** — the refresh states catalog-owned EventStore and Works-forwarding values as dated observations tied to the commit they were observed at, following the record's dating convention; no test change. Rationale: an EventStore guard would fail ArchitectureTests on most workspace syncs, and a `Works.Contracts`-only guard would not cover the catalog drift that occurred. Rejected: three derived guards, a `Works.Contracts`-only guard, and keeping the R3/R5/R7 precedent unchanged. Folded into the first patch below.
+
+**Patch**
+
+- [x] [Review][Patch] Refresh the current package-currency evidence at HEAD `929ea22` and date the catalog-owned values [docs/launch-readiness.md:53, :679, :686, :689, :690, :738, :832; docs/ci-cd.md:165-175; _bmad-output/implementation-artifacts/epic-5-context.md:34; _bmad-output/implementation-artifacts/deferred-work.md:727, :777; tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:300]
+  This patch implements both R8 decisions. Add a dated 2026-10-20 HEAD update anchored at `929ea22`; it states the catalog-owned EventStore and Works-forwarding values as observations at that commit. Content:
+  - catalog `6a38cb0` selects EventStore `3.126.0`, Commons `2.30.3` and PolymorphicSerializations `1.19.5`, and Works `6460257` forwards `3.126.0`;
+  - direct, vulnerable and deprecated audits are clean across 15 projects;
+  - the solution/AppHost transitive failure persists, and the 14 fallbacks report 19 IDs;
+  - six suites pass 1,959 tests with 0 failures and 5 intentional skips.
+
+  Keep the round-7 and 2026-10-18 results as dated history. Retain the review receipts as a round-8 evidence packet.
+
+  Ledger and context changes:
+  - Resolve the round-7 Builds handoff entry (`:777`).
+  - Update the Works forwarding entry (`:727`): the values coincide at `3.126.0`, but Works still hard-codes its default, and the README source-reference default lane was not rerun.
+  - Update the platform row, the gate row, `docs/ci-cd.md` and `epic-5-context.md` the same way. Replace the `-p:HexalithEventStoreVersion=3.125.1` instruction.
+
+  Change `LaunchReadinessTests.cs:300` only if the platform row's verdict label changes. No package, gitlink or test-guard change. [R8-AA6, R8-BH1, R8-BH2, R8-BH3, R8-EH4, R8-AA4, R8-EH1, R8-EH2, R8-BH8]
+  Applied 2026-10-20 in the review. Evidence: a forced no-cache restore, a non-incremental `-warnaserror` Release build (0 warnings, 0 errors), all six Release suites (1,959 tests, 0 failures, 5 intentional skips; ArchitectureTests 64/64 after the final document edits) and the four NuGet audits (no direct update; vulnerable and deprecated clean; solution/AppHost transitive failure unchanged; 19 transitive IDs) were rerun at `929ea22` and retained in `evidence/5-2/20261020-round8/`. Changes:
+  - The current verdict, the direct, vulnerable/deprecated, transitive and platform rows, the gate row, `docs/ci-cd.md` and `epic-5-context.md` carry the dated HEAD observations.
+  - The `-p` instruction now names the catalog version generically.
+  - The ledger resolves the round-7 Builds handoff and adds a HEAD update to the still-open Works forwarding entry.
+  - The direct row's resolved-version list now cites the round-8 package listing.
+  - The platform verdict label stays `waived / open divergence`, so no test changed.
+- [x] [Review][Patch] The `Package currency` release-gate row was not updated in round 7 [docs/launch-readiness.md:832]
+  The row's evidence cell cites only the 2026-10-18 audits, and its notes say "Direct NuGet, vulnerable, and deprecated audits are clean". The current verdict and the direct row (`:679`, `:686`) record two things this row omits: the round-7 Works Contracts `1.0.2` adoption, and a 2026-10-20 direct rerun that reported catalog-owned EventStore drift. R7-AA1's patch scope named the direct row, the waiver row and `docs/ci-cd.md`, and missed this row. Its test checks only the SDK and AppHost tokens. Fix: add the dated 2026-10-20 round-7 rerun (Works Contracts `1.0.2`; no Timesheets-owned direct update) to the evidence cell, and qualify "clean" in the notes. If the first R8 decision refreshes the evidence at HEAD, this row takes the HEAD evidence instead. [R8-AA1, R8-BH4, acceptance-auditor+blind-hunter]
+  Applied 2026-10-20: the evidence cell adds the dated round-7 (`c5ac600`) and round-8 (`929ea22`) reruns, and the notes say the audits are clean at HEAD `929ea22`.
+- [x] [Review][Patch] The EventStore drift sentence sits in the `waived` platform-prerelease row without saying it is outside the waiver [docs/launch-readiness.md:738]
+  The row (verdict `waived`, with prerelease risk and revisit cells) ends "The catalog still selects EventStore `3.125.1`; the newly reported `3.126.0` update belongs to the Builds catalog owner." EventStore is not a prerelease and is not covered by this waiver. The verdict column still makes the sentence read as waived; round-2 P2 fixed the same defect in the platform row. The direct row and the ledger already carry the sentence. Fix: delete it from this row. [R8-AA2, acceptance-auditor]
+  Applied 2026-10-20: the sentence was deleted; the row ends with the Timesheets direct-pin sentence.
+- [x] [Review][Patch] The round-7 evidence is anchored only to the modified worktree based on `2d6b689`, which still pins Works Contracts `1.0.1` [docs/launch-readiness.md:53, :679; _bmad-output/implementation-artifacts/evidence/5-2/20261020-round7/README.md:9]
+  The preamble still anchors the package-currency verdict at the worktree based on `180d9fd…`, committed as `b85e810`. Yet the direct, vulnerable/deprecated and transitive rows now rest on 2026-10-20 evidence. The receipt's input hashes match the `c5ac600` files, but no document names that commit. Round 4 (R4-BH3) patched the same gap for `b85e810`. Fix: add "committed as `c5ac6005a48d973d96f7eff6496c72d0728432f0`" to the round-7 update sentence and to the packet README, and name the round-7 rerun in the preamble's anchor example. [R8-AA3, R8-BH5, acceptance-auditor+blind-hunter]
+  Applied 2026-10-20: the preamble names both dated 2026-10-20 updates with their commits, and the round-7 update sentence and packet README say `committed as c5ac600…`.
+- [x] [Review][Patch] Only the commitlint workflow is named as running `npm audit signatures`, but the release workflow runs it too [docs/launch-readiness.md:688; docs/ci-cd.md:212; _bmad-output/implementation-artifacts/deferred-work.md:723]
+  `release.yml` calls Builds `domain-release.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9`, which runs `npm ci --ignore-scripts` and then `npm audit signatures` (its lines 334-336 and 746-749). "No workflow runs an npm vulnerability audit" stays true. Fix: name both pinned workflows in all three places. [R8-AA5, acceptance-auditor]
+  Applied 2026-10-20: all three places name the commitlint workflow and the shared release workflow `domain-release.yml@544fd2e…` (called by `release.yml`).
+- [x] [Review][Patch] `sprint-status.yaml` carries two different update times [_bmad-output/implementation-artifacts/sprint-status.yaml:38]
+  `c5ac600` set the header comment to `10-20-2026 09:40` but left the `last_updated` field at `10-20-2026 09:22`. Fix: make the field match the header. This review's status sync rewrites both. [R8-BH7, blind-hunter]
+  Applied 2026-10-20: the review's status sync set both to the same time.
+
+**Deferred**
+
+- [x] [Review][Defer] No normally run lane starts the `13.6.1` AppHost with NuGet `Aspire.Hosting.Orchestration`/`Aspire.Dashboard.Sdk` [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4] — deferred: this repeats the round-2 to round-7 deferral and is already ledgered (D1, `deferred-work.md:739`), so no new ledger entry. The only test that starts the host is skipped unless `TIMESHEETS_LIVE_DAPR=1`. [R8-VG1, verification-gap]
+
+**Rejected** (5 findings)
+
+- `GetCatalogProperty` does not resolve a catalog property whose value is itself `$(…)` (R8-EH3) — low and speculative: at HEAD every property the tests read is a literal (64/64 pass). A nested reference would fail loudly rather than pass a wrong value, and the fix adds recursion.
+- The Option 1 basis (identical nuspec dependencies and Contracts source) has no retained receipt (R8-BH6) — low: nuget.org nuspecs are immutable, and the source claim can be reproduced from the cited commits (the verification-gap layer reran `git diff 640c8b5..1ab960c -- src/Hexalith.Works.Contracts` and got an empty diff). The fix would be new evidence work.
+- The packet keeps derived counts but no derivation script (R8-BH9) — low: the raw stdout is retained, and the blind hunter recomputed every count from it (15 projects, 6 direct IDs in 17 occurrences, 26 transitive IDs). The overstated "all count calculations" wording is in the completed spec-2.
+- The spec-2 Review Triage Log puts severities in its Verdict column and has no IDs (R8-BH10) — false on the format: a severity in the verdict column is the triage format this spec's own log uses (`| R2-BH11 | low | …`). The missing IDs are cosmetic, and the fix edits a completed spec.
+- Superseded 2026-10-18 decisions carry no forward pointer to the round-7 `1.0.2` adoption (R8-BH11) — the story record is append-only with dated sections, and its round-7 section names the `Directory.Packages.props` change (same ground as R6-BH9). The spec parts would edit the spec under review.
+
 
 ## Implementation Notes
 

@@ -163,16 +163,22 @@ Reactor and Testing packages. At that date, Timesheets centrally pinned Works
 Contracts `1.0.1`.
 The imported Builds catalog then selected EventStore `3.124.0` (Builds `544fd2e`);
 package-only Release restore/build and candidate consumers validate that published
-dependency graph. Correction (2026-10-19): the current `references/Hexalith.Builds` catalog pin
-`332b2c144defba546fe0a09626a4a72f2340e22f` selects
-EventStore `3.125.1`, while Works still forwards `3.124.0` into source-reference
-builds; `docs/launch-readiness.md` records that open divergence (the workflows
+dependency graph. Correction (2026-10-19): the `references/Hexalith.Builds` catalog pin
+at that date, `332b2c144defba546fe0a09626a4a72f2340e22f`, selected
+EventStore `3.125.1`, while Works still forwarded `3.124.0` into source-reference
+builds; `docs/launch-readiness.md` records that divergence (the workflows
 still call Builds `544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9`).
 Update (2026-10-20, Story 5.2 round 7): the approved root CPM pin is now Works
 Contracts `1.0.2`, with unchanged nuspec dependencies from `1.0.1`. Package-mode
 restore and warnings-as-errors Release build pass. The direct audit reports only
 the catalog-owned EventStore `3.125.1 -> 3.126.0` update, published after the
 2026-10-18 audit; changing that line belongs to the Builds catalog owner.
+Update (2026-10-20, Story 5.2 round 8): at HEAD `929ea22c977385590d77d95f73af86e8b051c4fc`,
+after the workspace sync moved the gitlinks, the `references/Hexalith.Builds` catalog pin
+`6a38cb0f2e74977d7457fc59e6af79457ed8196a` selected EventStore `3.126.0` and Works
+`64602575b902c0f8d3bfaa41a27565eee5682639` forwarded `3.126.0`. The package-mode
+direct audit then reported no update; these catalog-owned values are dated
+observations that later workspace syncs can move.
 Timesheets' five package IDs remain unpublished until a separately authorized
 release; a 404 is absence and never publication evidence. Official index URLs use
 `https://api.nuget.org/v3-flatcontainer/<lowercase-package-id>/index.json`.
@@ -209,7 +215,7 @@ the configuration is already active. The workflows have run on direct pushes to
 `main` since `c4695a5`, and `dependency-review.yml` triggers only on pull
 requests and [evaluates only dependency changes introduced by that pull request](https://github.com/actions/dependency-review-action#overview).
 The existing braces lockfile findings stay outside this gate unless a pull request
-changes the affected packages; no workflow runs an npm vulnerability audit; the pinned commitlint workflow runs `npm audit signatures` for provenance verification. The gate has not
+changes the affected packages; no workflow runs an npm vulnerability audit; the pinned commitlint workflow and the shared release workflow (`domain-release.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9`, called by `release.yml`) run `npm audit signatures` for provenance verification. The gate has not
 evaluated these findings; the `Root npm applicability` row in
 `docs/launch-readiness.md` keeps them open. The NuGet audit gate
 remains enabled and is separate from this Node tooling blocker.

@@ -611,3 +611,63 @@ The [round-7 verification packet](evidence/5-2/20261020-round7/README.md) retain
 raw JSON output for all four solution audits and all 15 project fallbacks, exact
 commands/exits, restore/build/test logs, dependency-input hashes and derived counts.
 It is an additional artifact of this round, alongside the files listed above.
+
+## Round-8 Review Patches (2026-10-20)
+
+The round-8 code review of `180d9fd..c5ac600` (excluding the unrelated `aa49fda`
+and `969d32a`) found that the workspace sync commit
+`929ea22c977385590d77d95f73af86e8b051c4fc` had moved every `references/*` gitlink
+after the round-7 audit. That commit owns the pointer moves. At it, the Builds
+catalog `6a38cb0` selected EventStore `3.126.0`, and Works `6460257` forwarded
+`3.126.0`, so several current round-7 claims were stale.
+
+Jerome chose two options:
+
+- Refresh the current package-currency evidence at HEAD.
+- Record the catalog-owned values as dated observations, without a new fitness guard.
+
+The review then applied all six round-8 patches; their dispositions are in the
+original Story 5.2 spec.
+
+Verification at HEAD `929ea22` on the Release package-mode graph:
+
+- **Restore:** `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx --force --no-cache -m:1 /nr:false`
+  restored 15 projects.
+- **Build:** `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --no-restore --no-incremental -warnaserror -m:1 /nr:false`
+  passed with 0 warnings and 0 errors.
+- **Tests:** the six Release executables passed:
+
+  | Suite | Total | Notes |
+  |---|---|---|
+  | ArchitectureTests | 64 | run after the final documentation edits |
+  | Contracts.Tests | 92 | |
+  | Works.Tests | 76 | |
+  | Server.Tests | 558 | |
+  | Projections.Tests | 437 | |
+  | IntegrationTests | 732 | 5 intentional skips |
+
+  That is 1,959 tests, 0 failures and 5 intentional skips.
+- **NuGet audits:**
+  - Direct: no update across 15 projects.
+  - Vulnerable and deprecated: clean across 15 projects.
+  - Transitive, solution and AppHost: still exit 1 with `error: Sequence contains no matching element`.
+  - Transitive, other 14 project fallbacks: exit 0 and report 19 distinct transitive IDs behind latest.
+
+  No transitive pin was added.
+- **Not rerun:** the README source-reference default lane, npm, and live AppHost lanes.
+
+Changed files for this round:
+
+- `docs/launch-readiness.md`
+- `docs/ci-cd.md`
+- `epic-5-context.md`
+- `deferred-work.md`: the round-7 Builds handoff is resolved; the Works forwarding entry stays open with a HEAD update.
+- the round-7 packet README (commit anchor)
+- the original Story 5.2 spec (round-8 findings and dispositions)
+- `sprint-status.yaml`
+- this record
+
+The [round-8 verification packet](evidence/5-2/20261020-round8/README.md) retains the
+raw audit, package-listing and fallback output, restore/build logs, test summaries,
+input and assets hashes, and derived counts. No package, project, test, gitlink, SDK,
+npm manifest/lockfile, or workflow file changed.

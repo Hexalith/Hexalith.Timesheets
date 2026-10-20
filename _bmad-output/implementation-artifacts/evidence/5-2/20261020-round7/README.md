@@ -7,7 +7,9 @@ project-assets hashes, and derived audit counts. JSON is compressed to avoid
 repeating package data across projects in the repository.
 
 The source was the modified Timesheets worktree based on
-`2d6b689ec45fd1f73fb7a3ff09e8950c90a2fd07`. The SDK was `10.0.402`; all builds used
+`2d6b689ec45fd1f73fb7a3ff09e8950c90a2fd07`, committed as
+`c5ac6005a48d973d96f7eff6496c72d0728432f0` (the receipt's input hashes match that
+commit's files). The SDK was `10.0.402`; all builds used
 Release/package mode. The approved root pin changed Works Contracts to `1.0.2`;
 the catalog and sibling pointers were unchanged.
 
