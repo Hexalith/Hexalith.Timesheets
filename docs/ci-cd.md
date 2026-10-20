@@ -196,5 +196,9 @@ identifies braces **3.0.3** and micromatch **4.0.8** as latest; braces is affect
 No forced downgrade or broad override was used. This is an **activation and merge
 blocker**: the unchanged shared dependency-review gate rejects high-severity
 introductions. Do not merge or activate this configuration as green until an
-upstream fix or separately reviewed resolution exists. The NuGet audit gate
+upstream fix or separately reviewed resolution exists. Correction (2026-10-20):
+the configuration is already active. The workflows have run on direct pushes to
+`main` since `c4695a5`, and `dependency-review.yml` triggers only on pull
+requests, so the gate has not evaluated these findings; the `Root npm
+applicability` row in `docs/launch-readiness.md` keeps them open. The NuGet audit gate
 remains enabled and is separate from this Node tooling blocker.

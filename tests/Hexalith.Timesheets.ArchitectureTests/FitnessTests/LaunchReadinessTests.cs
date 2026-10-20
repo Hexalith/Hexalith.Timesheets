@@ -258,8 +258,9 @@ public sealed class LaunchReadinessTests
         currentVerdict.ShouldContain("`AspireUseCliBundle=false`");
         currentVerdict.ShouldContain("`ASPIRE010`");
         currentVerdict.ShouldContain("sprint-change-proposal-2026-09-12.md");
-        currentVerdict.ShouldContain("Historical AppHost smoke evidence last passed on 2026-09-15");
-        currentVerdict.ShouldContain("it does not validate the current restored graph");
+        currentVerdict.ShouldContain("The latest passing AppHost-starting run is the 2026-10-18 `9523d94` isolated journey");
+        currentVerdict.ShouldContain("pre-change `Aspire.AppHost.Sdk` `13.5.3` and its CLI-bundle DCP");
+        currentVerdict.ShouldContain("so it does not validate the current restored graph");
         currentVerdict.ShouldContain("Current runtime-smoke evidence remains deferred");
 
         string[] direct = ReadPackageVerdictRow(packageVerdict, "Direct Timesheets NuGet package currency");

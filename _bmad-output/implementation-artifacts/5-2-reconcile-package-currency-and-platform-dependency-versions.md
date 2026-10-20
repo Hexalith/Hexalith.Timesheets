@@ -498,7 +498,11 @@ workflow owner.
   64/64. The other five lanes were not rerun; their sources did not change. On 2026-10-20, after the round-5 review
   patches (documentation and ledger text only), the Release ArchitectureTests build (`--no-restore -warnaserror`) had
   0 warnings and 0 errors and `dotnet test --project … -c Release --no-build` ran 64/64. The other five lanes were not
-  rerun; their sources did not change.
+  rerun; their sources did not change. Later on 2026-10-20, after the round-6 review patches (documentation and ledger
+  text plus one `LaunchReadinessTests` assertion change), the Release ArchitectureTests build (`--no-restore -warnaserror`)
+  had 0 warnings and 0 errors and `dotnet test --project … -c Release --no-build` ran 64/64. Temporary `72d9fda` and
+  `13.6.1` mutations of the new current-verdict sentence each failed the package-verdict test, and the document was
+  restored byte-identical. The other five lanes were not rerun; their sources did not change.
 - AppHost/DCP lanes: `python3 scripts/check_magic_link_apphost_guards.py --configuration-only` -> exit 0; all 35 compiled
   no-resource probes passed. `python3 scripts/run_isolated_magic_link_dapr.py` -> exit 1 at preflight with
   `A Dapr application is already running or inventory is unsafe; no AppHost started`. At that point a foreign Tenants
