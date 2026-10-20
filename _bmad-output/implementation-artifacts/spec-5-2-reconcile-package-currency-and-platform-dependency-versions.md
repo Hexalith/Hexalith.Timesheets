@@ -281,6 +281,44 @@ Code review 2026-10-19 (round 4) of `180d9fd..de3d57c`, including the separate C
 - Epic 5 context says Story 5.2 "establishes the current SDK/package baseline" (R4-BH10) — false: the sentence was already there at `180d9fd`, and under option A Story 5.2 does establish the approved baseline. It assigns no ownership of `global.json`.
 - The Aspire ID pattern is repeated in three regexes, and a comment in `GetCatalogProperty` sits between the signature and `=>` (R4-BH12) — low: drift needs a future edit to one copy, the comment compiles and reads as intended, and the fix is a refactor.
 
+Code review 2026-10-19 (round 5) of `180d9fd..419bc7c`, including the separate CI commit `55e2955` and excluding the unrelated commits `aa49fda` (`.github/workflows/release.yml`) and `969d32a` (`epic-3-context.md`) (layers: blind-hunter, edge-case-hunter, verification-gap, acceptance-auditor; 23 raw findings). This round's IDs carry an `R5-` prefix. Release ArchitectureTests at `419bc7c`: 64/64 (acceptance-auditor run, and `dotnet test --project` during triage).
+
+**Patch**
+
+- [x] [Review][Patch] The round-4 ledger entry corrects only the "no `.github/workflows`" sentence of the `dotnet test` runner entry, whose premise `c4695a5` already removed [_bmad-output/implementation-artifacts/deferred-work.md:311-312, :759-761]
+  The spec-3-6 entry "Restore a working `dotnet test` path…" rests on "`global.json` lacks the `"test": { "runner": "Microsoft.Testing.Platform" }` opt-in". `c4695a5` added that opt-in, and during this review `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj -c Release --no-build` passed 64/64. The round-4 entry added in `419bc7c` hands Story 5.1 only the workflows sentence, so Story 5.1 inherits a runner problem that no longer exists. Fix: in the round-4 entry, record that `c4695a5` also added the runner opt-in and that `dotnet test --project` now works; add a dated update to the runner entry saying its premise no longer holds. [R5-BH2, blind-hunter]
+  Applied 2026-10-20: the runner entry carries an update saying its premise no longer holds and pointing to the round-4 entry; the round-4 entry records the `c4695a5` runner opt-in, the 64/64 `dotnet test --project` run, and the VSTest-socket fallback wording Story 5.1 should replace.
+- [x] [Review][Patch] The historical SDK chain still skips the `10.0.302` step [_bmad-output/planning-artifacts/architecture.md:156]
+  The round-4 patch completed the chain at its end, but it still reads `10.0.301` -> `10.0.400`. `git log -- global.json` shows `937be13` (2026-07-17) raised the pin to `10.0.302` before Story 5.3's `10.0.400`; the ledger's "three steps behind the current pin" for the agent entry points (`10.0.302`) counts that step. Fix: add that `937be13` raised the pin to `10.0.302` on 2026-07-17. [R5-BH11, blind-hunter]
+  Applied 2026-10-20: the chain now runs `10.0.301` -> `937be13` `10.0.302` (2026-07-17) -> `10.0.400` -> `10.0.401` -> `10.0.402`.
+- [x] [Review][Patch] The 2026-10-03 catalog observation still says "Story 5.2 owns their refresh" with no pointer to the refresh [docs/launch-readiness.md:691]
+  The refresh is the 2026-10-18 current verdict above it. The superseded 2026-09-17 paragraph carries a note pointing to the 2026-10-18 evidence; this paragraph does not, so it still reads as an open Story 5.2 action for Story 5.1's final classification. Fix: append a dated note that the 2026-10-18 current verdict above refreshed those audits. [R5-BH13, blind-hunter]
+  Applied 2026-10-20: the paragraph keeps its 2026-10-03 text and ends that sentence with "(Update 2026-10-20: the 2026-10-18 current package-currency verdict above is that refresh.)".
+
+**Deferred**
+
+- [x] [Review][Defer] No default lane starts the `13.6.1` AppHost with NuGet `Aspire.Hosting.Orchestration`/`Aspire.Dashboard.Sdk` [src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj:4] — deferred: this repeats the round-2 to round-4 deferral and is already ledgered (D1), so no new ledger entry. At triage a foreign Works AppHost with six Dapr sidecars was running, so the isolated journey's precondition still does not hold. [R5-VG1, verification-gap]
+
+**Rejected** (19 findings)
+
+- `dotnet test` claim and command list in this spec's Verification section are stale (R5-BH1, R5-BH3) — the fix edits the spec under review. The `dotnet test` half is real and verified (64/64); its ledger side is patch R5-BH2.
+- The ASPIRE010-only guard does not scan `Directory.Packages.props` or a nested `src/Directory.Build.*` (R5-VG2) — low: no nested build file exists and nobody puts `NoWarn` in the package catalog; the fix adds a directory-walk guard. Rejected on the same ground in round 2 (EH8).
+- NuGet orchestration bakes `/tmp/dotnet-cli-home` DCP and dashboard paths into the AppHost dll (R5-BH4) — low: confirmed in both builds, but this is standard NuGet-backed orchestration (the `Hexalith.EventStore` shape), an evicted DCP fails loudly at `aspire start` naming the missing path, and D1's rerun already starts with a Debug build.
+- The "AppHost/DCP lanes" record bullet is mislabeled and omits the dll metadata evidence (R5-BH5) — false: the bullet says "compiled no-resource probes" and "Current runtime smoke therefore remains deferred"; it claims no DCP evidence.
+- D1 names no owner while every other new entry does (R5-BH6) — false: D2 ("Qualify the release-gate…") and the vocabulary entry name none either; the ledger does not require an owner (18 of about 150 entries carry one), and D1 names its rerun trigger and the infrastructure-owned automated lane.
+- Passing CI runs are not cited (R5-BH7) — low: the record makes no false claim, the stale gate rows are the round-4 Story 5.1 entry, and citing run IDs is evidence work.
+- `docs/ci-cd.md` "the current Builds pin `332b2c1`" will go stale (R5-BH8, R5-EH5) — false: the sentence is a dated "Correction (2026-10-19)", the record's convention for observations; R4-AA1's defect was a same-date contradiction between documents, which this correction removed.
+- `epic-5-context.md` states unguarded present-tense versions (R5-BH9) — low: the values carry their 2026-10-18 renegotiation, and the Story 5.1 ground-truth entry already says to refresh from `docs/launch-readiness.md` before it runs; the fix adds a guard.
+- The platform-row test lets the Works divergence's owner, risk, and revisit condition be deleted (R5-BH10) — low: deletion is unlikely and the fix adds assertions; rejected on the same ground in round 2 (R2-BH10, BH11).
+- The spec says the gate rows are covered by D2 while the ledger adds a second entry (R5-BH12) — false: the round-4 entry tracks a different defect (the stale "latest round-20" citation) and tells Story 5.1 to handle it with D2; aligning the spec wording edits the spec under review.
+- Fluent UI guard cannot pass if Components and Icons get different versions (R5-EH1) — low: the catalog holds both at `5.0.1`, the architecture line itself states one shared version, so a divergence needs a document rewrite anyway, and the failure is loud; the fix adds a branch.
+- Npm verdict cell could read PASS beside eight high advisories (R5-EH2) — false: the row reads `applicable / CONCERNS`; the looser `ShouldStartWith("applicable")` assertion would need a condition tied to audit counts.
+- Direct-row and gate-row version assertions are unanchored (R5-EH3) — false: neither cell holds a second occurrence of the asserted token (`13.6.1` appears once in the direct cell; the gate cell's other SDK is `10.0.401`), so a stale claim fails. Round 4 anchored the verdict paragraph because its approval sentence held a real duplicate.
+- `SuppressMessage` regex stops at the first `)` (R5-EH4) — low: diagnostic categories never contain parentheses and no AppHost source uses `SuppressMessage`; a bracket-aware pattern adds its own multi-line edge cases.
+- `b85e810` says the AppHost "keeps" NuGet orchestration (R5-EH6) — low: needs a history rewrite; rejected in round 2 (EH14).
+- `Aspire.Hosting.Redis` can sit below `Aspire.Hosting` with a green alignment test (R5-EH7) — settled in rounds 3 and 4 (EH10, BH7, R4-EH4).
+- `de3d57c` (`fix: story 5.2`) will make the next release dispatch cut `v1.0.1` with unchanged package code (R5-AA1) — low: verified (`.releaserc.json` uses the default commit analyzer, `v1.0.0..HEAD` holds only this `fix`, and `release.yml` is `workflow_dispatch` only), but the release owner controls when to dispatch, the effect is one redundant patch version, and correcting it rewrites published `main`; commit-message findings were rejected or deferred on that ground in round 2 (EH14) and in 2026-09-12 (`ee76a92`).
+
 ## Implementation Notes
 
 _2026-10-18 re-baselined iteration:_

@@ -153,7 +153,7 @@ This is not a generic web application starter problem. The right foundation is a
 
 Current starter/tooling checks performed during this step:
 
-- Historical SDK observations: the 2026-06-18 architecture step observed `10.0.301`; the 2026-09-12 Story 5.3 review patch raised the repository pin to `10.0.400`, the 2026-09-12 Story 5.2 reopening raised it to `10.0.401`, and the 2026-10-18 CI/CD commit `c4695a5` raised it to `10.0.402`. The current pin is recorded separately below.
+- Historical SDK observations: the 2026-06-18 architecture step observed `10.0.301`; the 2026-07-17 commit `937be13` raised the repository pin to `10.0.302`; the 2026-09-12 Story 5.3 review patch raised it to `10.0.400`, the 2026-09-12 Story 5.2 reopening raised it to `10.0.401`, and the 2026-10-18 CI/CD commit `c4695a5` raised it to `10.0.402`. The current pin is recorded separately below.
 - Local templates include `aspire-apphost`, `aspire-servicedefaults`, `aspire-starter`, `webapi`, `blazor`, `classlib`, `xunit`, and solution templates.
 - `dotnet new sln --name Hexalith.Timesheets` on the local .NET 10 SDK creates `Hexalith.Timesheets.slnx`.
 - NuGet lists `Aspire.ProjectTemplates` `13.4.5` as the current package version on 2026-06-18.
