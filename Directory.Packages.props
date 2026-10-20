@@ -11,6 +11,6 @@
   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
   <ItemGroup>
     <!-- Separately published Works prerequisite, verified on the official feed. -->
-    <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.1" />
+    <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.2" />
   </ItemGroup>
 </Project>

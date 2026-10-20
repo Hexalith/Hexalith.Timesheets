@@ -258,14 +258,15 @@ public sealed class LaunchReadinessTests
         currentVerdict.ShouldContain("`AspireUseCliBundle=false`");
         currentVerdict.ShouldContain("`ASPIRE010`");
         currentVerdict.ShouldContain("sprint-change-proposal-2026-09-12.md");
-        currentVerdict.ShouldContain("The latest passing AppHost-starting run is the 2026-10-18 `9523d94` isolated journey");
+        currentVerdict.ShouldContain("The latest passing AppHost-starting run is the 2026-10-18 isolated journey on the worktree based on Timesheets `72d9fdaa813daf9d39d296e268fd2e1086a8dd87` and EventStore `d55c6f7c11e9bce6f17d490a84c83f1561979d63`");
+        currentVerdict.ShouldContain("both with uncommitted implementation changes; implementation was later published in EventStore `9b66153515687463fc1b1e929f8b0e73d8145e2c` and the proof in Timesheets `9523d94983a346d866246a2c45c3515b1bc54580`");
         currentVerdict.ShouldContain("pre-change `Aspire.AppHost.Sdk` `13.5.3` and its CLI-bundle DCP");
         currentVerdict.ShouldContain("so it does not validate the current restored graph");
         currentVerdict.ShouldContain("Current runtime-smoke evidence remains deferred");
 
         string[] direct = ReadPackageVerdictRow(packageVerdict, "Direct Timesheets NuGet package currency");
         direct[1].ShouldBe("PASS");
-        direct[2].ShouldContain("no direct package updates");
+        direct[2].ShouldContain("no Timesheets-owned direct package updates");
         direct[2].ShouldContain($"`{appHostVersion}`");
 
         string[] vulnerable = ReadPackageVerdictRow(packageVerdict, "Vulnerable and deprecated NuGet packages");

@@ -516,6 +516,12 @@ workflow owner.
 
 `git diff --name-only 180d9fd9a635ed44ba896688d6a06e38a33e9f28` after implementation:
 
+Correction (2026-10-20, round-7 patch): the same command now also lists
+`.github/workflows/release.yml` from unrelated commit
+`aa49fda2e62749e8ff3cc4eda8596fb7e1a9fd9a` and `epic-3-context.md` from unrelated
+commit `969d32a77d62c833182270349d87ec7bd0200606`. Those files are outside Story 5.2;
+the list below records the earlier implementation, not every subsequent workspace change.
+
 - `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
 - `_bmad-output/implementation-artifacts/deferred-work.md`
 - `_bmad-output/implementation-artifacts/epic-5-context.md`
@@ -533,3 +539,75 @@ workflow owner.
   `tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/RepositoryRoot.cs` (added by the round-3 code review
   patches, which moved both project scans to one shared Timesheets-owned project list; the earlier
   `BuildConfigurationTests.cs` change in `55e2955` is a separate CI commit)
+
+## Round-7 Review Patches (2026-10-20)
+
+Applied all seven round-7 patches from the original Story 5.2 spec, starting from
+`2d6b689ec45fd1f73fb7a3ff09e8950c90a2fd07`. Jerome's approved Option 1 raises only
+the root CPM Works Contracts pin from `1.0.1` to `1.0.2`; the two nuspec dependency
+lists are identical. Restored assets resolve Works Contracts `1.0.2` alongside
+catalog-selected EventStore Contracts `3.125.1`.
+
+The package verdict now distinguishes Timesheets-owned direct currency from
+post-audit catalog-owned EventStore `3.126.0` drift. CI/CD documentation separates
+the Builds catalog pin from the reusable-workflow pin. Advisory wording explicitly
+states that dependency review checks PR-introduced dependency changes and no workflow
+runs an npm vulnerability audit; commitlint runs `npm audit signatures` for provenance,
+and unchanged braces findings remain open. Runtime evidence now names
+the modified source worktree separately from its later publication commit. The
+ledger records the superseded round-19 journey statements for Story 5.1 and resolves
+the already-fixed full-suite fitness regex entry. The historical file list now
+explains the two unrelated commits it also reports.
+
+Verification used SDK `10.0.402` and the Release package graph throughout. Exact
+commands (each `dotnet` command used `DOTNET_CLI_HOME=/tmp/dotnet-cli-home`):
+
+- `dotnet restore Hexalith.Timesheets.slnx --force --no-cache -m:1 /nr:false`:
+  exit 0, all 15 projects restored.
+- `dotnet build Hexalith.Timesheets.slnx --configuration Release --no-restore -warnaserror -m:1 /nr:false`:
+  exit 0, 0 warnings and 0 errors.
+- `tests/Hexalith.Timesheets.Works.Tests/bin/Release/net10.0/Hexalith.Timesheets.Works.Tests -noColor`:
+  exit 0, 76/76 passed, 0 skipped, 0 failed.
+- `tests/Hexalith.Timesheets.ArchitectureTests/bin/Release/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor`:
+  exit 0, 64/64 passed, 0 skipped, 0 failed; repeated against the final evidence
+  text with the same result.
+- `dotnet list Hexalith.Timesheets.slnx package --outdated --no-restore --format json`:
+  exit 0, all 15 projects covered; the only reported direct updates are six
+  distinct catalog-owned EventStore package IDs, `3.125.1 -> 3.126.0` (17 project/package
+  occurrences). No Timesheets-owned direct update remains.
+- `dotnet list Hexalith.Timesheets.slnx package --vulnerable --include-transitive --no-restore --format json`:
+  exit 0, all 15 projects covered, no vulnerable packages.
+- `dotnet list Hexalith.Timesheets.slnx package --deprecated --include-transitive --no-restore --format json`:
+  exit 0, all 15 projects covered, no deprecated packages.
+- `dotnet list Hexalith.Timesheets.slnx package --outdated --include-transitive --no-restore --format json`:
+  exit 1, exactly `error: Sequence contains no matching element`.
+  Fallback: `dotnet list <project.csproj> package --outdated --include-transitive --no-restore --format json`
+  for each of the 15 Timesheets-owned projects listed in `Hexalith.Timesheets.slnx`.
+  The AppHost fails with the same error; the other 14 exit 0 and report 26 distinct
+  transitive drift IDs, the earlier 21 plus five EventStore IDs. No transitive pin
+  was added; this unavailable solution/AppHost lane remains explicit.
+
+The other four test projects were not rerun: only Works.Tests consumes the changed
+Works Contracts package, and ArchitectureTests covers the edited evidence guards.
+Their earlier suite results remain dated to their original runs. Root npm and live
+AppHost lanes were not rerun; their prior findings and deferred runtime proof remain
+visible. No sibling, gitlink, SDK, npm manifest/lockfile, or workflow changed.
+
+Changed files for this round: `Directory.Packages.props`, `docs/launch-readiness.md`,
+`docs/ci-cd.md`, `LaunchReadinessTests.cs`, this record, `deferred-work.md`, the original
+Story 5.2 spec (patch dispositions), and the new round-7 continuation spec. Workflow
+finalization also synchronizes Story 5.2's sprint key to `review`.
+
+The independent blind review produced seven findings. Six evidence/provenance
+corrections were applied, including the distinction between vulnerability scanning
+and `npm audit signatures`, and a durable Builds/platform handoff was added for
+EventStore drift. The post-review ArchitectureTests project build used
+`DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Release --no-restore -warnaserror -m:1 /nr:false`
+and passed with 0 warnings/errors; its Release executable again passed 64/64.
+Works.Tests and the NuGet audits were not repeated because the review corrections
+changed only documentation, evidence and the ArchitectureTests assertions.
+
+The [round-7 verification packet](evidence/5-2/20261020-round7/README.md) retains
+raw JSON output for all four solution audits and all 15 project fallbacks, exact
+commands/exits, restore/build/test logs, dependency-input hashes and derived counts.
+It is an additional artifact of this round, alongside the files listed above.

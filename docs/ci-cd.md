@@ -159,12 +159,20 @@ dispatch, settings changes and actual publication require separate authorization
 
 On 2026-10-18, the official NuGet v3 flat-container indexes returned HTTP 200 with
 exact version `1.0.1` for the Works manifest's Contracts, Server, Projections,
-Reactor and Testing packages. Timesheets centrally pins Works Contracts `1.0.1`.
+Reactor and Testing packages. At that date, Timesheets centrally pinned Works
+Contracts `1.0.1`.
 The imported Builds catalog then selected EventStore `3.124.0` (Builds `544fd2e`);
 package-only Release restore/build and candidate consumers validate that published
-dependency graph. Correction (2026-10-19): the current Builds pin `332b2c1` selects
+dependency graph. Correction (2026-10-19): the current `references/Hexalith.Builds` catalog pin
+`332b2c144defba546fe0a09626a4a72f2340e22f` selects
 EventStore `3.125.1`, while Works still forwards `3.124.0` into source-reference
-builds; `docs/launch-readiness.md` records that open divergence.
+builds; `docs/launch-readiness.md` records that open divergence (the workflows
+still call Builds `544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9`).
+Update (2026-10-20, Story 5.2 round 7): the approved root CPM pin is now Works
+Contracts `1.0.2`, with unchanged nuspec dependencies from `1.0.1`. Package-mode
+restore and warnings-as-errors Release build pass. The direct audit reports only
+the catalog-owned EventStore `3.125.1 -> 3.126.0` update, published after the
+2026-10-18 audit; changing that line belongs to the Builds catalog owner.
 Timesheets' five package IDs remain unpublished until a separately authorized
 release; a 404 is absence and never publication evidence. Official index URLs use
 `https://api.nuget.org/v3-flatcontainer/<lowercase-package-id>/index.json`.
@@ -199,6 +207,9 @@ introductions. Do not merge or activate this configuration as green until an
 upstream fix or separately reviewed resolution exists. Correction (2026-10-20):
 the configuration is already active. The workflows have run on direct pushes to
 `main` since `c4695a5`, and `dependency-review.yml` triggers only on pull
-requests, so the gate has not evaluated these findings; the `Root npm
-applicability` row in `docs/launch-readiness.md` keeps them open. The NuGet audit gate
+requests and [evaluates only dependency changes introduced by that pull request](https://github.com/actions/dependency-review-action#overview).
+The existing braces lockfile findings stay outside this gate unless a pull request
+changes the affected packages; no workflow runs an npm vulnerability audit; the pinned commitlint workflow runs `npm audit signatures` for provenance verification. The gate has not
+evaluated these findings; the `Root npm applicability` row in
+`docs/launch-readiness.md` keeps them open. The NuGet audit gate
 remains enabled and is separate from this Node tooling blocker.
