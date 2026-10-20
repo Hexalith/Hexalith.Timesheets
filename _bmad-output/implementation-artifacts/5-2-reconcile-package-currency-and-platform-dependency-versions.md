@@ -6,13 +6,19 @@ rebaseline_commit: 180d9fd9a635ed44ba896688d6a06e38a33e9f28
 
 # Story 5.2: Reconcile Package Currency and Platform Dependency Versions
 
-Status: review
+Status: done
 
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
 ## Current Status — 2026-10-20
 
-Sprint tracking records this story as `review`; acceptance is not marked complete. The approved SDK `10.0.402` / AppHost `13.6.1` baseline and dated round-8 Release evidence (1,954 passed, five skipped, zero failures) remain valid at their recorded graph. Package verdict stays CONCERNS for root npm findings, transitive audit tooling limits, accepted platform prereleases, and the open Works EventStore-version forwarding issue. The Story 5.1 source-reference rerun is recorded separately in `tests/5-1-test-summary.md` and does not refresh package audits or establish current-graph runtime compatibility. Overall release remains **FAIL** pending owning-story acceptance.
+The user accepted the walkthrough recommendation on 2026-10-20 with “apply recommended”. Story 5.2 is accepted and signed off for its package-reconciliation scope, and sprint tracking records it as `done`. The approved SDK `10.0.402` / AppHost `13.6.1` baseline, approved Works Contracts `1.0.2` CPM update, completed round-9 patches, and dated round-8 Release evidence (1,954 passed, five skipped, zero failures) are accepted within their recorded scope. Package verdict stays **CONCERNS** for root npm findings, transitive audit tooling limits, accepted platform prereleases, and the open, unwaived Works EventStore-version forwarding issue. The Story 5.1 source-reference rerun is recorded separately in `tests/5-1-test-summary.md` and does not refresh package audits or establish current-graph runtime compatibility. Stories 3.6/3.7 remain `in-progress`; overall release remains **FAIL** pending their deployed acceptance and the other owning release gates.
+
+## Human Acceptance and Sign-off — 2026-10-20
+
+The [scoped acceptance record](evidence/5-2/20261020-final-acceptance/story-acceptance.json) records the user's instruction to apply the walkthrough recommendation: accept Story 5.2's approved dependency baseline, audit reconciliation, and completed round-9 patches while retaining package currency as CONCERNS and all documented residual ownership. This authorizes Story 5.2's transition from `review` to `done`; it grants no release authorization or new waiver.
+
+Current-graph AppHost runtime qualification, Stories 3.6/3.7 deployed acceptance, tenant/legal sign-off, tenant-policy configuration, and product stakeholder UAT remain unfinished. npm advisories, transitive audit coverage, Works version forwarding, and the retained Projection cleanup risk remain visible under their existing owners. The earlier evidence packets, historical status statements, and Story 5.1 acceptance record retain their original dates and scope. This sign-off does not refresh package audits, runtime qualification, or performance measurements; its focused verification is recorded separately in the acceptance packet.
 
 ## Story
 

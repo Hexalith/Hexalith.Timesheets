@@ -1,0 +1,44 @@
+[
+  {
+    "name": "architecture-build",
+    "argv": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-20T14:47:41.272678+00:00",
+    "ended_utc": "2026-10-20T14:47:42.643914+00:00",
+    "seconds": 1.371,
+    "exit_code": 0,
+    "log": "architecture-build.log"
+  },
+  {
+    "name": "launch-readiness",
+    "argv": [
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-class",
+      "*LaunchReadinessTests",
+      "-noColor",
+      "-xml",
+      "_bmad-output/implementation-artifacts/evidence/5-2/20261020-final-acceptance/launch-readiness.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-20T14:47:42.644207+00:00",
+    "ended_utc": "2026-10-20T14:47:43.205450+00:00",
+    "seconds": 0.561,
+    "exit_code": 0,
+    "log": "launch-readiness.log"
+  }
+]

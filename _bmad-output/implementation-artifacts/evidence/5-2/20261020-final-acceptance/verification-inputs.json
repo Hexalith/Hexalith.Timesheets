@@ -1,0 +1,38 @@
+{
+  "captured_utc": "2026-10-20T14:47:32.193152+00:00",
+  "baseline_commit": "f82c446f62d9645735989c8fa2c12257dff4a8c9",
+  "scope": "Documentation and acceptance metadata only; existing launch-readiness tests are rebuilt and run in Debug/source-reference mode.",
+  "root_submodule_pins": "160000 commit 3f194e17174994d308ec84af9ee2b5aa68674d0d\treferences/Hexalith.AI.Tools\n160000 commit 6a38cb0f2e74977d7457fc59e6af79457ed8196a\treferences/Hexalith.Builds\n160000 commit 5c23c818f639c5bb3175f964c5549440bd5b876d\treferences/Hexalith.Commons\n160000 commit cb11f9338179cc0ab8fb5bcd59f7eae6d6292086\treferences/Hexalith.Conversations\n160000 commit 6c56c27bc1a8d63c83f9631f7162cf79fdde0a1e\treferences/Hexalith.EventStore\n160000 commit a2196fd67d6da3e9e56200847f6ea3b51419fc0a\treferences/Hexalith.FrontComposer\n160000 commit b616db3092a9b1c5af196538a3de37a5c7f2d7ca\treferences/Hexalith.McpCli\n160000 commit 836b2ba4aa41cdf8a7812b97a5da7c08896c0c7c\treferences/Hexalith.Parties\n160000 commit bb81fc9e98533246cfeed43ffcce08866a2a57f6\treferences/Hexalith.Platform\n160000 commit 221ac4592ba908ae7661ba1fa9e2d1fcc23baee0\treferences/Hexalith.PolymorphicSerializations\n160000 commit 5d8f6edf8740e974fec37e40c21c27680b0c7cb4\treferences/Hexalith.Projects\n160000 commit ce88a70b6af777c059b5fb4335d429b9272911bd\treferences/Hexalith.Tenants\n160000 commit 64602575b902c0f8d3bfaa41a27565eee5682639\treferences/Hexalith.Works\n",
+  "sha256": {
+    "Directory.Build.props": "92945c259d86f53f490dc26376a26aadd6dca0e7d93b24c74853979efb0d8f4c",
+    "Directory.Build.targets": "149ba0c5377430abd79652a53c0b6c4b7de79b2a9ef882b405ecbb6735ddb104",
+    "Directory.Packages.props": "35cd66b52362a6cf9d8e284bf65d55cef6e5e7b115d82c3f31a66ef37ade930a",
+    "_bmad-output/implementation-artifacts/5-1-final-launch-readiness-gate-and-documentation-sync.md": "598dce0dd8086112efa3239c3baa3b8cfd32a7d4f2056db9a7df553a1ac31132",
+    "_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md": "3abc98569ae3b993e7e6607c05b352202163a963300327777037972972ce62b4",
+    "_bmad-output/implementation-artifacts/evidence/5-1/20261020-final-gate/story-acceptance.json": "38b827421eb6acc6d36675e1f3a0e7c07857186b8e2795c6fc5fc863b6d6cf4f",
+    "_bmad-output/implementation-artifacts/evidence/5-2/20261020-final-acceptance/story-acceptance.json": "ecd42724ade0537b68eebfb7d2be4dd05c1d3835b05af30f0b22743e08275530",
+    "_bmad-output/implementation-artifacts/evidence/5-2/20261020-round8/verification.json.gz": "411acdad27f6b0bd9476c600a013699268894bfafae876db9a911d8b1814818b",
+    "_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md": "283dd631e4357d175137bd008bd923b72b1bdce449f48c246253ef1e8136da96",
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": "8002bfba2a94ec9442834e53350f6c695ef672cc5faea5d23e6abc3be80a62f8",
+    "docs/launch-readiness.md": "f9ee1c327caf1fbe04a02a5ac72e280e68c05ace005013ef7d9de90a465ad3ba",
+    "global.json": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652",
+    "references/Hexalith.Builds/Props/Directory.Packages.props": "806922385b3209e0f396ccb8478870bfca59a60ac9432fd6c97c63a22b34f337",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/BuildConfigurationTests.cs": "7981f31c76b11c5b17bd30e566e9f318d6ea824033a597236319011ba9238360",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DependencyDirectionTests.cs": "6d187ed07a0f33482a9383aa5951e4a5147d5e9bef006aab339cc9532d1e9594",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DependencyModeTests.cs": "65ab20228f171781c2c28bee753bb78ad4170472ec5d2cf1d182b98ba5a7494c",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DiagnosticsPrivacyTests.cs": "8f107740f3a969030743ccd2957758ca201f1675722d73b93eb56829adca44f3",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs": "1a0a287d502943641a9b9ebb6068b369ec930330143f7e24107baba6f25b3670",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/PerformanceEvidenceTests.cs": "98396667a0c3bb8be41537ffaba293be88f15de9a97d86a892eec57542fb4c91",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/RepositoryRoot.cs": "dda8f6a1b9d812b0527aca6229c8fb333c04164408cb4ca23a055df2b4d844d8",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs": "7cd01d0994e30a45cb6306a73e907062e627322afe14bafe34d05b19d86cb661",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/WorksCheckoutGovernanceTests.cs": "7ced90b87216aba8f90d2410dce856deff13269b6ececb3afc049a0f54f65f0b",
+    "tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj": "70407e2012d4eb2e093e3084f90901a39af788ec814cf3bbe7f4e15693516f0e"
+  },
+  "tracked_changes": [
+    "_bmad-output/implementation-artifacts/5-1-final-launch-readiness-gate-and-documentation-sync.md",
+    "_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md",
+    "_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md",
+    "_bmad-output/implementation-artifacts/sprint-status.yaml",
+    "docs/launch-readiness.md"
+  ]
+}

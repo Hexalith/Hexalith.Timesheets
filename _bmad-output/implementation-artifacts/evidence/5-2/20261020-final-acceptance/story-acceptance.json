@@ -1,0 +1,67 @@
+{
+  "recorded_utc": "2026-10-20T14:47:07.812551+00:00",
+  "story_key": "5-2-reconcile-package-currency-and-platform-dependency-versions",
+  "decision": "accepted",
+  "scope": "story-5.2-package-reconciliation",
+  "accepted_by": "User in the current conversation",
+  "user_instruction": "apply recommended",
+  "accepted_recommendation": "Accept Story 5.2's approved dependency baseline, audit reconciliation, and completed round-9 patches. Retain package currency as CONCERNS and all documented residual ownership. Keep Stories 3.6/3.7 open and launch FAIL. This acceptance grants no release authorization.",
+  "accepted_deliverable": "SDK 10.0.402/latestPatch; Aspire AppHost 13.6.1 with NuGet-backed orchestration and only ASPIRE010 suppressed; approved root CPM Works Contracts 1.0.2 update; dated audit evidence; all seven round-9 patch groups applied and their remaining dispositions recorded.",
+  "source_baseline_commit": "f82c446f62d9645735989c8fa2c12257dff4a8c9",
+  "round_9_patch_commit": "d72899b4489aaca0b9a9b96d0ac267165920caf8",
+  "round_8_evidence_publication_commit": "525859841e3dc329f65970b7067d3ef3bd1a91fa",
+  "status_transition": {
+    "from": "review",
+    "to": "done"
+  },
+  "release_authorized": false,
+  "release_decision": "FAIL",
+  "package_currency_verdict": "CONCERNS",
+  "remaining_gates": [
+    "story-3.6-deployed-acceptance",
+    "story-3.7-deployed-privacy",
+    "current-graph-runtime-qualification",
+    "tenant-legal-sign-off",
+    "tenant-policy-configuration",
+    "product-stakeholder-uat"
+  ],
+  "retained_concerns": [
+    {
+      "item": "npm advisories and exact-pinned tooling drift",
+      "owner": "CI/CD release tooling",
+      "evidence_date": "2026-10-18",
+      "status": "open; eight high findings and two outdated commitlint pins; no npm update or audit refresh"
+    },
+    {
+      "item": "incomplete transitive-outdated audit",
+      "owner": "Timesheets release maintainer / .NET SDK tooling",
+      "evidence_date": "2026-10-20",
+      "status": "solution and AppHost evaluation fail; 14 successful fallbacks report 19 drift IDs; manual AppHost registry fallback last ran 2026-10-18; no new pin"
+    },
+    {
+      "item": "Works EventStore-version forwarding",
+      "owner": "Hexalith.Works / consuming build owner",
+      "status": "open and unwaived; matching 3.126.0 defaults do not resolve the forwarding policy"
+    },
+    {
+      "item": "platform prereleases",
+      "owner": "Platform / Hexalith.Builds and Hexalith.EventStore",
+      "status": "existing approved exceptions only; no new waiver"
+    },
+    {
+      "item": "Projection scratch-marker cleanup failure",
+      "owner": "EventStore runtime / deployed shared-rebuild acceptance owners",
+      "status": "initial Story 5.1 full-suite failure retained alongside focused and complete retry passes; risk not closed"
+    }
+  ],
+  "evidence": {
+    "spec": "../../../spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md",
+    "round_7_approved_update_spec": "../../../spec-5-2-reconcile-package-currency-and-platform-dependency-versions-2.md",
+    "story": "../../../5-2-reconcile-package-currency-and-platform-dependency-versions.md",
+    "round_8_packet": "../20261020-round8/README.md",
+    "round_8_receipt": "../20261020-round8/verification.json.gz",
+    "later_source_reference_summary": "../../../tests/5-1-test-summary.md",
+    "launch_assessment": "../../../../../docs/launch-readiness.md"
+  },
+  "supersedes": "Story 5.2's pending human acceptance and review status only. Earlier receipts and the Story 5.1 acceptance remain point-in-time records. No deployed proof, runtime qualification, audit refresh, tenant/legal approval, policy configuration, product UAT, release authorization, or new waiver is inferred."
+}

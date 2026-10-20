@@ -1,0 +1,61 @@
+{
+  "verified_utc": "2026-10-20T14:48:28.204426+00:00",
+  "configuration": "Debug",
+  "dependency_mode": "source references",
+  "sdk": "10.0.402",
+  "build": {
+    "exit_code": 0,
+    "warnings": 0,
+    "errors": 0
+  },
+  "launch_readiness_tests": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "scope": "Existing Architecture project build and focused launch-readiness checks only; no new tests or runtime/product code changes.",
+  "story_status": "done",
+  "stories_3_6_and_3_7_status": "in-progress",
+  "package_currency": "CONCERNS",
+  "release_decision": "FAIL",
+  "release_authorized": false,
+  "existing_evidence_files_preserved": 290,
+  "verification_inputs_unchanged": 23,
+  "frozen_intent_unchanged": true,
+  "historical_triage_unchanged": true,
+  "protected_code_dependency_and_guidance_files_unchanged": true,
+  "not_rerun": [
+    "other Architecture tests",
+    "other five suites",
+    "NuGet audits",
+    "npm audit/outdated",
+    "performance lanes",
+    "AppHost runtime qualification",
+    "deployed acceptance"
+  ],
+  "receipts": {
+    "architecture-build.log": {
+      "compressed_path": "architecture-build.log.gz",
+      "raw_sha256": "2dba35db287c14bf24836b2b0690c9a990cd9c9e77d2022200557e1d07db7a2b",
+      "compressed_sha256": "289ec31485483f0cccb054122af95a76486711e6bf7a7b195bed7828c71b082a",
+      "raw_bytes": 272,
+      "compressed_bytes": 174
+    },
+    "launch-readiness.log": {
+      "compressed_path": "launch-readiness.log.gz",
+      "raw_sha256": "b834c5d13bf5acc2b1736258a8832dfde9f99ad76f599a18ec8ad1560a70872a",
+      "compressed_sha256": "a37687a1388f3f5e96d7770d6bfdd5bbbb5944ad732eb6d80aae95fe77101489",
+      "raw_bytes": 611,
+      "compressed_bytes": 359
+    },
+    "launch-readiness.xml": {
+      "compressed_path": "launch-readiness.xml.gz",
+      "raw_sha256": "eb5b5821170cf909a493f162161cc67a18a0dc41ff1fdb3929ace4478575b48e",
+      "compressed_sha256": "84892aafd6cad44603fe20847160e41fd50e78f640819862ab0abdd29860c998",
+      "raw_bytes": 11927,
+      "compressed_bytes": 2194
+    }
+  }
+}

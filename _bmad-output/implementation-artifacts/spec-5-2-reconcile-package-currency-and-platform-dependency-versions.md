@@ -607,6 +607,13 @@ _2026-09-12 iteration (historical; the CLI-bundle choice was reversed by the Opt
   re-validated and applied all fifteen 2026-09-12 review patches, reconciled package evidence, and recorded verification,
   the open Works EventStore-version divergence, and the unavailable DCP lane. The frozen intent is unchanged.
 
+- 2026-10-20 -- Human acceptance: the user instructed “apply recommended” after the final walkthrough. The
+  [scoped acceptance](evidence/5-2/20261020-final-acceptance/story-acceptance.json) accepts the approved baseline,
+  audit reconciliation, and completed round-9 patches and closes Story 5.2 with package currency still CONCERNS.
+  Stories 3.6/3.7, current-graph runtime qualification, and the independent legal/policy/UAT release gates remain
+  open; release remains FAIL. Existing review dispositions, dated evidence, residual owners, and frozen intent
+  are unchanged. No release, deployment, commit, or push is authorized.
+
 ## Review Triage Log
 
 | Finding | Verdict | Evidence | Route |
