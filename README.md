@@ -4,13 +4,22 @@ Hexalith Timesheets is a domain module for trusted time capture, approval, confi
 
 ## Local Codex Hooks
 
-For BMAD Loop orchestration with Codex, install `bmad-loop` on your machine, then run this command from each checkout root:
+For BMAD Loop orchestration with Codex, use Codex CLI 0.139 or newer and install `bmad-loop` using its [installation guide](https://github.com/bmad-code-org/bmad-loop/blob/main/docs/setup-guide.md). Run this command from each checkout root:
 
 ```bash
 bmad-loop init --cli codex --no-skills
 ```
 
-This generates `.codex/hooks.json` with the absolute path to your installed relay. That file is local and ignored by Git; `.codex/config.toml` remains shared. Review and trust the generated commands in Codex when prompted. Repeat setup after moving the `bmad-loop` installation or in a fresh checkout.
+This generates `.codex/hooks.json` with the absolute path to your installed relay. That file is local and ignored by Git; `.codex/config.toml` remains shared. Repeat setup after moving the `bmad-loop` installation or in a fresh checkout.
+
+Select Codex in the existing `[adapter]` section of local `.bmad-loop/policy.toml`; `init --cli codex` registers hooks and leaves the template's default adapter in place:
+
+```toml
+[adapter]
+name = "codex"
+```
+
+Before starting an unattended loop, run `codex` once in the checkout and review and accept its workspace-trust and hook-trust prompts. Spawned sessions cannot answer those first-run dialogs. See BMAD's [first-run setup notes](https://github.com/bmad-code-org/bmad-loop/blob/main/docs/setup-guide.md) for details.
 
 Existing checkouts upgrading from the tracked hook file should run setup again; remove any old hook that calls the deleted `bmad-story-automator` before doing so. Normal interactive Codex use does not require BMAD Loop hooks.
 
