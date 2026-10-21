@@ -53,7 +53,20 @@ or use the built executables in [README](../README.md#build-and-test).
 The shared workflow aggregates failures; a
 supplemental job validates its downloaded TRX artifact for every project and rejects
 missing, empty, all-skipped, inconsistent or failing results. CI also executes the
-Python release-tooling failure-path suite. CodeQL, dependency review, Dependabot,
+Python release-tooling failure-path suite. The same job requires Python 3.11+,
+runs the installed BMAD party-mode and forge-idea regression suites plus both
+Claude mirrors in separate processes, rejects empty or entirely skipped suites, and checks mirror
+contents and Copilot wrappers against the installed persona metadata. Workflow
+skills do not require persona wrappers. The resource-free selected magic-link
+index diagnostic suite also runs in this job. Reproduce these developer-tooling
+checks locally with:
+
+```bash
+python3 -m unittest discover -s scripts/tests -v
+python3 scripts/test_magic_link_index_selection.py -v
+```
+
+CodeQL, dependency review, Dependabot,
 and push/PR Conventional Commit checks use pinned shared callers. Commit types
 match the pinned Builds policy; dependency commits use `build(deps)`/`ci(deps)`.
 Dependabot monitors NuGet, npm, Actions and only the root `.gitmodules` inventory,

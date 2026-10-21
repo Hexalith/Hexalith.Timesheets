@@ -98,7 +98,7 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 
 ## Conventions that differ from defaults
 
-- Keep the authorization, tenant/reference validation, policy, and unavailable projection/reporting defaults in `AddTimesheetsServerKernel` fail-closed (`DenyAll*` / `Unavailable*`). The kernel also registers the concrete EventStore magic-link loader, gateway, and read-model store; standalone consumers must supply its EventStore read dependencies, as the composed HTTP host does. Bind Works validation or planned effort only via `AddTimesheetsWorksReferenceValidation` / `AddTimesheetsWorksPlannedEffortReporting` after an `IWorksQueryChannel` is registered.
+- Keep the authorization, tenant/reference validation, policy, and unavailable projection/reporting defaults in `AddTimesheetsServerKernel` fail-closed (`DenyAll*` / `Unavailable*`). The kernel also registers the concrete EventStore magic-link loader, gateway, and read-model store; the default Dapr-backed store requires `DaprClient`, supplied by the composed HTTP host through `AddEventStoreDomainService`. Standalone tests can instead pre-register `IEventStoreGatewayClient`, `IReadModelStore`, and `IReadModelBatchStore` seams, as `RuntimeRegistrationTests.ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride` demonstrates. Bind Works validation or planned effort only via `AddTimesheetsWorksReferenceValidation` / `AddTimesheetsWorksPlannedEffortReporting` after an `IWorksQueryChannel` is registered.
 - Keep aggregates pure (`Handle`/`Apply`); I/O stays in services and the host.
 
 ## Known pitfalls

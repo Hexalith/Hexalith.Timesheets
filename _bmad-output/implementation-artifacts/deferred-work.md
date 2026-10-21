@@ -21,6 +21,7 @@
 - source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
   summary: Copilot agent wrappers do not cover every installed BMAD skill.
   evidence: Updated skills such as bmad-agent-tech-writer and bmad-architecture have no matching `.github/agents` entry after the BMAD installer refresh.
+  resolution_note: Closed 2026-10-21 as stale by `spec-close-five-tooling-diagnostic-deferrals.md`: all 13 installed BMAD personas with `[agent]` metadata already have Copilot wrappers targeting their installed SKILL.md. The cited technical-writer persona is absent; architecture is a workflow rather than a persona. A CI-discovered inventory check now rejects missing, stale or misdirected persona wrappers. Workflow skills do not require persona wrappers.
 
 - source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
   summary: Historical Epic 5 planning artifacts still describe sibling-only Works checkout ownership.
@@ -663,10 +664,12 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
   summary: Validate the complete selected v6 shard in the local Python candidate diagnostic.
   evidence: An inline v6 candidate may be accepted without checking all manifest pages; the production loader validates the complete shard. Current isolated proof uses v7, but an old v6 diagnostic could overstate local evidence.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: the diagnostic validates the complete v6 manifest, reads every selected directory and collision page, checks identities, ordering, shard scope and content digests, and rechecks the selected generation/root before publishing a unique candidate. Inline hits and valid-GET diagnostics use this verified path. Regressions cover corrupt/missing unrelated pages and invalid manifest membership. This supplies no deployed or migration certification.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
   summary: Distinguish selected-format read failure from an absent v7 format in the local index diagnostic.
   evidence: `_selected_index_snapshot` catches every RuntimeError while reading the v7 format and falls back to v6, so a transient store outage can be misreported as a legacy shape. Production admission remains fail-closed.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: the selected-format reader uses `allow_missing=True`, whose read seam returns absence only for 204/404. Store failures and malformed format data propagate instead of falling back to v6. Direct pure-helper regressions cover genuine absence, v7 selection, outages and invalid JSON/format shape; the live journey delegates to this helper.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
   summary: Put compiled AppHost fixture-control refusal probes in a routine verification lane.
@@ -820,6 +823,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-pin-bmad-customization-override-behavior.md`
   summary: Run the installed BMAD party-mode and forge-idea regression suites in CI.
   evidence: `.github/workflows/ci.yml` runs Python discovery only under `scripts/tests`, and its reusable domain CI job lists only the six .NET test projects. Neither `.agents/skills/bmad-party-mode/scripts/tests/test_resolve_party.py` nor `.agents/skills/bmad-forge-idea/scripts/tests/test_resolve_personas.py` is invoked, so the new override regression coverage currently requires explicit local execution. This automation gap predates the selected test-suite increment; a follow-up should run both suites with Python 3.11+ and verify their `.claude` mirrors.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: CI requires Python 3.11+ and its discovery runs both installed suites plus both Claude copies in separate subprocesses, rejects empty/failing suites, and checks both skill mirrors file-for-file. The index diagnostic suite is explicitly included too. Installer-owned skill files and dependency/action pins are unchanged.
 
 ## Deferred from: review of five projection rebuild integrity closures (2026-10-21)
 
@@ -832,3 +836,10 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-close-five-runtime-guidance-deferrals.md`
   summary: Name the standalone kernel read dependencies explicitly in the synchronized managed agent guidance.
   evidence: The corrected guidance accurately requires EventStore read dependencies but does not name DaprClient for the default Dapr-backed store, or explicit IReadModelStore and IReadModelBatchStore test seams for standalone composition. RuntimeRegistrationTests.ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride demonstrates those substitutions; the composed HTTP host supplies DaprClient through AddEventStoreDomainService. This is a low-impact clarity improvement, not an unresolved runtime registration bug. The build workflow defers review suggestions editing managed agent instruction files; no runtime binding or default should be moved.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: all three synchronized entry points name DaprClient for the default store, supplied by AddEventStoreDomainService in the composed host, and the IEventStoreGatewayClient/IReadModelStore/IReadModelBatchStore standalone test seams demonstrated by RuntimeRegistrationTests.ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride. Runtime registration and fail-closed defaults are unchanged.
+
+## Deferred from: review of five developer-tooling and diagnostic closures (2026-10-21)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-close-five-tooling-diagnostic-deferrals.md`
+  summary: Align local index diagnostic readiness with the selected epoch lifecycle and pending delivery state.
+  evidence: The preexisting snapshot diagnostic reads activeGeneration and compares generation/root content without evaluating epoch phase, journal, offboarding or conflict evidence. EventStore SharedProjectionEpochCoordinator.ReadAsync returns unavailable for offboarding and CatchingUp/Aborting, stale for pending journal or Capturing/Building, and degraded for conflict readiness issues. An unchanged selected root can therefore produce a local unique-candidate diagnostic while the production coordinator refuses it. This developer-evidence gap predates these five closures; the HTTP journey still requires a successful production GET. Add lifecycle-aware diagnostic admission and regressions in a separate increment rather than treating candidate shape validation as production readiness or deployed acceptance.

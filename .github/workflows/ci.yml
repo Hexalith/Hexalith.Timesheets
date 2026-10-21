@@ -51,5 +51,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Exercise package and release failure paths
+      - name: Require Python 3.11 or newer for developer tooling
+        run: python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else "Python 3.11+ is required")'
+      - name: Exercise release and installed BMAD tooling
         run: python3 -m unittest discover -s scripts/tests -v
+      - name: Verify selected magic-link index diagnostics
+        run: python3 scripts/test_magic_link_index_selection.py -v

@@ -20,7 +20,7 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
-from magic_link_index_selection import legacy_index_diagnostics, selected_candidate
+from magic_link_index_selection import legacy_index_diagnostics, selected_candidate, selected_index_snapshot
 from run_isolated_magic_link_dapr import verify_runtime_components
 
 
@@ -352,28 +352,7 @@ def selected_index(token_hash):
 
 
 def _selected_index_snapshot(token_hash):
-    family = "magic-link-token-hash-capability-index"
-    components = ["timesheets-readmodels", "global-index", "timesheets", family, family, "shared-epoch"]
-    scope_bytes = "".join(f"{len(value)}:{value}" for value in components).encode()
-    scope_hash = b64(hashlib.sha256(scope_bytes).digest())
-    epoch = read_model("shared-epoch:" + scope_hash)
-    shard = hashlib.sha256(token_hash.encode()).digest()[0]
-    generation = epoch["activeGeneration"]
-    root_key = "timesheets:magic-links:token-hash-capability-index:v7:root"
-    format_key = "timesheets:magic-links:token-hash-capability-index:v7:format"
-    def physical(key_name):
-        return (f"shared-generation:{scope_hash}:{generation}:"
-                + hashlib.sha256(key_name.encode()).hexdigest().upper())
-    try:
-        selected_format = read_model(physical(format_key))
-    except RuntimeError:
-        selected_format = None
-    if selected_format is not None:
-        require(selected_format.get("storageVersion") == 7,
-                "Selected numeric index format is invalid")
-        return read_model(physical(root_key)), generation, scope_hash, shard
-    logical_key = f"timesheets:magic-links:token-hash-capability-index:v2:shard:{shard:02X}"
-    return read_model(physical(logical_key)), generation, scope_hash, shard
+    return selected_index_snapshot(token_hash, read_model)
 
 
 def selected_index_candidate(token_hash, diagnostic=None):
@@ -403,16 +382,8 @@ def valid_get_diagnostics(token_hash, capability, entry):
         elif token_hash in index.get("candidatePageCounts", {}):
             candidate_state = "paged-collision"
         else:
-            owners = index.get("contributions", {}).get(token_hash, [])
-            candidate = index.get("entries", {}).get(token_hash)
-            if len(owners) == 1 and candidate == owners[0]:
-                candidate_state = "inline-unique"
-            elif len(owners) > 1:
-                candidate_state = "ambiguous"
-            elif index.get("directoryPages"):
-                candidate_state = "directory-unique-or-missing" if selected_index_candidate(token_hash) else "directory-ambiguous-or-invalid"
-            else:
-                candidate_state = "missing"
+            candidate_state = ("v6-unique" if selected_index_candidate(token_hash)
+                               else "v6-missing-ambiguous-or-invalid")
         index_shape = ("v7-numeric-trie" if version == 7
                        else f"v{version}-pages-{len(index.get('directoryPages', []))}")
     except (RuntimeError, KeyError, ValueError, TypeError):
