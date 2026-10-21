@@ -1,0 +1,11 @@
+{
+  "baseline": "8c42a8ae153e3a11061ff1bd45f5f9373c70c78c",
+  "sha256": {
+    ".github/workflows/ci.yml": "1bafb23b318bf9df91443c1dacf1d30b0c798a373b291d883e35545aac318a65",
+    "README.md": "ac32b23e82a01d66dec05e8fc63e179876fb7fc81c2d1ec998b01879b25384fe",
+    "docs/ci-cd.md": "114e0daf96687f41d87e246c8e590c48e5659bc71977b7663fcd85469c09f74c",
+    "scripts/check_magic_link_apphost_guards.py": "1ba60633e55ccbca457fdf1aac4fa111108f95bae1378e800a5241ee86badb5e",
+    "scripts/test_isolated_magic_link_dapr.py": "061d6f6426ca2eed7da08c69eb3ca47f6ad75a7c64f6a555593d555f33999481"
+  },
+  "notes": "Final CI correction: standalone real-SDK query, no sibling build dependency; pinned SDK in routine Python CI. No local Release assets or live topology."
+}

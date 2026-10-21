@@ -2,7 +2,7 @@
 title: 'Close five deferred local fixture safety handoffs'
 type: 'bugfix'
 created: '2026-10-21'
-status: 'in-progress'
+status: 'done'
 route: 'oneshot'
 review_loop_iteration: 0
 context: []
@@ -28,3 +28,7 @@ Close five deferred local-fixture safety items: incomplete fixture startup admis
 - Implementation: added explicit guard configuration and package-build refusal expectations; all 35 Debug probes retain their behavior. Release refuses infrastructure mode before fixture creation. The new blocking CI job initializes only Builds, builds the Release/package AppHost with warnings as errors, runs the no-resource guard driver, and retains sanitized receipts. The existing Python CI job now also executes the fixture/sanitizer regression module. README and CI/CD guidance document both modes and their evidence limits.
 - Verification so far: matching Debug/source restore/build passed (zero warnings/errors), fixture Python 97/97, routine tooling Python 88/88, real compiled Debug guards 35/35 and actionlint/diff checks passed. The six individual default suites are running; actual Release execution belongs to hosted CI. No local Release build or live topology was started.
 - The configured context-free Blind Hunter review found no confirmed additional defects after checking code, workflow, tests and scope claims. Its independent Python execution also passed 97/97. No additional review layers are configured, and no review deferral was added.
+
+- Final original-build default suites passed 2,252 cases with five intentional skips and zero failures/errors/not-run. A concurrent process published the prepared change as `433055f0a5364eb77a67343237a569c88398ee8e` and then advanced root gitlinks in `8c42a8ae153e3a11061ff1bd45f5f9373c70c78c`; preserve both commits. No pointer was changed by this build task. Source hashes distinguish the original broad proof from later qualification.
+- Hosted Release/package compiled guards passed on `8c42a8ae153e3a11061ff1bd45f5f9373c70c78c`. The new routine Python job exposed an old real-SDK query test's reliance on a built EventStore checkout. Correct it with a temporary standalone SDK project/native metadata target, preserving genuine SDK evaluation and all environment-poisoning checks, and install the already-pinned SDK in that job. Full Python 97/97 and both real SDK cases with a missing sibling path pass. Preserve the hosted failure and intermediate missing-working-directory test failure separately. Independent follow-through review found no issues.
+- After external dependency movement, the current matching Debug/source solution restore/build passed with zero warnings/errors. A separate focused recheck passed 1,020 cases across the six projects and all 35 compiled Debug guards. Exact filters and results are retained in `tests/five-local-fixture-handoffs.md` and adjacent receipts. The complete old-graph default run is not presented as a complete new-graph rerun. No live topology, local Release build, deployed acceptance or release-gate change is claimed. Exactly five original ledger entries are resolved and no new deferral was added.

@@ -243,20 +243,31 @@ class IsolatedFixtureTests(unittest.TestCase):
         self.assertIn("redacted", logs)
 
     def test_poisoned_sdk_run_and_start_environment_cannot_replace_the_gateway_query(self):
+        # Query the real SDK's default native launch metadata without requiring a
+        # built sibling checkout. The file only satisfies metadata admission; it
+        # is never launched, and no restore/build or infrastructure is needed.
+        project = Path(self.temporary.name) / "GatewayProbe.csproj"
+        project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
+                           '<TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType>'
+                           '<RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>'
+                           '</PropertyGroup></Project>')
+        executable = project.parent / "bin/Debug/net10.0/GatewayProbe"
+        executable.parent.mkdir(parents=True)
+        executable.touch(mode=0o700)
         poison = {"RunCommand": "/usr/bin/true", "RunArguments": "", "RunWorkingDirectory": "/tmp",
                   "StartAction": "Program", "StartProgram": "/usr/bin/true", "StartArguments": "",
                   "StartWorkingDirectory": "/tmp"}
         aliases = {alias: value for name, value in poison.items()
                    for alias in (name, name.lower(), "ASPIRE_" + name.upper(), "DOTNET_" + name)}
-        with patch.dict(os.environ, aliases):
+        with patch.dict(os.environ, aliases), patch.object(fixture, "GATEWAY_PROJECT", project):
             caller = dict(os.environ)
             instance = fixture.IsolatedFixture(log_directory=self.logs)
             self.assertFalse(set(aliases) & set(instance.environment))
             instance.resolve_gateway_invocation()
             self.assertEqual(caller, dict(os.environ))
         selected = json.loads((instance.log_directory / "gateway-invocation.json").read_text())
-        self.assertEqual("Hexalith.EventStore", Path(selected["executable"]).name)
-        self.assertEqual(str(fixture.GATEWAY_PROJECT.parent), selected["working_directory"])
+        self.assertEqual(str(executable), selected["executable"])
+        self.assertEqual(str(project.parent), selected["working_directory"])
         self.assertEqual("", selected["arguments"])
 
     def test_removing_inherited_launch_overrides_preserves_project_defined_metadata(self):

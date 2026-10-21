@@ -1,0 +1,77 @@
+{
+  "baseline": "8c42a8ae153e3a11061ff1bd45f5f9373c70c78c",
+  "scope": "Focused recheck after an external process advanced root gitlinks. Four full fast suites, the projection handler class, and two lost-recording-response cases. This is not a repeated full Projection/Integration run.",
+  "projects": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noColor"
+      ],
+      "exit": 0,
+      "total": 103,
+      "passed": 103,
+      "seconds": 20.39
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noColor"
+      ],
+      "exit": 0,
+      "total": 92,
+      "passed": 92,
+      "seconds": 0.868
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noColor"
+      ],
+      "exit": 0,
+      "total": 564,
+      "passed": 564,
+      "seconds": 2.057
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noColor",
+        "-class",
+        "*MagicLinkStateProjectionHandlerTests"
+      ],
+      "exit": 0,
+      "total": 183,
+      "passed": 183,
+      "seconds": 1.736
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noColor"
+      ],
+      "exit": 0,
+      "total": 76,
+      "passed": 76,
+      "seconds": 0.534
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor",
+        "-method",
+        "*ExternalRecordingRecoversCommittedBatchAfterSubmitResponseFault"
+      ],
+      "exit": 0,
+      "total": 2,
+      "passed": 2,
+      "seconds": 3.8
+    }
+  ],
+  "passed": 1020
+}

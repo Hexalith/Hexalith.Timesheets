@@ -1,0 +1,75 @@
+{
+  "build_baseline": "87350775d56d7dceef9943630b9acf9c7b9cae53",
+  "scope": "Original consistent Debug/source build. Another process committed feature code and advanced dependencies while executables were running; these are not requalification receipts for the later gitlinks.",
+  "projects": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "total": 103,
+      "passed": 103,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 11.104,
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor"
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "total": 92,
+      "passed": 92,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 0.442,
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests -noColor"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "total": 564,
+      "passed": 564,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 1.783,
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -noColor"
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "total": 569,
+      "passed": 569,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 581.732,
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -noColor"
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "total": 76,
+      "passed": 76,
+      "skipped": 0,
+      "failed": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 0.3,
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests -noColor"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "total": 853,
+      "passed": 848,
+      "skipped": 5,
+      "failed": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 849.002,
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -noColor"
+    }
+  ],
+  "passed": 2252,
+  "skipped": 5,
+  "failed": 0
+}
