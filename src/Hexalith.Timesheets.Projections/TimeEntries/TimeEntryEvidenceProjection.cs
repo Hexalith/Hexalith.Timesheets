@@ -43,61 +43,11 @@ public sealed class TimeEntryEvidenceProjection
                 throw new InvalidOperationException("Time Entry event tenant does not match the requested projection.");
             }
 
-            if (projectionEvent.Payload is TimeEntryRecorded recorded
-                && recorded.TimeEntryId == timeEntryId)
+            TimeEntryEvidenceReadModel? next = ProjectNextCore(timeEntryId, model, projectionEvent, checkpoint, []);
+            if (next is not null)
             {
                 lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(recorded, checkpoint, []);
-            }
-            else if (projectionEvent.Payload is TimeEntrySubmitted submitted
-                && submitted.TimeEntryId == timeEntryId
-                && model is not null
-                && model.ApprovalState == TimeEntryApprovalState.Draft)
-            {
-                lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(submitted, model, checkpoint, []);
-            }
-            else if (projectionEvent.Payload is TimeEntryContributorConfirmed confirmed
-                && confirmed.TimeEntryId == timeEntryId
-                && model is not null)
-            {
-                lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(confirmed, model, checkpoint, []);
-            }
-            else if (projectionEvent.Payload is TimeEntryAdjustedThroughMagicLink adjusted
-                && adjusted.TimeEntryId == timeEntryId
-                && model?.ApprovalState == TimeEntryApprovalState.Draft)
-            {
-                lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(adjusted, model, checkpoint, []);
-            }
-            else if (projectionEvent.Payload is TimeEntryApproved approved
-                && approved.TimeEntryId == timeEntryId
-                && model?.ApprovalState == TimeEntryApprovalState.Submitted)
-            {
-                lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(approved, model, checkpoint, []);
-            }
-            else if (projectionEvent.Payload is TimeEntryRejected rejected
-                && rejected.TimeEntryId == timeEntryId
-                && model?.ApprovalState == TimeEntryApprovalState.Submitted)
-            {
-                lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(rejected, model, checkpoint, []);
-            }
-            else if (projectionEvent.Payload is TimeEntryCorrected corrected
-                && corrected.TimeEntryId == timeEntryId
-                && model?.ApprovalState == TimeEntryApprovalState.Rejected)
-            {
-                lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(corrected, model, checkpoint, []);
-            }
-            else if (projectionEvent.Payload is TimeEntryApprovedCorrected approvedCorrected
-                && approvedCorrected.TimeEntryId == timeEntryId
-                && model?.ApprovalState == TimeEntryApprovalState.Approved)
-            {
-                lineage.Add(CreateLineageItem(projectionEvent));
-                model = Apply(approvedCorrected, model, checkpoint, []);
+                model = next;
             }
         }
 
@@ -119,34 +69,76 @@ public sealed class TimeEntryEvidenceProjection
             throw new InvalidOperationException("The Time Entry suffix has another tenant.");
         IReadOnlyList<TimeEntryEventLineageItem> lineage = [.. current?.EventLineage ?? [],
             CreateLineageItem(item)];
-        return item.Payload switch
+        return ProjectNextCore(timeEntryId, current, item, checkpoint, lineage);
+    }
+
+    private static TimeEntryEvidenceReadModel? ProjectNextCore(
+        TimeEntryId timeEntryId, TimeEntryEvidenceReadModel? current,
+        TimeEntryProjectionEvent item, TimesheetsProjectionCheckpoint checkpoint,
+        IReadOnlyList<TimeEntryEventLineageItem> lineage)
+        => item.Payload switch
         {
             TimeEntryRecorded recorded when recorded.TimeEntryId == timeEntryId && current is null
+                && recorded.ApprovalState == TimeEntryApprovalState.Draft
                 => Apply(recorded, checkpoint, lineage),
             TimeEntrySubmitted submitted when submitted.TimeEntryId == timeEntryId
                 && current?.ApprovalState == TimeEntryApprovalState.Draft
+                && submitted.ApprovalState == TimeEntryApprovalState.Submitted
                 => Apply(submitted, current, checkpoint, lineage),
             TimeEntryContributorConfirmed confirmed when confirmed.TimeEntryId == timeEntryId
                 && current is not null
                 => Apply(confirmed, current, checkpoint, lineage),
             TimeEntryAdjustedThroughMagicLink adjusted when adjusted.TimeEntryId == timeEntryId
                 && current?.ApprovalState == TimeEntryApprovalState.Draft
+                && current.CorrectionState == TimeEntryCorrectionState.None
+                && MatchesPreviousScope(adjusted.PreviousValues, current)
+                && (adjusted.AdjustedValues.ActivityTypeScope is null
+                    || adjusted.AdjustedValues.ActivityTypeScope == adjusted.ActivityTypeScope)
                 => Apply(adjusted, current, checkpoint, lineage),
             TimeEntryApproved approved when approved.TimeEntryId == timeEntryId
                 && current?.ApprovalState == TimeEntryApprovalState.Submitted
+                && approved.ApprovalState == TimeEntryApprovalState.Approved
                 => Apply(approved, current, checkpoint, lineage),
             TimeEntryRejected rejected when rejected.TimeEntryId == timeEntryId
                 && current?.ApprovalState == TimeEntryApprovalState.Submitted
+                && rejected.ApprovalState == TimeEntryApprovalState.Rejected
                 => Apply(rejected, current, checkpoint, lineage),
             TimeEntryCorrected corrected when corrected.TimeEntryId == timeEntryId
                 && current?.ApprovalState == TimeEntryApprovalState.Rejected
+                && current.CorrectionState == TimeEntryCorrectionState.None
+                && corrected.ApprovalState == TimeEntryApprovalState.Draft
+                && corrected.CorrectionState == TimeEntryCorrectionState.Corrected
+                && MatchesPreviousScope(corrected.PreviousValues, current)
                 => Apply(corrected, current, checkpoint, lineage),
             TimeEntryApprovedCorrected corrected when corrected.TimeEntryId == timeEntryId
                 && current?.ApprovalState == TimeEntryApprovalState.Approved
+                && current.CorrectionState == TimeEntryCorrectionState.None
+                && current.ApprovalDecision is not null
+                && corrected.ApprovalState == TimeEntryApprovalState.Approved
+                && corrected.CorrectionState == TimeEntryCorrectionState.Corrected
+                && MatchesPreviousScope(corrected.PreviousValues, current)
                 => Apply(corrected, current, checkpoint, lineage),
+            _ when IsSelectedOwnerEvent(item.Payload, timeEntryId)
+                => throw new InvalidOperationException("Time Entry evidence contradicts its preceding lifecycle or scope."),
             _ => null
         };
-    }
+
+    private static bool MatchesPreviousScope(TimeEntryCorrectionValues previous, TimeEntryEvidenceReadModel current)
+        => previous.ActivityTypeScope is null || previous.ActivityTypeScope == current.ActivityTypeScope;
+
+    private static bool IsSelectedOwnerEvent(object payload, TimeEntryId owner)
+        => payload switch
+        {
+            TimeEntryRecorded item => item.TimeEntryId == owner,
+            TimeEntrySubmitted item => item.TimeEntryId == owner,
+            TimeEntryContributorConfirmed item => item.TimeEntryId == owner,
+            TimeEntryAdjustedThroughMagicLink item => item.TimeEntryId == owner,
+            TimeEntryApproved item => item.TimeEntryId == owner,
+            TimeEntryRejected item => item.TimeEntryId == owner,
+            TimeEntryCorrected item => item.TimeEntryId == owner,
+            TimeEntryApprovedCorrected item => item.TimeEntryId == owner,
+            _ => false
+        };
 
     /// <summary>Checks the tenant reference of recognized stored payloads.</summary>
     internal static bool MatchesTenant(object payload, string tenantId)

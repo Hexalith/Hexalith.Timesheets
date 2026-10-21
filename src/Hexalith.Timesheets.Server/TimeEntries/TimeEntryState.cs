@@ -160,6 +160,10 @@ public sealed class TimeEntryState
     public void Apply(TimeEntryRecorded recorded)
     {
         ArgumentNullException.ThrowIfNull(recorded);
+        if (IsRecorded || recorded.ApprovalState != TimeEntryApprovalState.Draft)
+        {
+            throw new InvalidOperationException("A Time Entry must be recorded once in Draft state.");
+        }
 
         IsRecorded = true;
         TimeEntryId = recorded.TimeEntryId;
@@ -180,6 +184,11 @@ public sealed class TimeEntryState
     public void Apply(TimeEntrySubmitted submitted)
     {
         ArgumentNullException.ThrowIfNull(submitted);
+        RequireState(TimeEntryApprovalState.Draft);
+        if (submitted.ApprovalState != TimeEntryApprovalState.Submitted)
+        {
+            throw new InvalidOperationException("A submission must enter Submitted state.");
+        }
 
         ApprovalState = submitted.ApprovalState;
         TimeEntrySubmissionId = submitted.TimeEntrySubmissionId;
@@ -192,6 +201,10 @@ public sealed class TimeEntryState
     public void Apply(TimeEntryContributorConfirmed confirmed)
     {
         ArgumentNullException.ThrowIfNull(confirmed);
+        if (!IsRecorded)
+        {
+            throw new InvalidOperationException("Confirmation requires a recorded Time Entry.");
+        }
 
         ConfirmedContributor = confirmed.Contributor;
         ConfirmationTenant = confirmed.Tenant;
@@ -202,6 +215,13 @@ public sealed class TimeEntryState
     public void Apply(TimeEntryAdjustedThroughMagicLink adjusted)
     {
         ArgumentNullException.ThrowIfNull(adjusted);
+        RequireState(TimeEntryApprovalState.Draft);
+        if (CorrectionState != TimeEntryCorrectionState.None
+            || (adjusted.PreviousValues.ActivityTypeScope is { } previousScope && previousScope != ActivityTypeScope)
+            || (adjusted.AdjustedValues.ActivityTypeScope is { } adjustedScope && adjustedScope != adjusted.ActivityTypeScope))
+        {
+            throw new InvalidOperationException("An adjustment contradicts the preceding Time Entry state or scope.");
+        }
 
         ActivityTypeId = adjusted.AdjustedValues.ActivityTypeId;
         ActivityTypeScope = adjusted.ActivityTypeScope;
@@ -224,6 +244,11 @@ public sealed class TimeEntryState
     public void Apply(TimeEntryApproved approved)
     {
         ArgumentNullException.ThrowIfNull(approved);
+        RequireState(TimeEntryApprovalState.Submitted);
+        if (approved.ApprovalState != TimeEntryApprovalState.Approved)
+        {
+            throw new InvalidOperationException("An approval must enter Approved state.");
+        }
 
         ApprovalState = approved.ApprovalState;
         TimeEntryApprovalDecisionId = approved.TimeEntryApprovalDecisionId;
@@ -238,6 +263,11 @@ public sealed class TimeEntryState
     public void Apply(TimeEntryRejected rejected)
     {
         ArgumentNullException.ThrowIfNull(rejected);
+        RequireState(TimeEntryApprovalState.Submitted);
+        if (rejected.ApprovalState != TimeEntryApprovalState.Rejected)
+        {
+            throw new InvalidOperationException("A rejection must enter Rejected state.");
+        }
 
         ApprovalState = rejected.ApprovalState;
         TimeEntryApprovalDecisionId = rejected.TimeEntryApprovalDecisionId;
@@ -253,6 +283,14 @@ public sealed class TimeEntryState
     public void Apply(TimeEntryCorrected corrected)
     {
         ArgumentNullException.ThrowIfNull(corrected);
+        RequireState(TimeEntryApprovalState.Rejected);
+        RequireCorrectionScope(corrected.PreviousValues);
+        if (CorrectionState != TimeEntryCorrectionState.None
+            || corrected.ApprovalState != TimeEntryApprovalState.Draft
+            || corrected.CorrectionState != TimeEntryCorrectionState.Corrected)
+        {
+            throw new InvalidOperationException("A rejected correction requires an uncorrected rejected Time Entry.");
+        }
 
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
@@ -280,6 +318,15 @@ public sealed class TimeEntryState
     public void Apply(TimeEntryApprovedCorrected corrected)
     {
         ArgumentNullException.ThrowIfNull(corrected);
+        RequireState(TimeEntryApprovalState.Approved);
+        RequireCorrectionScope(corrected.PreviousValues);
+        if (CorrectionState != TimeEntryCorrectionState.None
+            || TimeEntryApprovalDecisionId is null
+            || corrected.ApprovalState != TimeEntryApprovalState.Approved
+            || corrected.CorrectionState != TimeEntryCorrectionState.Corrected)
+        {
+            throw new InvalidOperationException("An approved correction requires an uncorrected approved Time Entry.");
+        }
 
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
@@ -304,5 +351,21 @@ public sealed class TimeEntryState
         CorrectionReason = corrected.Reason;
         SourceApprovalDecisionId = corrected.SourceApprovalDecisionId;
         SourceApprovalScope = corrected.SourceApprovalScope;
+    }
+
+    private void RequireState(TimeEntryApprovalState required)
+    {
+        if (!IsRecorded || ApprovalState != required || CorrectionState == TimeEntryCorrectionState.Superseded)
+        {
+            throw new InvalidOperationException("A Time Entry lifecycle event has no valid predecessor.");
+        }
+    }
+
+    private void RequireCorrectionScope(TimeEntryCorrectionValues previous)
+    {
+        if (previous.ActivityTypeScope is { } previousScope && previousScope != ActivityTypeScope)
+        {
+            throw new InvalidOperationException("A correction contradicts the preceding Activity Type scope.");
+        }
     }
 }

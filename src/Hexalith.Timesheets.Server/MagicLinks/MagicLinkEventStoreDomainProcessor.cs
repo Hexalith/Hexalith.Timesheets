@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Handlers;
@@ -77,7 +78,8 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             intent = JsonSerializer.Deserialize<CommitMagicLinkUse>(command.Payload, _jsonOptions);
             timeEntry = DomainStateReplay.Rehydrate<TimeEntryState>(currentState);
         }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException
+            or TargetInvocationException { InnerException: InvalidOperationException })
         {
             return Reject();
         }
@@ -182,7 +184,8 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             intent = JsonSerializer.Deserialize<CommitTimeEntryRecord>(envelope.Payload, _jsonOptions);
             current = DomainStateReplay.Rehydrate<TimeEntryState>(currentState);
         }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException
+            or TargetInvocationException { InnerException: InvalidOperationException })
         {
             return Reject();
         }
@@ -263,7 +266,8 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             intent = JsonSerializer.Deserialize<CommitMagicLinkIssue>(envelope.Payload, _jsonOptions);
             capability = DomainStateReplay.Rehydrate<MagicLinkCapabilityState>(currentState);
         }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException
+            or TargetInvocationException { InnerException: InvalidOperationException })
         {
             return Reject();
         }
@@ -323,7 +327,8 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             intent = JsonSerializer.Deserialize<CommitMagicLinkTransition>(envelope.Payload, _jsonOptions);
             timeEntry = DomainStateReplay.Rehydrate<TimeEntryState>(currentState);
         }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException)
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException
+            or TargetInvocationException { InnerException: InvalidOperationException })
         {
             return Reject();
         }

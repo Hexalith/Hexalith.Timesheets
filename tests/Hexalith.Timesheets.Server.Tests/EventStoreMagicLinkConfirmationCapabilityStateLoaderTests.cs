@@ -509,7 +509,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 Tenant().TenantId,
                 TimeEntryId().Value,
                 Event(1, "time-1", Recorded(activityTypeScope: ActivityTypeScope.Project)),
-                Event(2, "time-2", Corrected(ActivityTypeScope.Tenant)));
+                Event(2, "time-2", Submitted(Tenant())),
+                Event(3, "time-3", Rejected()),
+                Event(4, "time-4", Corrected(ActivityTypeScope.Tenant)));
 
         MagicLinkEndpointTokenState state = await CreateLoader(
                 gateway,
@@ -530,7 +532,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 Tenant().TenantId,
                 TimeEntryId().Value,
                 Event(1, "time-1", Recorded(activityTypeScope: ActivityTypeScope.Project)),
-                Event(2, "time-2", Corrected(null)));
+                Event(2, "time-2", Submitted(Tenant())),
+                Event(3, "time-3", Rejected()),
+                Event(4, "time-4", Corrected(null)));
 
         MagicLinkEndpointTokenState state = await CreateLoader(
                 gateway,
@@ -1649,6 +1653,69 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         state.IsTerminal.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task MalformedCapabilityLifecycleHistoriesDenyOpaquely()
+    {
+        object[][] histories =
+        [
+            [Used()], [Revoked()], [Expired()], [Revoked(), Issued()],
+            [Issued(), Issued()], [Issued(), Used(), Issued()],
+            [Issued(), Revoked(), Issued()], [Issued(), Expired(), Issued()],
+            [Issued(), Used(), Used()], [Issued(), Revoked(), Expired()]
+        ];
+        foreach (object[] history in histories)
+        {
+            var gateway = new ScriptedGatewayClient()
+                .WithStream(Tenant().TenantId, CapabilityId().Value,
+                    history.Select((payload, i) => Event(i + 1, $"capability-{i + 1}", payload)).ToArray())
+                .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "entry-1", Recorded()));
+            var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
+
+            ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+            (await loader.LoadCapabilityAsync(CapabilityId(), TestContext.Current.CancellationToken)).ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task MalformedTimeEntryLifecycleAndCorrectionScopesDenyOpaquely()
+    {
+        TimeEntryCorrected corrected = Corrected(ActivityTypeScope.Tenant);
+        TimeEntryApprovedCorrected approvedCorrected = ApprovedCorrected();
+        TimeEntryCorrected tenantCorrection = corrected with { PreviousValues = CorrectionValues(ActivityTypeScope.Tenant) };
+        object[][] histories =
+        [
+            [Submitted(Tenant()), Recorded()], [Approved(), Recorded()], [Rejected(), Recorded()],
+            [Recorded(), Recorded()], [Recorded(), Approved()], [Recorded(), Rejected()],
+            [Recorded(), tenantCorrection],
+            [Recorded(activityTypeScope: ActivityTypeScope.Project), approvedCorrected],
+            [Recorded(), Submitted(Tenant()), Submitted(Tenant())],
+            [Recorded(), Submitted(Tenant()), Adjusted()],
+            [Recorded(), Submitted(Tenant()), Rejected(), corrected],
+            [Recorded(), Submitted(Tenant()), Approved(), approvedCorrected],
+            [Recorded() with { ApprovalState = TimeEntryApprovalState.Approved }],
+            [Recorded() with { ApprovalState = (TimeEntryApprovalState)99 }],
+            [Recorded(), Submitted(Tenant()) with { ApprovalState = TimeEntryApprovalState.Draft }],
+            [Recorded(), Submitted(Tenant()), Approved() with { ApprovalState = TimeEntryApprovalState.Rejected }],
+            [Recorded(), Submitted(Tenant()), Rejected() with { ApprovalState = TimeEntryApprovalState.Approved }],
+            [Recorded(), Submitted(Tenant()), Rejected(), tenantCorrection with { ApprovalState = TimeEntryApprovalState.Approved }],
+            [Recorded(), Submitted(Tenant()), Rejected(), tenantCorrection with { CorrectionState = TimeEntryCorrectionState.None }],
+            [Recorded(activityTypeScope: ActivityTypeScope.Project), Submitted(Tenant()), Approved(), approvedCorrected with { ApprovalState = TimeEntryApprovalState.Draft }],
+            [Recorded(activityTypeScope: ActivityTypeScope.Project), Submitted(Tenant()), Approved(), approvedCorrected with { CorrectionState = TimeEntryCorrectionState.None }],
+            [Recorded(), Submitted(Tenant()), Rejected(), tenantCorrection, Submitted(Tenant()), Rejected(), tenantCorrection],
+            [Recorded(activityTypeScope: ActivityTypeScope.Project), Submitted(Tenant()), Approved(), approvedCorrected, approvedCorrected]
+        ];
+        foreach (object[] history in histories)
+        {
+            var gateway = new ScriptedGatewayClient()
+                .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
+                .WithStream(Tenant().TenantId, TimeEntryId().Value,
+                    history.Select((payload, i) => Event(i + 1, $"entry-{i + 1}", payload)).ToArray());
+
+            ShouldBeOpaqueFailClosed(await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+                .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+        }
+    }
+
     private static void ShouldBeOpaqueFailClosed(MagicLinkEndpointTokenState state)
     {
         // Every loader failure stage collapses to the identical opaque token state: no capability, no
@@ -1799,6 +1866,12 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 "v2",
                 ProjectionFreshnessMetadata.Fresh),
             TimeEntryApprovalScope.IndividualEntry);
+
+    private static TimeEntryRejected Rejected()
+        => new(TimeEntryId(), Operator(), Tenant(),
+            new DateTimeOffset(2026, 6, 19, 12, 45, 0, TimeSpan.Zero), new TimeEntryApprovalDecisionId("decision-1"),
+            TimeEntryApprovalState.Rejected, Approved().AuthoritySource with { Action = ApprovalAuthorityAction.EntryRejection },
+            TimeEntryApprovalScope.IndividualEntry, new TimeEntryRejectionReason("Rejected."));
 
     private static TimeEntryCorrected Corrected(ActivityTypeScope? correctedScope)
     {

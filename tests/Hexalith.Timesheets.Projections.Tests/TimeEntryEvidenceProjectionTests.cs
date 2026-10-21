@@ -298,14 +298,15 @@ public sealed class TimeEntryEvidenceProjectionTests
             "tenant-1",
             TimeEntryId(),
             [
-                Event("m3", 3, Recorded("time-entry-1", 90)),
+                Event("m3", 3, Submitted("time-entry-1")),
                 Event("m2", 2, Recorded("other-entry", 15)),
                 Event("m1", 1, Recorded("time-entry-1", 30))
             ],
             FreshCheckpoint(3));
 
         model.ShouldNotBeNull();
-        model.DurationMinutes.ShouldBe(90);
+        model.DurationMinutes.ShouldBe(30);
+        model.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
         model.EventLineage.Select(static item => item.Ordinal).ShouldBe([1, 3]);
     }
 
@@ -487,7 +488,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     [Fact]
     public void Projection_applies_resubmission_only_after_correction_and_keeps_lineage()
     {
-        TimeEntryEvidenceReadModel? blocked = Projector().Project(
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
             "tenant-1",
             TimeEntryId(),
             [
@@ -496,12 +497,7 @@ public sealed class TimeEntryEvidenceProjectionTests
                 Event("m3", 3, Rejected("time-entry-1")),
                 Event("m5", 5, Submitted("time-entry-1", "submission-2"))
             ],
-            FreshCheckpoint(5));
-
-        blocked.ShouldNotBeNull();
-        blocked.ApprovalState.ShouldBe(TimeEntryApprovalState.Rejected);
-        blocked.EventLineage.Select(static item => item.EventName)
-            .ShouldBe([nameof(TimeEntryRecorded), nameof(TimeEntrySubmitted), nameof(TimeEntryRejected)]);
+            FreshCheckpoint(5)));
 
         TimeEntryEvidenceReadModel? corrected = Projector().Project(
             "tenant-1",
@@ -698,9 +694,9 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_ignores_approved_correction_before_approval_until_replayed_in_supported_order()
+    public void ProjectionRefusesApprovedCorrectionBeforeApprovalAndPreservesSupportedOrder()
     {
-        TimeEntryEvidenceReadModel? blocked = Projector().Project(
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
             "tenant-1",
             TimeEntryId(),
             [
@@ -709,12 +705,7 @@ public sealed class TimeEntryEvidenceProjectionTests
                 Event("m3", 3, Submitted("time-entry-1")),
                 Event("m4", 4, Approved("time-entry-1"))
             ],
-            FreshCheckpoint(4));
-
-        blocked.ShouldNotBeNull();
-        blocked.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
-        blocked.DurationMinutes.ShouldBe(45);
-        blocked.ApprovedCorrection.ShouldBeNull();
+            FreshCheckpoint(4)));
 
         TimeEntryEvidenceReadModel? supported = Projector().Project(
             "tenant-1",
@@ -733,36 +724,16 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_marks_superseded_correction_as_superseded_locked_evidence()
+    public void ProjectionRefusesSupersededCorrectionWithoutASanctionedTransition()
     {
-        TimeEntryCorrected superseded = new(
-            TimeEntryId(),
-            new TimeEntryCorrectionId("correction-1"),
-            new TenantReference("tenant-1"),
-            new PartyReference("operator-1"),
-            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
-            CorrectionValues(45, "Original evidence."),
-            CorrectionValues(75, "Corrected after rejection."),
-            new TimeEntryRejectionReason("Needs customer PO evidence."),
-            new TimeEntryApprovalDecisionId("decision-2"),
-            TimeEntryApprovalState.Draft,
-            TimeEntryCorrectionState.Superseded);
-
-        TimeEntryEvidenceReadModel? model = Projector().Project(
-            "tenant-1",
-            TimeEntryId(),
-            [
-                Event("m1", 1, Recorded("time-entry-1", 45)),
-                Event("m2", 2, Submitted("time-entry-1")),
-                Event("m3", 3, Rejected("time-entry-1")),
-                Event("m4", 4, superseded)
-            ],
-            FreshCheckpoint(4));
-
-        model.ShouldNotBeNull();
-        model.CorrectionState.ShouldBe(TimeEntryCorrectionState.Superseded);
-        model.LockEvidence.LockState.ShouldBe(TimeEntryLockState.SupersededLocked);
-        model.LockEvidence.SourceApprovalDecisionId.ShouldBeNull();
+        TimeEntryCorrected superseded = Corrected("time-entry-1", 75) with
+        {
+            CorrectionState = TimeEntryCorrectionState.Superseded
+        };
+        Should.Throw<InvalidOperationException>(() => Projector().Project(
+            "tenant-1", TimeEntryId(),
+            [Event("m1", 1, Recorded("time-entry-1", 45)), Event("m2", 2, Submitted("time-entry-1")),
+                Event("m3", 3, Rejected("time-entry-1")), Event("m4", 4, superseded)], FreshCheckpoint(4)));
     }
 
     [Fact]
@@ -978,40 +949,24 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void List_projection_excludes_superseded_rows_by_default_unless_requested()
+    public void ListProjectionRefusesInvalidHistoryEvenWhenNoncurrentStatesAreRequested()
     {
-        TimeEntryCorrected superseded = Corrected("time-entry-1", 75) with
-        {
-            CorrectionState = TimeEntryCorrectionState.Superseded
-        };
         TimeEntryProjectionEvent[] events =
         [
             Event("m1", 1, Recorded("time-entry-1", 45)),
             Event("m2", 2, Submitted("time-entry-1")),
             Event("m3", 3, Rejected("time-entry-1")),
-            Event("m4", 4, superseded)
+            Event("m4", 4, Corrected("time-entry-1", 75) with { CorrectionState = TimeEntryCorrectionState.Superseded })
         ];
-
-        TimeEntryQueryReadModel currentOnly = ListProjector().Project(
-            "tenant-1",
-            events,
-            FreshCheckpoint(4),
-            new QueryTimeEntries());
-
-        currentOnly.Items.ShouldBeEmpty();
-
-        TimeEntryQueryReadModel includingNonCurrent = ListProjector().Project(
-            "tenant-1",
-            events,
-            FreshCheckpoint(4),
-            new QueryTimeEntries
-            {
-                CurrentEntriesOnly = false,
-                IncludeNonCurrentStates = true,
-                CorrectionStates = [TimeEntryCorrectionState.Superseded]
-            });
-
-        includingNonCurrent.Items.ShouldHaveSingleItem().CorrectionState.ShouldBe(TimeEntryCorrectionState.Superseded);
+        foreach (bool includeNoncurrent in new[] { false, true })
+        {
+            Should.Throw<InvalidOperationException>(() => ListProjector().Project(
+                "tenant-1", events, FreshCheckpoint(4), new QueryTimeEntries
+                {
+                    CurrentEntriesOnly = !includeNoncurrent,
+                    IncludeNonCurrentStates = includeNoncurrent
+                }));
+        }
     }
 
     [Fact]
@@ -1047,6 +1002,93 @@ public sealed class TimeEntryEvidenceProjectionTests
             "tenant-1",
             [.. events, Event("collision", 1, Recorded("time-entry-1", 90))],
             FreshCheckpoint(1), new QueryTimeEntries()));
+    }
+
+    [Fact]
+    public void MalformedSelectedOwnerLifecycleAndScopesAreRefusedByFullAndIncrementalReplay()
+    {
+        const string id = "time-entry-1";
+        TimeEntryAdjustedThroughMagicLink adjustment = Adjusted(id, 75);
+        TimeEntryCorrected correction = Corrected(id, 75);
+        TimeEntryApprovedCorrected approvedCorrection = ApprovedCorrected(id, 75);
+        (object[] Prefix, object Invalid)[] cases =
+        [
+            ([], Submitted(id)), ([], Confirmed(id)), ([], adjustment),
+            ([], Approved(id)), ([], Rejected(id)), ([], correction), ([], approvedCorrection),
+            ([], Recorded(id, 45) with { ApprovalState = TimeEntryApprovalState.Approved }),
+            ([], Recorded(id, 45) with { ApprovalState = (TimeEntryApprovalState)99 }),
+            ([Recorded(id, 45)], Submitted(id) with { ApprovalState = TimeEntryApprovalState.Draft }),
+            ([Recorded(id, 45), Submitted(id)], Approved(id) with { ApprovalState = TimeEntryApprovalState.Rejected }),
+            ([Recorded(id, 45), Submitted(id)], Rejected(id) with { ApprovalState = TimeEntryApprovalState.Approved }),
+            ([Recorded(id, 45), Submitted(id), Rejected(id)], correction with { ApprovalState = TimeEntryApprovalState.Approved }),
+            ([Recorded(id, 45), Submitted(id), Rejected(id)], correction with { CorrectionState = TimeEntryCorrectionState.None }),
+            ([Recorded(id, 45), Submitted(id), Approved(id)], approvedCorrection with { ApprovalState = TimeEntryApprovalState.Draft }),
+            ([Recorded(id, 45), Submitted(id), Approved(id)], approvedCorrection with { CorrectionState = TimeEntryCorrectionState.None }),
+            ([Recorded(id, 45)], Recorded(id, 90)),
+            ([Recorded(id, 45)], Approved(id)),
+            ([Recorded(id, 45)], Rejected(id)),
+            ([Recorded(id, 45)], correction),
+            ([Recorded(id, 45)], approvedCorrection),
+            ([Recorded(id, 45), Submitted(id)], Submitted(id)),
+            ([Recorded(id, 45), Submitted(id)], adjustment),
+            ([Recorded(id, 45), Submitted(id), Approved(id)], Submitted(id)),
+            ([Recorded(id, 45), Submitted(id), Approved(id)], Rejected(id)),
+            ([Recorded(id, 45), Submitted(id), Rejected(id)], Approved(id)),
+            ([Recorded(id, 45), Submitted(id), Rejected(id), correction], adjustment),
+            ([Recorded(id, 45), Submitted(id), Approved(id), approvedCorrection], approvedCorrection),
+            ([Recorded(id, 45), Submitted(id), Rejected(id), correction, Submitted(id), Rejected(id)], correction),
+            ([Recorded(id, 45)], adjustment with { PreviousValues = adjustment.PreviousValues with { ActivityTypeScope = ActivityTypeScope.Project } }),
+            ([Recorded(id, 45)], adjustment with { AdjustedValues = adjustment.AdjustedValues with { ActivityTypeScope = ActivityTypeScope.Project } }),
+            ([Recorded(id, 45), Submitted(id), Rejected(id)], correction with { PreviousValues = correction.PreviousValues with { ActivityTypeScope = ActivityTypeScope.Project } }),
+            ([Recorded(id, 45), Submitted(id), Approved(id)], approvedCorrection with { PreviousValues = approvedCorrection.PreviousValues with { ActivityTypeScope = ActivityTypeScope.Project } })
+        ];
+        foreach ((object[] prefix, object invalid) in cases)
+        {
+            TimeEntryProjectionEvent[] events = prefix.Select((item, i) => Event($"m{i + 1}", i + 1, item)).ToArray();
+            var suffix = Event($"m{events.Length + 1}", events.Length + 1, invalid);
+            TimeEntryEvidenceReadModel? current = Projector().Project("tenant-1", TimeEntryId(), events, FreshCheckpoint(events.Length));
+            string before = System.Text.Json.JsonSerializer.Serialize(current);
+
+            Should.Throw<InvalidOperationException>(() => Projector().Project(
+                "tenant-1", TimeEntryId(), [.. events, suffix], FreshCheckpoint(events.Length + 1)));
+            Should.Throw<InvalidOperationException>(() => Projector().ProjectNext(
+                "tenant-1", TimeEntryId(), current, suffix, FreshCheckpoint(events.Length + 1)));
+            System.Text.Json.JsonSerializer.Serialize(current).ShouldBe(before);
+        }
+    }
+
+    [Fact]
+    public void LegacyScopesCanonicalRedeliveryAndUnrelatedOwnersPreserveEquivalentReplay()
+    {
+        TimeEntryAdjustedThroughMagicLink adjustment = Adjusted("time-entry-1", 75);
+        adjustment = adjustment with
+        {
+            PreviousValues = adjustment.PreviousValues with { ActivityTypeScope = null },
+            AdjustedValues = adjustment.AdjustedValues with { ActivityTypeScope = null }
+        };
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("record", 1, new StoredTimeEntryRecorded(RecordedExternal("time-entry-1", 45))),
+            Event("adjust", 2, new StoredTimeEntryAdjusted(adjustment)),
+            Event("submit", 3, new StoredTimeEntrySubmitted(Submitted("time-entry-1"))),
+            Event("approve", 4, Approved("time-entry-1")),
+            Event("confirm", 5, new StoredTimeEntryConfirmed(Confirmed("time-entry-1")))
+        ];
+        TimeEntryEvidenceReadModel? incremental = null;
+        foreach (TimeEntryProjectionEvent item in TimeEntryStoredEventNormalizer.Normalize(events))
+            incremental = Projector().ProjectNext("tenant-1", TimeEntryId(), incremental, item, FreshCheckpoint(5));
+        TimeEntryEvidenceReadModel full = Projector().Project("tenant-1", TimeEntryId(),
+            [.. events, events[0], events[1], Event("other", 6, Submitted("unrelated-entry"))], FreshCheckpoint(5))!;
+
+        System.Text.Json.JsonSerializer.Serialize(full).ShouldBe(System.Text.Json.JsonSerializer.Serialize(incremental));
+        full.ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        full.ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        full.EventLineage.Count.ShouldBe(5);
+        full.ContributorConfirmation.ShouldNotBeNull();
+        full.ExternalAdjustment.ShouldNotBeNull().AdjustedValues.ActivityTypeScope.ShouldBeNull();
+
+        Should.Throw<InvalidOperationException>(() => Projector().Project("tenant-1", TimeEntryId(),
+            [events[0], Event("distinct-record", 2, RecordedExternal("time-entry-1", 45))], FreshCheckpoint(2)));
     }
 
     private static TimeEntryEvidenceProjection Projector() => new();

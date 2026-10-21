@@ -681,7 +681,7 @@ public sealed class TimesheetPeriodAuthorizationTests
             new TimeEntryRejectionReason("Entry needs correction."),
             new TimeEntryApprovalDecisionId("decision-1"),
             TimeEntryApprovalState.Draft,
-            TimeEntryCorrectionState.Superseded));
+            TimeEntryCorrectionState.Corrected));
         state.Apply(new TimeEntrySubmitted(
             timeEntryId,
             Submitter(),
@@ -690,6 +690,10 @@ public sealed class TimesheetPeriodAuthorizationTests
             new TimeEntrySubmissionId("submission-resubmitted"),
             TimeEntrySubmissionScope.SelectedEntries,
             TimeEntryApprovalState.Submitted));
+        // Synthetic lock state has no sanctioned event producer; keep this command
+        // authorization fixture independent of authoritative history validation.
+        typeof(TimeEntryState).GetProperty(nameof(TimeEntryState.CorrectionState))!
+            .SetValue(state, TimeEntryCorrectionState.Superseded);
         return state;
     }
 

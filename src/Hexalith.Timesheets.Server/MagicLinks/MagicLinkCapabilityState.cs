@@ -62,6 +62,10 @@ public sealed class MagicLinkCapabilityState
     public void Apply(MagicLinkConfirmationCapabilityIssued issued)
     {
         ArgumentNullException.ThrowIfNull(issued);
+        if (Exists)
+        {
+            throw new InvalidOperationException("A capability cannot be issued more than once.");
+        }
 
         Exists = true;
         CapabilityId = issued.CapabilityId;
@@ -82,20 +86,30 @@ public sealed class MagicLinkCapabilityState
     public void Apply(MagicLinkConfirmationCapabilityRevoked revoked)
     {
         ArgumentNullException.ThrowIfNull(revoked);
+        RequireIssued();
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Revoked;
     }
 
     public void Apply(MagicLinkConfirmationCapabilityExpired expired)
     {
         ArgumentNullException.ThrowIfNull(expired);
+        RequireIssued();
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Expired;
     }
 
     public void Apply(MagicLinkConfirmationCapabilityUsed used)
     {
         ArgumentNullException.ThrowIfNull(used);
+        RequireIssued();
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used;
         UsedAtUtc = used.UsedAtUtc;
         UseMetadata = used.Source;
+    }
+    private void RequireIssued()
+    {
+        if (!Exists || State != Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued)
+        {
+            throw new InvalidOperationException("A capability terminal transition requires an issued capability.");
+        }
     }
 }

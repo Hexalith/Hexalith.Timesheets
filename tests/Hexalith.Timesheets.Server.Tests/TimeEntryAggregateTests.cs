@@ -1132,18 +1132,7 @@ public sealed class TimeEntryAggregateTests
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RejectedState(command);
-        state.Apply(new TimeEntryCorrected(
-            command.TimeEntryId,
-            new TimeEntryCorrectionId("correction-1"),
-            new TenantReference("tenant-1"),
-            new PartyReference("operator-1"),
-            new DateTimeOffset(2026, 6, 20, 9, 30, 0, TimeSpan.Zero),
-            CorrectionValues(command),
-            CorrectionValues(command with { DurationMinutes = 75 }),
-            new TimeEntryRejectionReason("Needs customer PO evidence."),
-            new TimeEntryApprovalDecisionId("decision-1"),
-            TimeEntryApprovalState.Draft,
-            TimeEntryCorrectionState.Superseded));
+        SetSyntheticSupersededLock(state);
 
         TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
             SubmitCommand(command.TimeEntryId, "submission-after-superseded"),
@@ -1339,6 +1328,14 @@ public sealed class TimeEntryAggregateTests
         return state;
     }
 
+    private static void SetSyntheticSupersededLock(TimeEntryState state)
+    {
+        // No sanctioned writer emits Superseded. Seed only the lock branch under test;
+        // authoritative replay must not accept synthetic lifecycle events to reach it.
+        typeof(TimeEntryState).GetProperty(nameof(TimeEntryState.CorrectionState))!
+            .SetValue(state, TimeEntryCorrectionState.Superseded);
+    }
+
     private static TimeEntryState SupersededSubmittedState(RecordTimeEntry command)
     {
         TimeEntryState state = RejectedState(command);
@@ -1353,7 +1350,7 @@ public sealed class TimeEntryAggregateTests
             new TimeEntryRejectionReason("Needs customer PO evidence."),
             new TimeEntryApprovalDecisionId("decision-1"),
             TimeEntryApprovalState.Draft,
-            TimeEntryCorrectionState.Superseded));
+            TimeEntryCorrectionState.Corrected));
         state.Apply(new TimeEntrySubmitted(
             command.TimeEntryId,
             new PartyReference("submitter-1"),
@@ -1362,6 +1359,7 @@ public sealed class TimeEntryAggregateTests
             new TimeEntrySubmissionId("submission-2"),
             TimeEntrySubmissionScope.SelectedEntries,
             TimeEntryApprovalState.Submitted));
+        SetSyntheticSupersededLock(state);
         return state;
     }
 

@@ -1217,12 +1217,13 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = Operator().PartyId
             }
         };
-        var orphan = new Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState();
-        orphan.Apply(new MagicLinkConfirmationCapabilityRevoked(
+        var revoked = new MagicLinkConfirmationCapabilityRevoked(
             capabilityId, Tenant(), Operator(), ObservedAtUtc,
-            new MagicLinkAuditMetadata("timesheets", "orphan")));
+            new MagicLinkAuditMetadata("timesheets", "orphan"));
+        object[][] orphanHistories = [[revoked], [new StoredMagicLinkRevoked(revoked)]];
 
-        (await processor.ProcessAsync(envelope, orphan, TestContext.Current.CancellationToken)).IsRejection.ShouldBeTrue();
+        foreach (object[] orphan in orphanHistories)
+            (await processor.ProcessAsync(envelope, orphan, TestContext.Current.CancellationToken)).IsRejection.ShouldBeTrue();
         CommandEnvelope malformed = envelope with
         {
             Payload = JsonSerializer.SerializeToUtf8Bytes(

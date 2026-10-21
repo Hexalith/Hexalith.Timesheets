@@ -1385,6 +1385,108 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
             .ShouldBe("readmodel:tenant-1:timesheets:time-entry-evidence:entry-1:evidence");
     }
 
+    [Fact]
+    public async Task ReplayIntegrityRefusalPreservesSelectedContentsAndETagForFullAndSuffixDelivery()
+    {
+        TimeEntryAdjustedThroughMagicLink adjustment = Adjusted();
+        TimeEntryCorrectionValues values = adjustment.PreviousValues;
+        TimeEntryCorrected corrected = Corrected(values, values with { DurationMinutes = 75 });
+        var approvedCorrection = new TimeEntryApprovedCorrected(new("entry-1"), new("approved-correction-1"),
+            new("tenant-1"), new("operator-1"), new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.Zero),
+            values, values with { DurationMinutes = 75 }, new("Correction"), new("decision-1"),
+            TimeEntryApprovalScope.IndividualEntry, TimeEntryApprovalState.Approved, TimeEntryCorrectionState.Corrected);
+        (object[] Prefix, object Invalid)[] cases =
+        [
+            ([Recorded()], Recorded()), ([Recorded()], Approved()), ([Recorded()], Rejected()),
+            ([Recorded()], corrected), ([Recorded()], approvedCorrection),
+            ([Recorded(), Submitted()], Submitted()), ([Recorded(), Submitted()], adjustment),
+            ([Recorded(), Submitted(), Approved()], Submitted()),
+            ([Recorded(), Submitted(), Approved()], Rejected()),
+            ([Recorded(), Submitted(), Rejected()], Approved()),
+            ([Recorded(), Submitted(), Rejected(), corrected], adjustment),
+            ([Recorded(), Submitted(), Approved(), approvedCorrection], approvedCorrection),
+            ([Recorded()], adjustment with { PreviousValues = values with { ActivityTypeScope = ActivityTypeScope.Project } }),
+            ([Recorded()], adjustment with { AdjustedValues = adjustment.AdjustedValues with { ActivityTypeScope = ActivityTypeScope.Project } }),
+            ([Recorded(), Submitted(), Rejected()], corrected with { PreviousValues = values with { ActivityTypeScope = ActivityTypeScope.Project } }),
+            ([Recorded(), Submitted(), Approved()], approvedCorrection with { PreviousValues = values with { ActivityTypeScope = ActivityTypeScope.Project } })
+        ];
+        foreach ((object[] prefix, object invalid) in cases)
+        {
+            ProjectionEventDto[] history = prefix.Select((payload, i) => Event(i + 1, payload)).ToArray();
+            ProjectionEventDto suffix = Event(history.Length + 1, invalid);
+            foreach (string delivery in new[] { "suffix", "full", "streamed" })
+            {
+                var store = new TestStore();
+                var handler = new TimeEntryEvidenceProjectionHandler(store);
+                (await handler.ProjectAsync(Request(history), "seed", TestContext.Current.CancellationToken))
+                    .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+                JsonObject before = store.GetPacked();
+                string key = TimeEntryEvidenceReadModelAddress.StateKey("tenant-1", new("entry-1"));
+                string? etag = (await store.GetAsync<JsonObject>("unused", key, TestContext.Current.CancellationToken)).ETag;
+
+                if (delivery == "streamed")
+                {
+                    ProjectionRequest request = Request([.. history, suffix]);
+                    await Should.ThrowAsync<DomainProjectionRebuildRejectedException>(() => handler.PrepareStreamedRebuildAsync(
+                        request with { Events = [] }, Stream(request.Events), "invalid-streamed",
+                        TestContext.Current.CancellationToken));
+                }
+                else
+                {
+                    (await handler.ProjectAsync(Request(delivery == "full" ? [.. history, suffix] : [suffix]), "invalid",
+                        TestContext.Current.CancellationToken)).Status.ShouldBe(ProjectionDispatchStatus.Failed);
+                }
+
+                JsonNode.DeepEquals(store.GetPacked(), before).ShouldBeTrue();
+                (await store.GetAsync<JsonObject>("unused", key, TestContext.Current.CancellationToken)).ETag.ShouldBe(etag);
+            }
+            var empty = new TestStore();
+            (await new TimeEntryEvidenceProjectionHandler(empty).ProjectAsync(Request([.. history, suffix]),
+                "invalid-full", TestContext.Current.CancellationToken)).Status.ShouldBe(ProjectionDispatchStatus.Failed);
+            empty.HasValue.ShouldBeFalse();
+            ProjectionRequest invalidStream = Request([.. history, suffix]);
+            await Should.ThrowAsync<DomainProjectionRebuildRejectedException>(() =>
+                new TimeEntryEvidenceProjectionHandler(empty).PrepareStreamedRebuildAsync(
+                    invalidStream with { Events = [] }, Stream(invalidStream.Events), "invalid-empty-streamed",
+                    TestContext.Current.CancellationToken));
+            empty.HasValue.ShouldBeFalse();
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task LegacyCorrectionScopesAndValidDecisionsMatchFullSuffixAndCanonicalRedelivery(bool approved)
+    {
+        TimeEntryCorrectionValues values = Adjusted().PreviousValues with { ActivityTypeScope = null };
+        object correction = approved
+            ? new TimeEntryApprovedCorrected(new("entry-1"), new("correction-1"), new("tenant-1"), new("operator-1"),
+                new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.Zero), values, values with { DurationMinutes = 75 },
+                new("Correction"), new("decision-1"), TimeEntryApprovalScope.IndividualEntry,
+                TimeEntryApprovalState.Approved, TimeEntryCorrectionState.Corrected)
+            : Corrected(values, values with { DurationMinutes = 75 });
+        ProjectionEventDto[] history = [Event(1, Recorded()), Event(2, Submitted()),
+            Event(3, approved ? Approved() : Rejected()), Event(4, correction)];
+        if (!approved)
+            history = [.. history, Event(5, Submitted() with { TimeEntrySubmissionId = new("resubmission-1") }), Event(6, Approved())];
+        var suffixStore = new TestStore();
+        var suffixHandler = new TimeEntryEvidenceProjectionHandler(suffixStore);
+        foreach (ProjectionEventDto item in history)
+            (await suffixHandler.ProjectAsync(Request(item), "suffix", TestContext.Current.CancellationToken))
+                .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        var fullStore = new TestStore();
+        var fullHandler = new TimeEntryEvidenceProjectionHandler(fullStore);
+        (await fullHandler.ProjectAsync(Request(history), "full", TestContext.Current.CancellationToken))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+        (await fullHandler.ProjectAsync(Request([.. history, history[^1]]), "redelivery", TestContext.Current.CancellationToken))
+            .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+
+        JsonNode.DeepEquals(suffixStore.GetPacked(), fullStore.GetPacked()).ShouldBeTrue();
+        fullStore.Get().ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
+        fullStore.Get().ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
+        fullStore.Get().DurationMinutes.ShouldBe(75);
+    }
+
     private static ProjectionRequest Request(params ProjectionEventDto[] events)
         => new("tenant-1", "timesheets", "entry-1", events)
         {

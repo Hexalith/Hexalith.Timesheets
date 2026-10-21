@@ -213,10 +213,12 @@ The repeated 2026-09-14 agent-context findings are consolidated into the canonic
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Determine whether capability folds must reject illegal transition sequences found in EventStore history.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Capability folds now require one issuance followed by at most one terminal transition, refusing malformed raw or wrapped replay before mutation. State snapshots remain unchanged on refusal and loader regressions prove opaque denial. This defensive check establishes neither sanctioned-writer reachability nor deployed corruption or acceptance.
   evidence: `MagicLinkCapabilityState.Apply` accepts a later issuance event after a used, revoked, or expired terminal event and thereby reopens the folded capability. Sanctioned writers do not emit that transition. Evidence that the EventStore command boundary can admit such a sequence, or an inventory of one in deployed streams, would establish a reachable integrity defect.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Determine whether Time Entry folds must reject lifecycle events in illegal orders found in EventStore history.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Authoritative and evidence folds now require recording and the sanctioned lifecycle predecessor, refuse repeated recording and illegal corrections before mutation/materialization, and share full/incremental evidence transition checks. Regressions retain valid correction/resubmission, wrapped replay, rejected-command no-ops, owner filtering and canonical redelivery. Invalid full/suffix deliveries preserve persisted contents and ETags; confirmation-after-approval policy and Time Entry terminal-capability bookkeeping are unchanged. No deployed acceptance is inferred.
   evidence: `TimeEntryState.Apply` can fold sequences such as a correction while Draft or another Recorded event after recording, although sanctioned writers reject those transitions before emission. Evidence that the EventStore command boundary can admit such sequences, or an inventory of one in deployed streams, would establish a reachable integrity defect.
 
 ## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-16)
@@ -259,6 +261,7 @@ VG-02 is resolved rather than deferred: the current package-readiness inventory 
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Decide whether authoritative Time Entry folds must reject approved-correction events without a preceding approval transition.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Approved correction now requires a recorded, approved, previously uncorrected Time Entry with approval evidence. State/evidence regressions refuse correction before approval, preserve preceding state and persisted selection, and retain equivalent valid approved-correction full/suffix replay. Positive loader correction fixtures now contain their required submission and approval/rejection predecessors.
   evidence: `LoadTimeEntryAsync` accepts `TimeEntryApprovedCorrected` after only `TimeEntryRecorded`; sanctioned writers do not emit that sequence, but malformed EventStore history can be folded as approved correction evidence. The behavior predates this increment and needs the broader illegal-transition state-machine decision already identified for Time Entry history.
 
 ## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)
@@ -267,10 +270,12 @@ The independent review reconfirmed the single AppHost runtime-smoke VG-01 item r
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Decide whether Time Entry aggregate and evidence-projection folds must reject nested adjustment-scope disagreement the way the magic-link loader now does.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Both folds refuse an explicit previous adjustment scope that differs from folded scope or an explicit adjusted scope that differs from the top-level scope before mutation. Direct, wrapped and supported omitted-scope replay remain deterministic without catalog inference; loader and handler fences remain in place. Full/suffix delivery regressions verify unchanged persisted contents and ETags after contradictory evidence.
   evidence: `EventStoreMagicLinkConfirmationCapabilityStateLoader.LoadTimeEntryAsync` throws when explicit nested adjustment scopes disagree with authoritative lineage, then fail-closes. `TimeEntryState.Apply(TimeEntryAdjustedThroughMagicLink)` and `TimeEntryEvidenceProjection` still take top-level `ActivityTypeScope` and store nested snapshots as-is, so malformed history can publish contradictory evidence. Spec-3 forbade changing those folds; a later integrity story would have to own the fold-level guard.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Decide whether magic-link Time Entry folding must reject correction `PreviousValues` whose recorded scope disagrees with folded state.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Rejected and approved correction folds now refuse explicit previous-scope disagreement before field changes. Loader regressions prove opaque denial and evidence regressions prove full/suffix refusal without replacing persisted selection. Supported legacy omitted scopes inherit the preceding scope deterministically, with equivalent valid replay and canonical redelivery. No history rewrite, catalog inference, migration or deployed-readiness claim is made.
   evidence: `LoadTimeEntryAsync` applies `TimeEntryCorrected` and `TimeEntryApprovedCorrected` with no previous-scope check, while the new adjustment guard covers only `TimeEntryAdjustedThroughMagicLink`. Sanctioned writers emit both snapshots or omit both. Spec-2 rejected adding this guard as malformed-history-only; settling it needs the same illegal-history state-machine decision already ledgered for Time Entry folds.
 
 ## Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md (2026-09-17)
@@ -858,3 +863,18 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-close-five-tooling-diagnostic-deferrals.md`
   summary: Align local index diagnostic readiness with the selected epoch lifecycle and pending delivery state.
   evidence: The preexisting snapshot diagnostic reads activeGeneration and compares generation/root content without evaluating epoch phase, journal, offboarding or conflict evidence. EventStore SharedProjectionEpochCoordinator.ReadAsync returns unavailable for offboarding and CatchingUp/Aborting, stale for pending journal or Capturing/Building, and degraded for conflict readiness issues. An unchanged selected root can therefore produce a local unique-candidate diagnostic while the production coordinator refuses it. This developer-evidence gap predates these five closures; the HTTP journey still requires a successful production GET. Add lifecycle-aware diagnostic admission and regressions in a separate increment rather than treating candidate shape validation as production readiness or deployed acceptance.
+
+
+## Deferred from: review of five replay-integrity closures (2026-10-21)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
+  summary: Reconcile omitted-scope legacy adjustment delivery between direct folds and persisted evidence handlers.
+  evidence: Direct state/evidence folds and the loader preserve omitted nested adjustment scopes, but the pre-existing TimeEntryEvidenceProjectionHandler full, suffix and streamed validators compare prior snapshots and adjusted nested scope without legacy inheritance. Establish the supported delivery forms and add end-state regressions before claiming persisted legacy-adjustment compatibility; the current increment preserves existing direct-fold behavior and supplies no deployed migration acceptance.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
+  summary: Align authoritative and direct evidence approved-correction decision attribution with the persisted handler fence.
+  evidence: TimeEntryState and TimeEntryEvidenceProjection already accepted SourceApprovalDecisionId/SourceApprovalScope different from the preceding approval; the loader inherits the authoritative fold. TimeEntryEvidenceProjectionHandler checks both fields. This predates the selected lifecycle-predecessor and Activity Type-scope guards; add matching-lineage guards and refusal/opaque-loader tests in a separate defensive increment.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
+  summary: Align authoritative and direct evidence rejected-correction attribution with the persisted handler fence.
+  evidence: TimeEntryState and direct evidence replay already accepted RejectionDecisionId/RejectionReason inconsistent with the preceding rejection, while TimeEntryEvidenceProjectionHandler validates those fields. The selected increment guards lifecycle order and Activity Type scope, preserving existing attribution behavior. A separate defensive increment should verify prior rejection lineage before mutation and exercise loader denial and persisted equivalence.
