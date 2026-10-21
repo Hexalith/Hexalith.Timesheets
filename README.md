@@ -51,6 +51,14 @@ DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests
 ```
 
+After the Debug/source build, run the compiled AppHost configuration probes as part of local verification:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --configuration-only
+```
+
+These probes exit before resource construction and require no Docker, Dapr, Aspire CLI, or idle runtime. CI runs them in its blocking `apphost-configuration` job after a fresh Release/package AppHost build, passing `--configuration Release`. Package builds must reject the private compiled-gateway adapter; local Debug/source builds verify its valid selection as well. This lane checks configuration admission and supplies no running-topology or deployed acceptance evidence.
+
 The capture and governance command performance lane (NFR10 command-acknowledgement evidence) is **skipped by default** and opted in with `TIMESHEETS_PERF=1`, so it never enters the fast baseline. Set the variable on the same executable invocation:
 
 ```bash

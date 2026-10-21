@@ -64,7 +64,19 @@ checks locally with:
 ```bash
 python3 -m unittest discover -s scripts/tests -v
 python3 scripts/test_magic_link_index_selection.py -v
+python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py -v
 ```
+
+The blocking `apphost-configuration` job builds the AppHost in Release/package
+mode and runs `check_magic_link_apphost_guards.py --configuration-only
+--configuration Release`. The 35 compiled probes verify ordinary defaults,
+incomplete/unsafe fixture refusal and the package build's refusal of private
+compiled-gateway settings. Sanitized per-probe receipts are uploaded even on
+failure. These probes exit before resources and require no Docker, Dapr or Aspire
+CLI. Local developers run the same driver after the Debug/source build, using
+`--configuration-only` with its default Debug selection. The Python fixture-driver
+and credential-redaction regressions also run routinely in `release-tooling`.
+Neither lane supplies running-topology or deployed acceptance evidence.
 
 CodeQL, dependency review, Dependabot,
 and push/PR Conventional Commit checks use pinned shared callers. Commit types
@@ -133,7 +145,7 @@ Publication requires all of the following repository configuration:
 
 - A `production` environment with required reviewers and a deployment branch
   policy admitting `main`; protect `main` and require CI, test-evidence,
-  release-tooling, and commit policy checks before merging.
+  apphost-configuration, release-tooling, and commit policy checks before merging.
 - Repository or organization `NUGET_API_KEY`, explicitly mapped to the reusable
   workflow. An environment-only secret is insufficient for that explicit caller
   mapping; environment approval gates access in the called job.

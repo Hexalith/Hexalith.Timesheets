@@ -31,6 +31,34 @@ jobs:
         tests/Hexalith.Timesheets.Works.Tests
         tests/Hexalith.Timesheets.IntegrationTests
 
+  apphost-configuration:
+    name: Verify compiled AppHost configuration without resources
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          submodules: false
+      - name: Initialize the root-declared build catalog
+        run: git submodule update --init -- references/Hexalith.Builds
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Restore the AppHost package graph
+        run: dotnet restore src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj -p:Configuration=Release -p:UseHexalithProjectReferences=false -m:1 /nr:false
+      - name: Build the AppHost package graph
+        run: dotnet build src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --configuration Release --no-restore -p:UseHexalithProjectReferences=false -warnaserror -m:1 /nr:false
+      - name: Exercise compiled fixture refusal and default selection
+        run: python3 scripts/check_magic_link_apphost_guards.py --configuration-only --configuration Release --log-directory artifacts/apphost-configuration
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: apphost-configuration
+          path: artifacts/apphost-configuration
+          if-no-files-found: ignore
+
   verify-test-evidence:
     needs: ci
     runs-on: ubuntu-latest
@@ -57,3 +85,5 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Verify selected magic-link index diagnostics
         run: python3 scripts/test_magic_link_index_selection.py -v
+      - name: Verify isolated fixture drivers and diagnostic redaction
+        run: python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py -v

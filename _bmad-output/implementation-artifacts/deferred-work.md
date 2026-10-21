@@ -637,6 +637,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-isolate-live-dapr-fixture-storage.md`
   summary: Direct AppHost starts with bare TIMESHEETS_LIVE_DAPR_FIXTURE=1 enable development fixture authorization while retaining shared component defaults.
+  resolution_note: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The completed startup-hardening implementation already refuses bare/incomplete fixture settings before resource construction. The current Debug/source compiled probes verify ordinary defaults and all unsafe fixture/control-plane cases; the new routine Release/package CI lane preserves these controls and separately requires the source-only adapter refusal. The original isolation spec and historical evidence are unchanged. This closes local startup admission, without deployed or current-graph runtime acceptance; see `tests/five-local-fixture-handoffs.md`.
   evidence: The exact branch and default selection are present at baseline 2af8a543229f6427d4b07d1bc592add9f87aa3b2; the new isolated runner supplies and validates all private settings before commands. A later configuration-hardening change should reject incomplete fixture startup with a harmless compiled probe, while preserving ordinary starts.
 
 ## Resolution: AppHost fixture startup hardening (2026-10-13)
@@ -653,6 +654,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
   summary: Recover a committed external recording when its submit response is lost.
+  resolution_note: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The delivered recording service observes the same command after a submit-response fault, requires Completed status and exact stored recording/submission readback, and does not resubmit. `ExternalRecordingRecoversCommittedBatchAfterSubmitResponseFault` covers Draft and Submitted results, persisted event values and an HTTP retry with one submission. This reconciles the original entry with the October 13 response-loss resolution below; it does not establish cross-request reconciliation for magic-link use or deployed acceptance. See `tests/five-local-fixture-handoffs.md`.
   evidence: The recording service uses the response-first helper, so a post-commit transport fault can cause the endpoint to return 403 before status and exact stored-event readback. No recording-route lost-response test covers this case.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
@@ -683,6 +685,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
   summary: Put compiled AppHost fixture-control refusal probes in a routine verification lane.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-local-fixture-deferrals.md`. The blocking `apphost-configuration` CI job restores/builds a fresh Release/package AppHost and runs all 35 no-resource configuration probes, retaining sanitized per-probe evidence even on failure. The driver selects explicit Debug/Release assets, retains Debug defaults locally, and requires package-build refusal for private compiled-gateway settings. Release is rejected outside configuration-only mode. Fixture-driver, sanitizer and Release selection/failure regressions now also run in routine Python CI. Local Debug compiled checks pass; actual hosted Release execution is a distinct CI receipt, not a local runtime or deployment claim. See `tests/five-local-fixture-handoffs.md`.
   evidence: The separate hardening increment ran its compiled guard driver successfully, but routine test executables do not run `check_magic_link_apphost_guards.py --configuration-only`; Python unit tests mock commands. A routine negative probe would catch removal of ValidateFixtureControlPlane.
 
 ## Resolution: Recording response-loss recovery (2026-10-13)
@@ -695,6 +698,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md`
   summary: Extend the local diagnostic sanitizer to redact OTLP/API-key headers before retaining or displaying monitoring output.
+  resolution_note: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The delivered redactor covers OTLP exporter headers and API keys in plain, structured, escaped and multiline forms, including command arguments, stdout/stderr and retained evidence. The current 97-test fixture suite passes and is now run by routine Python CI. This reconciles the canonical entry with the October 18 diagnostic-redaction resolution below; no new runtime or deployed evidence is claimed. See `tests/five-local-fixture-handoffs.md`.
   evidence: A manual baseline Aspire describe/monitoring dump passed through scripts/run_isolated_magic_link_dapr.py sanitized() but still displayed the runtime's temporary OTEL_EXPORTER_OTLP_HEADERS credential. Subsequent output used selected non-sensitive fields; no raw dump was saved as acceptance evidence, and all owning runtime identities exited. The current sanitizer vocabulary covers domain/signing/channel credentials but misses this telemetry header. Add structured and plain-header regression cases in the separate diagnostic follow-up without broadening or weakening journey evidence.
 
 ## Deferred from: diagnostic credential-redaction scope selection (2026-10-18)
@@ -744,6 +748,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-fix-shared-state-preservation-checks.md`
   summary: Diagnose the EventStore process-stop timeout that prevents the isolated journey's restart assertion.
+  resolution_note: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The completed direct-execution correction uses the existing EventStore-owned launch adapter so DCP owns the native gateway. The checked-in runner requires actual native-command/direct-parent evidence and old/new PID/start replacement around normal restart; current Python regressions pass. The retained October 18 final corrected-source journey passed 1/1 in 131.536 s with preserved shared state and complete owned cleanup. That dated receipt closes the selected historical local restart correction, without identifying the exact managed shutdown stage or qualifying the later NuGet-orchestration graph. Preserve the original failed receipt and separate current-graph/deployed gates. See `tests/five-local-fixture-handoffs.md`.
   evidence: The unchanged journey passed record/issue/index/display/confirm/adjust/replay/race/rebuild checks, then `aspire resource eventstore restart --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive` exited 16 after the EventStore process failed to stop in time. The 2026-10-18 failed retry log is `/tmp/timesheets-checkpoint-tenant-live-projects-complete/run-f0qmfl8y/25-Hexalith.Timesheets.IntegrationTests--class.log`; AppHost logs report `timed out waiting for process to stop`. No runtime restart repair is included in this preservation-only increment.
 
 ## Deferred from: EventStore restart timeout scope selection (2026-10-18)

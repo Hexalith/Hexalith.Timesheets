@@ -107,7 +107,7 @@ class IsolatedFixtureTests(unittest.TestCase):
                 {"pid": 999999998, "start": "2", "parent_identity": parent}]
 
     @staticmethod
-    def guard_commands(failed=False):
+    def guard_commands(failed=False, package=False):
         commands = Commands()
         def probe(arguments):
             names = [argument.split("=", 1)[1] for argument in arguments if argument.startswith("--guard-probe=")]
@@ -116,6 +116,9 @@ class IsolatedFixtureTests(unittest.TestCase):
             name = names[0]
             if failed:
                 return subprocess.CompletedProcess(arguments, 42, "Guard failed", "")
+            if package and "compiled" in name:
+                return subprocess.CompletedProcess(arguments, -6, "",
+                    "Compiled gateway launch requires a Debug/source AppHost build.")
             if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated"):
                 message = "Dapr component selection: " + ("checked-in defaults" if name == "ordinary-defaults" else "isolated fixture")
                 message += "\nGateway launch selection: " + ("compiled executable" if name == "valid-compiled-isolated" else "project")
@@ -464,8 +467,68 @@ class IsolatedFixtureTests(unittest.TestCase):
             self.assertFalse(set(polluted) & set(kwargs["env"]))
         self.assertIsNone(instance.scratch)
         self.assertFalse(commands.containers)
-        self.assertEqual({"configuration_only": True, "resources_enabled": False},
+        self.assertEqual({"configuration": "Debug", "configuration_only": True, "resources_enabled": False},
                          json.loads((instance.log_directory / "guards-mode.json").read_text()))
+
+    def test_release_configuration_guards_select_package_assets_and_require_adapter_refusal(self):
+        commands = self.guard_commands(package=True)
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        executable = fixture.APPHOST.parent / "bin/Release/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        caller = dict(os.environ)
+        with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                patch.object(guards, "available_control_port", side_effect=AssertionError("Unexpected socket bind")), \
+                patch.object(guards, "read_only_shared_snapshot", side_effect=AssertionError("Unexpected storage read")), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(0, guards.run_guards(configuration_only=True, configuration="Release"))
+        self.assertEqual(caller, dict(os.environ))
+        self.assertEqual(35, len(commands.calls))
+        for arguments, kwargs in commands.calls:
+            self.assertEqual(str(executable), arguments[0])
+            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", arguments)
+            self.assertEqual("Release", kwargs["env"]["Configuration"])
+            self.assertEqual("false", kwargs["env"]["UseHexalithProjectReferences"])
+            self.assertEqual("true", kwargs["env"]["UseNuGetDeps"])
+        self.assertIsNone(instance.scratch)
+        self.assertFalse(commands.containers)
+        self.assertEqual({"configuration": "Release", "configuration_only": True, "resources_enabled": False},
+                         json.loads((instance.log_directory / "guards-mode.json").read_text()))
+        self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_release_guards_refuse_debug_adapter_success(self):
+        commands = self.guard_commands()
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        executable = fixture.APPHOST.parent / "bin/Release/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(1, guards.run_guards(configuration_only=True, configuration="Release"))
+        self.assertIn("valid-compiled-isolated did not refuse", output.getvalue())
+        self.assertFalse(commands.containers)
+
+    def test_release_guards_require_matching_binary_without_debug_fallback(self):
+        commands = self.guard_commands(package=True)
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        debug = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                patch.object(Path, "is_file", lambda path: path == debug), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(1, guards.run_guards(configuration_only=True, configuration="Release"))
+        self.assertIn("Build the Release AppHost", output.getvalue())
+        self.assertFalse(commands.calls)
+
+    def test_release_guards_refuse_infrastructure_mode_before_fixture_creation(self):
+        with patch.object(guards, "IsolatedFixture", side_effect=AssertionError("Unexpected fixture creation")):
+            with self.assertRaisesRegex(fixture.FixtureError, "Release guard checks require --configuration-only"):
+                guards.run_guards(configuration="Release")
+
+    def test_release_guard_cli_refuses_infrastructure_mode(self):
+        result = subprocess.run([sys.executable, str(Path(guards.__file__)), "--configuration", "Release"],
+                                capture_output=True, text=True, timeout=10)
+        self.assertEqual(2, result.returncode)
+        self.assertIn("Release guard checks require --configuration-only", result.stderr)
 
     def test_components_preserve_names_scopes_database_separation_and_defaults(self):
         originals = {path: (fixture.DEFAULT_COMPONENTS / path).read_bytes() for path in fixture.COMPONENT_FILES[:2]}

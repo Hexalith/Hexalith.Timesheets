@@ -1,0 +1,11 @@
+{
+  "baseline": "87350775d56d7dceef9943630b9acf9c7b9cae53",
+  "sha256": {
+    ".github/workflows/ci.yml": "f9cee786f3964b635c9aa165fcfc963598223ee20f052faf6fe19a3743eebc37",
+    "README.md": "ac32b23e82a01d66dec05e8fc63e179876fb7fc81c2d1ec998b01879b25384fe",
+    "docs/ci-cd.md": "114e0daf96687f41d87e246c8e590c48e5659bc71977b7663fcd85469c09f74c",
+    "scripts/check_magic_link_apphost_guards.py": "1ba60633e55ccbca457fdf1aac4fa111108f95bae1378e800a5241ee86badb5e",
+    "scripts/test_isolated_magic_link_dapr.py": "ac3d01c0b32a3dba673a76cb189bac4df16194f95bdd5b1aff3d3b6d62ee9e85"
+  },
+  "notes": "Local Debug/source checks only. Release/package execution belongs to the new hosted CI job. No running topology or deployment acceptance."
+}

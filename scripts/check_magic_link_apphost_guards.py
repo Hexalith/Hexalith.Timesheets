@@ -1,6 +1,7 @@
 """Repeatable compiled-AppHost configuration checks on owned private services.
 
-Run after the Debug solution build. Every probe exits before constructing
+Run after the matching AppHost build (Debug/source locally, Release/package in CI).
+Every probe exits before constructing
 resources. Shared/missing-control probes and ordinary-default selection cannot
 activate retained storage even if the validation under test regresses.
 --configuration-only runs the same no-resource probes without starting private
@@ -21,8 +22,14 @@ from run_isolated_magic_link_dapr import (
 )
 
 
-def run_guards(log_directory=None, configuration_only=False):
+def run_guards(log_directory=None, configuration_only=False, configuration="Debug"):
+    require(configuration in ("Debug", "Release"), "Unsupported AppHost build configuration")
+    require(configuration == "Debug" or configuration_only,
+            "Release guard checks require --configuration-only")
     fixture = IsolatedFixture(log_directory=log_directory)
+    fixture.environment.update({"Configuration": configuration,
+                                "UseHexalithProjectReferences": "true" if configuration == "Debug" else "false",
+                                "UseNuGetDeps": "false" if configuration == "Debug" else "true"})
     # IConfiguration treats environment keys case-insensitively and aliases __
     # to :. Remove caller overrides, including host-prefixed providers, so
     # missing-setting probes actually exercise missing settings.
@@ -54,10 +61,11 @@ def run_guards(log_directory=None, configuration_only=False):
             fixture.preflight()
             fixture.start_infrastructure()
             fixture.preflight()
-        fixture.write_evidence("guards-mode.json", json.dumps({"configuration_only": configuration_only,
+        fixture.write_evidence("guards-mode.json", json.dumps({"configuration": configuration,
+            "configuration_only": configuration_only,
             "resources_enabled": False}, indent=2) + "\n")
-        executable = APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
-        require(executable.is_file(), "Build the Debug AppHost before running guard checks")
+        executable = APPHOST.parent / "bin" / configuration / "net10.0/Hexalith.Timesheets.AppHost"
+        require(executable.is_file(), "Build the " + configuration + " AppHost before running guard checks")
         baseline = dict(fixture.environment)
         cases = ("valid-isolated", "ordinary-defaults", "bare-fixture-flag", "missing-components",
                  "empty-components", "whitespace-components", "publish-fixture", "publish-bare-fixture",
@@ -156,11 +164,15 @@ def run_guards(log_directory=None, configuration_only=False):
                         fixture.environment["Dapr__SchedulerHostAddress"] = "127.0.0.1:50006"
                     else:
                         fixture.environment["Dapr__SchedulerHostAddress"] = fixture.placement
+                # Package builds reject the source-only adapter before all other admission.
+                package_refusal = configuration == "Release" and "compiled" in name
+                if package_refusal:
+                    expected = "Compiled gateway launch requires a Debug/source AppHost build."
                 # Direct execution is a compiled configuration probe, with no
                 # Build/Run or resource construction. It is not an AppHost launch.
                 result = fixture.run_command(arguments, check=False)
                 output = (result.stdout or "") + (result.stderr or "")
-                if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated"):
+                if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated") and not package_refusal:
                     marker = "checked-in defaults" if name == "ordinary-defaults" else "isolated fixture"
                     require(result.returncode == 0 and "Dapr component selection: " + marker in output,
                             name + " selection was not verified")
@@ -209,8 +221,12 @@ if __name__ == "__main__":
     parser.add_argument("--log-directory", type=Path)
     parser.add_argument("--configuration-only", action="store_true",
                         help="Run only compiled validation probes; never start infrastructure or resources")
+    parser.add_argument("--configuration", choices=("Debug", "Release"), default="Debug",
+                        help="Select the matching AppHost build; Release requires --configuration-only")
     arguments = parser.parse_args()
+    if arguments.configuration == "Release" and not arguments.configuration_only:
+        parser.error("Release guard checks require --configuration-only")
     def interrupted(_signal, _frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, interrupted)
-    raise SystemExit(run_guards(arguments.log_directory, arguments.configuration_only))
+    raise SystemExit(run_guards(arguments.log_directory, arguments.configuration_only, arguments.configuration))
