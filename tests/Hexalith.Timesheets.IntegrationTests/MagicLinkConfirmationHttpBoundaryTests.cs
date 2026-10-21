@@ -109,7 +109,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         ];
         string[] genericTerms =
         [
-            "comment", "token", "Delivery", "durationMinutes", "60", "Draft", "RecoveryPath",
+            "comment", "token", "Delivery", "durationMinutes", "Draft", "RecoveryPath",
             "revoked", "used", "unauthorized", "cross-tenant", "wrong-recipient", "wrong-action",
             "stale-catalog", "project-owned", "repeated-token"
         ];
@@ -1375,16 +1375,27 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             using HttpResponseMessage response = await client
                 .PostAsync($"{route.Path}?t={token}", malformedBody, TestContext.Current.CancellationToken);
 
+            string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            AssertProtectedResponseMaterialAbsent(body, token);
+            AssertSensitiveResponseHeadersAbsent(response, token);
+            foreach (LogRecord record in factory.Logs.Records)
+            {
+                AssertSensitiveDiagnosticsAbsent(record, token);
+            }
+
             response.StatusCode.ShouldNotBe(HttpStatusCode.Accepted, route.Name);
             response.StatusCode.ShouldBe(HttpStatusCode.BadRequest, route.Name);
 
-            string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
             body.ShouldNotContain(token, Case.Insensitive, route.Name);
             foreach (string forbidden in InternalDisclosureMaterial())
             {
                 body.ShouldNotContain(forbidden, Case.Insensitive, route.Name);
             }
         }
+
+        factory.Gateway.SubmissionCount.ShouldBe(0);
+        factory.Logs.Records.ShouldContain(record => record.Level >= LogLevel.Warning
+            && record.Exception != null);
     }
 
     [Fact]
@@ -1455,6 +1466,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)
             .ConfigureAwait(false);
 
+        AssertSensitiveResponseMaterialAbsent(body, token);
+        AssertSensitiveResponseHeadersAbsent(response, token);
+
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden, name);
         response.Content.Headers.ContentType.ShouldNotBeNull().MediaType.ShouldBe("application/problem+json", name);
 
@@ -1464,8 +1478,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         problem.ContainsKey("errors").ShouldBeFalse(name);
         problem.ContainsKey("recoveryPath").ShouldBeFalse(name);
         problem.ContainsKey("RecoveryPath").ShouldBeFalse(name);
-
-        AssertSensitiveResponseMaterialAbsent(body, token);
 
         return new CapturedFailure(
             name,
@@ -1478,11 +1490,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
     private static void AssertSensitiveDiagnosticsAbsent(LogRecord record, string token)
     {
-        string rendered = $"{record.Category} {record.Message} {string.Join(' ', record.State)}";
+        string rendered = $"{record.Category} {record.Message} {string.Join(' ', record.State)} {string.Join(' ', record.Scopes)} {record.Exception}";
         AssertProtectedMaterialAbsent(rendered, token);
         if (record.Category.StartsWith("Hexalith.Timesheets", StringComparison.Ordinal))
         {
             AssertSensitiveMaterialAbsent(rendered, token);
+            AssertDiagnosticDurationEvidenceAbsent(record);
         }
     }
 
@@ -1516,7 +1529,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             "token",
             "Delivery",
             "durationMinutes",
-            "60",
             "Draft",
             "RecoveryPath",
             "revoked",
@@ -1538,9 +1550,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
     private static void AssertSensitiveResponseMaterialAbsent(string content, string token)
     {
+        AssertProtectedResponseMaterialAbsent(content, token);
         AssertSensitiveMaterialAbsent(content, token);
-        content.ShouldNotContain("tenant-1", Case.Insensitive);
-        content.ShouldNotContain("tenant-2", Case.Insensitive);
+        AssertResponseDurationEvidenceAbsent(content);
     }
 
     private static string NormalizeProblemJson(JsonObject problem)
@@ -1756,7 +1768,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         HttpMessageHandler? workloadGatewayHandler = null,
         ExternalContributionPolicyOptions? externalContributionPolicy = null,
         ITimeEntryCommentPublicationAuthority? commentAuthority = null,
-        InMemoryReadModelStore? batchStore = null) : WebApplicationFactory<Program>
+        InMemoryReadModelStore? batchStore = null,
+        IMagicLinkConfirmationCapabilityStateLoader? stateLoader = null) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
@@ -2012,7 +2025,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 // Port-specific tests set Connection.LocalPort before the guard; other in-process
                 // journeys explicitly open the projection route without claiming listener coverage.
                 services.Configure<InternalSurfaceOptions>(options => options.AllowOnAnyPort = internalPort is null);
-                if (!useConcreteLoader)
+                if (stateLoader is not null)
+                {
+                    services.RemoveAll<IMagicLinkConfirmationCapabilityStateLoader>();
+                    services.AddSingleton(stateLoader);
+                }
+                else if (!useConcreteLoader)
                 {
                     services.RemoveAll<IMagicLinkConfirmationCapabilityStateLoader>();
                     services.AddScoped<IMagicLinkConfirmationCapabilityStateLoader, ScriptedMagicLinkStateLoader>();
@@ -2953,10 +2971,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             => Task.FromResult(true);
     }
 
-    private sealed class CapturingLoggerProvider : ILoggerProvider
+    private sealed class CapturingLoggerProvider : ILoggerProvider, ISupportExternalScope
     {
         private readonly object _sync = new();
         private readonly List<LogRecord> _records = [];
+        private IExternalScopeProvider _scopeProvider = new LoggerExternalScopeProvider();
 
         public IReadOnlyList<LogRecord> Records
         {
@@ -2969,7 +2988,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
         }
 
-        public ILogger CreateLogger(string categoryName) => new CapturingLogger(categoryName, _records, _sync);
+        public ILogger CreateLogger(string categoryName) => new CapturingLogger(categoryName, _records, _sync, () => _scopeProvider);
+
+        public void SetScopeProvider(IExternalScopeProvider scopeProvider) => _scopeProvider = scopeProvider;
 
         public void Dispose()
         {
@@ -2979,11 +3000,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     private sealed class CapturingLogger(
         string category,
         List<LogRecord> records,
-        object sync) : ILogger
+        object sync,
+        Func<IExternalScopeProvider> scopeProvider) : ILogger
     {
         public IDisposable BeginScope<TState>(TState state)
             where TState : notnull
-            => NullScope.Instance;
+            => scopeProvider().Push(state);
 
         public bool IsEnabled(LogLevel logLevel) => true;
 
@@ -2997,22 +3019,37 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             string[] structuredState = state is IEnumerable<KeyValuePair<string, object?>> values
                 ? values.Select(static value => $"{value.Key}={value.Value}").ToArray()
                 : [];
+            List<string> scopes = [];
+            scopeProvider().ForEachScope(static (scope, captured) =>
+            {
+                if (scope is IEnumerable<KeyValuePair<string, object?>> fields)
+                {
+                    captured.AddRange(fields.Select(static field => $"{field.Key}={field.Value}"));
+                }
+                else
+                {
+                    captured.Add(scope?.ToString() ?? string.Empty);
+                }
+            }, scopes);
 
             lock (sync)
             {
-                records.Add(new LogRecord(category, formatter(state, exception), structuredState));
+                records.Add(new LogRecord(category, formatter(state, exception), structuredState)
+                {
+                    Scopes = [.. scopes],
+                    Exception = exception?.ToString(),
+                    Level = logLevel
+                });
             }
         }
     }
 
-    private sealed class NullScope : IDisposable
+    private sealed record LogRecord(string Category, string Message, string[] State)
     {
-        public static NullScope Instance { get; } = new();
+        public string[] Scopes { get; init; } = [];
 
-        public void Dispose()
-        {
-        }
+        public string? Exception { get; init; }
+
+        public LogLevel Level { get; init; }
     }
-
-    private sealed record LogRecord(string Category, string Message, string[] State);
 }
