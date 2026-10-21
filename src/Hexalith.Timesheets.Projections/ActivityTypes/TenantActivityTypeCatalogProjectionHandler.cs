@@ -133,17 +133,16 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             throw new InvalidOperationException("The aggregate history is outside the rebuild tenant.");
         }
 
+        ActivityTypeCatalogReadModel current = FromCandidate(candidate);
         ActivityTypeCatalogReadModel? aggregate = FoldAggregate(aggregateHistory);
         if (aggregate is null)
         {
             return Task.FromResult(candidate);
         }
 
-        // Guarded because a persisted candidate can deserialize with a JSON-null ProjectionFreshness,
-        // which Merge dereferences. Without the mapping that escapes as an unhandled
-        // NullReferenceException instead of this handler's declared deterministic fold failure.
+        // Candidate validation and merging both report deterministic fold failures.
         ActivityTypeCatalogReadModel merged = Guarded(() => Merge(
-            FromCandidate(candidate),
+            current,
             aggregate,
             aggregateHistory.AggregateId,
             promoteCompleteLiveHistory: false));
@@ -276,6 +275,11 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         string aggregateId,
         bool promoteCompleteLiveHistory)
     {
+        if (current is { Items: null } || aggregate.Items is null)
+        {
+            throw new InvalidOperationException("The Activity Type catalog items are missing.");
+        }
+
         Dictionary<string, ActivityTypeCatalogItem> items = (current?.Items ?? [])
             .Where(item => !string.Equals(item.ActivityTypeId.Value, aggregateId, StringComparison.Ordinal))
             .ToDictionary(static item => item.ActivityTypeId.Value, static item => item, StringComparer.Ordinal);
@@ -314,7 +318,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             return merge();
         }
         catch (Exception exception)
-            when (exception is InvalidOperationException or ArgumentException or NullReferenceException)
+            when (exception is InvalidOperationException or ArgumentException or NullReferenceException or JsonException)
         {
             throw new ProjectionFoldException(exception);
         }
@@ -329,8 +333,19 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         => new(JsonSerializer.SerializeToUtf8Bytes(model, s_jsonOptions));
 
     private static ActivityTypeCatalogReadModel FromCandidate(DomainSharedProjectionRebuildCandidate candidate)
-        => JsonSerializer.Deserialize<ActivityTypeCatalogReadModel>(candidate.State.Span, s_jsonOptions)
-            ?? throw new InvalidOperationException("The Activity Type catalog rebuild candidate is malformed.");
+        => Guarded(() =>
+        {
+            ActivityTypeCatalogReadModel model = JsonSerializer.Deserialize<ActivityTypeCatalogReadModel>(
+                candidate.State.Span, s_jsonOptions)
+                ?? throw new InvalidOperationException("The Activity Type catalog rebuild candidate is malformed.");
+            if (model.ProjectionFreshness is null || model.Items is null || model.Items.Any(static item => item is null
+                || item.ActivityTypeId is null || string.IsNullOrWhiteSpace(item.ActivityTypeId.Value)))
+            {
+                throw new InvalidOperationException("The Activity Type catalog rebuild items are malformed.");
+            }
+
+            return model;
+        });
 
     private static void Validate(ProjectionRequest request, string dispatchId)
     {

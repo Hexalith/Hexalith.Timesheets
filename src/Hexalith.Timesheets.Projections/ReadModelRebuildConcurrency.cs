@@ -13,7 +13,7 @@ namespace Hexalith.Timesheets.Projections;
 /// that rebuild write permanently instead of publishing it.
 /// </para>
 /// <para>
-/// A non-empty ETag is proof the row exists: the shipped stores return an existing row as its
+/// A non-blank ETag is proof the row exists: the shipped stores return an existing row as its
 /// deserialized value paired with its ETag. A JSON-null payload still leaves the key and its ETag
 /// in place, so that state takes <see cref="ReadModelBatchConcurrency.Match(string)"/> and heals
 /// the row. Malformed JSON throws during the store read before this policy can be selected.
@@ -21,9 +21,8 @@ namespace Hexalith.Timesheets.Projections;
 /// <para>
 /// Only an entry carrying nothing that indicates an existing row takes
 /// <see cref="ReadModelBatchConcurrency.CreateOnly"/>. An existing row a store returned without an
-/// ETag falls back to <see cref="ReadModelBatchConcurrency.LastWrite"/>, which is safe here because
-/// every plan produced in this project is a deterministic replay of the same history: overwriting
-/// re-derives identical bytes, while a permanently rejected write silently strands the projection.
+/// ETag is rejected: a tenant-slice rebuild can preserve other tenants' mutable contributions,
+/// so replay alone cannot make an unconditional write safe across the read-to-commit window.
 /// </para>
 /// </remarks>
 internal static class ReadModelRebuildConcurrency
@@ -36,10 +35,10 @@ internal static class ReadModelRebuildConcurrency
         where TValue : class
     {
         ArgumentNullException.ThrowIfNull(current);
-        return current.ETag is { Length: > 0 } etag
+        return !string.IsNullOrWhiteSpace(current.ETag) && current.ETag is { } etag
             ? ReadModelBatchConcurrency.Match(etag)
-            : current.Value is null
+            : current.Value is null && current.ETag is null
                 ? ReadModelBatchConcurrency.CreateOnly
-                : ReadModelBatchConcurrency.LastWrite;
+                : throw new InvalidOperationException("An existing rebuild row has no concurrency token.");
     }
 }

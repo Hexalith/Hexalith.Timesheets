@@ -20,7 +20,7 @@ using Shouldly;
 
 namespace Hexalith.Timesheets.Projections.Tests;
 
-public sealed class MagicLinkStateProjectionHandlerTests
+public sealed partial class MagicLinkStateProjectionHandlerTests
 {
     private static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -410,7 +410,7 @@ public sealed class MagicLinkStateProjectionHandlerTests
                 {"entries":[{"tokenHash":"hash-only","candidate":{"tenant":{"tenantId":"tenant-2"},"capabilityId":{"value":"capability-2"}}}]}
                 """));
 
-        _ = await Should.ThrowAsync<InvalidOperationException>(async () => await handler.FinalizeAsync(
+        _ = await Should.ThrowAsync<ProjectionFoldException>(async () => await handler.FinalizeAsync(
             identity,
             foreign,
             TestContext.Current.CancellationToken));
@@ -736,23 +736,28 @@ public sealed class MagicLinkStateProjectionHandlerTests
     [InlineData("catalog", "unreadable-value")]
     [InlineData("catalog", "null-etag")]
     [InlineData("catalog", "empty-etag")]
+    [InlineData("catalog", "blank-etag")]
+    [InlineData("catalog", "unreadable-empty-etag")]
+    [InlineData("catalog", "unreadable-blank-etag")]
     [InlineData("index", "absent")]
     [InlineData("index", "etag")]
     [InlineData("index", "unreadable-value")]
     [InlineData("index", "null-etag")]
     [InlineData("index", "empty-etag")]
+    [InlineData("index", "blank-etag")]
+    [InlineData("index", "unreadable-empty-etag")]
+    [InlineData("index", "unreadable-blank-etag")]
     public async Task Rebuild_finalize_chooses_write_concurrency_from_row_existence_not_from_the_value(
         string handlerName,
         string rowState)
     {
         // CreateOnly is accepted only while the key is absent, so selecting it for a row that already
         // exists strands the rebuild write permanently. Each row state needs its own arm, and neither
-        // half of the entry alone identifies existence: an ETag-only ternary collapses "exists without
-        // an ETag" onto the create-only arm, while a value-only one collapses "exists but its bytes
-        // materialize as null" onto it. No assertion on the plan's canonical value alone sees either.
+        // half of the entry alone identifies existence. A present row without a usable ETag must
+        // refuse the plan; an unreadable value with an ETag can still be healed through Match.
         var store = new ScriptedReadModelStore();
         string key = RebuildStateKey(handlerName);
-        if (rowState == "unreadable-value")
+        if (rowState.StartsWith("unreadable-", StringComparison.Ordinal))
         {
             // The shipped stores return an existing row as Deserialize<TValue>(bytes) paired with its
             // ETag. This double models a JSON-null payload with a live ETag; malformed JSON throws
@@ -764,13 +769,30 @@ public sealed class MagicLinkStateProjectionHandlerTests
             _ = SeedExistingState(store, handlerName);
         }
 
-        store.SuppressETag = rowState is "null-etag" or "empty-etag";
-        store.ETagWhenSuppressed = rowState == "empty-etag" ? string.Empty : null;
+        store.SuppressETag = rowState.EndsWith("-etag", StringComparison.Ordinal);
+        store.ETagWhenSuppressed = rowState switch
+        {
+            "empty-etag" or "unreadable-empty-etag" => string.Empty,
+            "blank-etag" or "unreadable-blank-etag" => " ",
+            _ => null
+        };
+        if (store.SuppressETag)
+        {
+            object before = store.Get<object>(key);
+            string etagBefore = store.ETagFor(key);
+            _ = await Should.ThrowAsync<InvalidOperationException>(() => RebuildAsync(
+                handlerName, store, TestContext.Current.CancellationToken));
+            store.Get<object>(key).ShouldBeSameAs(before);
+            store.ETagFor(key).ShouldBe(etagBefore);
+            store.TrySaveCount.ShouldBe(0);
+            return;
+        }
+
         ReadModelBatchConcurrency expected = rowState switch
         {
             "absent" => ReadModelBatchConcurrency.CreateOnly,
             "etag" or "unreadable-value" => ReadModelBatchConcurrency.Match(store.ETagFor(key)),
-            _ => ReadModelBatchConcurrency.LastWrite
+            _ => throw new InvalidOperationException("Unexpected row state.")
         };
 
         DomainProjectionRebuildPlan plan = await RebuildAsync(
@@ -896,7 +918,7 @@ public sealed class MagicLinkStateProjectionHandlerTests
                 new ProjectionRequest("tenant-1", "timesheets", "activity-1", [Event(1, ActivityCreated())]),
                 TestContext.Current.CancellationToken));
 
-        thrown.InnerException.ShouldBeOfType<NullReferenceException>();
+        thrown.InnerException.ShouldBeOfType<InvalidOperationException>();
         store.TrySaveCount.ShouldBe(0);
     }
 
@@ -932,7 +954,14 @@ public sealed class MagicLinkStateProjectionHandlerTests
         ProjectionFoldException thrown = await Should.ThrowAsync<ProjectionFoldException>(async () =>
             await handler.FinalizeAsync(identity, candidate, TestContext.Current.CancellationToken));
 
-        thrown.InnerException.ShouldBeOfType<NullReferenceException>();
+        if (source == "persisted")
+        {
+            thrown.InnerException.ShouldBeOfType<NullReferenceException>();
+        }
+        else
+        {
+            thrown.InnerException.ShouldBeOfType<InvalidOperationException>();
+        }
         store.TrySaveCount.ShouldBe(0);
     }
 

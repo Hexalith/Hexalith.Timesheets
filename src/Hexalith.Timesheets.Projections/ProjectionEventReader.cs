@@ -19,7 +19,9 @@ internal static class ProjectionEventReader
         List<ProjectionEventDto> received = [];
         foreach (ProjectionEventDto? projectionEvent in events)
         {
-            if (projectionEvent is null || string.IsNullOrWhiteSpace(projectionEvent.EventTypeName))
+            if (projectionEvent is null || string.IsNullOrWhiteSpace(projectionEvent.EventTypeName)
+                || string.IsNullOrWhiteSpace(projectionEvent.SerializationFormat)
+                || projectionEvent.Payload is null)
             {
                 throw new InvalidOperationException("A projection event envelope is malformed.");
             }
@@ -62,6 +64,11 @@ internal static class ProjectionEventReader
         if (!Matches<T>(projectionEvent.EventTypeName))
         {
             return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(projectionEvent.SerializationFormat) || projectionEvent.Payload is null)
+        {
+            throw new InvalidOperationException("A recognized projection event envelope is malformed.");
         }
 
         if (!string.Equals(projectionEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase))

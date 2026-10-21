@@ -451,10 +451,26 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
                 MagicLinkTokenHashCapabilityIndexProjection.StateKey,
                 cancellationToken)
             .ConfigureAwait(false);
-        MagicLinkTokenHashCapabilityIndexReadModel merged = MagicLinkTokenHashCapabilityIndexProjection.ReplaceTenant(
-            current.Value,
-            identity.TenantId,
-            ToLoaderVisibleIndex(FromCandidate(candidate), identity.TenantId));
+        MagicLinkTokenHashCapabilityIndexReadModel merged = Guarded(() =>
+        {
+            if (current.Value is { } persisted)
+            {
+                if (persisted.Entries is null || persisted.Contributions is null)
+                {
+                    throw new InvalidOperationException("The magic-link index collections are missing.");
+                }
+
+                foreach (var pair in MagicLinkTokenHashCapabilityIndexProjection.Expand(persisted))
+                {
+                    ValidateCandidateEntry(pair.Key, pair.Value);
+                }
+            }
+
+            return MagicLinkTokenHashCapabilityIndexProjection.ReplaceTenant(
+                current.Value,
+                identity.TenantId,
+                ToLoaderVisibleIndex(FromCandidate(candidate), identity.TenantId));
+        });
 
         return new DomainProjectionRebuildPlan(
             RebuildStoreName,
@@ -742,15 +758,14 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
         return MagicLinkTokenHashCapabilityIndexProjection.Apply(current, issued);
     }
 
-    private static MagicLinkTokenHashCapabilityIndexReadModel Guarded(
-        Func<MagicLinkTokenHashCapabilityIndexReadModel> apply)
+    private static TResult Guarded<TResult>(Func<TResult> apply)
     {
         try
         {
             return apply();
         }
         catch (Exception exception)
-            when (exception is InvalidOperationException or ArgumentException or NullReferenceException)
+            when (exception is InvalidOperationException or ArgumentException or NullReferenceException or JsonException)
         {
             throw new ProjectionFoldException(exception);
         }
@@ -819,12 +834,35 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
             new MagicLinkTokenHashCapabilityIndexEntry(issued.Tenant, issued.CapabilityId))));
 
     private static IndexRebuildCandidate CanonicalCandidate(IEnumerable<IndexRebuildCandidateEntry> entries)
-        => new(entries
+    {
+        IndexRebuildCandidateEntry[] received = entries.ToArray();
+        foreach (IndexRebuildCandidateEntry? entry in received)
+        {
+            if (entry is null)
+            {
+                throw new InvalidOperationException("The magic-link index rebuild entry is missing.");
+            }
+
+            ValidateCandidateEntry(entry.TokenHash, entry.Candidate);
+        }
+
+        return new(received
             .Distinct()
             .OrderBy(static entry => entry.TokenHash, StringComparer.Ordinal)
             .ThenBy(static entry => entry.Candidate.Tenant.TenantId, StringComparer.Ordinal)
             .ThenBy(static entry => entry.Candidate.CapabilityId.Value, StringComparer.Ordinal)
             .ToArray());
+    }
+
+    private static void ValidateCandidateEntry(string? tokenHash, MagicLinkTokenHashCapabilityIndexEntry? entry)
+    {
+        if (string.IsNullOrWhiteSpace(tokenHash) || entry?.Tenant is null
+            || string.IsNullOrWhiteSpace(entry.Tenant.TenantId) || entry.CapabilityId is null
+            || string.IsNullOrWhiteSpace(entry.CapabilityId.Value))
+        {
+            throw new InvalidOperationException("The magic-link index rebuild entry is malformed.");
+        }
+    }
 
     private static MagicLinkTokenHashCapabilityIndexReadModel ToLoaderVisibleIndex(
         IndexRebuildCandidate candidate,
@@ -846,11 +884,11 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
 
     private static IndexRebuildCandidate FromCandidate(
         DomainSharedProjectionRebuildCandidate candidate)
-        => CanonicalCandidate(JsonSerializer.Deserialize<IndexRebuildCandidate>(
+        => Guarded(() => CanonicalCandidate(JsonSerializer.Deserialize<IndexRebuildCandidate>(
                 candidate.State.Span,
                 s_jsonOptions)
             ?.Entries
-            ?? throw new InvalidOperationException("The magic-link index rebuild candidate is malformed."));
+            ?? throw new InvalidOperationException("The magic-link index rebuild candidate is malformed.")));
 
     private static void Validate(ProjectionRequest request, string dispatchId)
     {
