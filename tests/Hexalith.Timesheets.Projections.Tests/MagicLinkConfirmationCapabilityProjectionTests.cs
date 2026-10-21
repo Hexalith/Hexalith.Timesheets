@@ -226,6 +226,133 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
             FreshCheckpoint(1), ObservedAtUtc()));
     }
 
+    [Theory]
+    [InlineData("used", false, false)]
+    [InlineData("used", false, true)]
+    [InlineData("used", true, false)]
+    [InlineData("used", true, true)]
+    [InlineData("revoked", false, false)]
+    [InlineData("revoked", false, true)]
+    [InlineData("revoked", true, false)]
+    [InlineData("revoked", true, true)]
+    [InlineData("expired", false, false)]
+    [InlineData("expired", false, true)]
+    [InlineData("expired", true, false)]
+    [InlineData("expired", true, true)]
+    public void MixedCapabilityStreamsKeepIndependentSequenceSpaces(string terminal, bool stored, bool reverse)
+    {
+        var otherId = new MagicLinkCapabilityId("other-capability");
+        var otherTenant = new TenantReference("tenant-2");
+        var otherEntry = new TimeEntryId("other-entry");
+        MagicLinkConfirmationCapabilityIssued unrelated = Issued() with
+        {
+            CapabilityId = otherId,
+            Tenant = otherTenant,
+            TimeEntryId = otherEntry
+        };
+        object selectedTerminal = terminal switch
+        {
+            "used" => stored ? new StoredMagicLinkUsed(Used()) : Used(),
+            "revoked" => stored
+                ? new StoredMagicLinkRevoked(Revoked() with { TimeEntryId = Issued().TimeEntryId }) : Revoked(),
+            _ => stored
+                ? new StoredMagicLinkExpired(Expired() with { TimeEntryId = Issued().TimeEntryId }) : Expired()
+        };
+        object unrelatedTerminal = terminal switch
+        {
+            "used" => Used() with { CapabilityId = otherId, Tenant = otherTenant, TimeEntryId = otherEntry },
+            "revoked" => Revoked() with { CapabilityId = otherId, Tenant = otherTenant, TimeEntryId = otherEntry },
+            _ => Expired() with { CapabilityId = otherId, Tenant = otherTenant, TimeEntryId = otherEntry }
+        };
+        if (stored)
+        {
+            unrelatedTerminal = unrelatedTerminal switch
+            {
+                MagicLinkConfirmationCapabilityUsed used => new StoredMagicLinkUsed(used),
+                MagicLinkConfirmationCapabilityRevoked revoked => new StoredMagicLinkRevoked(revoked),
+                MagicLinkConfirmationCapabilityExpired expired => new StoredMagicLinkExpired(expired),
+                _ => throw new InvalidOperationException()
+            };
+        }
+
+        MagicLinkProjectionEvent[] selected =
+        [
+            Event("selected-issue", 1, stored ? new StoredMagicLinkIssued(Issued()) : Issued()),
+            Event("selected-terminal", 2, selectedTerminal)
+        ];
+        MagicLinkProjectionEvent[] mixed =
+        [
+            selected[0],
+            Event("unrelated-issue", 1, stored ? new StoredMagicLinkIssued(unrelated) : unrelated),
+            selected[0],
+            selected[1],
+            Event("unrelated-terminal", 2, unrelatedTerminal),
+            selected[1]
+        ];
+        if (reverse) Array.Reverse(mixed);
+
+        MagicLinkConfirmationCapabilityReadModel expected = Projector().Project(
+            CapabilityId(), selected, FreshCheckpoint(2), ObservedAtUtc()).ShouldNotBeNull();
+        MagicLinkConfirmationCapabilityReadModel actual = Projector().Project(
+            CapabilityId(), mixed, FreshCheckpoint(2), ObservedAtUtc()).ShouldNotBeNull();
+
+        actual.ShouldBe(expected);
+        actual.State.ShouldBe(terminal switch
+        {
+            "used" => CapabilityState.Used,
+            "revoked" => CapabilityState.Revoked,
+            _ => CapabilityState.Expired
+        });
+    }
+
+    [Fact]
+    public void UnselectedContradictoryStreamsDoNotCreateAModel()
+    {
+        MagicLinkConfirmationCapabilityIssued other = Issued() with
+        {
+            CapabilityId = new MagicLinkCapabilityId("other-capability")
+        };
+        Projector().Project(CapabilityId(),
+            [Event("other-issue", 1, other), Event("different-issue", 1, other with { Tenant = new("tenant-2") })],
+            FreshCheckpoint(1), ObservedAtUtc()).ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("used", false)]
+    [InlineData("used", true)]
+    [InlineData("revoked", false)]
+    [InlineData("revoked", true)]
+    [InlineData("expired", false)]
+    [InlineData("expired", true)]
+    public void SelectedCapabilityStillRejectsMismatchedTerminalScope(string terminal, bool foreignTenant)
+    {
+        TenantReference tenant = foreignTenant ? new("tenant-2") : Issued().Tenant;
+        TimeEntryId entry = foreignTenant ? Issued().TimeEntryId : new("other-entry");
+        object payload = terminal switch
+        {
+            "used" => new StoredMagicLinkUsed(Used() with { Tenant = tenant, TimeEntryId = entry }),
+            "revoked" => new StoredMagicLinkRevoked(Revoked() with { Tenant = tenant, TimeEntryId = entry }),
+            _ => new StoredMagicLinkExpired(Expired() with { Tenant = tenant, TimeEntryId = entry })
+        };
+
+        Should.Throw<InvalidOperationException>(() => Projector().Project(CapabilityId(),
+            [
+                Event("unrelated-issue", 1, Issued() with { CapabilityId = new("other-capability") }),
+                Event("issue", 1, Issued()),
+                Event("unrelated-terminal", 2, new StoredMagicLinkUsed(Used() with { CapabilityId = new("other-capability") })),
+                Event("bad-terminal", 2, payload)
+            ],
+            FreshCheckpoint(2), ObservedAtUtc()));
+    }
+
+    [Fact]
+    public void UnknownPayloadStillConflictsWithSelectedEvidenceAtTheSameSequence()
+    {
+        Should.Throw<InvalidOperationException>(() => Projector().Project(CapabilityId(),
+            [Event("issue", 1, Issued()), Event("unknown", 1, new { Unknown = true })],
+            FreshCheckpoint(1), ObservedAtUtc()));
+    }
+
     private static string Serialized(MagicLinkConfirmationCapabilityReadModel model)
         => JsonSerializer.Serialize(model, new JsonSerializerOptions(JsonSerializerDefaults.Web));
 

@@ -32,6 +32,20 @@ public sealed class MagicLinkConfirmationCapabilityProjection
             // terminal events belong to the capability stream. Their sequence spaces differ.
             bool ownerStream = item.Payload is StoredMagicLinkUsed or StoredMagicLinkRevoked or StoredMagicLinkExpired;
             object payload = Unwrap(item.Payload);
+            // Local sequence numbers are comparable only after selecting the capability.
+            // Other owners may legitimately issue or transition at the same sequence.
+            if (payload switch
+            {
+                MagicLinkConfirmationCapabilityIssued itemIssued => itemIssued.CapabilityId != capabilityId,
+                MagicLinkConfirmationCapabilityUsed itemUsed => itemUsed.CapabilityId != capabilityId,
+                MagicLinkConfirmationCapabilityRevoked itemRevoked => itemRevoked.CapabilityId != capabilityId,
+                MagicLinkConfirmationCapabilityExpired itemExpired => itemExpired.CapabilityId != capabilityId,
+                _ => false
+            })
+            {
+                continue;
+            }
+
             if (!ownerStream && payload is MagicLinkConfirmationCapabilityIssued issued
                 && issued.CapabilityId == capabilityId)
             {
