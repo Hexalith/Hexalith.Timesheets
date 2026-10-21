@@ -16,6 +16,19 @@ DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
 ```
 
+Use the same dependency graph for restore, build, and the built test executables.
+Compare `HexalithEventStoreVersion` in the imported catalog with the default
+forwarded by the selected Works checkout. This checkout uses
+`references/Hexalith.Builds/Props/Directory.Packages.props` and
+`references/Hexalith.Works/Directory.Build.props`. Honor an explicit
+`HexalithWorksRoot`, the references-first/sibling-second fallback, and any alternate
+Builds import when locating the actual inputs. When the selected defaults differ,
+pass `-p:HexalithEventStoreVersion=<catalog version>` to **both** local commands
+above, then run the newly built Debug executables as documented in
+[README](../README.md#build-and-test). On 2026-10-21 both defaults are `3.126.0`, so
+no override is needed at this checkout. The Works forwarding-policy follow-up
+remains open; do not carry a historical `3.125.1` workaround into a newer catalog.
+
 Release uses published sibling NuGet packages exclusively. Both
 `Directory.Solution.props` and `Directory.Build.props` default an unspecified
 configuration to Release so the shared workflow's bare restore agrees with its

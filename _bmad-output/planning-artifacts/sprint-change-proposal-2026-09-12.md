@@ -9,6 +9,18 @@ scope: moderate
 
 # Sprint Change Proposal: Reconcile Implementation Readiness After Sprint Closure
 
+**Later package-baseline decisions (reconciled 2026-10-21):** this approved proposal
+retains its September findings and targets as historical evidence. For version
+ground truth, the later accepted [Story 5.2 reconciliation](../implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md)
+and [Package-Currency Verdict](../../docs/launch-readiness.md#package-currency-verdict)
+supersede its SDK `10.0.401`, AppHost SDK `13.5.3`, and npm-not-applicable claims:
+the accepted baseline is SDK `10.0.402`, AppHost SDK `13.6.1`, and applicable root
+npm tooling. [Story 5.2 acceptance](../implementation-artifacts/evidence/5-2/20261020-final-acceptance/story-acceptance.json)
+closes that reconciliation with package currency still **CONCERNS**. The approved
+scope decisions below remain in force; this note grants no release or runtime
+acceptance. New verification reads the executable configuration and imported
+catalog rather than reapplying these historical version targets.
+
 ## 1. Issue Summary
 
 ### Trigger
