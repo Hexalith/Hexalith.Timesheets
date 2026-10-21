@@ -1,5 +1,6 @@
-"""Exercise hook stdin decoding through real subprocesses and isolated event files."""
+"""Exercise hook input and event-file confinement in isolated directories."""
 
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
 HOOK = Path(__file__).resolve().parents[2] / ".bmad-loop" / "bmad_loop_hook.py"
@@ -28,10 +30,10 @@ class BmadLoopHookInputTests(unittest.TestCase):
         )
         self.events = self.root / "run" / "events"
 
-    def invoke(self, payload, decoder="utf-8:strict"):
+    def invoke(self, payload, decoder="utf-8:strict", event_name="Stop"):
         env = {**self.env, "PYTHONIOENCODING": decoder}
         result = subprocess.run(
-            [sys.executable, "-B", str(HOOK), "Stop"],
+            [sys.executable, "-B", str(HOOK), event_name],
             input=payload,
             capture_output=True,
             env=env,
@@ -42,7 +44,7 @@ class BmadLoopHookInputTests(unittest.TestCase):
         self.assertEqual(result.stdout, b"")
         self.assertEqual(result.stderr, b"")
 
-    def assert_event(self, session_id=None, transcript_path=None, cwd=None):
+    def assert_event(self, session_id=None, transcript_path=None, cwd=None, event_name="Stop"):
         files = list(self.events.iterdir())
         self.assertEqual(len(files), 1, files)
         event_file = files[0]
@@ -51,12 +53,12 @@ class BmadLoopHookInputTests(unittest.TestCase):
         self.assertGreater(event["ts"], 0)
         self.assertEqual(
             event_file.name,
-            f'{event["ts"]}-input-regression-Stop.json',
+            f'{event["ts"]}-{self.env["BMAD_LOOP_TASK_ID"]}-{event_name}.json',
         )
         self.assertEqual(event, {
             "ts": event["ts"],
-            "event": "Stop",
-            "task_id": "input-regression",
+            "event": event_name,
+            "task_id": self.env["BMAD_LOOP_TASK_ID"],
             "session_id": session_id,
             "transcript_path": transcript_path,
             "cwd": cwd,
@@ -156,6 +158,121 @@ class BmadLoopHookInputTests(unittest.TestCase):
                 self.invoke(b"\xff", decoder)
                 self.assert_event()
                 self.assertFalse((self.root / "run").exists())
+
+    def test_unsafe_task_and_event_names_are_quiet_no_ops(self):
+        for explicit_directory in (False, True):
+            if explicit_directory:
+                self.env["BMAD_LOOP_EVENTS_DIR"] = str(self.root / "control-plane" / "events")
+            for value in ("task/../../escaped", r"task\..\..\escaped", "C:relative", "signal:stream"):
+                for field in ("task", "event"):
+                    with self.subTest(explicit_directory=explicit_directory, value=value, field=field):
+                        self.env["BMAD_LOOP_TASK_ID"] = value if field == "task" else "input-regression"
+                        self.invoke(b"{}", event_name=value if field == "event" else "Stop")
+                        self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_normal_identifiers_and_canonical_events_preserve_filename_and_payload(self):
+        self.env["BMAD_LOOP_TASK_ID"] = "task..-under_score-s\u00e9ance"
+        for event_name in ("SessionStart", "Stop", "Unknown"):
+            with self.subTest(event_name=event_name):
+                self.invoke(b'{"session_id":"original"}', event_name=event_name)
+                self.assert_event(session_id="original", event_name=event_name)
+
+
+class BmadLoopHookFilenameTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.events = self.root / "events"
+        spec = importlib.util.spec_from_file_location("hook_filename_tests", HOOK)
+        self.hook = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.hook)
+
+    def write_event(self, name, event, fallback):
+        if not fallback and not (
+            getattr(os, "O_NOFOLLOW", 0)
+            and getattr(os, "O_DIRECTORY", 0)
+            and {os.open, os.rename} <= os.supports_dir_fd
+        ):
+            self.skipTest("Directory-descriptor event writer is unavailable on this platform")
+        supported = set() if fallback else os.supports_dir_fd
+        with patch.object(self.hook.os, "supports_dir_fd", supported):
+            self.hook._write_event(str(self.events), name, event)
+
+    def test_unsafe_names_are_rejected_before_filesystem_access(self):
+        for name in (
+            "", ".", "..", "../escaped.json", "/escaped.json", "nested/event.json",
+            r"..\escaped.json", r"\escaped.json", r"nested\event.json",
+            r"C:\escaped.json", "C:escaped.json", r"\\server\share\event.json",
+            "event.json:stream", "event\x00.json",
+        ):
+            with self.subTest(name=name):
+                with patch.object(self.hook, "_is_link_like") as filesystem_probe:
+                    with self.assertRaises(OSError):
+                        self.hook._write_event(str(self.events), name, {})
+                    filesystem_probe.assert_not_called()
+                self.assertEqual(list(self.root.iterdir()), [])
+
+    def test_traversal_cannot_overwrite_outside_file_on_either_writer(self):
+        outside = self.root / "escaped-Stop.json"
+        outside.write_text("unchanged", encoding="utf-8")
+        # A separator alone would only fail with ENOENT. Supply the intermediate
+        # directory so removing the guard demonstrates an actual outside write.
+        for prefix in ("123-task", "123-input-regression-Stop"):
+            (self.events / prefix).mkdir(parents=True)
+        for fallback in (False, True):
+            for name in (
+                "123-task/../../escaped-Stop.json",
+                "123-input-regression-Stop/../../escaped-Stop.json",
+            ):
+                with self.subTest(fallback=fallback, name=name):
+                    with self.assertRaises(OSError):
+                        self.write_event(name, {"event": "Stop"}, fallback)
+                    self.assertEqual(outside.read_text(encoding="utf-8"), "unchanged")
+                    self.assertEqual(set(self.events.iterdir()), {
+                        self.events / "123-task", self.events / "123-input-regression-Stop",
+                    })
+                    self.assertEqual(list(self.events.rglob("*.tmp")), [])
+
+    def test_normal_event_is_complete_without_temporary_files_on_either_writer(self):
+        name = "123-task..-under_score-s\u00e9ance-Stop.json"
+        event = {"ts": 123, "task_id": "task..-under_score-s\u00e9ance", "event": "Stop"}
+        for fallback in (False, True):
+            with self.subTest(fallback=fallback):
+                self.write_event(name, event, fallback)
+                self.assertEqual(list(self.events.iterdir()), [self.events / name])
+                self.assertEqual(json.loads((self.events / name).read_text(encoding="utf-8")), event)
+                if os.name == "posix":
+                    self.assertEqual((self.events / name).stat().st_mode & 0o077, 0)
+                (self.events / name).unlink()
+
+    def test_redirected_event_directory_does_not_write_to_target(self):
+        target = self.root / "outside"
+        target.mkdir()
+        sentinel = target / "sentinel"
+        sentinel.write_text("unchanged", encoding="utf-8")
+        try:
+            self.events.symlink_to(target, target_is_directory=True)
+        except (OSError, NotImplementedError) as error:
+            self.skipTest(f"Directory symlinks are unavailable: {error}")
+        for fallback in (False, True):
+            with self.subTest(fallback=fallback):
+                with self.assertRaises(OSError):
+                    self.write_event("123-task-Stop.json", {"event": "Stop"}, fallback)
+                self.assertEqual(list(target.iterdir()), [sentinel])
+                self.assertEqual(sentinel.read_text(encoding="utf-8"), "unchanged")
+
+    def test_existing_temporary_file_is_preserved_on_either_writer(self):
+        self.events.mkdir()
+        name = "123-task-Stop.json"
+        sentinel = self.events / (name + ".tmp")
+        sentinel.write_text("unchanged", encoding="utf-8")
+        for fallback in (False, True):
+            with self.subTest(fallback=fallback):
+                with self.assertRaises(OSError):
+                    self.write_event(name, {"event": "Stop"}, fallback)
+                self.assertEqual(list(self.events.iterdir()), [sentinel])
+                self.assertEqual(sentinel.read_text(encoding="utf-8"), "unchanged")
 
 
 if __name__ == "__main__":

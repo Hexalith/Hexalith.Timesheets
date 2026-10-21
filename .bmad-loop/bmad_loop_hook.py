@@ -128,8 +128,14 @@ def _write_event(events_dir, name, event):
     Mode is 0o600 (narrowed from the umask-derived mode an ordinary `open()`
     produced): only the operator running the loop reads these.
 
+    `name` must be a single filename without path syntax. dir_fd anchors lookup
+    but does not prevent traversal through separators and `..`. Refuse Windows separators,
+    drive/stream syntax, and NUL on every platform before touching the filesystem.
+
     Raises OSError on any refusal or failure; the caller degrades to a no-op.
     """
+    if not name or name in (".", "..") or any(char in name for char in ("/", "\\", ":", "\x00")):
+        raise OSError("refusing an unsafe event filename")
     if _is_link_like(events_dir):
         raise OSError(f"refusing to write events into a redirected directory: {events_dir}")
     os.makedirs(events_dir, exist_ok=True)

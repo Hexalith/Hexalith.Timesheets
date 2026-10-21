@@ -16,6 +16,7 @@
 - source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
   summary: bmad-loop event filenames are not sanitized for path separators.
   evidence: `_write_event` uses `{ts}-{task_id}-{event_name}.json` with POSIX dir_fd open; a `task_id` containing `..` can walk out of the events directory.
+  resolution_note: Resolved 2026-10-21 by `spec-confine-bmad-loop-event-filenames.md`: `_write_event` rejects both separator forms, Windows drive/stream syntax, NUL, and empty/dot names before filesystem access. Invalid task/event names follow the existing quiet no-op policy; normal filenames and payload metadata are preserved. Regression tests reproduce traversal with an existing intermediate directory and protect outside sentinels through the POSIX and forced path-based writers. Bare `..` inside a basename does not itself traverse.
 
 - source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
   summary: Copilot agent wrappers do not cover every installed BMAD skill.
