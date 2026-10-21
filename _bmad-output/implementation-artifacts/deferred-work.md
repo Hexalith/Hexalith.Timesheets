@@ -11,6 +11,7 @@
 - source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
   summary: bmad-loop hook can crash on non-UTF-8 stdin.
   evidence: `json.load(sys.stdin)` in `.bmad-loop/bmad_loop_hook.py` catches JSONDecodeError and ValueError only, not UnicodeDecodeError.
+  resolution_note: Closed 2026-10-21 by `spec-pin-bmad-loop-malformed-input-behavior.md`: the reported crash is refuted because `UnicodeDecodeError` inherits from the already-caught `ValueError`. New subprocess regression tests in `scripts/tests/test_bmad_loop_hook.py` verify quiet exit 0 and complete events for malformed byte input under strict UTF-8 and surrogateescape, valid Unicode metadata, and inactive-session no-ops. Existing CI discovery includes the suite. Runtime hook behavior is unchanged; strict decoding discards malformed payload metadata, while surrogateescape retains invalid bytes inside JSON strings as escaped surrogates.
 
 - source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
   summary: bmad-loop event filenames are not sanitized for path separators.
