@@ -4,10 +4,13 @@
 # ///
 """Unit tests for resolve_personas.py — pool merge, alias, party resolution."""
 
+import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import chdir
 from pathlib import Path
+from textwrap import dedent
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import resolve_personas as rp  # noqa: E402
@@ -43,13 +46,43 @@ class TestBuildPool(unittest.TestCase):
         self.assertNotIn("morpheus", installed)
         self.assertEqual(pool["morpheus"]["persona"], "riddles")
 
-    def test_custom_override_lands_on_installed_slot_not_a_new_face(self):
-        pool, _, installed, custom = rp.build_pool(
-            AGENTS, [{"code": "analyst", "name": "Mary-Custom", "persona": "p"}])
-        self.assertNotIn("analyst", pool)
-        self.assertEqual(custom, [])  # an override is not a new face
-        self.assertEqual(pool["bmad-agent-analyst"]["source"], "custom")
-        self.assertEqual(pool["bmad-agent-analyst"]["name"], "Mary-Custom")
+    def test_custom_override_preserves_omitted_installed_fields(self):
+        agents = {code: dict(info) for code, info in AGENTS.items()}
+        agents["bmad-agent-analyst"]["description"] = "Finds the evidence."
+        for token in ("analyst", "AnAlYsT", "bmad-agent-analyst", "Mary", "mArY"):
+            with self.subTest(code=token):
+                override = {
+                    "code": token, "name": "Mary-Custom", "persona": "p",
+                    "capabilities": ["critique"], "model": "custom-model",
+                }
+                pool, index, installed, custom = rp.build_pool(agents, [override])
+                self.assertNotIn("analyst", pool)
+                self.assertEqual(index["mary-custom"], "bmad-agent-analyst")
+                self.assertEqual(installed, ["bmad-agent-analyst", "bmad-agent-pm"])
+                self.assertEqual(custom, [])
+                self.assertEqual(pool["bmad-agent-analyst"], {
+                    "code": "bmad-agent-analyst", "name": "Mary-Custom",
+                    "icon": "📊", "title": "Analyst", "description": "Finds the evidence.",
+                    "source": "custom", "persona": "p",
+                    "capabilities": ["critique"], "model": "custom-model",
+                })
+                self.assertEqual(agents["bmad-agent-analyst"]["name"], "Mary")
+
+    def test_custom_override_preserves_installed_name_when_omitted(self):
+        pool, *_ = rp.build_pool(AGENTS, [{"code": "analyst", "persona": "p"}])
+        self.assertEqual(pool["bmad-agent-analyst"]["name"], "Mary")
+
+    def test_custom_override_can_clear_fields(self):
+        overrides = [
+            {"code": "analyst", "persona": "p", "capabilities": ["critique"], "model": "custom-model"},
+            {"code": "analyst", "name": "", "icon": "", "title": "",
+             "persona": "", "capabilities": [], "model": ""},
+        ]
+        pool, *_ = rp.build_pool(AGENTS, overrides)
+        for field in ("name", "icon", "title", "persona", "model"):
+            with self.subTest(field=field):
+                self.assertEqual(pool["bmad-agent-analyst"][field], "")
+        self.assertEqual(pool["bmad-agent-analyst"]["capabilities"], [])
 
     def test_member_without_code_skipped(self):
         pool, _, _, custom = rp.build_pool(AGENTS, [{"name": "Nameless"}])
@@ -154,6 +187,109 @@ class TestResolverInvocation(unittest.TestCase):
             cmd = self._captured_command(tmp)
             self.assertIn("--project-root", cmd)
             self.assertEqual(cmd[cmd.index("--project-root") + 1], str(Path(tmp) / "project"))
+
+    def test_loads_real_layers_from_explicit_project_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project = root / "project"
+            scripts = project / "_bmad" / "scripts"
+            scripts.mkdir(parents=True)
+            project_scripts = Path(__file__).resolve().parents[5] / "_bmad" / "scripts"
+            for filename in ("resolve_customization.py", "config_utils.py"):
+                shutil.copy2(project_scripts / filename, scripts / filename)
+            skill = root / "skills" / "bmad-party-mode"
+            custom = project / "_bmad" / "custom"
+            layers = {
+                skill / "customize.toml": """
+                    [workflow]
+                    default_party = "base"
+                    party_mode = "session"
+                    party_memory = true
+                    persistent_facts = ["z-base fact", "shared fact"]
+                    [[workflow.party_members]]
+                    code = "analyst"
+                    name = "Base analyst"
+                    persona = "base persona"
+                    [[workflow.party_members]]
+                    code = "z-base"
+                    name = "Base member"
+                    [[workflow.party_groups]]
+                    id = "shared"
+                    name = "Base group"
+                    members = ["analyst"]
+                    scene = "base scene"
+                    [[workflow.party_groups]]
+                    id = "z-base"
+                    members = ["z-base"]
+                """,
+                custom / "bmad-party-mode.toml": """
+                    [workflow]
+                    default_party = "team"
+                    party_memory = false
+                    persistent_facts = ["a-team fact", "shared fact"]
+                    [[workflow.party_members]]
+                    code = "analyst"
+                    name = "Team analyst"
+                    persona = "team persona"
+                    [[workflow.party_members]]
+                    code = "a-team"
+                    name = "Team member"
+                    [[workflow.party_groups]]
+                    id = "shared"
+                    name = "Team group"
+                    members = ["a-team"]
+                    [[workflow.party_groups]]
+                    id = "a-team"
+                    members = ["a-team"]
+                """,
+                custom / "bmad-party-mode.user.toml": """
+                    [workflow]
+                    default_party = "shared"
+                    persistent_facts = ["m-user fact"]
+                    [[workflow.party_members]]
+                    code = "analyst"
+                    name = "User analyst"
+                    [[workflow.party_members]]
+                    code = "m-user"
+                    name = "User member"
+                    [[workflow.party_groups]]
+                    id = "shared"
+                    name = "User group"
+                    members = ["analyst", "m-user"]
+                    [[workflow.party_groups]]
+                    id = "m-user"
+                    members = ["m-user"]
+                """,
+            }
+            for path, body in layers.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(dedent(body), encoding="utf-8")
+            # A wrong or omitted --project-root would select these ambient overrides.
+            decoy = root / "other-project"
+            decoy_custom = decoy / "_bmad" / "custom"
+            decoy_custom.mkdir(parents=True)
+            (decoy_custom / "bmad-party-mode.user.toml").write_text(
+                '[workflow]\ndefault_party = "wrong-project"\n', encoding="utf-8")
+            with chdir(decoy):
+                workflow = rp.load_party_workflow(project, skill)
+            self.assertEqual(workflow, {
+                "default_party": "shared",
+                "party_mode": "session",
+                "party_memory": False,
+                "persistent_facts": ["z-base fact", "shared fact", "a-team fact", "shared fact", "m-user fact"],
+                "party_members": [
+                    {"code": "analyst", "name": "User analyst"},
+                    {"code": "z-base", "name": "Base member"},
+                    {"code": "a-team", "name": "Team member"},
+                    {"code": "m-user", "name": "User member"},
+                ],
+                "party_groups": [
+                    {"id": "shared", "name": "User group", "members": ["analyst", "m-user"]},
+                    {"id": "z-base", "members": ["z-base"]},
+                    {"id": "a-team", "members": ["a-team"]},
+                    {"id": "m-user", "members": ["m-user"]},
+                ],
+            })
 
 
 if __name__ == "__main__":

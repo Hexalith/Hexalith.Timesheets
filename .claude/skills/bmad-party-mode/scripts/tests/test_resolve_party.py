@@ -4,10 +4,13 @@
 # ///
 """Unit tests for resolve_party.py — merge, alias, override, group resolution."""
 
+import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import chdir
 from pathlib import Path
+from textwrap import dedent
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import resolve_party as rp  # noqa: E402
@@ -42,12 +45,45 @@ class TestBuildCollective(unittest.TestCase):
         self.assertEqual(col["morpheus"]["source"], "custom")
         self.assertEqual(col["morpheus"]["persona"], "riddles")
 
-    def test_custom_overrides_installed_by_alias(self):
-        col, _, _ = rp.build_collective(AGENTS, [{"code": "analyst", "name": "Mary-Custom", "persona": "p"}])
-        # Override lands on the canonical installed code, not a new "analyst" entry.
-        self.assertNotIn("analyst", col)
-        self.assertEqual(col["bmad-agent-analyst"]["source"], "custom")
-        self.assertEqual(col["bmad-agent-analyst"]["name"], "Mary-Custom")
+    def test_custom_override_preserves_omitted_installed_fields(self):
+        agents = {code: dict(info) for code, info in AGENTS.items()}
+        agents["bmad-agent-analyst"].update({
+            "description": "Finds the evidence.", "module": "bmm", "team": "planning",
+        })
+        for token in ("analyst", "AnAlYsT", "bmad-agent-analyst", "Mary", "mArY"):
+            with self.subTest(code=token):
+                override = {
+                    "code": token, "name": "Mary-Custom", "persona": "p",
+                    "capabilities": ["critique"], "model": "custom-model",
+                }
+                col, index, installed = rp.build_collective(agents, [override])
+                self.assertNotIn("analyst", col)
+                self.assertEqual(index["mary-custom"], "bmad-agent-analyst")
+                self.assertEqual(installed, ["bmad-agent-analyst", "bmad-agent-pm"])
+                self.assertEqual(col["bmad-agent-analyst"], {
+                    "code": "bmad-agent-analyst", "name": "Mary-Custom",
+                    "icon": "📊", "title": "Analyst", "description": "Finds the evidence.",
+                    "module": "bmm", "team": "planning",
+                    "source": "custom", "persona": "p",
+                    "capabilities": ["critique"], "model": "custom-model",
+                })
+                self.assertEqual(agents["bmad-agent-analyst"]["name"], "Mary")
+
+    def test_custom_override_preserves_installed_name_when_omitted(self):
+        col, *_ = rp.build_collective(AGENTS, [{"code": "analyst", "persona": "p"}])
+        self.assertEqual(col["bmad-agent-analyst"]["name"], "Mary")
+
+    def test_custom_override_can_clear_fields(self):
+        overrides = [
+            {"code": "analyst", "persona": "p", "capabilities": ["critique"], "model": "custom-model"},
+            {"code": "analyst", "name": "", "icon": "", "title": "",
+             "persona": "", "capabilities": [], "model": ""},
+        ]
+        col, *_ = rp.build_collective(AGENTS, overrides)
+        for field in ("name", "icon", "title", "persona", "model"):
+            with self.subTest(field=field):
+                self.assertEqual(col["bmad-agent-analyst"][field], "")
+        self.assertEqual(col["bmad-agent-analyst"]["capabilities"], [])
 
     def test_member_without_code_skipped(self):
         col, _, _ = rp.build_collective(AGENTS, [{"name": "Nameless"}])
@@ -62,6 +98,13 @@ class TestResolveMembers(unittest.TestCase):
         resolved, unresolved = rp.resolve_members(["morpheus", "analyst", "ghost"], self.col, self.idx)
         self.assertEqual([m["code"] for m in resolved], ["morpheus", "bmad-agent-analyst"])
         self.assertEqual(unresolved, ["ghost"])
+
+    def test_non_string_members_remain_unresolved_without_disrupting_valid_members(self):
+        malformed = [123, ["analyst"], {"code": "analyst"}, None, False]
+        tokens = ["morpheus", *malformed, "ghost", "Analyst"]
+        resolved, unresolved = rp.resolve_members(tokens, self.col, self.idx)
+        self.assertEqual([m["code"] for m in resolved], ["morpheus", "bmad-agent-analyst"])
+        self.assertEqual(unresolved, [*malformed, "ghost"])
 
     def test_empty(self):
         self.assertEqual(rp.resolve_members([], self.col, self.idx), ([], []))
@@ -177,6 +220,109 @@ class TestResolverInvocation(unittest.TestCase):
             cmd = self._captured_command(tmp)
             self.assertIn("--project-root", cmd)
             self.assertEqual(cmd[cmd.index("--project-root") + 1], str(Path(tmp) / "project"))
+
+    def test_loads_real_layers_from_explicit_project_root(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project = root / "project"
+            scripts = project / "_bmad" / "scripts"
+            scripts.mkdir(parents=True)
+            project_scripts = Path(__file__).resolve().parents[5] / "_bmad" / "scripts"
+            for filename in ("resolve_customization.py", "config_utils.py"):
+                shutil.copy2(project_scripts / filename, scripts / filename)
+            skill = root / "skills" / "bmad-party-mode"
+            custom = project / "_bmad" / "custom"
+            layers = {
+                skill / "customize.toml": """
+                    [workflow]
+                    default_party = "base"
+                    party_mode = "session"
+                    party_memory = true
+                    persistent_facts = ["z-base fact", "shared fact"]
+                    [[workflow.party_members]]
+                    code = "analyst"
+                    name = "Base analyst"
+                    persona = "base persona"
+                    [[workflow.party_members]]
+                    code = "z-base"
+                    name = "Base member"
+                    [[workflow.party_groups]]
+                    id = "shared"
+                    name = "Base group"
+                    members = ["analyst"]
+                    scene = "base scene"
+                    [[workflow.party_groups]]
+                    id = "z-base"
+                    members = ["z-base"]
+                """,
+                custom / "bmad-party-mode.toml": """
+                    [workflow]
+                    default_party = "team"
+                    party_memory = false
+                    persistent_facts = ["a-team fact", "shared fact"]
+                    [[workflow.party_members]]
+                    code = "analyst"
+                    name = "Team analyst"
+                    persona = "team persona"
+                    [[workflow.party_members]]
+                    code = "a-team"
+                    name = "Team member"
+                    [[workflow.party_groups]]
+                    id = "shared"
+                    name = "Team group"
+                    members = ["a-team"]
+                    [[workflow.party_groups]]
+                    id = "a-team"
+                    members = ["a-team"]
+                """,
+                custom / "bmad-party-mode.user.toml": """
+                    [workflow]
+                    default_party = "shared"
+                    persistent_facts = ["m-user fact"]
+                    [[workflow.party_members]]
+                    code = "analyst"
+                    name = "User analyst"
+                    [[workflow.party_members]]
+                    code = "m-user"
+                    name = "User member"
+                    [[workflow.party_groups]]
+                    id = "shared"
+                    name = "User group"
+                    members = ["analyst", "m-user"]
+                    [[workflow.party_groups]]
+                    id = "m-user"
+                    members = ["m-user"]
+                """,
+            }
+            for path, body in layers.items():
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(dedent(body), encoding="utf-8")
+            # A wrong or omitted --project-root would select these ambient overrides.
+            decoy = root / "other-project"
+            decoy_custom = decoy / "_bmad" / "custom"
+            decoy_custom.mkdir(parents=True)
+            (decoy_custom / "bmad-party-mode.user.toml").write_text(
+                '[workflow]\ndefault_party = "wrong-project"\n', encoding="utf-8")
+            with chdir(decoy):
+                workflow = rp.load_workflow(project, skill)
+            self.assertEqual(workflow, {
+                "default_party": "shared",
+                "party_mode": "session",
+                "party_memory": False,
+                "persistent_facts": ["z-base fact", "shared fact", "a-team fact", "shared fact", "m-user fact"],
+                "party_members": [
+                    {"code": "analyst", "name": "User analyst"},
+                    {"code": "z-base", "name": "Base member"},
+                    {"code": "a-team", "name": "Team member"},
+                    {"code": "m-user", "name": "User member"},
+                ],
+                "party_groups": [
+                    {"id": "shared", "name": "User group", "members": ["analyst", "m-user"]},
+                    {"id": "z-base", "members": ["z-base"]},
+                    {"id": "a-team", "members": ["a-team"]},
+                    {"id": "m-user", "members": ["m-user"]},
+                ],
+            })
 
 
 if __name__ == "__main__":
