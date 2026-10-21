@@ -3,9 +3,22 @@ using Hexalith.Timesheets.Server.Authorization;
 namespace Hexalith.Timesheets.Runtime;
 
 /// <summary>Allows isolated local Dapr acceptance data in Development only.</summary>
-internal sealed class LiveDaprFixtureAccessGuard : ITimesheetsAccessGuard
+internal sealed class LiveDaprFixtureAccessGuard : ITimesheetsAccessGuard, ITimesheetsTenantAccessValidator
 {
     private const string TenantPrefix = "live-dapr-";
+
+    /// <inheritdoc/>
+    public async ValueTask<TimesheetsTenantAccessResult> ValidateAsync(
+        TimesheetsRequestContext context,
+        TimesheetsOperation operation,
+        CancellationToken cancellationToken)
+    {
+        TimesheetsAuthorizationDecision decision = await AuthorizeAsync(new(context, operation), cancellationToken)
+            .ConfigureAwait(false);
+        return decision.IsAuthorized
+            ? TimesheetsTenantAccessResult.Authorized()
+            : TimesheetsTenantAccessResult.Denied(TimesheetsTenantAccessState.NonMember, decision.Reason);
+    }
 
     /// <inheritdoc/>
     public ValueTask<TimesheetsAuthorizationDecision> AuthorizeAsync(

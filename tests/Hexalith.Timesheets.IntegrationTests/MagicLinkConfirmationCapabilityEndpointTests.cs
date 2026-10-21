@@ -72,10 +72,12 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         endpoint.ShouldNotContain("command.Tenant");
         endpoint.ShouldNotContain("command.Actor");
         endpoint.ShouldNotContain("command.CorrelationId");
-        string withoutPublicRouteContract = endpoint
+        endpoint.ShouldContain(".RequireAuthorization(EventStoreDomainServicePolicies.Process)");
+        string withoutSdkRouteContracts = endpoint
             .Replace("using Hexalith.EventStore.DomainService;", string.Empty, StringComparison.Ordinal)
-            .Replace("AllowEventStorePublicEndpoint", string.Empty, StringComparison.Ordinal);
-        withoutPublicRouteContract.ShouldNotContain("EventStore");
+            .Replace("AllowEventStorePublicEndpoint", string.Empty, StringComparison.Ordinal)
+            .Replace(".RequireAuthorization(EventStoreDomainServicePolicies.Process)", string.Empty, StringComparison.Ordinal);
+        withoutSdkRouteContracts.ShouldNotContain("EventStore");
         endpoint.ShouldNotContain("inspect", Case.Insensitive);
         endpoint.ShouldNotContain("bearer", Case.Insensitive);
         endpoint.ShouldNotContain("rawToken", Case.Insensitive);

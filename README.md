@@ -87,4 +87,6 @@ Authoritative domain state must flow through Hexalith.EventStore. Do not add SQL
 
 Tenant and resource authority is resolved by server-side gates before aggregate load, command dispatch, projection read, export, or disclosure. JWT claims and caller-submitted context are evidence, not authority.
 
+Magic-link issue, revoke, and expire routes require a signed `domain-service:process` workload assertion and server-side authorization. Service consumers must use `MagicLinkConfirmationCapabilityCommandService.ExpireAsync` for authorized expiry. The obsolete synchronous `Expire` method now always returns an authorization-required rejection.
+
 Timesheets supplies contracts and FrontComposer-compatible metadata. A consuming FrontComposer host owns rendered Fluent UI V5 composition, responsive behavior, and browser/WCAG 2.2 AA evidence. Do not add a Timesheets UI project.

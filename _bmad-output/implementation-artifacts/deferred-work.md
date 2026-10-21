@@ -404,6 +404,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Authorize admin issue/revoke/expire requests before the loader replays capability streams or reads the tenant catalog.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. Issuance authorizes its known contributor and Project/Work references before catalog/capability reads. Revoke and expire require tenant/role admission before loading and retain complete resource authorization afterwards. Focused HTTP regressions prove denied admission performs no loader reads or submissions, and resource denial preserves stored state after successful coarse admission. Production fail-closed defaults remain unchanged.
   evidence: `MagicLinkConfirmationCapabilityEndpoints.cs:36` and `:39`, plus the revoke and expire routes, call `LoadActivityTypeCatalogAsync`/`LoadCapabilityAsync` before the command service runs `_accessGuard.AuthorizeAsync`. This order predates Story 3.6 (Story 3.2 endpoints), and the story task accepted it. It cannot be reached today because no authentication scheme is registered, so the accessor's tenant is null and the loader returns before any I/O. Once the authentication entry above lands, an authenticated but unauthorized caller makes the host fold capability IDs it chose, plus its claimed tenant's catalog, before denial.
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
@@ -439,6 +440,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Reject null capability identifiers on revoke and expire before dereferencing them.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. Both transition routes check for a null CapabilityId before its Value or any protected work. HTTP regressions exercise explicit null and omitted IDs for revoke and expire, requiring the opaque denial, zero loader/authorization/submission/token work, and empty stored capability state.
   evidence: Both unchanged management endpoints dereference command.CapabilityId.Value before the loader; otherwise-valid in-process null-id requests reproduce HTTP 500. This predates the current loader hardening.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
@@ -455,6 +457,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Require the capability id, contributor, Time Entry id and audit source in magic-link issuance validation.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. Aggregate validation now requires all four members; the HTTP boundary refuses incomplete commands before protected work and the direct service refuses them before token generation. Aggregate/service tests assert required-field rejections and no issuance event/token, while HTTP tests cover omitted and explicit-null scope, contributor, Time Entry ID and source, alongside existing capability-ID controls.
   evidence: `ValidateIssue` (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapability.cs:245`) checks scope, target, target kind, action, expiry and token hash, but not `CapabilityId`, `Scope.Contributor`, `Scope.TimeEntryId` or `Source`. `TimesheetsAccessGuard.cs:159` treats a null contributor as optional. An authorized issuance body that omits the contributor, Time Entry id or source returns 202 with a one-time token, and `HandleIssue` emits `MagicLinkConfirmationCapabilityIssued` with null members. The HTTP route persists nothing until durable submission lands. Pre-existing; the `8f89a6e` endpoint guard covers only `CapabilityId`. Medium once issuance is durable.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
@@ -517,10 +520,12 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
   summary: Give magic-link management endpoints a route-specific workload policy.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. The management group requires the existing EventStoreDomainServicePolicies.Process policy, matching the successful fixture and local journey's domain-service:process assertions. Signed Query and Project assertions are refused on all three routes before handler authorization, loader reads or submission. Public capability routes remain outside the protected management group; this does not supply production tenant/actor identity.
   evidence: The SDK fallback policy checks for an authenticated workload and any operation claim. The unchanged issuance, revoke, and expire endpoints declare no specific operation policy; a signed assertion for an unrelated operation can reach their handlers. Issue and revoke still use the Timesheets access guard. Select a management operation and test wrong-operation refusal in a dedicated authorization increment.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
   summary: Add the missing server-side authorization decision to magic-link expiry before durable submission.
+  resolution_note: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. The endpoint uses ExpireAsync and requires an authorized successful result before submission; EventStore processing retains its independent ExpireResolvedAsync revalidation. The retained synchronous Expire is obsolete and fails closed, with migration guidance in README. Service and HTTP tests deny already-expired capabilities without state changes, isolating authorization from premature-expiry rejection; existing authorized expiry and no-human-actor controls remain required.
   evidence: `MagicLinkConfirmationCapabilityCommandService.Expire` calls `HandleExpire` without the access-guard check present in `IssueAsync` and `RevokeAsync`. The current HTTP route has workload fallback and does not durably submit the returned event, but future management wiring must not make this result an unauthorized write.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`

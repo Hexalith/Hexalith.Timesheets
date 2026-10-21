@@ -45,6 +45,8 @@ if (builder.Environment.IsDevelopment()
 {
     // The local proof accepts only isolated tenants carried by signed workload bindings.
     builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsAccessGuard, LiveDaprFixtureAccessGuard>());
+    builder.Services.Replace(ServiceDescriptor.Singleton<ITimesheetsTenantAccessValidator>(
+        static provider => (LiveDaprFixtureAccessGuard)provider.GetRequiredService<ITimesheetsAccessGuard>()));
     builder.Services.AddSingleton<IClaimsTransformation, LiveDaprFixtureClaimsTransformation>();
     builder.Services.Configure<Hexalith.Timesheets.Server.MagicLinks.MagicLinkSubmissionPollingOptions>(
         options => options.Timeout = TimeSpan.FromSeconds(30));

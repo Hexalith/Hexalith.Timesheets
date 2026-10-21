@@ -5,6 +5,7 @@ using Hexalith.EventStore.DomainService;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
+using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -22,7 +23,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        RouteGroupBuilder group = endpoints.MapGroup("/api/timesheets/magic-links/confirmation-capabilities");
+        RouteGroupBuilder group = endpoints.MapGroup("/api/timesheets/magic-links/confirmation-capabilities")
+            .RequireAuthorization(EventStoreDomainServicePolicies.Process);
 
         group.MapPost(
             "/",
@@ -30,28 +32,44 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 IssueMagicLinkConfirmationCapability command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
+                ITimesheetsAccessGuard accessGuard,
                 MagicLinkDurableSubmissionService submission,
                 IMagicLinkTokenGenerator tokenGenerator,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
-                if (command.CapabilityId is null)
+                if (command.CapabilityId is null || command.Scope?.Contributor is null
+                    || command.Scope.TimeEntryId is null || command.Source is null)
                 {
                     return Denied();
                 }
 
                 ClaimsPrincipal user = httpContext.User;
+                var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
+                    FirstClaimValue(user, "tenant_id", "tenant"),
+                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    httpContext.TraceIdentifier);
+                TimesheetsAuthorizationDecision admission = await accessGuard.AuthorizeAsync(
+                    new(trustedContext, TimesheetsOperation.MagicLinkIssuance)
+                    {
+                        Contributor = command.Scope.Contributor,
+                        Project = command.Scope.Target?.TargetKind == TimeEntryTargetKind.Project
+                            ? new ProjectReference(command.Scope.Target.TargetId) : null,
+                        Work = command.Scope.Target?.TargetKind == TimeEntryTargetKind.Work
+                            ? new WorkReference(command.Scope.Target.TargetId) : null
+                    }, cancellationToken).ConfigureAwait(false);
+                if (!admission.IsAuthorized)
+                {
+                    return Denied();
+                }
+
                 ActivityTypeCatalogReadModel catalog = await stateLoader
                     .LoadActivityTypeCatalogAsync(cancellationToken)
                     .ConfigureAwait(false);
                 ServerMagicLinkCapabilityState? state = await stateLoader
                     .LoadCapabilityAsync(command.CapabilityId, cancellationToken)
                     .ConfigureAwait(false);
-                var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                        httpContext.TraceIdentifier);
                 DateTimeOffset issuedAtUtc = timeProvider.GetUtcNow();
                 MagicLinkCapabilityCommandResult result = await service.IssueAsync(
                     trustedContext,
@@ -86,24 +104,32 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 RevokeMagicLinkConfirmationCapability command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
+                ITimesheetsTenantAccessValidator tenantAccessValidator,
                 MagicLinkDurableSubmissionService submission,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
-                if (!StringComparer.Ordinal.Equals(capabilityId, command.CapabilityId.Value))
+                if (command.CapabilityId is null || !StringComparer.Ordinal.Equals(capabilityId, command.CapabilityId.Value))
                 {
                     return Denied();
                 }
 
                 ClaimsPrincipal user = httpContext.User;
+                var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
+                    FirstClaimValue(user, "tenant_id", "tenant"),
+                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    httpContext.TraceIdentifier);
+                TimesheetsTenantAccessResult admission = await tenantAccessValidator.ValidateAsync(
+                    trustedContext, TimesheetsOperation.MagicLinkIssuance, cancellationToken).ConfigureAwait(false);
+                if (!admission.IsAuthorized)
+                {
+                    return Denied();
+                }
+
                 ServerMagicLinkCapabilityState? state = await stateLoader
                     .LoadCapabilityAsync(command.CapabilityId, cancellationToken)
                     .ConfigureAwait(false);
-                var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                        httpContext.TraceIdentifier);
                 DateTimeOffset revokedAtUtc = timeProvider.GetUtcNow();
                 MagicLinkCapabilityCommandResult result = await service.RevokeAsync(
                     trustedContext,
@@ -134,30 +160,41 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ExpireMagicLinkConfirmationCapability command,
                 HttpContext httpContext,
                 MagicLinkConfirmationCapabilityCommandService service,
+                ITimesheetsTenantAccessValidator tenantAccessValidator,
                 MagicLinkDurableSubmissionService submission,
                 IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
-                if (!StringComparer.Ordinal.Equals(capabilityId, command.CapabilityId.Value))
+                if (command.CapabilityId is null || !StringComparer.Ordinal.Equals(capabilityId, command.CapabilityId.Value))
                 {
                     return Denied();
                 }
 
                 ClaimsPrincipal user = httpContext.User;
-                ServerMagicLinkCapabilityState? state = await stateLoader
-                    .LoadCapabilityAsync(command.CapabilityId, httpContext.RequestAborted)
-                    .ConfigureAwait(false);
                 var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
                     FirstClaimValue(user, "tenant_id", "tenant"),
                     FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
                     httpContext.TraceIdentifier);
+                TimesheetsTenantAccessResult admission = await tenantAccessValidator.ValidateAsync(
+                    trustedContext, TimesheetsOperation.MagicLinkIssuance, cancellationToken).ConfigureAwait(false);
+                if (!admission.IsAuthorized)
+                {
+                    return Denied();
+                }
+
+                ServerMagicLinkCapabilityState? state = await stateLoader
+                    .LoadCapabilityAsync(command.CapabilityId, httpContext.RequestAborted)
+                    .ConfigureAwait(false);
                 DateTimeOffset expiredAtUtc = timeProvider.GetUtcNow();
-                return !service.Expire(
+                MagicLinkCapabilityCommandResult result = await service.ExpireAsync(
+                    trustedContext,
                     command,
                     state,
-                    trustedContext,
-                    expiredAtUtc).IsRejection
+                    expiredAtUtc,
+                    cancellationToken).ConfigureAwait(false);
+                return result.Authorization.IsAuthorized
+                    && result.DomainResult?.IsSuccess == true
                     && state?.TimeEntryId is { } timeEntryId
                     && trustedContext.Tenant is { } tenant
                     && await submission.SubmitTransitionAsync(

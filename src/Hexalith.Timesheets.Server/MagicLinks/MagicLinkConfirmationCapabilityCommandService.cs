@@ -59,16 +59,17 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return new(authorization, rejection);
         }
 
-        if (state?.Exists == true)
+        if (state?.Exists == true || command.CapabilityId is null || command.Scope.Contributor is null
+            || command.Scope.TimeEntryId is null || command.Source is null)
         {
-            TimesheetsDomainResult duplicate = MagicLinkConfirmationCapability.HandleIssue(
+            TimesheetsDomainResult validation = MagicLinkConfirmationCapability.HandleIssue(
                 command,
                 state,
                 context.Tenant,
                 context.Actor,
-                new MagicLinkTokenHash("duplicate-state-placeholder"),
+                new MagicLinkTokenHash("validation-only-placeholder"),
                 issuedAtUtc);
-            return new(authorization, duplicate);
+            return new(authorization, validation);
         }
 
         MagicLinkTokenMaterial token = _tokenGenerator.Generate();
@@ -153,6 +154,33 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             : new(authorization, null);
     }
 
+    /// <summary>Authorizes expiry against the same management gate as revocation.</summary>
+    /// <param name="context">The server-resolved request authority.</param>
+    /// <param name="command">The expiry request.</param>
+    /// <param name="state">The authoritative capability state.</param>
+    /// <param name="expiredAtUtc">The UTC expiry evaluation instant.</param>
+    /// <param name="cancellationToken">The request cancellation token.</param>
+    /// <returns>The authorization decision and, when authorized, aggregate result.</returns>
+    public ValueTask<MagicLinkCapabilityCommandResult> ExpireAsync(
+        TimesheetsRequestContext context,
+        ExpireMagicLinkConfirmationCapability command,
+        MagicLinkCapabilityState? state,
+        DateTimeOffset expiredAtUtc,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(context);
+
+        return ExpireResolvedAsync(context, command, state, expiredAtUtc, cancellationToken);
+    }
+
+    /// <summary>Refuses synchronous expiry because it cannot evaluate asynchronous authorization. Use <see cref="ExpireAsync"/>.</summary>
+    /// <param name="command">The expiry request.</param>
+    /// <param name="state">The capability state.</param>
+    /// <param name="context">The request context.</param>
+    /// <param name="expiredAtUtc">The expiry evaluation instant.</param>
+    /// <returns>An authorization-required rejection.</returns>
+    [Obsolete("Synchronous expiry fails closed. Use ExpireAsync to evaluate management authorization.")]
     public TimesheetsDomainResult Expire(
         ExpireMagicLinkConfirmationCapability command,
         MagicLinkCapabilityState? state,
@@ -162,7 +190,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(context);
 
-        return MagicLinkConfirmationCapability.HandleExpire(command, state, context.Tenant, expiredAtUtc);
+        return Reject(TimesheetsRejectionCode.AuthorityCannotBeResolved,
+            "Magic-link expiry requires asynchronous management authorization.", "capability", "authorization-required");
     }
 
     public async ValueTask<MagicLinkConfirmationUseResult> ConfirmAsync(

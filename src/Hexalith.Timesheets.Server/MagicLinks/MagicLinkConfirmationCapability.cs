@@ -250,6 +250,16 @@ public static class MagicLinkConfirmationCapability
         DateTimeOffset issuedAtUtc,
         List<TimesheetsFieldError> errors)
     {
+        if (command.CapabilityId is null)
+        {
+            errors.Add(new("capabilityId", "required", "Magic-link capability identifier is required."));
+        }
+
+        if (command.Source is null)
+        {
+            errors.Add(new("source", "required", "Magic-link audit source is required."));
+        }
+
         if (tenant is null)
         {
             errors.Add(new("tenant", "required", "Tenant authority is required."));
@@ -269,6 +279,16 @@ public static class MagicLinkConfirmationCapability
         if (command.Scope.Target is null || command.Scope.Target.TargetKind == TimeEntryTargetKind.Unknown)
         {
             errors.Add(new("target", "required", "Magic-link target is required."));
+        }
+
+        if (command.Scope.Contributor is null)
+        {
+            errors.Add(new("contributor", "required", "Magic-link contributor is required."));
+        }
+
+        if (command.Scope.TimeEntryId is null)
+        {
+            errors.Add(new("timeEntryId", "required", "Magic-link Time Entry identifier is required."));
         }
 
         if (command.Scope.TargetKind is not (MagicLinkTargetKind.ProposedTimeEntry

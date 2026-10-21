@@ -22,7 +22,7 @@ using CapabilityStateData = Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapab
 
 namespace Hexalith.Timesheets.Server.Tests;
 
-public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
+public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
 {
     [Fact]
     public async Task Issue_magic_link_stores_hash_and_metadata_only_and_returns_one_time_token()
@@ -276,15 +276,16 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public void Expire_magic_link_rejects_premature_expiry_before_expiry_instant()
+    public async Task ExpireMagicLinkRejectsPrematureExpiryBeforeExpiryInstant()
     {
-        TimesheetsDomainResult result = new Fixture().CreateService().Expire(
+        MagicLinkCapabilityCommandResult result = await AuthorizedProjectFixture().CreateService().ExpireAsync(
+            Context(),
             ExpireCommand(),
             IssuedState(),
-            Context(),
-            IssuedAtUtc());
+            IssuedAtUtc(),
+            TestContext.Current.CancellationToken);
 
-        result.IsRejection.ShouldBeTrue();
+        result.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
     }
 
     [Fact]
@@ -348,17 +349,17 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public void Expire_magic_link_records_auditable_policy_state()
+    public async Task ExpireMagicLinkRecordsAuditablePolicyState()
     {
-        MagicLinkCapabilityCommandResult issue = null!;
-        TimesheetsDomainResult result = new Fixture().CreateService().Expire(
+        MagicLinkCapabilityCommandResult result = await AuthorizedProjectFixture().CreateService().ExpireAsync(
+            Context(),
             ExpireCommand(),
             IssuedState(),
-            Context(),
-            ExpiresAtUtc());
+            ExpiresAtUtc(),
+            TestContext.Current.CancellationToken);
 
-        issue.ShouldBeNull();
-        MagicLinkConfirmationCapabilityExpired expired = result.Events.ShouldHaveSingleItem()
+        result.Authorization.IsAuthorized.ShouldBeTrue();
+        MagicLinkConfirmationCapabilityExpired expired = result.DomainResult.ShouldNotBeNull().Events.ShouldHaveSingleItem()
             .ShouldBeOfType<MagicLinkConfirmationCapabilityExpired>();
         expired.ExpiredAtUtc.ShouldBe(ExpiresAtUtc());
     }
@@ -381,14 +382,15 @@ public sealed class MagicLinkConfirmationCapabilityCommandServiceTests
             null,
             RevokedAtUtc(),
             TestContext.Current.CancellationToken);
-        TimesheetsDomainResult terminalExpire = fixture.CreateService().Expire(
+        MagicLinkCapabilityCommandResult terminalExpire = await fixture.CreateService().ExpireAsync(
+            Context(),
             ExpireCommand(),
             terminal,
-            Context(),
-            ExpiresAtUtc());
+            ExpiresAtUtc(),
+            TestContext.Current.CancellationToken);
 
         unknownRevoke.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
-        terminalExpire.IsRejection.ShouldBeTrue();
+        terminalExpire.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
     }
 
     [Fact]

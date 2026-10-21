@@ -49,6 +49,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Options;
 
+using NSubstitute;
+
 using Shouldly;
 
 using ServerCapabilityState = Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState;
@@ -1769,11 +1771,15 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         ExternalContributionPolicyOptions? externalContributionPolicy = null,
         ITimeEntryCommentPublicationAuthority? commentAuthority = null,
         InMemoryReadModelStore? batchStore = null,
-        IMagicLinkConfirmationCapabilityStateLoader? stateLoader = null) : WebApplicationFactory<Program>
+        IMagicLinkConfirmationCapabilityStateLoader? stateLoader = null,
+        bool useLiveFixtureAdmission = false) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
         public ScriptedAccessGuard AccessGuard { get; } = new();
+
+        /// <summary>Gets the tenant/role admission seam used before transition state reads.</summary>
+        public ITimesheetsTenantAccessValidator TenantAccessValidator { get; } = CreateTenantAccessValidator();
 
         public CapturingLoggerProvider Logs { get; } = new();
 
@@ -1993,6 +1999,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            if (useLiveFixtureAdmission)
+            {
+                builder.UseEnvironment("Development");
+                builder.UseSetting("Timesheets:LiveDaprFixture:Enabled", "true");
+            }
+
             builder.UseSetting(DaprAppChannelToken.ConfigurationKey, ChannelToken);
             builder.UseSetting("EventStore:DomainService:AppId", "timesheets");
             builder.UseSetting("Authentication:JwtBearer:Issuer", "timesheets-test-issuer");
@@ -2036,8 +2048,13 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     services.AddScoped<IMagicLinkConfirmationCapabilityStateLoader, ScriptedMagicLinkStateLoader>();
                 }
 
-                services.RemoveAll<ITimesheetsAccessGuard>();
-                services.AddSingleton<ITimesheetsAccessGuard>(AccessGuard);
+                if (!useLiveFixtureAdmission)
+                {
+                    services.RemoveAll<ITimesheetsAccessGuard>();
+                    services.AddSingleton<ITimesheetsAccessGuard>(AccessGuard);
+                    services.RemoveAll<ITimesheetsTenantAccessValidator>();
+                    services.AddSingleton(TenantAccessValidator);
+                }
 
                 if (externalContributionPolicy is not null)
                 {
@@ -2194,14 +2211,23 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             return await client.SendAsync(request, cancellationToken);
         }
 
-        public async Task<HttpResponseMessage> PostProtectedManagementAsync<T>(HttpClient client, string route, T body)
+        public async Task<HttpResponseMessage> PostProtectedManagementAsync<T>(HttpClient client, string route, T body,
+            string operation = EventStoreWorkloadOperations.DomainServiceProcess)
         {
             using HttpRequestMessage request = new(HttpMethod.Post, route)
             {
                 Content = JsonContent.Create(body, options: JsonOptions)
             };
-            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess);
+            await AddWorkloadHeadersAsync(request, operation);
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
+        private static ITimesheetsTenantAccessValidator CreateTenantAccessValidator()
+        {
+            ITimesheetsTenantAccessValidator validator = Substitute.For<ITimesheetsTenantAccessValidator>();
+            validator.ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimesheetsOperation>(), Arg.Any<CancellationToken>())
+                .Returns(TimesheetsTenantAccessResult.Authorized());
+            return validator;
         }
 
         private async Task AddWorkloadHeadersAsync(HttpRequestMessage request, string operation, string? assertion = null)
@@ -2374,6 +2400,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         public Func<CancellationToken, ValueTask>? OnAuthorizeAsync { get; set; }
 
+        /// <summary>Overrides the gate decision to distinguish coarse and resource-level refusals.</summary>
+        public Func<TimesheetsAuthorizationRequest, TimesheetsAuthorizationDecision>? DecisionOverride { get; set; }
+
         /// <summary>Gets the last request passed to the service's authorization boundary.</summary>
         public TimesheetsAuthorizationRequest? LastAuthorizationRequest { get; private set; }
 
@@ -2415,10 +2444,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 Decision(request),
                 deniedVisibility));
 
-        private static TimesheetsAuthorizationDecision Decision(TimesheetsAuthorizationRequest request)
-            => request.Contributor == UnauthorizedContributor()
+        private TimesheetsAuthorizationDecision Decision(TimesheetsAuthorizationRequest request)
+            => DecisionOverride?.Invoke(request) ?? (request.Contributor == UnauthorizedContributor()
                 ? TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.UnconfiguredPolicy, "Denied by test access guard.")
-                : TimesheetsAuthorizationDecision.Allowed();
+                : TimesheetsAuthorizationDecision.Allowed());
     }
 
     private sealed class StaticTimeProvider(DateTimeOffset utcNow) : TimeProvider
