@@ -1,6 +1,7 @@
 - source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
   summary: Codex hooks hard-code this machine path and still call deleted bmad-story-automator.
   evidence: `.codex/hooks.json` Stop/SessionStart commands use `/home/administrator/projects/hexalith/timesheets/...`; the first Stop entry still execs `.agents/skills/bmad-story-automator/scripts/story-automator`, which is not on disk.
+  resolution_note: Resolved 2026-10-21 by `spec-make-codex-hooks-local.md`: generated `.codex/hooks.json` is no longer tracked and is ignored at the repository root; README documents per-checkout `bmad-loop init --cli codex --no-skills`. The current checkout retains its installed Stop/SessionStart relays with the deleted automator hook removed.
 
 - source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
   summary: BMAD party-mode, forge-idea, and customization-merge tests do not pin the 6.12 override behavior.

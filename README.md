@@ -2,6 +2,18 @@
 
 Hexalith Timesheets is a domain module for trusted time capture, approval, confirmation, reporting, and finance export.
 
+## Local Codex Hooks
+
+For BMAD Loop orchestration with Codex, install `bmad-loop` on your machine, then run this command from each checkout root:
+
+```bash
+bmad-loop init --cli codex --no-skills
+```
+
+This generates `.codex/hooks.json` with the absolute path to your installed relay. That file is local and ignored by Git; `.codex/config.toml` remains shared. Review and trust the generated commands in Codex when prompted. Repeat setup after moving the `bmad-loop` installation or in a fresh checkout.
+
+Existing checkouts upgrading from the tracked hook file should run setup again; remove any old hook that calls the deleted `bmad-story-automator` before doing so. Normal interactive Codex use does not require BMAD Loop hooks.
+
 ## Build and Test
 
 Use the pinned .NET SDK `10.0.402` (`rollForward: latestPatch`), with a writable CLI home in restricted environments:
