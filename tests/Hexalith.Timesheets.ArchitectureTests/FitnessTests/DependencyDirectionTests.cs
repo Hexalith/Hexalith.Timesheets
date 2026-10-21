@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 using Shouldly;
@@ -201,7 +202,68 @@ public sealed class DependencyDirectionTests
         }
 
         props.ShouldContain(@"references\Hexalith.");
-        props.ShouldNotContain("Exists('$(MSBuildThisFileDirectory)Hexalith.");
+        FindRepositoryRootModuleProbes(XDocument.Parse(props)).ShouldBeEmpty(
+            "Dependency probes must use references/ or the supported sibling fallback.");
+    }
+
+    /// <summary>
+    /// Rejects root probes across MSBuild quoting, separator and relative-path spellings.
+    /// </summary>
+    [Theory]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)Hexalith.Commons/src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)/Hexalith.EventStore/src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)\\Hexalith.Tenants\\src')", true)]
+    [InlineData("Exists(\"$(MSBuildThisFileDirectory)Hexalith.Parties/src\")", true)]
+    [InlineData("exists ( '$( MSBuildThisFileDirectory )/Hexalith.Projects/src' )", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)./Hexalith.Works/src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)references/../Hexalith.FrontComposer/src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)references\\..\\Hexalith.Commons\\src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)Hexalith%2eCommons/src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)%2e/Hexalith.Commons/src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)references%2f..%2fHexalith.Commons/src')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)Hexalith.Commons/src\"s')", true)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)references/Hexalith.Works/src')", false)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)references\\Hexalith.Works\\src')", false)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)../Hexalith.Works/src')", false)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)..\\Hexalith.Works\\src')", false)]
+    [InlineData("Exists('$(MSBuildThisFileDirectory)Hexalith%252eCommons/src')", false)]
+    [InlineData("'Exists(\"$(MSBuildThisFileDirectory)Hexalith.Commons/src\")' != ''", false)]
+    [InlineData("\"Exists('$(MSBuildThisFileDirectory)Hexalith.Commons/src')\" != ''", false)]
+    public void RootModuleProbeGuardRecognizesAlternateSpellings(string condition, bool forbidden)
+    {
+        XDocument props = new(new XElement("Project",
+            new XElement("PropertyGroup", new XElement("DependencyRoot", new XAttribute("Condition", condition)))));
+
+        FindRepositoryRootModuleProbes(props).Any().ShouldBe(forbidden);
+    }
+
+    private static IEnumerable<string> FindRepositoryRootModuleProbes(XDocument props)
+    {
+        string root = RepositoryRoot.Find().FullName;
+        foreach (XAttribute condition in props.Descendants().Attributes("Condition"))
+        {
+            // Skip quoted condition literals, while consuming actual Exists arguments as a unit.
+            // XML parsing has already decoded &quot; before this bounded literal-path scan.
+            foreach (Match match in Regex.Matches(condition.Value,
+                @"(?<literal>['""]).*?\k<literal>|\bExists\s*\(\s*(?<quote>['""])\s*\$\(\s*MSBuildThisFileDirectory\s*\)(?<relative>.*?)\k<quote>\s*\)",
+                RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Singleline))
+            {
+                if (!match.Groups["relative"].Success)
+                {
+                    continue;
+                }
+
+                // MSBuild unescapes literal %xx sequences once, rather than recursively.
+                string unescaped = Regex.Replace(match.Groups["relative"].Value, @"%([0-9a-fA-F]{2})",
+                    static escape => ((char)Convert.ToInt32(escape.Groups[1].Value, 16)).ToString());
+                string suffix = unescaped.Replace('\\', '/').TrimStart('/');
+                string relative = Path.GetRelativePath(root, Path.GetFullPath(suffix, root));
+                if (relative.Split(Path.DirectorySeparatorChar)[0].StartsWith("Hexalith.", StringComparison.OrdinalIgnoreCase))
+                {
+                    yield return match.Value;
+                }
+            }
+        }
     }
 
     [Fact]

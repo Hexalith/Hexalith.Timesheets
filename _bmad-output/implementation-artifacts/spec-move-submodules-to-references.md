@@ -88,6 +88,9 @@ root path declarations; do not commit or push.
 
 ## Review Triage Log
 
+The original findings below are historical review observations. The dated
+reconciliation after this list records their current Story 5.3 dispositions.
+
 - BH1 / WorksCheckoutGovernanceTests.cs missing — **false** — that class is specified by draft Story 5.3, not by this move spec. This spec's acceptance is git/MSBuild inspection, not a Works-only fitness type.
 - BH2 / LaunchReadinessTests not extended for checkout ownership — **false** — launch-readiness vocabulary tests already match this spec's one-line Builds path retarget; extra Works-ownership guards are Story 5.3 work, not a missing outcome of the move.
 - BH3 / BDR, README, architecture.md, sprint-status still describe root/sibling Works — **defer** — those documents and `5-3-…: backlog` are Story 5.3 remaining work. This intent only relocates checkouts and parent probes.
@@ -115,3 +118,9 @@ root path declarations; do not commit or push.
 - VG5 / Codex Stop still invokes deleted `bmad-story-automator` — **defer** — `.codex/hooks.json` still references that missing script; leftover of the BMAD-loop install, not the submodule move.
 - VG6 / gitlink SHAs do not match the keep-commits rule — **defer** — same later pin updates as BH5 (verification-gap other finding).
 - VG7 / `.codex/hooks.json` hard-codes this checkout path — **defer** — same as BH11 (verification-gap other finding).
+
+### Story 5.3 reconciliation (2026-10-21)
+
+- **BH1, BH8, BH14:** Story 5.3 is now `done` in `spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md` and `sprint-status.yaml`. Its approved Option B keeps this repository's `references/Hexalith.Works` gitlink. `WorksCheckoutGovernanceTests.cs` exists and covers declared/indexed paths, explicit and environment-supplied roots, references-first selection, and isolated sibling fallback. The draft/unfinished descriptions above apply only to the original review.
+- **BH3, BH4:** Story 5.3 delivered the Works checkout rule in README, architecture, boundary, and launch-readiness documentation. The 2026-10-21 governance increment also reconciles `epics.md`, the historical July proposal, and synchronized managed agent guidance. Those documentation handoffs are closed; deployed runtime acceptance remains separate.
+- **VG1:** The move added the original layout assertions. The 2026-10-21 governance increment strengthens `DependencyDirectionTests` to reject alternate quote/separator spellings and normalized root probes, and `ScaffoldGovernanceTests` to reject lexical traversal out of `references/`. These checks supersede the original missing-guard finding without changing submodule pins or build resolution.

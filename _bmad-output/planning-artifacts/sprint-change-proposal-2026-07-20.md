@@ -11,6 +11,27 @@ recommended_path: direct-adjustment
 
 # Sprint Change Proposal: Consume the Umbrella-Owned Hexalith.Works Checkout
 
+## Current checkout policy (reconciled 2026-10-21)
+
+Story 5.3's approved **Option B** supersedes the sibling-only ownership and
+configuration-removal instructions in the historical proposal below. This
+Timesheets repository is the umbrella pin: keep its root-declared
+`references/Hexalith.Works` submodule and gitlink. Preserve an explicit
+`HexalithWorksRoot`; otherwise prefer `references/Hexalith.Works` and use
+`../Hexalith.Works` only as the fallback. Reject a repository-root
+`Hexalith.Works` path, gitlink, or probe, and never initialize nested submodules.
+
+The accepted decision and completion evidence are in
+[`spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md`](../implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md).
+Story 5.3 is `done` in that spec and `sprint-status.yaml`; current ownership is
+also recorded in `architecture.md` under **Workspace Dependency Ownership**.
+This correction changes no product scope or launch-acceptance verdict.
+
+Sections 1–7 below preserve the original 2026-07-20 proposal, observations,
+approval, and handoff as history. Their sibling-only default, removal of the
+Works declaration/gitlink, and backlog/next-step statements are superseded;
+they are not current implementation instructions.
+
 ## 1. Issue Summary
 
 ### Trigger

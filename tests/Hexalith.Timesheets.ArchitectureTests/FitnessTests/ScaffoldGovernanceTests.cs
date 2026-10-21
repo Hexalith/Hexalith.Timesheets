@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -182,24 +183,18 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public void Nested_submodules_are_not_initialized_inside_root_level_submodules()
+    public async Task Nested_submodules_are_not_initialized_inside_root_level_submodules()
     {
-        string gitmodules = File.ReadAllText(RepositoryRoot.PathTo(".gitmodules"));
-        string[] submodulePaths = gitmodules
-            .Split(Environment.NewLine)
-            .Select(static line => line.Trim())
-            .Where(static line => line.StartsWith("path = ", StringComparison.Ordinal))
-            .Select(static line => line["path = ".Length..])
-            .ToArray();
+        string[] submodulePaths = await ReadSubmodulePathsAsync(RepositoryRoot.PathTo(".gitmodules"));
 
         submodulePaths.ShouldNotBeEmpty();
 
         foreach (string submodulePath in submodulePaths)
         {
-            submodulePath.StartsWith("references/", StringComparison.Ordinal)
+            IsUnderReferences(submodulePath)
                 .ShouldBeTrue($"Submodule path '{submodulePath}' must be under references/.");
 
-            string absolutePath = RepositoryRoot.PathTo(submodulePath);
+            string absolutePath = Path.GetFullPath(submodulePath.Replace('\\', '/'), RepositoryRoot.Find().FullName);
             if (!Directory.Exists(absolutePath))
             {
                 continue;
@@ -211,6 +206,103 @@ public sealed class ScaffoldGovernanceTests
 
             nestedGitEntries.ShouldBeEmpty($"Nested submodule initialized under {submodulePath}.");
         }
+    }
+
+    /// <summary>
+    /// Uses Git's parser so whitespace, comments and quotes cannot hide an escaping path.
+    /// </summary>
+    [Theory]
+    [InlineData("path=references/../Hexalith.Commons")]
+    [InlineData("path\t=\treferences/../Hexalith.Commons")]
+    [InlineData("path = \"references/..\"/Hexalith.Commons")]
+    [InlineData("path = references/../Hexalith.Commons # comment")]
+    public async Task SubmoduleConfigGuardReadsEveryPathAssignment(string assignment)
+    {
+        string temporaryFile = Path.GetTempFileName();
+        try
+        {
+            await File.WriteAllTextAsync(temporaryFile, $"[submodule \"escape\"]\n{assignment}\n", TestContext.Current.CancellationToken);
+            string[] paths = await ReadSubmodulePathsAsync(temporaryFile);
+            paths.ShouldHaveSingleItem().ShouldBe("references/../Hexalith.Commons");
+            IsUnderReferences(paths[0]).ShouldBeFalse();
+        }
+        finally
+        {
+            File.Delete(temporaryFile);
+        }
+    }
+
+    private static async Task<string[]> ReadSubmodulePathsAsync(string file)
+    {
+        using Process process = new();
+        process.StartInfo = new ProcessStartInfo("git")
+        {
+            WorkingDirectory = RepositoryRoot.Find().FullName,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            ArgumentList = { "config", "--file", file, "--null", "--get-regexp", @"^submodule\..*\.path$" },
+        };
+        process.Start().ShouldBeTrue();
+        Task<string> output = process.StandardOutput.ReadToEndAsync();
+        Task<string> error = process.StandardError.ReadToEndAsync();
+        using CancellationTokenSource timeout = new(TimeSpan.FromSeconds(30));
+        try
+        {
+            await process.WaitForExitAsync(timeout.Token);
+        }
+        catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            await process.WaitForExitAsync();
+            throw new TimeoutException("Git did not parse submodule paths within 30 seconds.");
+        }
+
+        process.ExitCode.ShouldBe(0, await error);
+        return (await output).Split('\0', StringSplitOptions.RemoveEmptyEntries)
+            .Select(static record => record.Split('\n', 2)[1]).ToArray();
+    }
+
+    /// <summary>
+    /// Keeps normalized submodule paths within references rather than trusting a textual prefix.
+    /// </summary>
+    [Theory]
+    [InlineData("references/Hexalith.Works", true)]
+    [InlineData("references\\Hexalith.Commons", true)]
+    [InlineData("./references/Hexalith.EventStore", true)]
+    [InlineData("references/temporary/../Hexalith.Works", true)]
+    [InlineData("references/../Hexalith.Works", false)]
+    [InlineData("references\\..\\Hexalith.Commons", false)]
+    [InlineData("references/a/../../Hexalith.Works", false)]
+    [InlineData("references/../../outside", false)]
+    [InlineData("references", false)]
+    [InlineData("references/", false)]
+    [InlineData("references/.", false)]
+    [InlineData("references-other/Hexalith.Works", false)]
+    [InlineData("Hexalith.Works", false)]
+    [InlineData("../references/Hexalith.Works", false)]
+    [InlineData("/references/Hexalith.Works", false)]
+    public void SubmodulePathGuardRequiresAReferencesDescendant(string path, bool allowed)
+    {
+        IsUnderReferences(path).ShouldBe(allowed);
+    }
+
+    private static bool IsUnderReferences(string path)
+    {
+        string normalized = path.Replace('\\', '/');
+        if (Path.IsPathRooted(normalized))
+        {
+            return false;
+        }
+
+        string absolutePath = Path.GetFullPath(normalized, RepositoryRoot.Find().FullName);
+        string references = RepositoryRoot.PathTo("references") + Path.DirectorySeparatorChar;
+        return Path.TrimEndingDirectorySeparator(absolutePath).StartsWith(references,
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
     }
 
     private static string AppHostProjectPath()

@@ -338,6 +338,10 @@ public sealed class LaunchReadinessTests
             managed.ShouldContain("**FAIL**");
             managed.ShouldContain("HTTP host registers the projection assembly and EventStore processing");
             managed.ShouldNotContain("has no projection-host wiring");
+            managed.ShouldContain("`references/Hexalith.Works` is the sole default checkout");
+            managed.ShouldContain("preserves an explicit `HexalithWorksRoot`");
+            managed.ShouldContain("`references/Hexalith.Works` first and `../Hexalith.Works` second");
+            managed.ShouldContain("Never initialize a repository-root `Hexalith.Works` checkout");
         }
     }
 

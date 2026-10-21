@@ -125,7 +125,7 @@ NFR15: Dates, periods, and approval cutoffs must be tenant-policy aware, with an
 - Make the first implementation story scaffold the module shell with `.slnx`, Central Package Management, Contracts, Client, Server, Projections, Testing, ServiceDefaults, AppHost, and architecture tests.
 - Normalize scaffolded projects to Hexalith conventions: `Directory.Packages.props`, `Directory.Build.props`, `.editorconfig`, no inline package versions, no `.sln`, warnings as errors, and module-local solution membership.
 - Use .NET 10, nullable enabled, implicit usings, file-scoped namespaces, centralized package versions, and `Hexalith.Timesheets.*` namespaces.
-- Preserve umbrella root-declared submodule rules and never introduce recursive submodule initialization. `Hexalith.Timesheets` must consume `Hexalith.Works` from the umbrella-owned `references/Hexalith.Works` checkout, exposed as sibling `../Hexalith.Works`, or from an explicitly supplied `HexalithWorksRoot`. Timesheets must not declare, initialize, track, or prefer a repository-root `Hexalith.Works` checkout.
+- Preserve root-declared submodule rules and never introduce recursive submodule initialization. This Timesheets repository is the umbrella pin for `references/Hexalith.Works`, its sole default Works checkout. Preserve an explicitly supplied `HexalithWorksRoot`; otherwise resolve `references/Hexalith.Works` first and sibling `../Hexalith.Works` second. Timesheets must not declare, initialize, track, or prefer a repository-root `Hexalith.Works` checkout.
 - Persist domain state changes only through Hexalith.EventStore; do not create direct SQL, Redis, Dapr state, or broker-backed authoritative CRUD storage.
 - Establish baseline aggregate boundaries for `TimeEntry`, `TimesheetPeriod`, and Activity Type/catalog governance.
 - Treat Magic-Link Confirmation, export audit, reference validation, and reporting as capabilities around domain events unless later decisions require separate aggregates.
@@ -1753,19 +1753,19 @@ So that launch-readiness does not overstate dependency versions or hide transiti
 **Requirements:** FR23 and the workspace dependency-ownership requirement
 
 As a Hexalith build maintainer,
-I want Timesheets to consume the umbrella-owned Hexalith.Works checkout,
+I want Timesheets to consume its root-declared `references/Hexalith.Works` checkout,
 So that one workspace-pinned Works source supplies validation and reporting contracts without nested submodule initialization or commit skew.
 
 **Acceptance Criteria:**
 
-**Given** the umbrella workspace declares `references/Hexalith.Works`
+**Given** this Timesheets repository is the umbrella pin for Works
 **When** Timesheets repository metadata is inspected
-**Then** Timesheets `.gitmodules` does not declare `Hexalith.Works`
-**And** the Timesheets Git index has no `Hexalith.Works` gitlink.
+**Then** Timesheets `.gitmodules` declares exactly one Works path at `references/Hexalith.Works`
+**And** the Timesheets Git index tracks that gitlink with no repository-root `Hexalith.Works` gitlink.
 
 **Given** `HexalithWorksRoot` is not supplied explicitly
-**When** Timesheets projects are evaluated inside the umbrella workspace
-**Then** `HexalithWorksRoot` resolves to sibling `../Hexalith.Works`
+**When** Timesheets projects are evaluated
+**Then** `HexalithWorksRoot` resolves to `references/Hexalith.Works` when present, falling back to sibling `../Hexalith.Works` when only that checkout is available
 **And** no Timesheets-root `./Hexalith.Works` probe or fallback exists.
 
 **Given** a controlled standalone or CI build supplies `HexalithWorksRoot`
@@ -1775,8 +1775,8 @@ So that one workspace-pinned Works source supplies validation and reporting cont
 
 **Given** checkout-governance fitness tests run
 **When** `.gitmodules` and `Directory.Build.props` are inspected
-**Then** tests fail if a Timesheets-owned Works declaration, gitlink assumption, or root-local path probe is reintroduced
-**And** tests confirm the explicit-property and umbrella-sibling resolution contract.
+**Then** tests fail if a repository-root Works declaration, gitlink, or root-local path probe is reintroduced
+**And** tests confirm the explicit-property, references-first, and sibling-fallback resolution contract.
 
 **Given** the umbrella-owned Works checkout is available
 **When** restore, build, ArchitectureTests, and Works.Tests run

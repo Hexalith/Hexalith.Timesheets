@@ -83,6 +83,7 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 
 - Aggregates and command services: `src/Hexalith.Timesheets.Server` (`src/Hexalith.Timesheets` is the HTTP host).
 - Works ports and opt-in DI: `src/Hexalith.Timesheets.Works`
+- `references/Hexalith.Works` is the sole default checkout. MSBuild preserves an explicit `HexalithWorksRoot`; otherwise it resolves `references/Hexalith.Works` first and `../Hexalith.Works` second. Treat the supplied checkout as read-only. Never initialize a repository-root `Hexalith.Works` checkout.
 - Rebuildable projections: `src/Hexalith.Timesheets.Projections`
 - Launch classifications, approval sources, and gates: `docs/launch-readiness.md`
 - Historical performance measurements and wire-path waiver: `docs/performance-evidence.md`
