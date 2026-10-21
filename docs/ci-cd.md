@@ -46,7 +46,11 @@ preserved. This pipeline publishes no container or AppHost artifact.
 
 All six projects run individually through xUnit v3/Microsoft.Testing.Platform:
 ArchitectureTests, Contracts.Tests, Server.Tests, Projections.Tests,
-IntegrationTests, and Works.Tests. The shared workflow aggregates failures; a
+IntegrationTests, and Works.Tests. `global.json` selects the platform runner. After
+the matching Debug/source build, run each project with
+`dotnet test --project <project.csproj> --configuration Debug --no-build -p:UseHexalithProjectReferences=true`,
+or use the built executables in [README](../README.md#build-and-test).
+The shared workflow aggregates failures; a
 supplemental job validates its downloaded TRX artifact for every project and rejects
 missing, empty, all-skipped, inconsistent or failing results. CI also executes the
 Python release-tooling failure-path suite. CodeQL, dependency review, Dependabot,

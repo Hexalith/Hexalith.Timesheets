@@ -116,6 +116,20 @@ This Timesheets repository is the umbrella pin for Works. The sole default check
 
 ## Host Controls and Historical Runtime Scope
 
+**Shared hosting defaults ownership — 2026-10-21:** the HTTP host's
+`AddEventStoreDomainService` call delegates observability, health checks, service
+discovery, and HTTP resilience to `Hexalith.EventStore.ServiceDefaults` through the
+EventStore domain-service SDK. It does not call `AddTimesheetsServiceDefaults`.
+The architecture-required local `Hexalith.Timesheets.ServiceDefaults` project
+remains, and the HTTP host still references it. Removal or host-reference cleanup
+requires a story that explicitly names that project. This records the delivered
+handover, without claiming current-graph runtime qualification or deployed
+acceptance. Source:
+`src/Hexalith.Timesheets/Program.cs` and EventStore's
+`src/Hexalith.EventStore.DomainService/EventStoreDomainServiceExtensions.cs`;
+the existing `Timesheets_host_delegates_shared_defaults_to_the_eventstore_sdk_once`
+architecture check guards the host registration.
+
 ### Control for the domain-service route group
 
 `src/Hexalith.Timesheets/Program.cs` calls `UseEventStoreDomainService()`, which maps the canonical

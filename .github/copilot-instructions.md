@@ -93,12 +93,12 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 - Use the SDK in `global.json` (`10.0.402`, `rollForward: latestPatch`). The AppHost SDK is `13.6.1`; package pins come from the imported Builds catalog plus root CPM overrides.
 - Restore/build `Hexalith.Timesheets.slnx` with matching local Debug/source-reference mode: `dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false`, then `dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false`.
 - CI workflows exist under `.github/workflows/`; CI/CD uses Release/published packages. Never mix these restore/build graphs. Works forwards its own EventStore default; when it differs from the consuming catalog, pass the catalog version as `-p:HexalithEventStoreVersion=<catalog version>` to both local commands until the owned build follow-up closes.
-- Prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home` in restricted environments. Run all six built xUnit v3 executables individually under `tests/<Project>/bin/Debug/net10.0/<Project>`, including `Hexalith.Timesheets.Works.Tests`. SDK 10.0.402 rejects this repository's `dotnet test` VSTest target; see README commands.
+- Prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home` in restricted environments. Run all six built xUnit v3 executables individually under `tests/<Project>/bin/Debug/net10.0/<Project>`, including `Hexalith.Timesheets.Works.Tests`. `global.json` selects Microsoft.Testing.Platform; alternatively use `dotnet test --project <project.csproj> --configuration Debug --no-build -p:UseHexalithProjectReferences=true` for each project. See README commands.
 - Performance lanes require `TIMESHEETS_PERF=1`; the local Dapr journey requires `TIMESHEETS_LIVE_DAPR=1` and its isolated fixture. Default skips are not runtime acceptance.
 
 ## Conventions that differ from defaults
 
-- Leave `AddTimesheetsServerKernel` fail-closed (`DenyAll*` / `Unavailable*`). Bind Works validation or planned effort only via `AddTimesheetsWorksReferenceValidation` / `AddTimesheetsWorksPlannedEffortReporting` after an `IWorksQueryChannel` is registered.
+- Keep the authorization, tenant/reference validation, policy, and unavailable projection/reporting defaults in `AddTimesheetsServerKernel` fail-closed (`DenyAll*` / `Unavailable*`). The kernel also registers the concrete EventStore magic-link loader, gateway, and read-model store; standalone consumers must supply its EventStore read dependencies, as the composed HTTP host does. Bind Works validation or planned effort only via `AddTimesheetsWorksReferenceValidation` / `AddTimesheetsWorksPlannedEffortReporting` after an `IWorksQueryChannel` is registered.
 - Keep aggregates pure (`Handle`/`Apply`); I/O stays in services and the host.
 
 ## Known pitfalls
