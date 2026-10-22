@@ -9,4 +9,9 @@
   <Import Project="$(Hexalith1BuildPackageProps)" Condition="Exists('$(Hexalith1BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith2BuildPackageProps)" Condition="Exists('$(Hexalith2BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
+  <!-- The shared catalog no longer versions this consumer contract. Package-mode
+       restore still needs the published 1.0.2 pin. -->
+  <ItemGroup>
+    <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.2" />
+  </ItemGroup>
 </Project>
