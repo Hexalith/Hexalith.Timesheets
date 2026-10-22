@@ -235,7 +235,12 @@ public static class MagicLinkTokenHashCapabilityIndexProjection
             second.Candidate.CapabilityId.Value);
     }
 
-    /// <summary>Rebuilds a deterministic index from issuance events.</summary>
+    /// <summary>Builds deterministic candidate content from issuance events without persisting it.</summary>
+    /// <remarks>
+    /// Retained as a pure composition helper. Its result does not select a generation, establish
+    /// source coverage or owner delivery continuity, or authorize a migration. Canonical projection
+    /// handlers and the EventStore coordinator own persisted rebuilds and selected-generation writes.
+    /// </remarks>
     /// <param name="issuedEvents">The issuance events to fold.</param>
     /// <returns>The rebuilt candidate index.</returns>
     public static MagicLinkTokenHashCapabilityIndexReadModel Rebuild(

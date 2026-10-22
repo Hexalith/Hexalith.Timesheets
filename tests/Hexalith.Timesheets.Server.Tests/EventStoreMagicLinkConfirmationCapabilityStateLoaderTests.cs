@@ -31,6 +31,31 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 {
+    /// <summary>The pure candidate helper deduplicates issuances and retains every ambiguous owner.</summary>
+    [Fact]
+    public void IssuanceCandidateRebuildIsDeterministicAndPreservesAmbiguity()
+    {
+        MagicLinkConfirmationCapabilityIssued first = Issued();
+        MagicLinkConfirmationCapabilityIssued otherTenant = Issued(tenant: new TenantReference("tenant-b"));
+        MagicLinkConfirmationCapabilityIssued otherCapability = Issued(capabilityId: new MagicLinkCapabilityId("capability-2"));
+        MagicLinkConfirmationCapabilityIssued unique = Issued(hash: new MagicLinkTokenHash("unique-hash"));
+        MagicLinkTokenHashCapabilityIndexReadModel rebuilt =
+            MagicLinkTokenHashCapabilityIndexProjection.Rebuild([first, unique, otherTenant, otherCapability, first]);
+        MagicLinkTokenHashCapabilityIndexReadModel reordered =
+            MagicLinkTokenHashCapabilityIndexProjection.Rebuild([otherTenant, otherCapability, unique, first]);
+
+        JsonSerializer.Serialize(rebuilt).ShouldBe(JsonSerializer.Serialize(reordered));
+        rebuilt.Entries.Keys.ShouldBe(["unique-hash"]);
+        rebuilt.Entries["unique-hash"].ShouldBe(new(Tenant(), CapabilityId()));
+        rebuilt.Contributions[Hash().Value].ShouldBe([
+            new MagicLinkTokenHashCapabilityIndexEntry(Tenant(), CapabilityId()),
+            new MagicLinkTokenHashCapabilityIndexEntry(Tenant(), otherCapability.CapabilityId),
+            new MagicLinkTokenHashCapabilityIndexEntry(otherTenant.Tenant, CapabilityId())
+        ]);
+        MagicLinkTokenHashCapabilityIndexProjection.Rebuild([]).Entries.ShouldBeEmpty();
+        Should.Throw<ArgumentNullException>(() => MagicLinkTokenHashCapabilityIndexProjection.Rebuild(null!));
+    }
+
     /// <summary>Emits bounded diagnostic fields while retaining the opaque failure bundle.</summary>
     /// <param name="operation">The failing logical read.</param>
     /// <param name="fault">The injected exception category.</param>

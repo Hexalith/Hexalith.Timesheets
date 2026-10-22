@@ -47,7 +47,16 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton(ExternalContributionPolicyOptions.Default);
         services.TryAddSingleton<ExternalContributionCommandService>();
         services.TryAddSingleton<ITimesheetsTrustedContextAccessor, UnavailableTimesheetsTrustedContextAccessor>();
-        if (!services.Any(static descriptor => descriptor.ServiceType == typeof(IEventStoreGatewayClient)))
+        // Reuse the SDK's internal fail-closed Location implementation without changing a caller's
+        // gateway transport. Inspect registration descriptors only; never build a temporary provider.
+        IServiceCollection gatewayDefaults = new ServiceCollection();
+        gatewayDefaults.AddEventStoreGatewayClient();
+        services.AddOptions<EventStoreGatewayClientOptions>();
+        services.AddHttpClient();
+        services.TryAdd(gatewayDefaults.Single(static descriptor =>
+            descriptor.ServiceType == typeof(ICommandStatusLocationBuilder)));
+        if (!services.Any(static descriptor => !descriptor.IsKeyedService
+            && descriptor.ServiceType == typeof(IEventStoreGatewayClient)))
         {
             services.AddEventStoreGatewayClient(options => options.BaseAddress = ResolveDaprHttpEndpoint())
                 .AddEventStoreDaprServiceInvocation(

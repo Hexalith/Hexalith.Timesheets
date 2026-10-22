@@ -212,18 +212,19 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Theory]
-    [InlineData("confirm")]
-    [InlineData("adjust")]
-    public async Task Token_display_get_responses_disable_caching_and_referrers(string route)
+    [InlineData("confirm-get")]
+    [InlineData("adjust-get")]
+    [InlineData("confirm-submit")]
+    [InlineData("adjust-submit")]
+    public async Task PublicTokenResponsesDisableCachingAndReferrers(string routeName)
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
-        using HttpResponseMessage response = await client.GetAsync(
-            $"/api/timesheets/magic-links/{route}?t=%20%20", TestContext.Current.CancellationToken);
+        ExternalRoute route = ExternalRoutes().Single(candidate => candidate.Name == routeName);
+        using HttpResponseMessage response = await SendAsync(client, route, "%20%20");
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-        response.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();
-        response.Headers.GetValues("Referrer-Policy").ShouldContain("no-referrer");
+        AssertPrivateLinkHeaders(response);
     }
 
     [Fact]
@@ -246,6 +247,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     $"{route.Name}:{caseName}",
                     token);
 
+                AssertPrivateLinkHeaders(response);
                 failures.Add(failure);
             }
         }
@@ -348,6 +350,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         adjustDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
         confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         adjustSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        foreach (HttpResponseMessage response in new[] { confirmDisplay, adjustDisplay, confirmSubmit, adjustSubmit })
+        {
+            AssertPrivateLinkHeaders(response);
+        }
         factory.Gateway.SubmissionCount.ShouldBe(2);
         using HttpResponseMessage confirmAfterPost = await client.GetAsync(
             $"/api/timesheets/magic-links/confirm?t={ValidConfirmToken()}", TestContext.Current.CancellationToken);
@@ -1488,6 +1494,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             NormalizeProblemJson(problem),
             HeaderSet(response),
             body);
+    }
+
+    private static void AssertPrivateLinkHeaders(HttpResponseMessage response)
+    {
+        response.Headers.CacheControl.ShouldNotBeNull().NoStore.ShouldBeTrue();
+        response.Headers.GetValues("Referrer-Policy").ShouldBe(["no-referrer"]);
     }
 
     private static void AssertSensitiveDiagnosticsAbsent(LogRecord record, string token)

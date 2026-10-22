@@ -4,6 +4,7 @@ using System.Text.Json;
 
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
+using Hexalith.EventStore.Client.Registration;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.References;
@@ -89,6 +90,98 @@ public sealed class RuntimeRegistrationTests
 
         using ServiceProvider provider = services.BuildServiceProvider();
         provider.GetRequiredService<IEventStoreGatewayClient>().ShouldBeSameAs(gateway);
+    }
+
+    /// <summary>A caller's scoped gateway does not suppress the SDK's supporting services.</summary>
+    [Fact]
+    public async Task GatewayOverridePreservesSupportingRegistrationsAndCallerDescriptors()
+    {
+        IServiceCollection services = new ServiceCollection();
+        IEventStoreGatewayClient first = Substitute.For<IEventStoreGatewayClient>();
+        IEventStoreGatewayClient second = Substitute.For<IEventStoreGatewayClient>();
+        services.AddSingleton(first);
+        services.AddScoped<IEventStoreGatewayClient>(_ => second);
+        ServiceDescriptor[] overrides = services.Where(static descriptor =>
+            descriptor.ServiceType == typeof(IEventStoreGatewayClient)).ToArray();
+        var recorder = new RecordingHandler();
+        services.AddTimesheetsServerKernel();
+        services.Configure<HttpClientFactoryOptions>(nameof(IEventStoreGatewayClient),
+            options => options.HttpMessageHandlerBuilderActions.Add(builder => builder.PrimaryHandler = recorder));
+
+        services.Where(static descriptor => descriptor.ServiceType == typeof(IEventStoreGatewayClient))
+            .ShouldBe(overrides);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        scope.ServiceProvider.GetRequiredService<IEventStoreGatewayClient>().ShouldBeSameAs(second);
+        scope.ServiceProvider.GetServices<IEventStoreGatewayClient>().ShouldBe([first, second]);
+        provider.GetRequiredService<ICommandStatusLocationBuilder>()
+            .TryBuild("tracking", out string? location).ShouldBeFalse();
+        location.ShouldBeNull();
+        Uri? origin = provider.GetRequiredService<IOptions<EventStoreGatewayClientOptions>>().Value.BaseAddress;
+        origin.ShouldBeNull();
+        using HttpClient client = provider.GetRequiredService<IHttpClientFactory>()
+            .CreateClient(nameof(IEventStoreGatewayClient));
+        client.BaseAddress.ShouldBe(origin);
+        using HttpResponseMessage response = await client.GetAsync("https://caller-owned.test/api/v1/streams/read",
+            TestContext.Current.CancellationToken);
+        recorder.AppId.ShouldBeNull();
+    }
+
+    /// <summary>The SDK retains the host's command-status URL policy alongside a custom gateway.</summary>
+    [Fact]
+    public void GatewayOverridePreservesCustomCommandStatusLocationBuilder()
+    {
+        IServiceCollection services = new ServiceCollection();
+        ICommandStatusLocationBuilder locations = Substitute.For<ICommandStatusLocationBuilder>();
+        services.AddSingleton(locations);
+        services.AddSingleton(Substitute.For<IEventStoreGatewayClient>());
+        services.AddTimesheetsServerKernel();
+
+        using ServiceProvider provider = services.BuildServiceProvider();
+        provider.GetRequiredService<ICommandStatusLocationBuilder>().ShouldBeSameAs(locations);
+    }
+
+    /// <summary>Repeated kernel composition keeps a caller's real SDK gateway transport intact.</summary>
+    [Fact]
+    public async Task PreconfiguredSdkGatewayRetainsItsOptionsAndNamedClientRouting()
+    {
+        IServiceCollection services = new ServiceCollection();
+        var recorder = new RecordingHandler();
+        services.AddEventStoreGatewayClient(options => options.BaseAddress = new Uri("https://configured-options.test/"))
+            .AddEventStoreDaprServiceInvocation("configured-target", "configured-token")
+            .ConfigureHttpClient(client => client.BaseAddress = new Uri("https://configured-client.test/"));
+        services.AddTimesheetsServerKernel();
+        services.AddTimesheetsServerKernel();
+        services.Configure<HttpClientFactoryOptions>(nameof(IEventStoreGatewayClient),
+            options => options.HttpMessageHandlerBuilderActions.Add(builder => builder.PrimaryHandler = recorder));
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        _ = await provider.GetRequiredService<IEventStoreGatewayClient>().ReadStreamAsync(
+            new StreamReadRequest("tenant-1", "timesheets", "capability-1"),
+            TestContext.Current.CancellationToken);
+
+        provider.GetRequiredService<IOptions<EventStoreGatewayClientOptions>>().Value.BaseAddress
+            .ShouldBe(new Uri("https://configured-options.test/"));
+        recorder.RequestUri.ShouldNotBeNull().Host.ShouldBe("configured-client.test");
+        recorder.AppId.ShouldBe("configured-target");
+        recorder.ApiToken.ShouldBe("configured-token");
+        provider.GetRequiredService<IOptionsMonitor<HttpClientFactoryOptions>>()
+            .Get(nameof(IEventStoreGatewayClient)).HttpMessageHandlerBuilderActions.Count.ShouldBe(2);
+    }
+
+    /// <summary>Repeated default composition adds only one sidecar routing handler.</summary>
+    [Fact]
+    public void DefaultGatewaySupportingRegistrationIsIdempotent()
+    {
+        IServiceCollection services = new ServiceCollection();
+        services.AddTimesheetsServerKernel();
+        services.AddTimesheetsServerKernel();
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        provider.GetServices<IEventStoreGatewayClient>().ShouldHaveSingleItem();
+        provider.GetServices<ICommandStatusLocationBuilder>().ShouldHaveSingleItem();
+        provider.GetRequiredService<IOptionsMonitor<HttpClientFactoryOptions>>()
+            .Get(nameof(IEventStoreGatewayClient)).HttpMessageHandlerBuilderActions.Count.ShouldBe(1);
     }
 
     [Fact]

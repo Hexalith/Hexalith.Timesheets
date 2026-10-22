@@ -29,6 +29,12 @@ above, then run the newly built Debug executables as documented in
 no override is needed at this checkout. The Works forwarding-policy follow-up
 remains open; do not carry a historical `3.125.1` workaround into a newer catalog.
 
+The Timesheets Works adapter and its test project now preserve Configuration
+on external source references during solution traversal. The [integration handoff results](../_bmad-output/implementation-artifacts/tests/five-integration-handoffs.md)
+record this bounded correction. It does not close version propagation: NuGet
+restore drops per-reference AdditionalProperties metadata, so the
+conditional catalog-derived override above still applies to both commands.
+
 Release uses published sibling NuGet packages exclusively. Both
 `Directory.Solution.props` and `Directory.Build.props` default an unspecified
 configuration to Release so the shared workflow's bare restore agrees with its

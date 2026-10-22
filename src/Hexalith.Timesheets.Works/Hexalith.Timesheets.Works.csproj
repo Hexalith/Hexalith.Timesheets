@@ -4,6 +4,9 @@
     <PackageTags>timesheets;works;reference-validation;eventsourcing;dotnet</PackageTags>
     <!-- Not packaged: this is host-composed integration glue, not a shipped library. -->
     <IsPackable>false</IsPackable>
+    <!-- Works.Contracts is outside this solution. Preserve its selected dependency mode
+         when solution traversal assigns configuration to external project references. -->
+    <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
   </PropertyGroup>
 
   <ItemGroup>

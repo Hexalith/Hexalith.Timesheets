@@ -32,7 +32,7 @@ DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
 ```
 
-Use the same source-reference mode for restore and build. CI/CD uses Release/published packages; configuration-free restore defaults to that graph. Do not reuse assets between dependency modes. Works forwards its own EventStore default; when it differs from the consuming catalog, pass `-p:HexalithEventStoreVersion=<catalog version>` to both local commands until the owned build follow-up closes. At the 2026-10-20 baseline both defaults are `3.126.0`.
+Use the same source-reference mode for restore and build. CI/CD uses Release/published packages; configuration-free restore defaults to that graph. Do not reuse assets between dependency modes. Works forwards its own EventStore default; when it differs from the consuming catalog, pass `-p:HexalithEventStoreVersion=<catalog version>` to both local commands until the owned build follow-up closes. At the 2026-10-20 baseline both defaults are `3.126.0`. The Timesheets Works adapter and its test project now preserve Configuration during solution traversal of external source references; [integration handoff verification](_bmad-output/implementation-artifacts/tests/five-integration-handoffs.md) records that bounded correction. Version-forwarding remains separately open because NuGet restore does not propagate the version through per-reference metadata.
 
 After building, run each test project individually. `global.json` selects Microsoft.Testing.Platform; use `--project` and the same configuration and dependency mode as the build:
 
