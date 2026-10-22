@@ -82,6 +82,7 @@
 
 - source_spec: none
   summary: Harden projection and loader correctness across the Story 3.6 review patch items that are not part of live-host catalog freshness.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. Delivered concurrency/envelope/null guards, telemetry discovery, caller-owned gateway preservation, dead-code cleanup and named-slot/logger wiring satisfy this original request. The pure Rebuild helper was deliberately retained and documented; its narrower retention follow-up and transport-diagnostic follow-up already have their own resolutions. Logging.Abstractions is now used. This does not close the broader eight-goal re-verification entry, its obsolete loader fixture setup, shape-layering or gateway-options work. See `tests/five-runtime-correctness-carry-forwards.md`.
   evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. Covers ETag-presence-instead-of-value concurrency selection in both projection handlers, the loader's same-sequence equivalence check being weaker than `ProjectionEventReader.Equivalent` with only the first MessageId entering the uniqueness set, null-guard gaps in `ProjectionEventReader` (`Matches<T>` JSON-null `EventTypeName`, null `ProjectionFreshness` in `Merge`/`ParseCursor`), the missing `[EventStoreDomain]` attribute on both handlers that leaves `AddEventStoreDomainTelemetry` registering nothing, the non-`TryAdd` gateway guard in `AddTimesheetsServerKernel`, dead code left by the refactor (`OrderedDistinct`, the first `hasMore` assignment, uncalled `MagicLinkTokenHashCapabilityIndexProjection.Rebuild`), and the bare `"index"` literal / unused logging reference / omitted `ReadModelWritePolicy` logger arguments.
 
 - source_spec: none
@@ -99,6 +100,7 @@
 
 - source_spec: none
   summary: Strengthen the Story 3.6 test suite where assertions cannot currently catch the regressions they imply.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. Existing tests assert rebuild StoreName, operation Kind and Concurrency, exercise a real cross-tenant candidate through all four public routes, and verify per-component/key ETag isolation and refused-write end state. The narrower remaining-double follow-up is already resolved by `spec-close-five-magic-link-operability-deferrals.md`; the HTTP double delegates to the platform InMemoryReadModelStore. These are local regression proofs, not deployed isolation acceptance. See `tests/five-runtime-correctness-carry-forwards.md`.
   evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. No test asserts `ReadModelBatchOperation.Concurrency`, so inverting both handler ternaries to always emit `CreateOnly` leaves every test green; the HTTP `"cross-tenant"` case became `null` and is now indistinguishable from `"unknown"`, leaving the external cross-tenant defense on one loader comparison with a single unit test; and the test read-model doubles ignore `storeName`, `Concurrency`, and operation `Kind` while `ScriptedReadModelStore` returns one global version as the ETag for every key.
 
 ## Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-14)
@@ -193,6 +195,7 @@ The repeated 2026-09-14 agent-context findings are consolidated into the canonic
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Preserve explicit non-Fresh catalog state only when the no-disclosure bundle can represent it safely.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. The concrete loader validates catalog shape, retains only the defined non-Fresh status internally, clears items/cursor/time/detail and withholds capability/Time Entry state; malformed or missing input stays unavailable. Existing tests cover all five non-Fresh states and malformed controls, while the HTTP boundary retains opaque denial. No public status disclosure or product-policy change is introduced. See `tests/five-runtime-correctness-carry-forwards.md`.
   evidence: The loader collapses stale, rebuilding, degraded, unknown, absent, and malformed catalogs into the same unavailable bundle even though AC2 names the states explicitly. The story and code already defer this Medium gap because exposing an honest category requires revisiting the approved indistinguishable-response design.
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
@@ -616,6 +619,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
   summary: Enforce checkpoint tenant scope consistently in Timesheets read-model projections.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. This historical request is satisfied by the existing `spec-enforce-projection-checkpoint-tenant-scope.md` implementation and the dated Projection checkpoint tenant isolation Resolution below. The shared ordinal guard covers full/incremental evidence, list, period, ledger, both reports/catalog views and capability issuance; explicit-tenant history folds refuse foreign checkpoints before enumeration. Matching-scope behavior and identifier-free errors remain tested. See `tests/five-runtime-correctness-carry-forwards.md`.
   evidence: A Fresh `TimesheetsProjectionCheckpoint` from another tenant can mark matching-envelope evidence and ledger export preview ready because the pre-existing folds do not compare `checkpoint.TenantId` with the requested tenant. Define a common checkpoint validation across evidence, period, list, ledger, and report folds.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
@@ -626,6 +630,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
   summary: Commit and pin the EventStore-owned AppPort and metadata changes in a later authorized repository update.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. EventStore commit `86d8847616b1f56064fa2dddf3d0ca07837b188f` committed the AppPort and capability-bound keyed-domain metadata changes and is an ancestor of the already-recorded gitlink `5ce5f1d84b88c808cc8a526b9decf149de977e55` at Timesheets baseline `7533cbd95557d0d02943a619a115fc85552d25c4`. This resolves only the historical uncommitted-source/pin handoff; no new pointer, platform test-run, current-graph runtime or deployed acceptance is claimed. See `tests/five-runtime-correctness-carry-forwards.md`.
   evidence: The Timesheets AppHost uses an optional EventStore Aspire overload added in the modified `references/Hexalith.EventStore` worktree. The user explicitly prohibited staging, committing, and pushing for this task, so a clean checkout of the current gitlink does not yet contain that overload.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
