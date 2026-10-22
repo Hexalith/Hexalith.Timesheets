@@ -152,9 +152,12 @@ Publication requires all of the following repository configuration:
 - A `production` environment with required reviewers and a deployment branch
   policy admitting `main`; protect `main` and require CI, test-evidence,
   apphost-configuration, release-tooling, and commit policy checks before merging.
-- Repository or organization `NUGET_API_KEY`, explicitly mapped to the reusable
-  workflow. An environment-only secret is insufficient for that explicit caller
-  mapping; environment approval gates access in the called job.
+- Repository variable `NUGET_USER`, the nuget.org profile that created the
+  Hexalith.Timesheets trusted publishing policy. `release.yml` exchanges a
+  GitHub OIDC token in the `production` environment for a short-lived publish
+  key and passes that key to the pinned reusable workflow. No stored NuGet API
+  key is used. The policy must name workflow `release.yml` and environment
+  `production`. Environment approval still gates that exchange and the called job.
 - Repository variable `HEXALITH_RELEASE_PUBLISH_ENABLED` exactly equal to the
   lowercase string `true`. Set it explicitly at repository scope to avoid inheriting
   an organization-wide value unintentionally. Unset/false values freeze publication.
