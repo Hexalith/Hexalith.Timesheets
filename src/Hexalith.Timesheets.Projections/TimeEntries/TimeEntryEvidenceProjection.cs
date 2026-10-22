@@ -109,6 +109,8 @@ public sealed class TimeEntryEvidenceProjection
                 && corrected.ApprovalState == TimeEntryApprovalState.Draft
                 && corrected.CorrectionState == TimeEntryCorrectionState.Corrected
                 && MatchesPreviousScope(corrected.PreviousValues, current)
+                && corrected.RejectionDecisionId == current.ApprovalDecision?.TimeEntryApprovalDecisionId
+                && corrected.RejectionReason == current.ApprovalDecision?.Reason
                 => Apply(corrected, current, checkpoint, lineage),
             TimeEntryApprovedCorrected corrected when corrected.TimeEntryId == timeEntryId
                 && current?.ApprovalState == TimeEntryApprovalState.Approved
@@ -117,6 +119,8 @@ public sealed class TimeEntryEvidenceProjection
                 && corrected.ApprovalState == TimeEntryApprovalState.Approved
                 && corrected.CorrectionState == TimeEntryCorrectionState.Corrected
                 && MatchesPreviousScope(corrected.PreviousValues, current)
+                && corrected.SourceApprovalDecisionId == current.ApprovalDecision.TimeEntryApprovalDecisionId
+                && corrected.SourceApprovalScope == current.ApprovalDecision.ApprovalScope
                 => Apply(corrected, current, checkpoint, lineage),
             _ when IsSelectedOwnerEvent(item.Payload, timeEntryId)
                 => throw new InvalidOperationException("Time Entry evidence contradicts its preceding lifecycle or scope."),

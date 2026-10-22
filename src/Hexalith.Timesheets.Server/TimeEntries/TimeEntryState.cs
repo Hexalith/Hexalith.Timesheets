@@ -287,7 +287,9 @@ public sealed class TimeEntryState
         RequireCorrectionScope(corrected.PreviousValues);
         if (CorrectionState != TimeEntryCorrectionState.None
             || corrected.ApprovalState != TimeEntryApprovalState.Draft
-            || corrected.CorrectionState != TimeEntryCorrectionState.Corrected)
+            || corrected.CorrectionState != TimeEntryCorrectionState.Corrected
+            || corrected.RejectionDecisionId != RejectionDecisionId
+            || corrected.RejectionReason != RejectionReason)
         {
             throw new InvalidOperationException("A rejected correction requires an uncorrected rejected Time Entry.");
         }
@@ -323,7 +325,9 @@ public sealed class TimeEntryState
         if (CorrectionState != TimeEntryCorrectionState.None
             || TimeEntryApprovalDecisionId is null
             || corrected.ApprovalState != TimeEntryApprovalState.Approved
-            || corrected.CorrectionState != TimeEntryCorrectionState.Corrected)
+            || corrected.CorrectionState != TimeEntryCorrectionState.Corrected
+            || corrected.SourceApprovalDecisionId != TimeEntryApprovalDecisionId
+            || corrected.SourceApprovalScope != ApprovalScope)
         {
             throw new InvalidOperationException("An approved correction requires an uncorrected approved Time Entry.");
         }

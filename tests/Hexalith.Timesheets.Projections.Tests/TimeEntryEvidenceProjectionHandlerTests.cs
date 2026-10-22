@@ -16,6 +16,7 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Policies;
+using Hexalith.Timesheets.Server.TimeEntries;
 
 using Shouldly;
 
@@ -1405,8 +1406,15 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
             ([Recorded(), Submitted(), Rejected()], Approved()),
             ([Recorded(), Submitted(), Rejected(), corrected], adjustment),
             ([Recorded(), Submitted(), Approved(), approvedCorrection], approvedCorrection),
+            ([Recorded(), Submitted(), Approved()], approvedCorrection with { SourceApprovalDecisionId = new("other-decision") }),
+            ([Recorded(), Submitted(), Approved()], approvedCorrection with { SourceApprovalScope = TimeEntryApprovalScope.TimesheetPeriod }),
+            ([Recorded(), Submitted(), Rejected()], corrected with { RejectionDecisionId = new("other-decision") }),
+            ([Recorded(), Submitted(), Rejected()], corrected with { RejectionReason = new("Other reason") }),
             ([Recorded()], adjustment with { PreviousValues = values with { ActivityTypeScope = ActivityTypeScope.Project } }),
             ([Recorded()], adjustment with { AdjustedValues = adjustment.AdjustedValues with { ActivityTypeScope = ActivityTypeScope.Project } }),
+            ([Recorded()], adjustment with { PreviousValues = values with { ActivityTypeScope = ActivityTypeScope.Project }, AdjustedValues = adjustment.AdjustedValues with { ActivityTypeScope = null } }),
+            ([Recorded()], adjustment with { PreviousValues = values with { ActivityTypeScope = null }, AdjustedValues = adjustment.AdjustedValues with { ActivityTypeScope = ActivityTypeScope.Project } }),
+
             ([Recorded(), Submitted(), Rejected()], corrected with { PreviousValues = values with { ActivityTypeScope = ActivityTypeScope.Project } }),
             ([Recorded(), Submitted(), Approved()], approvedCorrection with { PreviousValues = values with { ActivityTypeScope = ActivityTypeScope.Project } })
         ];
@@ -1485,6 +1493,164 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
         fullStore.Get().ActivityTypeScope.ShouldBe(ActivityTypeScope.Tenant);
         fullStore.Get().ApprovalState.ShouldBe(TimeEntryApprovalState.Approved);
         fullStore.Get().DurationMinutes.ShouldBe(75);
+    }
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(true, false, false)]
+    [InlineData(true, true, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, true)]
+    public async Task LegacyAdjustmentScopesAgreeAcrossFullSuffixStreamedAndDirectFolds(
+        bool omitPrevious, bool omitAdjusted, bool approvedCorrection)
+    {
+        TimeEntryAdjustedThroughMagicLink first = Adjusted() with
+        {
+            PreviousValues = Adjusted().PreviousValues with { ActivityTypeScope = omitPrevious ? null : ActivityTypeScope.Tenant },
+            ActivityTypeScope = ActivityTypeScope.Project,
+            AdjustedValues = Adjusted().AdjustedValues with
+            {
+                ActivityTypeScope = omitAdjusted ? null : ActivityTypeScope.Project,
+                ActivityTypeId = new("activity-2"), AiMetrics = AiEffortMetrics.Unavailable
+            }
+        };
+        TimeEntryAdjustedThroughMagicLink second = first with
+        {
+            PreviousValues = first.AdjustedValues with { ActivityTypeScope = null },
+            ActivityTypeScope = ActivityTypeScope.Tenant,
+            AdjustedValues = first.AdjustedValues with
+            {
+                ActivityTypeScope = null, ActivityTypeId = new("activity-3"), DurationMinutes = 80,
+                ServiceDate = new(2026, 6, 21), BillableState = BillableState.NonBillable
+            }
+        };
+        TimeEntryCorrectionValues correctedValues = second.AdjustedValues with { DurationMinutes = 90 };
+        object correction = approvedCorrection
+            ? new TimeEntryApprovedCorrected(new("entry-1"), new("correction-1"), new("tenant-1"), new("operator-1"),
+                new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.Zero), second.AdjustedValues, correctedValues,
+                new("Approved correction"), Approved().TimeEntryApprovalDecisionId, Approved().ApprovalScope,
+                TimeEntryApprovalState.Approved, TimeEntryCorrectionState.Corrected)
+            : Corrected(second.AdjustedValues, correctedValues);
+        object[] payloads = [Recorded(), first, second, Submitted(), approvedCorrection ? Approved() : Rejected(), correction];
+        if (!approvedCorrection)
+            payloads = [.. payloads, Submitted() with { TimeEntrySubmissionId = new("resubmission") }, Approved()];
+        payloads = [.. payloads, new TimeEntryContributorConfirmed(new("entry-1"), new("contributor-1"), new("tenant-1"),
+            new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero), new("magic-link", "later-confirmation"))];
+        ProjectionEventDto[] history = payloads.Select((item, index) => Event(index + 1, item)).ToArray();
+        JsonObject? final = null;
+        foreach (string delivery in new[] { "suffix", "full", "array", "streamed" })
+        {
+            var store = new TestStore();
+            var handler = new TimeEntryEvidenceProjectionHandler(store);
+            ProjectionRequest prefix = Request(history[..2]);
+            if (delivery is "array" or "streamed")
+            {
+                DomainProjectionRebuildPlan plan = delivery == "array"
+                    ? await handler.PrepareRebuildAsync(prefix, delivery, TestContext.Current.CancellationToken)
+                    : await handler.PrepareStreamedRebuildAsync(prefix with { Events = [] }, Stream(prefix.Events),
+                        delivery, TestContext.Current.CancellationToken);
+                JsonObject prepared = JsonNode.Parse(plan.Operations.Single().CanonicalValue.Span)!.AsObject();
+                await store.SaveAsync(TimeEntryEvidenceReadModelAddress.StateStoreName,
+                    TimeEntryEvidenceReadModelAddress.StateKey("tenant-1", new("entry-1")), prepared,
+                    TestContext.Current.CancellationToken);
+            }
+            else if (delivery == "full")
+            {
+                (await handler.ProjectAsync(prefix, delivery, TestContext.Current.CancellationToken))
+                    .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+            }
+            else
+            {
+                foreach (ProjectionEventDto item in history[..2])
+                    (await handler.ProjectAsync(Request(item), delivery, TestContext.Current.CancellationToken))
+                        .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+            }
+            AssertParity(store, 2);
+            store.Get().ExternalAdjustment.ShouldNotBeNull().PreviousValues.ShouldBe(first.PreviousValues);
+            store.Get().ExternalAdjustment!.AdjustedValues.ShouldBe(first.AdjustedValues);
+            foreach (ProjectionEventDto item in history[2..])
+            {
+                (await handler.ProjectAsync(delivery == "full" ? Request(history[..(int)item.SequenceNumber]) : Request(item),
+                    delivery + "-continuation", TestContext.Current.CancellationToken))
+                    .Status.ShouldBe(ProjectionDispatchStatus.Completed);
+                AssertParity(store, (int)item.SequenceNumber);
+                store.Get().ExternalAdjustment.ShouldNotBeNull().PreviousValues.ShouldBe(second.PreviousValues);
+                store.Get().ExternalAdjustment!.AdjustedValues.ShouldBe(second.AdjustedValues);
+                if (item.SequenceNumber == 3)
+                {
+                    JsonObject before = store.GetPacked();
+                    (await handler.ProjectAsync(Request([.. history[..3], history[1], history[2]]),
+                        "adjustment-redelivery", TestContext.Current.CancellationToken)).Status.ShouldBe(ProjectionDispatchStatus.Completed);
+                    JsonNode.DeepEquals(before, store.GetPacked()).ShouldBeTrue();
+                }
+            }
+            final ??= store.GetPacked();
+            JsonNode.DeepEquals(final, store.GetPacked()).ShouldBeTrue();
+        }
+
+        void AssertParity(TestStore store, int count)
+        {
+            TimeEntryEvidenceReadModel selected = store.Get();
+            TimeEntryEvidenceReadModel direct = new TimeEntryEvidenceProjection().Project("tenant-1", new("entry-1"),
+                payloads.Take(count).Select((item, index) => new TimeEntryProjectionEvent($"message-{index + 1}", index + 1, item, "tenant-1")),
+                new("tenant-1", TimeEntryEvidenceProjection.ProjectionName, count, ProjectionFreshness.Fresh))!;
+            direct = TimeEntryEvidenceCommentPolicy.Apply(direct, trustedPublicationAllowed: false) with
+            {
+                EventPayloadLineage = history.Take(count).Select(item => Convert.ToHexString(
+                    SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(item)))).ToArray()
+            };
+            JsonNode.DeepEquals(TimeEntryEvidenceCompactStorage.Pack(direct), TimeEntryEvidenceCompactStorage.Pack(selected)).ShouldBeTrue();
+            var authoritative = new TimeEntryState();
+            foreach (object item in payloads.Take(count))
+            {
+                switch (item)
+                {
+                    case TimeEntryRecorded value: authoritative.Apply(value); break;
+                    case TimeEntryAdjustedThroughMagicLink value: authoritative.Apply(value); break;
+                    case TimeEntrySubmitted value: authoritative.Apply(value); break;
+                    case TimeEntryApproved value: authoritative.Apply(value); break;
+                    case TimeEntryRejected value: authoritative.Apply(value); break;
+                    case TimeEntryCorrected value: authoritative.Apply(value); break;
+                    case TimeEntryApprovedCorrected value: authoritative.Apply(value); break;
+                    case TimeEntryContributorConfirmed value: authoritative.Apply(value); break;
+                }
+            }
+            selected.TimeEntryId.ShouldBe(authoritative.TimeEntryId);
+            new TimeEntryCorrectionValues(selected.Target, selected.Contributor, selected.ActivityTypeId,
+                selected.ServiceDate, selected.DurationMinutes, selected.BillableState, selected.ContributorCategory, selected.AiMetrics)
+                { ActivityTypeScope = selected.ActivityTypeScope, Comment = selected.Comment }.ShouldBe(
+                new TimeEntryCorrectionValues(authoritative.Target!, authoritative.Contributor!, authoritative.ActivityTypeId!,
+                    authoritative.ServiceDate, authoritative.DurationMinutes, authoritative.BillableState,
+                    authoritative.ContributorCategory, authoritative.AiMetrics)
+                    { ActivityTypeScope = authoritative.ActivityTypeScope, Comment = authoritative.Comment });
+            (selected.ApprovalState, selected.CorrectionState, selected.LockEvidence.LockState, selected.ExternalSource)
+                .ShouldBe((authoritative.ApprovalState, authoritative.CorrectionState, authoritative.LockState, authoritative.ExternalSource));
+            selected.ExternalAdjustment.ShouldBe(authoritative.ExternalAdjustment);
+            (selected.ApprovalDecision?.TimeEntryApprovalDecisionId, selected.ApprovalDecision?.Approver,
+                selected.ApprovalDecision?.Tenant, selected.ApprovalDecision?.DecidedAtUtc,
+                selected.ApprovalDecision?.ApprovalScope ?? TimeEntryApprovalScope.Unknown,
+                selected.ApprovalDecision?.AuthoritySource, selected.ApprovalDecision?.Reason)
+                .ShouldBe((authoritative.TimeEntryApprovalDecisionId, authoritative.Approver, authoritative.ApprovalTenant,
+                    authoritative.DecidedAtUtc, authoritative.ApprovalScope, authoritative.ApprovalAuthoritySource, authoritative.RejectionReason));
+            (selected.Correction?.TimeEntryCorrectionId ?? selected.ApprovedCorrection?.TimeEntryCorrectionId,
+                selected.Correction?.CorrectedBy ?? selected.ApprovedCorrection?.CorrectedBy,
+                selected.Correction?.Tenant ?? selected.ApprovedCorrection?.Tenant,
+                selected.Correction?.CorrectedAtUtc ?? selected.ApprovedCorrection?.CorrectedAtUtc,
+                selected.Correction?.PreviousValues ?? selected.ApprovedCorrection?.PreviousValues,
+                selected.Correction?.CorrectedValues ?? selected.ApprovedCorrection?.CorrectedValues)
+                .ShouldBe((authoritative.TimeEntryCorrectionId, authoritative.CorrectedBy, authoritative.CorrectionTenant,
+                    authoritative.CorrectedAtUtc, authoritative.PreviousValues, authoritative.CorrectedValues));
+            (selected.Correction?.RejectionDecisionId, selected.ApprovedCorrection?.SourceApprovalDecisionId,
+                selected.ApprovedCorrection?.SourceApprovalScope ?? TimeEntryApprovalScope.Unknown, selected.ApprovedCorrection?.Reason)
+                .ShouldBe((authoritative.TimeEntryCorrectionId is null || approvedCorrection ? null : authoritative.RejectionDecisionId,
+                    authoritative.SourceApprovalDecisionId, authoritative.SourceApprovalScope, authoritative.CorrectionReason));
+            (selected.ContributorConfirmation?.Contributor, selected.ContributorConfirmation?.ConfirmedAtUtc,
+                selected.ContributorConfirmation?.Source)
+                .ShouldBe((authoritative.ConfirmedContributor, authoritative.ConfirmedAtUtc, authoritative.ContributorConfirmationSource));
+        }
     }
 
     private static ProjectionRequest Request(params ProjectionEventDto[] events)

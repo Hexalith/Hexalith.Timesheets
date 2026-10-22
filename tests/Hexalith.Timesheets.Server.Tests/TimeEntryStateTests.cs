@@ -72,6 +72,26 @@ public sealed class TimeEntryStateTests
     }
 
     [Fact]
+    public void CorrectionAttributionMustMatchPrecedingDecisionBeforeMutation()
+    {
+        (object[] Prefix, object Invalid)[] cases =
+        [
+            ([Recorded(), Submitted(), Approved()], ApprovedCorrected() with { SourceApprovalDecisionId = new("other-decision") }),
+            ([Recorded(), Submitted(), Approved()], ApprovedCorrected() with { SourceApprovalScope = TimeEntryApprovalScope.TimesheetPeriod }),
+            ([Recorded(), Submitted(), Rejected()], Corrected() with { RejectionDecisionId = new("other-decision") }),
+            ([Recorded(), Submitted(), Rejected()], Corrected() with { RejectionReason = new("Other reason") })
+        ];
+        foreach ((object[] prefix, object invalid) in cases)
+        {
+            var state = new TimeEntryState();
+            foreach (object item in prefix) Apply(state, item);
+            string before = JsonSerializer.Serialize(state);
+            Should.Throw<InvalidOperationException>(() => Apply(state, invalid));
+            JsonSerializer.Serialize(state).ShouldBe(before);
+        }
+    }
+
+    [Fact]
     public void ContradictoryExplicitScopesLeaveEveryFieldUnchanged()
     {
         TimeEntryAdjustedThroughMagicLink adjustment = Adjusted();

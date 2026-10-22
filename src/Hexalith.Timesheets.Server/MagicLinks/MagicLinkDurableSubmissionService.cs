@@ -10,6 +10,7 @@ using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
@@ -36,7 +37,10 @@ public sealed class MagicLinkDurableSubmissionService(
             typeof(MagicLinkSubmissionPollingOptions),
             ["Timeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
 
-    /// <summary>Builds an internal commit intent from the server's resolved capability state.</summary>
+    /// <summary>
+    /// Builds an internal commit intent from the server's resolved capability state.
+    /// Adjustment success requires the complete trusted prior snapshot captured before submission.
+    /// </summary>
     public Task<bool> SubmitResolvedUseAsync(
         MagicLinkCapabilityState capability,
         MagicLinkUseAction action,
@@ -44,10 +48,21 @@ public sealed class MagicLinkDurableSubmissionService(
         DateTimeOffset usedAtUtc,
         string requestId,
         CancellationToken cancellationToken)
+        => SubmitResolvedUseAsync(capability, action, adjustment, usedAtUtc, requestId, cancellationToken, null);
+
+    /// <summary>Submits resolved intent with the trusted prior snapshot needed to verify an adjustment.</summary>
+    public Task<bool> SubmitResolvedUseAsync(
+        MagicLinkCapabilityState capability,
+        MagicLinkUseAction action,
+        AdjustTimeThroughMagicLink? adjustment,
+        DateTimeOffset usedAtUtc,
+        string requestId,
+        CancellationToken cancellationToken,
+        TimeEntryCorrectionValues? trustedPreviousValues)
         => capability is { CapabilityId: { } capabilityId, Tenant: { } tenant, TimeEntryId: { } timeEntryId, TokenHash: { } hash }
             ? SubmitUseAsync(new CommitMagicLinkUse(
                 capabilityId, tenant, timeEntryId, hash, action, adjustment, usedAtUtc),
-                requestId, cancellationToken, capability)
+                requestId, cancellationToken, capability, trustedPreviousValues)
             : Task.FromResult(false);
 
     /// <summary>Returns true only after an issued capability event is committed in its own stream.</summary>
@@ -186,18 +201,35 @@ public sealed class MagicLinkDurableSubmissionService(
         }
     }
 
-    /// <summary>Returns true only for a verified two-event committed use.</summary>
+    /// <summary>
+    /// Returns true only for a verified two-event committed use.
+    /// Adjustments require the complete trusted prior snapshot captured before submission.
+    /// </summary>
     public Task<bool> SubmitUseAsync(CommitMagicLinkUse intent, string requestId, CancellationToken cancellationToken)
-        => SubmitUseAsync(intent, requestId, cancellationToken, null);
+        => SubmitUseAsync(intent, requestId, cancellationToken, null, null);
+
+    /// <summary>Submits use intent with the trusted prior snapshot needed to verify an adjustment.</summary>
+    public Task<bool> SubmitUseAsync(CommitMagicLinkUse intent, string requestId, CancellationToken cancellationToken,
+        TimeEntryCorrectionValues? trustedPreviousValues)
+        => SubmitUseAsync(intent, requestId, cancellationToken, null, trustedPreviousValues);
 
     private async Task<bool> SubmitUseAsync(
         CommitMagicLinkUse intent,
         string requestId,
         CancellationToken cancellationToken,
-        MagicLinkCapabilityState? capability)
+        MagicLinkCapabilityState? capability,
+        TimeEntryCorrectionValues? trustedPreviousValues)
     {
         ArgumentNullException.ThrowIfNull(intent);
         ArgumentException.ThrowIfNullOrWhiteSpace(requestId);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (intent.Action == MagicLinkUseAction.Adjust
+            && (trustedPreviousValues is null
+                || intent.Adjustment?.Comment is not null && capability is null))
+        {
+            return false;
+        }
+
         string messageId = CreateMessageId(intent, requestId);
         try
         {
@@ -225,7 +257,7 @@ public sealed class MagicLinkDurableSubmissionService(
                     {
                         using CancellationTokenSource probe = CreateProbeDeadline(deadline.Token);
                         bool? verified = await VerifyCommittedBatchAsync(intent, messageId, status, capability,
-                            expectedComment, probe.Token)
+                            trustedPreviousValues, expectedComment, probe.Token)
                             .WaitAsync(probe.Token).ConfigureAwait(false);
                         if (verified is not null)
                         {
@@ -362,6 +394,7 @@ public sealed class MagicLinkDurableSubmissionService(
         string messageId,
         CommandStatusQueryResponse status,
         MagicLinkCapabilityState? capability,
+        TimeEntryCorrectionValues? trustedPreviousValues,
         TimeEntryComment? expectedComment,
         CancellationToken cancellationToken)
     {
@@ -436,7 +469,9 @@ public sealed class MagicLinkDurableSubmissionService(
                 && adjusted.Source.SourceSystem == "magic-link"
                 && adjusted.Source.ExternalRequestId == intent.CapabilityId.Value
                 && adjusted.ActivityTypeScope == ActivityTypeScope.Tenant
+                && trustedPreviousValues is not null
                 && adjusted.PreviousValues is { } previous
+                && previous == trustedPreviousValues
                 && adjusted.AdjustedValues is { } next
                 && previous.Target == next.Target
                 && (capability is null || next.Target == capability.Target)
@@ -474,7 +509,8 @@ public sealed class MagicLinkDurableSubmissionService(
 
     private static bool HasStoredEventIdentity(StreamReadEvent stored, string commandMessageId)
         => !string.IsNullOrWhiteSpace(stored.MessageId)
-            && StringComparer.Ordinal.Equals(stored.CorrelationId, commandMessageId);
+            && StringComparer.Ordinal.Equals(stored.CorrelationId, commandMessageId)
+            && StringComparer.Ordinal.Equals(stored.CausationId, commandMessageId);
 
     private static bool IsStaleReadback(StreamReadPage page, long lastSequence, int eventCount)
         => page.Events.Count < eventCount

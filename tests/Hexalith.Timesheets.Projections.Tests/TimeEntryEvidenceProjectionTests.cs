@@ -1058,6 +1058,32 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
+    public void CorrectionAttributionMatchesPrecedingDecisionInFullAndIncrementalReplay()
+    {
+        const string id = "time-entry-1";
+        (object Decision, object Invalid)[] cases =
+        [
+            (Approved(id), ApprovedCorrected(id, 75) with { SourceApprovalDecisionId = new("other-decision") }),
+            (Approved(id), ApprovedCorrected(id, 75) with { SourceApprovalScope = TimeEntryApprovalScope.TimesheetPeriod }),
+            (Rejected(id), Corrected(id, 75) with { RejectionDecisionId = new("other-decision") }),
+            (Rejected(id), Corrected(id, 75) with { RejectionReason = new("Other reason") })
+        ];
+        foreach ((object decision, object invalid) in cases)
+        {
+            TimeEntryProjectionEvent[] prefix = [Event("record", 1, Recorded(id, 45)),
+                Event("submit", 2, Submitted(id)), Event("decision", 3, decision)];
+            TimeEntryEvidenceReadModel current = Projector().Project("tenant-1", TimeEntryId(), prefix, FreshCheckpoint(3))!;
+            string before = System.Text.Json.JsonSerializer.Serialize(current);
+            TimeEntryProjectionEvent suffix = Event("correction", 4, invalid);
+            Should.Throw<InvalidOperationException>(() => Projector().Project(
+                "tenant-1", TimeEntryId(), [.. prefix, suffix], FreshCheckpoint(4)));
+            Should.Throw<InvalidOperationException>(() => Projector().ProjectNext(
+                "tenant-1", TimeEntryId(), current, suffix, FreshCheckpoint(4)));
+            System.Text.Json.JsonSerializer.Serialize(current).ShouldBe(before);
+        }
+    }
+
+    [Fact]
     public void LegacyScopesCanonicalRedeliveryAndUnrelatedOwnersPreserveEquivalentReplay()
     {
         TimeEntryAdjustedThroughMagicLink adjustment = Adjusted("time-entry-1", 75);

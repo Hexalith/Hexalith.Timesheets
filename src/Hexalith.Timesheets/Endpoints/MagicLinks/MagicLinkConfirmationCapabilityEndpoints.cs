@@ -363,6 +363,11 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     .LoadTokenStateAsync(t, cancellationToken)
                     .ConfigureAwait(false);
                 DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
+                TimeEntryCorrectionValues? trustedPreviousValues = state.TimeEntryState is { IsRecorded: true } prior
+                    ? new(prior.Target!, prior.Contributor!, prior.ActivityTypeId!, prior.ServiceDate,
+                        prior.DurationMinutes, prior.BillableState, prior.ContributorCategory, prior.AiMetrics)
+                    { ActivityTypeScope = prior.ActivityTypeScope, Comment = prior.Comment }
+                    : null;
                 MagicLinkConfirmationUseResult result = await service.AdjustAsync(
                     MagicLinkExternalRequestContext.FromResolvedCapability(
                         state.CapabilityState,
@@ -380,7 +385,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     && await submission.SubmitResolvedUseAsync(
                         resolvedCapability, MagicLinkUseAction.Adjust, command, usedAtUtc,
                         httpContext.TraceIdentifier,
-                        cancellationToken).ConfigureAwait(false))
+                        cancellationToken, trustedPreviousValues).ConfigureAwait(false))
                 {
                     return Results.Accepted();
                 }

@@ -2788,7 +2788,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                             1,
                             $"{request.MessageId}-{index}",
                             request.CorrelationId ?? request.MessageId,
-                            null,
+                            request.MessageId,
                             ObservedAtUtc,
                             "fixture");
                         stored.Add(StoredEventTransform?.Invoke(persisted) ?? persisted);

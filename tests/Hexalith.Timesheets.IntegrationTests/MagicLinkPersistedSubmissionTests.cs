@@ -333,6 +333,186 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Length.ShouldBe(3);
     }
 
+    public static TheoryData<string, int, string, string?> ReceiptAttributionCases()
+    {
+        var cases = new TheoryData<string, int, string, string?>();
+        foreach ((string action, int position) in new (string, int)[]
+            { ("issue", 0), ("revoke", 0), ("expire", 0), ("confirm", 0), ("confirm", 1), ("adjust", 0), ("adjust", 1) })
+            foreach (string field in new[] { "correlation", "causation" })
+                foreach (string? value in new string?[] { null, "foreign-command" })
+                    cases.Add(action, position, field, value);
+        return cases;
+    }
+
+    [Theory]
+    [MemberData(nameof(ReceiptAttributionCases))]
+    public async Task EveryReceiptRequiresSubmittedCommandCorrelationAndCausation(
+        string action, int position, string field, string? value)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId("capability-receipt-attribution");
+        var entryId = new TimeEntryId("entry-receipt-attribution");
+        bool adjust = action == "adjust";
+        string token = adjust ? ValidAdjustToken() : ValidConfirmToken();
+        await factory.ProjectValidStateAsync(client, token,
+            adjust ? MagicLinkAllowedAction.Adjust : MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        if (action == "expire")
+        {
+            StreamReadEvent seed = factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).Single();
+            MagicLinkConfirmationCapabilityIssued issued = Persisted<MagicLinkConfirmationCapabilityIssued>(seed);
+            factory.Gateway.WithStream(Tenant().TenantId, capabilityId.Value, seed with
+            {
+                Payload = JsonSerializer.SerializeToUtf8Bytes(issued with { ExpiresAtUtc = ObservedAtUtc }, JsonOptions)
+            });
+        }
+        int eventPosition = 0;
+        factory.Gateway.StoredEventTransform = stored => eventPosition++ == position
+            ? field == "correlation" ? stored with { CorrelationId = value! } : stored with { CausationId = value }
+            : stored;
+        using HttpResponseMessage response = action switch
+        {
+            "issue" => await factory.PostProtectedManagementAsync(client, "/api/timesheets/magic-links/confirmation-capabilities",
+                new IssueMagicLinkConfirmationCapability(new("issued-receipt-attribution"),
+                    new(Contributor(), TimeEntryTargetReference.ForProject(Project()), ActivityId(),
+                        new("proposed-receipt-attribution"), MagicLinkTargetKind.ProposedTimeEntry),
+                    MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1), new("timesheets", "issue"))),
+            "revoke" => await factory.PostProtectedManagementAsync(client,
+                $"/api/timesheets/magic-links/confirmation-capabilities/{capabilityId.Value}/revoke",
+                new RevokeMagicLinkConfirmationCapability(capabilityId, new("timesheets", "revoke"))),
+            "expire" => await factory.PostProtectedManagementAsync(client,
+                $"/api/timesheets/magic-links/confirmation-capabilities/{capabilityId.Value}/expire",
+                new ExpireMagicLinkConfirmationCapability(capabilityId, new("timesheets", "expire"))),
+            "adjust" => await client.PostAsJsonAsync($"/api/timesheets/magic-links/adjust/submit?t={token}",
+                AdjustCommand(), TestContext.Current.CancellationToken),
+            _ => await client.PostAsJsonAsync($"/api/timesheets/magic-links/confirm/submit?t={token}",
+                new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken)
+        };
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId,
+            action == "issue" ? "issued-receipt-attribution" : entryId.Value);
+        stored.Length.ShouldBe(action == "issue" ? 1 : action is "revoke" or "expire" ? 2 : 3);
+        StreamReadEvent changed = stored[action == "issue" ? position : position + 1];
+        (field == "correlation" ? changed.CorrelationId : changed.CausationId).ShouldBe(value);
+        if (action is "confirm" or "adjust")
+        {
+            CapturedFailure denial = await CaptureFailureAsync(response, "receipt", token);
+            using HttpResponseMessage unknown = await client.PostAsJsonAsync(
+                $"/api/timesheets/magic-links/{action}/submit?t=unknown-attribution-token",
+                adjust ? (object)AdjustCommand() : new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+            CapturedFailure baseline = await CaptureFailureAsync(unknown, "unknown", "unknown-attribution-token");
+            denial.NormalizedBody.ShouldBe(baseline.NormalizedBody);
+            denial.Headers.ShouldBe(baseline.Headers);
+        }
+    }
+
+    [Theory]
+    [InlineData("target")]
+    [InlineData("contributor")]
+    [InlineData("activity")]
+    [InlineData("scope")]
+    [InlineData("date")]
+    [InlineData("duration")]
+    [InlineData("billable")]
+    [InlineData("category")]
+    [InlineData("aiMetrics")]
+    [InlineData("comment")]
+    public async Task AdjustmentReceiptRequiresEveryTrustedPriorValue(string field)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"capability-prior-{field}");
+        var entryId = new TimeEntryId($"entry-prior-{field}");
+        await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust, capabilityId, entryId);
+        factory.Gateway.StoredPayloadTransform = payload => payload is StoredTimeEntryAdjusted stored
+            ? stored with { Event = stored.Event with { PreviousValues = field switch
+            {
+                "target" => stored.Event.PreviousValues with { Target = TimeEntryTargetReference.ForProject(new("other-project")) },
+                "contributor" => stored.Event.PreviousValues with { Contributor = OtherContributor() },
+                "activity" => stored.Event.PreviousValues with { ActivityTypeId = new("other-activity") },
+                "scope" => stored.Event.PreviousValues with { ActivityTypeScope = ActivityTypeScope.Project },
+                "date" => stored.Event.PreviousValues with { ServiceDate = stored.Event.PreviousValues.ServiceDate.AddDays(1) },
+                "duration" => stored.Event.PreviousValues with { DurationMinutes = stored.Event.PreviousValues.DurationMinutes + 1 },
+                "billable" => stored.Event.PreviousValues with { BillableState = BillableState.NonBillable },
+                "category" => stored.Event.PreviousValues with { ContributorCategory = ContributorCategory.Employee },
+                "aiMetrics" => stored.Event.PreviousValues with { AiMetrics = AiEffortMetrics.Unavailable },
+                "comment" => stored.Event.PreviousValues with { Comment = new("Forged prior evidence", TimeEntryCommentPolicy.SensitiveDefault) },
+                _ => throw new ArgumentOutOfRangeException(nameof(field))
+            } } } : payload;
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}", AdjustCommand(), TestContext.Current.CancellationToken);
+        CapturedFailure denial = await CaptureFailureAsync(response, field, ValidAdjustToken());
+        using HttpResponseMessage unknown = await client.PostAsJsonAsync(
+            "/api/timesheets/magic-links/adjust/submit?t=unknown-prior-token", AdjustCommand(), TestContext.Current.CancellationToken);
+        CapturedFailure baseline = await CaptureFailureAsync(unknown, "unknown", "unknown-prior-token");
+        denial.NormalizedBody.ShouldBe(baseline.NormalizedBody);
+        denial.Headers.ShouldBe(baseline.Headers);
+        StreamReadEvent[] persisted = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        persisted.Length.ShouldBe(3);
+        TimeEntryRecorded recording = Persisted<TimeEntryRecorded>(persisted[0]);
+        TimeEntryAdjustedThroughMagicLink adjustment = Persisted<StoredTimeEntryAdjusted>(persisted[2]).Event;
+        TimeEntryCorrectionValues trusted = new(recording.Target, recording.Contributor, recording.ActivityTypeId,
+            recording.ServiceDate, recording.DurationMinutes, recording.BillableState, recording.ContributorCategory, recording.AiMetrics)
+            { ActivityTypeScope = recording.ActivityTypeScope, Comment = recording.Comment };
+        adjustment.PreviousValues.ShouldNotBe(trusted);
+    }
+
+    [Theory]
+    [InlineData("matching")]
+    [InlineData("removed")]
+    [InlineData("text")]
+    [InlineData("policy")]
+    public async Task AdjustmentReceiptVerifiesExistingPriorComment(string change)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"capability-prior-comment-{change}");
+        var entryId = new TimeEntryId($"entry-prior-comment-{change}");
+        await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust, capabilityId, entryId);
+        var priorComment = new TimeEntryComment("existing private evidence", TimeEntryCommentPolicy.SensitiveDefault);
+        StreamReadEvent seed = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Single();
+        TimeEntryRecorded recording = Persisted<TimeEntryRecorded>(seed) with { Comment = priorComment };
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value, seed with
+        {
+            Payload = JsonSerializer.SerializeToUtf8Bytes(recording, JsonOptions)
+        });
+        TimeEntryComment? storedComment = change switch
+        {
+            "removed" => null,
+            "text" => new TimeEntryComment("forged private evidence", priorComment.Policy),
+            "policy" => new TimeEntryComment(priorComment.Text, priorComment.Policy with { ExportInclusion = TimesheetsCommentPolicyDecision.Allowed }),
+            _ => priorComment
+        };
+        factory.Gateway.StoredPayloadTransform = payload => payload is StoredTimeEntryAdjusted stored
+            ? stored with { Event = stored.Event with { PreviousValues = stored.Event.PreviousValues with { Comment = storedComment } } }
+            : payload;
+        using HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}", AdjustCommand(), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(change == "matching" ? HttpStatusCode.Accepted : HttpStatusCode.Forbidden);
+        StreamReadEvent[] persisted = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        persisted.Length.ShouldBe(3);
+        Persisted<TimeEntryRecorded>(persisted[0]).ShouldBe(recording);
+        TimeEntryCorrectionValues trusted = new(recording.Target, recording.Contributor, recording.ActivityTypeId,
+            recording.ServiceDate, recording.DurationMinutes, recording.BillableState, recording.ContributorCategory, recording.AiMetrics)
+            { ActivityTypeScope = recording.ActivityTypeScope, Comment = priorComment };
+        TimeEntryCorrectionValues storedPrior = Persisted<StoredTimeEntryAdjusted>(persisted[2]).Event.PreviousValues;
+        storedPrior.ShouldBe(trusted with { Comment = storedComment });
+        if (change == "matching")
+        {
+            storedPrior.ShouldBe(trusted);
+        }
+        else
+        {
+            storedPrior.ShouldNotBe(trusted);
+            CapturedFailure denial = await CaptureFailureAsync(response, change, ValidAdjustToken());
+            using HttpResponseMessage unknown = await client.PostAsJsonAsync(
+                "/api/timesheets/magic-links/adjust/submit?t=unknown-prior-comment-token", AdjustCommand(), TestContext.Current.CancellationToken);
+            CapturedFailure baseline = await CaptureFailureAsync(unknown, "unknown", "unknown-prior-comment-token");
+            denial.NormalizedBody.ShouldBe(baseline.NormalizedBody);
+            denial.Headers.ShouldBe(baseline.Headers);
+        }
+    }
+
     [Theory]
     [InlineData("text")]
     [InlineData("serverProjection")]

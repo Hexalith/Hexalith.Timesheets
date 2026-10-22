@@ -192,7 +192,10 @@ public sealed class TimeEntryEvidenceProjectionHandler(
                 next = TimeEntryEvidenceCommentPolicy.Apply(next, _trustedCommentPublicationAllowed);
                 nextValuesDigest = payload switch
                 {
-                    TimeEntryAdjustedThroughMagicLink adjusted => DigestValues(adjusted.AdjustedValues),
+                    TimeEntryAdjustedThroughMagicLink adjusted => DigestValues(adjusted.AdjustedValues with
+                    {
+                        ActivityTypeScope = adjusted.AdjustedValues.ActivityTypeScope ?? adjusted.ActivityTypeScope
+                    }),
                     TimeEntryCorrected corrected => DigestValues(corrected.CorrectedValues with
                     {
                         ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope
@@ -240,10 +243,13 @@ public sealed class TimeEntryEvidenceProjectionHandler(
                 && (correctedBefore
                     || current.ContributorCategory != ContributorCategory.ExternalContributor
                     || adjusted.Contributor != current.Contributor
-                    || DigestValues(adjusted.PreviousValues) != priorValuesDigest
+                    || DigestValues(adjusted.PreviousValues with
+                    {
+                        ActivityTypeScope = adjusted.PreviousValues.ActivityTypeScope ?? current.ActivityTypeScope
+                    }) != priorValuesDigest
                     || adjusted.AdjustedValues.Target != current.Target
                     || adjusted.AdjustedValues.Contributor != current.Contributor
-                    || adjusted.AdjustedValues.ActivityTypeScope != adjusted.ActivityTypeScope)
+                    || adjusted.AdjustedValues.ActivityTypeScope is { } adjustedScope && adjustedScope != adjusted.ActivityTypeScope)
             || payload is TimeEntryCorrected correction
                 && (correctedBefore
                     || DigestValues(correction.PreviousValues with
@@ -489,25 +495,28 @@ public sealed class TimeEntryEvidenceProjectionHandler(
                     && (seenCorrection
                         || precedingValues?.ContributorCategory != ContributorCategory.ExternalContributor
                         || adjustment.Contributor != precedingValues?.Contributor
-                        || !Equals(adjustment.PreviousValues, precedingValues)
+                        || !MatchesPreviousValues(adjustment.PreviousValues, precedingValues)
                         || adjustment.AdjustedValues.Target != precedingValues?.Target
                         || adjustment.AdjustedValues.Contributor != precedingValues.Contributor
-                        || adjustment.AdjustedValues.ActivityTypeScope != adjustment.ActivityTypeScope)
+                        || adjustment.AdjustedValues.ActivityTypeScope is { } adjustedScope && adjustedScope != adjustment.ActivityTypeScope)
                     || payload is TimeEntryCorrected correction
                     && (seenCorrection
-                        || !MatchesPreviousCorrectionValues(correction.PreviousValues, precedingValues)
+                        || !MatchesPreviousValues(correction.PreviousValues, precedingValues)
                         || correction.RejectionDecisionId != precedingRejectionDecision
                         || correction.RejectionReason != precedingRejectionReason)
                     || payload is TimeEntryApprovedCorrected approvedCorrection
                     && (seenCorrection
-                        || !MatchesPreviousCorrectionValues(approvedCorrection.PreviousValues, precedingValues)
+                        || !MatchesPreviousValues(approvedCorrection.PreviousValues, precedingValues)
                         || approvedCorrection.SourceApprovalDecisionId != precedingApprovalDecision
                         || approvedCorrection.SourceApprovalScope != precedingApprovalScope))
                     throw new InvalidOperationException("Time Entry transition contradicts its preceding state.");
 
                 precedingValues = payload switch
                 {
-                    TimeEntryAdjustedThroughMagicLink adjusted => adjusted.AdjustedValues,
+                    TimeEntryAdjustedThroughMagicLink adjusted => adjusted.AdjustedValues with
+                    {
+                        ActivityTypeScope = adjusted.AdjustedValues.ActivityTypeScope ?? adjusted.ActivityTypeScope
+                    },
                     TimeEntryCorrected corrected => corrected.CorrectedValues with
                     {
                         ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? precedingValues?.ActivityTypeScope
@@ -625,18 +634,18 @@ public sealed class TimeEntryEvidenceProjectionHandler(
                 && (seenCorrection
                     || precedingValues?.ContributorCategory != ContributorCategory.ExternalContributor
                     || adjustment.Contributor != precedingValues?.Contributor
-                    || !Equals(adjustment.PreviousValues, precedingValues)
+                    || !MatchesPreviousValues(adjustment.PreviousValues, precedingValues)
                     || adjustment.AdjustedValues.Target != precedingValues?.Target
                     || adjustment.AdjustedValues.Contributor != precedingValues.Contributor
-                    || adjustment.AdjustedValues.ActivityTypeScope != adjustment.ActivityTypeScope)
+                    || adjustment.AdjustedValues.ActivityTypeScope is { } adjustedScope && adjustedScope != adjustment.ActivityTypeScope)
                 || payload is TimeEntryCorrected correction
                 && (seenCorrection
-                    || !MatchesPreviousCorrectionValues(correction.PreviousValues, precedingValues)
+                    || !MatchesPreviousValues(correction.PreviousValues, precedingValues)
                     || correction.RejectionDecisionId != precedingRejectionDecision
                     || correction.RejectionReason != precedingRejectionReason)
                 || payload is TimeEntryApprovedCorrected approvedCorrection
                 && (seenCorrection
-                    || !MatchesPreviousCorrectionValues(approvedCorrection.PreviousValues, precedingValues)
+                    || !MatchesPreviousValues(approvedCorrection.PreviousValues, precedingValues)
                     || approvedCorrection.SourceApprovalDecisionId != precedingApprovalDecision
                     || approvedCorrection.SourceApprovalScope != precedingApprovalScope))
             {
@@ -645,7 +654,10 @@ public sealed class TimeEntryEvidenceProjectionHandler(
 
             precedingValues = payload switch
             {
-                TimeEntryAdjustedThroughMagicLink adjusted => adjusted.AdjustedValues,
+                TimeEntryAdjustedThroughMagicLink adjusted => adjusted.AdjustedValues with
+                {
+                    ActivityTypeScope = adjusted.AdjustedValues.ActivityTypeScope ?? adjusted.ActivityTypeScope
+                },
                 TimeEntryCorrected corrected => corrected.CorrectedValues with
                 {
                     ActivityTypeScope = corrected.CorrectedValues.ActivityTypeScope ?? precedingValues?.ActivityTypeScope
@@ -706,7 +718,7 @@ public sealed class TimeEntryEvidenceProjectionHandler(
             _trustedCommentPublicationAllowed);
     }
 
-    private static bool MatchesPreviousCorrectionValues(
+    private static bool MatchesPreviousValues(
         TimeEntryCorrectionValues previous,
         TimeEntryCorrectionValues? effective)
         => effective is not null

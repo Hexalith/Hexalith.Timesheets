@@ -1716,6 +1716,32 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         }
     }
 
+    [Theory]
+    [InlineData("approvalDecision")]
+    [InlineData("approvalScope")]
+    [InlineData("rejectionDecision")]
+    [InlineData("rejectionReason")]
+    public async Task ContradictoryCorrectionAttributionDeniesOpaquely(string field)
+    {
+        bool approved = field.StartsWith("approval", StringComparison.Ordinal);
+        object correction = field switch
+        {
+            "approvalDecision" => ApprovedCorrected() with { SourceApprovalDecisionId = new("other-decision") },
+            "approvalScope" => ApprovedCorrected() with { SourceApprovalScope = TimeEntryApprovalScope.TimesheetPeriod },
+            "rejectionDecision" => Corrected(ActivityTypeScope.Tenant) with { RejectionDecisionId = new("other-decision") },
+            "rejectionReason" => Corrected(ActivityTypeScope.Tenant) with { RejectionReason = new("Other reason") },
+            _ => throw new ArgumentOutOfRangeException(nameof(field))
+        };
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value,
+                Event(1, "record", Recorded(activityTypeScope: ActivityTypeScope.Project)),
+                Event(2, "submit", Submitted(Tenant())), Event(3, "decision", approved ? Approved() : Rejected()),
+                Event(4, "correction", correction));
+        ShouldBeOpaqueFailClosed(await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
+            .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+    }
+
     private static void ShouldBeOpaqueFailClosed(MagicLinkEndpointTokenState state)
     {
         // Every loader failure stage collapses to the identical opaque token state: no capability, no
