@@ -652,7 +652,214 @@ public sealed class MagicLinkGlobalIndexEpochTests
         (await candidateTask).ShouldBe(expected[interiorHash]);
     }
 
-    private sealed class FixedCursor(IReadOnlyList<DomainSharedProjectionRebuildPartition> partitions)
+    /// <summary>Rejects malformed streamed owner content before exposing any selected mutation.</summary>
+    /// <param name="json">The malformed owner contribution.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("{")]
+    [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("""{"tokenHash":null,"candidate":{"tenant":{"tenantId":"tenant-1"},"capabilityId":{"value":"capability-1"}}}""")]
+    [InlineData("""{"tokenHash":"","candidate":{"tenant":{"tenantId":"tenant-1"},"capabilityId":{"value":"capability-1"}}}""")]
+    [InlineData("""{"tokenHash":" ","candidate":{"tenant":{"tenantId":"tenant-1"},"capabilityId":{"value":"capability-1"}}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":null}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":null,"capabilityId":{"value":"capability-1"}}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":{"tenantId":null},"capabilityId":{"value":"capability-1"}}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":{"tenantId":" "},"capabilityId":{"value":"capability-1"}}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":{"tenantId":"tenant-1"},"capabilityId":null}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":{"tenantId":"tenant-1"},"capabilityId":{"value":null}}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":{"tenantId":"tenant-1"},"capabilityId":{"value":" "}}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":{"tenantId":"tenant-2"},"capabilityId":{"value":"capability-1"}}}""")]
+    [InlineData("""{"tokenHash":"hash","candidate":{"tenant":{"tenantId":"tenant-1"},"capabilityId":{"value":"other-owner"}}}""")]
+    public async Task MalformedStreamedPartitionsFailBeforeYieldingOrWriting(string json)
+    {
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store,
+            epochCoordinator: coordinator);
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets",
+            handler.ProjectionType, "invalid-streamed-content", "catalog");
+        const string key = MagicLinkTokenHashCapabilityIndexProjection.StateKey;
+        MagicLinkTokenHashCapabilityIndexReadModel preserved =
+            MagicLinkTokenHashCapabilityIndexProjection.FromContributions(
+                [new("existing-hash", new(new TenantReference("tenant-2"), new MagicLinkCapabilityId("existing-owner")))]);
+        await store.SaveAsync(handler.RebuildStoreName, key, preserved, TestContext.Current.CancellationToken);
+        ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> before = await store
+            .GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(handler.RebuildStoreName, key,
+                TestContext.Current.CancellationToken);
+        int writes = 0;
+        store.ConcurrentWriteBeforeTrySave = () => writes++;
+        ReadOnlyMemory<byte> valid = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            TokenHash = "valid-hash",
+            Candidate = new MagicLinkTokenHashCapabilityIndexEntry(
+                new TenantReference("tenant-1"), new MagicLinkCapabilityId("capability-0"))
+        }, s_json);
+        var cursor = new FixedCursor(
+        [
+            new(0, "capability-0", valid),
+            new(1, "capability-1", System.Text.Encoding.UTF8.GetBytes(json))
+        ]);
+        var operations = new List<ReadModelBatchOperation>();
+
+        _ = await Should.ThrowAsync<ProjectionFoldException>(async () =>
+        {
+            await foreach (ReadModelBatchOperation operation in handler.StreamFinalizedOperationsAsync(
+                identity, cursor, TestContext.Current.CancellationToken))
+            {
+                operations.Add(operation);
+            }
+        });
+
+        operations.ShouldBeEmpty();
+        writes.ShouldBe(0);
+        ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> after = await store
+            .GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(handler.RebuildStoreName, key,
+                TestContext.Current.CancellationToken);
+        after.ETag.ShouldBe(before.ETag);
+        JsonSerializer.Serialize(after.Value, s_json).ShouldBe(JsonSerializer.Serialize(before.Value, s_json));
+    }
+
+    /// <summary>Keeps a producer's JSON-null no-issuance contribution valid through commit.</summary>
+    [Fact]
+    public async Task StreamedNullContributionCommitsAnEmptyIndex()
+    {
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store,
+            epochCoordinator: coordinator);
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets",
+            handler.ProjectionType, "null-streamed-content", "catalog");
+        SharedProjectionScope scope = handler.CreateScope(identity.TenantId);
+        _ = await coordinator.RegisterWriterAsync(scope, handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        _ = await coordinator.BeginAsync(scope, identity.OperationId, "no-issuance-inventory",
+            new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        ReadOnlyMemory<byte> noIssuance = await handler.PreparePartitionAsync(identity,
+            new ProjectionRequest(identity.TenantId, identity.Domain, "no-issuance-owner", []),
+            TestContext.Current.CancellationToken);
+        System.Text.Encoding.UTF8.GetString(noIssuance.Span).ShouldBe("null");
+
+        _ = await coordinator.StageStreamingAsync(scope, identity.OperationId,
+            handler.StreamFinalizedOperationsAsync(identity,
+                new FixedCursor([new(0, "no-issuance-owner", noIssuance)]), TestContext.Current.CancellationToken),
+            TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(scope, identity.OperationId, TestContext.Current.CancellationToken);
+
+        SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexTreeRoot> selected = await coordinator
+            .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken);
+        selected.IsAvailable.ShouldBeTrue();
+        MagicLinkTokenHashCapabilityIndexTreeRoot root = selected.Value.ShouldNotBeNull();
+        root.StorageVersion.ShouldBe(7);
+        root.TokenRoot.ShouldBeNull();
+        var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope);
+        (await reader.ReadRosterAsync(root.TenantRoot, identity.TenantId,
+            TestContext.Current.CancellationToken)).ShouldNotBeNull().ShouldBeEmpty();
+    }
+
+    /// <summary>Does not reclassify cursor transport faults as malformed contribution content.</summary>
+    /// <param name="failure">The cursor fault category.</param>
+    [Theory]
+    [InlineData("http")]
+    [InlineData("invalid-operation")]
+    [InlineData("json")]
+    public async Task StreamedCursorReadFaultsRetainTheirOriginalException(string failure)
+    {
+        Exception outage = failure switch
+        {
+            "http" => new HttpRequestException("Cursor unavailable."),
+            "invalid-operation" => new InvalidOperationException("Cursor unavailable."),
+            "json" => new JsonException("Cursor unavailable."),
+            _ => throw new InvalidOperationException("Unknown cursor fault.")
+        };
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store,
+            epochCoordinator: coordinator);
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets",
+            handler.ProjectionType, "unavailable-streamed-cursor", "catalog");
+        SharedProjectionScope scope = handler.CreateScope(identity.TenantId);
+        _ = await coordinator.RegisterWriterAsync(scope, handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        _ = await coordinator.BeginAsync(scope, "seed-before-cursor-fault", "preserved-inventory",
+            new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        string key = MagicLinkTokenHashCapabilityIndexProjection.ShardKey("existing-hash");
+        MagicLinkTokenHashCapabilityIndexReadModel preserved =
+            MagicLinkTokenHashCapabilityIndexProjection.FromContributions(
+                [new("existing-hash", new(new TenantReference("tenant-2"), new MagicLinkCapabilityId("existing-owner")))]);
+        _ = await coordinator.StageAsync(scope, "seed-before-cursor-fault",
+            [ReadModelBatchOperation.Write(key, preserved, ReadModelBatchConcurrency.LastWrite)],
+            TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(scope, "seed-before-cursor-fault", TestContext.Current.CancellationToken);
+        long generation = (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken))
+            .ActiveGeneration;
+        ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> before = await coordinator
+            .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope, generation, key,
+                TestContext.Current.CancellationToken);
+        ReadOnlyMemory<byte> valid = JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            TokenHash = "valid-hash",
+            Candidate = new MagicLinkTokenHashCapabilityIndexEntry(
+                new TenantReference("tenant-1"), new MagicLinkCapabilityId("capability-1"))
+        }, s_json);
+        int writes = 0;
+        store.ConcurrentWriteBeforeTrySave = () => writes++;
+        var operations = new List<ReadModelBatchOperation>();
+
+        Exception? thrown = await Record.ExceptionAsync(async () =>
+        {
+            await foreach (ReadModelBatchOperation operation in handler.StreamFinalizedOperationsAsync(
+                identity, new FixedCursor([new(0, "capability-1", valid)], outage),
+                TestContext.Current.CancellationToken))
+            {
+                operations.Add(operation);
+            }
+        });
+
+        thrown.ShouldBeSameAs(outage);
+        operations.ShouldBeEmpty();
+        writes.ShouldBe(0);
+        ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> after = await coordinator
+            .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope, generation, key,
+                TestContext.Current.CancellationToken);
+        after.ETag.ShouldBe(before.ETag);
+        JsonSerializer.Serialize(after.Value, s_json).ShouldBe(JsonSerializer.Serialize(before.Value, s_json));
+        SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexReadModel> selected = await coordinator
+            .ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope, key, TestContext.Current.CancellationToken);
+        selected.IsAvailable.ShouldBeTrue();
+        JsonSerializer.Serialize(selected.Value, s_json).ShouldBe(JsonSerializer.Serialize(preserved, s_json));
+    }
+
+    /// <summary>Cancellation takes precedence over invalid streamed contribution content.</summary>
+    [Fact]
+    public async Task StreamedPartitionCancellationRemainsCancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store,
+            epochCoordinator: new SharedProjectionEpochCoordinator(store, store));
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets",
+            handler.ProjectionType, "canceled-streamed-content", "catalog");
+        var cursor = new FixedCursor([new(0, "capability-1", System.Text.Encoding.UTF8.GetBytes("{"))],
+            beforeYield: cancellation.Cancel);
+        int writes = 0;
+        store.ConcurrentWriteBeforeTrySave = () => writes++;
+
+        _ = await Should.ThrowAsync<OperationCanceledException>(async () =>
+        {
+            await foreach (ReadModelBatchOperation _ in handler.StreamFinalizedOperationsAsync(
+                identity, cursor, cancellation.Token))
+            {
+            }
+        });
+
+        writes.ShouldBe(0);
+    }
+
+    private sealed class FixedCursor(IReadOnlyList<DomainSharedProjectionRebuildPartition> partitions,
+        Exception? readException = null,
+        Action? beforeYield = null)
         : IDomainSharedProjectionPartitionCursor
     {
         public async IAsyncEnumerable<DomainSharedProjectionRebuildPartition> ReadAllAsync(
@@ -661,8 +868,10 @@ public sealed class MagicLinkGlobalIndexEpochTests
             foreach (DomainSharedProjectionRebuildPartition partition in partitions)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                beforeYield?.Invoke();
                 yield return partition;
             }
+            if (readException is not null) throw readException;
             await Task.CompletedTask;
         }
 

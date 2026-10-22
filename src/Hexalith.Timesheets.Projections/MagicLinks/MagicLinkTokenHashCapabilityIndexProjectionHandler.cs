@@ -395,6 +395,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
         catch (Exception)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ProjectionDeliveryLog.StateUnavailable(_logger, "candidate-index");
             return DomainProjectionHandlerResult.Retryable(ProjectionDispatchReasonCodes.DeliveryStateUnavailable);
         }
     }
@@ -532,18 +533,16 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     {
         Validate(identity);
         ArgumentNullException.ThrowIfNull(partitions);
+        cancellationToken.ThrowIfCancellationRequested();
         SharedProjectionEpochCoordinator coordinator = _epochCoordinator
             ?? throw new InvalidOperationException("The global index epoch coordinator is unavailable.");
         var replacement = new Dictionary<int, List<KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>>>();
         await foreach (DomainSharedProjectionRebuildPartition partition in partitions.ReadAllAsync(
             cancellationToken).ConfigureAwait(false))
         {
-            IndexRebuildCandidateEntry? item = JsonSerializer.Deserialize<IndexRebuildCandidateEntry?>(
-                partition.State.Span, s_jsonOptions);
+            cancellationToken.ThrowIfCancellationRequested();
+            IndexRebuildCandidateEntry? item = DecodePartition(identity, partition);
             if (item is null) continue;
-            if (item.Candidate?.Tenant?.TenantId != identity.TenantId
-                || item.Candidate.CapabilityId?.Value != partition.AggregateId)
-                throw new InvalidOperationException("An index owner contribution has mismatched identity.");
             int shard = System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes(item.TokenHash))[0];
             if (!replacement.TryGetValue(shard, out var entries))
@@ -621,6 +620,25 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
         foreach (ReadModelBatchOperation operation in builder.Operations())
             yield return operation;
     }
+
+    private static IndexRebuildCandidateEntry? DecodePartition(
+        DomainSharedProjectionRebuildIdentity identity,
+        DomainSharedProjectionRebuildPartition partition)
+        => Guarded(() =>
+        {
+            IndexRebuildCandidateEntry? item = JsonSerializer.Deserialize<IndexRebuildCandidateEntry?>(
+                partition.State.Span, s_jsonOptions);
+            // An owner without an issuance contributes JSON null, rather than an index entry.
+            if (item is null) return null;
+            ValidateCandidateEntry(item.TokenHash, item.Candidate);
+            if (!string.Equals(item.Candidate.Tenant.TenantId, identity.TenantId, StringComparison.Ordinal)
+                || !string.Equals(item.Candidate.CapabilityId.Value, partition.AggregateId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("An index owner contribution has mismatched identity.");
+            }
+
+            return item;
+        });
 
     private static async Task<IReadOnlyList<ReadModelBatchOperation>> AddDirectoryContributionAsync(
         MagicLinkTokenHashCapabilityIndexReadModel current,

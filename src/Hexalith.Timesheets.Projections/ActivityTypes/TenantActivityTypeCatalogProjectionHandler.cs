@@ -101,6 +101,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         catch (Exception)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ProjectionDeliveryLog.StateUnavailable(logger, "activity-catalog");
             return DomainProjectionHandlerResult.Retryable(ProjectionDispatchReasonCodes.DeliveryStateUnavailable);
         }
     }

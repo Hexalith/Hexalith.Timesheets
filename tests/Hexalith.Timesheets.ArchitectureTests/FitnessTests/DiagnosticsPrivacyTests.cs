@@ -463,15 +463,21 @@ public sealed class DiagnosticsPrivacyTests
 
         indexProjection.ShouldContain("TokenHash");
 
-        // The loader is a read-only candidate resolver: it never writes to the read-model store (so it
-        // cannot persist token material into the index) and never logs.
+        // The loader stays read-only and delegates internal diagnostics to the bounded outcome
+        // helper. Runtime tests assert the complete structured records and absence of fault details.
         loader.ShouldNotContain("SaveAsync");
         loader.ShouldNotContain("TrySaveAsync");
-        loader.ShouldNotContain("ILogger");
         loader.ShouldNotContain("LogInformation");
         loader.ShouldNotContain("LogWarning");
         loader.ShouldNotContain("LogError");
         loader.ShouldNotContain("decoded", Case.Insensitive);
+
+        string outcomeLog = File.ReadAllText(RepositoryRoot.PathTo(
+            "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkStateReadLog.cs"));
+        foreach (string protectedDetail in new[] { ".Message", ".StackTrace", ".InnerException", ".Data", "oneTimeToken", "TokenHash" })
+        {
+            outcomeLog.ShouldNotContain(protectedDetail, Case.Insensitive);
+        }
     }
 
     private static void AssertClosedSchema(

@@ -3,9 +3,11 @@
 import hashlib
 import json
 import base64
+from copy import deepcopy
 
 
 _V7_PREFIX = "timesheets:magic-links:token-hash-capability-index:v7:"
+_EPOCH_READY_BYTES = 504 * 1024
 
 
 def legacy_index_diagnostics(read_optional_model):
@@ -123,13 +125,102 @@ def _selected_v7_candidate(token_hash, root, generation, scope_hash, read_model,
         return None
 
 
+def _long_integer(value):
+    return type(value) is int and 0 <= value <= 2 ** 63 - 1
+
+
+def _epoch_size_bound(value, depth=0):
+    """Conservatively bound default-encoded typed JSON, including omitted defaults.
+
+    Each object gets 1 KiB for members supplied by typed deserialization; the
+    caller adds another 8 KiB for the epoch's optional members. This intentionally
+    refuses some large diagnostic snapshots before the SDK's capacity boundary.
+    """
+    if depth > 64:
+        raise ValueError("Selected epoch shape is invalid")
+    if isinstance(value, dict):
+        return 1024 + 2 + sum(len(_contract_json(key)) + 2
+                              + _epoch_size_bound(item, depth + 1)
+                              for key, item in value.items())
+    if isinstance(value, list):
+        return 2 + sum(1 + _epoch_size_bound(item, depth + 1) for item in value)
+    if isinstance(value, str):
+        return len(_contract_json(value))
+    if value is None:
+        return 4
+    if type(value) is bool:
+        return 5
+    if type(value) is int and -(2 ** 63) <= value <= 2 ** 63 - 1:
+        return len(str(value))
+    raise ValueError("Selected epoch shape is invalid")
+
+
+def _admit_epoch(epoch):
+    """Require a drained, available epoch without degraded readiness evidence.
+
+    This is conservative local evidence, not the SDK's typed validation or ETag
+    admission. In particular, an unchanged JSON snapshot cannot prove that its
+    ETag stayed unchanged between reads.
+    """
+    if (not isinstance(epoch, dict) or type(epoch.get("version")) is not int
+            or epoch["version"] != 1 or not _long_integer(epoch.get("epoch"))
+            or not _long_integer(epoch.get("activeGeneration"))
+            or epoch["activeGeneration"] > epoch["epoch"]
+            or type(epoch.get("phase")) is not int or epoch["phase"] != 0
+            or not isinstance(epoch.get("journal"), list) or epoch["journal"]
+            or epoch.get("offboardingAuditId") is not None
+            or epoch.get("ownerSequenceHandoffPending", False) is not False):
+        raise ValueError("Selected epoch is not ready")
+    conflicts = epoch.get("deliveryConflicts", [])
+    parking = epoch.get("parkingEvidence", [])
+    if (not isinstance(conflicts, list) or len(conflicts) > 128
+            or not isinstance(parking, list) or len(parking) > 128
+            or epoch.get("deliveryConflictOverflow") is not None
+            or epoch.get("parkingEvidenceOverflow") is not None):
+        raise ValueError("Selected epoch readiness evidence is invalid or degraded")
+
+    def valid_identity(item):
+        return (isinstance(item, dict) and _text(item.get("sourceStream"))
+                and len(item["sourceStream"].encode()) <= 512
+                and _long_integer(item.get("envelopePosition"))
+                and _long_integer(item.get("observedEpoch"))
+                and item["observedEpoch"] <= epoch["epoch"]
+                and (item.get("resolvedByOperationId") is None
+                     or _text(item["resolvedByOperationId"])))
+
+    for conflict in conflicts:
+        if not valid_identity(conflict):
+            raise ValueError("Selected epoch conflict evidence is invalid")
+        required = conflict.get("requiredOwnerSequenceNumber")
+        resolved = conflict.get("resolvedByOwnerSequenceNumber")
+        if (any(not isinstance(conflict.get(name), str)
+                or len(conflict[name]) != 64
+                or any(character not in "0123456789ABCDEFabcdef" for character in conflict[name])
+                for name in ("acceptedDigest", "conflictingDigest"))
+                or required is not None and (not _long_integer(required) or required == 0)
+                or resolved is not None and (not _long_integer(resolved) or required is None
+                                             or resolved != required)
+                or conflict.get("resolvedByOperationId") is None and resolved is None):
+            raise ValueError("Selected epoch conflict evidence is invalid or unresolved")
+    for parked in parking:
+        if (not valid_identity(parked) or type(parked.get("failureCount")) is not int
+                or not 1 <= parked["failureCount"] <= 1000
+                or parked.get("resolvedByOperationId") is None):
+            raise ValueError("Selected epoch parking evidence is invalid or unresolved")
+    if 8 * 1024 + _epoch_size_bound(epoch) > _EPOCH_READY_BYTES:
+        raise ValueError("Selected epoch diagnostic capacity is unavailable")
+
+
 def selected_index_snapshot(token_hash, read_model):
-    """Read the selected format; only an explicitly absent marker permits v6."""
+    """Read a ready, stable selection; only an explicitly absent marker permits v6."""
     family = "magic-link-token-hash-capability-index"
     components = ["timesheets-readmodels", "global-index", "timesheets", family, family, "shared-epoch"]
     scope_bytes = "".join(f"{len(value)}:{value}" for value in components).encode()
     scope_hash = base64.urlsafe_b64encode(hashlib.sha256(scope_bytes).digest()).rstrip(b"=").decode()
-    epoch = read_model("shared-epoch:" + scope_hash)
+    epoch_key = "shared-epoch:" + scope_hash
+    raw_epoch = read_model(epoch_key)
+    _admit_epoch(raw_epoch)
+    epoch = deepcopy(raw_epoch)
     generation = epoch["activeGeneration"]
     shard = hashlib.sha256(token_hash.encode()).digest()[0]
     selected_format = read_model(_physical(scope_hash, generation, _V7_PREFIX + "format"),
@@ -142,7 +233,12 @@ def selected_index_snapshot(token_hash, read_model):
         logical_key = _V7_PREFIX + "root"
     else:
         logical_key = f"timesheets:magic-links:token-hash-capability-index:v2:shard:{shard:02X}"
-    return read_model(_physical(scope_hash, generation, logical_key)), generation, scope_hash, shard
+    index = read_model(_physical(scope_hash, generation, logical_key))
+    after = read_model(epoch_key)
+    _admit_epoch(after)
+    if after != epoch:
+        raise ValueError("Selected epoch changed during the diagnostic read")
+    return index, generation, scope_hash, shard
 
 
 def _integer(value):

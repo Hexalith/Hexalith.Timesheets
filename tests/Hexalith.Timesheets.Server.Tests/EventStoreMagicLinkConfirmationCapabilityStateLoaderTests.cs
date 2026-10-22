@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Gateway;
@@ -18,6 +19,8 @@ using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
+using Microsoft.Extensions.Logging;
+
 using NSubstitute;
 
 using Shouldly;
@@ -28,6 +31,138 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 {
+    /// <summary>Emits bounded diagnostic fields while retaining the opaque failure bundle.</summary>
+    /// <param name="operation">The failing logical read.</param>
+    /// <param name="fault">The injected exception category.</param>
+    /// <param name="category">The fixed expected outcome.</param>
+    [Theory]
+    [InlineData("index", "transport", "dependency-unavailable")]
+    [InlineData("catalog", "transport", "dependency-unavailable")]
+    [InlineData("capability", "transport", "dependency-unavailable")]
+    [InlineData("entry", "transport", "dependency-unavailable")]
+    [InlineData("index", "json", "invalid-content")]
+    [InlineData("catalog", "json", "invalid-content")]
+    [InlineData("capability", "integrity", "integrity-failure")]
+    [InlineData("entry", "integrity", "integrity-failure")]
+    [InlineData("index", "timeout", "dependency-timeout")]
+    [InlineData("entry", "timeout", "dependency-timeout")]
+    public async Task ReadFailuresLogOnlySafeOperationCategoryAndPlatformTrace(
+        string operation, string fault, string category)
+    {
+        const string sensitive = "private-identity-payload-and-token";
+        Exception failure = fault switch
+        {
+            "transport" => new HttpRequestException(sensitive),
+            "json" => new JsonException(sensitive),
+            "timeout" => new TaskCanceledException(sensitive),
+            _ => new InvalidOperationException(sensitive)
+        };
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "issuance", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "recorded", Recorded()));
+        if (operation == "capability")
+            gateway.WithException(Tenant().TenantId, CapabilityId().Value, failure);
+        if (operation == "entry")
+        {
+            // The capability fold first reads its owner's terminal history. Fail the subsequent
+            // effective-entry replay to verify that distinct operation's diagnostics.
+            int ownerReads = 0;
+            gateway.WithPageTransform(Tenant().TenantId, TimeEntryId().Value, page =>
+                ++ownerReads == 2 ? throw failure : page);
+        }
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()),
+            indexException: operation == "index" ? failure : null,
+            catalogException: operation == "catalog" ? failure : null);
+        ILogger logger = Substitute.For<ILogger>();
+        logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
+        ILoggerFactory factory = Substitute.For<ILoggerFactory>();
+        factory.CreateLogger(Arg.Any<string>()).Returns(logger);
+        using var trace = new Activity("read-test").SetIdFormat(ActivityIdFormat.W3C).Start();
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway, readModels,
+            new DeterministicTokenGenerator(), new FixedTrustedContextAccessor(Tenant(), Operator(), sensitive),
+            allowLegacyIndexRead: true, loggerFactory: factory);
+
+        ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+
+        object?[] arguments = logger.ReceivedCalls().Where(call => call.GetMethodInfo().Name == "Log")
+            .ShouldHaveSingleItem().GetArguments();
+        arguments[0].ShouldBe(LogLevel.Warning);
+        ((EventId)arguments[1]!).Id.ShouldBe(1301);
+        arguments[3].ShouldBeNull();
+        var state = ((IEnumerable<KeyValuePair<string, object?>>)arguments[2]!).ToDictionary();
+        state.Keys.Order().ShouldBe(new[] { "Operation", "Outcome", "TraceId", "{OriginalFormat}" }.Order());
+        state["Operation"].ShouldBe(operation + "-read");
+        state["Outcome"].ShouldBe(category);
+        state["TraceId"].ShouldBe(trace.TraceId.ToHexString());
+        JsonSerializer.Serialize(state).ShouldNotContain(sensitive);
+        arguments[2]!.ToString()!.ShouldNotContain(sensitive);
+    }
+
+    /// <summary>Exercises wrapped production-epoch outages and failure of diagnostic emission.</summary>
+    /// <param name="providerFails">Whether diagnostic emission also fails.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProductionEpochReadFailureStaysOpaqueEvenWhenDiagnosticProviderFails(bool providerFails)
+    {
+        const string sensitive = "private-epoch-transport-material";
+        var readModels = new InMemoryReadModelStore(null, epochException: new IOException(sensitive));
+        var coordinator = new SharedProjectionEpochCoordinator(readModels,
+            new Hexalith.EventStore.Testing.Fakes.InMemoryReadModelStore());
+        ILogger logger = Substitute.For<ILogger>();
+        logger.IsEnabled(Arg.Any<LogLevel>()).Returns(_ => providerFails
+            ? throw new IOException("Diagnostic provider unavailable.") : true);
+        ILoggerFactory factory = Substitute.For<ILoggerFactory>();
+        factory.CreateLogger(Arg.Any<string>()).Returns(logger);
+        var gateway = new ScriptedGatewayClient();
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway, readModels,
+            new DeterministicTokenGenerator(), new FixedTrustedContextAccessor(Tenant(), Operator(), sensitive),
+            coordinator, loggerFactory: factory);
+
+        ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+
+        gateway.Requests.ShouldBeEmpty();
+        if (!providerFails)
+        {
+            object?[] arguments = logger.ReceivedCalls().Where(call => call.GetMethodInfo().Name == "Log")
+                .ShouldHaveSingleItem().GetArguments();
+            arguments[3].ShouldBeNull();
+            var state = ((IEnumerable<KeyValuePair<string, object?>>)arguments[2]!).ToDictionary();
+            state.Keys.Order().ShouldBe(new[] { "Operation", "Outcome", "TraceId", "{OriginalFormat}" }.Order());
+            state["Operation"].ShouldBe("index-read");
+            state["Outcome"].ShouldBe("dependency-unavailable");
+            JsonSerializer.Serialize(state).ShouldNotContain(sensitive);
+        }
+    }
+
+    /// <summary>Keeps expected invalid-link and cancellation paths outside dependency diagnostics.</summary>
+    [Fact]
+    public async Task CallerCancellationAndUnknownLinksDoNotLogDependencyFailures()
+    {
+        ILogger logger = Substitute.For<ILogger>();
+        logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
+        ILoggerFactory factory = Substitute.For<ILoggerFactory>();
+        factory.CreateLogger(Arg.Any<string>()).Returns(logger);
+        using var source = new CancellationTokenSource();
+        source.Cancel();
+        var gateway = new ScriptedGatewayClient().WithException(Tenant().TenantId, CapabilityId().Value,
+            new OperationCanceledException(source.Token));
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway,
+            new InMemoryReadModelStore(IndexWith(Hash())), new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"),
+            allowLegacyIndexRead: true, loggerFactory: factory);
+
+        await Should.ThrowAsync<OperationCanceledException>(async () =>
+            await loader.LoadTokenStateAsync("opaque-once", source.Token));
+        ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync(string.Empty, TestContext.Current.CancellationToken));
+        var unknown = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway,
+            new InMemoryReadModelStore(null), new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"),
+            allowLegacyIndexRead: true, loggerFactory: factory);
+        ShouldBeOpaqueFailClosed(await unknown.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+        logger.ReceivedCalls().ShouldNotContain(call => call.GetMethodInfo().Name == "Log");
+    }
+
     [Fact]
     public async Task NumericIndexPromotionDuringCandidateResolutionFailsClosed()
     {
@@ -2112,7 +2247,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         ActivityTypeCatalogReadModel? catalog = null,
         bool throwCatalogRead = false,
         bool throwIndexRead = false,
-        bool missingCatalogRead = false) : IReadModelStore
+        bool missingCatalogRead = false,
+        Exception? indexException = null,
+        Exception? catalogException = null,
+        Exception? epochException = null) : IReadModelStore
     {
         public int ReadCount { get; private set; }
 
@@ -2124,8 +2262,12 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         {
             ReadCount++;
 
+            if (epochException is not null && key.StartsWith("shared-epoch:", StringComparison.Ordinal))
+                throw epochException;
+
             if (typeof(TValue) == typeof(ActivityTypeCatalogReadModel))
             {
+                if (catalogException is not null) throw catalogException;
                 // Verify the addressing, not just the type. Dispatching on typeof(TValue) alone let
                 // the loader read any store and any key and still pass, so the tenant-scoped catalog
                 // key and its state-store component were never actually asserted by these tests.
@@ -2156,6 +2298,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
             storeName.ShouldBe(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName);
             key.ShouldBe(MagicLinkTokenHashCapabilityIndexProjection.StateKey);
+            if (indexException is not null) throw indexException;
             if (throwIndexRead)
             {
                 throw new InvalidOperationException("Index read failed.");

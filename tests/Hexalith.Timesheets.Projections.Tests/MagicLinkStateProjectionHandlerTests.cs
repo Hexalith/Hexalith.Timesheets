@@ -1179,11 +1179,11 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
 
     private sealed class ScriptedReadModelStore : IReadModelStore
     {
-        private readonly Dictionary<string, object> _values = new(StringComparer.Ordinal);
+        private readonly Dictionary<(string Store, string Key), object> _values = [];
 
         // Per key, not one global counter: a shared version would let a plan that read some other
         // key's ETag still satisfy an expected-ETag assertion, so the match case would not be real.
-        private readonly Dictionary<string, int> _versions = new(StringComparer.Ordinal);
+        private readonly Dictionary<(string Store, string Key), int> _versions = [];
 
         public int ConflictsRemaining { get; set; }
 
@@ -1206,18 +1206,19 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
         /// <summary>The ETag an existing row is read back with while <see cref="SuppressETag"/> is set.</summary>
         public string? ETagWhenSuppressed { get; set; }
 
-        public T Get<T>(string key)
+        public T Get<T>(string key, string storeName = "timesheets-readmodels")
             where T : class
-            => (T)_values[key];
+            => (T)_values[(storeName, key)];
 
-        public bool Contains(string key) => _values.ContainsKey(key);
+        public bool Contains(string key, string storeName = "timesheets-readmodels")
+            => _values.ContainsKey((storeName, key));
 
-        public string ETagFor(string key)
-            => $"{key}#{_versions[key].ToString(System.Globalization.CultureInfo.InvariantCulture)}";
+        public string ETagFor(string key, string storeName = "timesheets-readmodels")
+            => $"{storeName.Length}:{storeName}{key.Length}:{key}#{_versions[(storeName, key)].ToString(System.Globalization.CultureInfo.InvariantCulture)}";
 
-        public void Set<T>(string key, T value)
+        public void Set<T>(string key, T value, string storeName = "timesheets-readmodels")
             where T : class
-            => Commit(key, value);
+            => Commit(storeName, key, value);
 
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
             string storeName,
@@ -1225,6 +1226,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
             CancellationToken cancellationToken = default)
             where TValue : class
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (CancelBeforeGet is not null)
             {
                 CancelBeforeGet.Cancel();
@@ -1236,14 +1238,14 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
                 return Task.FromException<ReadModelEntry<TValue>>(GetException);
             }
 
-            if (!_values.TryGetValue(key, out object? value))
+            if (!_values.TryGetValue((storeName, key), out object? value))
             {
                 return Task.FromResult(new ReadModelEntry<TValue>(null, null));
             }
 
             return Task.FromResult(new ReadModelEntry<TValue>(
                 value as TValue,
-                SuppressETag ? ETagWhenSuppressed : ETagFor(key)));
+                SuppressETag ? ETagWhenSuppressed : ETagFor(key, storeName)));
         }
 
         public Task SaveAsync<TValue>(
@@ -1253,7 +1255,8 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
             CancellationToken cancellationToken = default)
             where TValue : class
         {
-            Commit(key, value);
+            cancellationToken.ThrowIfCancellationRequested();
+            Commit(storeName, key, value);
             return Task.CompletedTask;
         }
 
@@ -1265,6 +1268,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
             CancellationToken cancellationToken = default)
             where TValue : class
         {
+            cancellationToken.ThrowIfCancellationRequested();
             TrySaveCount++;
             if (CancelBeforeTrySave is not null)
             {
@@ -1282,14 +1286,21 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
                 return Task.FromResult(false);
             }
 
-            Commit(key, value);
+            bool exists = _values.ContainsKey((storeName, key));
+            if (exists ? !string.Equals(etag, ETagFor(key, storeName), StringComparison.Ordinal)
+                : !string.IsNullOrEmpty(etag))
+            {
+                return Task.FromResult(false);
+            }
+
+            Commit(storeName, key, value);
             return Task.FromResult(true);
         }
 
-        private void Commit(string key, object value)
+        private void Commit(string storeName, string key, object value)
         {
-            _values[key] = value;
-            _versions[key] = _versions.TryGetValue(key, out int version) ? version + 1 : 1;
+            _values[(storeName, key)] = value;
+            _versions[(storeName, key)] = _versions.TryGetValue((storeName, key), out int version) ? version + 1 : 1;
         }
     }
 }

@@ -11,6 +11,8 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
+using Microsoft.Extensions.Logging;
+
 namespace Hexalith.Timesheets.Server.MagicLinks;
 
 /// <summary>
@@ -23,13 +25,15 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 /// <param name="contextAccessor">The trusted ambient context used by administrator paths.</param>
 /// <param name="indexCoordinator">The selected global candidate-index epoch, when registered.</param>
 /// <param name="allowLegacyIndexRead">Explicit compatibility for isolated legacy loader fixtures.</param>
+/// <param name="loggerFactory">Optional internal outcome diagnostics.</param>
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     IEventStoreGatewayClient eventStore,
     IReadModelStore readModelStore,
     IMagicLinkTokenGenerator tokenGenerator,
     ITimesheetsTrustedContextAccessor contextAccessor,
     SharedProjectionEpochCoordinator? indexCoordinator = null,
-    bool allowLegacyIndexRead = false) : IMagicLinkConfirmationCapabilityStateLoader
+    bool allowLegacyIndexRead = false,
+    ILoggerFactory? loggerFactory = null) : IMagicLinkConfirmationCapabilityStateLoader
 {
     private const int StreamPageSize = 500;
 
@@ -40,6 +44,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     private readonly IMagicLinkTokenGenerator _tokenGenerator = tokenGenerator ?? throw new ArgumentNullException(nameof(tokenGenerator));
     private readonly ITimesheetsTrustedContextAccessor _contextAccessor = contextAccessor ?? throw new ArgumentNullException(nameof(contextAccessor));
     private readonly SharedProjectionEpochCoordinator? _indexCoordinator = indexCoordinator;
+    private readonly ILogger? _logger = loggerFactory?.CreateLogger("Hexalith.Timesheets.StateResolution");
 
     /// <inheritdoc/>
     public async ValueTask<ActivityTypeCatalogReadModel> LoadActivityTypeCatalogAsync(CancellationToken cancellationToken)
@@ -311,6 +316,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         }
         catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
+            MagicLinkStateReadLog.Failure(_logger, "index-read", ex);
             return null;
         }
     }
@@ -456,6 +462,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         }
         catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
+            MagicLinkStateReadLog.Failure(_logger, "capability-read", ex);
             return null;
         }
     }
@@ -544,6 +551,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         }
         catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
+            MagicLinkStateReadLog.Failure(_logger, "entry-read", ex);
             return null;
         }
     }
@@ -585,6 +593,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         }
         catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
         {
+            MagicLinkStateReadLog.Failure(_logger, "catalog-read", ex);
             return UnavailableCatalog();
         }
     }

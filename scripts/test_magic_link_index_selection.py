@@ -11,6 +11,28 @@ from magic_link_index_selection import (
 
 
 class SelectedIndexTests(unittest.TestCase):
+    @staticmethod
+    def ready_epoch():
+        return {"version": 1, "epoch": 5, "activeGeneration": 5, "phase": 0,
+                "journal": [], "deliveryConflicts": [], "parkingEvidence": []}
+
+    @staticmethod
+    def conflict():
+        return {"sourceStream": "owner", "envelopePosition": 1, "observedEpoch": 5,
+                "acceptedDigest": "A" * 64, "conflictingDigest": "B" * 64}
+
+    @staticmethod
+    def parking():
+        return {"sourceStream": "owner", "envelopePosition": 1, "observedEpoch": 5,
+                "failureCount": 1}
+
+    def read_snapshot(self, epoch, index=None):
+        def read(key, allow_missing=False):
+            if key.startswith("shared-epoch:"):
+                return epoch
+            return None if allow_missing else index or {"storageVersion": 6}
+        return selected_index_snapshot("hash", read)
+
     def test_legacy_bootstrap_diagnostic_only_reports_shape_and_count(self):
         sensitive = "sensitive-token-hash-and-owner"
         legacy = {"entries": {sensitive: {"tenant": sensitive, "capabilityId": sensitive}}}
@@ -72,6 +94,12 @@ class SelectedIndexTests(unittest.TestCase):
                                               lambda _: node | {"prefix": "altered"}, snapshot))
         self.assertIsNone(selected_candidate(token_hash, root, 5, "scope", 0,
                                               read_node, lambda _: (root, 6, "scope", 0)))
+        diagnostics = []
+        self.assertIsNone(selected_candidate(
+            token_hash, root, 5, "scope", 0, read_node,
+            lambda _: self.read_snapshot(self.ready_epoch() | {"phase": 2}, root),
+            diagnostics.append))
+        self.assertEqual(["numeric-node-integrity-invalid"], diagnostics)
 
     def test_numeric_interior_candidate_rejects_cross_tenant_ambiguity(self):
         token_hash = "shared-hash"
@@ -377,8 +405,8 @@ class SelectedIndexTests(unittest.TestCase):
 
             def read(key, allow_missing=False):
                 reads.append((key, allow_missing))
-                if len(reads) == 1:
-                    return {"activeGeneration": 5}
+                if key.startswith("shared-epoch:"):
+                    return self.ready_epoch()
                 if allow_missing:
                     return version
                 return {"storageVersion": 6 if version is None else 7}
@@ -388,7 +416,8 @@ class SelectedIndexTests(unittest.TestCase):
             self.assertEqual(6 if version is None else 7, index["storageVersion"])
             logical = (f"timesheets:magic-links:token-hash-capability-index:v2:shard:{shard:02X}"
                        if version is None else "timesheets:magic-links:token-hash-capability-index:v7:root")
-            self.assertEqual((_physical(scope, 5, logical), False), reads[-1])
+            self.assertEqual((_physical(scope, 5, logical), False), reads[-2])
+            self.assertEqual(reads[0], reads[-1])
             self.assertTrue(reads[1][1])
 
     def test_snapshot_propagates_unavailable_or_invalid_format_without_legacy_read(self):
@@ -399,7 +428,7 @@ class SelectedIndexTests(unittest.TestCase):
             def read(key, allow_missing=False):
                 reads.append(key)
                 if len(reads) == 1:
-                    return {"activeGeneration": 5}
+                    return self.ready_epoch()
                 self.assertTrue(allow_missing)
                 if isinstance(format_result, Exception):
                     raise format_result
@@ -409,6 +438,149 @@ class SelectedIndexTests(unittest.TestCase):
                 with self.assertRaises((RuntimeError, ValueError)):
                     selected_index_snapshot("hash", read)
                 self.assertEqual(2, len(reads))
+
+    def test_snapshot_refuses_nonopen_pending_and_offboarded_epochs_before_reading_content(self):
+        for field, value in (("phase", 1), ("phase", 2), ("phase", 3), ("phase", 4),
+                             ("journal", [{"failure": None}]),
+                             ("offboardingAuditId", "offboarded"),
+                             ("ownerSequenceHandoffPending", True)):
+            reads = []
+
+            def read(key, allow_missing=False):
+                reads.append(key)
+                self.assertEqual(1, len(reads))
+                return self.ready_epoch() | {field: value}
+
+            with self.subTest(field=field, value=value):
+                with self.assertRaisesRegex(ValueError, "Selected epoch is not ready"):
+                    selected_index_snapshot("hash", read)
+
+    def test_snapshot_refuses_malformed_lifecycle_fields(self):
+        for field, value in (("version", None), ("version", True), ("version", 2),
+                             ("epoch", -1), ("epoch", 4), ("epoch", "5"),
+                             ("activeGeneration", -1), ("activeGeneration", True),
+                             ("activeGeneration", 2 ** 63), ("phase", "Open"),
+                             ("phase", True), ("phase", 5), ("journal", None),
+                             ("journal", {}), ("deliveryConflicts", None),
+                             ("parkingEvidence", {}), ("offboardingAuditId", ""),
+                             ("ownerSequenceHandoffPending", None)):
+            with self.subTest(field=field, value=value):
+                with self.assertRaises(ValueError):
+                    self.read_snapshot(self.ready_epoch() | {field: value})
+        for invalid in (None, [], "invalid"):
+            with self.subTest(epoch_type=type(invalid).__name__):
+                with self.assertRaises(ValueError):
+                    self.read_snapshot(invalid)
+        # Generation is a signed Int64 in the SDK, not the v6 page ordinal Int32.
+        large = self.ready_epoch() | {"epoch": 2 ** 40, "activeGeneration": 2 ** 40}
+        self.assertEqual(2 ** 40, self.read_snapshot(large)[1])
+
+    def test_snapshot_refuses_unresolved_or_overflow_readiness_evidence(self):
+        for evidence in ({"deliveryConflicts": [self.conflict()]},
+                         {"parkingEvidence": [self.parking()]},
+                         {"deliveryConflictOverflow": self.conflict()},
+                         {"parkingEvidenceOverflow": self.parking()}):
+            with self.subTest(evidence=list(evidence)):
+                with self.assertRaises(ValueError):
+                    self.read_snapshot(self.ready_epoch() | evidence)
+
+    def test_snapshot_admits_resolved_conflicts_and_parking(self):
+        resolutions = ({"resolvedByOperationId": "repair"},
+                       {"requiredOwnerSequenceNumber": 2, "resolvedByOwnerSequenceNumber": 2})
+        for resolution in resolutions:
+            with self.subTest(resolution=resolution):
+                epoch = self.ready_epoch() | {
+                    "deliveryConflicts": [self.conflict() | resolution],
+                    "parkingEvidence": [self.parking() | {"resolvedByOperationId": "repair"}]}
+                self.assertEqual(5, self.read_snapshot(epoch)[1])
+
+    def test_snapshot_refuses_malformed_resolved_readiness_evidence(self):
+        conflict = self.conflict() | {"resolvedByOperationId": "repair"}
+        parking = self.parking() | {"resolvedByOperationId": "repair"}
+        invalid = []
+        for field, value in (("sourceStream", None), ("sourceStream", "é" * 257),
+                             ("acceptedDigest", None), ("conflictingDigest", "x" * 64),
+                             ("observedEpoch", 6), ("envelopePosition", -1),
+                             ("requiredOwnerSequenceNumber", 0),
+                             ("resolvedByOwnerSequenceNumber", 1),
+                             ("resolvedByOperationId", "")):
+            invalid.append({"deliveryConflicts": [conflict | {field: value}]})
+        invalid.append({"deliveryConflicts": [conflict | {
+            "requiredOwnerSequenceNumber": 2, "resolvedByOwnerSequenceNumber": 1}]})
+        for field, value in (("failureCount", 0), ("failureCount", True),
+                             ("failureCount", 1001), ("resolvedByOperationId", " ")):
+            invalid.append({"parkingEvidence": [parking | {field: value}]})
+        invalid.extend(({"deliveryConflicts": [None]}, {"parkingEvidence": [None]},
+                        {"deliveryConflicts": [conflict] * 129},
+                        {"parkingEvidence": [parking] * 129}))
+        for case, evidence in enumerate(invalid):
+            with self.subTest(case=case):
+                with self.assertRaises(ValueError):
+                    self.read_snapshot(self.ready_epoch() | evidence)
+
+    def test_snapshot_rechecks_epoch_even_when_selected_root_and_generation_are_unchanged(self):
+        for change in ({"phase": 2}, {"journal": [{}]}, {"offboardingAuditId": "offboard"},
+                       {"deliveryConflicts": [self.conflict()]},
+                       {"operationId": "changed-but-still-open"}):
+            epoch = self.ready_epoch()
+            reads = []
+
+            def read(key, allow_missing=False):
+                reads.append(key)
+                if key.startswith("shared-epoch:"):
+                    return epoch
+                if allow_missing:
+                    return None
+                epoch.update(change)
+                return {"storageVersion": 6}
+
+            with self.subTest(change=list(change)):
+                with self.assertRaises(ValueError):
+                    selected_index_snapshot("hash", read)
+                self.assertEqual(4, len(reads))
+                self.assertEqual(reads[0], reads[-1])
+
+    def test_final_candidate_recheck_refuses_new_readiness_failure_without_sensitive_diagnostics(self):
+        token_hash, shard, _, index, pages = self.legacy_shard()
+        sensitive = "sensitive-owner-token-hash-payload"
+        epoch = self.ready_epoch() | {"offboardingAuditId": sensitive}
+        diagnostics = []
+        self.assertIsNone(selected_candidate(
+            token_hash, index, 5, "scope", shard, pages.__getitem__,
+            lambda _: self.read_snapshot(epoch, index), diagnostics.append))
+        self.assertEqual(["legacy-shard-invalid-or-unavailable"], diagnostics)
+        with self.assertRaises(ValueError) as caught:
+            self.read_snapshot(epoch, index)
+        self.assertNotIn(sensitive, str(caught.exception))
+        self.assertNotIn(sensitive, " ".join(diagnostics))
+
+    def test_diagnostic_capacity_guard_conservatively_refuses_large_typed_json(self):
+        self.assertEqual(5, self.read_snapshot(self.ready_epoch() | {"operationId": "x" * 1024})[1])
+        # The SDK serializes these characters as six-byte Unicode escapes.
+        # Counting only the raw JSON or Unicode character count misses capacity.
+        for content in ("<" * (90 * 1024), "😀" * (45 * 1024), "x" * (505 * 1024)):
+            with self.subTest(character=content[0]):
+                with self.assertRaisesRegex(ValueError, "diagnostic capacity"):
+                    self.read_snapshot(self.ready_epoch() | {"operationId": content})
+
+    def test_snapshot_refuses_excessive_depth_before_copying_or_reading_content(self):
+        sensitive = "sensitive-owner-token-hash-payload"
+        nested = sensitive
+        for _ in range(500):
+            nested = {"nested": nested}
+        epoch = self.ready_epoch() | {"unknown": nested}
+        reads = []
+
+        def read(key, allow_missing=False):
+            reads.append(key)
+            self.assertEqual(1, len(reads))
+            return epoch
+
+        with self.assertRaises(ValueError) as caught:
+            selected_index_snapshot("hash", read)
+        self.assertEqual("Selected epoch shape is invalid", str(caught.exception))
+        self.assertNotIn(sensitive, str(caught.exception))
+        self.assertEqual(1, len(reads))
 
 
 if __name__ == "__main__":
