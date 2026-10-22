@@ -236,6 +236,7 @@ The repeated 2026-09-14 agent-context findings are consolidated into the canonic
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
   summary: Refresh the agent-context files that still describe the token-hash index as unwired.
   evidence: `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` each still state that `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". The shipped projection handlers, this story's 2026-09-16 supersession notice, and the new `LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers` fitness test (which asserts the readiness document must not contain "no projection-host wiring") all contradict it. The fix edits agent-context files, which is outside a code review's remit. Consolidated here from repeated findings since 2026-09-13; every agent session loads this as fact about a security-relevant path.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. The synchronized managed entry points already state that the HTTP host registers the projection assembly and EventStore processing, corroborated by Program.cs. They explicitly preserve unfinished deployed authority/shared-rebuild and current-graph runtime acceptance. The historical unwired-index diagnosis is superseded by delivered guidance; the older references elsewhere in this ledger calling this the canonical open 2026-09-16 guidance entry are superseded by this disposition. No runtime wiring or context regeneration is introduced here. See `tests/five-agent-guidance-carry-forwards.md`.
 
 ## Deferred from: build planning for Story 3.6 (2026-09-17)
 
@@ -477,6 +478,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
   summary: Refresh the CLAUDE.md `timesheets` block's SDK pin.
   evidence: The block says `global.json` pins `10.0.302` with `rollForward: latestPatch`, but `global.json` pins `10.0.401`, and `latestPatch` does not roll across feature bands. Agent-context file; refresh it through the project-context workflow.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. CLAUDE.md and both synchronized entry points already name SDK 10.0.402 with latestPatch, matching global.json. This predecessor of the delivered SDK/build guidance reconciliation in `spec-close-five-runtime-guidance-deferrals.md` is stale; no SDK or managed-context change is required. See `tests/five-agent-guidance-carry-forwards.md`.
 
 ## Deferred from: Story 3.6 spec-15 verification and review (2026-10-08)
 
@@ -513,6 +515,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md`
   summary: Refresh the launch posture in the agent entry points' `timesheets` block.
   evidence: `CLAUDE.md:72`, `AGENTS.md:72` and `.github/copilot-instructions.md:72` say "launch posture is `docs/launch-readiness.md` (CONCERNS, not PASS)". But `docs/launch-readiness.md:159` and `README.md:43` record the overall release decision as `FAIL`, with package currency separately at `CONCERNS`. This predates spec-16, which corrected only the README. Agent-context file: refresh it through the project-context workflow, together with the deferred SDK-pin refresh.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. All three current managed entry points already describe the overall launch verdict as FAIL and deployed acceptance as unfinished, consistent with the current launch-readiness assessment. Package currency remains separately CONCERNS. This is a disposition of previously delivered guidance, with no new acceptance or classification change. See `tests/five-agent-guidance-carry-forwards.md`.
 
 ## Deferred from: Story 3.6 spec-17 independent review (2026-10-09)
 
@@ -552,6 +555,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-18.md`
   summary: Refresh the managed repository agent context for the current launch posture and magic-link projection wiring.
   evidence: `AGENTS.md` still describes launch readiness as `CONCERNS` and says the token-hash projection lacks host wiring, while current launch readiness is `FAIL` and the in-process host discovers the projection handler. This can misdirect future agent work. Agent-context files require their own managed refresh and synchronized entry points.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. This combined carry-forward duplicates the SDK-independent launch-posture and projection-wiring guidance requests resolved above. The three entry points already agree on FAIL, registered projections/processing, and the remaining acceptance limits. Their managed-context generation stamp is retained; this increment verifies delivered text rather than claiming a new full context refresh. See `tests/five-agent-guidance-carry-forwards.md`.
 
 ## Deferred from: fail-closed Story 3.6 review (2026-10-10)
 
@@ -746,6 +750,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: none
   summary: Refresh stale repository guidance in a separate increment.
   evidence: The user selected projection checkpoint tenant isolation. SDK, projection-wiring, and launch-status guidance reconciliation is independent of checkpoint validation and must preserve the synchronized agent entry points.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. This scope-selection carry-forward is satisfied by the already-delivered SDK, projection-wiring, and launch-status guidance verified above; the three entry points remain byte-identical. The matching guidance carry-forward under EventStore restart timeout scope selection refers to these same satisfied facts and supplies no separate open refresh goal. No checkpoint behavior, story status, launch approval, or deployed/runtime acceptance is changed. See `tests/five-agent-guidance-carry-forwards.md`.
 
 
 ## Resolution: Projection checkpoint tenant isolation (2026-10-18)
