@@ -153,11 +153,11 @@ Publication requires all of the following repository configuration:
   policy admitting `main`; protect `main` and require CI, test-evidence,
   apphost-configuration, release-tooling, and commit policy checks before merging.
 - Repository variable `NUGET_USER`, the nuget.org profile that created the
-  Hexalith.Timesheets trusted publishing policy. `release.yml` exchanges a
-  GitHub OIDC token in the `production` environment for a short-lived publish
-  key and passes that key to the pinned reusable workflow. No stored NuGet API
-  key is used. The policy must name workflow `release.yml` and environment
-  `production`. Environment approval still gates that exchange and the called job.
+  Hexalith.Timesheets trusted publishing policy. The publication job in
+  `release.yml` exchanges a GitHub OIDC token in the `production` environment
+  for a short-lived publish key and uses that key in the same job. No stored
+  NuGet API key is used. The policy must name workflow `release.yml` and
+  environment `production`. Environment approval gates that job.
 - Repository variable `HEXALITH_RELEASE_PUBLISH_ENABLED` exactly equal to the
   lowercase string `true`. Set it explicitly at repository scope to avoid inheriting
   an organization-wide value unintentionally. Unset/false values freeze publication.
