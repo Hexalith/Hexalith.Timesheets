@@ -253,6 +253,7 @@ The repeated 2026-09-14 agent-context findings are consolidated into the canonic
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
   summary: Implement durable, atomic magic-link confirmation and adjustment persistence for unfinished Story 3.3/3.4 behavior.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`, standardizing the existing October 10 supersession below. Current processing emits use plus matching Time Entry effect in one owner-stream batch; success requires Completed status and exact stored-event readback. Current HTTP and actor-recreation tests verify stored end state, single-use/replay and in-process concurrency. Deployed histories, distributed/live Dapr acceptance, uncertain cross-request outcomes and readback-budget policy remain separately open. See `tests/five-completed-implementation-followups.md`.
   evidence: The live POST endpoints return `202 Accepted` from in-memory domain results without calling `IEventStoreGatewayClient.SubmitCommandAsync`, so neither the Time Entry event nor capability-use event is persisted and concurrent reuse is not prevented. The current EventStore gateway accepts one aggregate per submission and exposes no atomic multi-aggregate API; sequential submissions would violate the approved atomicity requirement. A dedicated high-priority remediation must choose a platform coordination or aggregate-boundary design and prove persisted end state, concurrency, replay rejection, and partial-failure safety.
   update_2026_10_10: Both public POST routes now return the shared opaque `403` after pure domain decisions, and the in-process fixture observes zero EventStore submit attempts. The durable atomic write, persisted concurrency proof, and deployed-history inventory remain open; the earlier `202` behavior above is historical evidence.
   resolution_2026_10_10: Superseded by the later EventStore-backed submission increment. Both public POST routes now submit one atomic Time Entry owner batch, return `202` only after `Completed` status and exact stored-batch readback, and have local actor persistence, rejection replay, and concurrency tests. Deployed-history inventory and live Dapr-backed acceptance remain separate open release gates.
@@ -745,6 +746,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: none
   summary: Address deferred BMAD hook and test-coverage maintenance in separate increments.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`. The canonical local-hook, malformed-input, filename-confinement and customization-override regression increments already delivered this tooling carry-forward; routine CI now runs the hook suite and installed persona tests plus both Claude mirrors. Current scripts/tests discovery passes 88 tests, with 86 nested persona executions recorded separately. This resolves the scope-selection duplicate, not the independent open PascalCase naming or future-spec lifecycle-wording requests. See `tests/five-completed-implementation-followups.md`.
   evidence: The user selected diagnostic credential redaction; the remaining tooling items are independent of the local diagnostic sanitizer.
 
 - source_spec: none
@@ -763,6 +765,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: none
   summary: Harden the deferred BMAD hooks in a separate increment.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`. The canonical filename-confinement and local generated-hook fixes already satisfy this scope-selection carry-forward. Current hook regressions verify traversal refusal, outside-file preservation, redirected-directory and temporary-file conflict handling, normal publication and malformed-input/inactive-session behavior; generated Codex hook configuration is untracked and ignored, with per-checkout setup documented. See `tests/five-completed-implementation-followups.md`; no new hook implementation or native Windows qualification is claimed.
   evidence: The user selected projection checkpoint tenant isolation as the next independently shippable goal. Event-filename containment and obsolete hook references have separate tooling verification requirements.
 
 - source_spec: none
@@ -775,6 +778,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-enforce-projection-checkpoint-tenant-scope.md`
   summary: The deferred cross-tenant checkpoint freshness gap is closed across Timesheets projection folds.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md` as a completed carry-forward from `spec-enforce-projection-checkpoint-tenant-scope.md`. The ordinal guard and refusal/privacy/non-enumeration/incremental-prefix/selected-issuance regressions remain present. All seven affected projection test classes now pass 174 cases, retaining matching-tenant freshness and export behavior. Original red/green and full-suite historical evidence below is unchanged; this local fold proof supplies no deployed acceptance. See `tests/five-completed-implementation-followups.md`.
   evidence: A shared internal ordinal tenant guard now protects Time Entry evidence (full and incremental), evidence lists, period summaries, approved ledgers, both actual-report targets, both activity-catalog views, and capability projections using their selected issuance. Explicit-tenant history paths reject before enumeration, including empty histories; no model is returned for a capability without its issuance. Parent checkpoint reuse and matching-tenant freshness/export behavior remain covered. All 36 new mismatch cases failed before the production fix. The Debug solution build passed with zero warnings/errors, and all six executable suites passed (1,936 passed, five intentional skips). After review, a zero-diagnostic test-project rebuild and 151/151 focused tests covered 11 additional cases, bringing distinct passing cases to 1,947. The independent reviewer confirmed all four test-gap findings addressed, with no unresolved findings or additional review deferrals. Another workspace's running AppHost blocked the read-only runtime preflight; no runtime was started or stopped. This local fold correction supplies no deployed journey or launch-acceptance evidence.
 
 
@@ -794,6 +798,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: none
   summary: Harden BMAD hooks and remove obsolete hook references in a separate increment.
+  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`. This is another scope-selection duplicate of the already-delivered local generated-hook, malformed-input regression and filename-confinement increments. Existing ValueError handling already catches UnicodeDecodeError; the regression suite pins strict/surrogateescape and inactive-session behavior. README documents removal of deleted-automator registrations and generation of ignored checkout-local Codex hooks. Current CI-discovered tests pass; no installed hook is regenerated or runtime behavior changed here. See `tests/five-completed-implementation-followups.md`.
   evidence: The user selected the recommended EventStore restart timeout investigation and repair; hook input handling and event-file containment have independent tooling validation.
 
 - source_spec: none

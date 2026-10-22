@@ -1,0 +1,463 @@
+{
+  "recorded_utc": "2026-10-22T17:42:08.836528+00:00",
+  "baseline_commit": "622ee40e0df72404f60ee57da06e2963e665749d",
+  "sdk": "10.0.402",
+  "configuration": "Debug",
+  "dependency_mode": "source references",
+  "optional_lanes_enabled": false,
+  "scope": "Documentation-only reconciliation; Projections and Integration are filtered, other .NET suites unfiltered. No AppHost started or stopped. No deployed acceptance.",
+  "root_gitlinks": [
+    "160000 commit 3f194e17174994d308ec84af9ee2b5aa68674d0d\treferences/Hexalith.AI.Tools",
+    "160000 commit 359fee24aeca4d9eabed4b425d4cfa2520b2adda\treferences/Hexalith.Builds",
+    "160000 commit 5c23c818f639c5bb3175f964c5549440bd5b876d\treferences/Hexalith.Commons",
+    "160000 commit ef3947078cb5ccf3d2b81ca684490e565e8cd04f\treferences/Hexalith.Conversations",
+    "160000 commit 5ce5f1d84b88c808cc8a526b9decf149de977e55\treferences/Hexalith.EventStore",
+    "160000 commit 7fcfb019bf94fa858410726fe9a1506f3a2e36a7\treferences/Hexalith.FrontComposer",
+    "160000 commit 7f4a08cb4b7ff9402d1dcf0826ad45ab0256ba65\treferences/Hexalith.McpCli",
+    "160000 commit 61921f7c0a25e00d9dd102d863e366cf67120f3d\treferences/Hexalith.Parties",
+    "160000 commit c65d87a6f8f4a05fa3bea4e24ac778bf23f12cd6\treferences/Hexalith.Platform",
+    "160000 commit 221ac4592ba908ae7661ba1fa9e2d1fcc23baee0\treferences/Hexalith.PolymorphicSerializations",
+    "160000 commit 5ea8ef3544892e420409ad5e961a8bd2b3001fe7\treferences/Hexalith.Projects",
+    "160000 commit ffe9522b10f37f56cd9339c3387cbb4b7d16d897\treferences/Hexalith.Tenants",
+    "160000 commit d60c29569de975bd280098e2e2f37406a30cf705\treferences/Hexalith.Works"
+  ],
+  "checks": [
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+      "exit_code": 0,
+      "seconds": 3.316,
+      "name": "restore",
+      "argv": [
+        "dotnet",
+        "restore",
+        "Hexalith.Timesheets.slnx",
+        "-p:Configuration=Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+      "exit_code": 0,
+      "seconds": 17.738,
+      "name": "build",
+      "argv": [
+        "dotnet",
+        "build",
+        "Hexalith.Timesheets.slnx",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor -xml /tmp/timesheets-five-completed-followups-qpyim_u_/ArchitectureTests.xml",
+      "exit_code": 0,
+      "seconds": 23.307,
+      "results": {
+        "total": 109,
+        "passed": 109,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "not-run": 0
+      },
+      "name": "ArchitectureTests",
+      "argv": [
+        "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noColor",
+        "-xml",
+        "/tmp/timesheets-five-completed-followups-qpyim_u_/ArchitectureTests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests -noColor -xml /tmp/timesheets-five-completed-followups-qpyim_u_/Contracts.Tests.xml",
+      "exit_code": 0,
+      "seconds": 1.146,
+      "results": {
+        "total": 92,
+        "passed": 92,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "not-run": 0
+      },
+      "name": "Contracts.Tests",
+      "argv": [
+        "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noColor",
+        "-xml",
+        "/tmp/timesheets-five-completed-followups-qpyim_u_/Contracts.Tests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -noColor -xml /tmp/timesheets-five-completed-followups-qpyim_u_/Server.Tests.xml",
+      "exit_code": 0,
+      "seconds": 2.844,
+      "results": {
+        "total": 624,
+        "passed": 624,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "not-run": 0
+      },
+      "name": "Server.Tests",
+      "argv": [
+        "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noColor",
+        "-xml",
+        "/tmp/timesheets-five-completed-followups-qpyim_u_/Server.Tests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -noColor -xml /tmp/timesheets-five-completed-followups-qpyim_u_/Projections.Tests.xml -class '*ActivityTypeCatalogProjectionTests' -class '*ActualTimeReportProjectionTests' -class '*ApprovedTimeLedgerProjectionTests' -class '*MagicLinkConfirmationCapabilityProjectionTests' -class '*TimeEntryEvidenceProjectionTests' -class '*TimesheetPeriodSummaryProjectionTests' -class '*ProjectionCheckpointTenantScopeTests'",
+      "exit_code": 0,
+      "seconds": 1.012,
+      "results": {
+        "total": 174,
+        "passed": 174,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "not-run": 0
+      },
+      "name": "Projections.Tests",
+      "argv": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noColor",
+        "-xml",
+        "/tmp/timesheets-five-completed-followups-qpyim_u_/Projections.Tests.xml",
+        "-class",
+        "*ActivityTypeCatalogProjectionTests",
+        "-class",
+        "*ActualTimeReportProjectionTests",
+        "-class",
+        "*ApprovedTimeLedgerProjectionTests",
+        "-class",
+        "*MagicLinkConfirmationCapabilityProjectionTests",
+        "-class",
+        "*TimeEntryEvidenceProjectionTests",
+        "-class",
+        "*TimesheetPeriodSummaryProjectionTests",
+        "-class",
+        "*ProjectionCheckpointTenantScopeTests"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests -noColor -xml /tmp/timesheets-five-completed-followups-qpyim_u_/Works.Tests.xml",
+      "exit_code": 0,
+      "seconds": 0.769,
+      "results": {
+        "total": 76,
+        "passed": 76,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "not-run": 0
+      },
+      "name": "Works.Tests",
+      "argv": [
+        "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noColor",
+        "-xml",
+        "/tmp/timesheets-five-completed-followups-qpyim_u_/Works.Tests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -noColor -xml /tmp/timesheets-five-completed-followups-qpyim_u_/IntegrationTests.xml -method '*Confirm_and_adjust_commit_use_with_matching_effect_in_target_stream' -method '*EventStore_actor_state_store_commits_pair_and_reloads_it_after_actor_recreation' -method '*Concurrent_and_replayed_confirmation_have_one_stored_terminal_batch' -method '*Confirm_race_reads_the_completed_batch_when_both_submit_responses_stall' -method '*Confirm_accepts_an_exact_committed_batch_after_submit_transport_fault' -method '*Non_completed_status_is_an_opaque_denial_without_claiming_a_commit' -method '*Legacy_capability_stream_terminal_cannot_reopen_the_link' -method '*Use_receipt_rejects_duplicate_persisted_event_identity' -method '*Completed_status_with_wrong_receipt_fields_is_opaque_denial'",
+      "exit_code": 0,
+      "seconds": 22.914,
+      "results": {
+        "total": 24,
+        "passed": 24,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "not-run": 0
+      },
+      "name": "IntegrationTests",
+      "argv": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor",
+        "-xml",
+        "/tmp/timesheets-five-completed-followups-qpyim_u_/IntegrationTests.xml",
+        "-method",
+        "*Confirm_and_adjust_commit_use_with_matching_effect_in_target_stream",
+        "-method",
+        "*EventStore_actor_state_store_commits_pair_and_reloads_it_after_actor_recreation",
+        "-method",
+        "*Concurrent_and_replayed_confirmation_have_one_stored_terminal_batch",
+        "-method",
+        "*Confirm_race_reads_the_completed_batch_when_both_submit_responses_stall",
+        "-method",
+        "*Confirm_accepts_an_exact_committed_batch_after_submit_transport_fault",
+        "-method",
+        "*Non_completed_status_is_an_opaque_denial_without_claiming_a_commit",
+        "-method",
+        "*Legacy_capability_stream_terminal_cannot_reopen_the_link",
+        "-method",
+        "*Use_receipt_rejects_duplicate_persisted_event_identity",
+        "-method",
+        "*Completed_status_with_wrong_receipt_fields_is_opaque_denial"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      }
+    },
+    {
+      "command": "python3 -B -m unittest discover -s scripts/tests -v",
+      "exit_code": 0,
+      "seconds": 2.209,
+      "tests": 88,
+      "name": "python",
+      "argv": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts/tests",
+        "-v"
+      ],
+      "environment": {},
+      "test_summary": "OK"
+    },
+    {
+      "argv": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor",
+        "-result-xml",
+        "/tmp/timesheets-five-completed-followups-qpyim_u_/IntegrationNegatives.xml",
+        "-method",
+        "*Use_receipt_rejects_changed_stored_event_fields",
+        "-method",
+        "*Confirmation_receipt_rejects_changed_stored_effect_fields",
+        "-method",
+        "*AdjustmentReceiptRequiresEveryTrustedPriorValue",
+        "-method",
+        "*Adjustment_receipt_rejects_changed_effect_fields",
+        "-method",
+        "*EveryReceiptRequiresSubmittedCommandCorrelationAndCausation"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 22.689,
+      "results": {
+        "total": 61,
+        "passed": 61,
+        "failed": 0,
+        "skipped": 0,
+        "errors": 0,
+        "not-run": 0
+      },
+      "name": "IntegrationNegatives",
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -noColor -result-xml /tmp/timesheets-five-completed-followups-qpyim_u_/IntegrationNegatives.xml -method '*Use_receipt_rejects_changed_stored_event_fields' -method '*Confirmation_receipt_rejects_changed_stored_effect_fields' -method '*AdjustmentReceiptRequiresEveryTrustedPriorValue' -method '*Adjustment_receipt_rejects_changed_effect_fields' -method '*EveryReceiptRequiresSubmittedCommandCorrelationAndCausation'"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        ".agents/skills/bmad-party-mode/scripts/tests",
+        "-v"
+      ],
+      "environment": {
+        "PYTHONUTF8": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit_code": 0,
+      "seconds": 0.204,
+      "tests": 23,
+      "test_summary": "OK",
+      "name": "agents-bmad-party-mode",
+      "command": "PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s .agents/skills/bmad-party-mode/scripts/tests -v"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        ".agents/skills/bmad-forge-idea/scripts/tests",
+        "-v"
+      ],
+      "environment": {
+        "PYTHONUTF8": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit_code": 0,
+      "seconds": 0.23,
+      "tests": 20,
+      "test_summary": "OK",
+      "name": "agents-bmad-forge-idea",
+      "command": "PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s .agents/skills/bmad-forge-idea/scripts/tests -v"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        ".claude/skills/bmad-party-mode/scripts/tests",
+        "-v"
+      ],
+      "environment": {
+        "PYTHONUTF8": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit_code": 0,
+      "seconds": 0.162,
+      "tests": 23,
+      "test_summary": "OK",
+      "name": "claude-bmad-party-mode",
+      "command": "PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s .claude/skills/bmad-party-mode/scripts/tests -v"
+    },
+    {
+      "argv": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        ".claude/skills/bmad-forge-idea/scripts/tests",
+        "-v"
+      ],
+      "environment": {
+        "PYTHONUTF8": "1",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit_code": 0,
+      "seconds": 0.274,
+      "tests": 20,
+      "test_summary": "OK",
+      "name": "claude-bmad-forge-idea",
+      "command": "PYTHONUTF8=1 PYTHONDONTWRITEBYTECODE=1 python3 -B -m unittest discover -s .claude/skills/bmad-forge-idea/scripts/tests -v"
+    },
+    {
+      "name": "static-and-scope",
+      "argv": [
+        "python3",
+        "-c",
+        "import json\nimport subprocess\nfrom pathlib import Path\n\nbaseline = '622ee40e0df72404f60ee57da06e2963e665749d'\nprefix = '_bmad-output/implementation-artifacts/'\nledger = prefix + 'deferred-work.md'\nspec = prefix + 'spec-close-five-completed-implementation-followups.md'\nreport = prefix + 'tests/five-completed-implementation-followups.md'\nreceipts = prefix + 'evidence/completed-followups/20261022-five-entries/'\nassert not subprocess.check_output(['git', 'ls-files', '--', '.codex/hooks.json'], text=True).strip()\nassert subprocess.run(['git', 'check-ignore', '-q', '--', '.codex/hooks.json']).returncode == 0\nassert subprocess.check_output(['git', 'ls-files', '--', '.codex/config.toml'], text=True).strip() == '.codex/config.toml'\nreadme = Path('README.md').read_text()\nassert 'bmad-loop init --cli codex --no-skills' in readme\nassert 'remove any old hook that calls the deleted `bmad-story-automator`' in readme\nworkflow = Path('.github/workflows/ci.yml').read_text()\nassert 'python3 -m unittest discover -s scripts/tests -v' in workflow\nassert 'Python 3.11' in workflow\nbefore = subprocess.check_output(['git', 'show', baseline + ':' + ledger], text=True)\nafter = Path(ledger).read_text()\nnotes = [line for line in after.splitlines(keepends=True) if line.startswith('  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`')]\nassert len(notes) == 5\nfor line in notes:\n    after = after.replace(line, '', 1)\nassert after == before, 'Original ledger text changed'\ntracked = subprocess.check_output(['git', 'diff', '--name-only', baseline], text=True).splitlines()\nuntracked = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()\nfor name in set(tracked + untracked):\n    assert name in (ledger, spec, report) or name.startswith(receipts), 'Out-of-scope change: ' + name\n    if not name.endswith('.gz'):\n        text = Path(name).read_text()\n        assert text.endswith('\\n'), name\n        assert all(line == line.rstrip() for line in text.splitlines()), name\nsubprocess.run(['git', 'diff', '--check', baseline], check=True)\nprint('Four static ownership/setup/CI assertions, five-note ledger preservation, source scope and all changed-text whitespace passed.')\n"
+      ],
+      "environment": {},
+      "command": "python3 -c 'import json\nimport subprocess\nfrom pathlib import Path\n\nbaseline = '\"'\"'622ee40e0df72404f60ee57da06e2963e665749d'\"'\"'\nprefix = '\"'\"'_bmad-output/implementation-artifacts/'\"'\"'\nledger = prefix + '\"'\"'deferred-work.md'\"'\"'\nspec = prefix + '\"'\"'spec-close-five-completed-implementation-followups.md'\"'\"'\nreport = prefix + '\"'\"'tests/five-completed-implementation-followups.md'\"'\"'\nreceipts = prefix + '\"'\"'evidence/completed-followups/20261022-five-entries/'\"'\"'\nassert not subprocess.check_output(['\"'\"'git'\"'\"', '\"'\"'ls-files'\"'\"', '\"'\"'--'\"'\"', '\"'\"'.codex/hooks.json'\"'\"'], text=True).strip()\nassert subprocess.run(['\"'\"'git'\"'\"', '\"'\"'check-ignore'\"'\"', '\"'\"'-q'\"'\"', '\"'\"'--'\"'\"', '\"'\"'.codex/hooks.json'\"'\"']).returncode == 0\nassert subprocess.check_output(['\"'\"'git'\"'\"', '\"'\"'ls-files'\"'\"', '\"'\"'--'\"'\"', '\"'\"'.codex/config.toml'\"'\"'], text=True).strip() == '\"'\"'.codex/config.toml'\"'\"'\nreadme = Path('\"'\"'README.md'\"'\"').read_text()\nassert '\"'\"'bmad-loop init --cli codex --no-skills'\"'\"' in readme\nassert '\"'\"'remove any old hook that calls the deleted `bmad-story-automator`'\"'\"' in readme\nworkflow = Path('\"'\"'.github/workflows/ci.yml'\"'\"').read_text()\nassert '\"'\"'python3 -m unittest discover -s scripts/tests -v'\"'\"' in workflow\nassert '\"'\"'Python 3.11'\"'\"' in workflow\nbefore = subprocess.check_output(['\"'\"'git'\"'\"', '\"'\"'show'\"'\"', baseline + '\"'\"':'\"'\"' + ledger], text=True)\nafter = Path(ledger).read_text()\nnotes = [line for line in after.splitlines(keepends=True) if line.startswith('\"'\"'  resolution_note: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`'\"'\"')]\nassert len(notes) == 5\nfor line in notes:\n    after = after.replace(line, '\"'\"''\"'\"', 1)\nassert after == before, '\"'\"'Original ledger text changed'\"'\"'\ntracked = subprocess.check_output(['\"'\"'git'\"'\"', '\"'\"'diff'\"'\"', '\"'\"'--name-only'\"'\"', baseline], text=True).splitlines()\nuntracked = subprocess.check_output(['\"'\"'git'\"'\"', '\"'\"'ls-files'\"'\"', '\"'\"'--others'\"'\"', '\"'\"'--exclude-standard'\"'\"'], text=True).splitlines()\nfor name in set(tracked + untracked):\n    assert name in (ledger, spec, report) or name.startswith(receipts), '\"'\"'Out-of-scope change: '\"'\"' + name\n    if not name.endswith('\"'\"'.gz'\"'\"'):\n        text = Path(name).read_text()\n        assert text.endswith('\"'\"'\\n'\"'\"'), name\n        assert all(line == line.rstrip() for line in text.splitlines()), name\nsubprocess.run(['\"'\"'git'\"'\"', '\"'\"'diff'\"'\"', '\"'\"'--check'\"'\"', baseline], check=True)\nprint('\"'\"'Four static ownership/setup/CI assertions, five-note ledger preservation, source scope and all changed-text whitespace passed.'\"'\"')\n'",
+      "exit_code": 0,
+      "seconds": 0.496
+    }
+  ],
+  "static_checks": {
+    "generated_codex_hooks_untracked_and_ignored": true,
+    "codex_config_still_tracked": true,
+    "readme_checkout_setup_and_obsolete_hook_removal_documented": true,
+    "ci_discovers_python_tooling_with_python_3_11_requirement": true
+  },
+  "inputs_sha256": {
+    ".agents/skills/bmad-forge-idea/scripts/resolve_personas.py": "9273c71595d6317e0a1035b1a632a47a8943379797d0a4db0d2842e5787c31cc",
+    ".agents/skills/bmad-forge-idea/scripts/tests/test_resolve_personas.py": "0e8ac7b0313fb01d1c9d191aa57d76b7026c5ece4584101aa1e2f2b2ffdfab1c",
+    ".agents/skills/bmad-party-mode/scripts/resolve_party.py": "810d7838ddb4623c60e29639a3b2484ae140ebc59147acf98bfb934b55577a58",
+    ".agents/skills/bmad-party-mode/scripts/tests/test_resolve_party.py": "08db75fd85e5e9308cd433800e8b1b430dbae4b44498d8c8a99f3e673ccc59f5",
+    ".bmad-loop/bmad_loop_hook.py": "667f9a6394949ff8a3456fdd047aaac345832a52788e5e9c190628c5472ebcaf",
+    ".claude/skills/bmad-forge-idea/scripts/resolve_personas.py": "9273c71595d6317e0a1035b1a632a47a8943379797d0a4db0d2842e5787c31cc",
+    ".claude/skills/bmad-forge-idea/scripts/tests/test_resolve_personas.py": "0e8ac7b0313fb01d1c9d191aa57d76b7026c5ece4584101aa1e2f2b2ffdfab1c",
+    ".claude/skills/bmad-party-mode/scripts/resolve_party.py": "810d7838ddb4623c60e29639a3b2484ae140ebc59147acf98bfb934b55577a58",
+    ".claude/skills/bmad-party-mode/scripts/tests/test_resolve_party.py": "08db75fd85e5e9308cd433800e8b1b430dbae4b44498d8c8a99f3e673ccc59f5",
+    ".codex/config.toml": "d37497c3278121598a663564ab38b53f658969717f78decb661ddd11c66551ea",
+    ".github/workflows/ci.yml": "1bafb23b318bf9df91443c1dacf1d30b0c798a373b291d883e35545aac318a65",
+    ".gitignore": "7fa03e86ef15740b7a90206150b485aec7760f0157b9d6bfb5e531d2800980fb",
+    "Directory.Build.props": "92945c259d86f53f490dc26376a26aadd6dca0e7d93b24c74853979efb0d8f4c",
+    "Directory.Build.targets": "149ba0c5377430abd79652a53c0b6c4b7de79b2a9ef882b405ecbb6735ddb104",
+    "Directory.Packages.props": "be59977a614f48a4f11c356447961344bd9f704cc1b8057c26171bd344f9df51",
+    "README.md": "46a01968fb89f2c692201ff44bfbb820805ed25e3552c67ed0684f485570f263",
+    "global.json": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652",
+    "scripts/tests/test_bmad_loop_hook.py": "68777b89a208cbe0c6fee7dbbc622f6a11833301339c239756175db3fd3dd7e6",
+    "scripts/tests/test_bmad_tooling.py": "69e3f6b0c7695b0fd6c6d6b4221e4e04ceea456aa9cc83876a9aad75bc5e8273",
+    "src/Hexalith.Timesheets.Projections/ActivityTypes/TenantActivityTypeCatalogProjection.cs": "ff4b569c3904bcfa1a0250b4dbf6a8ce0394bcfed2ceeb66d91b5ca2c8b8e138",
+    "src/Hexalith.Timesheets.Projections/ApprovedTimeLedger/ApprovedTimeLedgerProjection.cs": "fd551bad5f72e8f5619cab64c5d63fb57bfcd06a1130b8f36ea53dd50bca34a6",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkConfirmationCapabilityProjection.cs": "05d0759017e5dd7e1e45d4d188c229720f1104e1e1a13dbf99bdf31fa392805d",
+    "src/Hexalith.Timesheets.Projections/OperationalReports/ActualTimeReportProjection.cs": "ae1ef7b8ef09739a0f5322b6a88bf52c6578240aa3bcdb02d98e7feaccd35a8d",
+    "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceListProjection.cs": "57e07e15a8496e817e3521b9a95c13f7bff42f218dae804287ee5426965aabb7",
+    "src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceProjection.cs": "9bd99d66322c4932e9d7903571755360915dff78423f7d8ddc447b62ba5a02a2",
+    "src/Hexalith.Timesheets.Projections/TimesheetPeriods/TimesheetPeriodSummaryProjection.cs": "e160b7bd75b7494fcc892e6ee8bc2b9eb08ee67a2e94fd88a68543fa10e01bcc",
+    "src/Hexalith.Timesheets.Projections/TimesheetsProjectionCheckpoint.cs": "091d99ea963f489a0d4a9434c5b10f9b2bdfc8fb4017cb302cca3fecac7b4fd9",
+    "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs": "c1864fb68da4bedcf2e7a29ce5113dcb463dd4516817de91c93972033b5d1efd",
+    "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkEventStoreDomainProcessor.cs": "9efffc84a74f344ae9bbe14673b7303d00aceff597e197d488b59bf4ed0ba2ff",
+    "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs": "1091435d395a831845044b5582d04fefe2c3ed2165c55dfcb2255de0d7bf28b3",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkEventStoreActorPersistenceTests.cs": "bffd1c8f5c2a2913b9be634f3e0afae725617b3561de377f5d92efa374732d58",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkPersistedSubmissionTests.cs": "ecc889494cb7d345b2b09682ed511c03ade0f677899339ee29128d68bbe7fb5d",
+    "tests/Hexalith.Timesheets.Projections.Tests/ActivityTypeCatalogProjectionTests.cs": "d25011fec7f08a4f92e9a21f7500ecd4fa3fa6c93c93bbc2351d4004c783896b",
+    "tests/Hexalith.Timesheets.Projections.Tests/ActualTimeReportProjectionTests.cs": "9aa84f9089380814e11cbaf61b0c9e3ad3c1b3ae4c3da041470a501a5a493d37",
+    "tests/Hexalith.Timesheets.Projections.Tests/ApprovedTimeLedgerProjectionTests.cs": "3858366830161ceee848cb3259282ac7b3de2e3a2ae00ef422aea81bd64672c3",
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkConfirmationCapabilityProjectionTests.cs": "8f843fa19645e4b809c1beab75885f2a6398793735d08a199d66acf2c5069fb9",
+    "tests/Hexalith.Timesheets.Projections.Tests/ProjectionCheckpointTenantScopeTests.cs": "8bd530bc331823e4aaa56c90e86db5cc7f1f22237274ce8696c11d538fa0d8ec",
+    "tests/Hexalith.Timesheets.Projections.Tests/TimeEntryEvidenceProjectionTests.cs": "fe3e0e953b86ab3911d981d539fe18afa436153c31f1991ad7f9630c49ff0618",
+    "tests/Hexalith.Timesheets.Projections.Tests/TimesheetPeriodSummaryProjectionTests.cs": "fa6ab468ae15d0e418b355919c14eb95a9b4861b5e5e884bd0fc9ce9a2302a50",
+    "tests/Hexalith.Timesheets.Server.Tests/MagicLinkDurableSubmissionServiceTests.cs": "746a1f3754e76b7787e5befe429ff0e35dc0a984ef9310b9668d09299ea62154"
+  },
+  "python": {
+    "version": "3.14.4",
+    "full_version": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+    "executable": "/usr/bin/python3",
+    "implementation": "CPython",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.43"
+  },
+  "dependency_checkouts": {
+    "references/Hexalith.AI.Tools": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+    "references/Hexalith.Builds": "359fee24aeca4d9eabed4b425d4cfa2520b2adda",
+    "references/Hexalith.Commons": "5c23c818f639c5bb3175f964c5549440bd5b876d",
+    "references/Hexalith.Conversations": "ef3947078cb5ccf3d2b81ca684490e565e8cd04f",
+    "references/Hexalith.EventStore": "5ce5f1d84b88c808cc8a526b9decf149de977e55",
+    "references/Hexalith.FrontComposer": "7fcfb019bf94fa858410726fe9a1506f3a2e36a7",
+    "references/Hexalith.McpCli": "7f4a08cb4b7ff9402d1dcf0826ad45ab0256ba65",
+    "references/Hexalith.Parties": "61921f7c0a25e00d9dd102d863e366cf67120f3d",
+    "references/Hexalith.Platform": "c65d87a6f8f4a05fa3bea4e24ac778bf23f12cd6",
+    "references/Hexalith.PolymorphicSerializations": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+    "references/Hexalith.Projects": "5ea8ef3544892e420409ad5e961a8bd2b3001fe7",
+    "references/Hexalith.Tenants": "ffe9522b10f37f56cd9339c3387cbb4b7d16d897",
+    "references/Hexalith.Works": "d60c29569de975bd280098e2e2f37406a30cf705"
+  },
+  "review_followup_recorded_utc": "2026-10-22T17:49:30.000645+00:00",
+  "reproduction_verification": {
+    "command": "python3 <verbatim Python reproduction block from tests/five-completed-implementation-followups.md>",
+    "exit_code": 0,
+    "seconds": 82.994
+  }
+}
