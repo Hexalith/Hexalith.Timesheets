@@ -37,7 +37,10 @@ def check_source(allow_frozen: bool = False, require_publish_flag: bool = False)
     if head != sha or github(f"repos/{repository}/git/ref/heads/main").get("object", {}).get("sha") != sha:
         raise ValueError("Release source is stale or differs from the dispatched main SHA")
     for workflow in ("ci.yml", "commitlint.yml", "codeql.yml"):
-        runs = github(f"repos/{repository}/actions/workflows/{workflow}/runs?branch=main&event=push&head_sha={sha}&status=success&per_page=100")
+        # The runs list's branch, event, head_sha, and status filters currently
+        # return an empty page even when the unfiltered page contains the
+        # matching successful push. Scan that page and keep the predicates here.
+        runs = github(f"repos/{repository}/actions/workflows/{workflow}/runs?per_page=100")
         if not any(run.get("head_sha") == sha and run.get("head_branch") == "main"
                    and run.get("event") == "push" and run.get("status") == "completed"
                    and run.get("conclusion") == "success" for run in runs.get("workflow_runs", [])):
