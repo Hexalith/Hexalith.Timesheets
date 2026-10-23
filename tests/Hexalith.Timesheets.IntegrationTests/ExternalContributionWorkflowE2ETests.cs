@@ -20,7 +20,7 @@ public sealed class ExternalContributionWorkflowE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task External_contribution_record_confirm_and_read_workflow_discloses_confirmation_as_evidence_not_approval()
+    public async Task ExternalContributionRecordConfirmAndReadWorkflowDisclosesConfirmationAsEvidenceNotApproval()
     {
         AllowAllAccessGuard accessGuard = new();
         ExternalContributionCommandService service = new(

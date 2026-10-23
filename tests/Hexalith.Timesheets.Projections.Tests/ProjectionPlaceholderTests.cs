@@ -7,7 +7,7 @@ namespace Hexalith.Timesheets.Projections.Tests;
 public sealed class ProjectionPlaceholderTests
 {
     [Fact]
-    public void Projection_checkpoint_serves_reads_only_when_fresh()
+    public void ProjectionCheckpointServesReadsOnlyWhenFresh()
     {
         new TimesheetsProjectionCheckpoint("tenant-test", "approved-time-ledger", 42, ProjectionFreshness.Fresh)
             .CanServeReads.ShouldBeTrue();

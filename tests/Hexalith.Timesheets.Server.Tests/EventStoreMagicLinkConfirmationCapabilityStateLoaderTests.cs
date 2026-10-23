@@ -238,15 +238,141 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             stateLoadingOptions: Options.Create(new MagicLinkStateLoadingOptions
             { Timeout = callerCancels ? TimeSpan.FromSeconds(5) : TimeSpan.FromMilliseconds(75) }));
         Task<MagicLinkEndpointTokenState> resolution = loader.LoadTokenStateAsync("opaque-once", caller.Token).AsTask();
-        await started.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
-        if (callerCancels)
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        try
         {
-            caller.Cancel();
-            await Should.ThrowAsync<OperationCanceledException>(() => resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+            if (callerCancels)
+            {
+                caller.Cancel();
+                await Should.ThrowAsync<OperationCanceledException>(() => resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+            }
+            else
+            {
+                ShouldBeOpaqueFailClosed(await resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+                elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromMilliseconds(375));
+            }
         }
+        finally
+        {
+            pending.TrySetCanceled(TestContext.Current.CancellationToken);
+            _ = await Record.ExceptionAsync(() => pending.Task);
+        }
+
+    }
+
+    [Theory]
+    [InlineData("index-late-fault", false)]
+    [InlineData("index", false)]
+    [InlineData("index", true)]
+    [InlineData("coordinator", false)]
+    [InlineData("coordinator", true)]
+    [InlineData("tree", false)]
+    [InlineData("tree", true)]
+    [InlineData("catalog", false)]
+    [InlineData("catalog", true)]
+    [InlineData("standalone-catalog", false)]
+    [InlineData("standalone-catalog", true)]
+    public async Task NonCooperativeReadModelsShareInvocationDeadlineAndPropagateCallerCancellation(string boundary, bool callerCancels)
+    {
+        var inner = new Hexalith.EventStore.Testing.Fakes.InMemoryReadModelStore();
+        inner.SeedRaw(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName,
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey, IndexWith(Hash()));
+        inner.SeedRaw(MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName,
+            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()),
+            new ActivityTypeCatalogReadModel([new ActivityTypeCatalogItem(ActivityId(), ActivityTypeScope.Tenant,
+                null, "Delivery", true, BillableState.Billable)], ProjectionFreshnessMetadata.Fresh));
+        var readModels = new NonCooperativeReadModelStore(inner);
+        SharedProjectionEpochCoordinator? coordinator = null;
+        if (boundary is "coordinator" or "tree")
+        {
+            coordinator = new SharedProjectionEpochCoordinator(readModels, inner);
+            SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+            _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId,
+                TestContext.Current.CancellationToken);
+            long epoch = await coordinator.BeginAsync(scope, "deadline-tree", "inventory", new Dictionary<string, long>(),
+                TestContext.Current.CancellationToken);
+            var builder = new MagicLinkTokenHashCapabilityIndexTreeBuilder(
+                new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope),
+                new MagicLinkTokenHashCapabilityIndexTreeRoot(7, 0, null, null), epoch);
+            await builder.AddContributionAsync(new(Hash().Value, new(Tenant(), CapabilityId())), TestContext.Current.CancellationToken);
+            _ = await coordinator.StageAsync(scope, "deadline-tree", [.. builder.Operations()], TestContext.Current.CancellationToken);
+            await coordinator.CommitAsync(scope, "deadline-tree", TestContext.Current.CancellationToken);
+        }
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        readModels.BeforeReadAsync = async (type, key) =>
+        {
+            if (boundary == "catalog" && !callerCancels
+                && type == typeof(MagicLinkTokenHashCapabilityIndexReadModel))
+                await Task.Delay(TimeSpan.FromMilliseconds(650), TestContext.Current.CancellationToken);
+            bool stalls = boundary switch
+            {
+                "index" or "index-late-fault" => type == typeof(MagicLinkTokenHashCapabilityIndexReadModel),
+                "coordinator" => key.StartsWith("shared-epoch:", StringComparison.Ordinal),
+                "tree" => type == typeof(MagicLinkTokenHashCapabilityIndexTreeNode),
+                _ => type == typeof(ActivityTypeCatalogReadModel)
+            };
+            if (!stalls) return;
+            started.TrySetResult();
+            await release.Task; // Intentionally ignores the dependency cancellation token.
+            if (boundary == "index-late-fault") throw new IOException("Late dependency failure after deadline.");
+        };
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "issued", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "recorded", Recorded()));
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway, readModels,
+            new DeterministicTokenGenerator(), new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"),
+            coordinator, allowLegacyIndexRead: true,
+            stateLoadingOptions: Options.Create(new MagicLinkStateLoadingOptions
+            { MaxPages = 3, Timeout = callerCancels ? TimeSpan.FromSeconds(5)
+                : boundary == "catalog" ? TimeSpan.FromSeconds(1) : TimeSpan.FromMilliseconds(150) }));
+        using var caller = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        async Task ResolveAsync()
+        {
+            if (boundary == "standalone-catalog")
+            {
+                var result = await loader.LoadActivityTypeCatalogAsync(caller.Token);
+                result.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Unavailable);
+                result.Items.ShouldBeEmpty();
+            }
+            else ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", caller.Token));
+        }
+        var elapsed = System.Diagnostics.Stopwatch.StartNew();
+        Task resolution = ResolveAsync();
+        Task? abandoned = null;
+        try
+        {
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+            abandoned = readModels.LastRead.ShouldNotBeNull();
+            if (callerCancels)
+            {
+                caller.Cancel();
+                await Should.ThrowAsync<OperationCanceledException>(() => resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+            }
+            else
+            {
+                await resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+                // A 300 ms scheduling allowance still rejects a one-second timeout regression.
+                elapsed.Elapsed.ShouldBeLessThan(boundary == "catalog" ? TimeSpan.FromMilliseconds(1_300) : TimeSpan.FromMilliseconds(450));
+            }
+        }
+        finally
+        {
+            readModels.BeforeReadAsync = null;
+            abandoned ??= readModels.LastRead;
+            release.TrySetResult();
+            if (abandoned is not null)
+            {
+                Exception? late = await Record.ExceptionAsync(() => abandoned.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+                if (boundary == "index-late-fault") late.ShouldBeOfType<IOException>();
+                else late.ShouldBeNull();
+            }
+        }
+        if (boundary == "standalone-catalog")
+            (await loader.LoadActivityTypeCatalogAsync(TestContext.Current.CancellationToken)).ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
         else
-            ShouldBeOpaqueFailClosed(await resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
-        pending.TrySetCanceled(TestContext.Current.CancellationToken);
+            (await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken)).CapabilityState.ShouldNotBeNull();
     }
 
     /// <summary>The pure candidate helper deduplicates issuances and retains every ambiguous owner.</summary>
@@ -546,7 +672,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_resolves_index_and_folds_capability_time_entry_and_catalog()
+    public async Task LoadTokenStateAsyncResolvesIndexAndFoldsCapabilityTimeEntryAndCatalog()
     {
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
         var gateway = new ScriptedGatewayClient()
@@ -568,7 +694,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_accepts_exact_fully_qualified_production_event_names()
+    public async Task LoadTokenStateAsyncAcceptsExactFullyQualifiedProductionEventNames()
     {
         StreamReadEvent issued = Event(1, "capability-1", Issued()) with
         {
@@ -590,7 +716,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_uses_folded_capability_state_as_single_use_authority()
+    public async Task LoadTokenStateAsyncUsesFoldedCapabilityStateAsSingleUseAuthority()
     {
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
         var gateway = new ScriptedGatewayClient()
@@ -613,7 +739,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_index_has_no_hash()
+    public async Task LoadTokenStateAsyncFailsClosedWhenIndexHasNoHash()
     {
         var gateway = new ScriptedGatewayClient();
         var readModels = new InMemoryReadModelStore(new MagicLinkTokenHashCapabilityIndexReadModel(
@@ -632,7 +758,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_for_legacy_index_without_owner_contributions()
+    public async Task LoadTokenStateAsyncFailsClosedForLegacyIndexWithoutOwnerContributions()
     {
         MagicLinkTokenHashCapabilityIndexReadModel canonical = IndexWith(Hash());
         var legacy = new MagicLinkTokenHashCapabilityIndexReadModel(canonical.Entries);
@@ -647,7 +773,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_for_conflicting_unique_and_paged_index()
+    public async Task LoadTokenStateAsyncFailsClosedForConflictingUniqueAndPagedIndex()
     {
         MagicLinkTokenHashCapabilityIndexReadModel conflicting = IndexWith(Hash()) with
         {
@@ -666,7 +792,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_for_hash_addressed_page_manifest()
+    public async Task LoadTokenStateAsyncFailsClosedForHashAddressedPageManifest()
     {
         MagicLinkTokenHashCapabilityIndexReadModel legacyPaged = IndexWith(Hash()) with
         {
@@ -698,7 +824,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadCapabilityAsync_uses_trusted_ambient_tenant_for_admin_paths()
+    public async Task LoadCapabilityAsyncUsesTrustedAmbientTenantForAdminPaths()
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()));
@@ -718,7 +844,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [InlineData(StreamReplayReasonCodes.MissingStream, true)]
     [InlineData(StreamReplayReasonCodes.MissingEvent, false)]
     [InlineData(null, false)]
-    public async Task Proposed_entry_owner_accepts_only_explicit_missing_stream_reason(
+    public async Task ProposedEntryOwnerAcceptsOnlyExplicitMissingStreamReason(
         string? reasonCode, bool expectedCapability)
     {
         var gateway = new ScriptedGatewayClient()
@@ -734,7 +860,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task Repeated_physical_issuance_at_distinct_sequences_fails_closed()
+    public async Task RepeatedPhysicalIssuanceAtDistinctSequencesFailsClosed()
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value,
@@ -768,7 +894,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public void Token_hash_index_rebuilds_from_issued_events_without_raw_token_material()
+    public void TokenHashIndexRebuildsFromIssuedEventsWithoutRawTokenMaterial()
     {
         MagicLinkTokenHashCapabilityIndexReadModel index = MagicLinkTokenHashCapabilityIndexProjection.Rebuild(
         [
@@ -786,7 +912,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_capability_aggregate_is_missing()
+    public async Task LoadTokenStateAsyncFailsClosedWhenCapabilityAggregateIsMissing()
     {
         // The index resolves a candidate, but the capability stream folds to no state.
         var gateway = new ScriptedGatewayClient()
@@ -801,7 +927,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_folded_token_hash_does_not_match_candidate()
+    public async Task LoadTokenStateAsyncFailsClosedWhenFoldedTokenHashDoesNotMatchCandidate()
     {
         // The index points at a capability whose authoritative folded TokenHash differs from the
         // hash derived from the presented token. The candidate is non-authoritative; the fold wins.
@@ -821,7 +947,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_folded_capability_tenant_differs_from_candidate()
+    public async Task LoadTokenStateAsyncFailsClosedWhenFoldedCapabilityTenantDiffersFromCandidate()
     {
         // Cross-tenant: the candidate tenant resolves the stream, but the folded capability carries a
         // different tenant. The loader must not bridge tenants.
@@ -841,7 +967,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_scoped_time_entry_is_not_recorded()
+    public async Task LoadTokenStateAsyncFailsClosedWhenScopedTimeEntryIsNotRecorded()
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()));
@@ -1078,7 +1204,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_event_store_read_throws()
+    public async Task LoadTokenStateAsyncFailsClosedWhenEventStoreReadThrows()
     {
         var gateway = new ScriptedGatewayClient()
             .WithThrow(Tenant().TenantId, CapabilityId().Value)
@@ -1095,7 +1221,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [Theory]
     [InlineData("foreign-suffix")]
     [InlineData("null-payload")]
-    public async Task LoadTokenStateAsync_fails_closed_for_unrecognized_or_null_capability_payload(string caseName)
+    public async Task LoadTokenStateAsyncFailsClosedForUnrecognizedOrNullCapabilityPayload(string caseName)
     {
         StreamReadEvent issued = Event(1, "capability-1", Issued());
         issued = caseName == "foreign-suffix"
@@ -1113,7 +1239,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [Theory]
     [InlineData("capability")]
     [InlineData("time-entry")]
-    public async Task LoadTokenStateAsync_fails_closed_when_payload_identity_differs_from_requested_stream(string stage)
+    public async Task LoadTokenStateAsyncFailsClosedWhenPayloadIdentityDiffersFromRequestedStream(string stage)
     {
         MagicLinkConfirmationCapabilityIssued issued = stage == "capability"
             ? Issued(new MagicLinkCapabilityId("capability-2"))
@@ -1132,7 +1258,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_for_timeout_cancellation_without_caller_cancellation()
+    public async Task LoadTokenStateAsyncFailsClosedForTimeoutCancellationWithoutCallerCancellation()
     {
         var gateway = new ScriptedGatewayClient()
             .WithException(Tenant().TenantId, CapabilityId().Value, new OperationCanceledException("Timed out."));
@@ -1144,7 +1270,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_propagates_genuine_caller_cancellation()
+    public async Task LoadTokenStateAsyncPropagatesGenuineCallerCancellation()
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -1160,7 +1286,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_for_recognized_event_with_unsupported_serialization()
+    public async Task LoadTokenStateAsyncFailsClosedForRecognizedEventWithUnsupportedSerialization()
     {
         StreamReadEvent issued = Event(1, "capability-1", Issued()) with
         {
@@ -1179,7 +1305,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_returns_unavailable_catalog_when_catalog_read_throws()
+    public async Task LoadTokenStateAsyncReturnsUnavailableCatalogWhenCatalogReadThrows()
     {
         // Capability and Time Entry fold, but the catalog read fails. The loader surfaces an explicit
         // Unavailable freshness so the trust-bearing command service fails closed downstream — it never
@@ -1197,7 +1323,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_returns_folded_revoked_state_proving_index_is_not_revocation_authority()
+    public async Task LoadTokenStateAsyncReturnsFoldedRevokedStateProvingIndexIsNotRevocationAuthority()
     {
         // The index still resolves the candidate after revocation; revocation truth lives only in the
         // folded aggregate, which the downstream validators reject.
@@ -1219,7 +1345,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_folds_capability_deterministically_across_orderings_and_duplicates()
+    public async Task LoadTokenStateAsyncFoldsCapabilityDeterministicallyAcrossOrderingsAndDuplicates()
     {
         var ascending = new ScriptedGatewayClient()
             .WithStream(
@@ -1413,7 +1539,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadCapabilityAsync_returns_null_when_capability_aggregate_is_missing()
+    public async Task LoadCapabilityAsyncReturnsNullWhenCapabilityAggregateIsMissing()
     {
         var gateway = new ScriptedGatewayClient();
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
@@ -1426,7 +1552,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadCapabilityAsync_returns_null_when_no_ambient_tenant()
+    public async Task LoadCapabilityAsyncReturnsNullWhenNoAmbientTenant()
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()));
@@ -1441,7 +1567,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadActivityTypeCatalogAsync_fails_closed_when_no_ambient_tenant()
+    public async Task LoadActivityTypeCatalogAsyncFailsClosedWhenNoAmbientTenant()
     {
         var gateway = new ScriptedGatewayClient();
         var loader = CreateLoaderWithoutTenant(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
@@ -1458,7 +1584,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task LoadTokenStateAsync_fails_closed_for_blank_token_without_any_read(string blankToken)
+    public async Task LoadTokenStateAsyncFailsClosedForBlankTokenWithoutAnyRead(string blankToken)
     {
         // A malformed/blank token must collapse to the identical opaque state before any index or
         // EventStore read — no resolution work, no observable difference from any other failure.
@@ -1477,7 +1603,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_token_hashing_rejects_malformed_token()
+    public async Task LoadTokenStateAsyncFailsClosedWhenTokenHashingRejectsMalformedToken()
     {
         // When hashing the presented token throws (malformed material), the loader fails closed without
         // touching the index or EventStore — identical opaque outcome, no disclosure of the reason.
@@ -1501,7 +1627,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_returns_folded_expired_state_proving_index_is_not_expiry_authority()
+    public async Task LoadTokenStateAsyncReturnsFoldedExpiredStateProvingIndexIsNotExpiryAuthority()
     {
         // Parity with the revoked/used proofs: the index still resolves the candidate after expiry, but
         // expiry truth lives only in the folded aggregate, which the downstream validators reject.
@@ -1523,7 +1649,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadActivityTypeCatalogAsync_reads_fresh_tenant_catalog_for_admin_paths()
+    public async Task LoadActivityTypeCatalogAsyncReadsFreshTenantCatalogForAdminPaths()
     {
         var gateway = new ScriptedGatewayClient();
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
@@ -1543,7 +1669,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [InlineData(ProjectionFreshnessState.Degraded)]
     [InlineData(ProjectionFreshnessState.Unknown)]
     [InlineData(ProjectionFreshnessState.Unavailable)]
-    public async Task LoadActivityTypeCatalogAsync_retains_only_non_fresh_status(ProjectionFreshnessState status)
+    public async Task LoadActivityTypeCatalogAsyncRetainsOnlyNonFreshStatus(ProjectionFreshnessState status)
     {
         var gateway = new ScriptedGatewayClient();
         var metadata = new ProjectionFreshnessMetadata(
@@ -1588,7 +1714,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [Theory]
     [InlineData(ProjectionFreshnessState.Stale)]
     [InlineData(ProjectionFreshnessState.Rebuilding)]
-    public async Task LoadTokenStateAsync_rejects_malformed_non_fresh_catalog(ProjectionFreshnessState status)
+    public async Task LoadTokenStateAsyncRejectsMalformedNonFreshCatalog(ProjectionFreshnessState status)
     {
         ActivityTypeCatalogReadModel malformed = InvalidFreshCatalog("duplicate-identifier") with
         {
@@ -1607,7 +1733,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_returns_unavailable_when_catalog_is_missing()
+    public async Task LoadTokenStateAsyncReturnsUnavailableWhenCatalogIsMissing()
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
@@ -1625,7 +1751,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_returns_unavailable_for_unrecognized_catalog_status()
+    public async Task LoadTokenStateAsyncReturnsUnavailableForUnrecognizedCatalogStatus()
     {
         var malformed = new ActivityTypeCatalogReadModel(
             [],
@@ -1643,7 +1769,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadActivityTypeCatalogAsync_rejects_fresh_catalog_with_blank_label()
+    public async Task LoadActivityTypeCatalogAsyncRejectsFreshCatalogWithBlankLabel()
     {
         var malformed = new ActivityTypeCatalogReadModel(
             [new ActivityTypeCatalogItem(
@@ -1666,7 +1792,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_pages_aggregate_streams_with_exclusive_from_sequence()
+    public async Task LoadTokenStateAsyncPagesAggregateStreamsWithExclusiveFromSequence()
     {
         var gateway = new ScriptedGatewayClient()
             .WithPagedStream(
@@ -1726,7 +1852,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_later_page_regresses_latest_sequence()
+    public async Task LoadTokenStateAsyncFailsClosedWhenLaterPageRegressesLatestSequence()
     {
         var gateway = new ScriptedGatewayClient()
             .WithPagedStreamLatestSequences(
@@ -1749,7 +1875,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_for_aggregate_sequence_gap()
+    public async Task LoadTokenStateAsyncFailsClosedForAggregateSequenceGap()
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(
@@ -1767,7 +1893,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [Theory]
     [InlineData("missing-last")]
     [InlineData("unsolicited-to")]
-    public async Task LoadTokenStateAsync_fails_closed_for_malformed_stream_page_bounds(string caseName)
+    public async Task LoadTokenStateAsyncFailsClosedForMalformedStreamPageBounds(string caseName)
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
@@ -1791,7 +1917,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [InlineData("tenant")]
     [InlineData("domain")]
     [InlineData("aggregate")]
-    public async Task LoadTokenStateAsync_fails_closed_when_stream_page_scope_differs_from_request(string scopePart)
+    public async Task LoadTokenStateAsyncFailsClosedWhenStreamPageScopeDiffersFromRequest(string scopePart)
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
@@ -1842,7 +1968,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [InlineData("timestamp")]
     [InlineData("user-id")]
     [InlineData("protection-metadata")]
-    public async Task LoadTokenStateAsync_fails_closed_for_same_sequence_events_with_conflicting_envelope(
+    public async Task LoadTokenStateAsyncFailsClosedForSameSequenceEventsWithConflictingEnvelope(
         string conflict)
     {
         StreamReadEvent first = Event(1, "capability-1", Issued());
@@ -1891,7 +2017,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_accepts_same_sequence_duplicates_with_equivalent_protection_metadata()
+    public async Task LoadTokenStateAsyncAcceptsSameSequenceDuplicatesWithEquivalentProtectionMetadata()
     {
         StreamReadEvent first = Event(1, "capability-1", Issued()) with
         {
@@ -1917,7 +2043,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public async Task LoadTokenStateAsync_fails_closed_for_blank_event_message_id(string? messageId)
+    public async Task LoadTokenStateAsyncFailsClosedForBlankEventMessageId(string? messageId)
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(
@@ -1933,7 +2059,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadTokenStateAsync_fails_closed_when_one_message_id_appears_at_different_sequences()
+    public async Task LoadTokenStateAsyncFailsClosedWhenOneMessageIdAppearsAtDifferentSequences()
     {
         var gateway = new ScriptedGatewayClient()
             .WithStream(
@@ -1953,7 +2079,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     [InlineData("project-scope")]
     [InlineData("project-reference")]
     [InlineData("duplicate-identifier")]
-    public async Task LoadTokenStateAsync_fails_closed_for_invalid_fresh_catalog_shape(string scenario)
+    public async Task LoadTokenStateAsyncFailsClosedForInvalidFreshCatalogShape(string scenario)
     {
         ActivityTypeCatalogReadModel malformed = InvalidFreshCatalog(scenario);
         var gateway = new ScriptedGatewayClient()
@@ -2000,7 +2126,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     }
 
     [Fact]
-    public async Task LoadCapabilityAsync_folds_terminal_state_for_admin_revoke_and_expire_paths()
+    public async Task LoadCapabilityAsyncFoldsTerminalStateForAdminRevokeAndExpirePaths()
     {
         // The admin revoke/expire endpoints load existing capability state through LoadCapabilityAsync. Prior
         // events must fold so an already-terminal capability is observed as terminal (not as a fresh issue).

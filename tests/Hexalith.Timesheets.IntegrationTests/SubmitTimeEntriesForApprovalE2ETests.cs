@@ -21,7 +21,7 @@ public sealed class SubmitTimeEntriesForApprovalE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Draft_time_entry_submission_workflow_records_submits_projects_and_discloses_submitted_evidence()
+    public async Task DraftTimeEntrySubmissionWorkflowRecordsSubmitsProjectsAndDisclosesSubmittedEvidence()
     {
         AllowAllAccessGuard accessGuard = new();
         TimeEntryCommandService recordService = new(accessGuard);
@@ -121,7 +121,7 @@ public sealed class SubmitTimeEntriesForApprovalE2ETests
     }
 
     [Fact]
-    public async Task Submission_workflow_reports_partial_batch_when_activity_type_becomes_inactive()
+    public async Task SubmissionWorkflowReportsPartialBatchWhenActivityTypeBecomesInactive()
     {
         AllowAllAccessGuard accessGuard = new();
         TimeEntrySubmissionCommandService submissionService = new(accessGuard);

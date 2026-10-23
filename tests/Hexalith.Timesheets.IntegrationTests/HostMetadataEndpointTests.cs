@@ -11,7 +11,7 @@ public sealed class HostMetadataEndpointTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Host_metadata_api_contract_declares_successful_module_descriptor_response()
+    public void HostMetadataApiContractDeclaresSuccessfulModuleDescriptorResponse()
     {
         string program = File.ReadAllText(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
 
@@ -31,7 +31,7 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
-    public void Host_metadata_api_contract_exports_activity_type_catalog_descriptors()
+    public void HostMetadataApiContractExportsActivityTypeCatalogDescriptors()
     {
         string[] capabilities = TimesheetsMetadataCatalog.Descriptors
             .Select(static descriptor => descriptor.Capability)
@@ -47,7 +47,7 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
-    public void Host_metadata_api_contract_exports_actual_time_report_descriptors()
+    public void HostMetadataApiContractExportsActualTimeReportDescriptors()
     {
         string[] metadataDescriptors = TimesheetsMetadataCatalog.Descriptors
             .Select(static descriptor => descriptor.Name)
@@ -71,7 +71,7 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
-    public void Host_metadata_api_contract_exports_submit_time_entries_descriptor()
+    public void HostMetadataApiContractExportsSubmitTimeEntriesDescriptor()
     {
         var submitDescriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.command.submit-time-entries");
@@ -100,7 +100,7 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
-    public void Host_metadata_api_contract_exports_external_contribution_descriptor()
+    public void HostMetadataApiContractExportsExternalContributionDescriptor()
     {
         var descriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.command.external-contribution");
@@ -132,7 +132,7 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
-    public void Host_metadata_api_contract_exports_correct_rejected_entry_descriptor()
+    public void HostMetadataApiContractExportsCorrectRejectedEntryDescriptor()
     {
         var correctionDescriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.command.correct-rejected-time-entry");
@@ -151,7 +151,7 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
-    public void Host_metadata_api_contract_exports_operational_time_entry_query_descriptor()
+    public void HostMetadataApiContractExportsOperationalTimeEntryQueryDescriptor()
     {
         var queryDescriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.projection.time-entry-query");
@@ -174,7 +174,7 @@ public sealed class HostMetadataEndpointTests
     }
 
     [Fact]
-    public void Host_metadata_api_catalog_response_omits_authority_and_payload_identifiers()
+    public void HostMetadataApiCatalogResponseOmitsAuthorityAndPayloadIdentifiers()
     {
         var response = new
         {

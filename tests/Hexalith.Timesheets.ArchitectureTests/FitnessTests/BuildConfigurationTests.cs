@@ -24,7 +24,7 @@ public sealed class BuildConfigurationTests
     ];
 
     [Fact]
-    public void Repository_uses_slnx_and_central_package_management()
+    public void RepositoryUsesSlnxAndCentralPackageManagement()
     {
         DirectoryInfo root = RepositoryRoot.Find();
 
@@ -36,7 +36,7 @@ public sealed class BuildConfigurationTests
     }
 
     [Fact]
-    public void Required_projects_exist_and_are_registered_in_solution()
+    public void RequiredProjectsExistAndAreRegisteredInSolution()
     {
         string solution = File.ReadAllText(RepositoryRoot.PathTo("Hexalith.Timesheets.slnx"));
 
@@ -48,7 +48,7 @@ public sealed class BuildConfigurationTests
     }
 
     [Fact]
-    public void Project_files_do_not_use_inline_package_versions()
+    public void ProjectFilesDoNotUseInlinePackageVersions()
     {
         string[] projectFiles = RepositoryRoot.TimesheetsProjectFiles();
 

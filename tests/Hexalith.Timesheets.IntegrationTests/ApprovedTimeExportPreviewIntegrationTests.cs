@@ -22,7 +22,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class ApprovedTimeExportPreviewIntegrationTests
 {
     [Fact]
-    public async Task Seeded_approved_billable_project_and_work_rows_preview_ready_with_scope_freshness_and_no_audit_event()
+    public async Task SeededApprovedBillableProjectAndWorkRowsPreviewReadyWithScopeFreshnessAndNoAuditEvent()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -69,7 +69,7 @@ public sealed class ApprovedTimeExportPreviewIntegrationTests
     }
 
     [Fact]
-    public async Task No_results_filter_previews_blocked_without_file_or_audit_event()
+    public async Task NoResultsFilterPreviewsBlockedWithoutFileOrAuditEvent()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -105,7 +105,7 @@ public sealed class ApprovedTimeExportPreviewIntegrationTests
     }
 
     [Fact]
-    public async Task Stale_projection_previews_blocked_without_file_or_audit_event()
+    public async Task StaleProjectionPreviewsBlockedWithoutFileOrAuditEvent()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -140,7 +140,7 @@ public sealed class ApprovedTimeExportPreviewIntegrationTests
     }
 
     [Fact]
-    public async Task Preview_and_generate_agree_over_seeded_projection_while_only_generate_produces_file_and_audit()
+    public async Task PreviewAndGenerateAgreeOverSeededProjectionWhileOnlyGenerateProducesFileAndAudit()
     {
         // AC3 (NFR9): preview and generation share one readiness core, so over the SAME real seeded projection
         // they must agree on readiness, scope, and freshness — proven end-to-end, not just with a fake reader.
@@ -184,7 +184,7 @@ public sealed class ApprovedTimeExportPreviewIntegrationTests
     }
 
     [Fact]
-    public async Task Preview_current_rows_only_corrected_scope_is_deterministic_and_excludes_superseded_rows()
+    public async Task PreviewCurrentRowsOnlyCorrectedScopeIsDeterministicAndExcludesSupersededRows()
     {
         // AC5 (NFR9): seeded corrected/superseded rows must yield a deterministic readiness scope across repeated
         // runs, and the current-rows-only filter must exclude the superseded original from the count.

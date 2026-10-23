@@ -20,7 +20,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class ApprovedTimeExportIntegrationTests
 {
     [Fact]
-    public void Golden_csv_v1_fixture_pins_project_work_boundaries_lineage_ai_metrics_and_comment_safety()
+    public void GoldenCsvV1FixturePinsProjectWorkBoundariesLineageAiMetricsAndCommentSafety()
     {
         string actual = ApprovedTimeExportCsvWriter.Write([
             GoldenRow(
@@ -87,7 +87,7 @@ public sealed class ApprovedTimeExportIntegrationTests
     }
 
     [Fact]
-    public async Task Seeded_approved_billable_project_and_work_rows_export_with_freshness_lineage_and_no_empty_file()
+    public async Task SeededApprovedBillableProjectAndWorkRowsExportWithFreshnessLineageAndNoEmptyFile()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -165,7 +165,7 @@ public sealed class ApprovedTimeExportIntegrationTests
     }
 
     [Fact]
-    public async Task Export_scope_respects_work_contributor_activity_period_date_and_billable_filters()
+    public async Task ExportScopeRespectsWorkContributorActivityPeriodDateAndBillableFilters()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -292,7 +292,7 @@ public sealed class ApprovedTimeExportIntegrationTests
     }
 
     [Fact]
-    public async Task Export_tenant_local_period_key_filters_independently_of_utc_audit_instants()
+    public async Task ExportTenantLocalPeriodKeyFiltersIndependentlyOfUtcAuditInstants()
     {
         // Both entries are approved at the same June UTC instant. The period key keys off the
         // tenant-local service date only, so "2026-03" must include the March-service row and

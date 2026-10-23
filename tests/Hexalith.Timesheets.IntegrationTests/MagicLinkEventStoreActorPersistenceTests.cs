@@ -152,7 +152,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task External_recording_route_commits_owner_state_before_magic_link_use()
+    public async Task ExternalRecordingRouteCommitsOwnerStateBeforeMagicLinkUse()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -271,7 +271,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task External_recording_retries_and_concurrent_submissions_commit_one_recording()
+    public async Task ExternalRecordingRetriesAndConcurrentSubmissionsCommitOneRecording()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -296,7 +296,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Unverified_recording_status_or_receipt_denies_and_retry_does_not_append(bool receiptMismatch)
+    public async Task UnverifiedRecordingStatusOrReceiptDeniesAndRetryDoesNotAppend(bool receiptMismatch)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -331,7 +331,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("unauthorized")]
     [InlineData("unavailable-catalog")]
     [InlineData("conflict")]
-    public async Task Rejected_recording_does_not_replace_existing_owner_evidence(string scenario)
+    public async Task RejectedRecordingDoesNotReplaceExistingOwnerEvidence(string scenario)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -385,7 +385,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             client, "/api/timesheets/external-contributions/", command);
 
     [Fact]
-    public async Task Submitted_policy_commits_record_and_submission_as_one_verified_batch()
+    public async Task SubmittedPolicyCommitsRecordAndSubmissionAsOneVerifiedBatch()
     {
         using MagicLinkHttpBoundaryFactory factory = new(
             useConcreteLoader: true,
@@ -431,7 +431,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Submitted_policy_denies_new_command_with_tampered_submission_instant()
+    public async Task SubmittedPolicyDeniesNewCommandWithTamperedSubmissionInstant()
     {
         using MagicLinkHttpBoundaryFactory factory = new(
             useConcreteLoader: true,
@@ -462,7 +462,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Valid_use_requires_verified_origin_at_the_processor_entry()
+    public async Task ValidUseRequiresVerifiedOriginAtTheProcessorEntry()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -486,7 +486,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Valid_management_command_requires_verified_origin_and_actor_at_processor_entry(bool revoke)
+    public async Task ValidManagementCommandRequiresVerifiedOriginAndActorAtProcessorEntry(bool revoke)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -533,7 +533,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Protected_process_route_dispatches_to_the_keyed_timesheets_processor()
+    public async Task ProtectedProcessRouteDispatchesToTheKeyedTimesheetsProcessor()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081);
         using HttpClient client = factory.CreateClient();
@@ -564,7 +564,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData(false, true)]
     [InlineData(true, false)]
     [InlineData(true, true)]
-    public async Task EventStore_actor_state_store_commits_pair_and_reloads_it_after_actor_recreation(
+    public async Task EventStoreActorStateStoreCommitsPairAndReloadsItAfterActorRecreation(
         bool adjust, bool recreateAfterRejection)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
@@ -659,7 +659,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task EventStore_processor_rejects_recording_without_matching_verified_actor(bool mismatched)
+    public async Task EventStoreProcessorRejectsRecordingWithoutMatchingVerifiedActor(bool mismatched)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -699,7 +699,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task EventStore_processor_rejects_forged_resolved_token_hash_before_mutation()
+    public async Task EventStoreProcessorRejectsForgedResolvedTokenHashBeforeMutation()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -759,7 +759,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Proposed_entry_terminal_marker_survives_actor_recreation(bool expire)
+    public async Task ProposedEntryTerminalMarkerSurvivesActorRecreation(bool expire)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -899,7 +899,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Queued_use_is_rejected_when_processing_clock_passes_expiry()
+    public async Task QueuedUseIsRejectedWhenProcessingClockPassesExpiry()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -927,7 +927,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Queued_issuance_is_rejected_when_processing_clock_passes_expiry()
+    public async Task QueuedIssuanceIsRejectedWhenProcessingClockPassesExpiry()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using IServiceScope scope = factory.Services.CreateScope();
@@ -1190,7 +1190,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Terminal_only_capability_and_malformed_nested_issue_are_rejected()
+    public async Task TerminalOnlyCapabilityAndMalformedNestedIssueAreRejected()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();

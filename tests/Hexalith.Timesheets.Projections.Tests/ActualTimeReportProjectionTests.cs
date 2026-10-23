@@ -55,7 +55,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Project_report_rolls_up_approved_actuals_by_required_dimensions_without_replayed_duplicates()
+    public void ProjectReportRollsUpApprovedActualsByRequiredDimensionsWithoutReplayedDuplicates()
     {
         TimeEntryProjectionEvent duplicateApproval = Event("m6", 6, Approved("time-entry-2", "decision-2"));
         TimeEntryProjectionEvent[] events =
@@ -96,7 +96,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Work_report_includes_planned_effort_placeholder_and_superseded_rows_only_when_requested()
+    public void WorkReportIncludesPlannedEffortPlaceholderAndSupersededRowsOnlyWhenRequested()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -143,7 +143,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Report_combines_selected_non_approved_rows_with_approved_ledger_rows_when_no_approval_filter_is_set()
+    public void ReportCombinesSelectedNonApprovedRowsWithApprovedLedgerRowsWhenNoApprovalFilterIsSet()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -170,7 +170,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Report_rolls_up_ai_effort_units_without_merging_them_into_actual_minutes()
+    public void ReportRollsUpAiEffortUnitsWithoutMergingThemIntoActualMinutes()
     {
         TimeEntryProjectionEvent duplicateApproval = Event("m6", 6, Approved("ai-entry-1", "decision-2"));
         TimeEntryProjectionEvent[] events =
@@ -221,7 +221,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Ai_report_filters_agent_availability_source_and_keeps_not_reported_tokens_null()
+    public void AiReportFiltersAgentAvailabilitySourceAndKeepsNotReportedTokensNull()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -264,7 +264,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Ai_agent_filter_excludes_human_rows_for_the_same_party_reference()
+    public void AiAgentFilterExcludesHumanRowsForTheSamePartyReference()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -299,7 +299,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Approved_ai_metric_corrections_use_current_values_by_default_and_superseded_values_when_requested()
+    public void ApprovedAiMetricCorrectionsUseCurrentValuesByDefaultAndSupersededValuesWhenRequested()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -357,7 +357,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Mixed_provider_reported_and_not_reported_token_rows_merge_to_not_reported_regardless_of_order()
+    public void MixedProviderReportedAndNotReportedTokenRowsMergeToNotReportedRegardlessOfOrder()
     {
         // Two automated-agent entries in the same rollup group: one provider-reported,
         // one not-reported. The aggregate token availability must be conservative and
@@ -404,7 +404,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Selected_non_approved_rows_preserve_activity_type_scope_as_a_grouping_dimension()
+    public void SelectedNonApprovedRowsPreserveActivityTypeScopeAsAGroupingDimension()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -432,7 +432,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Report_filters_period_boundaries_date_range_billable_state_and_contributor_category()
+    public void ReportFiltersPeriodBoundariesDateRangeBillableStateAndContributorCategory()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -497,7 +497,7 @@ public sealed class ActualTimeReportProjectionTests
     }
 
     [Fact]
-    public void Report_sorting_and_cursor_paging_are_deterministic()
+    public void ReportSortingAndCursorPagingAreDeterministic()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -541,7 +541,7 @@ public sealed class ActualTimeReportProjectionTests
     [InlineData(ProjectionFreshness.Rebuilding, ProjectionFreshnessState.Rebuilding, ActualTimeReferenceState.Rebuilding)]
     [InlineData(ProjectionFreshness.Stale, ProjectionFreshnessState.Stale, ActualTimeReferenceState.Stale)]
     [InlineData(ProjectionFreshness.Unavailable, ProjectionFreshnessState.Unavailable, ActualTimeReferenceState.Unavailable)]
-    public void Report_maps_projection_freshness_to_row_and_reference_state(
+    public void ReportMapsProjectionFreshnessToRowAndReferenceState(
         ProjectionFreshness freshness,
         ProjectionFreshnessState expectedFreshness,
         ActualTimeReferenceState expectedReferenceState)

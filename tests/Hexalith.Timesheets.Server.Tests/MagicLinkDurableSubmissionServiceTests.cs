@@ -28,7 +28,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class MagicLinkDurableSubmissionServiceTests
 {
     [Fact]
-    public void Polling_options_are_bounded_and_default_to_five_seconds()
+    public void PollingOptionsAreBoundedAndDefaultToFiveSeconds()
     {
         var defaults = new MagicLinkSubmissionPollingOptions();
         defaults.Timeout.ShouldBe(TimeSpan.FromSeconds(5));
@@ -47,7 +47,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Processing_status_is_polled_to_the_configured_deadline_and_denied()
+    public async Task ProcessingStatusIsPolledToTheConfiguredDeadlineAndDenied()
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         int reads = 0;
@@ -71,7 +71,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Stalled_status_transport_submits_once_within_the_polling_deadline()
+    public async Task StalledStatusTransportSubmitsOnceWithinThePollingDeadline()
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         var stalled = new TaskCompletionSource<CommandStatusQueryResponse?>(
@@ -96,7 +96,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Stalled_submission_receives_the_deadline_cancellation_token()
+    public async Task StalledSubmissionReceivesTheDeadlineCancellationToken()
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -120,7 +120,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     [InlineData(CommandStatus.Rejected)]
     [InlineData(CommandStatus.PublishFailed)]
     [InlineData(CommandStatus.TimedOut)]
-    public async Task Terminal_non_completed_status_denies_without_readback(CommandStatus status)
+    public async Task TerminalNonCompletedStatusDeniesWithoutReadback(CommandStatus status)
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         int reads = 0;
@@ -137,7 +137,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Existing_terminal_status_is_read_without_resubmitting()
+    public async Task ExistingTerminalStatusIsReadWithoutResubmitting()
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -151,7 +151,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Cancellation_during_polling_propagates()
+    public async Task CancellationDuringPollingPropagates()
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -163,7 +163,7 @@ public sealed class MagicLinkDurableSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Gateway_fault_denies_and_retry_keeps_the_same_message_identity()
+    public async Task GatewayFaultDeniesAndRetryKeepsTheSameMessageIdentity()
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         var submitted = new List<string>();

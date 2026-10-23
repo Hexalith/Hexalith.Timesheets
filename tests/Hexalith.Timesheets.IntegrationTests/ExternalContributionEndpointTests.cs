@@ -5,7 +5,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class ExternalContributionEndpointTests
 {
     [Fact]
-    public void Host_maps_narrow_external_contribution_routes_without_authority_body_fields()
+    public void HostMapsNarrowExternalContributionRoutesWithoutAuthorityBodyFields()
     {
         string program = File.ReadAllText(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
         string endpoint = File.ReadAllText(TestRepositoryRoot.PathTo(
@@ -30,7 +30,7 @@ public sealed class ExternalContributionEndpointTests
     }
 
     [Fact]
-    public void External_contribution_endpoint_denial_copy_is_opaque()
+    public void ExternalContributionEndpointDenialCopyIsOpaque()
     {
         string endpoint = File.ReadAllText(TestRepositoryRoot.PathTo(
             "src",

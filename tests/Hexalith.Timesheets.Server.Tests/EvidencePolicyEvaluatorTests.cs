@@ -14,7 +14,7 @@ public sealed class EvidencePolicyEvaluatorTests
     [InlineData(TimesheetsOperation.Export)]
     [InlineData(TimesheetsOperation.Confirmation)]
     [InlineData(TimesheetsOperation.UiActionVisibility)]
-    public async Task Missing_retention_policy_blocks_trust_bearing_operations(TimesheetsOperation operation)
+    public async Task MissingRetentionPolicyBlocksTrustBearingOperations(TimesheetsOperation operation)
     {
         TimesheetsEvidencePolicyEvaluator evaluator = new(TimesheetsEvidencePolicyOptions.FailClosedDefault);
 
@@ -32,7 +32,7 @@ public sealed class EvidencePolicyEvaluatorTests
     }
 
     [Fact]
-    public async Task Missing_comment_policy_blocks_export_after_retention_is_configured()
+    public async Task MissingCommentPolicyBlocksExportAfterRetentionIsConfigured()
     {
         TimesheetsEvidencePolicyOptions options = TimesheetsEvidencePolicyOptions.FailClosedDefault with
         {
@@ -55,7 +55,7 @@ public sealed class EvidencePolicyEvaluatorTests
     [InlineData(TimesheetsUiAction.Correction)]
     [InlineData(TimesheetsUiAction.Confirmation)]
     [InlineData(TimesheetsUiAction.Export)]
-    public async Task Missing_retention_policy_blocks_trust_bearing_ui_actions(TimesheetsUiAction uiAction)
+    public async Task MissingRetentionPolicyBlocksTrustBearingUiActions(TimesheetsUiAction uiAction)
     {
         TimesheetsEvidencePolicyEvaluator evaluator = new(TimesheetsEvidencePolicyOptions.FailClosedDefault);
 
@@ -69,7 +69,7 @@ public sealed class EvidencePolicyEvaluatorTests
     }
 
     [Fact]
-    public async Task Configured_policy_allows_projection_reads_and_launch_ready_trust_operations()
+    public async Task ConfiguredPolicyAllowsProjectionReadsAndLaunchReadyTrustOperations()
     {
         TimesheetsEvidencePolicyOptions options = new()
         {
@@ -96,7 +96,7 @@ public sealed class EvidencePolicyEvaluatorTests
     }
 
     [Fact]
-    public async Task Explicit_export_comment_policy_marks_export_comments_allowed_without_launch_readiness_gaps()
+    public async Task ExplicitExportCommentPolicyMarksExportCommentsAllowedWithoutLaunchReadinessGaps()
     {
         TimesheetsEvidencePolicyOptions options = new()
         {
@@ -122,7 +122,7 @@ public sealed class EvidencePolicyEvaluatorTests
     [Theory]
     [InlineData(TimesheetsOperation.Query)]
     [InlineData(TimesheetsOperation.ProjectionRead)]
-    public async Task Missing_policy_allows_non_trust_bearing_read_operations(TimesheetsOperation operation)
+    public async Task MissingPolicyAllowsNonTrustBearingReadOperations(TimesheetsOperation operation)
     {
         TimesheetsEvidencePolicyEvaluator evaluator = new(TimesheetsEvidencePolicyOptions.FailClosedDefault);
 
@@ -135,7 +135,7 @@ public sealed class EvidencePolicyEvaluatorTests
     }
 
     [Fact]
-    public async Task Unknown_operation_fails_closed_with_opaque_copy()
+    public async Task UnknownOperationFailsClosedWithOpaqueCopy()
     {
         TimesheetsEvidencePolicyEvaluator evaluator = new(TimesheetsEvidencePolicyOptions.FailClosedDefault);
 
@@ -150,7 +150,7 @@ public sealed class EvidencePolicyEvaluatorTests
     }
 
     [Fact]
-    public void Policy_options_report_unresolved_legal_hold_and_tenant_overrides_as_launch_readiness_gaps()
+    public void PolicyOptionsReportUnresolvedLegalHoldAndTenantOverridesAsLaunchReadinessGaps()
     {
         TimesheetsEvidencePolicyOptions options = TimesheetsEvidencePolicyOptions.FailClosedDefault;
 

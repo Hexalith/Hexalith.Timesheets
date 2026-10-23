@@ -25,7 +25,7 @@ public sealed class ApprovedEntryCorrectionsE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Approved_time_entry_correction_workflow_appends_lineage_projects_effective_values_and_keeps_safe_add_correction_vocabulary()
+    public async Task ApprovedTimeEntryCorrectionWorkflowAppendsLineageProjectsEffectiveValuesAndKeepsSafeAddCorrectionVocabulary()
     {
         ConfigurableAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();
@@ -153,7 +153,7 @@ public sealed class ApprovedEntryCorrectionsE2ETests
     }
 
     [Fact]
-    public async Task Approved_correction_workflow_fails_closed_before_dispatch_when_corrected_target_is_not_authorized()
+    public async Task ApprovedCorrectionWorkflowFailsClosedBeforeDispatchWhenCorrectedTargetIsNotAuthorized()
     {
         ConfigurableAccessGuard accessGuard = new()
         {
@@ -197,7 +197,7 @@ public sealed class ApprovedEntryCorrectionsE2ETests
     }
 
     [Fact]
-    public async Task Approved_correction_workflow_fails_closed_before_dispatch_when_activity_type_catalog_is_stale()
+    public async Task ApprovedCorrectionWorkflowFailsClosedBeforeDispatchWhenActivityTypeCatalogIsStale()
     {
         ConfigurableAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();

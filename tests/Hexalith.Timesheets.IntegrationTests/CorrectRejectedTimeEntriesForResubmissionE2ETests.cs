@@ -23,7 +23,7 @@ public sealed class CorrectRejectedTimeEntriesForResubmissionE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Rejected_time_entry_correction_workflow_preserves_rejection_lineage_and_resubmits_corrected_evidence()
+    public async Task RejectedTimeEntryCorrectionWorkflowPreservesRejectionLineageAndResubmitsCorrectedEvidence()
     {
         ConfigurableAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();
@@ -148,7 +148,7 @@ public sealed class CorrectRejectedTimeEntriesForResubmissionE2ETests
     }
 
     [Fact]
-    public async Task Correction_workflow_fails_closed_before_dispatch_when_corrected_target_is_not_authorized()
+    public async Task CorrectionWorkflowFailsClosedBeforeDispatchWhenCorrectedTargetIsNotAuthorized()
     {
         ConfigurableAccessGuard accessGuard = new()
         {
@@ -192,7 +192,7 @@ public sealed class CorrectRejectedTimeEntriesForResubmissionE2ETests
     }
 
     [Fact]
-    public async Task Correction_workflow_fails_closed_before_dispatch_when_activity_type_catalog_is_stale()
+    public async Task CorrectionWorkflowFailsClosedBeforeDispatchWhenActivityTypeCatalogIsStale()
     {
         ConfigurableAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();

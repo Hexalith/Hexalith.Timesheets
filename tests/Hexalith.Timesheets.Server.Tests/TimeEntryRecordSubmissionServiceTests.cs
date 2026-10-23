@@ -30,7 +30,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     [Theory]
     [InlineData(false, true)]
     [InlineData(true, false)]
-    public async Task Completed_status_requires_matching_stored_recording(bool corruptReceipt, bool expected)
+    public async Task CompletedStatusRequiresMatchingStoredRecording(bool corruptReceipt, bool expected)
     {
         SubmitExternalTimeEntry command = Command();
         IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
@@ -55,7 +55,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Completed_recording_rejects_comment_decision_not_issued_by_server()
+    public async Task CompletedRecordingRejectsCommentDecisionNotIssuedByServer()
     {
         SubmitExternalTimeEntry command = Command() with
         {
@@ -88,7 +88,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Completed_recording_uses_pre_submit_comment_decision_when_authority_changes()
+    public async Task CompletedRecordingUsesPreSubmitCommentDecisionWhenAuthorityChanges()
     {
         SubmitExternalTimeEntry command = Command() with
         {
@@ -123,7 +123,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     [InlineData("", "event-message-2")]
     [InlineData("event-message-1", "event-message-1")]
     [InlineData("event-message-1", " ")]
-    public async Task Completed_two_event_recording_requires_distinct_nonblank_event_ids(
+    public async Task CompletedTwoEventRecordingRequiresDistinctNonblankEventIds(
         string firstId, string secondId)
     {
         SubmitExternalTimeEntry command = Command();
@@ -156,7 +156,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     [InlineData("record-correlation")]
     [InlineData("submitted-at")]
     [InlineData("submission-correlation")]
-    public async Task Completed_status_requires_exact_record_and_submission_receipt(string mismatch)
+    public async Task CompletedStatusRequiresExactRecordAndSubmissionReceipt(string mismatch)
     {
         SubmitExternalTimeEntry command = Command();
         DateTimeOffset submittedAtUtc = new(2026, 10, 10, 12, 0, 0, TimeSpan.Zero);
@@ -199,7 +199,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Distinct_trusted_actor_retry_has_distinct_command_identity()
+    public async Task DistinctTrustedActorRetryHasDistinctCommandIdentity()
     {
         SubmitExternalTimeEntry command = Command();
         List<string> queriedIds = [];
@@ -226,7 +226,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Newline_bearing_source_fields_have_distinct_command_identities()
+    public async Task NewlineBearingSourceFieldsHaveDistinctCommandIdentities()
     {
         List<string> queriedIds = [];
         IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
@@ -254,7 +254,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Fact]
-    public async Task Uncertain_status_denies_without_readback_or_duplicate_submission()
+    public async Task UncertainStatusDeniesWithoutReadbackOrDuplicateSubmission()
     {
         IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
         gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())

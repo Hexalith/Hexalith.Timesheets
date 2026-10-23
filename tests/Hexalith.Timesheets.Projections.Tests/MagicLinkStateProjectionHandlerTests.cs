@@ -25,7 +25,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     private static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Index_live_writer_is_idempotent_and_persists_only_safe_candidate_fields()
+    public async Task IndexLiveWriterIsIdempotentAndPersistsOnlySafeCandidateFields()
     {
         var store = new ScriptedReadModelStore();
         var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
@@ -55,7 +55,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_live_writer_accepts_internal_stored_issuance_payload()
+    public async Task IndexLiveWriterAcceptsInternalStoredIssuancePayload()
     {
         var store = new ScriptedReadModelStore();
         var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
@@ -72,7 +72,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_live_writer_accepts_issuance_at_a_later_owner_sequence()
+    public async Task IndexLiveWriterAcceptsIssuanceAtALaterOwnerSequence()
     {
         var store = new ScriptedReadModelStore();
         var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
@@ -88,7 +88,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_live_collision_retains_both_owners_and_discloses_neither()
+    public async Task IndexLiveCollisionRetainsBothOwnersAndDisclosesNeither()
     {
         var store = new ScriptedReadModelStore();
         var original = new MagicLinkTokenHashCapabilityIndexEntry(
@@ -120,7 +120,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Projection_normalization_rejects_cross_sequence_message_id_reuse()
+    public async Task ProjectionNormalizationRejectsCrossSequenceMessageIdReuse()
     {
         var store = new ScriptedReadModelStore();
         var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
@@ -137,7 +137,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Projection_normalization_rejects_same_sequence_duplicate_with_conflicting_metadata()
+    public async Task ProjectionNormalizationRejectsSameSequenceDuplicateWithConflictingMetadata()
     {
         var store = new ScriptedReadModelStore();
         var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
@@ -154,7 +154,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_live_writer_rejects_identical_issuances_at_different_sequences_without_writing()
+    public async Task IndexLiveWriterRejectsIdenticalIssuancesAtDifferentSequencesWithoutWriting()
     {
         var store = new ScriptedReadModelStore();
         string expectedState = SeedExistingState(store, "index");
@@ -192,7 +192,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [InlineData("index", "blank-capability")]
     [InlineData("index", "missing-token-hash")]
     [InlineData("index", "blank-token-hash")]
-    public async Task Malformed_live_deliveries_fail_with_identity_conflict_without_writing(
+    public async Task MalformedLiveDeliveriesFailWithIdentityConflictWithoutWriting(
         string handlerName,
         string scenario)
     {
@@ -217,7 +217,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [InlineData("catalog", "save")]
     [InlineData("index", "get")]
     [InlineData("index", "save")]
-    public async Task Live_writer_uncancelled_store_failures_are_retryable_without_changing_state(
+    public async Task LiveWriterUncancelledStoreFailuresAreRetryableWithoutChangingState(
         string handlerName,
         string operation)
     {
@@ -249,7 +249,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [InlineData("catalog", "save")]
     [InlineData("index", "get")]
     [InlineData("index", "save")]
-    public async Task Live_writer_uncancelled_cancellation_exceptions_are_retryable_without_changing_state(
+    public async Task LiveWriterUncancelledCancellationExceptionsAreRetryableWithoutChangingState(
         string handlerName,
         string operation)
     {
@@ -281,7 +281,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [InlineData("catalog", "save")]
     [InlineData("index", "get")]
     [InlineData("index", "save")]
-    public async Task Live_writer_propagates_requested_cancellation_without_changing_state(
+    public async Task LiveWriterPropagatesRequestedCancellationWithoutChangingState(
         string handlerName,
         string operation)
     {
@@ -304,7 +304,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_rebuild_replaces_only_target_tenant_slice()
+    public async Task IndexRebuildReplacesOnlyTargetTenantSlice()
     {
         var store = new ScriptedReadModelStore();
         store.Set(
@@ -344,10 +344,10 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_rebuild_drops_a_hash_another_tenant_already_owns()
+    public async Task IndexRebuildDropsAHashAnotherTenantAlreadyOwns()
     {
         // ReplaceTenant removes an entry whose hash collides with another tenant's persisted slice
-        // rather than letting either side win. Index_rebuild_replaces_only_target_tenant_slice never
+        // rather than letting either side win. IndexRebuildReplacesOnlyTargetTenantSlice never
         // reaches that branch: its replacement key does not collide, so TryAdd always succeeds and
         // the collision handling could be deleted with every assertion still green. Shipped, that
         // would let a tenant-1 rebuild hijack — or be shadowed by — tenant-2's hash mapping, and the
@@ -387,7 +387,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_rebuild_rejects_a_candidate_carrying_another_tenants_entry()
+    public async Task IndexRebuildRejectsACandidateCarryingAnotherTenantsEntry()
     {
         // ToLoaderVisibleIndex is the last tenant-isolation check before the shared index write, and
         // no test could reach it: every candidate in this file comes from AccumulateAsync, which
@@ -418,7 +418,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Index_rebuild_omits_ambiguous_hash_deterministically_in_both_delivery_orders()
+    public async Task IndexRebuildOmitsAmbiguousHashDeterministicallyInBothDeliveryOrders()
     {
         var store = new ScriptedReadModelStore();
         var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store);
@@ -481,7 +481,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Catalog_first_complete_live_delivery_is_promoted_to_fresh()
+    public async Task CatalogFirstCompleteLiveDeliveryIsPromotedToFresh()
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -505,7 +505,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Catalog_sibling_live_delivery_preserves_an_already_fresh_catalog()
+    public async Task CatalogSiblingLiveDeliveryPreservesAnAlreadyFreshCatalog()
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -548,7 +548,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Catalog_complete_live_delivery_preserves_an_existing_stale_catalog()
+    public async Task CatalogCompleteLiveDeliveryPreservesAnExistingStaleCatalog()
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -600,7 +600,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [InlineData("identity-conflict")]
     [InlineData("malformed-json")]
     [InlineData("unsupported-serialization")]
-    public async Task Catalog_incomplete_live_delivery_fails_without_changing_the_catalog(string scenario)
+    public async Task CatalogIncompleteLiveDeliveryFailsWithoutChangingTheCatalog(string scenario)
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -661,7 +661,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [Theory]
     [InlineData(42, 7)]
     [InlineData(7, 42)]
-    public async Task Catalog_rebuild_finalize_uses_the_greater_cursor(long persistedCursor, long candidateCursor)
+    public async Task CatalogRebuildFinalizeUsesTheGreaterCursor(long persistedCursor, long candidateCursor)
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -705,7 +705,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Live_writers_retry_optimistic_concurrency_and_report_exhaustion()
+    public async Task LiveWritersRetryOptimisticConcurrencyAndReportExhaustion()
     {
         var recoveredStore = new ScriptedReadModelStore { ConflictsRemaining = 2 };
         var recoveredHandler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(recoveredStore);
@@ -747,7 +747,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [InlineData("index", "blank-etag")]
     [InlineData("index", "unreadable-empty-etag")]
     [InlineData("index", "unreadable-blank-etag")]
-    public async Task Rebuild_finalize_chooses_write_concurrency_from_row_existence_not_from_the_value(
+    public async Task RebuildFinalizeChoosesWriteConcurrencyFromRowExistenceNotFromTheValue(
         string handlerName,
         string rowState)
     {
@@ -809,7 +809,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public void Both_projection_handlers_are_discovered_as_the_timesheets_telemetry_domain()
+    public void BothProjectionHandlersAreDiscoveredAsTheTimesheetsTelemetryDomain()
     {
         // Mirrors the SDK's handler-domain scan: an [EventStoreDomain] attribute short-circuits it,
         // and without one the type must expose a parameterless constructor to be instantiated and
@@ -830,7 +830,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Catalog_live_delivery_onto_a_null_persisted_freshness_fails_without_writing()
+    public async Task CatalogLiveDeliveryOntoANullPersistedFreshnessFailsWithoutWriting()
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -905,7 +905,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Catalog_rebuild_accumulate_maps_a_null_candidate_freshness_to_a_declared_fold_failure()
+    public async Task CatalogRebuildAccumulateMapsANullCandidateFreshnessToADeclaredFoldFailure()
     {
         var store = new ScriptedReadModelStore();
         var handler = new TenantActivityTypeCatalogProjectionHandler(store);
@@ -925,7 +925,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [Theory]
     [InlineData("persisted")]
     [InlineData("candidate")]
-    public async Task Catalog_rebuild_finalize_maps_a_null_freshness_to_a_declared_fold_failure(string source)
+    public async Task CatalogRebuildFinalizeMapsANullFreshnessToADeclaredFoldFailure(string source)
     {
         // A persisted read model or a persisted rebuild candidate can deserialize with a JSON-null
         // ProjectionFreshness. Both cursor reads dereference it, so without the guarded mapping the
@@ -969,7 +969,7 @@ public sealed partial class MagicLinkStateProjectionHandlerTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Projection_event_reader_treats_an_absent_event_type_name_as_an_unknown_event(string? eventTypeName)
+    public void ProjectionEventReaderTreatsAnAbsentEventTypeNameAsAnUnknownEvent(string? eventTypeName)
     {
         // ProjectionEventDto declares the member non-nullable, but a wire payload carrying JSON null
         // deserializes it to null anyway. Only call ordering - Normalize running first - keeps the

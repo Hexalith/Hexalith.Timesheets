@@ -265,19 +265,28 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         {
             throw new SharedProjectionReadUnavailableException(exception);
         }
+        MagicLinkCapabilityProjectionView next;
         try
         {
-            MagicLinkCapabilityProjectionView next = Apply(
+            next = Apply(
                 current ?? MagicLinkCapabilityProjectionView.Empty,
                 decoded.Value.Payload,
                 decoded.Value.OwnerStream,
                 request.TenantId,
                 delivery.EnvelopePosition);
-            return WriteView(request.TenantId, IdOf(decoded.Value.Payload), next);
         }
         catch (Exception exception) when (IsFoldFailure(exception))
         {
             throw Park(delivery);
+        }
+        try
+        {
+            return WriteLiveView(request.TenantId, IdOf(decoded.Value.Payload), next, entry.Value, decoded.Value);
+        }
+        catch (Exception exception) when (IsFoldFailure(exception))
+        {
+            // Unsupported storage capacity must preserve the accepted journal head for recovery.
+            throw new SharedProjectionReadUnavailableException(exception);
         }
     }
 
@@ -768,6 +777,59 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         return Publish(merged, tenantId);
     }
 
+    private static IReadOnlyList<ReadModelBatchOperation> WriteLiveView(
+        string tenantId, MagicLinkCapabilityId capabilityId, MagicLinkCapabilityProjectionView view,
+        MagicLinkCapabilityProjectionStorage? previous, (object Payload, bool OwnerStream) decoded)
+    {
+        byte[] viewBytes = JsonSerializer.SerializeToUtf8Bytes(view, s_json);
+        if (viewBytes.Length > 127L * ViewFragmentBytes)
+            throw new InvalidOperationException("A capability view exceeds the supported storage limit.");
+        IReadOnlyList<ReadModelBatchOperation> replacement = WriteView(tenantId, capabilityId, view);
+        if (previous?.Continuation is not null)
+            throw new InvalidOperationException("A capability continuation cannot be extended.");
+        int retireCount = previous?.FragmentCount ?? 0;
+        if (replacement.Count + retireCount <= 128)
+        {
+            var operations = replacement.ToList();
+            if (previous?.Digest is { } digest)
+                for (int ordinal = 0; ordinal < retireCount; ordinal++)
+                    operations.Add(ReadModelBatchOperation.Delete(FragmentKey(tenantId, capabilityId, digest, ordinal),
+                        ReadModelBatchConcurrency.IdempotentAbsent));
+            return operations;
+        }
+
+        // Apply has already proved the complementary prior fact; only a completed lifecycle
+        // may use the one-layer representation accepted by readers.
+        if (previous is null || view.Issuance is null || !HasTerminal(view))
+            throw new InvalidOperationException("A capability continuation requires a completed lifecycle.");
+        MagicLinkCapabilityProjectionTransition transition = new(
+            decoded.Payload is MagicLinkConfirmationCapabilityIssued ? view.Issuance : null,
+            decoded.Payload as MagicLinkConfirmationCapabilityUsed,
+            decoded.Payload as MagicLinkConfirmationCapabilityRevoked,
+            decoded.Payload as MagicLinkConfirmationCapabilityExpired,
+            decoded.Payload is not MagicLinkConfirmationCapabilityIssued && !decoded.OwnerStream,
+            decoded.Payload is MagicLinkConfirmationCapabilityIssued ? null : view.TerminalPosition);
+        byte[] transitionBytes = JsonSerializer.SerializeToUtf8Bytes(transition, s_json);
+        int count = checked((transitionBytes.Length + ViewFragmentBytes - 1) / ViewFragmentBytes);
+        if (count is < 1 or > 127)
+            throw new InvalidOperationException("A capability transition exceeds the live fold limit.");
+        string transitionDigest = Convert.ToHexString(SHA256.HashData(transitionBytes));
+        var continuation = new MagicLinkCapabilityProjectionContinuation(tenantId, capabilityId.Value, previous,
+            transitionDigest, transitionBytes.Length, count, Convert.ToHexString(SHA256.HashData(viewBytes)), viewBytes.Length);
+        var result = new List<ReadModelBatchOperation>(count + 1);
+        for (int ordinal = 0; ordinal < count; ordinal++)
+            result.Add(ReadModelBatchOperation.Write(TransitionKey(tenantId, capabilityId, transitionDigest, ordinal),
+                new MagicLinkCapabilityProjectionFragment(transitionBytes.AsSpan(ordinal * ViewFragmentBytes,
+                    Math.Min(ViewFragmentBytes, transitionBytes.Length - ordinal * ViewFragmentBytes)).ToArray()),
+                ReadModelBatchConcurrency.LastWrite));
+        result.Add(ReadModelBatchOperation.Write(MagicLinkCapabilityReadModelAddress.StateKey(tenantId, capabilityId),
+            new MagicLinkCapabilityProjectionStorage(null, null, 0, 0) { Continuation = continuation },
+            ReadModelBatchConcurrency.LastWrite));
+        if (result.Any(static operation => operation.CanonicalValue.Length > MaxPhysicalValueBytes))
+            throw new InvalidOperationException("A capability continuation exceeds the physical value limit.");
+        return result;
+    }
+
     private static IReadOnlyList<ReadModelBatchOperation> WriteView(
         string tenantId,
         MagicLinkCapabilityId capabilityId,
@@ -784,6 +846,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
 
         string digest = Convert.ToHexString(SHA256.HashData(bytes));
         int count = checked((bytes.Length + ViewFragmentBytes - 1) / ViewFragmentBytes);
+        if (count > 127) throw new InvalidOperationException("A capability view exceeds the supported storage limit.");
         var operations = new List<ReadModelBatchOperation>(count + 1);
         for (int ordinal = 0; ordinal < count; ordinal++)
         {
@@ -816,6 +879,73 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
         SharedProjectionEpochCoordinator coordinator,
         CancellationToken cancellationToken)
     {
+        if (storage.Continuation is { } continuation)
+        {
+            if (storage.Inline is not null || storage.Digest is not null || storage.ByteLength != 0
+                || storage.FragmentCount != 0 || storage.FragmentBytes != 0
+                || continuation.TenantId != scope.TenantId || continuation.CapabilityId != capabilityId.Value
+                || continuation.Base is null || continuation.Base.Continuation is not null
+                || !IsDigest(continuation.TransitionDigest) || !IsDigest(continuation.ViewDigest)
+                || continuation.TransitionByteLength <= 0 || continuation.TransitionByteLength > 127L * ViewFragmentBytes
+                || continuation.TransitionFragmentCount != ((long)continuation.TransitionByteLength + ViewFragmentBytes - 1) / ViewFragmentBytes
+                || continuation.ViewByteLength <= 0 || continuation.ViewByteLength > 127L * ViewFragmentBytes)
+                throw new InvalidOperationException("The capability continuation is invalid.");
+            MagicLinkCapabilityProjectionView baseView = await RestoreViewAsync(scope, capabilityId, generation,
+                continuation.Base, coordinator, cancellationToken).ConfigureAwait(false);
+            if ((baseView.Issuance is not null ? 1 : 0) + (HasTerminal(baseView) ? 1 : 0) != 1)
+                throw new InvalidOperationException("A capability continuation requires exactly one base fact.");
+            byte[] transitionBytes = new byte[continuation.TransitionByteLength];
+            for (int ordinal = 0; ordinal < continuation.TransitionFragmentCount; ordinal++)
+            {
+                ReadModelEntry<MagicLinkCapabilityProjectionFragment> entry;
+                try
+                {
+                    entry = await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionFragment>(scope, generation,
+                        TransitionKey(scope.TenantId, capabilityId, continuation.TransitionDigest, ordinal), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+                catch (Exception exception) { throw new SharedProjectionReadUnavailableException(exception); }
+                int offset = ordinal * ViewFragmentBytes;
+                int expected = Math.Min(ViewFragmentBytes, transitionBytes.Length - offset);
+                if (entry.Value?.Data is not { } data || data.Length != expected)
+                    throw new InvalidOperationException("A capability transition fragment is absent or malformed.");
+                data.CopyTo(transitionBytes, offset);
+            }
+            if (Convert.ToHexString(SHA256.HashData(transitionBytes)) != continuation.TransitionDigest)
+                throw new InvalidOperationException("The capability transition digest is invalid.");
+            MagicLinkCapabilityProjectionTransition transition = JsonSerializer.Deserialize<MagicLinkCapabilityProjectionTransition>(
+                transitionBytes, s_json) ?? throw new InvalidOperationException("A capability transition is empty.");
+            int facts = (transition.Issuance is not null ? 1 : 0) + (transition.Used is not null ? 1 : 0)
+                + (transition.Revoked is not null ? 1 : 0) + (transition.Expired is not null ? 1 : 0);
+            if (facts != 1 || transition.Issuance is not null && (transition.TerminalInCapabilityStream || transition.TerminalPosition is not null)
+                || transition.Issuance is null && transition.TerminalPosition is not > 0)
+                throw new InvalidOperationException("A capability transition is ambiguous.");
+            MagicLinkCapabilityProjectionView reconstructed;
+            if (transition.Issuance is { } issuance)
+            {
+                MagicLinkCapabilityProjectionView contribution = Publish(MagicLinkCapabilityProjectionView.Empty with { Issuance = issuance }, scope.TenantId);
+                ValidateStoredView(contribution, scope.TenantId, capabilityId);
+                reconstructed = Merge(baseView, contribution, scope.TenantId);
+            }
+            else
+            {
+                object terminal = (object?)transition.Used ?? (object?)transition.Revoked ?? transition.Expired!;
+                if (IdOf(terminal) != capabilityId)
+                    throw new InvalidOperationException("A capability transition crosses its scope.");
+                reconstructed = Apply(baseView, terminal, !transition.TerminalInCapabilityStream, scope.TenantId,
+                    transition.TerminalPosition!.Value);
+            }
+            ValidateStoredView(reconstructed, scope.TenantId, capabilityId);
+            if (reconstructed.Issuance is null || !HasTerminal(reconstructed))
+                throw new InvalidOperationException("A capability continuation must complete its lifecycle.");
+            byte[] completeBytes = JsonSerializer.SerializeToUtf8Bytes(reconstructed, s_json);
+            if (completeBytes.Length != continuation.ViewByteLength
+                || Convert.ToHexString(SHA256.HashData(completeBytes)) != continuation.ViewDigest)
+                throw new InvalidOperationException("The reconstructed capability view digest is invalid.");
+            return reconstructed;
+        }
+
         if (storage.Inline is { } inline)
         {
             if (storage.Digest is not null || storage.ByteLength != 0 || storage.FragmentCount != 0
@@ -830,7 +960,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
 
         int fragmentBytes = storage.FragmentBytes == 0 ? 24 * 1024 : storage.FragmentBytes;
         if (storage.FragmentBytes is not (0 or ViewFragmentBytes)
-            || storage.Digest is null || storage.Digest.Length != 64
+            || !IsDigest(storage.Digest)
             || storage.ByteLength <= InlineViewLimitBytes
             || storage.ByteLength > 127L * fragmentBytes
             || storage.FragmentCount != ((long)storage.ByteLength + fragmentBytes - 1) / fragmentBytes
@@ -847,7 +977,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
             {
                 entry = await coordinator
                     .ReadGenerationAsync<MagicLinkCapabilityProjectionFragment>(scope, generation,
-                        FragmentKey(scope.TenantId, capabilityId, storage.Digest, ordinal), cancellationToken)
+                        FragmentKey(scope.TenantId, capabilityId, storage.Digest!, ordinal), cancellationToken)
                     .ConfigureAwait(false);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -940,6 +1070,13 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
     private static string FragmentKey(string tenantId, MagicLinkCapabilityId capabilityId, string digest, int ordinal)
         => MagicLinkCapabilityReadModelAddress.StateKey(tenantId, capabilityId)
             + ":fragment:" + digest + ":" + ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private static bool IsDigest(string? digest)
+        => digest is { Length: 64 } && digest.All(static character => character is >= '0' and <= '9' or >= 'A' and <= 'F');
+
+    private static string TransitionKey(string tenantId, MagicLinkCapabilityId capabilityId, string digest, int ordinal)
+        => MagicLinkCapabilityReadModelAddress.StateKey(tenantId, capabilityId)
+            + ":transition:" + digest + ":" + ordinal.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static MagicLinkCapabilityProjectionView Apply(
         MagicLinkCapabilityProjectionView current,

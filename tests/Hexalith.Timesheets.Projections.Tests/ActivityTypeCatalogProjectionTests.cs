@@ -35,7 +35,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Projection_returns_fresh_catalog_with_active_and_inactive_status_text()
+    public void ProjectionReturnsFreshCatalogWithActiveAndInactiveStatusText()
     {
         ActivityTypeCatalogReadModel model = Projector().Project(
             "tenant-1",
@@ -57,7 +57,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_rename_metadata_update_deactivate_and_reactivate_by_stable_id()
+    public void ProjectionAppliesRenameMetadataUpdateDeactivateAndReactivateByStableId()
     {
         ActivityTypeCatalogReadModel model = Projector().Project(
             "tenant-1",
@@ -80,7 +80,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Projection_is_idempotent_for_duplicate_delivery_and_replay_equivalent()
+    public void ProjectionIsIdempotentForDuplicateDeliveryAndReplayEquivalent()
     {
         ActivityTypeProjectionEvent[] once =
         [
@@ -96,7 +96,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Projection_ignores_project_scoped_events_for_tenant_catalog()
+    public void ProjectionIgnoresProjectScopedEventsForTenantCatalog()
     {
         ActivityTypeCatalogReadModel model = Projector().Project(
             "tenant-1",
@@ -115,7 +115,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Project_catalog_includes_active_tenant_rows_and_requested_project_rows()
+    public void ProjectCatalogIncludesActiveTenantRowsAndRequestedProjectRows()
     {
         ActivityTypeCatalogReadModel model = Projector().ProjectForProject(
             "tenant-1",
@@ -143,7 +143,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Restricted_project_catalog_marks_excluded_and_inactive_rows_unavailable_for_capture()
+    public void RestrictedProjectCatalogMarksExcludedAndInactiveRowsUnavailableForCapture()
     {
         ActivityTypeCatalogReadModel model = Projector().ProjectForProject(
             "tenant-1",
@@ -183,7 +183,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Project_catalog_restriction_projection_is_idempotent_for_duplicate_delivery()
+    public void ProjectCatalogRestrictionProjectionIsIdempotentForDuplicateDelivery()
     {
         ActivityTypeProjectionEvent[] once =
         [
@@ -206,7 +206,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Project_catalog_keeps_tenant_and_project_rows_distinct_when_display_labels_collide()
+    public void ProjectCatalogKeepsTenantAndProjectRowsDistinctWhenDisplayLabelsCollide()
     {
         ActivityTypeCatalogReadModel model = Projector().ProjectForProject(
             "tenant-1",
@@ -231,7 +231,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     }
 
     [Fact]
-    public void Projection_orders_events_by_sequence_number_regardless_of_delivery_order()
+    public void ProjectionOrdersEventsBySequenceNumberRegardlessOfDeliveryOrder()
     {
         ActivityTypeCatalogReadModel model = Projector().Project(
             "tenant-1",
@@ -253,7 +253,7 @@ public sealed class ActivityTypeCatalogProjectionTests
     [InlineData(ProjectionFreshness.Rebuilding, ProjectionFreshnessState.Rebuilding)]
     [InlineData(ProjectionFreshness.Stale, ProjectionFreshnessState.Stale)]
     [InlineData(ProjectionFreshness.Unavailable, ProjectionFreshnessState.Unavailable)]
-    public void Projection_freshness_metadata_prevents_unfresh_catalog_authority(
+    public void ProjectionFreshnessMetadataPreventsUnfreshCatalogAuthority(
         ProjectionFreshness freshness,
         ProjectionFreshnessState expectedState)
     {

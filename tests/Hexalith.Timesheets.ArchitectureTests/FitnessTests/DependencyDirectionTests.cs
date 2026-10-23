@@ -33,7 +33,7 @@ public sealed class DependencyDirectionTests
     ];
 
     [Fact]
-    public void Contracts_project_has_no_infrastructure_runtime_or_ui_dependencies()
+    public void ContractsProjectHasNoInfrastructureRuntimeOrUiDependencies()
     {
         string projectPath = RepositoryRoot.PathTo(
             "src",
@@ -50,7 +50,7 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void Public_command_and_query_contracts_do_not_expose_server_authority_or_envelope_fields()
+    public void PublicCommandAndQueryContractsDoNotExposeServerAuthorityOrEnvelopeFields()
     {
         string contractsRoot = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Contracts");
         string[] contractFiles =
@@ -110,7 +110,7 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void Kernel_projects_do_not_reference_runtime_hosting_ui_or_direct_persistence_packages()
+    public void KernelProjectsDoNotReferenceRuntimeHostingUiOrDirectPersistencePackages()
     {
         string[] kernelProjects =
         [
@@ -131,7 +131,7 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void Contracts_take_no_works_or_eventstore_reference_and_server_takes_no_works_reference()
+    public void ContractsTakeNoWorksOrEventstoreReferenceAndServerTakesNoWorksReference()
     {
         // Contracts stay infrastructure-free. Server may reference the EventStore SDK for the owned
         // Story 3.6 magic-link state loader, but Works remains isolated behind Hexalith.Timesheets.Works.
@@ -146,7 +146,7 @@ public sealed class DependencyDirectionTests
 
     /// <summary>Preserves sibling boundaries while allowing the conditional published-package graph.</summary>
     [Fact]
-    public void Sibling_modules_use_conditional_source_and_published_package_references()
+    public void SiblingModulesUseConditionalSourceAndPublishedPackageReferences()
     {
         string repositoryRoot = RepositoryRoot.Find().FullName;
         string[] projectFiles =
@@ -183,7 +183,7 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void Directory_build_props_detects_required_root_level_sibling_modules()
+    public void DirectoryBuildPropsDetectsRequiredRootLevelSiblingModules()
     {
         string props = File.ReadAllText(RepositoryRoot.PathTo("Directory.Build.props"));
 
@@ -267,7 +267,7 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void Timesheets_host_discovers_projection_handlers_and_maps_canonical_sdk_routes()
+    public void TimesheetsHostDiscoversProjectionHandlersAndMapsCanonicalSdkRoutes()
     {
         string hostProject = File.ReadAllText(RepositoryRoot.PathTo(
             "src", "Hexalith.Timesheets", "Hexalith.Timesheets.csproj"));
@@ -294,7 +294,7 @@ public sealed class DependencyDirectionTests
     }
 
     [Fact]
-    public void Timesheets_host_delegates_shared_defaults_to_the_eventstore_sdk_once()
+    public void TimesheetsHostDelegatesSharedDefaultsToTheEventstoreSdkOnce()
     {
         string hostProject = File.ReadAllText(RepositoryRoot.PathTo(
             "src", "Hexalith.Timesheets", "Hexalith.Timesheets.csproj"));

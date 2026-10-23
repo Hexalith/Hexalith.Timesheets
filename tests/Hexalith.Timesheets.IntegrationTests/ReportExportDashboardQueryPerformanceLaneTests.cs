@@ -43,7 +43,7 @@ public sealed class ReportExportDashboardQueryPerformanceLaneTests
     }
 
     [Fact]
-    public async Task Report_export_and_dashboard_query_latency_records_nfr11_p95_evidence()
+    public async Task ReportExportAndDashboardQueryLatencyRecordsNfr11P95Evidence()
     {
         if (Environment.GetEnvironmentVariable(OptInVariable) != "1")
         {

@@ -1,0 +1,26 @@
+using System.Text.Json;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+var rootPath = args[0];
+var changes = new List<object>();
+foreach (string file in Directory.EnumerateFiles(Path.Combine(rootPath, "tests"), "*.cs", SearchOption.AllDirectories)
+    .Where(file => !file.Contains("/obj/") && !file.Contains("/bin/")))
+{
+    var syntax = CSharpSyntaxTree.ParseText(File.ReadAllText(file)).GetRoot();
+    foreach (var method in syntax.DescendantNodes().OfType<MethodDeclarationSyntax>())
+    {
+        string name = method.Identifier.ValueText;
+        bool test = method.AttributeLists.SelectMany(list => list.Attributes).Any(attribute =>
+            attribute.Name.ToString().Split('.').Last() is "Fact" or "Theory" or "FactAttribute" or "TheoryAttribute");
+        if (!test || !name.Contains('_')) continue;
+        string renamed = string.Concat(name.Split('_', StringSplitOptions.RemoveEmptyEntries)
+            .Select(part => char.ToUpperInvariant(part[0]) + part[1..]));
+        var owner = method.Parent!;
+        if (owner.ChildNodes().OfType<MethodDeclarationSyntax>().Any(other => other != method && other.Identifier.ValueText == renamed))
+            throw new InvalidOperationException($"Naming collision: {file}: {name} -> {renamed}");
+        changes.Add(new { File = Path.GetRelativePath(rootPath, file), Old = name, New = renamed,
+            Start = method.Identifier.Span.Start, Length = method.Identifier.Span.Length });
+    }
+}
+Console.Write(JsonSerializer.Serialize(changes, new JsonSerializerOptions { WriteIndented = true }));

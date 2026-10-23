@@ -18,7 +18,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class ApprovedTimeExportServiceTests
 {
     [Fact]
-    public async Task Export_denial_prevents_ledger_lookup()
+    public async Task ExportDenialPreventsLedgerLookup()
     {
         TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
         TrackingHydrator hydrator = new();
@@ -44,7 +44,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_missing_tenant_context_prevents_ledger_lookup_and_audit_recording()
+    public async Task ExportMissingTenantContextPreventsLedgerLookupAndAuditRecording()
     {
         TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
         TrackingAuditRecorder auditRecorder = new();
@@ -71,7 +71,7 @@ public sealed class ApprovedTimeExportServiceTests
     [Theory]
     [InlineData(TimesheetsDenialCategory.RetentionPolicyMissing)]
     [InlineData(TimesheetsDenialCategory.CommentPolicyMissing)]
-    public async Task Export_policy_gaps_fail_closed_before_ledger_lookup(TimesheetsDenialCategory category)
+    public async Task ExportPolicyGapsFailClosedBeforeLedgerLookup(TimesheetsDenialCategory category)
     {
         TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
         ApprovedTimeExportService service = Service(
@@ -94,7 +94,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_blocks_stale_projection_without_output()
+    public async Task ExportBlocksStaleProjectionWithoutOutput()
     {
         ApprovedTimeLedgerReadModel stalePage = Page([Row("time-entry-1", ProjectTarget())]) with
         {
@@ -124,7 +124,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_blocks_empty_ledger_without_empty_file()
+    public async Task ExportBlocksEmptyLedgerWithoutEmptyFile()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([TimesheetsAuthorizationDecision.Allowed(), TimesheetsAuthorizationDecision.Allowed()]),
@@ -146,7 +146,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_blocks_invalid_contract_requests_before_ledger_lookup()
+    public async Task ExportBlocksInvalidContractRequestsBeforeLedgerLookup()
     {
         (GenerateApprovedTimeExport Command, string Reason)[] cases =
         [
@@ -189,7 +189,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_blocks_non_billable_ledger_rows_without_csv_output()
+    public async Task ExportBlocksNonBillableLedgerRowsWithoutCsvOutput()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([TimesheetsAuthorizationDecision.Allowed(), TimesheetsAuthorizationDecision.Allowed()]),
@@ -216,7 +216,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_generates_deterministic_csv_from_authorized_billable_ledger_rows()
+    public async Task ExportGeneratesDeterministicCsvFromAuthorizedBillableLedgerRows()
     {
         ApprovedTimeLedgerReadModel page = Page([
             Row("time-entry-2", WorkTarget(), ApprovedTimeLedgerRowState.Superseded) with
@@ -288,7 +288,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Accepted_export_audit_evidence_records_filter_snapshot_timestamps_format_freshness_and_scope()
+    public async Task AcceptedExportAuditEvidenceRecordsFilterSnapshotTimestampsFormatFreshnessAndScope()
     {
         TrackingAuditRecorder auditRecorder = new();
         ApprovedTimeExportService service = Service(
@@ -346,7 +346,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public void Csv_v1_uses_lf_line_endings_and_neutralizes_formula_leading_comments()
+    public void CsvV1UsesLfLineEndingsAndNeutralizesFormulaLeadingComments()
     {
         string csv = ApprovedTimeExportCsvWriter.Write([
             ExportRow("time-entry-1", ProjectTarget()) with
@@ -362,7 +362,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public void Csv_v1_quotes_carriage_returns_commas_quotes_and_unicode_without_mutating_plain_text()
+    public void CsvV1QuotesCarriageReturnsCommasQuotesAndUnicodeWithoutMutatingPlainText()
     {
         string csv = ApprovedTimeExportCsvWriter.Write([
             ExportRow("time-entry-1", ProjectTarget()) with
@@ -380,7 +380,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public void Csv_v1_neutralizes_formula_leading_values_in_any_field_not_only_comments()
+    public void CsvV1NeutralizesFormulaLeadingValuesInAnyFieldNotOnlyComments()
     {
         // The formula-injection policy protects every column, so a structured field whose value
         // begins with a formula trigger is neutralized just like a free-text comment would be.
@@ -393,7 +393,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_omits_comment_text_unless_export_policy_allows_it()
+    public async Task ExportOmitsCommentTextUnlessExportPolicyAllowsIt()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([]),
@@ -443,7 +443,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_filters_insufficient_role_rows_before_output()
+    public async Task ExportFiltersInsufficientRoleRowsBeforeOutput()
     {
         TrackingHydrator hydrator = new();
         ApprovedTimeExportService service = Service(
@@ -474,7 +474,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_fails_closed_when_ledger_row_authorization_is_unsafe()
+    public async Task ExportFailsClosedWhenLedgerRowAuthorizationIsUnsafe()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([
@@ -498,7 +498,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_accumulates_all_pages_when_ledger_is_cursor_paged()
+    public async Task ExportAccumulatesAllPagesWhenLedgerIsCursorPaged()
     {
         SequentialPagedLedgerReader reader = new([
             Page([Row("time-entry-1", ProjectTarget())]) with { NextCursor = "cursor-2" },
@@ -530,7 +530,7 @@ public sealed class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task Export_orders_descending_time_entry_ids_with_prefix_relationship()
+    public async Task ExportOrdersDescendingTimeEntryIdsWithPrefixRelationship()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([]),

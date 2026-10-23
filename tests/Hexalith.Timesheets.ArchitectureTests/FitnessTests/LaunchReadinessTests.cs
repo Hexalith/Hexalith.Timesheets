@@ -15,7 +15,7 @@ public sealed class LaunchReadinessTests
     /// Verifies every current classification has a supported disposition and traceable approval for any waiver.
     /// </summary>
     [Fact]
-    public void Launch_readiness_record_uses_only_approved_structured_classifications()
+    public void LaunchReadinessRecordUsesOnlyApprovedStructuredClassifications()
     {
         string readiness = ReadReadiness();
         string classification = ReadMarkdownSection(readiness, "## Launch-Scope Classification");
@@ -57,7 +57,7 @@ public sealed class LaunchReadinessTests
     /// Keeps unfinished v1 and deployed acceptance visible independently of implemented local controls.
     /// </summary>
     [Fact]
-    public void Unfinished_v1_acceptance_cannot_be_relabelled_as_a_waiver()
+    public void UnfinishedV1AcceptanceCannotBeRelabelledAsAWaiver()
     {
         string readiness = ReadReadiness();
         string[] live = ReadClassificationRow(readiness, "Magic-link live end-to-end resolution");
@@ -86,7 +86,7 @@ public sealed class LaunchReadinessTests
     /// Verifies dated source scope, complete gates, and exact arithmetic for all six recorded suites.
     /// </summary>
     [Fact]
-    public void Current_evidence_has_dated_full_revisions_and_all_release_gates()
+    public void CurrentEvidenceHasDatedFullRevisionsAndAllReleaseGates()
     {
         string readiness = ReadReadiness();
         string current = ReadCurrentAssessment(readiness);
@@ -134,7 +134,7 @@ public sealed class LaunchReadinessTests
     /// Enforces consumer-host rendering and accessibility ownership without Timesheets UI projects.
     /// </summary>
     [Fact]
-    public void Consumer_host_owns_rendering_and_accessibility_without_timesheets_ui_projects()
+    public void ConsumerHostOwnsRenderingAndAccessibilityWithoutTimesheetsUiProjects()
     {
         string[] paths = ["README.md", "_bmad-output/planning-artifacts/architecture.md",
             "_bmad-output/planning-artifacts/epics.md", "_bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/prd.md",
@@ -164,7 +164,7 @@ public sealed class LaunchReadinessTests
     /// Verifies resolved product decisions and policy-conditional external comment disclosure.
     /// </summary>
     [Fact]
-    public void Prd_decisions_and_external_comment_disclosure_match_the_approved_scope()
+    public void PrdDecisionsAndExternalCommentDisclosureMatchTheApprovedScope()
     {
         string prd = File.ReadAllText(RepositoryRoot.PathTo("_bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/prd.md"));
         string questions = ReadMarkdownSection(prd, "## 14. Open Questions");
@@ -207,7 +207,7 @@ public sealed class LaunchReadinessTests
     /// Keeps active story records and readiness tracking consistent without closing unfinished prerequisites.
     /// </summary>
     [Fact]
-    public void Current_story_records_match_sprint_tracking_and_leave_prerequisites_open()
+    public void CurrentStoryRecordsMatchSprintTrackingAndLeavePrerequisitesOpen()
     {
         string sprint = File.ReadAllText(RepositoryRoot.PathTo("_bmad-output/implementation-artifacts/sprint-status.yaml"));
         string readiness = ReadReadiness();
@@ -233,7 +233,7 @@ public sealed class LaunchReadinessTests
     [Theory]
     [InlineData("\n")]
     [InlineData("\r\n")]
-    public void Tracking_readers_accept_both_line_endings_and_independent_package_completion(string newline)
+    public void TrackingReadersAcceptBothLineEndingsAndIndependentPackageCompletion(string newline)
     {
         const string package = "5-2-reconcile-package-currency-and-platform-dependency-versions";
         string sprint = File.ReadAllText(RepositoryRoot.PathTo("_bmad-output/implementation-artifacts/sprint-status.yaml"))
@@ -270,7 +270,7 @@ public sealed class LaunchReadinessTests
     /// Verifies evidence guards reject changed counts, inconsistent outcomes, and unrelated approved records.
     /// </summary>
     [Fact]
-    public void Evidence_checks_reject_invented_counts_mismatched_outcomes_and_unrelated_approvals()
+    public void EvidenceChecksRejectInventedCountsMismatchedOutcomesAndUnrelatedApprovals()
     {
         string readiness = ReadReadiness();
         string summary = File.ReadAllText(RepositoryRoot.PathTo("_bmad-output/implementation-artifacts/tests/5-1-test-summary.md"));
@@ -322,7 +322,7 @@ public sealed class LaunchReadinessTests
     /// Verifies synchronized guidance reflects executable configuration and registered projection delivery.
     /// </summary>
     [Fact]
-    public void Managed_entry_points_match_configuration_and_projection_wiring()
+    public void ManagedEntryPointsMatchConfigurationAndProjectionWiring()
     {
         string[] paths = ["AGENTS.md", "CLAUDE.md", ".github/copilot-instructions.md"];
         string[] documents = paths.Select(path => File.ReadAllText(RepositoryRoot.PathTo(path))).ToArray();
@@ -400,7 +400,7 @@ public sealed class LaunchReadinessTests
     }
 
     [Fact]
-    public void Launch_readiness_record_captures_package_currency_verdict_dimensions()
+    public void LaunchReadinessRecordCapturesPackageCurrencyVerdictDimensions()
     {
         // Story 5.2: package evidence must distinguish direct package currency, root npm applicability,
         // transitive drift, and platform/submodule alignment so release readiness cannot overstate currency.
@@ -602,7 +602,7 @@ public sealed class LaunchReadinessTests
     }
 
     [Fact]
-    public void Launch_readiness_record_captures_works_checkout_ownership_evidence()
+    public void LaunchReadinessRecordCapturesWorksCheckoutOwnershipEvidence()
     {
         // Story 5.3: checkout evidence must name the umbrella references/ pin, forbid a root
         // gitlink, and stay honest that this is not live Works host integration.

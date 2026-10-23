@@ -33,7 +33,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class ReportExportDashboardReadJourneyE2ETests
 {
     [Fact]
-    public async Task Project_report_discloses_expected_rows_across_tenant_project_and_period_filters()
+    public async Task ProjectReportDisclosesExpectedRowsAcrossTenantProjectAndPeriodFilters()
     {
         QueryFixture fixture = QueryFixture.CreateAllowed();
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
@@ -80,7 +80,7 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
     }
 
     [Fact]
-    public async Task Work_report_discloses_supplied_works_planned_effort()
+    public async Task WorkReportDisclosesSuppliedWorksPlannedEffort()
     {
         QueryFixture fixture = QueryFixture.CreateAllowed();
 
@@ -106,7 +106,7 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
     }
 
     [Fact]
-    public async Task Approved_time_ledger_discloses_export_ready_multi_page_source()
+    public async Task ApprovedTimeLedgerDisclosesExportReadyMultiPageSource()
     {
         QueryFixture fixture = QueryFixture.CreateAllowed();
 
@@ -124,7 +124,7 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
     }
 
     [Fact]
-    public async Task Approved_time_export_generates_full_cursor_scope_while_preview_stays_side_effect_free()
+    public async Task ApprovedTimeExportGeneratesFullCursorScopeWhilePreviewStaysSideEffectFree()
     {
         QueryFixture fixture = QueryFixture.CreateAllowed();
         CancellationToken cancellationToken = TestContext.Current.CancellationToken;
@@ -159,7 +159,7 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
     }
 
     [Fact]
-    public async Task Dashboard_overview_composes_all_read_sections()
+    public async Task DashboardOverviewComposesAllReadSections()
     {
         QueryFixture fixture = QueryFixture.CreateAllowed();
 
@@ -185,7 +185,7 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
     }
 
     [Fact]
-    public async Task Report_query_fails_closed_when_tenant_projection_read_is_denied()
+    public async Task ReportQueryFailsClosedWhenTenantProjectionReadIsDenied()
     {
         // NFR8: the lane uses an allow-all guard only to reach the read path. With the real
         // tenant-first ProjectionRead gate denied, the composed report path must short-circuit

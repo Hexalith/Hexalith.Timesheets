@@ -225,7 +225,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Normal_epoch_delivery_retains_two_capabilities_and_joins_terminal_first_without_token_data()
+    public async Task NormalEpochDeliveryRetainsTwoCapabilitiesAndJoinsTerminalFirstWithoutTokenData()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -256,7 +256,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Normal_epoch_delivery_publishes_revocation_or_expiry(bool expiry)
+    public async Task NormalEpochDeliveryPublishesRevocationOrExpiry(bool expiry)
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -301,7 +301,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     [InlineData("used")]
     [InlineData("revoked")]
     [InlineData("expired")]
-    public async Task Default_terminal_timestamp_is_parked_without_publishing(string kind)
+    public async Task DefaultTerminalTimestampIsParkedWithoutPublishing(string kind)
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -329,7 +329,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Normal_epoch_delivery_parks_malformed_head_then_processes_later_valid_event()
+    public async Task NormalEpochDeliveryParksMalformedHeadThenProcessesLaterValidEvent()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -358,7 +358,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     [InlineData("issuer")]
     [InlineData("source-system")]
     [InlineData("source-reference")]
-    public async Task Normal_epoch_delivery_parks_incomplete_or_unknown_issuance(string field)
+    public async Task NormalEpochDeliveryParksIncompleteOrUnknownIssuance(string field)
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -391,7 +391,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Selected_generation_write_outage_is_retryable_and_preserves_previous_complete_view()
+    public async Task SelectedGenerationWriteOutageIsRetryableAndPreservesPreviousCompleteView()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -512,6 +512,497 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
                     TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
             JsonSerializer.SerializeToUtf8Bytes(fragment, s_json).Length.ShouldBeLessThanOrEqualTo(64 * 1024);
         }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReplacementRetiresOnlyValidatedPriorFragmentsAfterPublishingPointer(bool inlineReplacement)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        var id = new MagicLinkCapabilityId("cap-retirement");
+        MagicLinkConfirmationCapabilityIssued issue = Issued(id.Value) with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(
+                inlineReplacement ? "project-1" : new string('p', 40_000)))
+        };
+        (await Deliver(provider, id.Value, Event(1, 1, new StoredMagicLinkIssued(issue))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", id);
+        MagicLinkCapabilityProjectionStorage previous = (await coordinator
+            .ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(scope, 0, key,
+                TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        if (inlineReplacement)
+        {
+            // A valid older encoding may contain whitespace and exceed the current inline limit.
+            byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(previous.Inline, s_json)
+                + new string(' ', 50_000));
+            string digest = Convert.ToHexString(SHA256.HashData(bytes));
+            int count = (bytes.Length + 24 * 1024 - 1) / (24 * 1024);
+            for (int ordinal = 0; ordinal < count; ordinal++)
+                store.SeedRaw(scope.StoreName, Physical(scope, key + ":fragment:" + digest + ":" + ordinal),
+                    new MagicLinkCapabilityProjectionFragment(bytes.AsSpan(ordinal * 24 * 1024,
+                        Math.Min(24 * 1024, bytes.Length - ordinal * 24 * 1024)).ToArray()));
+            previous = new(null, digest, bytes.Length, count);
+            store.SeedRaw(scope.StoreName, Physical(scope, key), previous);
+        }
+        previous.FragmentCount.ShouldBeGreaterThan(0);
+        string[] retired = Enumerable.Range(0, previous.FragmentCount)
+            .Select(ordinal => key + ":fragment:" + previous.Digest + ":" + ordinal).ToArray();
+        SharedProjectionScope foreignScope = handler.CreateScope("tenant-foreign");
+        foreach (string fragment in retired)
+            store.SeedRaw(scope.StoreName, Physical(foreignScope, fragment), new MagicLinkCapabilityProjectionFragment([42]));
+        ProjectionEventDto terminal = Event(1, 2, new StoredMagicLinkUsed(Used(id.Value)));
+        var delivery = new SharedProjectionDelivery("entry-1", 2,
+            JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-1", "timesheets", "entry-1", [terminal]), s_json), []);
+        IReadOnlyList<ReadModelBatchOperation> operations = await handler.FoldCatchUpAsync(delivery, 0,
+            coordinator, TestContext.Current.CancellationToken);
+        ReadModelBatchOperation[] deletes = operations.Where(operation => operation.Kind == ReadModelBatchOperationKind.Delete).ToArray();
+        deletes.Select(operation => operation.Key).ShouldBe(retired);
+        deletes.ShouldAllBe(operation => operation.Concurrency.Mode == ReadModelBatchConcurrencyMode.IdempotentAbsent);
+        Array.FindIndex(operations.ToArray(), operation => operation.Key == key)
+            .ShouldBeLessThan(Array.FindIndex(operations.ToArray(), operation => operation.Kind == ReadModelBatchOperationKind.Delete));
+
+        (await Deliver(provider, "entry-1", terminal)).ShouldBe(ProjectionDispatchStatus.Completed);
+        (await Deliver(provider, "entry-1", terminal)).ShouldBeOneOf(
+            ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        foreach (string fragment in retired)
+        {
+            (await store.GetAsync<MagicLinkCapabilityProjectionFragment>(scope.StoreName, Physical(scope, fragment),
+                TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+            (await store.GetAsync<MagicLinkCapabilityProjectionFragment>(scope.StoreName, Physical(foreignScope, fragment),
+                TestContext.Current.CancellationToken)).Value.ShouldNotBeNull().Data.ShouldBe(new byte[] { 42 });
+        }
+        MagicLinkCapabilityProjectionStorage selected = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(
+            scope, 0, key, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        (selected.Inline is not null).ShouldBe(inlineReplacement);
+        (await Read(coordinator, handler, id.Value)).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+    }
+
+    [Fact]
+    public async Task InterruptedRetirementResumesPreparedDeletesAndCrossingReaderSeesReplacement()
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new ReadFaultStore(inner);
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        using ServiceProvider provider = Provider(inner, coordinator, handler);
+        var id = new MagicLinkCapabilityId("cap-retire-retry");
+        var issue = Issued(id.Value) with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(new string('p', 950_000)))
+        };
+        (await Deliver(provider, id.Value, Event(1, 1, new StoredMagicLinkIssued(issue))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", id);
+        var previous = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(scope, 0, key,
+            TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        bool interrupted = false;
+        inner.BatchFaultHook = async (phase, _, token) =>
+        {
+            if (phase == ReadModelBatchPhase.BeforeCommit)
+            {
+                var selected = await inner.GetAsync<MagicLinkCapabilityProjectionStorage>(scope.StoreName,
+                    Physical(scope, key), token);
+                if (selected.Value?.Digest != previous.Digest)
+                {
+                    interrupted = true;
+                    throw new IOException("Injected retirement interruption after publication.");
+                }
+            }
+        };
+        ProjectionEventDto terminal = Event(1, 2, new StoredMagicLinkUsed(Used(id.Value)));
+        (await Deliver(provider, "entry-1", terminal)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        interrupted.ShouldBeTrue();
+        inner.BatchFaultHook = null;
+        (await Deliver(provider, "entry-1", terminal)).ShouldBeOneOf(
+            ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        for (int ordinal = 0; ordinal < previous.FragmentCount; ordinal++)
+            (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionFragment>(scope, 0,
+                key + ":fragment:" + previous.Digest + ":" + ordinal, TestContext.Current.CancellationToken))
+                .Value.ShouldBeNull();
+
+        // A reader holding the old pointer must retry even when retirement removes its first fragment.
+        var otherId = new MagicLinkCapabilityId("cap-cross-retirement");
+        (await Deliver(provider, otherId.Value, Event(1, 3, new StoredMagicLinkIssued(issue with { CapabilityId = otherId }))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        store.OnFragmentReadAsync = async () =>
+            (await Deliver(provider, "entry-1", Event(2, 4, new StoredMagicLinkUsed(Used(otherId.Value)))))
+                .ShouldBe(ProjectionDispatchStatus.Completed);
+        (await Read(coordinator, handler, otherId.Value)).ShouldNotBeNull().Published.ShouldNotBeNull()
+            .State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("truncated")]
+    [InlineData("substituted")]
+    [InlineData("digest-invalid")]
+    [InlineData("zero-fact")]
+    [InlineData("multiple-fact")]
+    public async Task PublicReadRejectsMalformedTransitionFragmentsAndFactSets(string damage)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        var id = new MagicLinkCapabilityId("cap-transition-validation");
+        (await Deliver(provider, id.Value, Event(1, 1, new StoredMagicLinkIssued(Issued(id.Value)))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", id);
+        MagicLinkCapabilityProjectionStorage baseStorage = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(
+            scope, 0, key, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        (await Deliver(provider, "entry-1", Event(1, 2, new StoredMagicLinkUsed(Used(id.Value)))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView complete = (await Read(coordinator, handler, id.Value)).ShouldNotBeNull();
+        var transition = new MagicLinkCapabilityProjectionTransition(null, complete.Used, null, null, false, 2);
+        byte[] originalBytes = JsonSerializer.SerializeToUtf8Bytes(transition, s_json);
+        byte[] completeBytes = JsonSerializer.SerializeToUtf8Bytes(complete, s_json);
+        string originalDigest = Convert.ToHexString(SHA256.HashData(originalBytes));
+        var continuation = new MagicLinkCapabilityProjectionContinuation("tenant-1", id.Value, baseStorage,
+            originalDigest, originalBytes.Length, 1, Convert.ToHexString(SHA256.HashData(completeBytes)), completeBytes.Length);
+        string fragmentKey = key + ":transition:" + originalDigest + ":0";
+        store.SeedRaw(scope.StoreName, Physical(scope, fragmentKey), new MagicLinkCapabilityProjectionFragment(originalBytes));
+        store.SeedRaw(scope.StoreName, Physical(scope, key), new MagicLinkCapabilityProjectionStorage(null, null, 0, 0)
+            { Continuation = continuation });
+        (await Read(coordinator, handler, id.Value)).ShouldBe(complete);
+
+        byte[] malformedBytes = originalBytes;
+        if (damage == "missing")
+        {
+            var fragment = await store.GetAsync<MagicLinkCapabilityProjectionFragment>(scope.StoreName, Physical(scope, fragmentKey),
+                TestContext.Current.CancellationToken);
+            (await store.TryEraseAsync(scope.StoreName, Physical(scope, fragmentKey), fragment.ETag!,
+                TestContext.Current.CancellationToken)).ShouldBeTrue();
+        }
+        else if (damage == "truncated") malformedBytes = originalBytes[..^1];
+        else if (damage == "substituted")
+        {
+            // Match the substituted complete view, isolating the transition fragment's own digest check.
+            var changedUsed = complete.Used.ShouldNotBeNull() with { UsedAtUtc = complete.Used.UsedAtUtc.AddMinutes(1) };
+            malformedBytes = JsonSerializer.SerializeToUtf8Bytes(transition with { Used = changedUsed }, s_json);
+            malformedBytes.Length.ShouldBe(originalBytes.Length);
+            byte[] changedView = JsonSerializer.SerializeToUtf8Bytes(complete with
+                { Used = changedUsed, Published = complete.Published! with { UsedAtUtc = changedUsed.UsedAtUtc } }, s_json);
+            continuation = continuation with { ViewDigest = Convert.ToHexString(SHA256.HashData(changedView)), ViewByteLength = changedView.Length };
+        }
+        else if (damage == "digest-invalid")
+        {
+            continuation = continuation with { TransitionDigest = new string('0', 64) };
+            fragmentKey = key + ":transition:" + continuation.TransitionDigest + ":0";
+        }
+        else
+        {
+            MagicLinkCapabilityProjectionTransition malformed = damage == "zero-fact"
+                ? transition with { Used = null }
+                : transition with { Revoked = new(id, new("tenant-1"), new("issuer-1"),
+                    complete.Used!.UsedAtUtc, new("timesheets", "multiple-fact")) { TimeEntryId = new("entry-1") } };
+            malformedBytes = JsonSerializer.SerializeToUtf8Bytes(malformed, s_json);
+            continuation = continuation with { TransitionDigest = Convert.ToHexString(SHA256.HashData(malformedBytes)),
+                TransitionByteLength = malformedBytes.Length };
+            fragmentKey = key + ":transition:" + continuation.TransitionDigest + ":0";
+            // The Used+Revoked case deliberately retains the valid Used complete-view digest above.
+            // If the single-fact check is removed, selecting Used would otherwise pass every later check.
+        }
+        if (damage != "missing")
+            store.SeedRaw(scope.StoreName, Physical(scope, fragmentKey), new MagicLinkCapabilityProjectionFragment(malformedBytes));
+        store.SeedRaw(scope.StoreName, Physical(scope, key), new MagicLinkCapabilityProjectionStorage(null, null, 0, 0)
+            { Continuation = continuation });
+        _ = await Should.ThrowAsync<InvalidOperationException>(() => handler.ReadViewAsync("tenant-1", id, coordinator,
+            TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData(128)]
+    [InlineData(129)]
+    public async Task ExactFoldCapacityBoundaryRetiresOrRetainsTheValidatedFlatBase(int requiredOperations)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        var id = new MagicLinkCapabilityId("cap-capacity-boundary");
+        var issued = Issued(id.Value) with { Target = TimeEntryTargetReference.ForProject(new ProjectReference(new string('p', 30_000))) };
+        (await Deliver(provider, id.Value, Event(1, 1, new StoredMagicLinkIssued(issued)))).ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView baseView = (await Read(coordinator, handler, id.Value)).ShouldNotBeNull();
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", id);
+        ProjectionEventDto terminal = Event(1, 2, new StoredMagicLinkUsed(Used(id.Value)));
+        var delivery = new SharedProjectionDelivery("entry-1", 2,
+            JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-1", "timesheets", "entry-1", [terminal]), s_json), []);
+        IReadOnlyList<ReadModelBatchOperation> initial = await handler.FoldCatchUpAsync(delivery, 0, coordinator,
+            TestContext.Current.CancellationToken);
+        int replacementWrites = initial.Count(operation => operation.Kind == ReadModelBatchOperationKind.Write);
+        replacementWrites.ShouldBe(3);
+        int priorCount = requiredOperations - replacementWrites;
+        const int fragmentBytes = 24 * 1024;
+        byte[] canonical = JsonSerializer.SerializeToUtf8Bytes(baseView, s_json);
+        byte[] padded = Encoding.UTF8.GetBytes(Encoding.UTF8.GetString(canonical)
+            + new string(' ', (priorCount - 1) * fragmentBytes + 1 - canonical.Length));
+        string digest = Convert.ToHexString(SHA256.HashData(padded));
+        for (int ordinal = 0; ordinal < priorCount; ordinal++)
+            store.SeedRaw(scope.StoreName, Physical(scope, key + ":fragment:" + digest + ":" + ordinal),
+                new MagicLinkCapabilityProjectionFragment(padded.AsSpan(ordinal * fragmentBytes,
+                    Math.Min(fragmentBytes, padded.Length - ordinal * fragmentBytes)).ToArray()));
+        var previous = new MagicLinkCapabilityProjectionStorage(null, digest, padded.Length, priorCount);
+        store.SeedRaw(scope.StoreName, Physical(scope, key), previous);
+        (await Read(coordinator, handler, id.Value)).ShouldBe(baseView);
+        (replacementWrites + previous.FragmentCount).ShouldBe(requiredOperations);
+
+        IReadOnlyList<ReadModelBatchOperation> operations = await handler.FoldCatchUpAsync(delivery, 0, coordinator,
+            TestContext.Current.CancellationToken);
+        ReadModelBatchOperation[] deletes = operations.Where(operation => operation.Kind == ReadModelBatchOperationKind.Delete).ToArray();
+        if (requiredOperations == 128)
+        {
+            operations.Count.ShouldBe(128);
+            deletes.Select(operation => operation.Key).ShouldBe(Enumerable.Range(0, priorCount)
+                .Select(ordinal => key + ":fragment:" + digest + ":" + ordinal));
+            deletes.ShouldAllBe(operation => operation.Concurrency.Mode == ReadModelBatchConcurrencyMode.IdempotentAbsent);
+            operations[replacementWrites - 1].Key.ShouldBe(key);
+        }
+        else
+        {
+            operations.Count.ShouldBeInRange(2, 128);
+            deletes.ShouldBeEmpty();
+            var pointer = JsonSerializer.Deserialize<MagicLinkCapabilityProjectionStorage>(operations.Last().CanonicalValue.Span, s_json)
+                .ShouldNotBeNull();
+            pointer.Continuation.ShouldNotBeNull().Base.ShouldBe(previous);
+        }
+        (await Deliver(provider, "entry-1", terminal)).ShouldBe(ProjectionDispatchStatus.Completed);
+        var selected = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(scope, 0, key,
+            TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        (selected.Continuation is not null).ShouldBe(requiredOperations == 129);
+        for (int ordinal = 0; ordinal < priorCount; ordinal++)
+        {
+            var fragment = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionFragment>(scope, 0,
+                key + ":fragment:" + digest + ":" + ordinal, TestContext.Current.CancellationToken)).Value;
+            if (requiredOperations == 128) fragment.ShouldBeNull();
+            else fragment.ShouldNotBeNull();
+        }
+        (await Read(coordinator, handler, id.Value)).ShouldNotBeNull().Published.ShouldNotBeNull().State
+            .ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UnsupportedCompleteViewCapacityPreservesPointerFragmentsAndJournalHead(bool emptyBase)
+    {
+        var store = new InMemoryReadModelStore();
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        using ServiceProvider provider = Provider(store, coordinator, handler);
+        var id = new MagicLinkCapabilityId("cap-oversized-completion");
+        (await Deliver(provider, id.Value, Event(1, 1, new StoredMagicLinkIssued(Issued(id.Value)))))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        MagicLinkCapabilityProjectionView oldView = (await Read(coordinator, handler, id.Value)).ShouldNotBeNull();
+        // An admitted historical flat view can be larger than a current single-event delivery.
+        var largeRow = oldView.Issuance.ShouldNotBeNull() with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(new string('p', 2_200_000)))
+        };
+        byte[] bytes = emptyBase
+            ? Encoding.UTF8.GetBytes(JsonSerializer.Serialize(MagicLinkCapabilityProjectionView.Empty, s_json) + new string(' ', 5_100_000))
+            : JsonSerializer.SerializeToUtf8Bytes(oldView with { Issuance = largeRow, Published = largeRow }, s_json);
+        string digest = Convert.ToHexString(SHA256.HashData(bytes));
+        int count = (bytes.Length + 40 * 1024 - 1) / (40 * 1024);
+        count.ShouldBeInRange(1, 127);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", id);
+        for (int ordinal = 0; ordinal < count; ordinal++)
+            store.SeedRaw(scope.StoreName, Physical(scope, key + ":fragment:" + digest + ":" + ordinal),
+                new MagicLinkCapabilityProjectionFragment(bytes.AsSpan(ordinal * 40 * 1024,
+                    Math.Min(40 * 1024, bytes.Length - ordinal * 40 * 1024)).ToArray()));
+        var pointer = new MagicLinkCapabilityProjectionStorage(null, digest, bytes.Length, count, 40 * 1024);
+        store.SeedRaw(scope.StoreName, Physical(scope, key), pointer);
+        var before = await store.GetAsync<MagicLinkCapabilityProjectionStorage>(scope.StoreName, Physical(scope, key),
+            TestContext.Current.CancellationToken);
+        var revoked = new MagicLinkConfirmationCapabilityRevoked(id, new("tenant-1"), new(new string('r', 950_000)),
+            largeRow.IssuedAtUtc.AddHours(1), new("timesheets", "capacity-refusal")) { TimeEntryId = largeRow.TimeEntryId };
+        ProjectionEventDto terminal = Event(1, 2, new StoredMagicLinkRevoked(revoked));
+        terminal.Payload.Length.ShouldBeLessThan(1_048_576);
+        (await Deliver(provider, "entry-1", terminal)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        (await Deliver(provider, "entry-1", terminal)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        var after = await store.GetAsync<MagicLinkCapabilityProjectionStorage>(scope.StoreName, Physical(scope, key),
+            TestContext.Current.CancellationToken);
+        after.Value.ShouldBe(pointer); after.ETag.ShouldBe(before.ETag);
+        for (int ordinal = 0; ordinal < count; ordinal++)
+            (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionFragment>(scope, 0,
+                key + ":fragment:" + digest + ":" + ordinal, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).PendingDeliveryCount.ShouldBe(1);
+        MagicLinkCapabilityProjectionView retained = (await Read(coordinator, handler, id.Value)).ShouldNotBeNull();
+        if (emptyBase) retained.ShouldBe(MagicLinkCapabilityProjectionView.Empty);
+        else retained.Published.ShouldNotBeNull().State.ShouldBe(Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued);
+    }
+
+    [Theory]
+    [InlineData("used", false)]
+    [InlineData("revoked", false)]
+    [InlineData("expired", false)]
+    [InlineData("legacy-used", false)]
+    [InlineData("legacy-revoked", false)]
+    [InlineData("legacy-expired", false)]
+    [InlineData("used", true)]
+    [InlineData("revoked", true)]
+    [InlineData("expired", true)]
+    public async Task MaximalEntropyTransitionsUseBoundedContinuationAndRetainReachableFlatBase(string kind, bool terminalFirst)
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new ReadFaultStore(inner);
+        var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        using ServiceProvider provider = Provider(inner, coordinator, handler);
+        var id = new MagicLinkCapabilityId("cap-continuation");
+        string entropy = Convert.ToHexString(RandomNumberGenerator.GetBytes(475_000));
+        MagicLinkConfirmationCapabilityIssued issuance = Issued(id.Value) with
+        {
+            Target = TimeEntryTargetReference.ForProject(new ProjectReference(entropy))
+        };
+        bool legacyTerminal = kind.StartsWith("legacy-", StringComparison.Ordinal);
+        kind = kind.Replace("legacy-", string.Empty, StringComparison.Ordinal);
+        var metadata = new MagicLinkAuditMetadata("timesheets", entropy[..120]);
+        object terminal = kind switch
+        {
+            "used" => new StoredMagicLinkUsed(Used(id.Value) with { Source = metadata }),
+            "revoked" => new StoredMagicLinkRevoked(new(id, issuance.Tenant, new PartyReference(entropy),
+                issuance.IssuedAtUtc.AddHours(1), metadata) { TimeEntryId = issuance.TimeEntryId }),
+            _ => new StoredMagicLinkExpired(new(id, issuance.Tenant, issuance.ExpiresAtUtc, metadata)
+                { TimeEntryId = issuance.TimeEntryId })
+        };
+        if (legacyTerminal)
+            terminal = terminal switch
+            {
+                StoredMagicLinkUsed used => used.Event,
+                StoredMagicLinkRevoked revoked => revoked.Event,
+                StoredMagicLinkExpired expired => expired.Event,
+                _ => throw new InvalidOperationException()
+            };
+        string terminalOwner = legacyTerminal ? id.Value : "entry-1";
+        ProjectionEventDto issue = Event(1, 1, new StoredMagicLinkIssued(issuance));
+        ProjectionEventDto fact = Event(legacyTerminal ? 2 : 1, 2, terminal);
+        issue.Payload.Length.ShouldBeLessThan(1_048_576);
+        fact.Payload.Length.ShouldBeLessThan(1_048_576);
+        (await Deliver(provider, terminalFirst ? terminalOwner : id.Value, terminalFirst ? fact : issue))
+            .ShouldBe(ProjectionDispatchStatus.Completed);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = MagicLinkCapabilityReadModelAddress.StateKey("tenant-1", id);
+        MagicLinkCapabilityProjectionStorage previous = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(
+            scope, 0, key, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        if (terminalFirst || kind != "revoked")
+        {
+            // Legacy flat fragments can have a larger physical footprint than today's encoding.
+            MagicLinkCapabilityProjectionView pending = (await Read(coordinator, handler, id.Value)).ShouldNotBeNull();
+            byte[] bytes = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(pending, s_json) + new string(' ', terminalFirst ? 2_000_000 : 500_000));
+            string digest = Convert.ToHexString(SHA256.HashData(bytes));
+            int count = (bytes.Length + 24 * 1024 - 1) / (24 * 1024);
+            for (int ordinal = 0; ordinal < count; ordinal++)
+                inner.SeedRaw(scope.StoreName, Physical(scope, key + ":fragment:" + digest + ":" + ordinal),
+                    new MagicLinkCapabilityProjectionFragment(bytes.AsSpan(ordinal * 24 * 1024,
+                        Math.Min(24 * 1024, bytes.Length - ordinal * 24 * 1024)).ToArray()));
+            previous = new(null, digest, bytes.Length, count);
+            inner.SeedRaw(scope.StoreName, Physical(scope, key), previous);
+        }
+        string owner = terminalFirst ? id.Value : terminalOwner;
+        ProjectionEventDto completion = terminalFirst ? issue : fact;
+        var delivery = new SharedProjectionDelivery(owner, completion.GlobalPosition,
+            JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-1", "timesheets", owner, [completion]), s_json), []);
+        IReadOnlyList<ReadModelBatchOperation> operations = await handler.FoldCatchUpAsync(delivery, 0, coordinator,
+            TestContext.Current.CancellationToken);
+        operations.Count.ShouldBeInRange(2, 128);
+        operations.ShouldAllBe(operation => operation.Kind == ReadModelBatchOperationKind.Write
+            && operation.CanonicalValue.Length <= 64 * 1024);
+        operations.Last().Key.ShouldBe(key);
+        MagicLinkCapabilityProjectionStorage pointer = JsonSerializer.Deserialize<MagicLinkCapabilityProjectionStorage>(
+            operations.Last().CanonicalValue.Span, s_json).ShouldNotBeNull();
+        pointer.Continuation.ShouldNotBeNull().Base.ShouldBe(previous);
+        using (var transitionBytes = new MemoryStream())
+        {
+            foreach (ReadModelBatchOperation operation in operations.SkipLast(1))
+                transitionBytes.Write(JsonSerializer.Deserialize<MagicLinkCapabilityProjectionFragment>(
+                    operation.CanonicalValue.Span, s_json).ShouldNotBeNull().Data);
+            string json = Encoding.UTF8.GetString(transitionBytes.ToArray());
+            json.ShouldNotContain("tokenHash", Case.Insensitive);
+            json.ShouldNotContain(issuance.TokenHash.Value);
+        }
+        // Interrupt after preparing fragments but before publishing their pointer.
+        bool interrupted = false;
+        inner.BatchFaultHook = (phase, _, _) =>
+        {
+            if (phase == ReadModelBatchPhase.BeforeCommit && !interrupted)
+            {
+                interrupted = true;
+                throw new IOException("Interrupted continuation publication.");
+            }
+            return Task.CompletedTask;
+        };
+        (await Deliver(provider, owner, completion)).ShouldBe(ProjectionDispatchStatus.Retryable);
+        inner.BatchFaultHook = null;
+        (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(scope, 0, key,
+            TestContext.Current.CancellationToken)).Value.ShouldBe(previous);
+        // A reader crosses the same-generation pointer change while restoring its flat base.
+        store.OnFragmentReadAsync = async () =>
+            (await Deliver(provider, owner, completion)).ShouldBeOneOf(ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        MagicLinkCapabilityProjectionView selected = (await Read(coordinator, handler, id.Value)).ShouldNotBeNull();
+        selected.Published.ShouldNotBeNull().State.ToString().ToLowerInvariant().ShouldBe(kind);
+        selected.Published.Target.TargetId.ShouldBe(entropy);
+        var current = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(scope, 0, key,
+            TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        current.Continuation.ShouldNotBeNull();
+        for (int ordinal = 0; ordinal < previous.FragmentCount; ordinal++)
+            (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionFragment>(scope, 0,
+                key + ":fragment:" + previous.Digest + ":" + ordinal, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        (await Deliver(provider, owner, completion)).ShouldBeOneOf(ProjectionDispatchStatus.Completed, ProjectionDispatchStatus.AlreadyCompleted);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).PendingDeliveryCount.ShouldBe(0);
+
+        // Every pointer binding is checked before accepting reconstructed state.
+        MagicLinkCapabilityProjectionContinuation continuation = current.Continuation.ShouldNotBeNull();
+        MagicLinkCapabilityProjectionView transitionOnly = terminalFirst
+            ? selected with { Used = null, Revoked = null, Expired = null, TerminalInCapabilityStream = false,
+                TerminalPosition = null, Published = selected.Issuance }
+            : selected with { Issuance = null, Published = null };
+        byte[] transitionOnlyBytes = JsonSerializer.SerializeToUtf8Bytes(transitionOnly, s_json);
+        MagicLinkCapabilityProjectionStorage[] invalid =
+        [
+            current with { Inline = selected },
+            current with { Continuation = continuation with { Base = new(selected, null, 0, 0) } },
+            current with { Continuation = continuation with
+            {
+                Base = new(MagicLinkCapabilityProjectionView.Empty, null, 0, 0),
+                ViewDigest = Convert.ToHexString(SHA256.HashData(transitionOnlyBytes)), ViewByteLength = transitionOnlyBytes.Length
+            } },
+            current with { Continuation = continuation with { Base = new(selected with
+                { Published = selected.Published with { CapabilityId = new("foreign") } }, null, 0, 0) } },
+            current with { Continuation = continuation with { TenantId = "foreign" } },
+            current with { Continuation = continuation with { CapabilityId = "foreign" } },
+            current with { Continuation = continuation with { ViewDigest = new string('0', 64) } },
+            current with { Continuation = continuation with { ViewByteLength = continuation.ViewByteLength + 1 } },
+            current with { Continuation = continuation with { TransitionByteLength = int.MaxValue } },
+            current with { Continuation = continuation with { TransitionFragmentCount = 128 } },
+            current with { Continuation = continuation with { Base = previous with { Continuation = continuation } } },
+            current with { Continuation = continuation with { Base = previous with { Digest = "malformed" } } }
+        ];
+        foreach (MagicLinkCapabilityProjectionStorage malformed in invalid)
+        {
+            inner.SeedRaw(scope.StoreName, Physical(scope, key), malformed);
+            _ = await Should.ThrowAsync<InvalidOperationException>(() => handler.ReadViewAsync("tenant-1", id, coordinator,
+                TestContext.Current.CancellationToken));
+        }
+        inner.SeedRaw(scope.StoreName, Physical(scope, key), current);
+        // Rebuild staging deliberately materializes the established flat encoding.
+        if (legacyTerminal) return;
+        await Rebuild(provider, "continuation-to-flat", [(id.Value, issue), (terminalOwner, fact)]);
+        var staged = (await coordinator.ReadGenerationAsync<MagicLinkCapabilityProjectionStorage>(scope, 1, key,
+            TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        staged.Continuation.ShouldBeNull();
+        (await Read(coordinator, handler, id.Value)).ShouldNotBeNull().Published.ShouldNotBeNull().State.ToString().ToLowerInvariant()
+            .ShouldBe(kind);
     }
 
     [Fact]
@@ -675,7 +1166,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Normal_epoch_delivery_rejects_changed_same_position_and_preserves_selected_view()
+    public async Task NormalEpochDeliveryRejectsChangedSamePositionAndPreservesSelectedView()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -690,7 +1181,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Ten_thousand_valid_high_entropy_owners_produce_bounded_independent_partitions()
+    public async Task TenThousandValidHighEntropyOwnersProduceBoundedIndependentPartitions()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -736,7 +1227,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Large_valid_capability_inventory_streams_more_than64MiB_through_full_rebuild()
+    public async Task LargeValidCapabilityInventoryStreamsMoreThan64MiBThroughFullRebuild()
     {
         const int ownerCount = 2_600;
         var store = new InMemoryReadModelStore();
@@ -933,7 +1424,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Applied_rebuild_selects_complete_new_generation_and_prunes_missing_capability()
+    public async Task AppliedRebuildSelectsCompleteNewGenerationAndPrunesMissingCapability()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -972,7 +1463,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Aborted_staged_rebuild_removes_private_capability_contribution_index()
+    public async Task AbortedStagedRebuildRemovesPrivateCapabilityContributionIndex()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -1074,7 +1565,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Streamed_rebuild_joins_issuance_and_time_entry_terminal_once()
+    public async Task StreamedRebuildJoinsIssuanceAndTimeEntryTerminalOnce()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -1091,7 +1582,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Streamed_rebuild_joins_terminal_owner_before_issuance_owner()
+    public async Task StreamedRebuildJoinsTerminalOwnerBeforeIssuanceOwner()
     {
         var store = new InMemoryReadModelStore();
         var handler = new MagicLinkConfirmationCapabilityProjectionHandler(store);
@@ -1246,7 +1737,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Selected_generation_read_outage_is_retryable_and_keeps_last_view()
+    public async Task SelectedGenerationReadOutageIsRetryableAndKeepsLastView()
     {
         var inner = new InMemoryReadModelStore();
         var fault = new ReadFaultStore(inner);

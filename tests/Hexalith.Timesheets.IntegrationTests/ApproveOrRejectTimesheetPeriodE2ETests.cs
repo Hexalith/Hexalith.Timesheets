@@ -22,7 +22,7 @@ public sealed class ApproveOrRejectTimesheetPeriodE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Period_approval_locks_two_submitted_entries_and_records_period_evidence()
+    public async Task PeriodApprovalLocksTwoSubmittedEntriesAndRecordsPeriodEvidence()
     {
         AllowAllAccessGuard accessGuard = new();
         StaticAuthorityResolver authority = new(ApprovalAuthorityAction.PeriodApproval);
@@ -55,7 +55,7 @@ public sealed class ApproveOrRejectTimesheetPeriodE2ETests
     }
 
     [Fact]
-    public async Task Period_rejection_records_selected_entry_reason_without_rejecting_unaffected_entries()
+    public async Task PeriodRejectionRecordsSelectedEntryReasonWithoutRejectingUnaffectedEntries()
     {
         AllowAllAccessGuard accessGuard = new();
         StaticAuthorityResolver authority = new(ApprovalAuthorityAction.PeriodRejection);
@@ -93,7 +93,7 @@ public sealed class ApproveOrRejectTimesheetPeriodE2ETests
     }
 
     [Fact]
-    public async Task Period_rejection_replay_preserves_period_detail_entry_states_and_reason_evidence()
+    public async Task PeriodRejectionReplayPreservesPeriodDetailEntryStatesAndReasonEvidence()
     {
         AllowAllAccessGuard accessGuard = new();
         StaticAuthorityResolver authority = new(ApprovalAuthorityAction.PeriodRejection);
@@ -169,7 +169,7 @@ public sealed class ApproveOrRejectTimesheetPeriodE2ETests
     }
 
     [Fact]
-    public async Task Period_approval_blocks_stale_projection_and_unresolved_authority_without_period_event()
+    public async Task PeriodApprovalBlocksStaleProjectionAndUnresolvedAuthorityWithoutPeriodEvent()
     {
         AllowAllAccessGuard accessGuard = new();
         StaticAuthorityResolver authority = new(ApprovalAuthorityAction.PeriodApproval);

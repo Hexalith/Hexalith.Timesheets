@@ -12,7 +12,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class ActivityTypeAggregateTests
 {
     [Fact]
-    public void Create_tenant_activity_type_emits_tenant_scoped_created_event()
+    public void CreateTenantActivityTypeEmitsTenantScopedCreatedEvent()
     {
         TimesheetsDomainResult result = TenantActivityTypeAggregate.Handle(
             new CreateTenantActivityType(ActivityId(), " Discovery ", BillableState.Billable),
@@ -27,7 +27,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Create_rejects_duplicate_activity_type_id()
+    public void CreateRejectsDuplicateActivityTypeId()
     {
         ActivityTypeCatalogState state = CreatedState();
 
@@ -41,7 +41,7 @@ public sealed class ActivityTypeAggregateTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void Create_and_rename_reject_blank_labels(string label)
+    public void CreateAndRenameRejectBlankLabels(string label)
     {
         TenantActivityTypeAggregate.Handle(
                 new CreateTenantActivityType(new ActivityTypeId("new-activity"), label, BillableState.Billable),
@@ -55,7 +55,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Create_and_metadata_update_reject_unknown_billable_metadata()
+    public void CreateAndMetadataUpdateRejectUnknownBillableMetadata()
     {
         TenantActivityTypeAggregate.Handle(
                 new CreateTenantActivityType(new ActivityTypeId("new-activity"), "Build", BillableState.Unknown),
@@ -70,7 +70,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Rename_metadata_deactivate_and_reactivate_preserve_stable_activity_type_id()
+    public void RenameMetadataDeactivateAndReactivatePreserveStableActivityTypeId()
     {
         ActivityTypeCatalogState state = CreatedState();
 
@@ -98,7 +98,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Same_label_same_metadata_inactive_and_active_transitions_are_noops()
+    public void SameLabelSameMetadataInactiveAndActiveTransitionsAreNoops()
     {
         ActivityTypeCatalogState state = CreatedState();
 
@@ -128,7 +128,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Unknown_or_project_scoped_activity_type_rejects_tenant_mutations()
+    public void UnknownOrProjectScopedActivityTypeRejectsTenantMutations()
     {
         TenantActivityTypeAggregate.Handle(
                 new DeactivateActivityType(ActivityId()),
@@ -150,7 +150,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Create_project_activity_type_emits_project_scoped_created_event()
+    public void CreateProjectActivityTypeEmitsProjectScopedCreatedEvent()
     {
         TimesheetsDomainResult result = ProjectActivityTypeAggregate.Handle(
             new CreateProjectActivityType(ActivityId(), Project(), " Delivery ", BillableState.Billable),
@@ -165,7 +165,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Project_activity_type_rejects_duplicate_scope_mismatch_and_missing_project_reference()
+    public void ProjectActivityTypeRejectsDuplicateScopeMismatchAndMissingProjectReference()
     {
         ActivityTypeCatalogState state = CreatedState();
 
@@ -188,7 +188,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Project_commands_reject_missing_project_reference_with_typed_validation_outcome()
+    public void ProjectCommandsRejectMissingProjectReferenceWithTypedValidationOutcome()
     {
         Rejection(ProjectActivityTypeAggregate.Handle(
                 new CreateProjectActivityType(ActivityId(), null!, "Delivery", BillableState.Billable),
@@ -211,7 +211,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Project_mutations_preserve_stable_activity_type_id()
+    public void ProjectMutationsPreserveStableActivityTypeId()
     {
         ActivityTypeCatalogState state = ProjectCreatedState();
 
@@ -239,7 +239,7 @@ public sealed class ActivityTypeAggregateTests
     }
 
     [Fact]
-    public void Project_restriction_configuration_emits_replayable_policy_event()
+    public void ProjectRestrictionConfigurationEmitsReplayablePolicyEvent()
     {
         TimesheetsDomainResult result = ProjectActivityTypeAggregate.Handle(
             new ConfigureProjectActivityTypeCatalogRestriction(

@@ -17,7 +17,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class ApprovedTimeLedgerQueryServiceIntegrationTests
 {
     [Fact]
-    public async Task Seeded_approved_entries_can_be_queried_paged_authorized_hydrated_and_drilled_into_evidence()
+    public async Task SeededApprovedEntriesCanBeQueriedPagedAuthorizedHydratedAndDrilledIntoEvidence()
     {
         TimeEntryProjectionEvent[] events =
         [

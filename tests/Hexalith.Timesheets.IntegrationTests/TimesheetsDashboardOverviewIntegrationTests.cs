@@ -16,7 +16,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class TimesheetsDashboardOverviewIntegrationTests
 {
     [Fact]
-    public async Task Dashboard_composes_period_pending_approval_reports_ledger_and_empty_action_from_projection_readers()
+    public async Task DashboardComposesPeriodPendingApprovalReportsLedgerAndEmptyActionFromProjectionReaders()
     {
         AllowAllAccessGuard guard = new();
         QueueTimeReader timeReader = new(
@@ -84,7 +84,7 @@ public sealed class TimesheetsDashboardOverviewIntegrationTests
     }
 
     [Fact]
-    public async Task Dashboard_empty_unavailable_projections_keep_record_time_as_only_ready_empty_state_action()
+    public async Task DashboardEmptyUnavailableProjectionsKeepRecordTimeAsOnlyReadyEmptyStateAction()
     {
         AllowAllAccessGuard guard = new();
         QueueTimeReader timeReader = new(

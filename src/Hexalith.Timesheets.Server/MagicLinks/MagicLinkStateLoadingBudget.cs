@@ -36,6 +36,21 @@ internal sealed class MagicLinkStateLoadingBudget(MagicLinkStateLoadingOptions o
         return page;
     }
 
+    /// <summary>Bounds a read-model operation by the invocation deadline without charging history costs.</summary>
+    internal async Task<T> ReadModelAsync<T>(Func<CancellationToken, Task<T>> read,
+        CancellationToken cancellationToken)
+    {
+        ThrowIfUnavailable(cancellationToken);
+        TimeSpan remaining = options.Timeout - _elapsed.Elapsed;
+        if (remaining <= TimeSpan.Zero)
+            throw new TimeoutException("The state loading deadline was exhausted.");
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(remaining);
+        T value = await read(deadline.Token).WaitAsync(remaining, cancellationToken).ConfigureAwait(false);
+        ThrowIfUnavailable(cancellationToken);
+        return value;
+    }
+
     /// <summary>Refuses publication after caller cancellation or expiry of the invocation deadline.</summary>
     internal void ThrowIfUnavailable(CancellationToken cancellationToken)
     {

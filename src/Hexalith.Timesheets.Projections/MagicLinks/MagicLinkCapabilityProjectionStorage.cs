@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Hexalith.Timesheets.Projections.MagicLinks;
 
 /// <summary>A generation-selected capability value or a pointer to its bounded immutable fragments.</summary>
@@ -11,8 +13,9 @@ public sealed record MagicLinkCapabilityProjectionStorage(
     string? Digest,
     int ByteLength,
     int FragmentCount,
-    int FragmentBytes = 0);
-
-/// <summary>One bounded piece of a capability view, written before its selected pointer.</summary>
-/// <param name="Data">The fragment's canonical bytes.</param>
-public sealed record MagicLinkCapabilityProjectionFragment(byte[] Data);
+    int FragmentBytes = 0)
+{
+    /// <summary>Gets the single-layer continuation when replacing and retiring a flat base exceeds a live fold.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public MagicLinkCapabilityProjectionContinuation? Continuation { get; init; }
+}

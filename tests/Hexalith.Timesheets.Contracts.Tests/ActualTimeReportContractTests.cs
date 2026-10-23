@@ -17,7 +17,7 @@ public sealed class ActualTimeReportContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Project_and_work_report_queries_round_trip_without_server_controlled_authority_fields()
+    public void ProjectAndWorkReportQueriesRoundTripWithoutServerControlledAuthorityFields()
     {
         QueryProjectActualTimeReport projectQuery = new()
         {
@@ -64,7 +64,7 @@ public sealed class ActualTimeReportContractTests
     }
 
     [Fact]
-    public void Actual_time_report_read_model_round_trips_reference_state_planned_effort_cursor_and_freshness()
+    public void ActualTimeReportReadModelRoundTripsReferenceStatePlannedEffortCursorAndFreshness()
     {
         ActualTimeReportReadModel model = new(
             [
@@ -119,7 +119,7 @@ public sealed class ActualTimeReportContractTests
     }
 
     [Fact]
-    public void Actual_time_report_read_model_round_trips_ai_effort_units_and_provider_reported_zero_tokens()
+    public void ActualTimeReportReadModelRoundTripsAiEffortUnitsAndProviderReportedZeroTokens()
     {
         ActualTimeReportReadModel model = new(
             [
@@ -174,7 +174,7 @@ public sealed class ActualTimeReportContractTests
     }
 
     [Fact]
-    public void Work_planned_effort_unavailable_states_never_fabricate_planned_values()
+    public void WorkPlannedEffortUnavailableStatesNeverFabricatePlannedValues()
     {
         WorkPlannedEffortReadModel[] unavailableStates =
         [
@@ -206,7 +206,7 @@ public sealed class ActualTimeReportContractTests
     }
 
     [Fact]
-    public void Actual_time_report_metadata_declares_required_filters_fields_badges_and_no_forbidden_language()
+    public void ActualTimeReportMetadataDeclaresRequiredFiltersFieldsBadgesAndNoForbiddenLanguage()
     {
         TimesheetsMetadataDescriptor project = Descriptor("timesheets.projection.project-actual-time-report");
         TimesheetsMetadataDescriptor work = Descriptor("timesheets.projection.work-actual-time-report");

@@ -19,7 +19,7 @@ public sealed class ApprovalAuthorityPolicyE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Configured_project_approval_workflow_records_policy_source_evidence_and_safe_json()
+    public async Task ConfiguredProjectApprovalWorkflowRecordsPolicySourceEvidenceAndSafeJson()
     {
         AllowAllAccessGuard accessGuard = new();
         TimesheetsApprovalAuthorityResolver resolver = new(
@@ -64,7 +64,7 @@ public sealed class ApprovalAuthorityPolicyE2ETests
     }
 
     [Fact]
-    public async Task Default_kernel_authority_workflow_fails_closed_when_authority_sources_are_unavailable()
+    public async Task DefaultKernelAuthorityWorkflowFailsClosedWhenAuthoritySourcesAreUnavailable()
     {
         AllowAllAccessGuard accessGuard = new();
         IServiceCollection services = new ServiceCollection();
@@ -105,7 +105,7 @@ public sealed class ApprovalAuthorityPolicyE2ETests
     }
 
     [Fact]
-    public void Metadata_endpoint_payload_exposes_approval_surfaces_and_blocking_copy_without_protected_identifiers()
+    public void MetadataEndpointPayloadExposesApprovalSurfacesAndBlockingCopyWithoutProtectedIdentifiers()
     {
         var response = new
         {

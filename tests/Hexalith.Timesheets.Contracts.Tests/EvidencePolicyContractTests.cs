@@ -18,7 +18,7 @@ public sealed class EvidencePolicyContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Evidence_policy_enums_expose_unknown_zero_sentinels_and_string_json()
+    public void EvidencePolicyEnumsExposeUnknownZeroSentinelsAndStringJson()
     {
         Enum.GetName((TimesheetsEvidenceRetentionCategory)0).ShouldBe("Unknown");
         Enum.GetName((TimesheetsRetentionPosture)0).ShouldBe("Unknown");
@@ -34,7 +34,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Default_policy_descriptor_declares_retention_categories_and_launch_readiness_gaps()
+    public void DefaultPolicyDescriptorDeclaresRetentionCategoriesAndLaunchReadinessGaps()
     {
         TimesheetsEvidencePolicyDescriptor descriptor = TimesheetsEvidencePolicyDescriptor.FailClosedDefault;
 
@@ -51,7 +51,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Comment_sensitivity_policy_covers_visibility_export_diagnostics_redaction_and_retention()
+    public void CommentSensitivityPolicyCoversVisibilityExportDiagnosticsRedactionAndRetention()
     {
         TimeEntryCommentPolicy policy = TimeEntryCommentPolicy.SensitiveDefault;
 
@@ -65,7 +65,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Default_policy_descriptor_declares_comment_scope_rules_and_export_redaction()
+    public void DefaultPolicyDescriptorDeclaresCommentScopeRulesAndExportRedaction()
     {
         TimesheetsEvidencePolicyDescriptor descriptor = TimesheetsEvidencePolicyDescriptor.FailClosedDefault;
 
@@ -90,7 +90,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Time_entry_comment_requires_text_and_keeps_policy_metadata_safe()
+    public void TimeEntryCommentRequiresTextAndKeepsPolicyMetadataSafe()
     {
         Should.Throw<ArgumentException>(static () => new TimeEntryComment(" ", TimeEntryCommentPolicy.SensitiveDefault));
 
@@ -107,7 +107,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Time_entry_comment_enforces_upper_length_boundary()
+    public void TimeEntryCommentEnforcesUpperLengthBoundary()
     {
         string atLimit = new('x', TimeEntryComment.MaxLength);
         TimeEntryComment comment = new(atLimit, TimeEntryCommentPolicy.SensitiveDefault);
@@ -119,7 +119,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Record_time_entry_comment_is_additive_and_round_trips_without_constructor_breaking()
+    public void RecordTimeEntryCommentIsAdditiveAndRoundTripsWithoutConstructorBreaking()
     {
         RecordTimeEntry command = CreateRecordTimeEntry() with
         {
@@ -141,7 +141,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Time_entry_recorded_comment_is_additive_and_round_trips_without_constructor_breaking()
+    public void TimeEntryRecordedCommentIsAdditiveAndRoundTripsWithoutConstructorBreaking()
     {
         TimeEntryRecorded recorded = new(
             new TimeEntryId("time-entry-234"),
@@ -174,7 +174,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Evidence_read_model_comment_policy_is_additive_and_excludes_diagnostics_by_default()
+    public void EvidenceReadModelCommentPolicyIsAdditiveAndExcludesDiagnosticsByDefault()
     {
         TimeEntryEvidenceReadModel model = CreateEvidenceReadModel() with
         {
@@ -195,7 +195,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Metadata_catalog_exposes_policy_help_without_runtime_or_finance_ownership_language()
+    public void MetadataCatalogExposesPolicyHelpWithoutRuntimeOrFinanceOwnershipLanguage()
     {
         string metadata = JsonSerializer.Serialize(TimesheetsMetadataCatalog.Descriptors, JsonOptions);
 
@@ -210,7 +210,7 @@ public sealed class EvidencePolicyContractTests
     }
 
     [Fact]
-    public void Openapi_policy_guidance_documents_comment_and_retention_defaults_safely()
+    public void OpenapiPolicyGuidanceDocumentsCommentAndRetentionDefaultsSafely()
     {
         string artifactPath = RepositoryPath(
             "src",

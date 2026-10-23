@@ -5,7 +5,7 @@ namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 public sealed class PerformanceEvidenceTests
 {
     [Fact]
-    public void Performance_evidence_lane_documents_launch_latency_targets()
+    public void PerformanceEvidenceLaneDocumentsLaunchLatencyTargets()
     {
         string evidence = File.ReadAllText(RepositoryRoot.PathTo("docs", "performance-evidence.md"));
 
@@ -17,7 +17,7 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
-    public void Integration_tests_reserve_runtime_and_performance_lanes_without_entering_fast_baseline()
+    public void IntegrationTestsReserveRuntimeAndPerformanceLanesWithoutEnteringFastBaseline()
     {
         string[] integrationTests = Directory.GetFiles(
             RepositoryRoot.PathTo("tests", "Hexalith.Timesheets.IntegrationTests"),
@@ -27,13 +27,13 @@ public sealed class PerformanceEvidenceTests
         integrationTests.ShouldNotBeEmpty();
 
         string combinedSource = string.Join(Environment.NewLine, integrationTests.Select(File.ReadAllText));
-        combinedSource.ShouldContain("Runtime_integration_lane_is_reserved_for_eventstore_state_store_evidence");
-        combinedSource.ShouldContain("Performance_lane_is_reserved_for_launch_latency_evidence");
+        combinedSource.ShouldContain("RuntimeIntegrationLaneIsReservedForEventstoreStateStoreEvidence");
+        combinedSource.ShouldContain("PerformanceLaneIsReservedForLaunchLatencyEvidence");
         combinedSource.ShouldContain("Skip =");
     }
 
     [Fact]
-    public void Performance_evidence_documents_capture_and_governance_command_verdict()
+    public void PerformanceEvidenceDocumentsCaptureAndGovernanceCommandVerdict()
     {
         string evidence = File.ReadAllText(RepositoryRoot.PathTo("docs", "performance-evidence.md"));
 
@@ -55,7 +55,7 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
-    public void Command_performance_lane_stays_opt_in_and_out_of_the_fast_baseline()
+    public void CommandPerformanceLaneStaysOptInAndOutOfTheFastBaseline()
     {
         string[] integrationTests = Directory.GetFiles(
             RepositoryRoot.PathTo("tests", "Hexalith.Timesheets.IntegrationTests"),
@@ -73,7 +73,7 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
-    public void Performance_evidence_documents_report_export_dashboard_nfr11_verdicts()
+    public void PerformanceEvidenceDocumentsReportExportDashboardNfr11Verdicts()
     {
         string evidence = File.ReadAllText(RepositoryRoot.PathTo("docs", "performance-evidence.md"));
 
@@ -93,7 +93,7 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
-    public void Report_export_dashboard_performance_lane_stays_opt_in()
+    public void ReportExportDashboardPerformanceLaneStaysOptIn()
     {
         string source = File.ReadAllText(RepositoryRoot.PathTo(
             "tests",
@@ -107,7 +107,7 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
-    public void Performance_evidence_documents_how_to_run_the_opt_in_lane()
+    public void PerformanceEvidenceDocumentsHowToRunTheOptInLane()
     {
         string evidence = File.ReadAllText(RepositoryRoot.PathTo("docs", "performance-evidence.md"));
 
@@ -119,7 +119,7 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
-    public void Report_export_dashboard_lane_emits_privacy_safe_nfr11_aggregates_only()
+    public void ReportExportDashboardLaneEmitsPrivacySafeNfr11AggregatesOnly()
     {
         // AC5 / NFR12: the lane and its recorded evidence must surface timing aggregates and scenario
         // names only - never report rows, ledger rows, CSV content, comments, identifiers, or PII.
@@ -141,7 +141,7 @@ public sealed class PerformanceEvidenceTests
     }
 
     [Fact]
-    public void Report_export_dashboard_read_journey_has_fast_baseline_functional_coverage()
+    public void ReportExportDashboardReadJourneyHasFastBaselineFunctionalCoverage()
     {
         // AC3: the report/export/dashboard read paths the opt-in lane measures must also have
         // fast-baseline functional coverage so their composed correctness is guarded in the default

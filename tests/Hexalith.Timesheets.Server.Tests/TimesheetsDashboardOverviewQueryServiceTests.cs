@@ -16,7 +16,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class TimesheetsDashboardOverviewQueryServiceTests
 {
     [Fact]
-    public async Task Dashboard_denies_tenant_before_any_projection_lookup()
+    public async Task DashboardDeniesTenantBeforeAnyProjectionLookup()
     {
         DashboardFixture fixture = new(new DashboardAccessGuard
         {
@@ -39,7 +39,7 @@ public sealed class TimesheetsDashboardOverviewQueryServiceTests
     }
 
     [Fact]
-    public async Task Dashboard_hides_approval_and_ledger_when_policy_denies_without_disclosing_protected_rows()
+    public async Task DashboardHidesApprovalAndLedgerWhenPolicyDeniesWithoutDisclosingProtectedRows()
     {
         DashboardAccessGuard guard = new();
         guard.SetAction(TimesheetsUiAction.Approval, TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.InsufficientRole, "No approver role."));
@@ -75,7 +75,7 @@ public sealed class TimesheetsDashboardOverviewQueryServiceTests
     }
 
     [Fact]
-    public async Task Dashboard_surfaces_stale_and_degraded_projection_status_without_enabling_export()
+    public async Task DashboardSurfacesStaleAndDegradedProjectionStatusWithoutEnablingExport()
     {
         DashboardFixture fixture = new(new DashboardAccessGuard());
         fixture.TimeReader.Enqueue(TimePage(

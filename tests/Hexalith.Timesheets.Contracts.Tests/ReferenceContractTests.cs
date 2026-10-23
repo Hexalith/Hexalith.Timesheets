@@ -8,7 +8,7 @@ namespace Hexalith.Timesheets.Contracts.Tests;
 public sealed class ReferenceContractTests
 {
     [Fact]
-    public void Stable_references_reject_blank_identifiers()
+    public void StableReferencesRejectBlankIdentifiers()
     {
         Should.Throw<ArgumentException>(static () => new TenantReference(" "));
         Should.Throw<ArgumentException>(static () => new PartyReference(" "));
@@ -17,7 +17,7 @@ public sealed class ReferenceContractTests
     }
 
     [Fact]
-    public void Stable_references_expose_only_stable_identifier_values()
+    public void StableReferencesExposeOnlyStableIdentifierValues()
     {
         Type[] referenceTypes =
         [
@@ -60,7 +60,7 @@ public sealed class ReferenceContractTests
     }
 
     [Fact]
-    public void Metadata_catalog_exposes_capture_and_evidence_surface_descriptors()
+    public void MetadataCatalogExposesCaptureAndEvidenceSurfaceDescriptors()
     {
         TimesheetsMetadataCatalog.Descriptors.Count.ShouldBe(24);
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)

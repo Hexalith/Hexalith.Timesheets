@@ -41,7 +41,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_reuses_record_flow_and_forces_external_contributor_evidence()
+    public async Task SubmitExternalTimeEntryReusesRecordFlowAndForcesExternalContributorEvidence()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -64,7 +64,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_fails_closed_before_dispatch_when_project_authority_is_invalid()
+    public async Task SubmitExternalTimeEntryFailsClosedBeforeDispatchWhenProjectAuthorityIsInvalid()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -91,7 +91,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_fails_closed_on_tenant_authority_before_references_or_dispatch()
+    public async Task SubmitExternalTimeEntryFailsClosedOnTenantAuthorityBeforeReferencesOrDispatch()
     {
         Fixture fixture = new();
         fixture.TenantValidator
@@ -116,7 +116,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_fails_closed_on_invalid_contributor_before_dispatch()
+    public async Task SubmitExternalTimeEntryFailsClosedOnInvalidContributorBeforeDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -146,7 +146,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_rejects_inactive_activity_type_before_aggregate_dispatch()
+    public async Task SubmitExternalTimeEntryRejectsInactiveActivityTypeBeforeAggregateDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
         ActivityTypeCatalogReadModel inactiveCatalog = new(
@@ -174,7 +174,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_same_source_retry_is_noop_without_duplicate_record_event()
+    public async Task SubmitExternalTimeEntrySameSourceRetryIsNoopWithoutDuplicateRecordEvent()
     {
         Fixture fixture = AuthorizedProjectFixture();
         TimeEntryState state = RecordedExternalState();
@@ -193,7 +193,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_submitted_policy_reuses_submission_flow()
+    public async Task SubmitExternalTimeEntrySubmittedPolicyReusesSubmissionFlow()
     {
         Fixture fixture = AuthorizedProjectFixture();
         ExternalContributionPolicyOptions options = new()
@@ -228,7 +228,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submitted_policy_records_after_retained_rejection_state()
+    public async Task SubmittedPolicyRecordsAfterRetainedRejectionState()
     {
         Fixture fixture = AuthorizedProjectFixture();
         TimeEntryState retainedRejection = new();
@@ -249,7 +249,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_fails_closed_on_work_authority_before_contributor_policy_or_dispatch()
+    public async Task SubmitExternalTimeEntryFailsClosedOnWorkAuthorityBeforeContributorPolicyOrDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.WorkValidator
@@ -278,7 +278,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Submit_external_time_entry_fails_closed_on_policy_denial_before_dispatch()
+    public async Task SubmitExternalTimeEntryFailsClosedOnPolicyDenialBeforeDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.PolicyEvaluator
@@ -302,7 +302,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_external_time_entry_records_confirmation_evidence_not_approval()
+    public async Task ConfirmExternalTimeEntryRecordsConfirmationEvidenceNotApproval()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -324,7 +324,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_external_time_entry_same_source_retry_is_noop_without_duplicate_confirmation_event()
+    public async Task ConfirmExternalTimeEntrySameSourceRetryIsNoopWithoutDuplicateConfirmationEvent()
     {
         Fixture fixture = AuthorizedProjectFixture();
         TimeEntryState state = ConfirmedExternalState();
@@ -342,7 +342,7 @@ public sealed class ExternalContributionCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_external_time_entry_fails_closed_on_invalid_contributor_before_dispatch()
+    public async Task ConfirmExternalTimeEntryFailsClosedOnInvalidContributorBeforeDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator

@@ -24,7 +24,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Preview_denial_prevents_ledger_lookup_and_records_no_audit()
+    public async Task PreviewDenialPreventsLedgerLookupAndRecordsNoAudit()
     {
         TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
         TrackingHydrator hydrator = new();
@@ -52,7 +52,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_missing_tenant_context_prevents_ledger_lookup_and_audit_recording()
+    public async Task PreviewMissingTenantContextPreventsLedgerLookupAndAuditRecording()
     {
         TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
         TrackingAuditRecorder auditRecorder = new();
@@ -78,7 +78,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     [Theory]
     [InlineData(TimesheetsDenialCategory.RetentionPolicyMissing)]
     [InlineData(TimesheetsDenialCategory.CommentPolicyMissing)]
-    public async Task Preview_policy_gaps_fail_closed_before_ledger_lookup(TimesheetsDenialCategory category)
+    public async Task PreviewPolicyGapsFailClosedBeforeLedgerLookup(TimesheetsDenialCategory category)
     {
         TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
         TrackingAuditRecorder auditRecorder = new();
@@ -104,7 +104,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_blocks_stale_projection_without_output_or_audit()
+    public async Task PreviewBlocksStaleProjectionWithoutOutputOrAudit()
     {
         ApprovedTimeLedgerReadModel stalePage = Page([Row("time-entry-1", ProjectTarget())]) with
         {
@@ -138,7 +138,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_blocks_empty_ledger_without_file_or_audit()
+    public async Task PreviewBlocksEmptyLedgerWithoutFileOrAudit()
     {
         TrackingAuditRecorder auditRecorder = new();
         ApprovedTimeExportService service = Service(
@@ -161,7 +161,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_blocks_invalid_contract_requests_before_ledger_lookup()
+    public async Task PreviewBlocksInvalidContractRequestsBeforeLedgerLookup()
     {
         (PreviewApprovedTimeExport Query, string Reason)[] cases =
         [
@@ -204,7 +204,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_blocks_non_billable_ledger_rows_without_audit()
+    public async Task PreviewBlocksNonBillableLedgerRowsWithoutAudit()
     {
         TrackingAuditRecorder auditRecorder = new();
         ApprovedTimeExportService service = Service(
@@ -231,7 +231,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_ready_scope_is_deterministic_and_records_no_file_or_audit()
+    public async Task PreviewReadyScopeIsDeterministicAndRecordsNoFileOrAudit()
     {
         ApprovedTimeLedgerReadModel page = Page([
             Row("time-entry-2", WorkTarget(), ApprovedTimeLedgerRowState.Superseded),
@@ -283,7 +283,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_ready_audit_metadata_carries_filters_scope_without_generated_fields_or_audit_event()
+    public async Task PreviewReadyAuditMetadataCarriesFiltersScopeWithoutGeneratedFieldsOrAuditEvent()
     {
         TrackingAuditRecorder auditRecorder = new();
         ApprovedTimeExportService service = Service(
@@ -332,7 +332,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_surfaces_comment_policy_and_discloses_no_comment_text()
+    public async Task PreviewSurfacesCommentPolicyAndDisclosesNoCommentText()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([]),
@@ -371,7 +371,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_comment_policy_reflects_evidence_options_when_comments_allowed()
+    public async Task PreviewCommentPolicyReflectsEvidenceOptionsWhenCommentsAllowed()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([]),
@@ -390,7 +390,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_filters_insufficient_role_rows_from_scope()
+    public async Task PreviewFiltersInsufficientRoleRowsFromScope()
     {
         TrackingHydrator hydrator = new();
         ApprovedTimeExportService service = Service(
@@ -422,7 +422,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_fails_closed_when_ledger_row_authorization_is_unsafe()
+    public async Task PreviewFailsClosedWhenLedgerRowAuthorizationIsUnsafe()
     {
         TrackingAuditRecorder auditRecorder = new();
         ApprovedTimeExportService service = Service(
@@ -448,7 +448,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_accumulates_all_pages_when_ledger_is_cursor_paged()
+    public async Task PreviewAccumulatesAllPagesWhenLedgerIsCursorPaged()
     {
         SequentialPagedLedgerReader reader = new([
             Page([Row("time-entry-1", ProjectTarget())]) with { NextCursor = "cursor-2" },
@@ -476,7 +476,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_and_generate_share_one_readiness_core_on_ready_scope()
+    public async Task PreviewAndGenerateShareOneReadinessCoreOnReadyScope()
     {
         ApprovedTimeLedgerReadModel page = Page([
             Row("time-entry-1", ProjectTarget()),
@@ -523,7 +523,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task Preview_and_generate_share_one_readiness_core_on_blocked_reason()
+    public async Task PreviewAndGenerateShareOneReadinessCoreOnBlockedReason()
     {
         ApprovedTimeLedgerReadModel stalePage = Page([Row("time-entry-1", ProjectTarget())]) with
         {

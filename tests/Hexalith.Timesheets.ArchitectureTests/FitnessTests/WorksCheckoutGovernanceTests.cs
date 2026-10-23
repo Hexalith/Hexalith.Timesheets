@@ -23,7 +23,7 @@ public sealed class WorksCheckoutGovernanceTests
     private static readonly TimeSpan ProcessTimeout = TimeSpan.FromMinutes(2);
 
     [Fact]
-    public void Gitmodules_declares_works_only_under_references()
+    public void GitmodulesDeclaresWorksOnlyUnderReferences()
     {
         string gitmodules = File.ReadAllText(RepositoryRoot.PathTo(".gitmodules"));
         string[] worksPaths = SubmodulePath.Matches(gitmodules)
@@ -36,7 +36,7 @@ public sealed class WorksCheckoutGovernanceTests
     }
 
     [Fact]
-    public async Task Git_index_has_references_works_gitlink_and_no_other_works_gitlink()
+    public async Task GitIndexHasReferencesWorksGitlinkAndNoOtherWorksGitlink()
     {
         IReadOnlyList<(string Mode, string Path)> staged = await ReadStagedPathsAsync();
         (string Mode, string Path)[] worksGitlinks = staged
@@ -51,7 +51,7 @@ public sealed class WorksCheckoutGovernanceTests
     }
 
     [Fact]
-    public async Task Directory_build_props_preserves_caller_supplied_hexalith_works_root()
+    public async Task DirectoryBuildPropsPreservesCallerSuppliedHexalithWorksRoot()
     {
         XElement[] worksRoots = LoadWorksRootAssignments();
 
@@ -81,7 +81,7 @@ public sealed class WorksCheckoutGovernanceTests
     }
 
     [Fact]
-    public void Directory_build_props_resolves_references_then_sibling_and_rejects_root_local_probe()
+    public void DirectoryBuildPropsResolvesReferencesThenSiblingAndRejectsRootLocalProbe()
     {
         string propsPath = RepositoryRoot.PathTo("Directory.Build.props");
         string props = File.ReadAllText(propsPath);
@@ -103,7 +103,7 @@ public sealed class WorksCheckoutGovernanceTests
     }
 
     [Fact]
-    public async Task Directory_build_props_resolves_sibling_then_prefers_references_when_both_exist()
+    public async Task DirectoryBuildPropsResolvesSiblingThenPrefersReferencesWhenBothExist()
     {
         string temporaryRoot = Path.Combine(
             Path.GetTempPath(),
@@ -145,7 +145,7 @@ public sealed class WorksCheckoutGovernanceTests
     }
 
     [Fact]
-    public void Repository_root_does_not_contain_a_works_checkout()
+    public void RepositoryRootDoesNotContainAWorksCheckout()
     {
         Directory.Exists(RepositoryRoot.PathTo("Hexalith.Works"))
             .ShouldBeFalse("A repository-root Hexalith.Works checkout must not return.");

@@ -20,7 +20,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class TimesheetPeriodAuthorizationTests
 {
     [Fact]
-    public async Task Period_submission_dispatches_draft_entry_transitions_and_period_event_only_when_all_entries_are_valid()
+    public async Task PeriodSubmissionDispatchesDraftEntryTransitionsAndPeriodEventOnlyWhenAllEntriesAreValid()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         TimesheetPeriodSubmissionCommandService service = new(guard);
@@ -57,7 +57,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_submission_blocks_whole_period_when_one_entry_needs_correction()
+    public async Task PeriodSubmissionBlocksWholePeriodWhenOneEntryNeedsCorrection()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         TimesheetPeriodSubmissionCommandService service = new(guard);
@@ -90,7 +90,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_submission_blocks_cross_boundary_entries_without_silently_submitting_subset()
+    public async Task PeriodSubmissionBlocksCrossBoundaryEntriesWithoutSilentlySubmittingSubset()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         TimesheetPeriodSubmissionCommandService service = new(guard);
@@ -120,7 +120,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_submission_blocks_missing_entries_without_dispatching_valid_subset()
+    public async Task PeriodSubmissionBlocksMissingEntriesWithoutDispatchingValidSubset()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         TimesheetPeriodSubmissionCommandService service = new(guard);
@@ -150,7 +150,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_submission_blocks_entries_for_another_contributor_without_dispatching_valid_subset()
+    public async Task PeriodSubmissionBlocksEntriesForAnotherContributorWithoutDispatchingValidSubset()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         TimesheetPeriodSubmissionCommandService service = new(guard);
@@ -181,7 +181,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_submission_blocks_when_activity_type_catalog_is_not_fresh()
+    public async Task PeriodSubmissionBlocksWhenActivityTypeCatalogIsNotFresh()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         TimesheetPeriodSubmissionCommandService service = new(guard);
@@ -211,7 +211,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_submission_blocks_superseded_locked_entries()
+    public async Task PeriodSubmissionBlocksSupersededLockedEntries()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         TimesheetPeriodSubmissionCommandService service = new(guard);
@@ -242,7 +242,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_submission_denial_copy_hides_raw_authority_details()
+    public async Task PeriodSubmissionDenialCopyHidesRawAuthorityDetails()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         guard.AuthorizeAsync(
@@ -275,7 +275,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_approval_dispatches_period_scoped_entry_approvals_before_period_event()
+    public async Task PeriodApprovalDispatchesPeriodScopedEntryApprovalsBeforePeriodEvent()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
@@ -310,7 +310,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_rejection_dispatches_selected_period_scoped_entry_rejections()
+    public async Task PeriodRejectionDispatchesSelectedPeriodScopedEntryRejections()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodRejection);
@@ -349,7 +349,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_approval_blocks_stale_period_projection_before_entry_or_period_dispatch()
+    public async Task PeriodApprovalBlocksStalePeriodProjectionBeforeEntryOrPeriodDispatch()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
@@ -377,7 +377,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_approval_fails_closed_when_authority_cannot_be_resolved()
+    public async Task PeriodApprovalFailsClosedWhenAuthorityCannotBeResolved()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         ITimesheetsApprovalAuthorityResolver resolver = Substitute.For<ITimesheetsApprovalAuthorityResolver>();
@@ -408,7 +408,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_approval_blocks_cross_contributor_entries_without_dispatching_period_event()
+    public async Task PeriodApprovalBlocksCrossContributorEntriesWithoutDispatchingPeriodEvent()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
@@ -434,7 +434,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_approval_blocks_when_an_entry_summary_evidence_is_stale_even_if_period_projection_is_fresh()
+    public async Task PeriodApprovalBlocksWhenAnEntrySummaryEvidenceIsStaleEvenIfPeriodProjectionIsFresh()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         ITimesheetsApprovalAuthorityResolver resolver = AllowingAuthority(ApprovalAuthorityAction.PeriodApproval);
@@ -464,7 +464,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_approval_blocks_cross_tenant_entries_with_safe_denial_copy()
+    public async Task PeriodApprovalBlocksCrossTenantEntriesWithSafeDenialCopy()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         guard.AuthorizeAsync(
@@ -500,7 +500,7 @@ public sealed class TimesheetPeriodAuthorizationTests
     }
 
     [Fact]
-    public async Task Period_approval_forwards_contributor_and_period_action_so_self_approval_is_denied_fail_closed()
+    public async Task PeriodApprovalForwardsContributorAndPeriodActionSoSelfApprovalIsDeniedFailClosed()
     {
         ITimesheetsAccessGuard guard = AllowingGuard();
         ITimesheetsApprovalAuthorityResolver resolver = Substitute.For<ITimesheetsApprovalAuthorityResolver>();

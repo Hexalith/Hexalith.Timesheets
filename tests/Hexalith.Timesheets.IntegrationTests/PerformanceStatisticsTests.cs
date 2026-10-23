@@ -18,7 +18,7 @@ public sealed class PerformanceStatisticsTests
     [InlineData(0.50, 50.0)]  // ceil(0.50 * 100) = 50 -> index 49 -> value 50
     [InlineData(0.99, 99.0)]  // ceil(0.99 * 100) = 99 -> index 98 -> value 99
     [InlineData(1.00, 100.0)] // ceil(1.00 * 100) = 100 -> index 99 -> max
-    public void NearestRankPercentile_reads_the_expected_rank_over_one_to_one_hundred(
+    public void NearestRankPercentileReadsTheExpectedRankOverOneToOneHundred(
         double percentile,
         double expected)
     {
@@ -31,7 +31,7 @@ public sealed class PerformanceStatisticsTests
     [InlineData(0.20, 10.0)] // ceil(0.20 * 5) = 1 -> index 0
     [InlineData(0.50, 30.0)] // ceil(0.50 * 5) = 3 -> index 2
     [InlineData(0.95, 50.0)] // ceil(0.95 * 5) = 5 -> index 4 (max)
-    public void NearestRankPercentile_uses_nearest_rank_on_a_small_sample(
+    public void NearestRankPercentileUsesNearestRankOnASmallSample(
         double percentile,
         double expected)
     {
@@ -41,7 +41,7 @@ public sealed class PerformanceStatisticsTests
     }
 
     [Fact]
-    public void NearestRankPercentile_clamps_a_zero_percentile_to_the_minimum()
+    public void NearestRankPercentileClampsAZeroPercentileToTheMinimum()
     {
         double[] sorted = [10.0, 20.0, 30.0, 40.0, 50.0];
 
@@ -50,7 +50,7 @@ public sealed class PerformanceStatisticsTests
     }
 
     [Fact]
-    public void NearestRankPercentile_returns_the_single_value_for_a_one_element_sample()
+    public void NearestRankPercentileReturnsTheSingleValueForAOneElementSample()
     {
         double[] sorted = [0.0042];
 
@@ -59,7 +59,7 @@ public sealed class PerformanceStatisticsTests
     }
 
     [Fact]
-    public void NearestRankPercentile_returns_an_actual_member_of_the_sample()
+    public void NearestRankPercentileReturnsAnActualMemberOfTheSample()
     {
         double[] sorted = [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007];
 
@@ -70,7 +70,7 @@ public sealed class PerformanceStatisticsTests
     }
 
     [Fact]
-    public void NearestRankPercentile_rejects_an_empty_sample()
+    public void NearestRankPercentileRejectsAnEmptySample()
         => Should.Throw<ArgumentException>(
             static () => PerformanceStatistics.NearestRankPercentile([], 0.95));
 }

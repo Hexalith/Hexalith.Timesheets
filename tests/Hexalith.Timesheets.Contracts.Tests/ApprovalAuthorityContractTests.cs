@@ -15,7 +15,7 @@ public sealed class ApprovalAuthorityContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Approval_authority_enums_expose_unknown_zero_sentinels_and_json_strings()
+    public void ApprovalAuthorityEnumsExposeUnknownZeroSentinelsAndJsonStrings()
     {
         Enum.GetName((ApprovalAuthorityAction)0).ShouldBe("Unknown");
         Enum.GetName((ApprovalAuthoritySource)0).ShouldBe("Unknown");
@@ -47,7 +47,7 @@ public sealed class ApprovalAuthorityContractTests
     }
 
     [Fact]
-    public void Approval_authority_action_vocabulary_covers_entry_period_correction_and_export()
+    public void ApprovalAuthorityActionVocabularyCoversEntryPeriodCorrectionAndExport()
     {
         Enum.GetNames<ApprovalAuthorityAction>().ShouldBe(
         [
@@ -62,7 +62,7 @@ public sealed class ApprovalAuthorityContractTests
     }
 
     [Fact]
-    public void Metadata_catalog_declares_approval_queue_and_approval_command_surfaces()
+    public void MetadataCatalogDeclaresApprovalQueueAndApprovalCommandSurfaces()
     {
         TimesheetsMetadataDescriptor queue = Descriptor("timesheets.approvals.queue");
         TimesheetsMetadataDescriptor entryCommand = Descriptor("timesheets.command.time-entry-approval");
@@ -96,7 +96,7 @@ public sealed class ApprovalAuthorityContractTests
     }
 
     [Fact]
-    public void Openapi_artifact_documents_additive_approval_authority_schema()
+    public void OpenapiArtifactDocumentsAdditiveApprovalAuthoritySchema()
     {
         JsonNode artifact = JsonNode.Parse(File.ReadAllText(RepositoryPath(
             "src",

@@ -17,7 +17,7 @@ public sealed class DashboardContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Dashboard_query_round_trips_without_server_controlled_authority_or_freshness_fields()
+    public void DashboardQueryRoundTripsWithoutServerControlledAuthorityOrFreshnessFields()
     {
         QueryTimesheetsDashboardOverview query = new()
         {
@@ -47,7 +47,7 @@ public sealed class DashboardContractTests
     }
 
     [Fact]
-    public void Dashboard_read_model_round_trips_status_messages_shortcuts_and_preserved_context()
+    public void DashboardReadModelRoundTripsStatusMessagesShortcutsAndPreservedContext()
     {
         TimesheetsDashboardContextReadModel context = new(
             "2026-06",
@@ -138,7 +138,7 @@ public sealed class DashboardContractTests
     }
 
     [Fact]
-    public void Dashboard_metadata_declares_operational_fields_actions_badges_and_no_runtime_dependency_leakage()
+    public void DashboardMetadataDeclaresOperationalFieldsActionsBadgesAndNoRuntimeDependencyLeakage()
     {
         TimesheetsMetadataDescriptor descriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.dashboard.overview");

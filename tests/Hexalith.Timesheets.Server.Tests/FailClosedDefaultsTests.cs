@@ -9,7 +9,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class FailClosedDefaultsTests
 {
     [Fact]
-    public void Default_authorization_gate_is_fail_closed()
+    public void DefaultAuthorizationGateIsFailClosed()
     {
         string source = File.ReadAllText(ServerSourcePath(
             "Authorization",
@@ -20,7 +20,7 @@ public sealed class FailClosedDefaultsTests
     }
 
     [Fact]
-    public void Default_reference_validators_reject_unverified_sibling_references()
+    public void DefaultReferenceValidatorsRejectUnverifiedSiblingReferences()
     {
         string[] validatorFiles =
         [
@@ -38,7 +38,7 @@ public sealed class FailClosedDefaultsTests
     }
 
     [Fact]
-    public void Default_tenant_validator_rejects_unconfigured_authority()
+    public void DefaultTenantValidatorRejectsUnconfiguredAuthority()
     {
         string source = File.ReadAllText(ServerSourcePath(
             "Authorization",
@@ -50,7 +50,7 @@ public sealed class FailClosedDefaultsTests
     }
 
     [Fact]
-    public void Default_approval_authority_source_providers_are_fail_closed()
+    public void DefaultApprovalAuthoritySourceProvidersAreFailClosed()
     {
         string source = File.ReadAllText(ServerSourcePath(
             "ApprovalAuthority",
@@ -61,7 +61,7 @@ public sealed class FailClosedDefaultsTests
     }
 
     [Fact]
-    public async Task Default_policy_evaluator_blocks_trust_bearing_operations_until_policy_is_configured()
+    public async Task DefaultPolicyEvaluatorBlocksTrustBearingOperationsUntilPolicyIsConfigured()
     {
         // The registered default (TimesheetsEvidencePolicyEvaluator + FailClosedDefault options)
         // must deny trust-bearing operations until retention/comment policy is configured.

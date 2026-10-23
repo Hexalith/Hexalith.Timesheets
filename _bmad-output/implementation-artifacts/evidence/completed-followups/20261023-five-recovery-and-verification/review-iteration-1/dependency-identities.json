@@ -1,0 +1,98 @@
+{
+  "timesheetsBaseline": "357db9d8c2df951a60c8ffb59c0d61c6a7bb3c8c",
+  "rootDirty": true,
+  "inventory": "all root-declared dependency checkouts; includes dependencies not compiled by every project",
+  "dependencies": [
+    {
+      "path": "references/Hexalith.Commons",
+      "committedGitlink": "5c23c818f639c5bb3175f964c5549440bd5b876d",
+      "actualHead": "5c23c818f639c5bb3175f964c5549440bd5b876d",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.AI.Tools",
+      "committedGitlink": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "actualHead": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.Builds",
+      "committedGitlink": "359fee24aeca4d9eabed4b425d4cfa2520b2adda",
+      "actualHead": "359fee24aeca4d9eabed4b425d4cfa2520b2adda",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.Tenants",
+      "committedGitlink": "ffe9522b10f37f56cd9339c3387cbb4b7d16d897",
+      "actualHead": "ffe9522b10f37f56cd9339c3387cbb4b7d16d897",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.EventStore",
+      "committedGitlink": "e1d8b17160202761ab5c9606cafbcf4d1a4b92c3",
+      "actualHead": "e1d8b17160202761ab5c9606cafbcf4d1a4b92c3",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.FrontComposer",
+      "committedGitlink": "7fcfb019bf94fa858410726fe9a1506f3a2e36a7",
+      "actualHead": "7fcfb019bf94fa858410726fe9a1506f3a2e36a7",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.PolymorphicSerializations",
+      "committedGitlink": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "actualHead": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.Projects",
+      "committedGitlink": "5ea8ef3544892e420409ad5e961a8bd2b3001fe7",
+      "actualHead": "5ea8ef3544892e420409ad5e961a8bd2b3001fe7",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.Conversations",
+      "committedGitlink": "ef3947078cb5ccf3d2b81ca684490e565e8cd04f",
+      "actualHead": "ef3947078cb5ccf3d2b81ca684490e565e8cd04f",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.Works",
+      "committedGitlink": "d60c29569de975bd280098e2e2f37406a30cf705",
+      "actualHead": "d60c29569de975bd280098e2e2f37406a30cf705",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.Parties",
+      "committedGitlink": "61921f7c0a25e00d9dd102d863e366cf67120f3d",
+      "actualHead": "61921f7c0a25e00d9dd102d863e366cf67120f3d",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.McpCli",
+      "committedGitlink": "7f4a08cb4b7ff9402d1dcf0826ad45ab0256ba65",
+      "actualHead": "7f4a08cb4b7ff9402d1dcf0826ad45ab0256ba65",
+      "dirty": false,
+      "status": []
+    },
+    {
+      "path": "references/Hexalith.Platform",
+      "committedGitlink": "c65d87a6f8f4a05fa3bea4e24ac778bf23f12cd6",
+      "actualHead": "c65d87a6f8f4a05fa3bea4e24ac778bf23f12cd6",
+      "dirty": false,
+      "status": []
+    }
+  ]
+}

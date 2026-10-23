@@ -16,7 +16,7 @@ public sealed class ActivityTypeCatalogE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Activity_type_catalog_operator_workflow_metadata_exposes_keyboard_reachable_commands()
+    public void ActivityTypeCatalogOperatorWorkflowMetadataExposesKeyboardReachableCommands()
     {
         TimesheetsMetadataDescriptor command = Descriptor("timesheets.command.activity-type-catalog");
         TimesheetsMetadataDescriptor projection = Descriptor("timesheets.projection.activity-type-catalog");
@@ -54,7 +54,7 @@ public sealed class ActivityTypeCatalogE2ETests
     }
 
     [Fact]
-    public void Activity_type_catalog_projection_metadata_exposes_textual_state_and_freshness_cues()
+    public void ActivityTypeCatalogProjectionMetadataExposesTextualStateAndFreshnessCues()
     {
         TimesheetsMetadataDescriptor projection = Descriptor("timesheets.projection.activity-type-catalog");
 
@@ -74,7 +74,7 @@ public sealed class ActivityTypeCatalogE2ETests
     }
 
     [Fact]
-    public void Activity_type_catalog_read_model_round_trips_active_and_inactive_rows_for_capture_selection()
+    public void ActivityTypeCatalogReadModelRoundTripsActiveAndInactiveRowsForCaptureSelection()
     {
         ActivityTypeCatalogReadModel model = new(
             [
@@ -112,7 +112,7 @@ public sealed class ActivityTypeCatalogE2ETests
     }
 
     [Fact]
-    public void Activity_type_catalog_command_payloads_round_trip_without_server_authority_fields()
+    public void ActivityTypeCatalogCommandPayloadsRoundTripWithoutServerAuthorityFields()
     {
         CreateTenantActivityType create = RoundTrip(new CreateTenantActivityType(
             new ActivityTypeId("discovery"),

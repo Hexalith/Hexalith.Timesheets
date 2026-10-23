@@ -33,7 +33,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
     [Fact]
-    public async Task Composed_host_registers_authenticated_resource_binding_assertion_source()
+    public async Task ComposedHostRegistersAuthenticatedResourceBindingAssertionSource()
     {
         IWorkloadAssertionIssuer issuer = Substitute.For<IWorkloadAssertionIssuer>();
         issuer.CanBindResources.Returns(true);
@@ -63,7 +63,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Composed_host_gateway_sends_bound_assertion_on_workload_submit_route()
+    public async Task ComposedHostGatewaySendsBoundAssertionOnWorkloadSubmitRoute()
     {
         IWorkloadAssertionIssuer issuer = Substitute.For<IWorkloadAssertionIssuer>();
         issuer.CanBindResources.Returns(true);
@@ -99,7 +99,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Production_gateway_assertion_source_binds_tenant_domain_and_authenticated_actor()
+    public async Task ProductionGatewayAssertionSourceBindsTenantDomainAndAuthenticatedActor()
     {
         IWorkloadAssertionIssuer issuer = Substitute.For<IWorkloadAssertionIssuer>();
         issuer.CanBindResources.Returns(true);
@@ -133,7 +133,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Production_gateway_assertion_uses_name_identifier_when_party_claim_is_blank()
+    public async Task ProductionGatewayAssertionUsesNameIdentifierWhenPartyClaimIsBlank()
     {
         IWorkloadAssertionIssuer issuer = Substitute.For<IWorkloadAssertionIssuer>();
         issuer.CanBindResources.Returns(true);
@@ -157,7 +157,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             Arg.Any<CancellationToken>());
     }
     [Fact]
-    public async Task Confirm_and_adjust_commit_use_with_matching_effect_in_target_stream()
+    public async Task ConfirmAndAdjustCommitUseWithMatchingEffectInTargetStream()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -208,7 +208,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Delayed_completed_status_still_accepts_exact_stored_batch()
+    public async Task DelayedCompletedStatusStillAcceptsExactStoredBatch()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -236,7 +236,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("usedAt")]
     [InlineData("source")]
     [InlineData("outcome")]
-    public async Task Use_receipt_rejects_changed_stored_event_fields(string field)
+    public async Task UseReceiptRejectsChangedStoredEventFields(string field)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -270,7 +270,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("contributor")]
     [InlineData("confirmedAt")]
     [InlineData("source")]
-    public async Task Confirmation_receipt_rejects_changed_stored_effect_fields(string field)
+    public async Task ConfirmationReceiptRejectsChangedStoredEffectFields(string field)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -297,7 +297,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Accepted_message_id_mismatch_is_opaque_even_when_events_were_stored()
+    public async Task AcceptedMessageIdMismatchIsOpaqueEvenWhenEventsWereStored()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -315,7 +315,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Use_receipt_rejects_duplicate_persisted_event_identity()
+    public async Task UseReceiptRejectsDuplicatePersistedEventIdentity()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -517,7 +517,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("text")]
     [InlineData("serverProjection")]
     [InlineData("serverDisplay")]
-    public async Task Adjustment_receipt_rejects_a_persisted_comment_different_from_the_server_decision(string field)
+    public async Task AdjustmentReceiptRejectsAPersistedCommentDifferentFromTheServerDecision(string field)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -569,7 +569,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Adjustment_receipt_keeps_the_pre_submit_comment_decision_when_authority_changes()
+    public async Task AdjustmentReceiptKeepsThePreSubmitCommentDecisionWhenAuthorityChanges()
     {
         bool allowPublication = false;
         ITimeEntryCommentPublicationAuthority authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
@@ -614,7 +614,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("failure")]
     [InlineData("rejection")]
     [InlineData("retryable")]
-    public async Task Completed_status_with_wrong_receipt_fields_is_opaque_denial(string field)
+    public async Task CompletedStatusWithWrongReceiptFieldsIsOpaqueDenial(string field)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -673,7 +673,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Issue_returns_token_only_after_issuance_is_stored_in_capability_stream()
+    public async Task IssueReturnsTokenOnlyAfterIssuanceIsStoredInCapabilityStream()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -702,7 +702,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Issue_recovers_committed_event_when_submit_response_is_lost()
+    public async Task IssueRecoversCommittedEventWhenSubmitResponseIsLost()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -741,7 +741,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(503)]
     [InlineData(408)]
-    public async Task Issue_retries_transient_stored_read_after_exact_completion(int transientStatusCode)
+    public async Task IssueRetriesTransientStoredReadAfterExactCompletion(int transientStatusCode)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -772,7 +772,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Issue_receipt_rejects_event_from_a_different_command_message()
+    public async Task IssueReceiptRejectsEventFromADifferentCommandMessage()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -796,7 +796,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Use_receipt_rejects_another_commands_correlation_for_confirm_and_adjust(bool adjust)
+    public async Task UseReceiptRejectsAnotherCommandsCorrelationForConfirmAndAdjust(bool adjust)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -834,7 +834,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("issuer")]
     [InlineData("issuedAt")]
     [InlineData("timeEntry")]
-    public async Task Issue_receipt_rejects_changed_issuance_fields(string changedField)
+    public async Task IssueReceiptRejectsChangedIssuanceFields(string changedField)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -886,7 +886,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("activityType")]
     [InlineData("billable")]
     [InlineData("comment")]
-    public async Task Adjustment_receipt_rejects_changed_effect_fields(string changedField)
+    public async Task AdjustmentReceiptRejectsChangedEffectFields(string changedField)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -930,7 +930,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Transition_receipt_rejects_changed_audit_source()
+    public async Task TransitionReceiptRejectsChangedAuditSource()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -954,7 +954,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Transition_receipt_rejects_missing_persisted_event_identity()
+    public async Task TransitionReceiptRejectsMissingPersistedEventIdentity()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -977,7 +977,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("timeEntry")]
     [InlineData("expiredAt")]
     [InlineData("source")]
-    public async Task Expire_receipt_rejects_changed_stored_event_fields(string field)
+    public async Task ExpireReceiptRejectsChangedStoredEventFields(string field)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -1010,7 +1010,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Concurrent_and_replayed_confirmation_have_one_stored_terminal_batch()
+    public async Task ConcurrentAndReplayedConfirmationHaveOneStoredTerminalBatch()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1045,7 +1045,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Confirm_race_reads_the_completed_batch_when_both_submit_responses_stall()
+    public async Task ConfirmRaceReadsTheCompletedBatchWhenBothSubmitResponsesStall()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1116,7 +1116,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Confirm_accepts_an_exact_committed_batch_after_submit_transport_fault()
+    public async Task ConfirmAcceptsAnExactCommittedBatchAfterSubmitTransportFault()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1142,7 +1142,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(429)]
     [InlineData(408)]
-    public async Task Confirm_retries_transient_status_and_batch_read_faults_within_its_deadline(int transientStatusCode)
+    public async Task ConfirmRetriesTransientStatusAndBatchReadFaultsWithinItsDeadline(int transientStatusCode)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1170,7 +1170,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Confirm_submits_once_when_status_preflight_is_unavailable_until_submission()
+    public async Task ConfirmSubmitsOnceWhenStatusPreflightIsUnavailableUntilSubmission()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1194,7 +1194,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData(CommandStatus.Received)]
     [InlineData(CommandStatus.EventsStored)]
     [InlineData(CommandStatus.PublishFailed)]
-    public async Task Non_completed_status_is_an_opaque_denial_without_claiming_a_commit(CommandStatus status)
+    public async Task NonCompletedStatusIsAnOpaqueDenialWithoutClaimingACommit(CommandStatus status)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1228,7 +1228,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("used")]
     [InlineData("revoked")]
     [InlineData("expired")]
-    public async Task Legacy_capability_stream_terminal_cannot_reopen_the_link(string terminalKind)
+    public async Task LegacyCapabilityStreamTerminalCannotReopenTheLink(string terminalKind)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1285,7 +1285,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData(true, true, false)]
     [InlineData(false, true, true)]
     [InlineData(true, true, true)]
-    public async Task Management_terminal_transition_is_stored_in_target_stream_and_denies_later_use(
+    public async Task ManagementTerminalTransitionIsStoredInTargetStreamAndDeniesLaterUse(
         bool expire, bool loseResponse, bool corruptReceipt)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
@@ -1382,7 +1382,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task Proposed_entry_can_be_revoked_or_expired_when_EventStore_reports_missing_owner_stream(bool expire)
+    public async Task ProposedEntryCanBeRevokedOrExpiredWhenEventStoreReportsMissingOwnerStream(bool expire)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
@@ -1430,7 +1430,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Expiry_without_a_human_actor_still_commits_the_terminal_event()
+    public async Task ExpiryWithoutAHumanActorStillCommitsTheTerminalEvent()
     {
         using MagicLinkHttpBoundaryFactory factory = new(
             useConcreteLoader: true, useMismatchedClaims: false,

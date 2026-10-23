@@ -23,7 +23,7 @@ public sealed class TimeCaptureContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Record_time_entry_models_exactly_one_target_reference()
+    public void RecordTimeEntryModelsExactlyOneTargetReference()
     {
         TimeEntryTargetReference projectTarget = TimeEntryTargetReference.ForProject(new ProjectReference("project-42"));
         TimeEntryTargetReference workTarget = TimeEntryTargetReference.ForWork(new WorkReference("work-42"));
@@ -42,7 +42,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Record_time_entry_contract_round_trips_through_web_json_without_authority_fields()
+    public void RecordTimeEntryContractRoundTripsThroughWebJsonWithoutAuthorityFields()
     {
         RecordTimeEntry command = new(
             new TimeEntryId("time-entry-123"),
@@ -87,7 +87,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_evidence_read_model_round_trips_projection_and_state_metadata()
+    public void TimeEntryEvidenceReadModelRoundTripsProjectionAndStateMetadata()
     {
         TimeEntryEvidenceReadModel readModel = new(
             new TimeEntryId("time-entry-456"),
@@ -123,7 +123,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Query_time_entries_contract_round_trips_without_authority_fields()
+    public void QueryTimeEntriesContractRoundTripsWithoutAuthorityFields()
     {
         QueryTimeEntries query = new()
         {
@@ -162,7 +162,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_query_read_model_round_trips_state_names_source_type_and_degraded_freshness()
+    public void TimeEntryQueryReadModelRoundTripsStateNamesSourceTypeAndDegradedFreshness()
     {
         TimeEntryQueryReadModel page = new(
             [
@@ -202,7 +202,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Submit_time_entries_contract_round_trips_without_authority_fields()
+    public void SubmitTimeEntriesContractRoundTripsWithoutAuthorityFields()
     {
         SubmitTimeEntriesForApproval command = new(
             new TimeEntrySubmissionId("submission-123"),
@@ -228,7 +228,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Submit_timesheet_period_contract_round_trips_without_authority_or_policy_fields()
+    public void SubmitTimesheetPeriodContractRoundTripsWithoutAuthorityOrPolicyFields()
     {
         SubmitTimesheetPeriod command = new(
             new TimesheetPeriodId("period-2026-w25"),
@@ -259,7 +259,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Approve_timesheet_period_contract_round_trips_without_authority_fields()
+    public void ApproveTimesheetPeriodContractRoundTripsWithoutAuthorityFields()
     {
         ApproveTimesheetPeriod command = new(
             new TimesheetPeriodId("period-2026-w25"),
@@ -279,7 +279,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Reject_timesheet_period_contract_round_trips_selected_entry_reasons_without_authority_fields()
+    public void RejectTimesheetPeriodContractRoundTripsSelectedEntryReasonsWithoutAuthorityFields()
     {
         RejectTimesheetPeriod command = new(
             new TimesheetPeriodId("period-2026-w25"),
@@ -309,7 +309,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Timesheet_period_submitted_event_records_boundary_and_keeps_utc_audit_instant_separate()
+    public void TimesheetPeriodSubmittedEventRecordsBoundaryAndKeepsUtcAuditInstantSeparate()
     {
         TimesheetPeriodSubmitted submitted = new(
             new TimesheetPeriodId("period-2026-06"),
@@ -342,7 +342,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Timesheet_period_approved_event_records_grouped_decision_evidence()
+    public void TimesheetPeriodApprovedEventRecordsGroupedDecisionEvidence()
     {
         TimesheetPeriodApproved approved = new(
             new TimesheetPeriodId("period-2026-w25"),
@@ -372,7 +372,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Timesheet_period_rejected_event_records_grouped_and_selected_entry_reasons()
+    public void TimesheetPeriodRejectedEventRecordsGroupedAndSelectedEntryReasons()
     {
         TimesheetPeriodRejected rejected = new(
             new TimesheetPeriodId("period-2026-w25"),
@@ -407,7 +407,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Approve_time_entry_contract_round_trips_without_caller_authority_fields()
+    public void ApproveTimeEntryContractRoundTripsWithoutCallerAuthorityFields()
     {
         ApproveTimeEntry command = new(
             new TimeEntryId("time-entry-123"),
@@ -427,7 +427,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Reject_time_entry_contract_round_trips_reason_without_caller_authority_fields()
+    public void RejectTimeEntryContractRoundTripsReasonWithoutCallerAuthorityFields()
     {
         RejectTimeEntry command = new(
             new TimeEntryId("time-entry-123"),
@@ -451,7 +451,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_submitted_event_records_submission_evidence_and_resulting_state()
+    public void TimeEntrySubmittedEventRecordsSubmissionEvidenceAndResultingState()
     {
         TimeEntrySubmitted submitted = new(
             new TimeEntryId("time-entry-123"),
@@ -480,7 +480,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_approved_event_records_decision_evidence_and_resulting_state()
+    public void TimeEntryApprovedEventRecordsDecisionEvidenceAndResultingState()
     {
         TimeEntryApproved approved = new(
             new TimeEntryId("time-entry-123"),
@@ -519,7 +519,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_rejected_event_records_reason_and_decision_evidence()
+    public void TimeEntryRejectedEventRecordsReasonAndDecisionEvidence()
     {
         TimeEntryRejected rejected = new(
             new TimeEntryId("time-entry-123"),
@@ -560,7 +560,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Correct_rejected_time_entry_contract_round_trips_without_caller_authority_fields()
+    public void CorrectRejectedTimeEntryContractRoundTripsWithoutCallerAuthorityFields()
     {
         CorrectRejectedTimeEntry command = new(
             new TimeEntryId("time-entry-123"),
@@ -598,7 +598,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Correct_approved_time_entry_contract_round_trips_reason_without_caller_authority_fields()
+    public void CorrectApprovedTimeEntryContractRoundTripsReasonWithoutCallerAuthorityFields()
     {
         CorrectApprovedTimeEntry command = new(
             new TimeEntryId("time-entry-123"),
@@ -634,7 +634,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_corrected_event_links_previous_corrected_values_and_rejection_lineage()
+    public void TimeEntryCorrectedEventLinksPreviousCorrectedValuesAndRejectionLineage()
     {
         TimeEntryCorrectionValues previous = CorrectionValues(60);
         TimeEntryCorrectionValues corrected = CorrectionValues(75) with
@@ -677,7 +677,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_approved_corrected_event_links_previous_corrected_values_reason_and_approval_lineage()
+    public void TimeEntryApprovedCorrectedEventLinksPreviousCorrectedValuesReasonAndApprovalLineage()
     {
         TimeEntryCorrectionValues previous = CorrectionValues(60);
         TimeEntryCorrectionValues corrected = CorrectionValues(75);
@@ -767,7 +767,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_evidence_read_model_round_trips_source_lineage_and_display_hydration_without_raw_envelope_fields()
+    public void TimeEntryEvidenceReadModelRoundTripsSourceLineageAndDisplayHydrationWithoutRawEnvelopeFields()
     {
         TimeEntryEvidenceReadModel readModel = new(
             new TimeEntryId("time-entry-789"),
@@ -836,7 +836,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Rejection_contract_round_trips_policy_failures_without_disclosing_protected_context()
+    public void RejectionContractRoundTripsPolicyFailuresWithoutDisclosingProtectedContext()
     {
         TimesheetsRejection rejection = new(
             TimesheetsRejectionCode.AuthorityCannotBeResolved,
@@ -860,7 +860,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Public_commands_do_not_accept_server_controlled_authority_or_envelope_fields()
+    public void PublicCommandsDoNotAcceptServerControlledAuthorityOrEnvelopeFields()
     {
         Type[] commandTypes =
         [
@@ -914,7 +914,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Value_enums_expose_unknown_zero_sentinels()
+    public void ValueEnumsExposeUnknownZeroSentinels()
     {
         Enum.GetName((TimeEntryTargetKind)0).ShouldBe("Unknown");
         Enum.GetName((ContributorCategory)0).ShouldBe("Unknown");
@@ -938,7 +938,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_lock_evidence_round_trips_without_authority_or_envelope_fields()
+    public void TimeEntryLockEvidenceRoundTripsWithoutAuthorityOrEnvelopeFields()
     {
         TimeEntryLockEvidence evidence = new(
             TimeEntryLockState.LockedFromDirectEdit,
@@ -971,7 +971,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_evidence_read_model_carries_lock_state_and_evidence()
+    public void TimeEntryEvidenceReadModelCarriesLockStateAndEvidence()
     {
         TimeEntryEvidenceReadModel model = new(
             new TimeEntryId("time-entry-1"),
@@ -1010,7 +1010,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Ai_metrics_keep_units_source_metadata_and_unavailable_provider_counts_explicit()
+    public void AiMetricsKeepUnitsSourceMetadataAndUnavailableProviderCountsExplicit()
     {
         AiEffortMetrics unavailable = AiEffortMetrics.Unavailable;
 
@@ -1036,7 +1036,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Ai_metrics_distinguish_provider_reported_zero_tokens_from_unreported_tokens()
+    public void AiMetricsDistinguishProviderReportedZeroTokensFromUnreportedTokens()
     {
         AiEffortMetrics reportedZeroTokens = new(
             AiMetricAvailability.ProviderReported,
@@ -1071,7 +1071,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Time_entry_evidence_read_model_keeps_sibling_references_stable_and_projection_freshness_explicit()
+    public void TimeEntryEvidenceReadModelKeepsSiblingReferencesStableAndProjectionFreshnessExplicit()
     {
         TimeEntryEvidenceReadModel model = new(
             new TimeEntryId("time-entry-1"),
@@ -1095,7 +1095,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Metadata_catalog_declares_foundational_frontcomposer_surfaces_without_runtime_dependencies()
+    public void MetadataCatalogDeclaresFoundationalFrontcomposerSurfacesWithoutRuntimeDependencies()
     {
         TimesheetsMetadataCatalog.Descriptors.Select(static descriptor => descriptor.Name)
             .ShouldBe(
@@ -1144,7 +1144,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Metadata_catalog_declares_required_status_badge_vocabularies()
+    public void MetadataCatalogDeclaresRequiredStatusBadgeVocabularies()
     {
         string[] badgeVocabularies = TimesheetsMetadataCatalog.Descriptors
             .SelectMany(static descriptor => descriptor.StateBadges)
@@ -1177,7 +1177,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Record_time_entry_e2e_metadata_exposes_expected_capture_workflow()
+    public void RecordTimeEntryE2eMetadataExposesExpectedCaptureWorkflow()
     {
         TimesheetsMetadataDescriptor command = Descriptor("timesheets.command.record-time");
         TimesheetsMetadataDescriptor submission = Descriptor("timesheets.command.submit-time-entries");
@@ -1295,7 +1295,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Operational_time_entry_query_metadata_declares_filters_grid_fields_and_badges()
+    public void OperationalTimeEntryQueryMetadataDeclaresFiltersGridFieldsAndBadges()
     {
         TimesheetsMetadataDescriptor query = Descriptor("timesheets.projection.time-entry-query");
 
@@ -1333,7 +1333,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Activity_type_catalog_read_model_exposes_text_status_and_selection_metadata()
+    public void ActivityTypeCatalogReadModelExposesTextStatusAndSelectionMetadata()
     {
         ActivityTypeCatalogReadModel model = new(
             [
@@ -1379,7 +1379,7 @@ public sealed class TimeCaptureContractTests
     }
 
     [Fact]
-    public void Openapi_ready_artifact_documents_safe_contract_surface_without_product_endpoints()
+    public void OpenapiReadyArtifactDocumentsSafeContractSurfaceWithoutProductEndpoints()
     {
         string artifactPath = RepositoryPath(
             "src",

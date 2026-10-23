@@ -13,7 +13,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class ActualTimeReportAuthorizationTests
 {
     [Fact]
-    public async Task Project_report_denies_tenant_before_projection_lookup()
+    public async Task ProjectReportDeniesTenantBeforeProjectionLookup()
     {
         TrackingReportReader reader = new(Page([Row(ProjectTarget())]));
         TrackingHydrationProvider hydration = new();
@@ -39,7 +39,7 @@ public sealed class ActualTimeReportAuthorizationTests
     }
 
     [Fact]
-    public async Task Unavailable_report_reader_discloses_nothing_after_tenant_authorization()
+    public async Task UnavailableReportReaderDisclosesNothingAfterTenantAuthorization()
     {
         ActualTimeReportQueryService service = Service(
             new SequencedAccessGuard([TimesheetsAuthorizationDecision.Allowed()]),
@@ -57,7 +57,7 @@ public sealed class ActualTimeReportAuthorizationTests
     }
 
     [Fact]
-    public async Task Work_report_filters_insufficient_role_rows_without_hydration_or_planned_effort_lookup_for_denied_rows()
+    public async Task WorkReportFiltersInsufficientRoleRowsWithoutHydrationOrPlannedEffortLookupForDeniedRows()
     {
         TrackingHydrationProvider hydration = new();
         TrackingPlannedEffortProvider plannedEffort = new();
@@ -97,7 +97,7 @@ public sealed class ActualTimeReportAuthorizationTests
     [InlineData(TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(TimesheetsDenialCategory.InvalidReference)]
     [InlineData(TimesheetsDenialCategory.UnconfiguredPolicy)]
-    public async Task Report_fails_closed_for_non_filterable_row_denials(TimesheetsDenialCategory category)
+    public async Task ReportFailsClosedForNonFilterableRowDenials(TimesheetsDenialCategory category)
     {
         TrackingHydrationProvider hydration = new();
         TrackingPlannedEffortProvider plannedEffort = new();
@@ -122,7 +122,7 @@ public sealed class ActualTimeReportAuthorizationTests
     }
 
     [Fact]
-    public async Task Report_row_authorization_uses_project_for_project_rows_and_work_for_work_rows()
+    public async Task ReportRowAuthorizationUsesProjectForProjectRowsAndWorkForWorkRows()
     {
         RecordingAccessGuard guard = new();
         ActualTimeReportQueryService service = Service(
@@ -154,7 +154,7 @@ public sealed class ActualTimeReportAuthorizationTests
     }
 
     [Fact]
-    public async Task Ai_report_row_authorization_uses_exact_ai_agent_contributor_and_work_target()
+    public async Task AiReportRowAuthorizationUsesExactAiAgentContributorAndWorkTarget()
     {
         RecordingAccessGuard guard = new();
         ActualTimeReportQueryService service = Service(
@@ -184,7 +184,7 @@ public sealed class ActualTimeReportAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_report_hydrates_authorized_rows_without_planned_effort_lookup()
+    public async Task ProjectReportHydratesAuthorizedRowsWithoutPlannedEffortLookup()
     {
         TrackingHydrationProvider hydration = new();
         TrackingPlannedEffortProvider plannedEffort = new();
@@ -212,7 +212,7 @@ public sealed class ActualTimeReportAuthorizationTests
     }
 
     [Fact]
-    public async Task Work_report_preserves_planned_effort_state_separately_from_actual_projection_freshness()
+    public async Task WorkReportPreservesPlannedEffortStateSeparatelyFromActualProjectionFreshness()
     {
         TrackingPlannedEffortProvider plannedEffort = new(WorkPlannedEffortReadModel.Unauthorized());
         ActualTimeReportQueryService service = Service(

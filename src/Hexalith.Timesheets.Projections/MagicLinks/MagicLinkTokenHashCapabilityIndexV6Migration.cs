@@ -21,6 +21,50 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
     private const int AppendWidth = 8;
     private const int AppendByteLimit = 256 * 1024;
 
+    /// <summary>Gets the immutable ownership witness key outside disposable generation storage.</summary>
+    public static string AbortWitnessKey(long epoch)
+        => "timesheets:magic-links:v6-migration:abort-witness:"
+            + epoch.ToString("D16", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>
+    /// Resumes only a previously authorized abort. Missing witnesses never acquire ownership,
+    /// and this path cannot promote a private generation or repair corrupt selected metadata.
+    /// Operation IDs must remain unique and maintenance must be serialized: the SDK abort call
+    /// cannot atomically bind an expected epoch or inventory after the final status recheck.
+    /// </summary>
+    public async Task RecoverAbortAsync(string operationId, string certifiedInventoryFingerprint,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operationId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(certifiedInventoryFingerprint);
+        if (!await authority.AuthorizeCertifiedMigrationAsync(operationId,
+            certifiedInventoryFingerprint, cancellationToken).ConfigureAwait(false))
+            throw new UnauthorizedAccessException("A certified full-index migration authority is unavailable.");
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        // SDK status access may reconcile its control/discovery indexes. A refused witness
+        // still makes no Timesheets source, witness, or fence writes.
+        SharedProjectionEpochStatus status = await coordinator.GetStatusAsync(scope, cancellationToken)
+            .ConfigureAwait(false);
+        MagicLinkV6MigrationAbortWitness expected = CreateWitness(scope, status, operationId,
+            certifiedInventoryFingerprint);
+        ReadModelEntry<MagicLinkV6MigrationAbortWitness> entry = await readModelStore
+            .GetAsync<MagicLinkV6MigrationAbortWitness>(scope.StoreName, AbortWitnessKey(status.Epoch),
+                cancellationToken).ConfigureAwait(false);
+        if (entry.Value != expected || status.OperationId != operationId
+            || status.ActiveGeneration >= status.Epoch || status.IsBuilding || status.IsOffboarded
+            || status.OperationTenantId != scope.TenantId
+            || !status.IsAborting && status.PendingDeliveryCount != 0)
+            throw new InvalidOperationException("The certified migration abort ownership is unavailable.");
+        SharedProjectionEpochStatus current = await coordinator.GetStatusAsync(scope, cancellationToken)
+            .ConfigureAwait(false);
+        if (current.Epoch != status.Epoch || current.ActiveGeneration != status.ActiveGeneration
+            || current.OperationId != status.OperationId || current.OperationTenantId != status.OperationTenantId
+            || current.IsBuilding != status.IsBuilding || current.IsAborting != status.IsAborting
+            || current.IsOffboarded != status.IsOffboarded)
+            throw new InvalidOperationException("The certified migration abort binding changed during recovery.");
+        await AbortAsync(scope, operationId, cancellationToken).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Begins or resumes the named migration and atomically selects v7 after validating every v6
     /// root and page. The caller must supply its certified inventory fingerprint and a unique ID.
@@ -36,6 +80,12 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, cancellationToken)
             .ConfigureAwait(false);
+        if (before.IsAborting)
+        {
+            await RecoverAbortAsync(operationId, certifiedInventoryFingerprint, cancellationToken)
+                .ConfigureAwait(false);
+            throw new InvalidOperationException("The migration was aborted without selecting v7.");
+        }
         // A resumed operation must prove its immutable inventory binding before it may abort
         // invalid selected metadata. A failed Begin must never release someone else's fence.
         long epoch = before.Epoch;
@@ -45,6 +95,8 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
             epoch = await coordinator.BeginAsync(scope, operationId, certifiedInventoryFingerprint,
                 new Dictionary<string, long>(StringComparer.Ordinal), cancellationToken,
                 operationTenantId: scope.TenantId).ConfigureAwait(false);
+            await PersistWitnessAsync(scope, epoch, operationId, certifiedInventoryFingerprint,
+                cancellationToken).ConfigureAwait(false);
             ownsBuilding = true;
         }
         try
@@ -85,6 +137,18 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
             epoch = await coordinator.BeginAsync(scope, operationId, certifiedInventoryFingerprint,
                 new Dictionary<string, long>(StringComparer.Ordinal), cancellationToken,
                 operationTenantId: scope.TenantId).ConfigureAwait(false);
+            // Initialization failure must leave Building retryable. Do not abort until the
+            // immutable witness is known durable; recovery never invents one in Aborting.
+            try
+            {
+                await PersistWitnessAsync(scope, epoch, operationId, certifiedInventoryFingerprint,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                ownsBuilding = false;
+                throw;
+            }
             ownsBuilding = true;
         }
         SharedProjectionEpochStatus status = await coordinator.GetStatusAsync(scope, cancellationToken)
@@ -225,14 +289,45 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
                 && string.Equals(failed.OperationId, operationId,
                 StringComparison.Ordinal))
             {
-                var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(
-                    readModelStore, epochCoordinator: coordinator);
-                await coordinator.AbortAsync(scope, operationId,
-                    (delivery, generation, token) => handler.FoldCatchUpAsync(delivery,
-                        generation, coordinator, token), CancellationToken.None).ConfigureAwait(false);
+                await AbortAsync(scope, operationId, CancellationToken.None).ConfigureAwait(false);
             }
             throw;
         }
+    }
+
+    private static MagicLinkV6MigrationAbortWitness CreateWitness(SharedProjectionScope scope,
+        SharedProjectionEpochStatus status, string operationId, string inventoryFingerprint)
+        => new(scope.StoreName, scope.TenantId, scope.Domain, scope.Family, operationId,
+            inventoryFingerprint, status.Epoch, status.ActiveGeneration);
+
+    private async Task PersistWitnessAsync(SharedProjectionScope scope, long epoch,
+        string operationId, string inventoryFingerprint, CancellationToken cancellationToken)
+    {
+        SharedProjectionEpochStatus status = await coordinator.GetStatusAsync(scope, cancellationToken)
+            .ConfigureAwait(false);
+        if (!status.IsBuilding || status.Epoch != epoch || status.OperationId != operationId
+            || status.ActiveGeneration >= epoch)
+            throw new InvalidOperationException("The certified migration witness has no building reservation.");
+        MagicLinkV6MigrationAbortWitness witness = CreateWitness(scope, status, operationId, inventoryFingerprint);
+        ReadModelEntry<MagicLinkV6MigrationAbortWitness> existing = await readModelStore
+            .GetAsync<MagicLinkV6MigrationAbortWitness>(scope.StoreName, AbortWitnessKey(epoch), cancellationToken)
+            .ConfigureAwait(false);
+        if (existing.Value == witness) return;
+        if (existing.Value is not null)
+            throw new InvalidOperationException("The immutable migration witness conflicts.");
+        _ = await ReadModelWritePolicy.UpdateAsync<MagicLinkV6MigrationAbortWitness>(readModelStore,
+            scope.StoreName, AbortWitnessKey(epoch), current => current is null || current == witness
+                ? witness : throw new InvalidOperationException("The immutable migration witness conflicts."),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private Task AbortAsync(SharedProjectionScope scope, string operationId, CancellationToken cancellationToken)
+    {
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(readModelStore,
+            epochCoordinator: coordinator);
+        return coordinator.AbortAsync(scope, operationId,
+            (delivery, generation, token) => handler.FoldCatchUpAsync(delivery, generation, coordinator, token),
+            cancellationToken);
     }
 
     private async Task ValidateSealedCheckpointAsync(SharedProjectionScope scope, long epoch,

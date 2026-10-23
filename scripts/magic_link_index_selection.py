@@ -155,6 +155,87 @@ def _epoch_size_bound(value, depth=0):
     raise ValueError("Selected epoch shape is invalid")
 
 
+def _admit_typed_epoch(epoch):
+    """Validate the supported Open/drained subset of the SDK state and global scope.
+
+    Chunk/staging protocols deliberately remain unsupported. These local checks
+    neither share the SDK's private validators nor provide ETag admission.
+    """
+    refusal = "Selected epoch typed state or scope is invalid or unsupported"
+
+    def refuse():
+        raise ValueError(refusal)
+
+    for name in ("captureHighWatermarks", "consumerCheckpoints"):
+        if not isinstance(epoch.get(name), dict):
+            refuse()
+    for name in ("requiredWriters", "registeredWriters", "stageKeys", "deliveryConflicts", "parkingEvidence"):
+        if not isinstance(epoch.get(name), list):
+            refuse()
+    anchor = epoch.get("copyOnWriteAnchorGeneration")
+    if anchor is not None and (not _long_integer(anchor) or anchor > epoch["activeGeneration"]):
+        refuse()
+    for name in ("operationId", "inventoryFingerprint", "stageFingerprint", "operationTenantId"):
+        if epoch.get(name) is not None and not _text(epoch[name]):
+            refuse()
+    expected = "timesheets-token-candidate-index"
+    for name in ("requiredWriters", "registeredWriters"):
+        writers = epoch[name]
+        if any(writer != expected for writer in writers) or len(writers) > 1:
+            refuse()
+    if set(epoch["registeredWriters"]) - set(epoch["requiredWriters"]):
+        refuse()
+    if any(not _text(key) or not _long_integer(position)
+           for key, position in epoch["captureHighWatermarks"].items()):
+        refuse()
+
+    def byte_string(value):
+        if not isinstance(value, str):
+            return False
+        try:
+            base64.b64decode(value, validate=True)
+            return True
+        except ValueError:
+            return False
+
+    for key, checkpoint in epoch["consumerCheckpoints"].items():
+        if (not _text(key) or not isinstance(checkpoint, dict)
+                or not _long_integer(checkpoint.get("position"))
+                or not byte_string(checkpoint.get("token"))
+                or not _long_integer(checkpoint.get("ownerSequenceNumber", 0))
+                or checkpoint.get("capturedEventDigests") is not None
+                    and not byte_string(checkpoint["capturedEventDigests"])
+                or checkpoint.get("capturedIdentityReference") is not None):
+            refuse()
+        captured = checkpoint.get("capturedEventDigests")
+        if captured is not None:
+            length = len(base64.b64decode(captured, validate=True))
+            if not length or length % 32 or length // 32 > checkpoint.get("ownerSequenceNumber", 0):
+                refuse()
+    retained = epoch.get("retainedControlIndexNames")
+    if retained is not None and (not isinstance(retained, list) or len(retained) > 8
+                                or any(not _text(name) for name in retained)
+                                or len(set(retained)) != len(retained)):
+        refuse()
+    # Open snapshots with outstanding staging/chunk/cleanup data need the SDK's
+    # authoritative protocol; local diagnostics refuse them conservatively.
+    for name in ("stageMutations", "stageManifestDigest", "stageControlIndexIntent",
+                 "stageChunks", "cleanupChunks", "captureChunks", "cleanupPreparedChunks",
+                 "cleanupStreamOperationId"):
+        if epoch.get(name) is not None:
+            refuse()
+    if epoch["stageKeys"]:
+        refuse()
+    for name in ("stageExecutionStarted", "stageStreaming", "cleanupPromotedRetirements"):
+        if epoch.get(name, False) is not False:
+            refuse()
+    for name in ("stageCompletedPageCount", "stageSealedPageCount", "stageReservedPageCount",
+                 "cleanupStreamEpoch", "cleanupStreamPageCount"):
+        value = epoch.get(name, 0)
+        if type(value) is not int or value != 0:
+            refuse()
+
+
 def _admit_epoch(epoch):
     """Require a drained, available epoch without degraded readiness evidence.
 
@@ -171,8 +252,9 @@ def _admit_epoch(epoch):
             or epoch.get("offboardingAuditId") is not None
             or epoch.get("ownerSequenceHandoffPending", False) is not False):
         raise ValueError("Selected epoch is not ready")
-    conflicts = epoch.get("deliveryConflicts", [])
-    parking = epoch.get("parkingEvidence", [])
+    _admit_typed_epoch(epoch)
+    conflicts = epoch["deliveryConflicts"]
+    parking = epoch["parkingEvidence"]
     if (not isinstance(conflicts, list) or len(conflicts) > 128
             or not isinstance(parking, list) or len(parking) > 128
             or epoch.get("deliveryConflictOverflow") is not None

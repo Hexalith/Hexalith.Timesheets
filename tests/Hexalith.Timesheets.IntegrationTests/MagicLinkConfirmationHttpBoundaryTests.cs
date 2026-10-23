@@ -228,7 +228,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Invalid_magic_link_http_boundary_responses_are_equivalent_and_opaque()
+    public async Task InvalidMagicLinkHttpBoundaryResponsesAreEquivalentAndOpaque()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -264,7 +264,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Valid_magic_link_get_displays_and_post_denials_match_invalid_denials()
+    public async Task ValidMagicLinkGetDisplaysAndPostDenialsMatchInvalidDenials()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -314,7 +314,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Concrete_loader_commits_both_actions_after_projection_delivery()
+    public async Task ConcreteLoaderCommitsBothActionsAfterProjectionDelivery()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1082,7 +1082,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Concrete_loader_cross_tenant_candidate_is_indistinguishable_from_an_unknown_token_on_every_route()
+    public async Task ConcreteLoaderCrossTenantCandidateIsIndistinguishableFromAnUnknownTokenOnEveryRoute()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1134,7 +1134,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [InlineData("missing-sequence")]
     [InlineData("identity-conflict")]
     [InlineData("unreadable")]
-    public async Task Rejected_catalog_delivery_keeps_confirm_submit_opaque_without_capability_use(string scenario)
+    public async Task RejectedCatalogDeliveryKeepsConfirmSubmitOpaqueWithoutCapabilityUse(string scenario)
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -1153,7 +1153,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Empty_magic_link_token_uses_the_same_opaque_boundary_denial()
+    public async Task EmptyMagicLinkTokenUsesTheSameOpaqueBoundaryDenial()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -1168,7 +1168,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Repeated_invalid_magic_link_attempts_are_byte_equivalent_without_throttling_headers()
+    public async Task RepeatedInvalidMagicLinkAttemptsAreByteEquivalentWithoutThrottlingHeaders()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -1193,7 +1193,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Invalid_magic_link_http_boundary_emits_no_timesheets_sensitive_diagnostics()
+    public async Task InvalidMagicLinkHttpBoundaryEmitsNoTimesheetsSensitiveDiagnostics()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -1272,7 +1272,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Confirm_submit_reports_one_indistinguishable_category_for_every_non_fresh_catalog()
+    public async Task ConfirmSubmitReportsOneIndistinguishableCategoryForEveryNonFreshCatalog()
     {
         ExternalRoute route = ExternalRoutes().Single(static candidate => candidate.Name == "confirm-submit");
 
@@ -1301,7 +1301,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Empty_or_missing_magic_link_token_is_indistinguishable_from_an_invalid_state_denial_on_every_route()
+    public async Task EmptyOrMissingMagicLinkTokenIsIndistinguishableFromAnInvalidStateDenialOnEveryRoute()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -1336,7 +1336,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Valid_magic_link_display_responses_do_not_disclose_internal_sensitive_material()
+    public async Task ValidMagicLinkDisplayResponsesDoNotDiscloseInternalSensitiveMaterial()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -1364,7 +1364,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Malformed_submit_body_neither_dispatches_nor_discloses_on_magic_link_submit_routes()
+    public async Task MalformedSubmitBodyNeitherDispatchesNorDisclosesOnMagicLinkSubmitRoutes()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();
@@ -1407,7 +1407,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
-    public async Task Empty_magic_link_token_records_the_malformed_outcome_category_without_sensitive_diagnostics()
+    public async Task EmptyMagicLinkTokenRecordsTheMalformedOutcomeCategoryWithoutSensitiveDiagnostics()
     {
         using MagicLinkHttpBoundaryFactory factory = new();
         using HttpClient client = factory.CreateClient();

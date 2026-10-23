@@ -15,7 +15,7 @@ public sealed class ApprovalAuthorityPolicyTests
     [InlineData(ApprovalAuthoritySource.WorkOwner)]
     [InlineData(ApprovalAuthoritySource.TenantAdministrator)]
     [InlineData(ApprovalAuthoritySource.FinanceReviewer)]
-    public async Task Resolver_allows_when_configured_source_authorizes_action(ApprovalAuthoritySource source)
+    public async Task ResolverAllowsWhenConfiguredSourceAuthorizesAction(ApprovalAuthoritySource source)
     {
         TimesheetsApprovalAuthorityResolver resolver = Resolver(
             Provider(source, ApprovalAuthoritySourceResult.Allowed(source, ProjectionFreshnessMetadata.Fresh)));
@@ -31,7 +31,7 @@ public sealed class ApprovalAuthorityPolicyTests
     }
 
     [Fact]
-    public async Task Resolver_applies_source_precedence_before_tenant_governance()
+    public async Task ResolverAppliesSourcePrecedenceBeforeTenantGovernance()
     {
         TimesheetsApprovalAuthorityResolver resolver = Resolver(
             Provider(
@@ -58,7 +58,7 @@ public sealed class ApprovalAuthorityPolicyTests
     }
 
     [Fact]
-    public async Task Resolver_denies_same_precedence_contradiction_as_ambiguous_authority()
+    public async Task ResolverDeniesSamePrecedenceContradictionAsAmbiguousAuthority()
     {
         TimesheetsApprovalAuthorityResolver resolver = Resolver(
             Provider(
@@ -88,7 +88,7 @@ public sealed class ApprovalAuthorityPolicyTests
     }
 
     [Fact]
-    public async Task Resolver_denies_self_approval_by_default_even_when_governance_source_allows()
+    public async Task ResolverDeniesSelfApprovalByDefaultEvenWhenGovernanceSourceAllows()
     {
         TimesheetsApprovalAuthorityResolver resolver = Resolver(
             Provider(
@@ -110,7 +110,7 @@ public sealed class ApprovalAuthorityPolicyTests
     }
 
     [Fact]
-    public async Task Resolver_allows_self_approval_only_for_explicit_policy_action()
+    public async Task ResolverAllowsSelfApprovalOnlyForExplicitPolicyAction()
     {
         TimesheetsApprovalAuthorityResolver resolver = Resolver(
             Provider(
@@ -145,7 +145,7 @@ public sealed class ApprovalAuthorityPolicyTests
     [InlineData(ApprovalAuthorityDecisionState.Unavailable, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ApprovalAuthorityDecisionState.InvalidReference, TimesheetsDenialCategory.InvalidReference)]
     [InlineData(ApprovalAuthorityDecisionState.CrossTenantTarget, TimesheetsDenialCategory.CrossTenantTarget)]
-    public async Task Resolver_fails_closed_for_untrusted_source_states(
+    public async Task ResolverFailsClosedForUntrustedSourceStates(
         ApprovalAuthorityDecisionState state,
         TimesheetsDenialCategory denialCategory)
     {
@@ -172,7 +172,7 @@ public sealed class ApprovalAuthorityPolicyTests
     }
 
     [Fact]
-    public async Task Resolver_fails_closed_when_no_source_can_resolve_authority()
+    public async Task ResolverFailsClosedWhenNoSourceCanResolveAuthority()
     {
         TimesheetsApprovalAuthorityResolver resolver = Resolver();
 
@@ -187,7 +187,7 @@ public sealed class ApprovalAuthorityPolicyTests
     }
 
     [Fact]
-    public async Task Resolver_runs_base_access_guard_before_authority_sources()
+    public async Task ResolverRunsBaseAccessGuardBeforeAuthoritySources()
     {
         TrackingAuthorityProvider provider = new(
             ApprovalAuthoritySource.ProjectApprover,
@@ -210,7 +210,7 @@ public sealed class ApprovalAuthorityPolicyTests
     }
 
     [Fact]
-    public void Result_copy_does_not_expose_protected_authority_material()
+    public void ResultCopyDoesNotExposeProtectedAuthorityMaterial()
     {
         ApprovalAuthorityResolutionResult result = ApprovalAuthorityResolutionResult.Denied(
             TimesheetsDenialCategory.AmbiguousAuthority,

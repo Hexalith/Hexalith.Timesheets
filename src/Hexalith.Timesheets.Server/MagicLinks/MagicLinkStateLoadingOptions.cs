@@ -1,6 +1,6 @@
 namespace Hexalith.Timesheets.Server.MagicLinks;
 
-/// <summary>Bounds the total authoritative history reads made by one loader invocation.</summary>
+/// <summary>Bounds the invocation deadline and total authoritative history read costs.</summary>
 public sealed class MagicLinkStateLoadingOptions
 {
     /// <summary>Gets or sets the total stream page allowance, including repeated stream reads.</summary>
@@ -12,7 +12,7 @@ public sealed class MagicLinkStateLoadingOptions
     /// <summary>Gets or sets the total raw payload byte allowance.</summary>
     public long MaxPayloadBytes { get; set; } = 16 * 1024 * 1024;
 
-    /// <summary>Gets or sets the total elapsed allowance for authoritative history loading.</summary>
+    /// <summary>Gets or sets the total elapsed allowance shared by candidate, history and catalog reads.</summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(5);
 
     /// <summary>Checks that all allowances are positive and within supported hard limits.</summary>

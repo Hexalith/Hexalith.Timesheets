@@ -20,7 +20,7 @@ public sealed class ActivityTypeAuthorizationTests
     [InlineData(TimesheetsTenantAccessState.StaleProjection)]
     [InlineData(TimesheetsTenantAccessState.AmbiguousAuthority)]
     [InlineData(TimesheetsTenantAccessState.UnavailableSiblingAuthority)]
-    public async Task Tenant_activity_type_write_fails_closed_before_domain_decision(
+    public async Task TenantActivityTypeWriteFailsClosedBeforeDomainDecision(
         TimesheetsTenantAccessState accessState)
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
@@ -55,7 +55,7 @@ public sealed class ActivityTypeAuthorizationTests
     }
 
     [Fact]
-    public async Task Tenant_activity_type_write_uses_tenant_then_policy_without_project_or_work_validation()
+    public async Task TenantActivityTypeWriteUsesTenantThenPolicyWithoutProjectOrWorkValidation()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         IProjectReferenceValidator projectValidator = Substitute.For<IProjectReferenceValidator>();
@@ -93,7 +93,7 @@ public sealed class ActivityTypeAuthorizationTests
     }
 
     [Fact]
-    public async Task Tenant_activity_type_write_policy_denial_fails_before_domain_dispatch()
+    public async Task TenantActivityTypeWritePolicyDenialFailsBeforeDomainDispatch()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         ITimesheetsPolicyEvaluator policyEvaluator = Substitute.For<ITimesheetsPolicyEvaluator>();
@@ -126,7 +126,7 @@ public sealed class ActivityTypeAuthorizationTests
     }
 
     [Fact]
-    public async Task Tenant_activity_type_catalog_read_requires_projection_read_authority()
+    public async Task TenantActivityTypeCatalogReadRequiresProjectionReadAuthority()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         ITimesheetsPolicyEvaluator policyEvaluator = Substitute.For<ITimesheetsPolicyEvaluator>();
@@ -161,7 +161,7 @@ public sealed class ActivityTypeAuthorizationTests
     [InlineData(ReferenceValidationState.Unavailable, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.DisabledOrArchived, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.InvalidReference, TimesheetsDenialCategory.InvalidReference)]
-    public async Task Project_activity_type_write_fails_closed_before_domain_dispatch_when_project_authority_is_not_valid(
+    public async Task ProjectActivityTypeWriteFailsClosedBeforeDomainDispatchWhenProjectAuthorityIsNotValid(
         ReferenceValidationState referenceState,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -205,7 +205,7 @@ public sealed class ActivityTypeAuthorizationTests
     [InlineData(TimesheetsTenantAccessState.MissingTenant, TimesheetsDenialCategory.MissingTenant)]
     [InlineData(TimesheetsTenantAccessState.NonMember, TimesheetsDenialCategory.NonMember)]
     [InlineData(TimesheetsTenantAccessState.StaleProjection, TimesheetsDenialCategory.StaleProjection)]
-    public async Task Project_activity_type_write_fails_closed_on_tenant_authority_before_project_validation(
+    public async Task ProjectActivityTypeWriteFailsClosedOnTenantAuthorityBeforeProjectValidation(
         TimesheetsTenantAccessState accessState,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -242,7 +242,7 @@ public sealed class ActivityTypeAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_activity_type_write_uses_tenant_then_project_then_policy_without_work_or_contributor_validation()
+    public async Task ProjectActivityTypeWriteUsesTenantThenProjectThenPolicyWithoutWorkOrContributorValidation()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         IProjectReferenceValidator projectValidator = Substitute.For<IProjectReferenceValidator>();
@@ -293,7 +293,7 @@ public sealed class ActivityTypeAuthorizationTests
     [InlineData("deactivate")]
     [InlineData("reactivate")]
     [InlineData("configure-restriction")]
-    public async Task Project_activity_type_catalog_commands_validate_project_before_domain_dispatch(
+    public async Task ProjectActivityTypeCatalogCommandsValidateProjectBeforeDomainDispatch(
         string command)
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
@@ -338,7 +338,7 @@ public sealed class ActivityTypeAuthorizationTests
     [InlineData("deactivate")]
     [InlineData("reactivate")]
     [InlineData("configure-restriction")]
-    public async Task Project_activity_type_catalog_commands_dispatch_only_after_tenant_project_and_policy_allow(
+    public async Task ProjectActivityTypeCatalogCommandsDispatchOnlyAfterTenantProjectAndPolicyAllow(
         string command)
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
@@ -389,7 +389,7 @@ public sealed class ActivityTypeAuthorizationTests
     [InlineData("deactivate")]
     [InlineData("reactivate")]
     [InlineData("configure-restriction")]
-    public async Task Project_activity_type_catalog_commands_stop_on_policy_denial_before_domain_dispatch(
+    public async Task ProjectActivityTypeCatalogCommandsStopOnPolicyDenialBeforeDomainDispatch(
         string command)
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();

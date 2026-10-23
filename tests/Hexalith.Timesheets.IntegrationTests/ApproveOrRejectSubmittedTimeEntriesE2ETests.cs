@@ -22,7 +22,7 @@ public sealed class ApproveOrRejectSubmittedTimeEntriesE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Submitted_time_entry_approval_workflow_records_projects_and_discloses_approved_evidence()
+    public async Task SubmittedTimeEntryApprovalWorkflowRecordsProjectsAndDisclosesApprovedEvidence()
     {
         AllowAllAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();
@@ -98,7 +98,7 @@ public sealed class ApproveOrRejectSubmittedTimeEntriesE2ETests
     }
 
     [Fact]
-    public async Task Approved_time_entry_direct_mutation_workflow_rejects_and_discloses_lock_evidence()
+    public async Task ApprovedTimeEntryDirectMutationWorkflowRejectsAndDisclosesLockEvidence()
     {
         AllowAllAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();
@@ -171,7 +171,7 @@ public sealed class ApproveOrRejectSubmittedTimeEntriesE2ETests
     }
 
     [Fact]
-    public async Task Submitted_time_entry_rejection_workflow_requires_reason_and_discloses_rejected_evidence()
+    public async Task SubmittedTimeEntryRejectionWorkflowRequiresReasonAndDisclosesRejectedEvidence()
     {
         AllowAllAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = AllowingAuthorityProvider();
@@ -232,7 +232,7 @@ public sealed class ApproveOrRejectSubmittedTimeEntriesE2ETests
     }
 
     [Fact]
-    public async Task Approval_workflow_fails_closed_when_authority_cannot_be_resolved()
+    public async Task ApprovalWorkflowFailsClosedWhenAuthorityCannotBeResolved()
     {
         AllowAllAccessGuard accessGuard = new();
         FixedAuthorityProvider authorityProvider = new(ApprovalAuthoritySource.ProjectApprover, ApprovalAuthoritySourceResult.Denied(

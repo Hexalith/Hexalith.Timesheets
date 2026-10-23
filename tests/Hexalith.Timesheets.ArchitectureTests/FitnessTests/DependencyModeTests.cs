@@ -15,7 +15,7 @@ public sealed class DependencyModeTests
     [Theory]
     [InlineData("Debug", "true")]
     [InlineData("Release", "false")]
-    public async Task Evaluated_solution_projects_keep_source_references_in_debug_only(string configuration, string sourceMode)
+    public async Task EvaluatedSolutionProjectsKeepSourceReferencesInDebugOnly(string configuration, string sourceMode)
     {
         string root = RepositoryRoot.Find().FullName;
         XDocument solution = XDocument.Load(Path.Combine(root, "Hexalith.Timesheets.slnx"));

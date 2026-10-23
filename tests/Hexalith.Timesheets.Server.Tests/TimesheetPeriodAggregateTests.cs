@@ -14,7 +14,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class TimesheetPeriodAggregateTests
 {
     [Fact]
-    public void Submit_weekly_period_emits_tenant_local_boundary_and_utc_audit_evidence()
+    public void SubmitWeeklyPeriodEmitsTenantLocalBoundaryAndUtcAuditEvidence()
     {
         SubmitTimesheetPeriod command = WeeklyCommand();
 
@@ -42,7 +42,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Submit_monthly_period_uses_month_boundary_across_cross_midnight_audit_instant()
+    public void SubmitMonthlyPeriodUsesMonthBoundaryAcrossCrossMidnightAuditInstant()
     {
         TimesheetPeriodSubmitted submitted = SingleSuccess<TimesheetPeriodSubmitted>(
             TimesheetPeriod.Handle(
@@ -64,7 +64,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Submit_weekly_period_keeps_date_only_boundary_stable_across_dst_spring_forward()
+    public void SubmitWeeklyPeriodKeepsDateOnlyBoundaryStableAcrossDstSpringForward()
     {
         // 2026-03-29 is the Europe/Paris spring-forward day (02:00 -> 03:00 local skips an hour).
         // The audit instant maps to the skipped local window; tenant-local period keys are
@@ -90,7 +90,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Submit_monthly_period_keeps_date_only_boundary_stable_across_dst_fall_back()
+    public void SubmitMonthlyPeriodKeepsDateOnlyBoundaryStableAcrossDstFallBack()
     {
         // 2026-10-25 is the Europe/Paris fall-back day (03:00 -> 02:00 local repeats an hour).
         // The audit instant maps to the ambiguous local window; month boundary keys stay
@@ -116,14 +116,14 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Boundary_calculator_fails_closed_on_unknown_period_kind()
+    public void BoundaryCalculatorFailsClosedOnUnknownPeriodKind()
         => Should.Throw<ArgumentOutOfRangeException>(() =>
             TenantLocalPeriodBoundaryCalculator.Calculate(
                 new TimesheetPeriodRequest(TimesheetPeriodKind.Unknown, new DateOnly(2026, 6, 19)),
                 ParisPolicy()));
 
     [Fact]
-    public void Submit_duplicate_same_period_evidence_is_noop()
+    public void SubmitDuplicateSamePeriodEvidenceIsNoop()
     {
         TimesheetPeriodState state = new();
         TimesheetPeriodSubmitted submitted = SingleSuccess<TimesheetPeriodSubmitted>(
@@ -142,7 +142,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Submit_same_period_id_with_different_membership_is_rejected()
+    public void SubmitSamePeriodIdWithDifferentMembershipIsRejected()
     {
         TimesheetPeriodState state = new();
         state.Apply(SingleSuccess<TimesheetPeriodSubmitted>(
@@ -161,7 +161,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Submit_rejects_non_utc_timestamp_empty_membership_and_unknown_period_kind()
+    public void SubmitRejectsNonUtcTimestampEmptyMembershipAndUnknownPeriodKind()
     {
         TimesheetsRejection rejection = SingleRejection(TimesheetPeriod.Handle(
             new(PeriodId(), Contributor(), new(TimesheetPeriodKind.Unknown, new DateOnly(2026, 6, 19)), []),
@@ -177,7 +177,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Approve_submitted_period_emits_grouped_period_decision()
+    public void ApproveSubmittedPeriodEmitsGroupedPeriodDecision()
     {
         TimesheetPeriodState state = SubmittedState();
         ApproveTimesheetPeriod command = ApproveCommand();
@@ -203,7 +203,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Reject_submitted_period_emits_grouped_period_and_selected_entry_evidence()
+    public void RejectSubmittedPeriodEmitsGroupedPeriodAndSelectedEntryEvidence()
     {
         TimesheetPeriodState state = SubmittedState();
         RejectTimesheetPeriod command = RejectCommand();
@@ -226,7 +226,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Approve_rejects_non_utc_missing_authority_and_non_submitted_state()
+    public void ApproveRejectsNonUtcMissingAuthorityAndNonSubmittedState()
     {
         TimesheetsRejection rejection = SingleRejection(TimesheetPeriod.Handle(
             ApproveCommand(),
@@ -242,7 +242,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Reject_rejects_blank_reason_and_affected_entry_outside_submitted_period()
+    public void RejectRejectsBlankReasonAndAffectedEntryOutsideSubmittedPeriod()
     {
         TimesheetsRejection rejection = SingleRejection(TimesheetPeriod.Handle(
             RejectCommand() with
@@ -263,7 +263,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Reject_requires_period_and_entry_rejection_reasons()
+    public void RejectRequiresPeriodAndEntryRejectionReasons()
     {
         TimesheetsRejection rejection = SingleRejection(TimesheetPeriod.Handle(
             new RejectTimesheetPeriod(
@@ -282,7 +282,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Approve_duplicate_same_period_decision_is_noop()
+    public void ApproveDuplicateSamePeriodDecisionIsNoop()
     {
         TimesheetPeriodState state = SubmittedState();
         state.Apply(SingleSuccess<TimesheetPeriodApproved>(TimesheetPeriod.Handle(
@@ -305,7 +305,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Reject_duplicate_same_period_decision_is_noop_but_same_id_different_reason_conflicts()
+    public void RejectDuplicateSamePeriodDecisionIsNoopButSameIdDifferentReasonConflicts()
     {
         TimesheetPeriodState state = SubmittedState();
         state.Apply(SingleSuccess<TimesheetPeriodRejected>(TimesheetPeriod.Handle(
@@ -338,7 +338,7 @@ public sealed class TimesheetPeriodAggregateTests
     }
 
     [Fact]
-    public void Terminal_period_decision_rejects_conflicting_later_decision()
+    public void TerminalPeriodDecisionRejectsConflictingLaterDecision()
     {
         TimesheetPeriodState state = SubmittedState();
         state.Apply(SingleSuccess<TimesheetPeriodApproved>(TimesheetPeriod.Handle(

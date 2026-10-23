@@ -23,7 +23,7 @@ public sealed class AuthorityBoundaryTests
     ];
 
     [Fact]
-    public void Public_contracts_and_client_do_not_expose_server_authority_context()
+    public void PublicContractsAndClientDoNotExposeServerAuthorityContext()
     {
         string[] publicSourceFiles =
         [
@@ -45,7 +45,7 @@ public sealed class AuthorityBoundaryTests
     }
 
     [Fact]
-    public void Server_authority_context_is_defined_only_in_the_server_kernel()
+    public void ServerAuthorityContextIsDefinedOnlyInTheServerKernel()
     {
         string[] matchingFiles = Directory
             .GetFiles(TestRepositoryRoot.PathTo("src"), "*.cs", SearchOption.AllDirectories)
@@ -60,7 +60,7 @@ public sealed class AuthorityBoundaryTests
         // concrete sibling reference-validation adapter (Hexalith.Timesheets.Works), which legitimately
         // consumes the Server-owned IWorkReferenceValidator seam and therefore takes a
         // TimesheetsRequestContext parameter. Public surfaces (Contracts/Client) are still forbidden the
-        // type by Public_contracts_and_client_do_not_expose_server_authority_context. The host's
+        // type by PublicContractsAndClientDoNotExposeServerAuthorityContext. The host's
         // Development-only isolated fixture also implements the server-owned tenant-validation seam;
         // permit that exact adapter without allowing other host or presentation code.
         matchingFiles.ShouldAllBe(file =>

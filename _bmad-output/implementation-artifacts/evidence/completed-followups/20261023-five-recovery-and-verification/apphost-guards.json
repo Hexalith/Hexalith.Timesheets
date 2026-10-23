@@ -1,0 +1,177 @@
+[
+  {
+    "case": "valid-isolated",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "ordinary-defaults",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "bare-fixture-flag",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-components",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "empty-components",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "whitespace-components",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "publish-fixture",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "publish-bare-fixture",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-opt-in",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "wrong-scope",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-component",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-pubsub",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "unsafe-pubsub",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-placement",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "shared-placement",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-scheduler",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "shared-scheduler",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "duplicate-control-endpoint",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "shared-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "mismatched-actor-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "mismatched-readmodel-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "mismatched-pubsub-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "valid-compiled-isolated",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "compiled-executable-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-directory-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-empty-executable",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-empty-directory",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-blank-executable",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-blank-directory",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "ordinary-compiled",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "ordinary-compiled-executable-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "ordinary-compiled-directory-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "publish-compiled",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "unsafe-components-compiled",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-placement-compiled",
+    "exit": -6,
+    "passed": true
+  }
+]

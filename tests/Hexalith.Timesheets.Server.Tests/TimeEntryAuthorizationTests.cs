@@ -26,7 +26,7 @@ public sealed class TimeEntryAuthorizationTests
     [InlineData(TimesheetsTenantAccessState.StaleProjection, TimesheetsDenialCategory.StaleProjection)]
     [InlineData(TimesheetsTenantAccessState.AmbiguousAuthority, TimesheetsDenialCategory.AmbiguousAuthority)]
     [InlineData(TimesheetsTenantAccessState.UnavailableSiblingAuthority, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
-    public async Task Capture_fails_closed_on_tenant_authority_before_target_contributor_policy_or_domain_dispatch(
+    public async Task CaptureFailsClosedOnTenantAuthorityBeforeTargetContributorPolicyOrDomainDispatch(
         TimesheetsTenantAccessState accessState,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -58,7 +58,7 @@ public sealed class TimeEntryAuthorizationTests
     [InlineData(ReferenceValidationState.Unavailable, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.DisabledOrArchived, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.InvalidReference, TimesheetsDenialCategory.InvalidReference)]
-    public async Task Project_targeted_capture_fails_closed_before_domain_dispatch_when_project_authority_is_invalid(
+    public async Task ProjectTargetedCaptureFailsClosedBeforeDomainDispatchWhenProjectAuthorityIsInvalid(
         ReferenceValidationState referenceState,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -94,7 +94,7 @@ public sealed class TimeEntryAuthorizationTests
     [InlineData(ReferenceValidationState.Ambiguous, TimesheetsDenialCategory.AmbiguousAuthority)]
     [InlineData(ReferenceValidationState.Unavailable, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.InvalidReference, TimesheetsDenialCategory.InvalidReference)]
-    public async Task Capture_fails_closed_on_contributor_authority_before_policy_or_domain_dispatch(
+    public async Task CaptureFailsClosedOnContributorAuthorityBeforePolicyOrDomainDispatch(
         ReferenceValidationState referenceState,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -124,7 +124,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_targeted_capture_validates_tenant_project_contributor_policy_then_dispatches()
+    public async Task ProjectTargetedCaptureValidatesTenantProjectContributorPolicyThenDispatches()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -160,7 +160,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Ai_agent_capture_uses_existing_tenant_project_contributor_policy_and_catalog_gates()
+    public async Task AiAgentCaptureUsesExistingTenantProjectContributorPolicyAndCatalogGates()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -193,7 +193,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Capture_policy_denial_fails_before_activity_type_selection_or_domain_dispatch()
+    public async Task CapturePolicyDenialFailsBeforeActivityTypeSelectionOrDomainDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -221,7 +221,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Work_targeted_capture_validates_only_work_and_contributor_before_policy()
+    public async Task WorkTargetedCaptureValidatesOnlyWorkAndContributorBeforePolicy()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.WorkValidator
@@ -247,7 +247,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Capture_rejects_stale_activity_type_catalog_before_aggregate_dispatch()
+    public async Task CaptureRejectsStaleActivityTypeCatalogBeforeAggregateDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -270,7 +270,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Capture_rejects_missing_activity_type_before_aggregate_dispatch()
+    public async Task CaptureRejectsMissingActivityTypeBeforeAggregateDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -288,7 +288,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Capture_rejects_inactive_activity_type_before_aggregate_dispatch()
+    public async Task CaptureRejectsInactiveActivityTypeBeforeAggregateDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -306,7 +306,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_capture_rejects_project_activity_type_from_different_project_before_aggregate_dispatch()
+    public async Task ProjectCaptureRejectsProjectActivityTypeFromDifferentProjectBeforeAggregateDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -324,7 +324,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Work_capture_rejects_project_activity_type_until_governing_project_adapter_exists()
+    public async Task WorkCaptureRejectsProjectActivityTypeUntilGoverningProjectAdapterExists()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.WorkValidator
@@ -351,7 +351,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_capture_dispatches_with_matching_project_activity_type_scope()
+    public async Task ProjectCaptureDispatchesWithMatchingProjectActivityTypeScope()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -370,7 +370,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Submission_fails_closed_on_tenant_authority_before_reference_policy_catalog_or_domain_dispatch()
+    public async Task SubmissionFailsClosedOnTenantAuthorityBeforeReferencePolicyCatalogOrDomainDispatch()
     {
         Fixture fixture = new();
         fixture.TenantValidator
@@ -398,7 +398,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_submission_validates_authority_and_dispatches_with_server_context()
+    public async Task ProjectSubmissionValidatesAuthorityAndDispatchesWithServerContext()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -432,7 +432,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_submission_fails_closed_on_project_authority_before_contributor_policy_or_domain_dispatch()
+    public async Task ProjectSubmissionFailsClosedOnProjectAuthorityBeforeContributorPolicyOrDomainDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -460,7 +460,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Submission_fails_closed_on_contributor_authority_before_policy_or_domain_dispatch()
+    public async Task SubmissionFailsClosedOnContributorAuthorityBeforePolicyOrDomainDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -492,7 +492,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Submission_policy_denial_fails_before_catalog_or_domain_dispatch()
+    public async Task SubmissionPolicyDenialFailsBeforeCatalogOrDomainDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.PolicyEvaluator
@@ -516,7 +516,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Submission_rejects_stale_activity_type_catalog_before_domain_dispatch()
+    public async Task SubmissionRejectsStaleActivityTypeCatalogBeforeDomainDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -537,7 +537,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Submission_rejects_inactive_activity_type_before_domain_dispatch()
+    public async Task SubmissionRejectsInactiveActivityTypeBeforeDomainDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -558,7 +558,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Work_submission_rejects_project_activity_type_until_governing_project_adapter_exists()
+    public async Task WorkSubmissionRejectsProjectActivityTypeUntilGoverningProjectAdapterExists()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.WorkValidator
@@ -585,7 +585,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Submission_partial_batch_reports_accepted_and_blocked_entries()
+    public async Task SubmissionPartialBatchReportsAcceptedAndBlockedEntries()
     {
         Fixture fixture = AuthorizedProjectFixture();
         TimeEntryId validId = TimeEntryId();
@@ -619,7 +619,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Submission_deduplicates_repeated_time_entry_ids_into_a_single_transition()
+    public async Task SubmissionDeduplicatesRepeatedTimeEntryIdsIntoASingleTransition()
     {
         Fixture fixture = AuthorizedProjectFixture();
         TimeEntryId duplicatedId = TimeEntryId();
@@ -643,7 +643,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Approval_fails_closed_on_base_authority_before_resolver_or_domain_dispatch()
+    public async Task ApprovalFailsClosedOnBaseAuthorityBeforeResolverOrDomainDispatch()
     {
         Fixture fixture = new();
         fixture.TenantValidator
@@ -668,7 +668,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Project_approval_uses_same_contributor_source_for_access_and_resolver_then_dispatches()
+    public async Task ProjectApprovalUsesSameContributorSourceForAccessAndResolverThenDispatches()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.ApprovalResolver
@@ -705,7 +705,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Rejection_uses_entry_rejection_authority_action_and_dispatches_rejected_event()
+    public async Task RejectionUsesEntryRejectionAuthorityActionAndDispatchesRejectedEvent()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.ApprovalResolver
@@ -736,7 +736,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Approval_authority_denial_uses_safe_copy_and_does_not_dispatch_domain()
+    public async Task ApprovalAuthorityDenialUsesSafeCopyAndDoesNotDispatchDomain()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.ApprovalResolver
@@ -769,7 +769,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Approval_service_denies_self_approval_by_default_through_resolver()
+    public async Task ApprovalServiceDeniesSelfApprovalByDefaultThroughResolver()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -796,7 +796,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Approval_service_allows_self_approval_only_when_policy_explicitly_allows_entry_approval()
+    public async Task ApprovalServiceAllowsSelfApprovalOnlyWhenPolicyExplicitlyAllowsEntryApproval()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -831,7 +831,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Correction_fails_closed_on_current_entry_authority_before_corrected_reference_or_domain_dispatch()
+    public async Task CorrectionFailsClosedOnCurrentEntryAuthorityBeforeCorrectedReferenceOrDomainDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -862,7 +862,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Approved_entry_correction_attempt_fails_closed_on_current_authority_before_lock_guard_dispatch()
+    public async Task ApprovedEntryCorrectionAttemptFailsClosedOnCurrentAuthorityBeforeLockGuardDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -892,7 +892,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Correction_validates_current_and_corrected_references_then_uses_correction_authority_action()
+    public async Task CorrectionValidatesCurrentAndCorrectedReferencesThenUsesCorrectionAuthorityAction()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.ApprovalResolver
@@ -939,7 +939,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Approved_correction_validates_current_and_corrected_references_then_dispatches_additive_event()
+    public async Task ApprovedCorrectionValidatesCurrentAndCorrectedReferencesThenDispatchesAdditiveEvent()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.ApprovalResolver
@@ -978,7 +978,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Correction_fails_closed_on_corrected_target_authority_before_resolver_or_domain_dispatch()
+    public async Task CorrectionFailsClosedOnCorrectedTargetAuthorityBeforeResolverOrDomainDispatch()
     {
         Fixture fixture = AuthorizedFixture();
         ProjectReference correctedProject = new("project-2");
@@ -1012,7 +1012,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Correction_authority_denial_uses_safe_copy_and_does_not_dispatch_domain()
+    public async Task CorrectionAuthorityDenialUsesSafeCopyAndDoesNotDispatchDomain()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.ApprovalResolver
@@ -1046,7 +1046,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Correction_rejects_stale_activity_type_catalog_before_domain_dispatch()
+    public async Task CorrectionRejectsStaleActivityTypeCatalogBeforeDomainDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.ApprovalResolver
@@ -1069,7 +1069,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Correction_authority_is_provider_resolved_and_fails_closed_for_self_correction_without_a_granting_provider()
+    public async Task CorrectionAuthorityIsProviderResolvedAndFailsClosedForSelfCorrectionWithoutAGrantingProvider()
     {
         // Documents the chosen correction-policy boundary: correction is resolved through the
         // approval-authority providers (CorrectionAuthorization), NOT contributor-self-owned. The
@@ -1100,7 +1100,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_query_fails_closed_before_projection_lookup_when_tenant_authority_is_missing()
+    public async Task EvidenceQueryFailsClosedBeforeProjectionLookupWhenTenantAuthorityIsMissing()
     {
         Fixture fixture = new();
         fixture.TenantValidator
@@ -1123,7 +1123,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_query_returns_non_disclosing_not_found_when_projection_has_no_entry()
+    public async Task EvidenceQueryReturnsNonDisclosingNotFoundWhenProjectionHasNoEntry()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         fixture.ProjectionReader
@@ -1150,7 +1150,7 @@ public sealed class TimeEntryAuthorizationTests
     [InlineData(ReferenceValidationState.Unavailable, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.Ambiguous, TimesheetsDenialCategory.AmbiguousAuthority)]
     [InlineData(ReferenceValidationState.InvalidReference, TimesheetsDenialCategory.InvalidReference)]
-    public async Task Evidence_query_fails_closed_on_project_authority_before_returning_identifiers_lineage_or_labels(
+    public async Task EvidenceQueryFailsClosedOnProjectAuthorityBeforeReturningIdentifiersLineageOrLabels(
         ReferenceValidationState referenceState,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -1179,7 +1179,7 @@ public sealed class TimeEntryAuthorizationTests
     [InlineData(ReferenceValidationState.Unauthorized, TimesheetsDenialCategory.InsufficientRole)]
     [InlineData(ReferenceValidationState.TenantMismatch, TimesheetsDenialCategory.CrossTenantTarget)]
     [InlineData(ReferenceValidationState.Unavailable, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
-    public async Task Evidence_query_fails_closed_on_contributor_authority_before_returning_lineage_or_labels(
+    public async Task EvidenceQueryFailsClosedOnContributorAuthorityBeforeReturningLineageOrLabels(
         ReferenceValidationState referenceState,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -1210,7 +1210,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_query_policy_denial_after_reference_validation_returns_no_evidence()
+    public async Task EvidenceQueryPolicyDenialAfterReferenceValidationReturnsNoEvidence()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         fixture.ProjectionReader
@@ -1245,7 +1245,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_query_validates_work_target_without_project_lookup()
+    public async Task EvidenceQueryValidatesWorkTargetWithoutProjectLookup()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         fixture.ProjectionReader
@@ -1281,7 +1281,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_query_validates_project_and_contributor_then_returns_read_time_hydrated_evidence()
+    public async Task EvidenceQueryValidatesProjectAndContributorThenReturnsReadTimeHydratedEvidence()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         fixture.ProjectionReader
@@ -1318,7 +1318,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_list_query_fails_closed_before_projection_lookup_when_tenant_authority_is_missing()
+    public async Task EvidenceListQueryFailsClosedBeforeProjectionLookupWhenTenantAuthorityIsMissing()
     {
         Fixture fixture = new();
         fixture.TenantValidator
@@ -1340,7 +1340,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_list_query_filters_ordinary_unauthorized_rows_and_hydrates_only_disclosed_rows()
+    public async Task EvidenceListQueryFiltersOrdinaryUnauthorizedRowsAndHydratesOnlyDisclosedRows()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         ProjectReference deniedProject = new("project-denied");
@@ -1387,7 +1387,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_list_query_returns_authorized_empty_page_without_hydrating_labels()
+    public async Task EvidenceListQueryReturnsAuthorizedEmptyPageWithoutHydratingLabels()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         fixture.ListProjectionReader
@@ -1408,7 +1408,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_list_query_fails_closed_for_cross_tenant_row_without_hydrating_labels()
+    public async Task EvidenceListQueryFailsClosedForCrossTenantRowWithoutHydratingLabels()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         fixture.ListProjectionReader
@@ -1435,7 +1435,7 @@ public sealed class TimeEntryAuthorizationTests
     }
 
     [Fact]
-    public async Task Evidence_list_query_validates_work_target_without_project_lookup()
+    public async Task EvidenceListQueryValidatesWorkTargetWithoutProjectLookup()
     {
         Fixture fixture = AuthorizedProjectionReadFixture();
         fixture.ListProjectionReader

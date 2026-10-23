@@ -473,7 +473,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Stored_record_submission_and_approval_publish_decision_and_lock_evidence()
+    public async Task StoredRecordSubmissionAndApprovalPublishDecisionAndLockEvidence()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -493,7 +493,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Older_replay_retains_newer_evidence_and_conflicting_prefix_fails()
+    public async Task OlderReplayRetainsNewerEvidenceAndConflictingPrefixFails()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -519,7 +519,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Higher_prefix_must_extend_the_full_stored_payload_history()
+    public async Task HigherPrefixMustExtendTheFullStoredPayloadHistory()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -537,7 +537,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Older_prefix_with_unrelated_owner_event_retains_later_evidence()
+    public async Task OlderPrefixWithUnrelatedOwnerEventRetainsLaterEvidence()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -846,7 +846,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Stored_owner_mismatch_fails_even_for_an_older_replay()
+    public async Task StoredOwnerMismatchFailsEvenForAnOlderReplay()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -863,7 +863,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Stored_adjustment_wrapper_publishes_adjusted_evidence()
+    public async Task StoredAdjustmentWrapperPublishesAdjustedEvidence()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -1200,7 +1200,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Invalid_transitions_and_second_recording_do_not_publish()
+    public async Task InvalidTransitionsAndSecondRecordingDoNotPublish()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -1220,7 +1220,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Missing_recording_fields_and_mismatched_approval_states_fail_without_publishing()
+    public async Task MissingRecordingFieldsAndMismatchedApprovalStatesFailWithoutPublishing()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -1244,7 +1244,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Malformed_recognized_effects_never_publish_fresh_evidence()
+    public async Task MalformedRecognizedEffectsNeverPublishFreshEvidence()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -1301,7 +1301,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Invalid_nested_recording_metrics_and_comment_policy_do_not_publish()
+    public async Task InvalidNestedRecordingMetricsAndCommentPolicyDoNotPublish()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -1343,7 +1343,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public async Task Same_entry_id_in_two_tenants_uses_distinct_canonical_store_keys()
+    public async Task SameEntryIdInTwoTenantsUsesDistinctCanonicalStoreKeys()
     {
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -1361,7 +1361,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public async Task Read_or_write_outage_is_retryable_without_publishing(bool readOutage)
+    public async Task ReadOrWriteOutageIsRetryableWithoutPublishing(bool readOutage)
     {
         var store = new TestStore { FailRead = readOutage, FailWrite = !readOutage };
         var handler = new TimeEntryEvidenceProjectionHandler(store);
@@ -1376,7 +1376,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
     }
 
     [Fact]
-    public void Aggregate_owned_address_rejects_colon_components()
+    public void AggregateOwnedAddressRejectsColonComponents()
     {
         Should.Throw<ArgumentException>(() => TimeEntryEvidenceReadModelAddress.StateKey(
             "tenant:other", new TimeEntryId("entry-1")));

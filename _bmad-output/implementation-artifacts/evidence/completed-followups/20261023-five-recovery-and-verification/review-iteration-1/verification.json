@@ -1,0 +1,158 @@
+{
+  "baselineCommit": "357db9d8c2df951a60c8ffb59c0d61c6a7bb3c8c",
+  "qualification": "Final corrected-source build after complete-size and lifecycle writer/reader guards; all six full executables rebuilt before these runs. Earlier receipts in the parent directory remain pre-review history.",
+  "configuration": "Debug",
+  "useHexalithProjectReferences": true,
+  "eventStoreCatalogVersion": "3.127.0",
+  "dependencyIdentities": "dependency-identities.json",
+  "suites": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "total": 109,
+      "passed": 109,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "seconds": 11.892,
+      "xmlSha256": "31473bd99e5923b14bea24822f1de5f916c1412a976fc6330c7f481e269cb83f",
+      "startedUtc": "2026-10-23T18:39:27.0407869+00:00",
+      "finishedUtc": "2026-10-23T18:39:38.9312915+00:00",
+      "assemblySha256": "7510a7623266dfa3a8df790dfb28ea637dc27d5cf55cf5b91c65ab27b1e120cf"
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "total": 92,
+      "passed": 92,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "seconds": 0.495,
+      "xmlSha256": "1d9e92db443ad86b7167007d135071e3fcd939f07562ef5538d23587c3ced7d5",
+      "startedUtc": "2026-10-23T18:39:39.1663881+00:00",
+      "finishedUtc": "2026-10-23T18:39:39.6611222+00:00",
+      "assemblySha256": "f2deb2e9c8cb59556e0ceb63b7bb02c4f0ceeecb8861e26a1aebaf7fc39bbec1"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "total": 903,
+      "passed": 898,
+      "failed": 0,
+      "skipped": 5,
+      "errors": 0,
+      "not-run": 0,
+      "seconds": 825.775,
+      "xmlSha256": "7400d1862cbab899783399fde3b332e17bf3fd67040bd4321f828c08ec087b1a",
+      "startedUtc": "2026-10-23T18:39:39.9147213+00:00",
+      "finishedUtc": "2026-10-23T18:53:25.6499161+00:00",
+      "assemblySha256": "1b99781e08811985e814cef6c274c5c4c08fb475e5d00ffe0947f3d15c4c6f03"
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "total": 689,
+      "passed": 689,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "seconds": 873.563,
+      "xmlSha256": "263101c5e2397f81cc47370781abf127d86563c2f0f863227355ea8a89e8109f",
+      "startedUtc": "2026-10-23T18:53:25.9896741+00:00",
+      "finishedUtc": "2026-10-23T19:07:59.5008342+00:00",
+      "assemblySha256": "4ea897355a2aaea15f935892ab365d85388d90bfd0c99d3eac6e3acda28b2a48"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "total": 693,
+      "passed": 693,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "seconds": 7.752,
+      "xmlSha256": "b8711fac6d58f3f9b67569c0d25a2c300d8321d46315487f81d4980821fc5655",
+      "startedUtc": "2026-10-23T19:07:59.8164496+00:00",
+      "finishedUtc": "2026-10-23T19:08:07.5638223+00:00",
+      "assemblySha256": "6358394b6f339fa6785dda663dc817d6fd568228f18fb579b6d57a354a03658d"
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "seconds": 0.293,
+      "xmlSha256": "56d1f19f8cf78d40a64bc9ae8a5a7458a88c892eea9ee61352688df3af54dc36",
+      "startedUtc": "2026-10-23T19:08:07.7913341+00:00",
+      "finishedUtc": "2026-10-23T19:08:08.0841888+00:00",
+      "assemblySha256": "81d804e4878d434676e6cf6c1fcdc5f189d4ab73d395aa4aef3dbcf4337741a0"
+    }
+  ],
+  "totals": {
+    "total": 2562,
+    "passed": 2557,
+    "failed": 0,
+    "skipped": 5,
+    "errors": 0,
+    "not-run": 0
+  },
+  "focusedProjectionMethods": {
+    "ColdAuthorizedAbortRecoveryResumesAndRepeatedRecoveryNeverPromotes": 1,
+    "ColdRecoveryDrainsHealthyPendingDeliveryAndResumesInterruptedStageDeletion": 2,
+    "UnsupportedCompleteViewCapacityPreservesPointerFragmentsAndJournalHead": 2,
+    "ReplacementRetiresOnlyValidatedPriorFragmentsAfterPublishingPointer": 2,
+    "InterruptedRetirementResumesPreparedDeletesAndCrossingReaderSeesReplacement": 1,
+    "MaximalEntropyTransitionsUseBoundedContinuationAndRetainReachableFlatBase": 9
+  },
+  "focusedProjectionTotal": 17,
+  "focusedLoaderTotal": 145,
+  "nonCooperativeReadModelCases": 11,
+  "python": {
+    "diagnostic": 30,
+    "scripts": 130,
+    "tooling": 88
+  },
+  "compiledAppHost": {
+    "passed": 35,
+    "resourcesEnabled": false
+  },
+  "rename": {
+    "attributedMethods": 786,
+    "files": 83,
+    "equivalentOriginalCases": 2546,
+    "laterAuditCasesAdded": 16,
+    "finalCases": 2562,
+    "remainingAttributedUnderscores": 0,
+    "sourceAttributesDataAssertionsPreserved": true
+  },
+  "sourceSha256": {
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkConfirmationCapabilityProjectionHandler.cs": "605e3c34c0c54b37200e2f0f402a49f40b3f21d3d16dfef38178aef882cc85df",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkCapabilityProjectionStorage.cs": "7bfbaeebdedddfb50109442f2abf964c18264f89b31e3fef86bcae32327d57c1",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkCapabilityProjectionContinuation.cs": "a2a490782b39aba055e8644ff12acc373e17b49ae437bffef982a96fea78c37a",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkCapabilityProjectionTransition.cs": "a66379968609ba676bb3d326ca2ac7aecdbe819dbc4667b04edb1ebfd425655c",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkCapabilityProjectionFragment.cs": "c1b36729dd01003db302fe18a07b6deb5f519dce80ca31a6fc71565afe780919",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV6Migration.cs": "0f7c2c0fd8595459a364f35782f6aa11c82af7c3967d86c19b8be73dc7afee16",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV6MigrationAbortWitness.cs": "9a32c19aea474f5755b1788dfe54e90ad1c4c8530b70d6e05ad1364ce0d85398",
+    "src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs": "ab32526b6acc332cb0d1da07be2334c36d151bdee38817430ef3f7abf3f9b86f",
+    "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkStateLoadingBudget.cs": "6fb6107d5a0a8c2ac2c46cf3033d2a336eb55f85b9517836d1b3c4c5655626c4",
+    "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkStateLoadingOptions.cs": "3958d4c9e185ac3d3fe456728ed4d88f6056c1c3f67f9517a1850bcd4e70c3b6",
+    "scripts/magic_link_index_selection.py": "1ad0c5ddb7c803b3c27d924af0e1b749af2ac09af0d835e5c97740b697e29142",
+    "scripts/test_magic_link_index_selection.py": "9e1e988e7b8b5368aa0dbb79cb44780480cbff3dcc176d338d9c6e7aff80cf38",
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkConfirmationCapabilityProjectionHandlerTests.cs": "553c65f2aeb80b30bb997cfb054559bcd026231bc4fe57a12a17711ab6bde7bf",
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": "886fc797ed09c4d9a3674b375dbf06c9522fc2f99f469ae6b5903febf61222c0",
+    "tests/Hexalith.Timesheets.Server.Tests/EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs": "ccc16d4dd9afd37d58c9c0d66650a1e5b51dbe084567aa3d51a381f162ad53e3",
+    "tests/Hexalith.Timesheets.Server.Tests/NonCooperativeReadModelStore.cs": "f86516d28bac463f2e3554b0da9f0505e9a929d7b10bfd0430b57d1e68c2285d"
+  },
+  "limitations": [
+    "Compatible capability readers must precede continuation writers at deployment; retained bases are reachable until generation cleanup.",
+    "Unsupported complete capacity or incomplete lifecycle preserves the accepted journal head for recovery.",
+    "No live migration, runtime or deployed acceptance.",
+    "Diagnostic is a conservative supported subset without full SDK parity or ETag admission.",
+    "Pending corrupt-source journals still require certified source repair; witness-free Aborting refuses recovery.",
+    "SDK status may reconcile control/discovery indexes; refusal makes no Timesheets source/witness/fence writes.",
+    "SDK abort has no atomic expected-epoch/inventory condition; unique IDs and serialized maintenance remain required."
+  ]
+}

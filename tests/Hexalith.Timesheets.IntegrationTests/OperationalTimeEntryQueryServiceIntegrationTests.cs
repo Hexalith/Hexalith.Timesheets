@@ -15,7 +15,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class OperationalTimeEntryQueryServiceIntegrationTests
 {
     [Fact]
-    public async Task Seeded_entries_can_be_queried_paged_and_drilled_into_evidence_projection()
+    public async Task SeededEntriesCanBeQueriedPagedAndDrilledIntoEvidenceProjection()
     {
         TimeEntryProjectionEvent[] events =
         [

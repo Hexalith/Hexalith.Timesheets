@@ -55,7 +55,7 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Fact]
-    public void Normally_composed_host_registers_both_materialized_projection_routes()
+    public void NormallyComposedHostRegistersBothMaterializedProjectionRoutes()
     {
         using GuardedFactory factory = new(allowOnAnyPort: false);
         using HttpClient client = factory.CreateClient();
@@ -71,7 +71,7 @@ public sealed class InternalSurfaceGuardTests
 
     [Theory]
     [MemberData(nameof(ProtectedRoutes))]
-    public async Task Domain_service_routes_are_refused_when_no_internal_port_is_configured(string route)
+    public async Task DomainServiceRoutesAreRefusedWhenNoInternalPortIsConfigured(string route)
     {
         // Fail-closed is the whole point: a deployment that never configures the split must lose
         // projection delivery, not publish an unauthenticated write surface on its public ingress.
@@ -91,7 +91,7 @@ public sealed class InternalSurfaceGuardTests
     [Theory]
     [InlineData("migrate-v6")]
     [InlineData("migrate-v1")]
-    public async Task Internal_migration_route_is_default_denied_without_a_certified_operator_authority(string route)
+    public async Task InternalMigrationRouteIsDefaultDeniedWithoutACertifiedOperatorAuthority(string route)
     {
         using GuardedFactory factory = new(allowOnAnyPort: true, authenticatedOperator: true);
         using HttpClient client = factory.CreateClient();
@@ -106,7 +106,7 @@ public sealed class InternalSurfaceGuardTests
     [Theory]
     [InlineData("", "certified")]
     [InlineData("migration", "")]
-    public async Task V6_migration_route_opaquely_refuses_blank_identifiers(string operationId, string fingerprint)
+    public async Task V6MigrationRouteOpaquelyRefusesBlankIdentifiers(string operationId, string fingerprint)
     {
         using GuardedFactory factory = new(allowOnAnyPort: true,
             migrationAuthority: new CountingMigration(), authenticatedOperator: true);
@@ -122,7 +122,7 @@ public sealed class InternalSurfaceGuardTests
     [Theory]
     [InlineData("migrate-v6")]
     [InlineData("migrate-v1")]
-    public async Task Internal_migration_route_requires_an_authenticated_operator(string route)
+    public async Task InternalMigrationRouteRequiresAnAuthenticatedOperator(string route)
     {
         var authority = new CountingMigration();
         var inventory = new InternalMagicLinkV1Inventory([]);
@@ -140,7 +140,7 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Fact]
-    public async Task Authenticated_v1_operator_without_installed_verified_inventory_is_opaquely_refused()
+    public async Task AuthenticatedV1OperatorWithoutInstalledVerifiedInventoryIsOpaquelyRefused()
     {
         var store = new InMemoryReadModelStore();
         var authority = new CountingMigration();
@@ -157,7 +157,7 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Fact]
-    public async Task Authenticated_v1_operator_with_default_authority_cannot_reserve_verified_inventory()
+    public async Task AuthenticatedV1OperatorWithDefaultAuthorityCannotReserveVerifiedInventory()
     {
         var store = new InMemoryReadModelStore();
         var inventory = new InternalMagicLinkV1Inventory([]);
@@ -173,7 +173,7 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Fact]
-    public async Task Verified_internal_v1_route_selects_persisted_v7_candidates_and_retains_direct_legacy()
+    public async Task VerifiedInternalV1RouteSelectsPersistedV7CandidatesAndRetainsDirectLegacy()
     {
         var store = new InMemoryReadModelStore();
         MagicLinkTokenHashCapabilityIndexDirectoryEntry[] rows =
@@ -203,7 +203,7 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Fact]
-    public async Task Certified_internal_operator_route_migrates_selected_v6_candidates()
+    public async Task CertifiedInternalOperatorRouteMigratesSelectedV6Candidates()
     {
         var store = new InMemoryReadModelStore();
         using GuardedFactory factory = new(allowOnAnyPort: true, store,
@@ -257,7 +257,7 @@ public sealed class InternalSurfaceGuardTests
     [InlineData("{}")]
     [InlineData("{\"operationId\":\"\",\"receiptId\":\"server-receipt\"}")]
     [InlineData("{\"operationId\":\"migration\",\"receiptId\":\"   \"}")]
-    public async Task Malformed_v1_identifiers_are_opaquely_refused_without_reservation(string body)
+    public async Task MalformedV1IdentifiersAreOpaquelyRefusedWithoutReservation(string body)
     {
         var store = new InMemoryReadModelStore();
         using GuardedFactory factory = new(true, store, new CountingMigration(), authenticatedOperator: true,
@@ -274,7 +274,7 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Fact]
-    public async Task Invalid_installed_v1_inventory_is_opaquely_refused_and_retains_legacy()
+    public async Task InvalidInstalledV1InventoryIsOpaquelyRefusedAndRetainsLegacy()
     {
         var store = new InMemoryReadModelStore();
         var inventory = new InternalMagicLinkV1Inventory([]) { InvalidDigest = true };
@@ -297,7 +297,7 @@ public sealed class InternalSurfaceGuardTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task V1_store_and_sdk_stage_failures_are_opaque_retryable_with_durable_private_state(bool sdkFailure)
+    public async Task V1StoreAndSdkStageFailuresAreOpaqueRetryableWithDurablePrivateState(bool sdkFailure)
     {
         var store = new InMemoryReadModelStore();
         var interrupted = new InternalMagicLinkV1FaultStore(store, sdkFailure);
@@ -344,7 +344,7 @@ public sealed class InternalSurfaceGuardTests
     /// <param name="post">Whether to send a POST body.</param>
     [Theory]
     [MemberData(nameof(PublicCapabilityRoutes))]
-    public async Task The_public_magic_link_surface_stays_reachable_when_the_guard_is_closed(string route, bool post)
+    public async Task ThePublicMagicLinkSurfaceStaysReachableWhenTheGuardIsClosed(string route, bool post)
     {
         // The guard must not collapse the routes this host exists to publish.
         using GuardedFactory factory = new(allowOnAnyPort: false);
@@ -362,7 +362,7 @@ public sealed class InternalSurfaceGuardTests
     }
 
     [Fact]
-    public async Task Metadata_route_is_not_swept_up_by_the_guard()
+    public async Task MetadataRouteIsNotSweptUpByTheGuard()
     {
         using GuardedFactory factory = new(allowOnAnyPort: false);
         using HttpClient client = factory.CreateClient();
@@ -380,7 +380,7 @@ public sealed class InternalSurfaceGuardTests
     [InlineData("/api/timesheets/magic-links/confirmation-capabilities")]
     [InlineData("/api/timesheets/magic-links/confirmation-capabilities/capability-1/revoke")]
     [InlineData("/api/timesheets/magic-links/confirmation-capabilities/capability-1/expire")]
-    public async Task Magic_link_management_routes_require_workload_credentials(string route)
+    public async Task MagicLinkManagementRoutesRequireWorkloadCredentials(string route)
     {
         using GuardedFactory factory = new(allowOnAnyPort: false);
         using HttpClient client = factory.CreateClient();

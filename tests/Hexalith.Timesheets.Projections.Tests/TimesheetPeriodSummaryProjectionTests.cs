@@ -46,7 +46,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     [Theory]
     [InlineData(null)]
     [InlineData("tenant-2")]
-    public void Period_rejects_unscoped_or_cross_tenant_recording(string? deliveryTenant)
+    public void PeriodRejectsUnscopedOrCrossTenantRecording(string? deliveryTenant)
     {
         TimeEntryId entry = new("time-entry-1");
         Should.Throw<InvalidOperationException>(() => Projector().Project(
@@ -57,7 +57,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Period_rejects_cross_tenant_decision_payload()
+    public void PeriodRejectsCrossTenantDecisionPayload()
     {
         TimeEntryId entry = new("time-entry-1");
         Should.Throw<InvalidOperationException>(() => Projector().Project(
@@ -68,7 +68,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Empty_period_rejects_cross_tenant_entry_rejection_before_publishing_summary()
+    public void EmptyPeriodRejectsCrossTenantEntryRejectionBeforePublishingSummary()
     {
         var entryId = new TimeEntryId("entry-outside-empty-period");
         Should.Throw<InvalidOperationException>(() => Projector().Project(
@@ -82,7 +82,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     [InlineData("used")]
     [InlineData("revoked")]
     [InlineData("expired")]
-    public void Empty_period_rejects_cross_tenant_normalized_magic_link_terminal(string terminal)
+    public void EmptyPeriodRejectsCrossTenantNormalizedMagicLinkTerminal(string terminal)
     {
         var capabilityId = new MagicLinkCapabilityId("capability-outside-empty-period");
         var entryId = new TimeEntryId("entry-outside-empty-period");
@@ -106,7 +106,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Projection_replays_period_and_entry_evidence_with_separate_states()
+    public void ProjectionReplaysPeriodAndEntryEvidenceWithSeparateStates()
     {
         TimeEntryId draft = new("time-entry-1");
         TimeEntryId submitted = new("time-entry-2");
@@ -136,7 +136,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Projection_deduplicates_duplicate_delivery_by_message_id()
+    public void ProjectionDeduplicatesDuplicateDeliveryByMessageId()
     {
         TimeEntryId entryId = new("time-entry-1");
         TimesheetPeriodProjectionEvent period = Event("m2", 2, PeriodSubmitted(entryId));
@@ -157,7 +157,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Projection_marks_rebuilding_when_period_arrives_before_entry_evidence()
+    public void ProjectionMarksRebuildingWhenPeriodArrivesBeforeEntryEvidence()
     {
         TimeEntryId missing = new("time-entry-1");
 
@@ -174,7 +174,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_period_approval_without_flattening_entry_lock_state_source()
+    public void ProjectionAppliesPeriodApprovalWithoutFlatteningEntryLockStateSource()
     {
         TimeEntryId entryId = new("time-entry-1");
 
@@ -202,7 +202,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_period_rejection_with_selected_entry_reasons_and_separate_entry_state()
+    public void ProjectionAppliesPeriodRejectionWithSelectedEntryReasonsAndSeparateEntryState()
     {
         TimeEntryId rejectedEntry = new("time-entry-1");
         TimeEntryId submittedEntry = new("time-entry-2");
@@ -233,7 +233,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Projection_deduplicates_duplicate_period_decision_delivery()
+    public void ProjectionDeduplicatesDuplicatePeriodDecisionDelivery()
     {
         TimeEntryId entryId = new("time-entry-1");
         TimesheetPeriodProjectionEvent decision = Event("m5", 5, PeriodApproved(entryId));
@@ -257,7 +257,7 @@ public sealed class TimesheetPeriodSummaryProjectionTests
     }
 
     [Fact]
-    public void Projection_keeps_rebuilding_when_period_decision_arrives_before_entry_evidence()
+    public void ProjectionKeepsRebuildingWhenPeriodDecisionArrivesBeforeEntryEvidence()
     {
         TimeEntryId missing = new("time-entry-1");
 

@@ -43,7 +43,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_rejects_unscoped_recording()
+    public void LedgerRejectsUnscopedRecording()
     {
         Should.Throw<InvalidOperationException>(() => Projector().Project(
             "tenant-1",
@@ -52,7 +52,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_accepts_independent_owner_streams_with_the_same_local_sequences()
+    public void LedgerAcceptsIndependentOwnerStreamsWithTheSameLocalSequences()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -73,7 +73,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_includes_only_approved_entries_by_default()
+    public void LedgerIncludesOnlyApprovedEntriesByDefault()
     {
         ApprovedTimeLedgerReadModel page = Projector().Project(
             "tenant-1",
@@ -97,7 +97,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_preserves_approved_correction_lineage_and_includes_superseded_rows_only_when_requested()
+    public void LedgerPreservesApprovedCorrectionLineageAndIncludesSupersededRowsOnlyWhenRequested()
     {
         TimeEntryProjectionEvent duplicateCorrection = Event("m4", 4, ApprovedCorrected("time-entry-1", 75));
         TimeEntryProjectionEvent[] events =
@@ -153,7 +153,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_preserves_rejected_correction_lineage_only_after_later_approval()
+    public void LedgerPreservesRejectedCorrectionLineageOnlyAfterLaterApproval()
     {
         TimeEntryProjectionEvent[] beforeApproval =
         [
@@ -184,7 +184,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_filters_sorts_pages_and_does_not_duplicate_replayed_events()
+    public void LedgerFiltersSortsPagesAndDoesNotDuplicateReplayedEvents()
     {
         TimeEntryProjectionEvent duplicate = Event("m6", 6, Approved("time-entry-2", "decision-2"));
         TimeEntryProjectionEvent[] events =
@@ -231,7 +231,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_applies_work_contributor_activity_period_date_and_billable_filters()
+    public void LedgerAppliesWorkContributorActivityPeriodDateAndBillableFilters()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -279,7 +279,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     }
 
     [Fact]
-    public void Ledger_maps_degraded_freshness_and_blocks_export_readiness()
+    public void LedgerMapsDegradedFreshnessAndBlocksExportReadiness()
     {
         ApprovedTimeLedgerReadModel page = Projector().Project(
             "tenant-1",
@@ -300,7 +300,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     [InlineData(ProjectionFreshness.Rebuilding, ProjectionFreshnessState.Rebuilding)]
     [InlineData(ProjectionFreshness.Stale, ProjectionFreshnessState.Stale)]
     [InlineData(ProjectionFreshness.Unavailable, ProjectionFreshnessState.Unavailable)]
-    public void Ledger_maps_non_fresh_projection_states_and_blocks_export_readiness(
+    public void LedgerMapsNonFreshProjectionStatesAndBlocksExportReadiness(
         ProjectionFreshness freshness,
         ProjectionFreshnessState expectedState)
     {

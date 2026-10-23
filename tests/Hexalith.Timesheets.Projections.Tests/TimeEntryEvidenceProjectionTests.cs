@@ -73,7 +73,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     [Theory]
     [InlineData(null)]
     [InlineData("tenant-2")]
-    public void Recording_without_matching_delivery_scope_is_rejected(string? deliveryTenant)
+    public void RecordingWithoutMatchingDeliveryScopeIsRejected(string? deliveryTenant)
     {
         TimeEntryProjectionEvent recording = Event("m1", 1, Recorded("time-entry-1", 45))
             with { TenantId = deliveryTenant };
@@ -85,7 +85,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Cross_tenant_magic_link_terminal_is_rejected()
+    public void CrossTenantMagicLinkTerminalIsRejected()
     {
         var used = new MagicLinkConfirmationCapabilityUsed(
             new MagicLinkCapabilityId("capability-1"), new TenantReference("tenant-2"),
@@ -101,7 +101,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Cross_tenant_revoke_or_expire_payload_is_rejected_by_evidence_and_list(bool expire)
+    public void CrossTenantRevokeOrExpirePayloadIsRejectedByEvidenceAndList(bool expire)
     {
         var capabilityId = new MagicLinkCapabilityId("capability-1");
         var otherTenant = new TenantReference("tenant-2");
@@ -126,7 +126,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Projection_folds_stored_magic_link_effects_and_duplicate_delivery(bool adjust)
+    public void ProjectionFoldsStoredMagicLinkEffectsAndDuplicateDelivery(bool adjust)
     {
         TimeEntryRecorded recorded = Recorded("time-entry-1", 45);
         object effect = adjust
@@ -155,7 +155,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_exposes_recorded_draft_evidence_with_freshness_metadata()
+    public void ProjectionExposesRecordedDraftEvidenceWithFreshnessMetadata()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
             "tenant-1",
@@ -180,7 +180,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_is_idempotent_for_duplicate_delivery()
+    public void ProjectionIsIdempotentForDuplicateDelivery()
     {
         TimeEntryProjectionEvent[] once = [Event("m1", 1, Recorded("time-entry-1", 45))];
 
@@ -200,7 +200,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_preserves_provider_reported_ai_metrics_through_duplicate_replay()
+    public void ProjectionPreservesProviderReportedAiMetricsThroughDuplicateReplay()
     {
         AiEffortMetrics metrics = new(
             AiMetricAvailability.ProviderReported,
@@ -232,7 +232,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_preserves_unreported_token_metrics_as_null()
+    public void ProjectionPreservesUnreportedTokenMetricsAsNull()
     {
         AiEffortMetrics metrics = new(
             AiMetricAvailability.ProviderReported,
@@ -260,7 +260,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_exposes_external_source_and_confirmation_evidence_idempotently()
+    public void ProjectionExposesExternalSourceAndConfirmationEvidenceIdempotently()
     {
         TimeEntryRecorded recorded = Recorded("time-entry-1", 45) with
         {
@@ -292,7 +292,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_orders_events_by_sequence_number_and_ignores_other_entries()
+    public void ProjectionOrdersEventsBySequenceNumberAndIgnoresOtherEntries()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
             "tenant-1",
@@ -311,7 +311,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_submitted_after_recorded_without_mutating_evidence()
+    public void ProjectionAppliesSubmittedAfterRecordedWithoutMutatingEvidence()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
             "tenant-1",
@@ -333,7 +333,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_unwraps_stored_submission_and_preserves_submission_lineage()
+    public void ProjectionUnwrapsStoredSubmissionAndPreservesSubmissionLineage()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
             "tenant-1", TimeEntryId(),
@@ -350,7 +350,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_dedupes_duplicate_submitted_message_id()
+    public void ProjectionDedupesDuplicateSubmittedMessageId()
     {
         TimeEntryProjectionEvent submitted = Event("m2", 2, Submitted("time-entry-1"));
 
@@ -370,7 +370,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_approved_after_submitted_without_mutating_recorded_or_submitted_evidence()
+    public void ProjectionAppliesApprovedAfterSubmittedWithoutMutatingRecordedOrSubmittedEvidence()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
             "tenant-1",
@@ -402,7 +402,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_dedupes_duplicate_approval_without_duplicate_lock_lineage()
+    public void ProjectionDedupesDuplicateApprovalWithoutDuplicateLockLineage()
     {
         TimeEntryProjectionEvent approved = Event("m3", 3, Approved("time-entry-1"));
 
@@ -425,7 +425,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_rejected_after_submitted_and_preserves_rejection_reason()
+    public void ProjectionAppliesRejectedAfterSubmittedAndPreservesRejectionReason()
     {
         TimeEntryProjectionEvent rejected = Event("m3", 3, Rejected("time-entry-1"));
 
@@ -450,7 +450,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_corrected_after_rejected_and_preserves_rejection_evidence()
+    public void ProjectionAppliesCorrectedAfterRejectedAndPreservesRejectionEvidence()
     {
         TimeEntryProjectionEvent corrected = Event("m4", 4, Corrected("time-entry-1", 75));
 
@@ -486,7 +486,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_resubmission_only_after_correction_and_keeps_lineage()
+    public void ProjectionAppliesResubmissionOnlyAfterCorrectionAndKeepsLineage()
     {
         Should.Throw<InvalidOperationException>(() => Projector().Project(
             "tenant-1",
@@ -529,7 +529,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_approved_correction_after_approval_and_preserves_lock_and_approval_evidence()
+    public void ProjectionAppliesApprovedCorrectionAfterApprovalAndPreservesLockAndApprovalEvidence()
     {
         TimeEntryProjectionEvent corrected = Event("m4", 4, ApprovedCorrected("time-entry-1", 75));
 
@@ -737,7 +737,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_ignores_approval_for_unrelated_entries()
+    public void ProjectionIgnoresApprovalForUnrelatedEntries()
     {
         TimeEntryEvidenceReadModel? model = Projector().Project(
             "tenant-1",
@@ -757,7 +757,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Projection_applies_magic_link_adjustment_to_effective_draft_values()
+    public void ProjectionAppliesMagicLinkAdjustmentToEffectiveDraftValues()
     {
         TimeEntryAdjustedThroughMagicLink adjusted = Adjusted("time-entry-1", 75);
 
@@ -790,7 +790,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     [InlineData(ProjectionFreshness.Stale, ProjectionFreshnessState.Stale)]
     [InlineData(ProjectionFreshness.Rebuilding, ProjectionFreshnessState.Rebuilding)]
     [InlineData(ProjectionFreshness.Unavailable, ProjectionFreshnessState.Unavailable)]
-    public void Projection_freshness_metadata_does_not_present_unfresh_checkpoint_as_fresh(
+    public void ProjectionFreshnessMetadataDoesNotPresentUnfreshCheckpointAsFresh(
         ProjectionFreshness freshness,
         ProjectionFreshnessState expectedState)
     {
@@ -805,7 +805,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void List_projection_filters_operational_dimensions_and_exposes_source_type()
+    public void ListProjectionFiltersOperationalDimensionsAndExposesSourceType()
     {
         TimeEntryQueryReadModel page = ListProjector().Project(
             "tenant-1",
@@ -840,7 +840,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void List_projection_filters_work_target_and_external_source_type()
+    public void ListProjectionFiltersWorkTargetAndExternalSourceType()
     {
         TimeEntryRecorded workExternal = RecordedExternal("time-entry-2", 30) with
         {
@@ -870,7 +870,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     [Theory]
     [InlineData("2026-06")]
     [InlineData("2026-06-15/2026-06-21")]
-    public void List_projection_filters_by_tenant_local_period_key(string periodKey)
+    public void ListProjectionFiltersByTenantLocalPeriodKey(string periodKey)
     {
         TimeEntryQueryReadModel page = ListProjector().Project(
             "tenant-1",
@@ -890,7 +890,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void List_projection_returns_no_rows_for_invalid_tenant_local_period_key()
+    public void ListProjectionReturnsNoRowsForInvalidTenantLocalPeriodKey()
     {
         TimeEntryQueryReadModel page = ListProjector().Project(
             "tenant-1",
@@ -905,7 +905,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void List_projection_paginates_with_stable_order_and_duplicate_replay_determinism()
+    public void ListProjectionPaginatesWithStableOrderAndDuplicateReplayDeterminism()
     {
         TimeEntryProjectionEvent duplicate = Event("m2", 2, Recorded("time-entry-2", 20));
         TimeEntryProjectionEvent[] events =
@@ -970,7 +970,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void Stored_normalizer_rejects_distinct_events_at_one_stream_sequence()
+    public void StoredNormalizerRejectsDistinctEventsAtOneStreamSequence()
     {
         TimeEntryRecorded recorded = Recorded("time-entry-1", 45);
         TimeEntryProjectionEvent first = Event("message-1", 1, recorded);
@@ -984,7 +984,7 @@ public sealed class TimeEntryEvidenceProjectionTests
     }
 
     [Fact]
-    public void List_projection_accepts_independent_owner_streams_with_the_same_local_sequence()
+    public void ListProjectionAcceptsIndependentOwnerStreamsWithTheSameLocalSequence()
     {
         TimeEntryProjectionEvent[] events =
         [

@@ -96,7 +96,7 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
-    public void Polling_options_bind_from_configuration_and_invalid_values_fail_startup_validation()
+    public void PollingOptionsBindFromConfigurationAndInvalidValuesFailStartupValidation()
     {
         using (ServiceProvider valid = BuildPollingProvider("00:00:02", "00:00:00.025"))
         {
@@ -146,7 +146,7 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
-    public void Server_kernel_preserves_a_pre_registered_event_store_gateway_override()
+    public void ServerKernelPreservesAPreRegisteredEventStoreGatewayOverride()
     {
         IServiceCollection services = new ServiceCollection();
         IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
@@ -320,7 +320,7 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
-    public async Task Server_kernel_default_gateway_routes_through_configured_dapr_origin_and_headers()
+    public async Task ServerKernelDefaultGatewayRoutesThroughConfiguredDaprOriginAndHeaders()
     {
         var recorder = new RecordingHandler();
         IServiceCollection services = new ServiceCollection();
@@ -341,7 +341,7 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
-    public async Task Server_kernel_workload_gateway_uses_signed_routes_for_submit_status_and_read()
+    public async Task ServerKernelWorkloadGatewayUsesSignedRoutesForSubmitStatusAndRead()
     {
         var recorder = new RecordingHandler();
         IEventStoreGatewayWorkloadAssertionSource assertions = Substitute.For<IEventStoreGatewayWorkloadAssertionSource>();
@@ -380,7 +380,7 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
-    public void Server_kernel_falls_back_to_the_dapr_http_port_when_no_endpoint_is_configured()
+    public void ServerKernelFallsBackToTheDaprHttpPortWhenNoEndpointIsConfigured()
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
@@ -409,7 +409,7 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
-    public void Server_kernel_registers_fail_closed_defaults_until_trust_adapters_exist()
+    public void ServerKernelRegistersFailClosedDefaultsUntilTrustAdaptersExist()
     {
         IServiceCollection services = new ServiceCollection();
 
@@ -494,7 +494,7 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
-    public async Task Composed_access_guard_fails_closed_with_unconfigured_defaults()
+    public async Task ComposedAccessGuardFailsClosedWithUnconfiguredDefaults()
     {
         IServiceCollection services = new ServiceCollection();
 

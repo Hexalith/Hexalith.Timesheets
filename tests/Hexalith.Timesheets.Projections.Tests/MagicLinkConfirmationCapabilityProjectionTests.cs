@@ -76,7 +76,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_exposes_issued_state_with_text_badges_and_freshness()
+    public void ProjectionExposesIssuedStateWithTextBadgesAndFreshness()
     {
         MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
             CapabilityId(),
@@ -96,7 +96,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_is_duplicate_tolerant_for_replayed_events()
+    public void ProjectionIsDuplicateTolerantForReplayedEvents()
     {
         MagicLinkProjectionEvent issued = Event("m1", 1, Issued());
         MagicLinkProjectionEvent revoked = Event("m2", 2, Revoked());
@@ -114,7 +114,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_rejects_terminal_mutations_after_revocation()
+    public void ProjectionRejectsTerminalMutationsAfterRevocation()
     {
         Should.Throw<InvalidOperationException>(() => Projector().Project(
             CapabilityId(),
@@ -128,7 +128,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_exposes_expired_state_from_expiry_event()
+    public void ProjectionExposesExpiredStateFromExpiryEvent()
     {
         MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
             CapabilityId(),
@@ -144,7 +144,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_rejects_terminal_mutations_after_use()
+    public void ProjectionRejectsTerminalMutationsAfterUse()
     {
         Should.Throw<InvalidOperationException>(() => Projector().Project(
             CapabilityId(),
@@ -158,7 +158,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_exposes_safe_adjustment_use_outcome_category()
+    public void ProjectionExposesSafeAdjustmentUseOutcomeCategory()
     {
         MagicLinkConfirmationCapabilityUsed used = Used() with { OutcomeCategory = "adjusted" };
 
@@ -176,7 +176,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_reconciles_stored_cross_stream_terminal_before_issuance_sequence()
+    public void ProjectionReconcilesStoredCrossStreamTerminalBeforeIssuanceSequence()
     {
         MagicLinkConfirmationCapabilityReadModel? model = Projector().Project(
             CapabilityId(),
@@ -191,7 +191,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_rejects_legacy_terminal_before_issuance_in_capability_stream()
+    public void ProjectionRejectsLegacyTerminalBeforeIssuanceInCapabilityStream()
     {
         Should.Throw<InvalidOperationException>(() => Projector().Project(
             CapabilityId(),
@@ -201,7 +201,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_rejects_repeated_physical_issuance_even_when_identical()
+    public void ProjectionRejectsRepeatedPhysicalIssuanceEvenWhenIdentical()
     {
         Should.Throw<InvalidOperationException>(() => Projector().Project(
             CapabilityId(),
@@ -210,7 +210,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionTests
     }
 
     [Fact]
-    public void Projection_rejects_distinct_payloads_at_one_sequence_within_each_stream()
+    public void ProjectionRejectsDistinctPayloadsAtOneSequenceWithinEachStream()
     {
         MagicLinkProjectionEvent issuance = Event("issue", 1, Issued());
         Projector().Project(CapabilityId(), [issuance, Event("", 1, Issued())],

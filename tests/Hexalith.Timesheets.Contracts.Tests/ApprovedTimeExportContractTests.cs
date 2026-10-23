@@ -19,7 +19,7 @@ public sealed class ApprovedTimeExportContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Export_request_contracts_reuse_ledger_filters_and_omit_server_controlled_authority()
+    public void ExportRequestContractsReuseLedgerFiltersAndOmitServerControlledAuthority()
     {
         GenerateApprovedTimeExport command = new()
         {
@@ -54,7 +54,7 @@ public sealed class ApprovedTimeExportContractTests
     }
 
     [Fact]
-    public void Export_read_model_round_trips_audit_scope_lineage_comment_policy_and_csv_v1_output()
+    public void ExportReadModelRoundTripsAuditScopeLineageCommentPolicyAndCsvV1Output()
     {
         ApprovedTimeExportReadModel model = new(
             ApprovedTimeExportReadinessState.Ready,
@@ -108,7 +108,7 @@ public sealed class ApprovedTimeExportContractTests
     }
 
     [Fact]
-    public void Export_preview_read_model_round_trips_readiness_scope_comment_policy_and_audit_without_generated_fields()
+    public void ExportPreviewReadModelRoundTripsReadinessScopeCommentPolicyAndAuditWithoutGeneratedFields()
     {
         ApprovedTimeExportPreviewReadModel model = new(
             ApprovedTimeExportReadinessState.Ready,
@@ -163,7 +163,7 @@ public sealed class ApprovedTimeExportContractTests
     }
 
     [Fact]
-    public void Approved_time_exported_event_round_trips_safe_audit_evidence_without_output_payloads()
+    public void ApprovedTimeExportedEventRoundTripsSafeAuditEvidenceWithoutOutputPayloads()
     {
         ApprovedTimeExported exported = new(
             new PartyReference("operator-1"),

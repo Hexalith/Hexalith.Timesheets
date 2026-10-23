@@ -43,7 +43,7 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
     [InlineData(nameof(CommitMagicLinkIssue))]
     [InlineData(nameof(CommitMagicLinkUse))]
     [InlineData(nameof(CommitMagicLinkTransition))]
-    public void Verified_origin_guard_accepts_only_the_gateway_stamped_timesheets_origin(string commandName)
+    public void VerifiedOriginGuardAcceptsOnlyTheGatewayStampedTimesheetsOrigin(string commandName)
     {
         CommandEnvelope valid = Envelope(commandName);
 
@@ -58,7 +58,7 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
     [Theory]
     [InlineData(nameof(CommitMagicLinkIssue))]
     [InlineData(nameof(CommitMagicLinkTransition))]
-    public void Management_actor_guard_requires_the_verified_actor_to_match_the_envelope(string commandName)
+    public void ManagementActorGuardRequiresTheVerifiedActorToMatchTheEnvelope(string commandName)
     {
         CommandEnvelope valid = Envelope(commandName);
 

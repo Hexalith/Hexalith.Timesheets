@@ -17,7 +17,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class ActualTimeReportQueryServiceIntegrationTests
 {
     [Fact]
-    public async Task Seeded_project_report_can_be_queried_authorized_hydrated_and_drilled_into_evidence()
+    public async Task SeededProjectReportCanBeQueriedAuthorizedHydratedAndDrilledIntoEvidence()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -70,7 +70,7 @@ public sealed class ActualTimeReportQueryServiceIntegrationTests
     }
 
     [Fact]
-    public async Task Seeded_work_report_can_be_queried_authorized_hydrated_paged_and_attributed_to_works_effort()
+    public async Task SeededWorkReportCanBeQueriedAuthorizedHydratedPagedAndAttributedToWorksEffort()
     {
         TimeEntryProjectionEvent[] events =
         [
@@ -141,7 +141,7 @@ public sealed class ActualTimeReportQueryServiceIntegrationTests
     }
 
     [Fact]
-    public async Task Seeded_ai_work_report_preserves_units_authorization_hydration_freshness_and_unavailable_tokens()
+    public async Task SeededAiWorkReportPreservesUnitsAuthorizationHydrationFreshnessAndUnavailableTokens()
     {
         TimeEntryProjectionEvent[] events =
         [

@@ -16,7 +16,7 @@ public sealed class ExternalContributionContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Submit_external_time_entry_round_trips_without_authority_or_approval_fields()
+    public void SubmitExternalTimeEntryRoundTripsWithoutAuthorityOrApprovalFields()
     {
         SubmitExternalTimeEntry command = new(
             new TimeEntryId("external-entry-1"),
@@ -49,7 +49,7 @@ public sealed class ExternalContributionContractTests
     }
 
     [Fact]
-    public void Confirm_external_time_entry_round_trips_as_contributor_evidence_not_approval()
+    public void ConfirmExternalTimeEntryRoundTripsAsContributorEvidenceNotApproval()
     {
         ConfirmExternalTimeEntry command = new(
             new TimeEntryId("external-entry-1"),
@@ -75,7 +75,7 @@ public sealed class ExternalContributionContractTests
     }
 
     [Fact]
-    public void Contributor_confirmation_event_records_evidence_without_approval_authority()
+    public void ContributorConfirmationEventRecordsEvidenceWithoutApprovalAuthority()
     {
         TimeEntryContributorConfirmed confirmed = new(
             new TimeEntryId("external-entry-1"),
@@ -102,7 +102,7 @@ public sealed class ExternalContributionContractTests
     }
 
     [Fact]
-    public void Openapi_declares_external_contribution_commands_and_evidence_without_authority_fields()
+    public void OpenapiDeclaresExternalContributionCommandsAndEvidenceWithoutAuthorityFields()
     {
         JsonNode artifact = JsonNode.Parse(File.ReadAllText(Path.Combine(
             FindRepositoryRoot(),

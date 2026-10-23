@@ -51,7 +51,7 @@ public sealed class CaptureAndGovernanceCommandPerformanceLaneTests
     }
 
     [Fact]
-    public async Task Capture_and_governance_command_acknowledgements_record_nfr10_p95_evidence()
+    public async Task CaptureAndGovernanceCommandAcknowledgementsRecordNfr10P95Evidence()
     {
         if (Environment.GetEnvironmentVariable(OptInVariable) != "1")
         {

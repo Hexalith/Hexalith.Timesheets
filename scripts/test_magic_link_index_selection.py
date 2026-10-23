@@ -1,5 +1,6 @@
 """Narrow selected-index checks without a running Dapr application."""
 
+import base64
 import hashlib
 import json
 import unittest
@@ -14,7 +15,10 @@ class SelectedIndexTests(unittest.TestCase):
     @staticmethod
     def ready_epoch():
         return {"version": 1, "epoch": 5, "activeGeneration": 5, "phase": 0,
-                "journal": [], "deliveryConflicts": [], "parkingEvidence": []}
+                "captureHighWatermarks": {}, "consumerCheckpoints": {},
+                "requiredWriters": ["timesheets-token-candidate-index"],
+                "registeredWriters": ["timesheets-token-candidate-index"],
+                "stageKeys": [], "journal": [], "deliveryConflicts": [], "parkingEvidence": []}
 
     @staticmethod
     def conflict():
@@ -32,6 +36,20 @@ class SelectedIndexTests(unittest.TestCase):
                 return epoch
             return None if allow_missing else index or {"storageVersion": 6}
         return selected_index_snapshot("hash", read)
+
+    def test_captured_digest_alignment_count_and_nonempty_are_required(self):
+        for length in (0, 1, 31, 33, 64):
+            epoch = self.ready_epoch() | {"consumerCheckpoints": {"owner": {
+                "position": 1, "token": "", "ownerSequenceNumber": 1,
+                "capturedEventDigests": base64.b64encode(bytes(length)).decode()}}}
+            with self.subTest(length=length), self.assertRaisesRegex(ValueError, "typed state or scope"):
+                self.read_snapshot(epoch)
+        for sequence, length in ((1, 32), (2, 32), (2, 64)):
+            epoch = self.ready_epoch() | {"consumerCheckpoints": {"owner": {
+                "position": sequence, "token": "", "ownerSequenceNumber": sequence,
+                "capturedEventDigests": base64.b64encode(bytes(length)).decode()}}}
+            with self.subTest(sequence=sequence, length=length):
+                self.assertEqual(5, self.read_snapshot(epoch)[1])
 
     def test_legacy_bootstrap_diagnostic_only_reports_shape_and_count(self):
         sensitive = "sensitive-token-hash-and-owner"
@@ -438,6 +456,61 @@ class SelectedIndexTests(unittest.TestCase):
                 with self.assertRaises((RuntimeError, ValueError)):
                     selected_index_snapshot("hash", read)
                 self.assertEqual(2, len(reads))
+
+    def test_typed_admission_refuses_four_ledger_corruptions(self):
+        for change in ({"copyOnWriteAnchorGeneration": 6}, {"consumerCheckpoints": None},
+                       {"requiredWriters": ["foreign-writer"]}, {"stageCompletedPageCount": -1}):
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, "typed state or scope"):
+                self.read_snapshot(self.ready_epoch() | change)
+
+    def test_typed_admission_requires_containers_and_typed_scalars(self):
+        for field in ("captureHighWatermarks", "consumerCheckpoints", "requiredWriters",
+                      "registeredWriters", "stageKeys", "deliveryConflicts", "parkingEvidence"):
+            for value in (None, "bad", 1):
+                with self.subTest(field=field, value=value), self.assertRaises(ValueError):
+                    self.read_snapshot(self.ready_epoch() | {field: value})
+            missing = self.ready_epoch()
+            del missing[field]
+            with self.subTest(missing=field), self.assertRaises(ValueError):
+                self.read_snapshot(missing)
+        for change in ({"copyOnWriteAnchorGeneration": True}, {"captureHighWatermarks": {"o": True}},
+                       {"registeredWriters": ["foreign"]}, {"operationTenantId": 1},
+                       {"requiredWriters": [], "registeredWriters": ["timesheets-token-candidate-index"]},
+                       {"consumerCheckpoints": {"o": {"position": 1, "token": None}}},
+                       {"consumerCheckpoints": {"o": {"position": True, "token": ""}}},
+                       {"consumerCheckpoints": {"o": {"position": 1, "token": "!"}}},
+                       {"retainedControlIndexNames": ["index", "index"]},
+                       {"retainedControlIndexNames": [None]}, {"stageReservedPageCount": True},
+                       {"cleanupStreamEpoch": "0"}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.read_snapshot(self.ready_epoch() | change)
+
+    def test_typed_admission_refuses_unsupported_staging_and_chunks(self):
+        for field in ("stageMutations", "stageChunks", "cleanupChunks", "captureChunks",
+                      "cleanupPreparedChunks", "stageControlIndexIntent"):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                self.read_snapshot(self.ready_epoch() | {field: {}})
+        for change in ({"stageKeys": ["private"]}, {"stageStreaming": True},
+                       {"stageExecutionStarted": True}, {"stageSealedPageCount": 1},
+                       {"cleanupStreamPageCount": 1}, {"cleanupPromotedRetirements": True}):
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.read_snapshot(self.ready_epoch() | change)
+
+    def test_typed_admission_accepts_healthy_sdk_shaped_open_snapshot(self):
+        snapshot = self.ready_epoch() | {
+            "copyOnWriteAnchorGeneration": 0, "operationId": "completed-rebuild",
+            "inventoryFingerprint": "inventory", "stageFingerprint": "sealed",
+            "operationTenantId": "tenant-1", "captureHighWatermarks": {"owner": 4},
+            "consumerCheckpoints": {"owner": {"position": 4, "token": "AQI=",
+                                               "ownerSequenceNumber": 2,
+                                               "capturedEventDigests": None}},
+            "stageMutations": None, "stageManifestDigest": None,
+            "stageExecutionStarted": False, "stageStreaming": False,
+            "stageCompletedPageCount": 0, "stageSealedPageCount": 0,
+            "stageReservedPageCount": 0, "cleanupStreamEpoch": 0,
+            "cleanupStreamPageCount": 0, "retainedControlIndexNames": ["catalog"],
+        }
+        self.assertEqual(5, self.read_snapshot(snapshot)[1])
 
     def test_snapshot_refuses_nonopen_pending_and_offboarded_epochs_before_reading_content(self):
         for field, value in (("phase", 1), ("phase", 2), ("phase", 3), ("phase", 4),

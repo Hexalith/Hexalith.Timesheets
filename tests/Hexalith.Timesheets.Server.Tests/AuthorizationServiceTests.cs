@@ -11,7 +11,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class AuthorizationServiceTests
 {
     [Fact]
-    public void Operation_vocabulary_covers_trust_boundaries_and_ui_visibility()
+    public void OperationVocabularyCoversTrustBoundariesAndUiVisibility()
     {
         Enum.GetNames<TimesheetsOperation>().ShouldBe([
             "Unknown",
@@ -39,7 +39,7 @@ public sealed class AuthorizationServiceTests
     [InlineData(TimesheetsDenialCategory.UnconfiguredPolicy)]
     [InlineData(TimesheetsDenialCategory.CommentPolicyMissing)]
     [InlineData(TimesheetsDenialCategory.RetentionPolicyMissing)]
-    public void Denial_vocabulary_contains_safe_categories(TimesheetsDenialCategory category)
+    public void DenialVocabularyContainsSafeCategories(TimesheetsDenialCategory category)
     {
         TimesheetsAuthorizationDecision decision = TimesheetsAuthorizationDecision.Denied(
             category,
@@ -51,7 +51,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Access_guard_short_circuits_when_tenant_authority_fails()
+    public async Task AccessGuardShortCircuitsWhenTenantAuthorityFails()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         IProjectReferenceValidator projectValidator = Substitute.For<IProjectReferenceValidator>();
@@ -94,7 +94,7 @@ public sealed class AuthorizationServiceTests
     [InlineData(TimesheetsTenantAccessState.AmbiguousAuthority, TimesheetsDenialCategory.AmbiguousAuthority)]
     [InlineData(TimesheetsTenantAccessState.UnavailableSiblingAuthority, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(TimesheetsTenantAccessState.UnconfiguredPolicy, TimesheetsDenialCategory.UnconfiguredPolicy)]
-    public async Task Access_guard_maps_tenant_failures_to_safe_denials(
+    public async Task AccessGuardMapsTenantFailuresToSafeDenials(
         TimesheetsTenantAccessState state,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -120,7 +120,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Access_guard_denies_cross_tenant_reference_before_policy_check()
+    public async Task AccessGuardDeniesCrossTenantReferenceBeforePolicyCheck()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         IProjectReferenceValidator projectValidator = Substitute.For<IProjectReferenceValidator>();
@@ -163,7 +163,7 @@ public sealed class AuthorizationServiceTests
     [InlineData(ReferenceValidationState.Unavailable, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.DisabledOrArchived, TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(ReferenceValidationState.InvalidReference, TimesheetsDenialCategory.InvalidReference)]
-    public async Task Access_guard_maps_reference_failures_to_safe_denials(
+    public async Task AccessGuardMapsReferenceFailuresToSafeDenials(
         ReferenceValidationState state,
         TimesheetsDenialCategory expectedCategory)
     {
@@ -195,7 +195,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Access_guard_reaches_policy_only_after_tenant_and_references_are_valid()
+    public async Task AccessGuardReachesPolicyOnlyAfterTenantAndReferencesAreValid()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         IProjectReferenceValidator projectValidator = Substitute.For<IProjectReferenceValidator>();
@@ -244,7 +244,7 @@ public sealed class AuthorizationServiceTests
     [InlineData(TimesheetsOperation.Export)]
     [InlineData(TimesheetsOperation.Confirmation)]
     [InlineData(TimesheetsOperation.UiActionVisibility)]
-    public async Task Access_guard_routes_each_host_operation_through_tenant_authority_and_policy(
+    public async Task AccessGuardRoutesEachHostOperationThroughTenantAuthorityAndPolicy(
         TimesheetsOperation operation)
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
@@ -294,7 +294,7 @@ public sealed class AuthorizationServiceTests
     [InlineData("project")]
     [InlineData("work")]
     [InlineData("party")]
-    public async Task Access_guard_denies_cross_tenant_targets_for_each_resource_before_policy(
+    public async Task AccessGuardDeniesCrossTenantTargetsForEachResourceBeforePolicy(
         string target)
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
@@ -349,7 +349,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Access_guard_allows_command_after_tenant_references_and_policy_allow()
+    public async Task AccessGuardAllowsCommandAfterTenantReferencesAndPolicyAllow()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         IProjectReferenceValidator projectValidator = Substitute.For<IProjectReferenceValidator>();
@@ -389,7 +389,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Access_guard_does_not_run_trusted_work_when_authorization_fails()
+    public async Task AccessGuardDoesNotRunTrustedWorkWhenAuthorizationFails()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         tenantValidator
@@ -420,7 +420,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Access_guard_runs_trusted_work_when_authorization_succeeds()
+    public async Task AccessGuardRunsTrustedWorkWhenAuthorizationSucceeds()
     {
         ITimesheetsTenantAccessValidator tenantValidator = Substitute.For<ITimesheetsTenantAccessValidator>();
         IProjectReferenceValidator projectValidator = Substitute.For<IProjectReferenceValidator>();
@@ -466,7 +466,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Evaluate_ui_action_returns_allowed_outcome_when_policy_allows()
+    public async Task EvaluateUiActionReturnsAllowedOutcomeWhenPolicyAllows()
     {
         TimesheetsAccessGuard guard = UiActionGuard(
             TimesheetsTenantAccessResult.Authorized(),
@@ -482,7 +482,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Evaluate_ui_action_maps_unresolved_authority_to_authority_unresolved_copy()
+    public async Task EvaluateUiActionMapsUnresolvedAuthorityToAuthorityUnresolvedCopy()
     {
         TimesheetsAccessGuard guard = UiActionGuard(
             TimesheetsTenantAccessResult.Denied(
@@ -500,7 +500,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Evaluate_ui_action_maps_access_denial_to_denied_copy()
+    public async Task EvaluateUiActionMapsAccessDenialToDeniedCopy()
     {
         TimesheetsAccessGuard guard = UiActionGuard(
             TimesheetsTenantAccessResult.Denied(
@@ -520,7 +520,7 @@ public sealed class AuthorizationServiceTests
     [Theory]
     [InlineData(TimesheetsOperation.Command)]
     [InlineData(TimesheetsOperation.Export)]
-    public async Task Evaluate_ui_action_requires_the_ui_action_visibility_operation(TimesheetsOperation operation)
+    public async Task EvaluateUiActionRequiresTheUiActionVisibilityOperation(TimesheetsOperation operation)
     {
         TimesheetsAccessGuard guard = UiActionGuard(
             TimesheetsTenantAccessResult.Authorized(),
@@ -535,7 +535,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Evaluate_ui_action_requires_a_ui_action()
+    public async Task EvaluateUiActionRequiresAUiAction()
     {
         TimesheetsAccessGuard guard = UiActionGuard(
             TimesheetsTenantAccessResult.Authorized(),
@@ -550,7 +550,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public async Task Evaluate_ui_action_rejects_allowed_denied_visibility()
+    public async Task EvaluateUiActionRejectsAllowedDeniedVisibility()
     {
         TimesheetsAccessGuard guard = UiActionGuard(
             TimesheetsTenantAccessResult.Authorized(),
@@ -563,7 +563,7 @@ public sealed class AuthorizationServiceTests
     }
 
     [Fact]
-    public void Ui_action_policy_outcomes_use_safe_copy_and_hide_disable_semantics()
+    public void UiActionPolicyOutcomesUseSafeCopyAndHideDisableSemantics()
     {
         TimesheetsUiActionPolicyOutcome denied = TimesheetsUiActionPolicyOutcome.Denied(
             TimesheetsUiAction.Export,

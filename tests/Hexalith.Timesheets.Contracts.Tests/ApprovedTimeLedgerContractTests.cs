@@ -17,7 +17,7 @@ public sealed class ApprovedTimeLedgerContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Ledger_query_contract_round_trips_without_server_controlled_authority_fields()
+    public void LedgerQueryContractRoundTripsWithoutServerControlledAuthorityFields()
     {
         QueryApprovedTimeLedger query = new()
         {
@@ -46,7 +46,7 @@ public sealed class ApprovedTimeLedgerContractTests
     }
 
     [Fact]
-    public void Ledger_read_model_round_trips_approval_lineage_comment_policy_cursor_and_degraded_freshness()
+    public void LedgerReadModelRoundTripsApprovalLineageCommentPolicyCursorAndDegradedFreshness()
     {
         ApprovedTimeLedgerReadModel model = new(
             [
@@ -81,7 +81,7 @@ public sealed class ApprovedTimeLedgerContractTests
     }
 
     [Fact]
-    public void Approved_time_ledger_metadata_declares_filters_fields_actions_and_status_vocabularies()
+    public void ApprovedTimeLedgerMetadataDeclaresFiltersFieldsActionsAndStatusVocabularies()
     {
         TimesheetsMetadataDescriptor descriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.projection.approved-time-ledger");
@@ -118,7 +118,7 @@ public sealed class ApprovedTimeLedgerContractTests
     }
 
     [Fact]
-    public void Approved_ledger_export_metadata_declares_review_dialog_audit_and_blocking_copy()
+    public void ApprovedLedgerExportMetadataDeclaresReviewDialogAuditAndBlockingCopy()
     {
         TimesheetsMetadataDescriptor descriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.command.approved-ledger-export");
@@ -146,7 +146,7 @@ public sealed class ApprovedTimeLedgerContractTests
     }
 
     [Fact]
-    public void Approved_ledger_export_preview_metadata_binds_review_readiness_to_a_file_free_query()
+    public void ApprovedLedgerExportPreviewMetadataBindsReviewReadinessToAFileFreeQuery()
     {
         TimesheetsMetadataDescriptor descriptor = TimesheetsMetadataCatalog.Descriptors
             .Single(static descriptor => descriptor.Name == "timesheets.query.approved-ledger-export-preview");

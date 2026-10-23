@@ -44,7 +44,7 @@ public sealed class DiagnosticsPrivacyTests
     ];
 
     [Fact]
-    public void Source_logging_does_not_include_sensitive_payload_or_identifier_material()
+    public void SourceLoggingDoesNotIncludeSensitivePayloadOrIdentifierMaterial()
     {
         string[] sourceFiles = Directory.GetFiles(RepositoryRoot.PathTo("src"), "*.cs", SearchOption.AllDirectories);
         sourceFiles.ShouldNotBeEmpty();
@@ -67,7 +67,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Magic_link_invalid_outcome_category_stays_server_internal_and_off_the_external_contract()
+    public void MagicLinkInvalidOutcomeCategoryStaysServerInternalAndOffTheExternalContract()
     {
         string serverOutcomeCategory = File.ReadAllText(RepositoryRoot.PathTo(
             "src",
@@ -103,7 +103,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Works_reference_adapter_does_not_log_serialize_or_copy_works_owned_state()
+    public void WorksReferenceAdapterDoesNotLogSerializeOrCopyWorksOwnedState()
     {
         string adapterRoot = RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Works");
         string[] adapterFiles = Directory.GetFiles(adapterRoot, "*.cs", SearchOption.AllDirectories)
@@ -169,7 +169,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Host_metadata_endpoint_exposes_correlation_safe_module_metadata_only()
+    public void HostMetadataEndpointExposesCorrelationSafeModuleMetadataOnly()
     {
         string hostProgram = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
 
@@ -187,7 +187,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Policy_guidance_omits_protected_payloads_sibling_state_and_finance_ownership_language()
+    public void PolicyGuidanceOmitsProtectedPayloadsSiblingStateAndFinanceOwnershipLanguage()
     {
         string[] artifactPaths =
         [
@@ -221,7 +221,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Export_metadata_and_golden_fixtures_omit_raw_payloads_and_finance_ownership_language()
+    public void ExportMetadataAndGoldenFixturesOmitRawPayloadsAndFinanceOwnershipLanguage()
     {
         string[] exportMetadataLines = File.ReadAllLines(RepositoryRoot.PathTo(
             "src",
@@ -251,7 +251,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Approved_time_export_preview_read_model_is_structurally_rows_free()
+    public void ApprovedTimeExportPreviewReadModelIsStructurallyRowsFree()
     {
         // The export preview surface must never be able to carry export evidence rows or CSV output, so a
         // preview can never be mistaken for, substituted for, or used to leak a generated file. The dedicated
@@ -269,7 +269,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Evidence_detail_contract_schemas_expose_no_envelope_or_identifier_fields()
+    public void EvidenceDetailContractSchemasExposeNoEnvelopeOrIdentifierFields()
     {
         string openApiPath = RepositoryRoot.PathTo(
             "src",
@@ -299,7 +299,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Approval_decision_schema_exposes_only_stable_evidence_without_display_or_raw_authority_material()
+    public void ApprovalDecisionSchemaExposesOnlyStableEvidenceWithoutDisplayOrRawAuthorityMaterial()
     {
         string openApiPath = RepositoryRoot.PathTo(
             "src",
@@ -349,7 +349,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Magic_link_read_schema_exposes_operator_state_without_raw_capability_material()
+    public void MagicLinkReadSchemaExposesOperatorStateWithoutRawCapabilityMaterial()
     {
         string openApiPath = RepositoryRoot.PathTo(
             "src",
@@ -387,7 +387,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Correction_evidence_schema_exposes_only_stable_lineage_without_display_or_raw_authority_material()
+    public void CorrectionEvidenceSchemaExposesOnlyStableLineageWithoutDisplayOrRawAuthorityMaterial()
     {
         string openApiPath = RepositoryRoot.PathTo(
             "src",
@@ -438,7 +438,7 @@ public sealed class DiagnosticsPrivacyTests
     }
 
     [Fact]
-    public void Magic_link_state_loader_and_token_hash_index_persist_no_raw_token_or_decoded_material()
+    public void MagicLinkStateLoaderAndTokenHashIndexPersistNoRawTokenOrDecodedMaterial()
     {
         string indexReadModel = File.ReadAllText(RepositoryRoot.PathTo(
             "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexReadModel.cs"));

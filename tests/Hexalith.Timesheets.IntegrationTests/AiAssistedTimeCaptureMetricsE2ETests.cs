@@ -21,7 +21,7 @@ public sealed class AiAssistedTimeCaptureMetricsE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Ai_agent_time_capture_workflow_records_projects_and_discloses_separated_metrics()
+    public async Task AiAgentTimeCaptureWorkflowRecordsProjectsAndDisclosesSeparatedMetrics()
     {
         AllowAllAccessGuard accessGuard = new();
         TimeEntryCommandService commandService = new(accessGuard);
@@ -103,7 +103,7 @@ public sealed class AiAssistedTimeCaptureMetricsE2ETests
     }
 
     [Fact]
-    public async Task Human_time_capture_workflow_rejects_provider_reported_ai_metrics()
+    public async Task HumanTimeCaptureWorkflowRejectsProviderReportedAiMetrics()
     {
         TimeEntryCommandResult commandResult = await new TimeEntryCommandService(new AllowAllAccessGuard()).RecordAsync(
             Context(),

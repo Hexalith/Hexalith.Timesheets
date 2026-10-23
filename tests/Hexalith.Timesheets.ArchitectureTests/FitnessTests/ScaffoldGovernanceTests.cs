@@ -29,7 +29,7 @@ public sealed class ScaffoldGovernanceTests
     ];
 
     [Fact]
-    public void Source_does_not_introduce_forbidden_authoritative_persistence_or_ui_patterns()
+    public void SourceDoesNotIntroduceForbiddenAuthoritativePersistenceOrUiPatterns()
     {
         string[] sourceFiles = Directory.GetFiles(RepositoryRoot.PathTo("src"), "*.cs", SearchOption.AllDirectories);
         sourceFiles.ShouldNotBeEmpty();
@@ -46,7 +46,7 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public void No_fluent_ui_v4_component_package_is_introduced()
+    public void NoFluentUiV4ComponentPackageIsIntroduced()
     {
         foreach (string projectFile in RepositoryRoot.TimesheetsProjectFiles())
         {
@@ -55,7 +55,7 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public void AppHost_initializes_security_through_eventstore_aspire_helper()
+    public void AppHostInitializesSecurityThroughEventstoreAspireHelper()
     {
         string program = File.ReadAllText(RepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Program.cs"));
         XElement project = LoadAppHostProject();
@@ -72,7 +72,7 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public void AppHost_pins_approved_aspire_apphost_sdk()
+    public void AppHostPinsApprovedAspireApphostSdk()
     {
         // Approved pins are literal here, like the global.json SDK pin below; documentation guards derive
         // the same value from this project instead of restating it.
@@ -87,7 +87,7 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public void AppHost_retains_nuget_orchestration_and_suppresses_only_aspire010()
+    public void AppHostRetainsNugetOrchestrationAndSuppressesOnlyAspire010()
     {
         // Decided 2026-09-13 (Option 2): keep the SDK-added Aspire.Hosting.Orchestration and
         // Aspire.Dashboard.Sdk packages so restore/build stay self-contained, and suppress only the
@@ -141,7 +141,7 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public void Repository_pins_approved_dotnet_sdk()
+    public void RepositoryPinsApprovedDotnetSdk()
     {
         using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
         JsonElement sdk = globalJson.RootElement.GetProperty("sdk");
@@ -183,7 +183,7 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public async Task Nested_submodules_are_not_initialized_inside_root_level_submodules()
+    public async Task NestedSubmodulesAreNotInitializedInsideRootLevelSubmodules()
     {
         string[] submodulePaths = await ReadSubmodulePathsAsync(RepositoryRoot.PathTo(".gitmodules"));
 

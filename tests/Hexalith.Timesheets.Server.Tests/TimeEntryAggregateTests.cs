@@ -14,7 +14,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class TimeEntryAggregateTests
 {
     [Fact]
-    public void Record_draft_time_entry_emits_stable_draft_event()
+    public void RecordDraftTimeEntryEmitsStableDraftEvent()
     {
         RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
 
@@ -36,7 +36,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_rejects_duplicate_time_entry_id_without_duplicate_event()
+    public void RecordRejectsDuplicateTimeEntryIdWithoutDuplicateEvent()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = new();
@@ -62,7 +62,7 @@ public sealed class TimeEntryAggregateTests
     [Theory]
     [InlineData(0, "durationMinutes", "positive")]
     [InlineData(-5, "durationMinutes", "positive")]
-    public void Record_rejects_non_positive_duration_with_field_error(
+    public void RecordRejectsNonPositiveDurationWithFieldError(
         int durationMinutes,
         string expectedField,
         string expectedCode)
@@ -76,7 +76,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_rejects_missing_required_capture_fields()
+    public void RecordRejectsMissingRequiredCaptureFields()
     {
         RecordTimeEntry command = ValidCommand() with
         {
@@ -98,7 +98,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_rejects_invalid_ai_metric_units()
+    public void RecordRejectsInvalidAiMetricUnits()
     {
         RecordTimeEntry command = ValidCommand() with
         {
@@ -127,7 +127,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_accepts_automated_agent_provider_metrics_and_keeps_duration_authoritative()
+    public void RecordAcceptsAutomatedAgentProviderMetricsAndKeepsDurationAuthoritative()
     {
         RecordTimeEntry command = ValidCommand() with
         {
@@ -151,7 +151,7 @@ public sealed class TimeEntryAggregateTests
     [Theory]
     [InlineData(ContributorCategory.Employee)]
     [InlineData(ContributorCategory.ExternalContributor)]
-    public void Record_rejects_human_or_external_provider_reported_ai_metrics(
+    public void RecordRejectsHumanOrExternalProviderReportedAiMetrics(
         ContributorCategory category)
     {
         RecordTimeEntry command = ValidCommand() with
@@ -167,7 +167,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_rejects_unknown_ai_source_and_token_availability()
+    public void RecordRejectsUnknownAiSourceAndTokenAvailability()
     {
         RecordTimeEntry command = ValidCommand() with
         {
@@ -193,7 +193,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_rejects_unavailable_token_metrics_when_counts_are_supplied()
+    public void RecordRejectsUnavailableTokenMetricsWhenCountsAreSupplied()
     {
         RecordTimeEntry command = ValidCommand() with
         {
@@ -217,7 +217,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_accepts_unavailable_ai_placeholder_for_human_entries()
+    public void RecordAcceptsUnavailableAiPlaceholderForHumanEntries()
     {
         RecordTimeEntry command = ValidCommand() with
         {
@@ -232,7 +232,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Record_rejects_invalid_comment_policy_decisions()
+    public void RecordRejectsInvalidCommentPolicyDecisions()
     {
         RecordTimeEntry command = ValidCommand() with { Comment = InvalidComment() };
 
@@ -243,7 +243,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_draft_time_entry_emits_submitted_event_and_preserves_recorded_state()
+    public void SubmitDraftTimeEntryEmitsSubmittedEventAndPreservesRecordedState()
     {
         RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
         TimeEntryState state = RecordedState(command);
@@ -272,7 +272,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_duplicate_same_submission_id_is_noop()
+    public void SubmitDuplicateSameSubmissionIdIsNoop()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RecordedState(command);
@@ -300,7 +300,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_rejects_non_draft_state_with_different_submission_id()
+    public void SubmitRejectsNonDraftStateWithDifferentSubmissionId()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RecordedState(command);
@@ -326,7 +326,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_rejects_missing_submitter_tenant_and_unrecorded_state()
+    public void SubmitRejectsMissingSubmitterTenantAndUnrecordedState()
     {
         SubmitTimeEntriesForApproval submit = SubmitCommand(new TimeEntryId("time-entry-1"));
 
@@ -345,7 +345,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_revalidates_required_recorded_facts_with_entry_field_paths()
+    public void SubmitRevalidatesRequiredRecordedFactsWithEntryFieldPaths()
     {
         TimeEntryState state = new();
         state.Apply(new TimeEntryRecorded(
@@ -379,7 +379,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Approve_submitted_time_entry_emits_approved_event_and_preserves_prior_evidence()
+    public void ApproveSubmittedTimeEntryEmitsApprovedEventAndPreservesPriorEvidence()
     {
         RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
         TimeEntryState state = SubmittedState(command);
@@ -412,7 +412,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Reject_submitted_time_entry_emits_rejected_event_with_required_reason()
+    public void RejectSubmittedTimeEntryEmitsRejectedEventWithRequiredReason()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = SubmittedState(command);
@@ -437,7 +437,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Approve_duplicate_same_decision_id_and_resulting_state_is_noop()
+    public void ApproveDuplicateSameDecisionIdAndResultingStateIsNoop()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = SubmittedState(command);
@@ -465,7 +465,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Approved_state_derives_locked_from_direct_edit_from_replayed_events()
+    public void ApprovedStateDerivesLockedFromDirectEditFromReplayedEvents()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = SubmittedState(command);
@@ -488,7 +488,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Rejects_different_decision_id_after_terminal_approval_state()
+    public void RejectsDifferentDecisionIdAfterTerminalApprovalState()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = SubmittedState(command);
@@ -518,7 +518,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_after_approved_rejects_with_typed_lock_rejection()
+    public void SubmitAfterApprovedRejectsWithTypedLockRejection()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = ApprovedState(command);
@@ -538,7 +538,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Reject_after_approved_rejects_with_typed_lock_rejection_without_new_event()
+    public void RejectAfterApprovedRejectsWithTypedLockRejectionWithoutNewEvent()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = ApprovedState(command);
@@ -559,7 +559,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Approve_rejects_unrecorded_draft_missing_context_and_non_utc_timestamp()
+    public void ApproveRejectsUnrecordedDraftMissingContextAndNonUtcTimestamp()
     {
         TimesheetsRejection rejection = Rejection(TimeEntry.Handle(
             ApproveCommand(new TimeEntryId("time-entry-1")),
@@ -583,7 +583,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Reject_revalidates_missing_reason_and_submitted_state()
+    public void RejectRevalidatesMissingReasonAndSubmittedState()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RecordedState(command);
@@ -606,7 +606,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_rejected_time_entry_emits_additive_correction_and_preserves_rejection_evidence()
+    public void CorrectRejectedTimeEntryEmitsAdditiveCorrectionAndPreservesRejectionEvidence()
     {
         RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
         TimeEntryState state = RejectedState(command);
@@ -645,7 +645,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_duplicate_same_correction_id_after_apply_is_noop()
+    public void CorrectDuplicateSameCorrectionIdAfterApplyIsNoop()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RejectedState(command);
@@ -674,7 +674,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_rejects_non_rejected_state_and_different_correction_after_correction()
+    public void CorrectRejectsNonRejectedStateAndDifferentCorrectionAfterCorrection()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState draft = RecordedState(command);
@@ -716,7 +716,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_rejects_missing_context_non_utc_timestamp_invalid_comment_and_ai_metrics()
+    public void CorrectRejectsMissingContextNonUtcTimestampInvalidCommentAndAiMetrics()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RejectedState(command);
@@ -748,7 +748,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_allows_corrected_rejected_entry_and_preserves_rejection_lineage()
+    public void SubmitAllowsCorrectedRejectedEntryAndPreservesRejectionLineage()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RejectedState(command);
@@ -777,7 +777,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_rejects_rejected_state_without_intervening_correction()
+    public void SubmitRejectsRejectedStateWithoutInterveningCorrection()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RejectedState(command);
@@ -798,7 +798,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_approved_entry_rejects_with_typed_lock_rejection_without_correction_event()
+    public void CorrectApprovedEntryRejectsWithTypedLockRejectionWithoutCorrectionEvent()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = ApprovedState(command);
@@ -820,7 +820,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_approved_time_entry_emits_additive_correction_and_preserves_approval_evidence()
+    public void CorrectApprovedTimeEntryEmitsAdditiveCorrectionAndPreservesApprovalEvidence()
     {
         RecordTimeEntry command = ValidCommand() with { Comment = Comment() };
         TimeEntryState state = ApprovedState(command);
@@ -863,7 +863,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_approved_duplicate_same_correction_id_after_apply_is_noop()
+    public void CorrectApprovedDuplicateSameCorrectionIdAfterApplyIsNoop()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = ApprovedState(command);
@@ -1076,7 +1076,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Correct_approved_rejects_same_id_different_values_missing_reason_and_non_utc_timestamp()
+    public void CorrectApprovedRejectsSameIdDifferentValuesMissingReasonAndNonUtcTimestamp()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = ApprovedState(command);
@@ -1128,7 +1128,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Submit_after_superseded_entry_rejects_with_typed_superseded_lock_rejection()
+    public void SubmitAfterSupersededEntryRejectsWithTypedSupersededLockRejection()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = RejectedState(command);
@@ -1151,7 +1151,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Approve_after_superseded_submitted_rejects_with_typed_superseded_lock_without_event()
+    public void ApproveAfterSupersededSubmittedRejectsWithTypedSupersededLockWithoutEvent()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = SupersededSubmittedState(command);
@@ -1177,7 +1177,7 @@ public sealed class TimeEntryAggregateTests
     }
 
     [Fact]
-    public void Reject_after_superseded_submitted_rejects_with_typed_superseded_lock_without_event()
+    public void RejectAfterSupersededSubmittedRejectsWithTypedSupersededLockWithoutEvent()
     {
         RecordTimeEntry command = ValidCommand();
         TimeEntryState state = SupersededSubmittedState(command);

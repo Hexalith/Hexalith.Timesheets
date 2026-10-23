@@ -13,7 +13,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class TimeEntryDisplayHydrationTests
 {
     [Fact]
-    public async Task Default_display_hydration_provider_returns_unavailable_states_without_guessing_labels()
+    public async Task DefaultDisplayHydrationProviderReturnsUnavailableStatesWithoutGuessingLabels()
     {
         UnavailableDisplayHydrationProvider provider = new();
         TimesheetsRequestContext context = Context();
@@ -46,7 +46,7 @@ public sealed class TimeEntryDisplayHydrationTests
     }
 
     [Fact]
-    public async Task Display_hydrator_routes_project_target_to_project_provider_and_activity_provider()
+    public async Task DisplayHydratorRoutesProjectTargetToProjectProviderAndActivityProvider()
     {
         IPartyDisplayHydrationProvider partyProvider = Substitute.For<IPartyDisplayHydrationProvider>();
         IProjectDisplayHydrationProvider projectProvider = Substitute.For<IProjectDisplayHydrationProvider>();
@@ -93,7 +93,7 @@ public sealed class TimeEntryDisplayHydrationTests
     }
 
     [Fact]
-    public async Task Display_hydrator_routes_work_target_to_work_provider_without_project_lookup()
+    public async Task DisplayHydratorRoutesWorkTargetToWorkProviderWithoutProjectLookup()
     {
         IPartyDisplayHydrationProvider partyProvider = Substitute.For<IPartyDisplayHydrationProvider>();
         IProjectDisplayHydrationProvider projectProvider = Substitute.For<IProjectDisplayHydrationProvider>();

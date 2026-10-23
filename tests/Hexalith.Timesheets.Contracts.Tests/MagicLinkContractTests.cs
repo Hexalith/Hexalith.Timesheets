@@ -18,7 +18,7 @@ public sealed class MagicLinkContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public void Issue_magic_link_command_round_trips_without_authority_or_token_fields()
+    public void IssueMagicLinkCommandRoundTripsWithoutAuthorityOrTokenFields()
     {
         IssueMagicLinkConfirmationCapability command = IssueCommand();
 
@@ -45,7 +45,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Issued_event_stores_hash_and_safe_metadata_without_raw_token_material()
+    public void IssuedEventStoresHashAndSafeMetadataWithoutRawTokenMaterial()
     {
         MagicLinkConfirmationCapabilityIssued issued = new(
             new MagicLinkCapabilityId("capability-1"),
@@ -82,7 +82,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Confirm_magic_link_command_and_used_event_round_trip_without_raw_token_material()
+    public void ConfirmMagicLinkCommandAndUsedEventRoundTripWithoutRawTokenMaterial()
     {
         ConfirmTimeThroughMagicLink command = new();
         MagicLinkConfirmationCapabilityUsed used = new(
@@ -113,7 +113,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Adjust_magic_link_command_round_trips_with_only_editable_fields()
+    public void AdjustMagicLinkCommandRoundTripsWithOnlyEditableFields()
     {
         AdjustTimeThroughMagicLink command = new(
             new DateOnly(2026, 6, 20),
@@ -142,7 +142,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Display_response_shape_contains_only_safe_confirmation_details()
+    public void DisplayResponseShapeContainsOnlySafeConfirmationDetails()
     {
         MagicLinkConfirmationDisplayResponse response = new(
             new DateOnly(2026, 6, 19),
@@ -166,7 +166,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Adjustment_display_response_marks_editable_and_readonly_fields_without_authority_material()
+    public void AdjustmentDisplayResponseMarksEditableAndReadonlyFieldsWithoutAuthorityMaterial()
     {
         MagicLinkAdjustmentDisplayResponse response = new(
             new DateOnly(2026, 6, 19),
@@ -189,7 +189,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Read_model_and_metadata_are_free_of_raw_token_fields()
+    public void ReadModelAndMetadataAreFreeOfRawTokenFields()
     {
         MagicLinkConfirmationCapabilityReadModel readModel = new(
             new MagicLinkCapabilityId("capability-1"),
@@ -226,7 +226,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Invalid_link_denial_contract_has_one_safe_recovery_path_without_authority_material()
+    public void InvalidLinkDenialContractHasOneSafeRecoveryPathWithoutAuthorityMaterial()
     {
         MagicLinkInvalidLinkDenial denial = MagicLinkInvalidLinkDenial.Default;
 
@@ -250,7 +250,7 @@ public sealed class MagicLinkContractTests
     }
 
     [Fact]
-    public void Openapi_declares_magic_link_schemas_additively_without_authority_body_fields()
+    public void OpenapiDeclaresMagicLinkSchemasAdditivelyWithoutAuthorityBodyFields()
     {
         JsonObject schemas = LoadSchemas();
 

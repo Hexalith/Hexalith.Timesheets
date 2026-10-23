@@ -27,7 +27,7 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 /// <param name="indexCoordinator">The selected global candidate-index epoch, when registered.</param>
 /// <param name="allowLegacyIndexRead">Explicit compatibility for isolated legacy loader fixtures.</param>
 /// <param name="loggerFactory">Optional internal outcome diagnostics.</param>
-/// <param name="stateLoadingOptions">Optional invocation-local history read allowances.</param>
+/// <param name="stateLoadingOptions">Optional invocation deadline and history read allowances.</param>
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     IEventStoreGatewayClient eventStore,
     IReadModelStore readModelStore,
@@ -97,7 +97,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             return UnavailableCatalog();
         }
 
-        return await LoadActivityTypeCatalogAsync(tenant, cancellationToken).ConfigureAwait(false);
+        return await LoadActivityTypeCatalogAsync(tenant, new(_stateLoadingOptions), cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -130,7 +130,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     internal Task<ActivityTypeCatalogReadModel> LoadCatalogForTenantAsync(
         TenantReference tenant,
         CancellationToken cancellationToken)
-        => LoadActivityTypeCatalogAsync(tenant, cancellationToken);
+        => LoadActivityTypeCatalogAsync(tenant, new(_stateLoadingOptions), cancellationToken);
 
     /// <inheritdoc/>
     public async ValueTask<MagicLinkEndpointTokenState> LoadTokenStateAsync(
@@ -153,8 +153,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             return UnavailableTokenState();
         }
 
-        MagicLinkTokenHashCapabilityIndexEntry? candidate = await ResolveCandidateAsync(
+        MagicLinkTokenHashCapabilityIndexEntry? candidate = await ResolveCandidateWithinBudgetAsync(
             tokenHash,
+            budget,
             cancellationToken).ConfigureAwait(false);
         if (candidate is null)
         {
@@ -191,6 +192,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
         ActivityTypeCatalogReadModel catalog = await LoadActivityTypeCatalogAsync(
             candidate.Tenant,
+            budget,
             cancellationToken).ConfigureAwait(false);
         if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
         {
@@ -225,6 +227,23 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         }
 
         return new MagicLinkEndpointTokenState(capability, timeEntry, catalog);
+    }
+
+    private async Task<MagicLinkTokenHashCapabilityIndexEntry?> ResolveCandidateWithinBudgetAsync(
+        MagicLinkTokenHash tokenHash,
+        MagicLinkStateLoadingBudget budget,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await budget.ReadModelAsync(token => ResolveCandidateAsync(tokenHash, token),
+                cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
+        {
+            MagicLinkStateReadLog.Failure(_logger, "index-read", ex);
+            return null;
+        }
     }
 
     private async Task<MagicLinkTokenHashCapabilityIndexEntry?> ResolveCandidateAsync(
@@ -600,16 +619,16 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
     private async Task<ActivityTypeCatalogReadModel> LoadActivityTypeCatalogAsync(
         TenantReference tenant,
+        MagicLinkStateLoadingBudget budget,
         CancellationToken cancellationToken)
     {
         try
         {
-            ReadModelEntry<ActivityTypeCatalogReadModel> entry = await _readModelStore
-                .GetAsync<ActivityTypeCatalogReadModel>(
+            ReadModelEntry<ActivityTypeCatalogReadModel> entry = await budget.ReadModelAsync(
+                token => _readModelStore.GetAsync<ActivityTypeCatalogReadModel>(
                     MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName,
-                    MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant),
-                    cancellationToken)
-                .ConfigureAwait(false);
+                    MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant), token),
+                cancellationToken).ConfigureAwait(false);
 
             ActivityTypeCatalogReadModel? catalog = entry.Value;
             if (catalog?.ProjectionFreshness is null
@@ -627,6 +646,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 return UnavailableCatalog();
             }
 
+            budget.ThrowIfUnavailable(cancellationToken);
             return catalog.ProjectionFreshness.State == ProjectionFreshnessState.Fresh
                 ? catalog
                 : new ActivityTypeCatalogReadModel(

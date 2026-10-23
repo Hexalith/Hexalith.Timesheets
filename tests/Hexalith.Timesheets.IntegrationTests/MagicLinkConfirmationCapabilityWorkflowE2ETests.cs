@@ -27,7 +27,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
-    public async Task Magic_link_issue_revoke_and_operator_projection_workflow_discloses_state_without_token_material()
+    public async Task MagicLinkIssueRevokeAndOperatorProjectionWorkflowDisclosesStateWithoutTokenMaterial()
     {
         RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
         DeterministicTokenGenerator tokenGenerator = new();
@@ -101,7 +101,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     }
 
     [Fact]
-    public async Task Magic_link_adjustment_workflow_updates_draft_values_projects_safe_evidence_and_rejects_replay()
+    public async Task MagicLinkAdjustmentWorkflowUpdatesDraftValuesProjectsSafeEvidenceAndRejectsReplay()
     {
         RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
         DeterministicTokenGenerator tokenGenerator = new();
@@ -247,7 +247,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     }
 
     [Fact]
-    public async Task Magic_link_issue_with_unfresh_activity_catalog_fails_closed_without_token_or_projection()
+    public async Task MagicLinkIssueWithUnfreshActivityCatalogFailsClosedWithoutTokenOrProjection()
     {
         RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
         DeterministicTokenGenerator tokenGenerator = new();
@@ -273,7 +273,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     }
 
     [Fact]
-    public async Task Magic_link_confirmation_workflow_consumes_token_projects_used_state_and_rejects_replay()
+    public async Task MagicLinkConfirmationWorkflowConsumesTokenProjectsUsedStateAndRejectsReplay()
     {
         RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
         DeterministicTokenGenerator tokenGenerator = new();
@@ -368,7 +368,7 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
     }
 
     [Fact]
-    public async Task Invalid_magic_link_confirmation_and_adjustment_workflows_return_no_external_disclosure()
+    public async Task InvalidMagicLinkConfirmationAndAdjustmentWorkflowsReturnNoExternalDisclosure()
     {
         RecordingAccessGuard accessGuard = new(TimesheetsAuthorizationDecision.Allowed());
         MagicLinkConfirmationCapabilityCommandService service = CreateService(accessGuard, new DeterministicTokenGenerator());

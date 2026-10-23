@@ -13,7 +13,7 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class ApprovedTimeLedgerAuthorizationTests
 {
     [Fact]
-    public async Task Ledger_query_denies_tenant_before_projection_lookup()
+    public async Task LedgerQueryDeniesTenantBeforeProjectionLookup()
     {
         TrackingLedgerReader reader = new(Page([Row("time-entry-1", ProjectTarget())]));
         TrackingHydrator hydrator = new();
@@ -36,7 +36,7 @@ public sealed class ApprovedTimeLedgerAuthorizationTests
     }
 
     [Fact]
-    public async Task Unavailable_ledger_reader_discloses_nothing_after_tenant_authorization()
+    public async Task UnavailableLedgerReaderDisclosesNothingAfterTenantAuthorization()
     {
         ApprovedTimeLedgerQueryService service = new(
             new SequencedAccessGuard([TimesheetsAuthorizationDecision.Allowed()]),
@@ -53,7 +53,7 @@ public sealed class ApprovedTimeLedgerAuthorizationTests
     }
 
     [Fact]
-    public async Task Ledger_query_filters_insufficient_role_rows_without_hydrating_denied_rows()
+    public async Task LedgerQueryFiltersInsufficientRoleRowsWithoutHydratingDeniedRows()
     {
         TrackingLedgerReader reader = new(Page([
             Row("time-entry-1", ProjectTarget()),
@@ -83,7 +83,7 @@ public sealed class ApprovedTimeLedgerAuthorizationTests
     }
 
     [Fact]
-    public async Task Ledger_query_blocks_export_readiness_when_all_rows_are_filtered()
+    public async Task LedgerQueryBlocksExportReadinessWhenAllRowsAreFiltered()
     {
         TrackingHydrator hydrator = new();
         ApprovedTimeLedgerQueryService service = new(
@@ -114,7 +114,7 @@ public sealed class ApprovedTimeLedgerAuthorizationTests
     [InlineData(TimesheetsDenialCategory.UnavailableSiblingAuthority)]
     [InlineData(TimesheetsDenialCategory.InvalidReference)]
     [InlineData(TimesheetsDenialCategory.UnconfiguredPolicy)]
-    public async Task Ledger_query_fails_closed_for_non_filterable_row_denials(
+    public async Task LedgerQueryFailsClosedForNonFilterableRowDenials(
         TimesheetsDenialCategory category)
     {
         TrackingHydrator hydrator = new();
@@ -137,7 +137,7 @@ public sealed class ApprovedTimeLedgerAuthorizationTests
     }
 
     [Fact]
-    public async Task Ledger_row_authorization_uses_project_for_project_rows_and_work_for_work_rows()
+    public async Task LedgerRowAuthorizationUsesProjectForProjectRowsAndWorkForWorkRows()
     {
         RecordingAccessGuard guard = new();
         ApprovedTimeLedgerQueryService service = new(

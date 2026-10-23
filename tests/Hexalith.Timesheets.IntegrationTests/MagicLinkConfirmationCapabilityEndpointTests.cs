@@ -43,7 +43,7 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
     }
 
     [Fact]
-    public void Host_maps_narrow_magic_link_confirmation_routes_without_authority_body_fields()
+    public void HostMapsNarrowMagicLinkConfirmationRoutesWithoutAuthorityBodyFields()
     {
         string program = File.ReadAllText(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
         string endpoint = File.ReadAllText(TestRepositoryRoot.PathTo(
@@ -85,7 +85,7 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
     }
 
     [Fact]
-    public void Magic_link_endpoint_denial_copy_is_opaque()
+    public void MagicLinkEndpointDenialCopyIsOpaque()
     {
         string endpoint = File.ReadAllText(TestRepositoryRoot.PathTo(
             "src",
@@ -109,7 +109,7 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
     }
 
     [Fact]
-    public void Magic_link_external_routes_share_one_denial_helper()
+    public void MagicLinkExternalRoutesShareOneDenialHelper()
     {
         string endpoint = File.ReadAllText(TestRepositoryRoot.PathTo(
             "src",

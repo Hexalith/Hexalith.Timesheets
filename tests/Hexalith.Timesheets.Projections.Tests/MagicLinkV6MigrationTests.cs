@@ -1,6 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+
+using Hexalith.EventStore.Contracts.Projections;
+using Hexalith.Timesheets.Contracts.Events.MagicLinks;
+using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Testing.Fakes;
@@ -15,6 +20,279 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class MagicLinkV6MigrationTests
 {
+    [Fact]
+    public async Task ColdAuthorizedAbortRecoveryResumesAndRepeatedRecoveryNeverPromotes()
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await SeedMetadataSourceAsync(coordinator, scope);
+        var authority = new PermittedCertifiedMigration();
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, authority);
+        interrupted.InterruptAfterNextSeal = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        string corruptKey = CorruptSelectedMetadata(store, scope, before.ActiveGeneration, "format");
+        ReadModelEntry<JsonObject> corrupt = await store.GetAsync<JsonObject>(scope.StoreName, corruptKey, TestContext.Current.CancellationToken);
+        interrupted.InterruptAfterAborting = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).IsAborting.ShouldBeTrue();
+        ReadModelEntry<MagicLinkV6MigrationAbortWitness> witness = await store.GetAsync<MagicLinkV6MigrationAbortWitness>(
+            scope.StoreName, MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(before.Epoch), TestContext.Current.CancellationToken);
+        witness.Value.ShouldNotBeNull().InventoryFingerprint.ShouldBe("certified-selected-v6");
+
+        // New coordinator and migration objects model a process restart with only durable bindings.
+        var coldCoordinator = new SharedProjectionEpochCoordinator(store, store);
+        var cold = new MagicLinkTokenHashCapabilityIndexV6Migration(coldCoordinator, store, authority);
+        await Should.ThrowAsync<InvalidOperationException>(() => cold.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        // Assert migration retry itself completed cleanup before an explicit idempotent recovery can mask it.
+        SharedProjectionEpochStatus afterRetry = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        afterRetry.IsAborting.ShouldBeFalse(); afterRetry.IsBuilding.ShouldBeFalse(); afterRetry.PendingDeliveryCount.ShouldBe(0);
+        afterRetry.ActiveGeneration.ShouldBe(before.ActiveGeneration); afterRetry.Epoch.ShouldBe(before.Epoch);
+        await cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+        SharedProjectionEpochStatus after = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.IsAborting.ShouldBeFalse(); after.IsBuilding.ShouldBeFalse(); after.PendingDeliveryCount.ShouldBe(0);
+        after.ActiveGeneration.ShouldBe(before.ActiveGeneration); after.Epoch.ShouldBe(before.Epoch);
+        (await store.GetAsync<JsonObject>(scope.StoreName, corruptKey, TestContext.Current.CancellationToken)).ETag.ShouldBe(corrupt.ETag);
+        (await store.GetAsync<MagicLinkV6MigrationAbortWitness>(scope.StoreName,
+            MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(before.Epoch), TestContext.Current.CancellationToken)).ETag.ShouldBe(witness.ETag);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ColdRecoveryDrainsHealthyPendingDeliveryAndResumesInterruptedStageDeletion(bool interruptDeletion)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var batches = new InterruptCheckpointBatch(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, batches);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry original = await SeedMetadataSourceAsync(coordinator, scope);
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, new PermittedCertifiedMigration());
+        interrupted.InterruptAfterNextSeal = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        string privatePrefix = "shared-generation:" + scope.ComputeHash() + ":" + before.Epoch + ":";
+        string[] privateKeys = batches.WrittenKeys.Where(key => key.StartsWith(privatePrefix, StringComparison.Ordinal)).ToArray();
+        string[] metadataKeys = batches.WrittenKeys.Where(key => (key.Contains(":stage-page:", StringComparison.Ordinal) || key.Contains(":stage-key:", StringComparison.Ordinal))).ToArray();
+        privateKeys.ShouldNotBeEmpty(); metadataKeys.ShouldNotBeEmpty();
+        var issued = new MagicLinkConfirmationCapabilityIssued(new("pending-owner"), new("tenant-a"), new("party-a"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-a")), new("activity-a"), new("entry-a"),
+            MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm, new("pending-hash"),
+            DateTimeOffset.UnixEpoch.AddDays(1), new("issuer-a"), DateTimeOffset.UnixEpoch.AddHours(1),
+            new("timesheets", "pending-source"), true);
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var projectionEvent = new ProjectionEventDto(nameof(StoredMagicLinkIssued),
+            JsonSerializer.SerializeToUtf8Bytes(new StoredMagicLinkIssued(issued), json), "json", 1,
+            DateTimeOffset.UnixEpoch, "correlation", "message", "user", 2);
+        var delivery = new SharedProjectionDelivery("pending-owner", 2,
+            JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-a", "timesheets", "pending-owner", [projectionEvent]), json), []);
+        SharedProjectionLease lease = await coordinator.RefreshLeaseAsync(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        (await coordinator.JournalAsync(scope, lease, delivery, TestContext.Current.CancellationToken)).ShouldBe(SharedProjectionJournalResult.Journaled);
+        interrupted.InterruptAfterAborting = true;
+        await Should.ThrowAsync<IOException>(() => coordinator.AbortAsync(scope, "explicit-v7", (_, _, _) =>
+            Task.FromResult<IReadOnlyList<ReadModelBatchOperation>>([]), TestContext.Current.CancellationToken));
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).PendingDeliveryCount.ShouldBe(1);
+        batches.InterruptDuringStageDeletion = interruptDeletion;
+        if (interruptDeletion)
+        {
+            await Should.ThrowAsync<IOException>(() => migration.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+            (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).IsAborting.ShouldBeTrue();
+            // This fault follows an actual private-value delete commit, before metadata cleanup.
+            privateKeys.Any(key => store.SnapshotRaw(scope.StoreName, key) is null).ShouldBeTrue();
+            metadataKeys.Any(key => store.SnapshotRaw(scope.StoreName, key) is not null).ShouldBeTrue();
+        }
+        var coldCoordinator = new SharedProjectionEpochCoordinator(store, store);
+        var cold = new MagicLinkTokenHashCapabilityIndexV6Migration(coldCoordinator, store, new PermittedCertifiedMigration());
+        await cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+        SharedProjectionEpochStatus after = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.IsAborting.ShouldBeFalse(); after.IsBuilding.ShouldBeFalse(); after.PendingDeliveryCount.ShouldBe(0);
+        after.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+        foreach (string key in privateKeys.Concat(metadataKeys)) store.SnapshotRaw(scope.StoreName, key).ShouldBeNull();
+        var pending = (await coldCoordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey("pending-hash"), TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        pending.Contributions["pending-hash"].ShouldContain(new MagicLinkTokenHashCapabilityIndexEntry(issued.Tenant, issued.CapabilityId));
+        var selectedOriginal = (await coldCoordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey(original.TokenHash), TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        selectedOriginal.Contributions[original.TokenHash].ShouldContain(original.Candidate);
+        await cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("scope")]
+    [InlineData("operation")]
+    [InlineData("inventory")]
+    [InlineData("epoch")]
+    [InlineData("generation")]
+    [InlineData("corrupt-json")]
+    [InlineData("authority")]
+    [InlineData("caller-operation")]
+    [InlineData("caller-inventory")]
+    public async Task AbortRecoveryRefusesForeignMissingOrCorruptBindingsWithoutMutation(string mismatch)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        var sourceRow = await SeedMetadataSourceAsync(coordinator, scope);
+        var authority = new PermittedCertifiedMigration { AllowAnyFingerprint = true };
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, authority);
+        interrupted.InterruptAfterNextSeal = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        _ = CorruptSelectedMetadata(store, scope, before.ActiveGeneration, "format");
+        interrupted.InterruptAfterAborting = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        string witnessKey = MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(before.Epoch);
+        ReadModelEntry<MagicLinkV6MigrationAbortWitness> entry = await store.GetAsync<MagicLinkV6MigrationAbortWitness>(scope.StoreName,
+            witnessKey, TestContext.Current.CancellationToken);
+        MagicLinkV6MigrationAbortWitness original = entry.Value.ShouldNotBeNull();
+        if (mismatch == "missing")
+            (await store.TryEraseAsync(scope.StoreName, witnessKey, entry.ETag!, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        else if (mismatch == "corrupt-json") store.SeedRaw(scope.StoreName, witnessKey, new { Epoch = "invalid" });
+        else if (mismatch == "authority") authority.Denied = true;
+        else if (!mismatch.StartsWith("caller-", StringComparison.Ordinal))
+            store.SeedRaw(scope.StoreName, witnessKey, mismatch switch
+            {
+                "scope" => original with { TenantId = "foreign" },
+                "operation" => original with { OperationId = "foreign" },
+                "inventory" => original with { InventoryFingerprint = "foreign" },
+                "epoch" => original with { Epoch = original.Epoch + 1 },
+                _ => original with { SourceGeneration = original.SourceGeneration + 1 }
+            });
+        string epochKey = "shared-epoch:" + scope.ComputeHash();
+        var epochBefore = await store.GetAsync<JsonObject>(scope.StoreName, epochKey, TestContext.Current.CancellationToken);
+        var witnessBefore = await store.GetAsync<JsonObject>(scope.StoreName, witnessKey, TestContext.Current.CancellationToken);
+        string[] sourceKeys =
+        [
+            PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey),
+            PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexTreeReader.RootKey),
+            PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexProjection.StateKey),
+            PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexProjection.ShardKey(sourceRow.TokenHash)),
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey
+        ];
+        async Task<Dictionary<string, ReadModelEntry<JsonObject>>> SnapshotSourceAsync()
+        {
+            var snapshots = new Dictionary<string, ReadModelEntry<JsonObject>>(StringComparer.Ordinal);
+            foreach (string key in sourceKeys)
+                snapshots[key] = await store.GetAsync<JsonObject>(scope.StoreName, key, TestContext.Current.CancellationToken);
+            return snapshots;
+        }
+        async Task AssertSourceUnchangedAsync(Dictionary<string, ReadModelEntry<JsonObject>> snapshots)
+        {
+            foreach ((string key, ReadModelEntry<JsonObject> snapshot) in snapshots)
+            {
+                var retained = await store.GetAsync<JsonObject>(scope.StoreName, key, TestContext.Current.CancellationToken);
+                retained.ETag.ShouldBe(snapshot.ETag);
+                (retained.Value?.ToJsonString()).ShouldBe(snapshot.Value?.ToJsonString());
+            }
+        }
+        var recoverySource = await SnapshotSourceAsync();
+        Exception? failure = await Record.ExceptionAsync(() => migration.RecoverAbortAsync(
+            mismatch == "caller-operation" ? "foreign" : "explicit-v7",
+            mismatch == "caller-inventory" ? "foreign" : "certified-selected-v6", TestContext.Current.CancellationToken));
+        failure.ShouldNotBeNull();
+        await AssertSourceUnchangedAsync(recoverySource);
+        var migrationSource = await SnapshotSourceAsync();
+        (await Record.ExceptionAsync(() => migration.MigrateAsync(
+            mismatch == "caller-operation" ? "foreign" : "explicit-v7",
+            mismatch == "caller-inventory" ? "foreign" : "certified-selected-v6",
+            TestContext.Current.CancellationToken))).ShouldNotBeNull();
+        await AssertSourceUnchangedAsync(migrationSource);
+        (await store.GetAsync<JsonObject>(scope.StoreName, epochKey, TestContext.Current.CancellationToken)).ETag.ShouldBe(epochBefore.ETag);
+        (await store.GetAsync<JsonObject>(scope.StoreName, witnessKey, TestContext.Current.CancellationToken)).ETag.ShouldBe(witnessBefore.ETag);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).IsAborting.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task RecoveryRechecksEpochAfterWitnessReadAndNeverAbortsReplacement()
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await SeedMetadataSourceAsync(coordinator, scope);
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, new PermittedCertifiedMigration());
+        interrupted.InterruptAfterNextSeal = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus old = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        _ = CorruptSelectedMetadata(store, scope, old.ActiveGeneration, "format");
+        interrupted.InterruptAfterAborting = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        long replacementEpoch = 0;
+        interrupted.BeforeWitnessReturnAsync = async () =>
+        {
+            await coordinator.AbortAsync(scope, "explicit-v7", (_, _, _) =>
+                Task.FromResult<IReadOnlyList<ReadModelBatchOperation>>([]), TestContext.Current.CancellationToken);
+            // Deliberately simulate a second operator violating the unique-ID rule. The SDK's
+            // operation-only AbortAsync would otherwise accept this replacement reservation.
+            replacementEpoch = await coordinator.BeginAsync(scope, "explicit-v7", "replacement-inventory",
+                new Dictionary<string, long>(), TestContext.Current.CancellationToken, operationTenantId: scope.TenantId);
+        };
+        await Should.ThrowAsync<InvalidOperationException>(() => migration.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        replacementEpoch.ShouldBeGreaterThan(old.Epoch);
+        SharedProjectionEpochStatus retained = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        retained.Epoch.ShouldBe(replacementEpoch); retained.ActiveGeneration.ShouldBe(old.ActiveGeneration);
+        retained.OperationId.ShouldBe("explicit-v7"); retained.IsBuilding.ShouldBeTrue(); retained.IsAborting.ShouldBeFalse();
+        (await store.GetAsync<MagicLinkV6MigrationAbortWitness>(scope.StoreName,
+            MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(replacementEpoch), TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task WitnessPersistedBeforeWriteFaultReusesBindingAndETagOnRetry()
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await SeedMetadataSourceAsync(coordinator, scope);
+        interrupted.InterruptAfterWitnessWrite = true;
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, new PermittedCertifiedMigration());
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        before.IsBuilding.ShouldBeTrue(); before.IsAborting.ShouldBeFalse();
+        before.ActiveGeneration.ShouldBeLessThan(before.Epoch);
+        string witnessKey = MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(before.Epoch);
+        ReadModelEntry<MagicLinkV6MigrationAbortWitness> witness = await store.GetAsync<MagicLinkV6MigrationAbortWitness>(
+            scope.StoreName, witnessKey, TestContext.Current.CancellationToken);
+        witness.Value.ShouldNotBeNull().SourceGeneration.ShouldBe(before.ActiveGeneration);
+        witness.Value.InventoryFingerprint.ShouldBe("certified-selected-v6");
+        var cold = new MagicLinkTokenHashCapabilityIndexV6Migration(new SharedProjectionEpochCoordinator(store, store),
+            store, new PermittedCertifiedMigration());
+        await cold.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+        ReadModelEntry<MagicLinkV6MigrationAbortWitness> reused = await store.GetAsync<MagicLinkV6MigrationAbortWitness>(
+            scope.StoreName, witnessKey, TestContext.Current.CancellationToken);
+        reused.Value.ShouldBe(witness.Value); reused.ETag.ShouldBe(witness.ETag);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration.ShouldBe(before.Epoch);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WitnessInitializationFailureLeavesBuildingRetryable(bool validationFailure)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await SeedMetadataSourceAsync(coordinator, scope);
+        interrupted.WitnessWriteFailure = validationFailure ? new InvalidOperationException("Witness fault") : new IOException("Witness fault");
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, new PermittedCertifiedMigration());
+        (await Record.ExceptionAsync(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken))).ShouldNotBeNull();
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        before.IsBuilding.ShouldBeTrue(); before.IsAborting.ShouldBeFalse(); before.ActiveGeneration.ShouldBeLessThan(before.Epoch);
+        (await store.GetAsync<MagicLinkV6MigrationAbortWitness>(scope.StoreName,
+            MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(before.Epoch), TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+        await Should.ThrowAsync<InvalidOperationException>(() => migration.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        await migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration.ShouldBe(before.Epoch);
+        await Should.ThrowAsync<InvalidOperationException>(() => migration.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+    }
+
     [Theory]
     [InlineData("format", false)]
     [InlineData("root", false)]
@@ -678,7 +956,11 @@ public sealed class MagicLinkV6MigrationTests
 
         public int StageAppendCalls { get; private set; }
 
-        public Task<ReadModelBatchResult> ExecuteAsync(ReadModelBatch batch,
+        public bool InterruptDuringStageDeletion { get; set; }
+
+        public HashSet<string> WrittenKeys { get; } = new(StringComparer.Ordinal);
+
+        public async Task<ReadModelBatchResult> ExecuteAsync(ReadModelBatch batch,
             CancellationToken cancellationToken = default)
         {
             if (batch.Scope.BatchId.StartsWith("stage:", StringComparison.Ordinal)
@@ -691,12 +973,29 @@ public sealed class MagicLinkV6MigrationTests
                 InterruptBeforeFirstTenantCheckpoint = false;
                 throw new IOException("Interrupted after private node flush and before its checkpoint.");
             }
-            return inner.ExecuteAsync(batch, cancellationToken);
+            foreach (ReadModelBatchOperation operation in batch.Operations.Where(static operation => operation.Kind == ReadModelBatchOperationKind.Write))
+                WrittenKeys.Add(operation.Key);
+            ReadModelBatchResult result = await inner.ExecuteAsync(batch, cancellationToken);
+            if (result.IsSuccess && InterruptDuringStageDeletion && batch.Operations.Any(operation =>
+                operation.Kind == ReadModelBatchOperationKind.Delete && operation.Key.StartsWith("shared-generation:", StringComparison.Ordinal)))
+            {
+                InterruptDuringStageDeletion = false;
+                throw new IOException("Interrupted after deleting private stage values.");
+            }
+            return result;
         }
     }
 
     private sealed class InterruptSealStore(InMemoryReadModelStore inner) : IReadModelStore, IReadModelConditionalEraser
     {
+        public bool InterruptAfterAborting { get; set; }
+
+        public Exception? WitnessWriteFailure { get; set; }
+
+        public bool InterruptAfterWitnessWrite { get; set; }
+
+        public Func<Task>? BeforeWitnessReturnAsync { get; set; }
+
         public bool InterruptNextSeal { get; set; }
 
         public bool InterruptAfterNextSeal { get; set; }
@@ -712,6 +1011,11 @@ public sealed class MagicLinkV6MigrationTests
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(string storeName, string key,
             CancellationToken cancellationToken = default) where TValue : class
         {
+            if (typeof(TValue) == typeof(MagicLinkV6MigrationAbortWitness) && BeforeWitnessReturnAsync is { } callback)
+            {
+                BeforeWitnessReturnAsync = null;
+                return ReadBeforeCallbackAsync<TValue>(storeName, key, callback, cancellationToken);
+            }
             if (key == FaultReadKey)
             {
                 FaultReadKey = null;
@@ -724,6 +1028,14 @@ public sealed class MagicLinkV6MigrationTests
             }
             return WrapInvalidJson ? ReadWrappedAsync<TValue>(storeName, key, cancellationToken)
                 : inner.GetAsync<TValue>(storeName, key, cancellationToken);
+        }
+
+        private async Task<ReadModelEntry<TValue>> ReadBeforeCallbackAsync<TValue>(string storeName,
+            string key, Func<Task> callback, CancellationToken cancellationToken) where TValue : class
+        {
+            ReadModelEntry<TValue> entry = await inner.GetAsync<TValue>(storeName, key, cancellationToken);
+            await callback();
+            return entry;
         }
 
         private async Task<ReadModelEntry<TValue>> ReadWrappedAsync<TValue>(string storeName, string key, CancellationToken token)
@@ -753,6 +1065,11 @@ public sealed class MagicLinkV6MigrationTests
         public async Task<bool> TrySaveAsync<TValue>(string storeName, string key, TValue value,
             string etag, CancellationToken cancellationToken = default) where TValue : class
         {
+            if (value is MagicLinkV6MigrationAbortWitness && WitnessWriteFailure is { } witnessFailure)
+            {
+                WitnessWriteFailure = null;
+                throw witnessFailure;
+            }
             if (InterruptNextSeal && value.GetType().Name == "SharedProjectionEpochState"
                 && value.GetType().GetProperty("OperationId")?.GetValue(value) is "explicit-v7"
                 && value.GetType().GetProperty("StageFingerprint")?.GetValue(value) is string)
@@ -761,6 +1078,17 @@ public sealed class MagicLinkV6MigrationTests
                 throw new IOException("Interrupted after the final root page and before sealing.");
             }
             bool saved = await inner.TrySaveAsync(storeName, key, value, etag, cancellationToken);
+            if (saved && InterruptAfterWitnessWrite && value is MagicLinkV6MigrationAbortWitness)
+            {
+                InterruptAfterWitnessWrite = false;
+                throw new IOException("Interrupted after persisting the immutable witness.");
+            }
+            if (saved && InterruptAfterAborting && value.GetType().Name == "SharedProjectionEpochState"
+                && value.GetType().GetProperty("Phase")?.GetValue(value)?.ToString() == "Aborting")
+            {
+                InterruptAfterAborting = false;
+                throw new IOException("Interrupted after durable Aborting transition.");
+            }
             if (saved && InterruptAfterNextSeal && value.GetType().Name == "SharedProjectionEpochState"
                 && value.GetType().GetProperty("OperationId")?.GetValue(value) is "explicit-v7"
                 && value.GetType().GetProperty("StageFingerprint")?.GetValue(value) is string)

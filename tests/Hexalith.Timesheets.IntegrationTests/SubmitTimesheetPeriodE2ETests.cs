@@ -15,7 +15,7 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed class SubmitTimesheetPeriodE2ETests
 {
     [Fact]
-    public async Task Period_submission_blocks_rejected_entries_then_submits_two_drafts_with_already_submitted_entry()
+    public async Task PeriodSubmissionBlocksRejectedEntriesThenSubmitsTwoDraftsWithAlreadySubmittedEntry()
     {
         AllowAllAccessGuard accessGuard = new();
         TimesheetPeriodSubmissionCommandService service = new(accessGuard);

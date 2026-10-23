@@ -40,7 +40,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_stores_hash_and_metadata_only_and_returns_one_time_token()
+    public async Task IssueMagicLinkStoresHashAndMetadataOnlyAndReturnsOneTimeToken()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -66,7 +66,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_fails_closed_on_tenant_authority_before_references_or_token_generation()
+    public async Task IssueMagicLinkFailsClosedOnTenantAuthorityBeforeReferencesOrTokenGeneration()
     {
         Fixture fixture = new();
         fixture.TenantValidator
@@ -92,7 +92,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_fails_closed_on_invalid_project_before_contributor_policy_or_token_generation()
+    public async Task IssueMagicLinkFailsClosedOnInvalidProjectBeforeContributorPolicyOrTokenGeneration()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -120,7 +120,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_fails_closed_on_invalid_contributor_before_policy_or_token_generation()
+    public async Task IssueMagicLinkFailsClosedOnInvalidContributorBeforePolicyOrTokenGeneration()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.ProjectValidator
@@ -148,7 +148,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_fails_closed_on_invalid_work_before_contributor_policy_or_token_generation()
+    public async Task IssueMagicLinkFailsClosedOnInvalidWorkBeforeContributorPolicyOrTokenGeneration()
     {
         Fixture fixture = AuthorizedFixture();
         fixture.WorkValidator
@@ -174,7 +174,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_fails_closed_on_policy_denial_before_token_generation()
+    public async Task IssueMagicLinkFailsClosedOnPolicyDenialBeforeTokenGeneration()
     {
         Fixture fixture = AuthorizedProjectFixture();
         fixture.PolicyEvaluator
@@ -198,7 +198,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_fails_closed_when_activity_catalog_is_stale()
+    public async Task IssueMagicLinkFailsClosedWhenActivityCatalogIsStale()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -217,7 +217,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_rejects_inactive_or_ambiguous_activity_type_before_token_generation()
+    public async Task IssueMagicLinkRejectsInactiveOrAmbiguousActivityTypeBeforeTokenGeneration()
     {
         Fixture inactiveFixture = AuthorizedProjectFixture();
         Fixture ambiguousFixture = AuthorizedProjectFixture();
@@ -246,7 +246,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_fails_closed_on_malformed_scope_without_target()
+    public async Task IssueMagicLinkFailsClosedOnMalformedScopeWithoutTarget()
     {
         Fixture fixture = AuthorizedProjectFixture();
         IssueMagicLinkConfirmationCapability command = IssueCommand() with
@@ -304,7 +304,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_rejects_non_utc_or_expired_at_issue_expiry()
+    public async Task IssueMagicLinkRejectsNonUtcOrExpiredAtIssueExpiry()
     {
         Fixture fixture = AuthorizedProjectFixture();
         IssueMagicLinkConfirmationCapability command = IssueCommand() with
@@ -325,7 +325,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Issue_magic_link_rejects_duplicate_capability_without_generating_new_token()
+    public async Task IssueMagicLinkRejectsDuplicateCapabilityWithoutGeneratingNewToken()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData state = IssuedState();
@@ -344,7 +344,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Revoke_magic_link_records_auditable_terminal_state()
+    public async Task RevokeMagicLinkRecordsAuditableTerminalState()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -380,7 +380,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Revoke_or_expire_unknown_and_terminal_capabilities_are_rejected()
+    public async Task RevokeOrExpireUnknownAndTerminalCapabilitiesAreRejected()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData terminal = IssuedState();
@@ -409,7 +409,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_magic_link_consumes_capability_and_records_contributor_evidence_not_approval()
+    public async Task ConfirmMagicLinkConsumesCapabilityAndRecordsContributorEvidenceNotApproval()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -441,7 +441,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Adjust_magic_link_updates_draft_external_values_then_consumes_capability()
+    public async Task AdjustMagicLinkUpdatesDraftExternalValuesThenConsumesCapability()
     {
         Fixture fixture = AuthorizedProjectFixture();
         AdjustTimeThroughMagicLink command = AdjustCommand() with
@@ -619,7 +619,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Adjust_magic_link_fails_closed_without_capability_use_when_values_are_invalid()
+    public async Task AdjustMagicLinkFailsClosedWithoutCapabilityUseWhenValuesAreInvalid()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -639,7 +639,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Adjust_magic_link_rejects_confirm_only_capability_without_time_entry_adjustment()
+    public async Task AdjustMagicLinkRejectsConfirmOnlyCapabilityWithoutTimeEntryAdjustment()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -659,7 +659,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirmation_and_adjustment_invalid_link_rejections_have_identical_neutral_messages()
+    public async Task ConfirmationAndAdjustmentInvalidLinkRejectionsHaveIdenticalNeutralMessages()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -697,7 +697,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Invalid_link_categories_all_produce_equivalent_external_service_results_without_dispatch()
+    public async Task InvalidLinkCategoriesAllProduceEquivalentExternalServiceResultsWithoutDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData used = IssuedState();
@@ -761,7 +761,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Adjust_invalid_link_categories_all_produce_equivalent_external_service_results_without_dispatch()
+    public async Task AdjustInvalidLinkCategoriesAllProduceEquivalentExternalServiceResultsWithoutDispatch()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData used = IssuedState(allowedAction: MagicLinkAllowedAction.Adjust);
@@ -828,7 +828,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Malformed_magic_link_tokens_are_neutral_for_describe_confirm_and_adjust()
+    public async Task MalformedMagicLinkTokensAreNeutralForDescribeConfirmAndAdjust()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -881,7 +881,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Unauthorized_magic_link_disclosure_paths_return_no_display_or_dispatch_result()
+    public async Task UnauthorizedMagicLinkDisclosurePathsReturnNoDisplayOrDispatchResult()
     {
         Fixture fixture = new();
         fixture.TenantValidator
@@ -937,7 +937,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     [Theory]
     [InlineData("different-token")]
     [InlineData("")]
-    public async Task Confirm_magic_link_fails_closed_for_invalid_tokens_without_time_entry_confirmation(string token)
+    public async Task ConfirmMagicLinkFailsClosedForInvalidTokensWithoutTimeEntryConfirmation(string token)
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -956,7 +956,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_magic_link_rejects_reuse_without_time_entry_confirmation()
+    public async Task ConfirmMagicLinkRejectsReuseWithoutTimeEntryConfirmation()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData state = IssuedState();
@@ -983,7 +983,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_magic_link_fails_closed_for_unavailable_or_terminal_capabilities_without_time_entry_confirmation()
+    public async Task ConfirmMagicLinkFailsClosedForUnavailableOrTerminalCapabilitiesWithoutTimeEntryConfirmation()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData revoked = IssuedState();
@@ -1018,7 +1018,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_magic_link_fails_closed_for_expired_tenant_mismatched_wrong_action_or_wrong_scope_state()
+    public async Task ConfirmMagicLinkFailsClosedForExpiredTenantMismatchedWrongActionOrWrongScopeState()
     {
         Fixture fixture = AuthorizedProjectFixture();
         (CapabilityStateData State, DateTimeOffset ConfirmedAtUtc)[] cases =
@@ -1047,7 +1047,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Confirm_magic_link_fails_closed_when_time_entry_state_does_not_match_capability_scope()
+    public async Task ConfirmMagicLinkFailsClosedWhenTimeEntryStateDoesNotMatchCapabilityScope()
     {
         Fixture fixture = AuthorizedProjectFixture();
         TimeEntryState differentContributor = RecordedExternalState(contributor: new PartyReference("party-2"));
@@ -1072,7 +1072,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Describe_magic_link_returns_only_safe_confirmation_details_for_valid_token()
+    public async Task DescribeMagicLinkReturnsOnlySafeConfirmationDetailsForValidToken()
     {
         Fixture fixture = AuthorizedProjectFixture();
 
@@ -1220,7 +1220,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Describe_magic_link_fails_closed_for_invalid_used_expired_wrong_scope_or_unfresh_states()
+    public async Task DescribeMagicLinkFailsClosedForInvalidUsedExpiredWrongScopeOrUnfreshStates()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData used = IssuedState();
@@ -1260,7 +1260,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Describe_adjustment_fails_closed_for_invalid_used_expired_wrong_scope_or_unfresh_states()
+    public async Task DescribeAdjustmentFailsClosedForInvalidUsedExpiredWrongScopeOrUnfreshStates()
     {
         Fixture fixture = AuthorizedProjectFixture();
         CapabilityStateData used = IssuedState(allowedAction: MagicLinkAllowedAction.Adjust);
@@ -1308,7 +1308,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public async Task Unavailable_magic_link_state_loader_returns_only_fail_closed_state()
+    public async Task UnavailableMagicLinkStateLoaderReturnsOnlyFailClosedState()
     {
         UnavailableMagicLinkConfirmationCapabilityStateLoader loader = new();
 
@@ -1324,7 +1324,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
-    public void Invalid_link_outcome_vocabulary_is_internal_and_correlation_safe()
+    public void InvalidLinkOutcomeVocabularyIsInternalAndCorrelationSafe()
     {
         Enum.GetNames<MagicLinkInvalidLinkOutcomeCategory>().ShouldBe([
             "Unknown",
