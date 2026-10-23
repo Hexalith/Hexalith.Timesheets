@@ -455,6 +455,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Establish how the token-hash index and tenant catalog are populated for histories that predate handler deployment.
   evidence: Unverified; medium if confirmed. Both handlers (`MagicLinkTokenHashCapabilityIndexProjectionHandler.cs:61`, `TenantActivityTypeCatalogProjectionHandler.cs`) write only on a live `/project/v2` delivery for an aggregate that receives events, and nothing in the repository triggers `/project/rebuild/shared/v1`. A capability issued, or an Activity Type created, before the handlers went live would have no index entry or catalog item, and its valid token would fail closed. Settle it by checking whether EventStore admission of a newly registered named projection replays existing aggregates, or whether deployment must run an initial shared rebuild per tenant (then record it in the runbook).
+  resolution_note: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. The October 11 canonical deployed inventory/rebuild task retains full source coverage, including histories predating handlers with no read-model rows, and population/verification of both index and tenant catalog before traffic. The chosen replay/rebuild/migration procedure and its verification must be documented in the deployment runbook. No automatic replay, completed initialization or qualified runbook is established. See `tests/five-operational-followups.md`.
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Confirm that unfenced shared rebuilds cannot drop live index or catalog writes made between aggregate enumeration and FinalizeAsync.
@@ -655,6 +656,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
   summary: Inventory deployed read-model components and rebuild or migrate prior magic-link index and catalog data before deployment.
   evidence: Local preflight found no Timesheets Dapr sidecar or usable prior store, while the shared read-model addresses now name `timesheets-readmodels`. Any deployed `statestore` data or component wiring is unobserved; the release decision remains FAIL pending its separate inventory and journey.
+  followup_note: Open acceptance retained 2026-10-23 by `spec-consolidate-five-operational-followups.md`. This task includes full certified source histories predating handler deployment even when no read-model rows exist, population and verification of both token-hash index and tenant catalog before traffic, and documentation of the chosen replay/rebuild/migration procedure and its verification in the deployment runbook. Applicable hosting modes, actual component wiring and prior statestore content remain unqualified. No automatic replay or operational acceptance is established; see `tests/five-operational-followups.md`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
   summary: Include keyed-only domains in the legacy operational metadata path when that path must serve them.
@@ -669,10 +671,12 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
   summary: Reconcile an uncertain committed magic-link use across separate HTTP retries.
   evidence: The endpoint's per-request trace identifier changes the EventStore MessageId on a later HTTP retry; the local fixture proves stable retries within one request and replay denial, not cross-request status reconciliation. The earlier Story 3.6 deferred entry identifies the same release concern.
+  resolution_note: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. This duplicate is carried by the earlier spec-19 task with the identical summary. Cross-request idempotency/status reconciliation remains open; within-request response-loss recovery and replay denial do not settle it. See `tests/five-operational-followups.md`.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
   summary: Verify deployed read-model component wiring and migration independently of the opt-in local journey.
   evidence: Both loader and projection use `timesheets-readmodels`, and the local Dapr lane proves that component exists under the run-mode AppHost. Other hosting modes and prior deployed `statestore` data remain uninspected; default unit tests compare each route with its production constant and cannot detect a component mismatch.
+  resolution_note: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. The October 11 canonical deployed inventory/rebuild task already retains actual component wiring, prior statestore content and applicable hosting modes. Local timesheets-readmodels proof does not establish deployed wiring or migration. That requirement remains open; see `tests/five-operational-followups.md`.
 
 - source_spec: `spec-3-6-migrate-v1-magic-link-index-to-v7.md`
   summary: Establish independently verified legacy owner delivery continuity and pending-journal recovery before enabling the v1 migration in a real environment.
@@ -751,6 +755,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: none
   summary: Address deferred projection storage and migration hardening in separate increments.
   evidence: The user selected diagnostic credential redaction as the first independently shippable goal; storage and migration changes require their own investigation and verification.
+  resolution_note: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. This generic scope-selection wrapper is represented by the existing specific open catalog-key/fencing, deployed inventory, legacy continuity, direct-shard, sealed-v6, operator-binding, fragment-cleanup, subscriber-delivery and selected-index validation tasks. No underlying requirement is completed. Exact successor coverage is in `tests/five-operational-followups.md`.
 
 - source_spec: none
   summary: Address deferred BMAD hook and test-coverage maintenance in separate increments.
@@ -813,6 +818,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 - source_spec: none
   summary: Address projection storage and migration hardening in separate increments.
   evidence: The user selected the EventStore restart timeout; deployed inventory, migration authorization, and storage cleanup require their own evidence.
+  resolution_note: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. This repeated scope-selection wrapper is represented by the same specific open storage/migration tasks enumerated in `tests/five-operational-followups.md`, including deployed inventory, authority and cleanup. Their evidence requirements remain open; neither restart repair nor this consolidation delivers them.
 
 - source_spec: none
   summary: Refresh synchronized repository guidance in a separate increment.
