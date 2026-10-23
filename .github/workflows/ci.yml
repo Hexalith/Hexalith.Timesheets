@@ -20,7 +20,8 @@ jobs:
       solution: Hexalith.Timesheets.slnx
       test-platform: microsoft-testing-platform
       run-consumer-validation: true
-      build-timeout-minutes: 30
+      # The six blocking suites exceeded 30 minutes with coverage on 2026-10-23.
+      build-timeout-minutes: 60
       # Every project is blocking. The live Dapr and performance facts retain their
       # existing explicit opt-ins; ordinary composed-host integration needs no Dapr.
       unit-test-projects: |
