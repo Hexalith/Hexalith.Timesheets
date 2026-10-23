@@ -1,10 +1,13 @@
 using System.Globalization;
 using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
+using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
+using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks;
 
 using Microsoft.Extensions.Logging;
@@ -276,12 +279,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     /// <summary>Exercises exception middleware through every real external route without disclosing query values.</summary>
-    [Fact]
-    public async Task ThrowingMagicLinkDependencyKeepsQueryValuesOutOfDiagnostics()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ThrowingMagicLinkDependencyKeepsQueryValuesOutOfDiagnostics(bool dependencyCancellation)
     {
         IMagicLinkConfirmationCapabilityStateLoader loader = Substitute.For<IMagicLinkConfirmationCapabilityStateLoader>();
         loader.LoadTokenStateAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(ValueTask.FromException<MagicLinkEndpointTokenState>(new InvalidOperationException("dependency-failure-probe")));
+            .Returns(ValueTask.FromException<MagicLinkEndpointTokenState>(dependencyCancellation ? new OperationCanceledException("dependency-failure-probe") : new InvalidOperationException("dependency-failure-probe")));
         using MagicLinkHttpBoundaryFactory factory = new(stateLoader: loader);
         using HttpClient client = factory.CreateClient();
         List<string> tokens = [];
@@ -302,12 +307,108 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
 
             response.StatusCode.ShouldBe(HttpStatusCode.InternalServerError);
+            response.Headers.CacheControl!.NoStore.ShouldBeTrue();
+            response.Headers.GetValues("Referrer-Policy").ShouldBe(["no-referrer"]);
+            using JsonDocument problem = JsonDocument.Parse(body);
+            problem.RootElement.GetProperty("title").GetString().ShouldBe("Unable to process link.");
+            problem.RootElement.GetProperty("detail").GetString().ShouldBe("The link request could not be completed.");
+            body.ShouldNotContain("dependency-failure-probe");
         }
 
         factory.Gateway.SubmissionCount.ShouldBe(0);
-        factory.Logs.Records.Count(record => record.Level >= LogLevel.Error
-            && record.Exception?.Contains("dependency-failure-probe", StringComparison.Ordinal) == true).ShouldBe(4);
+        LogRecord[] faults = factory.Logs.Records.Where(record => record.Level >= LogLevel.Error).ToArray();
+        faults.Length.ShouldBe(4);
+        foreach (LogRecord fault in faults)
+        {
+            fault.Exception.ShouldBeNull();
+            fault.Message.ShouldNotContain("dependency-failure-probe");
+            fault.State.Length.ShouldBe(3);
+        }
         await loader.Received(4).LoadTokenStateAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CommandServiceAuthorizationFaultsAfterSuccessfulLoadingStayOpaqueForEveryRoute()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new();
+        using HttpClient client = factory.CreateClient();
+        factory.AccessGuard.OnAuthorizeAsync = _ => ValueTask.FromException(new InvalidOperationException("private-service-fault-material"));
+        foreach (ExternalRoute route in ExternalRoutes())
+        {
+            int authorizations = factory.AccessGuard.AuthorizationCount;
+            string token = route.Action == MagicLinkAllowedAction.Confirm ? ValidConfirmToken() : ValidAdjustToken();
+            using HttpResponseMessage response = await SendAsync(client, route, token);
+            factory.AccessGuard.AuthorizationCount.ShouldBe(authorizations + 1);
+            response.StatusCode.ShouldBe(HttpStatusCode.InternalServerError);
+            response.Headers.CacheControl!.NoStore.ShouldBeTrue();
+            response.Headers.GetValues("Referrer-Policy").ShouldBe(["no-referrer"]);
+            string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            body.ShouldNotContain("private-service-fault-material");
+            AssertProtectedResponseMaterialAbsent(body, token);
+            using JsonDocument problem = JsonDocument.Parse(body);
+            problem.RootElement.GetProperty("title").GetString().ShouldBe("Unable to process link.");
+            problem.RootElement.GetProperty("detail").GetString().ShouldBe("The link request could not be completed.");
+        }
+        LogRecord[] faults = factory.Logs.Records.Where(record => record.Level == LogLevel.Error).ToArray();
+        faults.Length.ShouldBe(4);
+        faults.ShouldAllBe(record => record.Exception == null && !record.Message.Contains("private-service-fault-material", StringComparison.Ordinal));
+        factory.Gateway.SubmissionCount.ShouldBe(0);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DiagnosticProviderFailuresPreserveOpaqueDenialOrFaultForEveryRoute(bool dependencyFaults)
+    {
+        IMagicLinkConfirmationCapabilityStateLoader loader = Substitute.For<IMagicLinkConfirmationCapabilityStateLoader>();
+        loader.LoadTokenStateAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(_ => dependencyFaults
+            ? ValueTask.FromException<MagicLinkEndpointTokenState>(new IOException("private-fault-material"))
+            : ValueTask.FromResult(new MagicLinkEndpointTokenState(null, null, UnavailableCatalog())));
+        using MagicLinkHttpBoundaryFactory factory = new(stateLoader: loader);
+        using HttpClient client = factory.CreateClient();
+        factory.Logs.ThrowBoundaryDiagnostics = true;
+        foreach (ExternalRoute route in ExternalRoutes())
+        {
+            using HttpResponseMessage response = await SendAsync(client, route, "query-secret-probe");
+            response.StatusCode.ShouldBe(dependencyFaults ? HttpStatusCode.InternalServerError : HttpStatusCode.Forbidden);
+            response.Headers.CacheControl!.NoStore.ShouldBeTrue();
+            response.Headers.GetValues("Referrer-Policy").ShouldBe(["no-referrer"]);
+            (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldNotContain("private-fault-material");
+        }
+        factory.Gateway.SubmissionCount.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task GenuinePublicRequestCancellationPropagatesWithoutErrorDiagnosticsForEveryRoute()
+    {
+        foreach (ExternalRoute route in ExternalRoutes())
+        {
+            IMagicLinkConfirmationCapabilityStateLoader loader = Substitute.For<IMagicLinkConfirmationCapabilityStateLoader>();
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            async Task<MagicLinkEndpointTokenState> WaitAsync(CancellationToken token)
+            {
+                started.TrySetResult();
+                try { await Task.Delay(Timeout.InfiniteTimeSpan, token); }
+                catch (OperationCanceledException) { cancelled.TrySetResult(); throw; }
+                throw new InvalidOperationException();
+            }
+            loader.LoadTokenStateAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(call => new ValueTask<MagicLinkEndpointTokenState>(WaitAsync(call.Arg<CancellationToken>())));
+            using MagicLinkHttpBoundaryFactory factory = new(stateLoader: loader);
+            using HttpClient client = factory.CreateClient();
+            using var caller = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            using var request = new HttpRequestMessage(route.Method, route.Path + "?t=query-secret-probe");
+            if (route.Method == HttpMethod.Post)
+                request.Content = JsonContent.Create(route.Action == MagicLinkAllowedAction.Confirm
+                    ? (object)new ConfirmTimeThroughMagicLink() : AdjustCommand());
+            Task<HttpResponseMessage> pending = client.SendAsync(request, caller.Token);
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+            caller.Cancel();
+            await Should.ThrowAsync<OperationCanceledException>(() => pending);
+            await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+            factory.Logs.Records.Where(record => record.Category == "Hexalith.Timesheets.MagicLinkBoundary" && record.Level == LogLevel.Error).ShouldBeEmpty();
+        }
     }
 
     private static HttpResponseMessage OpaqueDenialResponse(HttpStatusCode status = HttpStatusCode.Forbidden)
@@ -382,7 +483,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         }
         else
         {
-            AssertDurationEvidenceAbsent(record.Message);
+            Match fault = Regex.Match(record.Message,
+                @"\AExternal link request failed: operation=(?<operation>[a-z-]+) trace=(?<trace>(?:[a-f0-9]{32})?)\z");
+            if (fault.Success)
+                AssertDurationEvidenceAbsent(fault.Groups["operation"].Value);
+            else
+                AssertDurationEvidenceAbsent(record.Message);
         }
 
         AssertDurationEvidenceAbsent(record.Exception ?? string.Empty);

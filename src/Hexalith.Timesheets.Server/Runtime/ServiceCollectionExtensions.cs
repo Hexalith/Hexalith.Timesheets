@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddTimesheetsServerKernel(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IConfiguration>(_ => new ConfigurationBuilder().Build());
 
         services.TryAddSingleton<ITimesheetsAccessGuard, TimesheetsAccessGuard>();
         services.TryAddSingleton<ITimeEntryCommentPublicationAuthority, DenyAllTimeEntryCommentPublicationAuthority>();
@@ -58,7 +59,6 @@ public static class ServiceCollectionExtensions
         if (!services.Any(static descriptor => !descriptor.IsKeyedService
             && descriptor.ServiceType == typeof(IEventStoreGatewayClient)))
         {
-            services.TryAddSingleton<IConfiguration>(_ => new ConfigurationBuilder().Build());
             services.AddOptions<TimesheetsEventStoreGatewayOptions>()
                 .Configure<IConfiguration>((options, configuration) =>
                 {
@@ -78,6 +78,10 @@ public static class ServiceCollectionExtensions
 
         services.AddEventStoreReadModelStore();
         services.TryAddSingleton<IMagicLinkTokenGenerator, CryptographicMagicLinkTokenGenerator>();
+        services.AddOptions<MagicLinkStateLoadingOptions>()
+            .BindConfiguration("Timesheets:MagicLinks:StateLoading")
+            .Validate(static options => options.IsValid(), "Magic-link state loading options must be bounded.")
+            .ValidateOnStart();
         services.TryAddScoped<EventStoreMagicLinkConfirmationCapabilityStateLoader>();
         services.TryAddScoped<IMagicLinkConfirmationCapabilityStateLoader>(
             static provider => provider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>());

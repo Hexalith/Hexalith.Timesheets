@@ -195,10 +195,12 @@ The repeated 2026-09-14 agent-context findings are consolidated into the canonic
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Decide how loaders should treat unknown future events in authority streams.
+  resolution_note: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. Complete capability/Time Entry admission rejects unknown events, preserves known stored/domain aliases, rejection no-ops and ordinary owner events, and returns no partial authority. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
   evidence: `EventStoreMagicLinkConfirmationCapabilityStateLoader.Deserialize` returns null for an unrecognized event and folding continues, so a future revocation-like event after otherwise valid state could be ignored. Every current capability and Time Entry event type is recognized; a current producer or planned event with authorization-changing semantics would settle this maybe-false risk.
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
   summary: Add a total read budget if realistic aggregate history can amplify one magic-link request.
+  resolution_note: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. Invocation-local history allowances share page/event/payload/deadline limits across repeated streams, charge raw duplicates before buffering, and bound non-cooperative awaited stream reads. Validated options default to 64 pages, 10,000 events, 16 MiB and five seconds. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
   evidence: `ReadAllEventsAsync` pages until the pinned latest sequence is reached and has no total page or event cap. EventStore limits each page and current domain flows keep these aggregates bounded; evidence of a realistically oversized or continuously advancing stream causing request amplification would settle the risk.
 
 - source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
@@ -587,6 +589,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-close-remaining-acceptance-gaps.md`
   summary: Decide how public magic-link routes should handle unexpected loader or command-service exceptions.
+  resolution_note: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. The approved policy returns fixed opaque HTTP 500 with private headers and sanitized Error diagnostics across all four public handlers. Invalid links retain 403; genuine cancellation propagates and diagnostic-provider failures cannot alter outcomes. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
   evidence: The confirm and adjust POST handlers already awaited loader and command services before this increment, and an uncaught access-guard or domain-service exception can still produce a framework error response instead of the common opaque denial. A dedicated error-handling decision should distinguish unexpected faults and cancellation from invalid links, then verify the public response and privacy-safe diagnostics without masking operational failures.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
@@ -613,6 +616,7 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
   summary: Decide whether `ExistingTimeEntry` magic links are usable, or stop issuing them.
+  resolution_note: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. The approved policy rejects new ExistingTimeEntry issuance before token generation and at aggregate/durable processing boundaries. Historical event reads, enum compatibility and existing use denial remain; Story 3.2 issuance scope is explicitly narrowed without additional approval/correction behavior. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
   evidence: Issuance accepts `MagicLinkTargetKind.ExistingTimeEntry` (`MagicLinkConfirmationCapability.cs:274`), while use validation requires `ProposedTimeEntry` (`:371`). The asymmetry predates `61d6fc7`, but durable issuance now commits such links, so the issuer receives a token that every confirm or adjust denies.
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
@@ -953,4 +957,20 @@ Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Se
 
 - source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-runtime-deferrals.md`
   summary: Abort an interrupted v6 migration when selected-source format/root/single metadata becomes invalid before resumed validation.
+  resolution_note: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. Selected metadata checks now participate in abort handling after validating operation and immutable inventory ownership. Corrupt sealed/unsealed retries initiate an owned abort without promotion or selected-source mutation; empty-journal aborts release Building. Pending corrupt-source journals and interrupted abort cleanup retain the separate pre-existing follow-ups below. Fresh malformed, foreign-operation/inventory, authority-denied, pre-abort transient/cancellation and completed-retry controls remain. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
   evidence: Review B1 verified that MigrateAsync checks selected format/root and selected/direct legacy single-root metadata before its abort try/catch. If this metadata is added after sealing, retry rejects it while the existing global epoch remains Building and backpressures owner delivery. The identical ordering exists in baseline 024d3aa24a804c5798017cd84b73041e4fb4dfec; test metadata corruption after an interrupted sealed migration, assert abort releases Building, and preserve the fresh-source preflight that reserves no fence for malformed input.
+
+
+## Deferred from: review of five magic-link safety deferrals (2026-10-23)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
+  summary: Establish safe v6 migration abort recovery when pending deliveries encounter corrupt selected metadata.
+  evidence: Review B1 traced the unchanged normal FoldCatchUpAsync through SDK AbortAsync/CatchUpAsync: journaled issuance rereads corrupt selected format/root/single metadata and refuses it, retaining the journal in Aborting. The same baseline abort path is reachable when selected metadata becomes invalid after Begin. The new empty-journal retry tests prove release only when abort can drain safely; they do not authorize deleting corrupt metadata, discarding journaled events or bypassing integrity checks. Define and verify the certified source-repair/catch-up procedure before claiming pending-journal recovery or deployed readiness.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
+  summary: Resume an interrupted v6 migration abort through an operation-and-inventory-authorized recovery path.
+  evidence: Review B2 and E1 verified that both baseline and current MigrateAsync lack an Aborting continuation, while SDK BeginAsync rejects that phase and AbortAsync itself supports resumption. A transient error after persisting Aborting can therefore leave later migration retries unable to finish cleanup. The SDK status does not expose the immutable inventory binding used by Begin, so a continuation must preserve certified operation/inventory authority rather than accept only an operation ID. Reproduce interrupted cleanup, foreign operation/inventory rejection and successful authorized recovery in a separate protocol increment; never claim generic abort recovery from the new pre-abort transient-read tests.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
+  summary: Qualify candidate-index and catalog read deadlines separately from authority-history allowances.
+  evidence: Review B3 is medium and unverified for the deployed transport. Existing ResolveCandidateAsync and LoadActivityTypeCatalogAsync await IReadModelStore/coordinator dependencies outside the new raw authority-history page/event/byte/deadline allowance; a non-cooperative implementation can stall until caller cancellation. Inspect or exercise actual Dapr transport deadlines and stalled read-model operations before deciding whether an additional bounded read-model or overall-resolution deadline is needed. The five-second StateLoading option is not a guarantee that all read-model awaits complete within five seconds.

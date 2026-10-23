@@ -118,8 +118,22 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
             "MagicLinks",
             "MagicLinkConfirmationCapabilityEndpoints.cs"));
 
-        endpoint.Split("private static IResult Denied()", StringSplitOptions.None).Length.ShouldBe(2);
-        endpoint.Split("Results.Problem(", StringSplitOptions.None).Length.ShouldBe(2);
+        string[] denialParts = endpoint.Split("private static IResult Denied()", StringSplitOptions.None);
+        denialParts.Length.ShouldBe(2);
+        string denial = denialParts[1].Split("private static void SetPrivateLinkResponseHeaders", StringSplitOptions.None)[0];
+        denial.Split("Results.Problem(", StringSplitOptions.None).Length.ShouldBe(2);
+        denial.ShouldContain("MagicLinkInvalidLinkDenial.Default.Title");
+        denial.ShouldContain("MagicLinkInvalidLinkDenial.Default.Detail");
+        denial.ShouldContain("StatusCodes.Status403Forbidden");
+        // Route delegates share the fixed helpers; they must not emit route-specific problem copy.
+        denialParts[0].ShouldNotContain("Results.Problem(");
+        string[] faultParts = endpoint.Split("private static IResult Faulted(", StringSplitOptions.None);
+        faultParts.Length.ShouldBe(2);
+        string fault = faultParts[1].Split("[LoggerMessage", StringSplitOptions.None)[0];
+        fault.Split("Results.Problem(", StringSplitOptions.None).Length.ShouldBe(2);
+        fault.ShouldContain("StatusCodes.Status500InternalServerError");
+        fault.ShouldContain("Unable to process link.");
+        fault.ShouldContain("The link request could not be completed.");
     }
 
     private static string RemoveComments(string source)

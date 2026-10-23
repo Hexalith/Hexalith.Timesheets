@@ -274,6 +274,7 @@ public sealed class MagicLinkEventStoreDomainProcessor(
 
         if (intent?.Command?.CapabilityId is null
             || intent.Command.Scope is null
+            || intent.Command.Scope.TargetKind != MagicLinkTargetKind.ProposedTimeEntry
             || intent.Command.Scope.Contributor is null
             || intent.Command.Scope.Target is null
             || string.IsNullOrWhiteSpace(intent.Command.Scope.Target.TargetId)

@@ -12,6 +12,7 @@ using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Hexalith.Timesheets.Server.MagicLinks;
 
@@ -26,6 +27,7 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 /// <param name="indexCoordinator">The selected global candidate-index epoch, when registered.</param>
 /// <param name="allowLegacyIndexRead">Explicit compatibility for isolated legacy loader fixtures.</param>
 /// <param name="loggerFactory">Optional internal outcome diagnostics.</param>
+/// <param name="stateLoadingOptions">Optional invocation-local history read allowances.</param>
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     IEventStoreGatewayClient eventStore,
     IReadModelStore readModelStore,
@@ -33,7 +35,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     ITimesheetsTrustedContextAccessor contextAccessor,
     SharedProjectionEpochCoordinator? indexCoordinator = null,
     bool allowLegacyIndexRead = false,
-    ILoggerFactory? loggerFactory = null) : IMagicLinkConfirmationCapabilityStateLoader
+    ILoggerFactory? loggerFactory = null,
+    IOptions<MagicLinkStateLoadingOptions>? stateLoadingOptions = null) : IMagicLinkConfirmationCapabilityStateLoader
 {
     private const int StreamPageSize = 500;
 
@@ -44,7 +47,46 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     private readonly IMagicLinkTokenGenerator _tokenGenerator = tokenGenerator ?? throw new ArgumentNullException(nameof(tokenGenerator));
     private readonly ITimesheetsTrustedContextAccessor _contextAccessor = contextAccessor ?? throw new ArgumentNullException(nameof(contextAccessor));
     private readonly SharedProjectionEpochCoordinator? _indexCoordinator = indexCoordinator;
+    private readonly MagicLinkStateLoadingOptions _stateLoadingOptions = ValidateOptions(stateLoadingOptions?.Value ?? new());
+
+    private static readonly Type[] _capabilityEventTypes =
+    [
+        typeof(MagicLinkConfirmationCapabilityIssued), typeof(MagicLinkConfirmationCapabilityUsed),
+        typeof(MagicLinkConfirmationCapabilityRevoked), typeof(MagicLinkConfirmationCapabilityExpired),
+        typeof(MagicLinkCommitRejected)
+    ];
+
+    private static readonly Type[] _ownerEventTypes =
+    [
+        typeof(TimeEntryRecorded), typeof(TimeEntrySubmitted), typeof(TimeEntryContributorConfirmed),
+        typeof(TimeEntryAdjustedThroughMagicLink), typeof(TimeEntryApproved), typeof(TimeEntryRejected),
+        typeof(TimeEntryCorrected), typeof(TimeEntryApprovedCorrected),
+        typeof(MagicLinkConfirmationCapabilityUsed), typeof(MagicLinkConfirmationCapabilityRevoked),
+        typeof(MagicLinkConfirmationCapabilityExpired), typeof(MagicLinkCommitRejected)
+    ];
+
     private readonly ILogger? _logger = loggerFactory?.CreateLogger("Hexalith.Timesheets.StateResolution");
+
+    /// <summary>Preserves the original public constructor signature for existing binary consumers.</summary>
+    /// <param name="eventStore">The authoritative stream gateway.</param>
+    /// <param name="readModelStore">The candidate and catalog store.</param>
+    /// <param name="tokenGenerator">The token hash derivation service.</param>
+    /// <param name="contextAccessor">The trusted ambient authority.</param>
+    /// <param name="indexCoordinator">The selected candidate-index epoch.</param>
+    /// <param name="allowLegacyIndexRead">Explicit compatibility for isolated legacy fixtures.</param>
+    /// <param name="loggerFactory">Optional internal outcome diagnostics.</param>
+    public EventStoreMagicLinkConfirmationCapabilityStateLoader(
+        IEventStoreGatewayClient eventStore,
+        IReadModelStore readModelStore,
+        IMagicLinkTokenGenerator tokenGenerator,
+        ITimesheetsTrustedContextAccessor contextAccessor,
+        SharedProjectionEpochCoordinator? indexCoordinator,
+        bool allowLegacyIndexRead,
+        ILoggerFactory? loggerFactory)
+        : this(eventStore, readModelStore, tokenGenerator, contextAccessor,
+            indexCoordinator, allowLegacyIndexRead, loggerFactory, null)
+    {
+    }
 
     /// <inheritdoc/>
     public async ValueTask<ActivityTypeCatalogReadModel> LoadActivityTypeCatalogAsync(CancellationToken cancellationToken)
@@ -74,7 +116,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             return null;
         }
 
-        return await LoadCapabilityAsync(tenant, capabilityId, cancellationToken).ConfigureAwait(false);
+        return await LoadCapabilityAsync(tenant, capabilityId, new(_stateLoadingOptions), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Loads only the different capability stream while the Time Entry actor owns processing.</summary>
@@ -82,7 +124,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         TenantReference tenant,
         MagicLinkCapabilityId capabilityId,
         CancellationToken cancellationToken)
-        => LoadCapabilityAsync(tenant, capabilityId, cancellationToken, includeOwnerStream: false);
+        => LoadCapabilityAsync(tenant, capabilityId, new(_stateLoadingOptions), cancellationToken, includeOwnerStream: false);
 
     /// <summary>Loads the tenant catalog without using a caller-supplied ambient claim.</summary>
     internal Task<ActivityTypeCatalogReadModel> LoadCatalogForTenantAsync(
@@ -100,6 +142,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             return UnavailableTokenState();
         }
 
+        var budget = new MagicLinkStateLoadingBudget(_stateLoadingOptions);
         MagicLinkTokenHash tokenHash;
         try
         {
@@ -121,6 +164,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         MagicLinkCapabilityState? capability = await LoadCapabilityAsync(
             candidate.Tenant,
             candidate.CapabilityId,
+            budget,
             cancellationToken).ConfigureAwait(false);
         if (capability is null
             || capability.Tenant != candidate.Tenant
@@ -134,6 +178,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         TimeEntryState? timeEntry = await LoadTimeEntryAsync(
             candidate.Tenant,
             capability.TimeEntryId,
+            budget,
             cancellationToken).ConfigureAwait(false);
         if (timeEntry is null
             || !timeEntry.IsRecorded
@@ -166,6 +211,16 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             || matchingActivityTypes[0].Scope != ActivityTypeScope.Tenant
             || matchingActivityTypes[0].Project is not null)
         {
+            return UnavailableTokenState();
+        }
+
+        try
+        {
+            budget.ThrowIfUnavailable(cancellationToken);
+        }
+        catch (TimeoutException exception)
+        {
+            MagicLinkStateReadLog.Failure(_logger, "catalog-read", exception);
             return UnavailableTokenState();
         }
 
@@ -324,6 +379,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     private async Task<MagicLinkCapabilityState?> LoadCapabilityAsync(
         TenantReference tenant,
         MagicLinkCapabilityId capabilityId,
+        MagicLinkStateLoadingBudget budget,
         CancellationToken cancellationToken,
         bool includeOwnerStream = true)
     {
@@ -332,6 +388,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             StreamReadEvent[] events = await ReadAllEventsAsync(
                 tenant,
                 capabilityId.Value,
+                budget,
                 cancellationToken).ConfigureAwait(false);
 
             MagicLinkCapabilityState state = new();
@@ -339,13 +396,9 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             int terminalCount = 0;
             foreach (StreamReadEvent streamEvent in events)
             {
-                object? payload = Deserialize(
-                    streamEvent,
-                    typeof(MagicLinkConfirmationCapabilityIssued),
-                    typeof(MagicLinkConfirmationCapabilityRevoked),
-                    typeof(MagicLinkConfirmationCapabilityExpired),
-                    typeof(MagicLinkConfirmationCapabilityUsed));
-                if (payload is not null && !MatchesCapabilityIdentity(payload, tenant, capabilityId))
+                object payload = Deserialize(streamEvent, _capabilityEventTypes);
+                if (payload is MagicLinkCommitRejected) continue;
+                if (!MatchesCapabilityIdentity(payload, tenant, capabilityId))
                 {
                     throw new InvalidOperationException("A capability event does not match the requested stream identity.");
                 }
@@ -383,6 +436,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
             if (!includeOwnerStream)
             {
+                budget.ThrowIfUnavailable(cancellationToken);
                 return state;
             }
 
@@ -392,7 +446,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             try
             {
                 ownerEvents = await ReadAllEventsAsync(
-                    tenant, state.TimeEntryId.Value, cancellationToken).ConfigureAwait(false);
+                    tenant, state.TimeEntryId.Value, budget, cancellationToken).ConfigureAwait(false);
             }
             catch (EventStoreGatewayException ex) when (
                 state.TargetKind == MagicLinkTargetKind.ProposedTimeEntry
@@ -405,15 +459,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             }
             foreach (StreamReadEvent streamEvent in ownerEvents)
             {
-                object? payload = Deserialize(
-                    streamEvent,
-                    typeof(MagicLinkConfirmationCapabilityUsed),
-                    typeof(MagicLinkConfirmationCapabilityRevoked),
-                    typeof(MagicLinkConfirmationCapabilityExpired));
-                if (payload is null)
-                {
-                    continue;
-                }
+                object payload = Deserialize(streamEvent, _ownerEventTypes);
+                if (payload is MagicLinkCommitRejected) continue;
+                if (!MatchesTimeEntryIdentity(payload, tenant, state.TimeEntryId))
+                    throw new InvalidOperationException("An owner event does not match its Time Entry stream.");
 
                 if (payload is MagicLinkConfirmationCapabilityUsed ownerUse
                     && ownerUse.CapabilityId == capabilityId
@@ -458,6 +507,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 return null;
             }
 
+            budget.ThrowIfUnavailable(cancellationToken);
             return state.Exists ? state : null;
         }
         catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
@@ -470,6 +520,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     private async Task<TimeEntryState?> LoadTimeEntryAsync(
         TenantReference tenant,
         TimeEntryId timeEntryId,
+        MagicLinkStateLoadingBudget budget,
         CancellationToken cancellationToken)
     {
         try
@@ -477,25 +528,15 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             StreamReadEvent[] events = await ReadAllEventsAsync(
                 tenant,
                 timeEntryId.Value,
+                budget,
                 cancellationToken).ConfigureAwait(false);
 
             TimeEntryState state = new();
             foreach (StreamReadEvent streamEvent in events)
             {
-                object? payload = Deserialize(
-                    streamEvent,
-                    typeof(TimeEntryRecorded),
-                    typeof(TimeEntrySubmitted),
-                    typeof(TimeEntryContributorConfirmed),
-                    typeof(TimeEntryAdjustedThroughMagicLink),
-                    typeof(TimeEntryApproved),
-                    typeof(TimeEntryRejected),
-                    typeof(TimeEntryCorrected),
-                    typeof(TimeEntryApprovedCorrected),
-                    typeof(MagicLinkConfirmationCapabilityUsed),
-                    typeof(MagicLinkConfirmationCapabilityRevoked),
-                    typeof(MagicLinkConfirmationCapabilityExpired));
-                if (payload is not null && !MatchesTimeEntryIdentity(payload, tenant, timeEntryId))
+                object payload = Deserialize(streamEvent, _ownerEventTypes);
+                if (payload is MagicLinkCommitRejected) continue;
+                if (!MatchesTimeEntryIdentity(payload, tenant, timeEntryId))
                 {
                     throw new InvalidOperationException("A Time Entry event does not match the requested stream identity.");
                 }
@@ -547,6 +588,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 }
             }
 
+            budget.ThrowIfUnavailable(cancellationToken);
             return state.IsRecorded && !state.HasAmbiguousMagicLinkTerminalHistory ? state : null;
         }
         catch (Exception ex) when (IsFailClosedReadException(ex, cancellationToken))
@@ -601,6 +643,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     private async Task<StreamReadEvent[]> ReadAllEventsAsync(
         TenantReference tenant,
         string? aggregateId,
+        MagicLinkStateLoadingBudget budget,
         CancellationToken cancellationToken)
     {
         List<StreamReadEvent> events = [];
@@ -610,15 +653,15 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
         do
         {
-            StreamReadPage page = await _eventStore
-                .ReadWorkloadStreamAsync(
+            StreamReadPage page = await budget.ReadAsync(
+                token => _eventStore.ReadWorkloadStreamAsync(
                     new StreamReadRequest(
                         tenant.TenantId,
                         TimesheetsEventStoreIntegration.DomainName,
                         aggregateId,
                         FromSequence: fromSequence,
                         PageSize: StreamPageSize),
-                    cancellationToken)
+                    token), cancellationToken)
                 .ConfigureAwait(false);
 
             if (!string.Equals(page.Tenant, tenant.TenantId, StringComparison.Ordinal)
@@ -700,26 +743,26 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             ? right is null
             : right is not null && left.AsSpan().SequenceEqual(right);
 
-    private static object? Deserialize(StreamReadEvent streamEvent, params Type[] eventTypes)
+    private static object Deserialize(StreamReadEvent streamEvent, params Type[] eventTypes)
     {
         string unqualifiedEventTypeName = streamEvent.EventTypeName.Split(',', 2)[0];
         (Type Stored, Type Domain)? stored = unqualifiedEventTypeName switch
         {
-            var name when name == typeof(StoredMagicLinkIssued).FullName =>
+            var name when name == typeof(StoredMagicLinkIssued).FullName || name == nameof(StoredMagicLinkIssued) =>
                 (typeof(StoredMagicLinkIssued), typeof(MagicLinkConfirmationCapabilityIssued)),
-            var name when name == typeof(StoredMagicLinkUsed).FullName =>
+            var name when name == typeof(StoredMagicLinkUsed).FullName || name == nameof(StoredMagicLinkUsed) =>
                 (typeof(StoredMagicLinkUsed), typeof(MagicLinkConfirmationCapabilityUsed)),
-            var name when name == typeof(StoredMagicLinkRevoked).FullName =>
+            var name when name == typeof(StoredMagicLinkRevoked).FullName || name == nameof(StoredMagicLinkRevoked) =>
                 (typeof(StoredMagicLinkRevoked), typeof(MagicLinkConfirmationCapabilityRevoked)),
-            var name when name == typeof(StoredMagicLinkExpired).FullName =>
+            var name when name == typeof(StoredMagicLinkExpired).FullName || name == nameof(StoredMagicLinkExpired) =>
                 (typeof(StoredMagicLinkExpired), typeof(MagicLinkConfirmationCapabilityExpired)),
-            var name when name == typeof(StoredTimeEntryConfirmed).FullName =>
+            var name when name == typeof(StoredTimeEntryConfirmed).FullName || name == nameof(StoredTimeEntryConfirmed) =>
                 (typeof(StoredTimeEntryConfirmed), typeof(TimeEntryContributorConfirmed)),
-            var name when name == typeof(StoredTimeEntryAdjusted).FullName =>
+            var name when name == typeof(StoredTimeEntryAdjusted).FullName || name == nameof(StoredTimeEntryAdjusted) =>
                 (typeof(StoredTimeEntryAdjusted), typeof(TimeEntryAdjustedThroughMagicLink)),
-            var name when name == typeof(StoredTimeEntryRecorded).FullName =>
+            var name when name == typeof(StoredTimeEntryRecorded).FullName || name == nameof(StoredTimeEntryRecorded) =>
                 (typeof(StoredTimeEntryRecorded), typeof(TimeEntryRecorded)),
-            var name when name == typeof(StoredTimeEntrySubmitted).FullName =>
+            var name when name == typeof(StoredTimeEntrySubmitted).FullName || name == nameof(StoredTimeEntrySubmitted) =>
                 (typeof(StoredTimeEntrySubmitted), typeof(TimeEntrySubmitted)),
             _ => null
         };
@@ -730,7 +773,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             || string.Equals(unqualifiedEventTypeName, type.FullName, StringComparison.Ordinal));
         if (eventType is null)
         {
-            return null;
+            throw new InvalidOperationException("The authoritative stream contains an unknown event type.");
         }
 
         if (!string.Equals(streamEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase))
@@ -803,6 +846,18 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
 
     private static ActivityTypeCatalogReadModel UnavailableCatalog()
         => new([], ProjectionFreshnessMetadata.Unavailable());
+
+    private static MagicLinkStateLoadingOptions ValidateOptions(MagicLinkStateLoadingOptions options)
+    {
+        var snapshot = new MagicLinkStateLoadingOptions
+        {
+            MaxPages = options.MaxPages,
+            MaxEvents = options.MaxEvents,
+            MaxPayloadBytes = options.MaxPayloadBytes,
+            Timeout = options.Timeout
+        };
+        return snapshot.IsValid() ? snapshot : throw new ArgumentException("Magic-link state loading options must be bounded.");
+    }
 
     private static bool IsFailClosedReadException(Exception exception, CancellationToken cancellationToken)
         => exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested;

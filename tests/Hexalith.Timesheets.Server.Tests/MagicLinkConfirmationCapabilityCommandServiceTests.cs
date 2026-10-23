@@ -25,6 +25,21 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
 {
     [Fact]
+    public async Task ExistingTimeEntryIssuanceIsRejectedBeforeTokenGenerationAndByTheAggregate()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        IssueMagicLinkConfirmationCapability original = IssueCommand();
+        var command = original with { Scope = original.Scope with { TargetKind = MagicLinkTargetKind.ExistingTimeEntry } };
+        MagicLinkCapabilityCommandResult result = await fixture.CreateService().IssueAsync(Context(), command,
+            null, FreshCatalog(), IssuedAtUtc(), TestContext.Current.CancellationToken);
+        result.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        result.IssueResponse.ShouldBeNull();
+        fixture.TokenGenerator.GenerateCount.ShouldBe(0);
+        MagicLinkConfirmationCapability.HandleIssue(command, null, Context().Tenant, Context().Actor,
+            new("hash-only"), IssuedAtUtc()).IsSuccess.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Issue_magic_link_stores_hash_and_metadata_only_and_returns_one_time_token()
     {
         Fixture fixture = AuthorizedProjectFixture();

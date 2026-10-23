@@ -60,7 +60,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         }
 
         if (state?.Exists == true || command.CapabilityId is null || command.Scope.Contributor is null
-            || command.Scope.TimeEntryId is null || command.Source is null)
+            || command.Scope.TimeEntryId is null || command.Source is null
+            || command.Scope.TargetKind != MagicLinkTargetKind.ProposedTimeEntry)
         {
             TimesheetsDomainResult validation = MagicLinkConfirmationCapability.HandleIssue(
                 command,

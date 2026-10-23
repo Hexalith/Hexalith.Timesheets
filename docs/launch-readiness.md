@@ -945,3 +945,20 @@ readback. The pre-review focused v1 suite passed 43/43 with no skips; its Debug
 build passed with zero warnings/errors. Exact commands/logs are in the
 Story 3.6 test summary. No live or deployed proof was added; Story 3.6 stays
 in progress and release stays **FAIL**.
+
+
+## Magic-link safety boundaries — 2026-10-23
+
+The five safety deferrals now have source implementations and in-process regressions:
+
+- Capability and Time Entry authority replay rejects unknown events while preserving known aliases, rejection no-ops, and ordinary owner events.
+- Invocation-wide history allowances count repeated reads and raw duplicates before normalization; defaults are 64 pages, 10,000 events, 16 MiB and five seconds, with validated configuration caps.
+- All four public handler fault boundaries return fixed opaque HTTP 500 responses with private headers and sanitized Error diagnostics. Invalid links retain HTTP 403; caller cancellation propagates and diagnostic provider faults cannot replace responses.
+- New ExistingTimeEntry issuance is rejected before token generation and durable validation. Historical reads and current use denial remain compatible; Story 3.2 issuance scope is explicitly narrowed without changing approval/correction policy.
+- Interrupted v6 migration metadata corruption refuses promotion and initiates only the validated operation's abort. Empty-journal aborts release the fence; pending deliveries against corrupt selected metadata and interrupted abort cleanup remain pre-existing recovery follow-ups. Fresh malformed, foreign-operation/inventory, completed retry and pre-abort transient/cancellation controls preserve their existing behavior. Candidate-index/catalog awaits remain outside the raw authority-history allowance.
+
+[The safety verification receipt](../_bmad-output/implementation-artifacts/tests/five-magic-link-safety-deferrals.md)
+records commands, results and review disposition. These checks add no live migration,
+AppHost runtime qualification, deployed authority or shared-rebuild acceptance.
+A foreign Tenants AppHost prevents the prescribed isolated live baseline; it was
+left untouched. Story 3.6 remains in progress and the launch verdict remains **FAIL**.

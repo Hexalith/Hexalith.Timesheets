@@ -26,6 +26,19 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class MagicLinkEventStoreDomainProcessorTests
 {
+    [Fact]
+    public async Task DurableExistingTimeEntryIssueRejectsBeforeConsultingDependencies()
+    {
+        var processor = new MagicLinkEventStoreDomainProcessor(null!, null!, null!, TimeProvider.System);
+        DomainResult result = await processor.ProcessAsync(ReplayEnvelope(nameof(CommitMagicLinkIssue)), null,
+            TestContext.Current.CancellationToken);
+        result.IsRejection.ShouldBeTrue();
+        result.Events.ShouldHaveSingleItem().ShouldBeOfType<MagicLinkCommitRejected>();
+        CapabilityFold historical = DomainStateReplay.Rehydrate<CapabilityFold>(new object[] { new StoredMagicLinkIssued(Issued()) })!;
+        historical.TargetKind.ShouldBe(MagicLinkTargetKind.ExistingTimeEntry);
+        historical.Exists.ShouldBeTrue();
+    }
+
     [Theory]
     [InlineData(nameof(CommitMagicLinkIssue))]
     [InlineData(nameof(CommitMagicLinkUse))]

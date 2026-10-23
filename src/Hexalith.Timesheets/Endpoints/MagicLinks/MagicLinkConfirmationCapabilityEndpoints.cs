@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 
 using Hexalith.EventStore.DomainService;
@@ -219,28 +220,36 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 CancellationToken cancellationToken) =>
             {
                 SetPrivateLinkResponseHeaders(httpContext);
-                if (string.IsNullOrWhiteSpace(t))
+                try
                 {
-                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
-                }
+                    if (string.IsNullOrWhiteSpace(t))
+                    {
+                        return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
+                    }
 
-                MagicLinkEndpointTokenState state = await stateLoader
-                    .LoadTokenStateAsync(t, cancellationToken)
-                    .ConfigureAwait(false);
-                MagicLinkConfirmationDisplayResponse? response = await service.DescribeAsync(
-                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                    MagicLinkEndpointTokenState state = await stateLoader
+                        .LoadTokenStateAsync(t, cancellationToken)
+                        .ConfigureAwait(false);
+                    MagicLinkConfirmationDisplayResponse? response = await service.DescribeAsync(
+                        MagicLinkExternalRequestContext.FromResolvedCapability(
+                            state.CapabilityState,
+                            httpContext.TraceIdentifier),
+                        t,
                         state.CapabilityState,
-                        httpContext.TraceIdentifier),
-                    t,
-                    state.CapabilityState,
-                    state.TimeEntryState,
-                    state.ActivityTypeCatalog,
-                    timeProvider.GetUtcNow(),
-                    cancellationToken).ConfigureAwait(false);
+                        state.TimeEntryState,
+                        state.ActivityTypeCatalog,
+                        timeProvider.GetUtcNow(),
+                        cancellationToken).ConfigureAwait(false);
 
-                return response is null
-                    ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
-                    : Results.Ok(response);
+                    return response is null
+                        ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
+                        : Results.Ok(response);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException
+                    || !cancellationToken.IsCancellationRequested)
+                {
+                    return Faulted(loggerFactory, "confirm-display");
+                }
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm");
 
         endpoints.MapPost(
@@ -257,51 +266,59 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 CancellationToken cancellationToken) =>
             {
                 SetPrivateLinkResponseHeaders(httpContext);
-                if (string.IsNullOrWhiteSpace(t))
+                try
                 {
-                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
-                }
+                    if (string.IsNullOrWhiteSpace(t))
+                    {
+                        return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
+                    }
 
-                MagicLinkEndpointTokenState state = await stateLoader
-                    .LoadTokenStateAsync(t, cancellationToken)
-                    .ConfigureAwait(false);
-                if (state.ActivityTypeCatalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
-                {
-                    // ConfirmAsync takes no catalog, so this gate is load-bearing rather than
-                    // defence in depth: the other three routes gate inside the command service.
-                    //
-                    // Catalog status is retained internally but must not change the public denial
-                    // or diagnostics category.
-                    return DeniedWithDiagnostics(
-                        loggerFactory,
-                        httpContext,
-                        timeProvider.GetUtcNow(),
-                        MagicLinkInvalidLinkOutcomeCategory.Unknown);
-                }
+                    MagicLinkEndpointTokenState state = await stateLoader
+                        .LoadTokenStateAsync(t, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (state.ActivityTypeCatalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+                    {
+                        // ConfirmAsync takes no catalog, so this gate is load-bearing rather than
+                        // defence in depth: the other three routes gate inside the command service.
+                        //
+                        // Catalog status is retained internally but must not change the public denial
+                        // or diagnostics category.
+                        return DeniedWithDiagnostics(
+                            loggerFactory,
+                            httpContext,
+                            timeProvider.GetUtcNow(),
+                            MagicLinkInvalidLinkOutcomeCategory.Unknown);
+                    }
 
-                DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
-                MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
-                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                    DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
+                    MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
+                        MagicLinkExternalRequestContext.FromResolvedCapability(
+                            state.CapabilityState,
+                            httpContext.TraceIdentifier),
+                        t,
+                        command,
                         state.CapabilityState,
-                        httpContext.TraceIdentifier),
-                    t,
-                    command,
-                    state.CapabilityState,
-                    state.TimeEntryState,
-                    usedAtUtc,
-                    cancellationToken).ConfigureAwait(false);
+                        state.TimeEntryState,
+                        usedAtUtc,
+                        cancellationToken).ConfigureAwait(false);
 
-                if (result.WasDispatched
-                    && state.CapabilityState is { } resolvedCapability
-                    && await submission.SubmitResolvedUseAsync(
-                        resolvedCapability, MagicLinkUseAction.Confirm, null, usedAtUtc,
-                        httpContext.TraceIdentifier,
-                        cancellationToken).ConfigureAwait(false))
-                {
-                    return Results.Accepted();
+                    if (result.WasDispatched
+                        && state.CapabilityState is { } resolvedCapability
+                        && await submission.SubmitResolvedUseAsync(
+                            resolvedCapability, MagicLinkUseAction.Confirm, null, usedAtUtc,
+                            httpContext.TraceIdentifier,
+                            cancellationToken).ConfigureAwait(false))
+                    {
+                        return Results.Accepted();
+                    }
+
+                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
                 }
-
-                return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
+                catch (Exception exception) when (exception is not OperationCanceledException
+                    || !cancellationToken.IsCancellationRequested)
+                {
+                    return Faulted(loggerFactory, "confirm-submit");
+                }
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm/submit");
 
         endpoints.MapGet(
@@ -316,28 +333,36 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 CancellationToken cancellationToken) =>
             {
                 SetPrivateLinkResponseHeaders(httpContext);
-                if (string.IsNullOrWhiteSpace(t))
+                try
                 {
-                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
-                }
+                    if (string.IsNullOrWhiteSpace(t))
+                    {
+                        return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
+                    }
 
-                MagicLinkEndpointTokenState state = await stateLoader
-                    .LoadTokenStateAsync(t, cancellationToken)
-                    .ConfigureAwait(false);
-                MagicLinkAdjustmentDisplayResponse? response = await service.DescribeAdjustmentAsync(
-                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                    MagicLinkEndpointTokenState state = await stateLoader
+                        .LoadTokenStateAsync(t, cancellationToken)
+                        .ConfigureAwait(false);
+                    MagicLinkAdjustmentDisplayResponse? response = await service.DescribeAdjustmentAsync(
+                        MagicLinkExternalRequestContext.FromResolvedCapability(
+                            state.CapabilityState,
+                            httpContext.TraceIdentifier),
+                        t,
                         state.CapabilityState,
-                        httpContext.TraceIdentifier),
-                    t,
-                    state.CapabilityState,
-                    state.TimeEntryState,
-                    state.ActivityTypeCatalog,
-                    timeProvider.GetUtcNow(),
-                    cancellationToken).ConfigureAwait(false);
+                        state.TimeEntryState,
+                        state.ActivityTypeCatalog,
+                        timeProvider.GetUtcNow(),
+                        cancellationToken).ConfigureAwait(false);
 
-                return response is null
-                    ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
-                    : Results.Ok(response);
+                    return response is null
+                        ? DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown)
+                        : Results.Ok(response);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException
+                    || !cancellationToken.IsCancellationRequested)
+                {
+                    return Faulted(loggerFactory, "adjust-display");
+                }
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust");
 
         endpoints.MapPost(
@@ -354,43 +379,51 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 CancellationToken cancellationToken) =>
             {
                 SetPrivateLinkResponseHeaders(httpContext);
-                if (string.IsNullOrWhiteSpace(t))
+                try
                 {
-                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
-                }
+                    if (string.IsNullOrWhiteSpace(t))
+                    {
+                        return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
+                    }
 
-                MagicLinkEndpointTokenState state = await stateLoader
-                    .LoadTokenStateAsync(t, cancellationToken)
-                    .ConfigureAwait(false);
-                DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
-                TimeEntryCorrectionValues? trustedPreviousValues = state.TimeEntryState is { IsRecorded: true } prior
-                    ? new(prior.Target!, prior.Contributor!, prior.ActivityTypeId!, prior.ServiceDate,
-                        prior.DurationMinutes, prior.BillableState, prior.ContributorCategory, prior.AiMetrics)
-                    { ActivityTypeScope = prior.ActivityTypeScope, Comment = prior.Comment }
-                    : null;
-                MagicLinkConfirmationUseResult result = await service.AdjustAsync(
-                    MagicLinkExternalRequestContext.FromResolvedCapability(
+                    MagicLinkEndpointTokenState state = await stateLoader
+                        .LoadTokenStateAsync(t, cancellationToken)
+                        .ConfigureAwait(false);
+                    DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
+                    TimeEntryCorrectionValues? trustedPreviousValues = state.TimeEntryState is { IsRecorded: true } prior
+                        ? new(prior.Target!, prior.Contributor!, prior.ActivityTypeId!, prior.ServiceDate,
+                            prior.DurationMinutes, prior.BillableState, prior.ContributorCategory, prior.AiMetrics)
+                        { ActivityTypeScope = prior.ActivityTypeScope, Comment = prior.Comment }
+                        : null;
+                    MagicLinkConfirmationUseResult result = await service.AdjustAsync(
+                        MagicLinkExternalRequestContext.FromResolvedCapability(
+                            state.CapabilityState,
+                            httpContext.TraceIdentifier),
+                        t,
+                        command,
                         state.CapabilityState,
-                        httpContext.TraceIdentifier),
-                    t,
-                    command,
-                    state.CapabilityState,
-                    state.TimeEntryState,
-                    state.ActivityTypeCatalog,
-                    usedAtUtc,
-                    cancellationToken).ConfigureAwait(false);
+                        state.TimeEntryState,
+                        state.ActivityTypeCatalog,
+                        usedAtUtc,
+                        cancellationToken).ConfigureAwait(false);
 
-                if (result.WasDispatched
-                    && state.CapabilityState is { } resolvedCapability
-                    && await submission.SubmitResolvedUseAsync(
-                        resolvedCapability, MagicLinkUseAction.Adjust, command, usedAtUtc,
-                        httpContext.TraceIdentifier,
-                        cancellationToken, trustedPreviousValues).ConfigureAwait(false))
-                {
-                    return Results.Accepted();
+                    if (result.WasDispatched
+                        && state.CapabilityState is { } resolvedCapability
+                        && await submission.SubmitResolvedUseAsync(
+                            resolvedCapability, MagicLinkUseAction.Adjust, command, usedAtUtc,
+                            httpContext.TraceIdentifier,
+                            cancellationToken, trustedPreviousValues).ConfigureAwait(false))
+                    {
+                        return Results.Accepted();
+                    }
+
+                    return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
                 }
-
-                return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Unknown);
+                catch (Exception exception) when (exception is not OperationCanceledException
+                    || !cancellationToken.IsCancellationRequested)
+                {
+                    return Faulted(loggerFactory, "adjust-submit");
+                }
             }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust/submit");
 
         return endpoints;
@@ -414,10 +447,36 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
         DateTimeOffset timestampUtc,
         MagicLinkInvalidLinkOutcomeCategory category)
     {
-        ILogger logger = loggerFactory.CreateLogger("Hexalith.Timesheets.MagicLinkBoundary");
-        LogExternalLinkDenial(logger, httpContext.TraceIdentifier, timestampUtc, category);
+        try
+        {
+            ILogger logger = loggerFactory.CreateLogger("Hexalith.Timesheets.MagicLinkBoundary");
+            LogExternalLinkDenial(logger, httpContext.TraceIdentifier, timestampUtc, category);
+        }
+        catch (Exception)
+        {
+            // Diagnostic providers must not alter the selected public response.
+        }
         return Denied();
     }
+
+    private static IResult Faulted(ILoggerFactory loggerFactory, string operation)
+    {
+        try
+        {
+            ILogger logger = loggerFactory.CreateLogger("Hexalith.Timesheets.MagicLinkBoundary");
+            LogExternalLinkFault(logger, operation, Activity.Current?.TraceId.ToHexString() ?? string.Empty);
+        }
+        catch (Exception)
+        {
+            // Diagnostic providers must not alter the selected public response.
+        }
+        return Results.Problem(title: "Unable to process link.",
+            detail: "The link request could not be completed.", statusCode: StatusCodes.Status500InternalServerError);
+    }
+
+    [LoggerMessage(EventId = 37002, Level = LogLevel.Error,
+        Message = "External link request failed: operation={Operation} trace={TraceId}")]
+    private static partial void LogExternalLinkFault(ILogger logger, string operation, string traceId);
 
     [LoggerMessage(
         EventId = 37001,

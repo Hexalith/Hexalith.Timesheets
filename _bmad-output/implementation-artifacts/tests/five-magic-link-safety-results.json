@@ -1,0 +1,163 @@
+{
+  "verified_utc": "2026-10-23T16:00:02.415923+00:00",
+  "baseline_commit": "c56ac4fdf5f4648f2168555f837856555a15431a",
+  "eventstore_source_commit": "e1d8b17160202761ab5c9606cafbcf4d1a4b92c3",
+  "sdk": "10.0.402",
+  "configuration": "Debug",
+  "use_hexalith_project_references": true,
+  "eventstore_version_property": "3.127.0",
+  "totals": {
+    "tests": 2520,
+    "passed": 2515,
+    "failed": 0,
+    "pending": 0,
+    "skipped": 5,
+    "other": 0
+  },
+  "projects": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "summary": {
+        "tests": 109,
+        "passed": 109,
+        "failed": 0,
+        "pending": 0,
+        "skipped": 0,
+        "other": 0,
+        "suites": 1,
+        "start": 1792770188017,
+        "stop": 1792770199069,
+        "duration": 11052
+      },
+      "receipt_sha256": "766a4b3444b24ca2eb6a259fc04a29555bd2f01d8a024899146f0639bf2462c4",
+      "assembly_sha256": "03a7f27a892bc12400be8cf807a7c7cd3bded05de5ee9d9862ff3b25bf6357f8"
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "summary": {
+        "tests": 92,
+        "passed": 92,
+        "failed": 0,
+        "pending": 0,
+        "skipped": 0,
+        "other": 0,
+        "suites": 1,
+        "start": 1792770188029,
+        "stop": 1792770188595,
+        "duration": 566
+      },
+      "receipt_sha256": "7b2d500ec5fc15883f36634848ba080838b5bdda6d784286ad5818e2f8f64582",
+      "assembly_sha256": "bc295861d28ba8815ee0541b12f53979ba135aba9e9a8f195928e1794b6eb037"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "summary": {
+        "tests": 682,
+        "passed": 682,
+        "failed": 0,
+        "pending": 0,
+        "skipped": 0,
+        "other": 0,
+        "suites": 1,
+        "start": 1792770188035,
+        "stop": 1792770194075,
+        "duration": 6040
+      },
+      "receipt_sha256": "1e08005fbb30a6ee6fbbb3f25cea042c7625780833b34bb45290d808ddb3cb81",
+      "assembly_sha256": "126b935f0c11184ca5c0c11b06a64533fd92fe36e933f4de5b93e20a05e48741"
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "summary": {
+        "tests": 658,
+        "passed": 658,
+        "failed": 0,
+        "pending": 0,
+        "skipped": 0,
+        "other": 0,
+        "suites": 1,
+        "start": 1792770188040,
+        "stop": 1792771024738,
+        "duration": 836698
+      },
+      "receipt_sha256": "ab80a58b474cc8585b4155414267b4552d100f5059b19e27c70332a350aa2089",
+      "assembly_sha256": "94a80ffb1b68db4d0a359f3d8ec95b32d76659bc16b6aa3a6d2f4fb94433d8f0"
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "summary": {
+        "tests": 76,
+        "passed": 76,
+        "failed": 0,
+        "pending": 0,
+        "skipped": 0,
+        "other": 0,
+        "suites": 1,
+        "start": 1792770188030,
+        "stop": 1792770188371,
+        "duration": 341
+      },
+      "receipt_sha256": "a678decb7980b140afeedef64acbb888371bd22a34f8fd6a21bab25fac0e923f",
+      "assembly_sha256": "b45157ae5353f6aa597b85ec838e00eed1f9f54eab8d4013047d0655b3729eb4"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "summary": {
+        "tests": 903,
+        "passed": 898,
+        "failed": 0,
+        "pending": 0,
+        "skipped": 5,
+        "other": 0,
+        "suites": 1,
+        "start": 1792770188040,
+        "stop": 1792770957730,
+        "duration": 769690
+      },
+      "receipt_sha256": "0fb63c08db0887798da6c3197e9c58ec65fd712cae6db78de54e11b431c7cff7",
+      "assembly_sha256": "528518bf86f5e56f7c8e1519276bf13276f3cba83d9562eed2ddd4db40e04afb"
+    }
+  ],
+  "executed_matrix": {
+    "current_events": {
+      "UnknownAuthoritySuffixDeniesWhileKnownAliasesAndRejectionNoOpsSurvive": 2
+    },
+    "unknown_events": {
+      "UnknownAuthoritySuffixDeniesWhileKnownAliasesAndRejectionNoOpsSurvive": 2
+    },
+    "bounded_history": {
+      "InvocationAllowanceChargesRepeatedStreamsAtExactAndOverBoundaries": 4,
+      "AdvancingGrowingHistoryStopsAtTheSharedPageAllowance": 1,
+      "CumulativeSuccessfulReadsShareOneInvocationDeadline": 1,
+      "NonCooperativeStreamReadIsBoundedAndCallerCancellationPropagates": 2,
+      "LatePublicationRefusesExpiredAllowanceAndPropagatesCallerCancellation": 8,
+      "CallerOptionsMutationCannotExpandTheValidatedSnapshot": 4
+    },
+    "public_faults": {
+      "ThrowingMagicLinkDependencyKeepsQueryValuesOutOfDiagnostics": 2,
+      "CommandServiceAuthorizationFaultsAfterSuccessfulLoadingStayOpaqueForEveryRoute": 1,
+      "DiagnosticProviderFailuresPreserveOpaqueDenialOrFaultForEveryRoute": 2,
+      "GenuinePublicRequestCancellationPropagatesWithoutErrorDiagnosticsForEveryRoute": 1
+    },
+    "existing_target": {
+      "ExistingTimeEntryIssuanceIsRejectedBeforeTokenGenerationAndByTheAggregate": 1,
+      "DurableExistingTimeEntryIssueRejectsBeforeConsultingDependencies": 1,
+      "ExistingTimeEntryIssueProducesNoTokenAndNoDurableSubmission": 1
+    },
+    "migration_metadata": {
+      "InvalidSelectedMetadataOnRetryReleasesOnlyItsBuildingFence": 18
+    },
+    "migration_controls": {
+      "FreshInvalidSelectedMetadataNeverReservesAFence": 4,
+      "RetryMustProveOperationAndInventoryAuthorityBeforeOwningAbort": 3,
+      "SealedResumeTransportFailureOrCancellationRemainsRetryable": 2
+    }
+  },
+  "review": {
+    "layers_completed": 3,
+    "individual_findings_triaged": 11,
+    "direct_corrections": 3,
+    "pre_existing_followups": 3
+  },
+  "live_or_deployed_acceptance": false
+}

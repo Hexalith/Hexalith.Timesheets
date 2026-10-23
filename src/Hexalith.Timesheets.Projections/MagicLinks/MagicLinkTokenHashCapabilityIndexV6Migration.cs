@@ -36,6 +36,19 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, cancellationToken)
             .ConfigureAwait(false);
+        // A resumed operation must prove its immutable inventory binding before it may abort
+        // invalid selected metadata. A failed Begin must never release someone else's fence.
+        long epoch = before.Epoch;
+        bool ownsBuilding = false;
+        if (before.IsBuilding)
+        {
+            epoch = await coordinator.BeginAsync(scope, operationId, certifiedInventoryFingerprint,
+                new Dictionary<string, long>(StringComparer.Ordinal), cancellationToken,
+                operationTenantId: scope.TenantId).ConfigureAwait(false);
+            ownsBuilding = true;
+        }
+        try
+        {
         ReadModelEntry<MagicLinkTokenHashCapabilityIndexTreeFormat> selectedFormat = await coordinator
             .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexTreeFormat>(scope,
                 before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey,
@@ -67,16 +80,18 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         string? preflightDigest = before.IsBuilding ? null
             : (await FindNextTenantAsync(scope, before.ActiveGeneration, null,
                 cancellationToken).ConfigureAwait(false)).Digest;
-        long epoch = await coordinator.BeginAsync(scope, operationId, certifiedInventoryFingerprint,
-            new Dictionary<string, long>(StringComparer.Ordinal), cancellationToken,
-            operationTenantId: scope.TenantId).ConfigureAwait(false);
+        if (!ownsBuilding)
+        {
+            epoch = await coordinator.BeginAsync(scope, operationId, certifiedInventoryFingerprint,
+                new Dictionary<string, long>(StringComparer.Ordinal), cancellationToken,
+                operationTenantId: scope.TenantId).ConfigureAwait(false);
+            ownsBuilding = true;
+        }
         SharedProjectionEpochStatus status = await coordinator.GetStatusAsync(scope, cancellationToken)
             .ConfigureAwait(false);
         if (status.ActiveGeneration == epoch && !status.IsBuilding) return;
         if (!status.IsBuilding || status.Epoch != epoch || status.ActiveGeneration >= epoch)
             throw new InvalidOperationException("The certified v6 migration epoch is not building.");
-        try
-        {
         long sourceGeneration = status.ActiveGeneration;
         preflightDigest ??= (await FindNextTenantAsync(scope, sourceGeneration, null,
             cancellationToken).ConfigureAwait(false)).Digest;
@@ -201,12 +216,13 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         await ValidateSealedStageAsync(scope, operationId, epoch, checkpoint, cancellationToken).ConfigureAwait(false);
         await coordinator.CommitAsync(scope, operationId, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception exception) when (exception is InvalidOperationException
-            || exception is SharedProjectionReadUnavailableException { InnerException: InvalidOperationException })
+        catch (Exception exception) when (exception is InvalidOperationException or JsonException
+            || exception is SharedProjectionReadUnavailableException { InnerException: InvalidOperationException or JsonException })
         {
             SharedProjectionEpochStatus failed = await coordinator.GetStatusAsync(scope,
                 CancellationToken.None).ConfigureAwait(false);
-            if (failed.IsBuilding && string.Equals(failed.OperationId, operationId,
+            if (ownsBuilding && failed.IsBuilding && failed.Epoch == epoch
+                && string.Equals(failed.OperationId, operationId,
                 StringComparison.Ordinal))
             {
                 var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(

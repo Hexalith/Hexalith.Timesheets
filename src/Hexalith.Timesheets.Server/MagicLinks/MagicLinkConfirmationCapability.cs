@@ -291,10 +291,9 @@ public static class MagicLinkConfirmationCapability
             errors.Add(new("timeEntryId", "required", "Magic-link Time Entry identifier is required."));
         }
 
-        if (command.Scope.TargetKind is not (MagicLinkTargetKind.ProposedTimeEntry
-            or MagicLinkTargetKind.ExistingTimeEntry))
+        if (command.Scope.TargetKind != MagicLinkTargetKind.ProposedTimeEntry)
         {
-            errors.Add(new("targetKind", "required", "Magic-link target kind is required."));
+            errors.Add(new("targetKind", "unsupported", "Only proposed Time Entry magic links may be issued."));
         }
 
         if (command.AllowedAction is not (MagicLinkAllowedAction.Confirm

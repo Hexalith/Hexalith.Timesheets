@@ -24,6 +24,7 @@ using Hexalith.Timesheets.Server.TimesheetPeriods;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using NSubstitute;
@@ -33,6 +34,67 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class RuntimeRegistrationTests
 {
+    [Fact]
+    public void StateLoaderRetainsItsOriginalSevenParameterPublicConstructor()
+    {
+        typeof(EventStoreMagicLinkConfirmationCapabilityStateLoader).GetConstructor([
+            typeof(IEventStoreGatewayClient), typeof(IReadModelStore), typeof(IMagicLinkTokenGenerator),
+            typeof(ITimesheetsTrustedContextAccessor), typeof(SharedProjectionEpochCoordinator),
+            typeof(bool), typeof(ILoggerFactory)]).ShouldNotBeNull();
+        typeof(EventStoreMagicLinkConfirmationCapabilityStateLoader).GetConstructor([
+            typeof(IEventStoreGatewayClient), typeof(IReadModelStore), typeof(IMagicLinkTokenGenerator),
+            typeof(ITimesheetsTrustedContextAccessor), typeof(SharedProjectionEpochCoordinator),
+            typeof(bool), typeof(ILoggerFactory), typeof(IOptions<MagicLinkStateLoadingOptions>)]).ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void KernelSelectsTheOptionsAwareLoaderConstructor()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(Substitute.For<IEventStoreGatewayClient>());
+        services.AddSingleton(Substitute.For<IReadModelStore>());
+        services.AddSingleton(Substitute.For<IReadModelBatchStore>());
+        services.AddTimesheetsServerKernel();
+        services.Configure<MagicLinkStateLoadingOptions>(options => options.MaxPages = 0);
+        using ServiceProvider provider = services.BuildServiceProvider();
+        using IServiceScope scope = provider.CreateScope();
+        Should.Throw<OptionsValidationException>(() => scope.ServiceProvider
+            .GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>());
+    }
+
+    [Theory]
+    [InlineData("MaxPages", "0")]
+    [InlineData("MaxPages", "257")]
+    [InlineData("MaxEvents", "0")]
+    [InlineData("MaxEvents", "100001")]
+    [InlineData("MaxPayloadBytes", "0")]
+    [InlineData("MaxPayloadBytes", "134217729")]
+    [InlineData("Timeout", "00:00:00")]
+    [InlineData("Timeout", "00:00:31")]
+    public void StateLoadingOptionsBindAndRejectUnboundedValues(string key, string value)
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["Timesheets:MagicLinks:StateLoading:MaxPages"] = "256",
+            ["Timesheets:MagicLinks:StateLoading:MaxEvents"] = "100000",
+            ["Timesheets:MagicLinks:StateLoading:MaxPayloadBytes"] = "134217728",
+            ["Timesheets:MagicLinks:StateLoading:Timeout"] = "00:00:30"
+        };
+        ServiceProvider Provider() => new ServiceCollection()
+            .AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(values).Build())
+            .AddTimesheetsServerKernel().BuildServiceProvider();
+        using (ServiceProvider valid = Provider())
+        {
+            valid.GetRequiredService<IStartupValidator>().Validate();
+            MagicLinkStateLoadingOptions options = valid.GetRequiredService<IOptions<MagicLinkStateLoadingOptions>>().Value;
+            options.MaxPages.ShouldBe(256); options.MaxEvents.ShouldBe(100000);
+            options.MaxPayloadBytes.ShouldBe(134217728); options.Timeout.ShouldBe(TimeSpan.FromSeconds(30));
+        }
+        values["Timesheets:MagicLinks:StateLoading:" + key] = value;
+        using ServiceProvider invalid = Provider();
+        Should.Throw<OptionsValidationException>(() => invalid.GetRequiredService<IStartupValidator>().Validate());
+    }
+
     [Fact]
     public void Polling_options_bind_from_configuration_and_invalid_values_fail_startup_validation()
     {

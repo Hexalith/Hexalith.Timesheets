@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Gateway;
@@ -20,6 +21,7 @@ using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 using NSubstitute;
 
@@ -31,6 +33,222 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task UnknownAuthoritySuffixDeniesWhileKnownAliasesAndRejectionNoOpsSurvive(bool ownerSuffix)
+    {
+        StreamReadEvent issued = Event(1, "issued", new StoredMagicLinkIssued(Issued()));
+        StreamReadEvent recorded = Event(1, "recorded", new StoredTimeEntryRecorded(Recorded())) with
+        { EventTypeName = typeof(StoredTimeEntryRecorded).AssemblyQualifiedName! };
+        StreamReadEvent noOp = Event(2, "rejection", new MagicLinkCommitRejected());
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, issued, noOp)
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, recorded, noOp);
+        var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
+        (await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken))
+            .CapabilityState.ShouldNotBeNull();
+        StreamReadEvent unknown = Event(3, "future", new MagicLinkCommitRejected()) with
+        { EventTypeName = "FutureAuthorityEvent" };
+        if (ownerSuffix)
+            gateway.WithStream(Tenant().TenantId, TimeEntryId().Value, recorded, noOp, unknown);
+        else
+            gateway.WithStream(Tenant().TenantId, CapabilityId().Value, issued, noOp, unknown);
+        ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData("pages")]
+    [InlineData("events")]
+    [InlineData("bytes")]
+    [InlineData("duplicates")]
+    public async Task InvocationAllowanceChargesRepeatedStreamsAtExactAndOverBoundaries(string dimension)
+    {
+        StreamReadEvent issued = Event(1, "issued", Issued());
+        StreamReadEvent recorded = Event(1, "recorded", Recorded());
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, dimension == "duplicates" ? [issued, issued] : [issued])
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, recorded);
+        var options = new MagicLinkStateLoadingOptions
+        { MaxPages = 3, MaxEvents = dimension == "duplicates" ? 4 : 3,
+            MaxPayloadBytes = (dimension == "duplicates" ? 2L : 1L) * issued.Payload.Length + 2L * recorded.Payload.Length };
+        EventStoreMagicLinkConfirmationCapabilityStateLoader Loader() => new(gateway,
+            new InMemoryReadModelStore(IndexWith(Hash())), new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"), allowLegacyIndexRead: true,
+            stateLoadingOptions: Options.Create(options));
+        var loader = Loader();
+        (await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken)).CapabilityState.ShouldNotBeNull();
+        // Each invocation starts a new allowance even on the same scoped loader.
+        (await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken)).TimeEntryState.ShouldNotBeNull();
+        if (dimension == "pages") options.MaxPages--;
+        if (dimension is "events" or "duplicates") options.MaxEvents--;
+        if (dimension == "bytes") options.MaxPayloadBytes--;
+        ShouldBeOpaqueFailClosed(await Loader().LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task AdvancingGrowingHistoryStopsAtTheSharedPageAllowance()
+    {
+        var gateway = new ScriptedGatewayClient().WithPagedStreamLatestSequences(Tenant().TenantId,
+            CapabilityId().Value, [2, 3, 4, 5],
+            [Event(1, "issued", Issued())], [Event(2, "reject-2", new MagicLinkCommitRejected())],
+            [Event(3, "reject-3", new MagicLinkCommitRejected())], [Event(4, "reject-4", new MagicLinkCommitRejected())]);
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway,
+            new InMemoryReadModelStore(IndexWith(Hash())), new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"), allowLegacyIndexRead: true,
+            stateLoadingOptions: Options.Create(new MagicLinkStateLoadingOptions { MaxPages = 3 }));
+        ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+        gateway.WorkloadRequests.Count.ShouldBe(3);
+    }
+
+    [Fact]
+    public async Task CumulativeSuccessfulReadsShareOneInvocationDeadline()
+    {
+        var scripted = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "issued", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "recorded", Recorded()));
+        var gateway = Substitute.For<IEventStoreGatewayClient>();
+        int completedReads = 0;
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(async call =>
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(800), call.Arg<CancellationToken>());
+                Interlocked.Increment(ref completedReads);
+                return await scripted.ReadWorkloadStreamAsync(call.Arg<StreamReadRequest>(), call.Arg<CancellationToken>());
+            });
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway,
+            new InMemoryReadModelStore(IndexWith(Hash())), new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"), allowLegacyIndexRead: true,
+            stateLoadingOptions: Options.Create(new MagicLinkStateLoadingOptions { Timeout = TimeSpan.FromSeconds(2) }));
+
+        MagicLinkEndpointTokenState result = await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken)
+            .AsTask().WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+
+        ShouldBeOpaqueFailClosed(result);
+        completedReads.ShouldBeLessThan(3);
+    }
+
+    [Theory]
+    [InlineData("capability", false)]
+    [InlineData("capability", true)]
+    [InlineData("owner", false)]
+    [InlineData("owner", true)]
+    [InlineData("entry", false)]
+    [InlineData("entry", true)]
+    [InlineData("catalog", false)]
+    [InlineData("catalog", true)]
+    public async Task LatePublicationRefusesExpiredAllowanceAndPropagatesCallerCancellation(string boundary, bool callerCancels)
+    {
+        using var caller = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        bool reachedBoundary = false;
+        void ReachBoundary()
+        {
+            reachedBoundary = true;
+            if (callerCancels) caller.Cancel();
+            else Thread.Sleep(600);
+        }
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "issued", Issued()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "recorded", Recorded()));
+        if (boundary == "capability")
+            gateway.WithPageTransform(Tenant().TenantId, CapabilityId().Value,
+                page => page with { Events = new LateMaterializationEvents(page.Events, ReachBoundary) });
+        int ownerReads = 0;
+        gateway.WithPageTransform(Tenant().TenantId, TimeEntryId().Value, page =>
+        {
+            ownerReads++;
+            return boundary == "owner" && ownerReads == 1 || boundary == "entry" && ownerReads == 2
+                ? page with { Events = new LateMaterializationEvents(page.Events, ReachBoundary) } : page;
+        });
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()),
+            beforeCatalogReturn: boundary == "catalog" ? ReachBoundary : null);
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway, readModels,
+            new DeterministicTokenGenerator(), new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"),
+            allowLegacyIndexRead: true, stateLoadingOptions: Options.Create(new MagicLinkStateLoadingOptions
+            { Timeout = callerCancels ? TimeSpan.FromSeconds(5) : TimeSpan.FromMilliseconds(500) }));
+        async Task<object?> ResolveAsync()
+        {
+            if (boundary == "capability")
+            {
+                var replay = (Task<Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState?>)typeof(EventStoreMagicLinkConfirmationCapabilityStateLoader)
+                    .GetMethod("LoadCapabilityStreamForTenantAsync", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(loader, [Tenant(), CapabilityId(), caller.Token])!;
+                return await replay;
+            }
+            if (boundary == "owner") return await loader.LoadCapabilityAsync(CapabilityId(), caller.Token);
+            return await loader.LoadTokenStateAsync("opaque-once", caller.Token);
+        }
+        if (callerCancels)
+            await Should.ThrowAsync<OperationCanceledException>(() => ResolveAsync());
+        else
+        {
+            object? result = await ResolveAsync();
+            if (boundary is "capability" or "owner") result.ShouldBeNull();
+            else ShouldBeOpaqueFailClosed((MagicLinkEndpointTokenState)result!);
+        }
+        reachedBoundary.ShouldBeTrue();
+        readModels.CatalogReadCount.ShouldBe(boundary == "catalog" ? 1 : 0);
+    }
+
+    [Theory]
+    [InlineData("pages")]
+    [InlineData("events")]
+    [InlineData("bytes")]
+    [InlineData("timeout")]
+    public async Task CallerOptionsMutationCannotExpandTheValidatedSnapshot(string dimension)
+    {
+        StreamReadEvent issued = Event(1, "issued", Issued());
+        StreamReadEvent recorded = Event(1, "recorded", Recorded());
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, issued)
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, recorded);
+        var options = new MagicLinkStateLoadingOptions
+        {
+            MaxPages = dimension == "pages" ? 2 : 3,
+            MaxEvents = dimension == "events" ? 2 : 3,
+            MaxPayloadBytes = issued.Payload.Length + 2L * recorded.Payload.Length - (dimension == "bytes" ? 1 : 0),
+            Timeout = dimension == "timeout" ? TimeSpan.FromMilliseconds(500) : TimeSpan.FromSeconds(5)
+        };
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway,
+            new InMemoryReadModelStore(IndexWith(Hash()), beforeCatalogReturn: dimension == "timeout" ? () => Thread.Sleep(600) : null),
+            new DeterministicTokenGenerator(), new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"),
+            allowLegacyIndexRead: true, stateLoadingOptions: Options.Create(options));
+        options.MaxPages = int.MaxValue;
+        options.MaxEvents = int.MaxValue;
+        options.MaxPayloadBytes = long.MaxValue;
+        options.Timeout = TimeSpan.FromDays(1);
+
+        ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NonCooperativeStreamReadIsBoundedAndCallerCancellationPropagates(bool callerCancels)
+    {
+        var gateway = Substitute.For<IEventStoreGatewayClient>();
+        var pending = new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => { started.TrySetResult(); return pending.Task; });
+        using var caller = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway,
+            new InMemoryReadModelStore(IndexWith(Hash())), new DeterministicTokenGenerator(),
+            new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation"), allowLegacyIndexRead: true,
+            stateLoadingOptions: Options.Create(new MagicLinkStateLoadingOptions
+            { Timeout = callerCancels ? TimeSpan.FromSeconds(5) : TimeSpan.FromMilliseconds(75) }));
+        Task<MagicLinkEndpointTokenState> resolution = loader.LoadTokenStateAsync("opaque-once", caller.Token).AsTask();
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        if (callerCancels)
+        {
+            caller.Cancel();
+            await Should.ThrowAsync<OperationCanceledException>(() => resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        }
+        else
+            ShouldBeOpaqueFailClosed(await resolution.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        pending.TrySetCanceled(TestContext.Current.CancellationToken);
+    }
+
     /// <summary>The pure candidate helper deduplicates issuances and retains every ambiguous owner.</summary>
     [Fact]
     public void IssuanceCandidateRebuildIsDeterministicAndPreservesAmbiguity()
@@ -2264,9 +2482,12 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         bool missingCatalogRead = false,
         Exception? indexException = null,
         Exception? catalogException = null,
-        Exception? epochException = null) : IReadModelStore
+        Exception? epochException = null,
+        Action? beforeCatalogReturn = null) : IReadModelStore
     {
         public int ReadCount { get; private set; }
+
+        public int CatalogReadCount { get; private set; }
 
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
             string storeName,
@@ -2281,6 +2502,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
             if (typeof(TValue) == typeof(ActivityTypeCatalogReadModel))
             {
+                CatalogReadCount++;
                 if (catalogException is not null) throw catalogException;
                 // Verify the addressing, not just the type. Dispatching on typeof(TValue) alone let
                 // the loader read any store and any key and still pass, so the tenant-scoped catalog
@@ -2307,6 +2529,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                         true,
                         BillableState.Billable)],
                     new ProjectionFreshnessMetadata(ProjectionFreshnessState.Fresh, "1", null, null));
+                beforeCatalogReturn?.Invoke();
                 return Task.FromResult(new ReadModelEntry<TValue>(value as TValue, "etag-catalog"));
             }
 

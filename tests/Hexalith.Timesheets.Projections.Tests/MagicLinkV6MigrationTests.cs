@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Nodes;
 
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Testing.Fakes;
@@ -14,6 +15,157 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class MagicLinkV6MigrationTests
 {
+    [Theory]
+    [InlineData("format", false)]
+    [InlineData("root", false)]
+    [InlineData("selected-single", false)]
+    [InlineData("direct-single", false)]
+    [InlineData("format", true)]
+    [InlineData("root", true)]
+    [InlineData("selected-single", true)]
+    [InlineData("direct-single", true)]
+    [InlineData("format-json", false)]
+    [InlineData("root-json", false)]
+    [InlineData("selected-single-json", false)]
+    [InlineData("direct-single-json", false)]
+    [InlineData("format-json", true)]
+    [InlineData("root-json", true)]
+    [InlineData("selected-single-json", true)]
+    [InlineData("direct-single-json", true)]
+    [InlineData("wrapped-format-json", false)]
+    [InlineData("wrapped-format-json", true)]
+    public async Task InvalidSelectedMetadataOnRetryReleasesOnlyItsBuildingFence(string damage, bool sealedStage)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var batches = new InterruptCheckpointBatch(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, batches);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        var row = await SeedMetadataSourceAsync(coordinator, scope);
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, new PermittedCertifiedMigration());
+        if (sealedStage) interrupted.InterruptAfterNextSeal = true;
+        else batches.InterruptBeforeFirstTenantCheckpoint = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        before.IsBuilding.ShouldBeTrue();
+        (before.StageFingerprint is not null).ShouldBe(sealedStage);
+        string damagedKey = CorruptSelectedMetadata(store, scope, before.ActiveGeneration, damage);
+        interrupted.WrapInvalidJson = damage.StartsWith("wrapped-", StringComparison.Ordinal);
+        string sourceKey = PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexProjection.ShardKey(row.TokenHash));
+        var keys = new[] { damagedKey, sourceKey };
+        var snapshots = new Dictionary<string, ReadModelEntry<JsonObject>>();
+        foreach (string key in keys)
+            snapshots[key] = await store.GetAsync<JsonObject>(scope.StoreName, key, TestContext.Current.CancellationToken);
+        int appends = batches.StageAppendCalls;
+
+        Exception? refused = await Record.ExceptionAsync(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        if (damage.StartsWith("wrapped-", StringComparison.Ordinal)) refused.ShouldBeOfType<SharedProjectionReadUnavailableException>()
+            .InnerException.ShouldBeOfType<System.Text.Json.JsonException>();
+        else if (damage.EndsWith("-json", StringComparison.Ordinal)) refused.ShouldBeOfType<System.Text.Json.JsonException>();
+        else refused.ShouldBeOfType<InvalidOperationException>();
+
+        SharedProjectionEpochStatus after = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.IsBuilding.ShouldBeFalse(); after.IsAborting.ShouldBeFalse();
+        after.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+        after.Epoch.ShouldBe(before.Epoch);
+        batches.StageAppendCalls.ShouldBe(appends);
+        foreach (string key in keys)
+        {
+            ReadModelEntry<JsonObject> retained = await store.GetAsync<JsonObject>(scope.StoreName, key, TestContext.Current.CancellationToken);
+            retained.ETag.ShouldBe(snapshots[key].ETag);
+            retained.Value?.ToJsonString().ShouldBe(snapshots[key].Value?.ToJsonString());
+        }
+    }
+
+    [Theory]
+    [InlineData("format")]
+    [InlineData("root")]
+    [InlineData("selected-single")]
+    [InlineData("direct-single")]
+    public async Task FreshInvalidSelectedMetadataNeverReservesAFence(string damage)
+    {
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await SeedMetadataSourceAsync(coordinator, scope);
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        string key = CorruptSelectedMetadata(store, scope, before.ActiveGeneration, damage);
+        ReadModelEntry<JsonObject> snapshot = await store.GetAsync<JsonObject>(scope.StoreName, key, TestContext.Current.CancellationToken);
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, store, new PermittedCertifiedMigration());
+        await Should.ThrowAsync<InvalidOperationException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus after = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.IsBuilding.ShouldBeFalse(); after.ActiveGeneration.ShouldBe(before.ActiveGeneration); after.Epoch.ShouldBe(before.Epoch);
+        (await store.GetAsync<JsonObject>(scope.StoreName, key, TestContext.Current.CancellationToken)).ETag.ShouldBe(snapshot.ETag);
+    }
+
+    [Theory]
+    [InlineData("foreign-operation")]
+    [InlineData("foreign-inventory")]
+    [InlineData("authority-denied")]
+    public async Task RetryMustProveOperationAndInventoryAuthorityBeforeOwningAbort(string mismatch)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await SeedMetadataSourceAsync(coordinator, scope);
+        var authority = new PermittedCertifiedMigration { AllowAnyFingerprint = true };
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, authority);
+        interrupted.InterruptAfterNextSeal = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        if (mismatch == "authority-denied")
+            authority.Denied = true;
+        Exception? failure = await Record.ExceptionAsync(() => migration.MigrateAsync(
+            mismatch == "foreign-operation" ? "other-operation" : "explicit-v7",
+            mismatch == "foreign-inventory" ? "other-certified-inventory" : "certified-selected-v6", TestContext.Current.CancellationToken));
+        if (mismatch == "authority-denied") failure.ShouldBeOfType<UnauthorizedAccessException>();
+        else failure.ShouldBeOfType<InvalidOperationException>();
+        SharedProjectionEpochStatus after = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.IsBuilding.ShouldBeTrue(); after.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+        after.Epoch.ShouldBe(before.Epoch); after.StageFingerprint.ShouldBe(before.StageFingerprint);
+        authority.Denied = false;
+        await migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+        await migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration.ShouldBe(before.Epoch);
+    }
+
+    private static async Task<MagicLinkTokenHashCapabilityIndexDirectoryEntry> SeedMetadataSourceAsync(
+        SharedProjectionEpochCoordinator coordinator, SharedProjectionScope scope)
+    {
+        _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        var row = Row("tenant-a", "owner-a", "hash-a");
+        _ = await coordinator.BeginAsync(scope, "metadata-source", "source", new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        _ = await coordinator.StageStreamingAsync(scope, "metadata-source", AsAsync([
+            ReadModelBatchOperation.Write(MagicLinkTokenHashCapabilityIndexProjection.ShardKey(row.TokenHash),
+                MagicLinkTokenHashCapabilityIndexProjection.FromContributions([new KeyValuePair<string, MagicLinkTokenHashCapabilityIndexEntry>(row.TokenHash, row.Candidate)]),
+                ReadModelBatchConcurrency.LastWrite)]), TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(scope, "metadata-source", TestContext.Current.CancellationToken);
+        return row;
+    }
+
+    private static string CorruptSelectedMetadata(InMemoryReadModelStore store, SharedProjectionScope scope, long generation, string damage)
+    {
+        bool invalidJsonShape = damage.EndsWith("-json", StringComparison.Ordinal);
+        string kind = invalidJsonShape ? damage[..^5] : damage;
+        if (kind.StartsWith("wrapped-", StringComparison.Ordinal)) kind = kind[8..];
+        string logicalKey = kind switch
+        {
+            "format" => MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey,
+            "root" => MagicLinkTokenHashCapabilityIndexTreeReader.RootKey,
+            _ => MagicLinkTokenHashCapabilityIndexProjection.StateKey
+        };
+        string key = kind == "direct-single" ? logicalKey : PhysicalKey(scope, generation, logicalKey);
+        object value = invalidJsonShape ? new { StorageVersion = "invalid-json-shape" } : kind switch
+        {
+            "format" => new MagicLinkTokenHashCapabilityIndexTreeFormat(6),
+            "root" => new MagicLinkTokenHashCapabilityIndexTreeRoot(6, 0, null, null),
+            _ => MagicLinkTokenHashCapabilityIndexProjection.FromContributions([])
+        };
+        store.SeedRaw(scope.StoreName, key, value);
+        return key;
+    }
+
     [Fact]
     public async Task UnverifiedV6SourceFailsBeforeReservingTheGlobalEpoch()
     {
@@ -509,9 +661,13 @@ public sealed class MagicLinkV6MigrationTests
 
     private sealed class PermittedCertifiedMigration : IMagicLinkIndexMigrationAuthority
     {
+        public bool AllowAnyFingerprint { get; init; }
+
+        public bool Denied { get; set; }
+
         public Task<bool> AuthorizeCertifiedMigrationAsync(string operationId,
             string certifiedInventoryFingerprint, CancellationToken cancellationToken)
-            => Task.FromResult(certifiedInventoryFingerprint == "certified-selected-v6");
+            => Task.FromResult(!Denied && (AllowAnyFingerprint || certifiedInventoryFingerprint == "certified-selected-v6"));
     }
 
     private sealed class InterruptCheckpointBatch(InMemoryReadModelStore inner) : IReadModelBatchStore
@@ -549,6 +705,8 @@ public sealed class MagicLinkV6MigrationTests
 
         public bool WaitForReadCancellation { get; set; }
 
+        public bool WrapInvalidJson { get; set; }
+
         public TaskCompletionSource ReadStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public Task<ReadModelEntry<TValue>> GetAsync<TValue>(string storeName, string key,
@@ -564,7 +722,15 @@ public sealed class MagicLinkV6MigrationTests
                 }
                 return Task.FromException<ReadModelEntry<TValue>>(new IOException("Transient sealed-stage read failure."));
             }
-            return inner.GetAsync<TValue>(storeName, key, cancellationToken);
+            return WrapInvalidJson ? ReadWrappedAsync<TValue>(storeName, key, cancellationToken)
+                : inner.GetAsync<TValue>(storeName, key, cancellationToken);
+        }
+
+        private async Task<ReadModelEntry<TValue>> ReadWrappedAsync<TValue>(string storeName, string key, CancellationToken token)
+            where TValue : class
+        {
+            try { return await inner.GetAsync<TValue>(storeName, key, token); }
+            catch (System.Text.Json.JsonException exception) { throw new SharedProjectionReadUnavailableException(exception); }
         }
 
         private static async Task<ReadModelEntry<TValue>> AwaitReadCancellationAsync<TValue>(CancellationToken cancellationToken)

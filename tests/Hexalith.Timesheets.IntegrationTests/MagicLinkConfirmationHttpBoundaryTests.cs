@@ -3018,6 +3018,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         private readonly List<LogRecord> _records = [];
         private IExternalScopeProvider _scopeProvider = new LoggerExternalScopeProvider();
 
+        public bool ThrowBoundaryDiagnostics { get; set; }
+
         public IReadOnlyList<LogRecord> Records
         {
             get
@@ -3029,7 +3031,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
         }
 
-        public ILogger CreateLogger(string categoryName) => new CapturingLogger(categoryName, _records, _sync, () => _scopeProvider);
+        public ILogger CreateLogger(string categoryName) => new CapturingLogger(categoryName, _records, _sync, () => _scopeProvider, () => ThrowBoundaryDiagnostics);
 
         public void SetScopeProvider(IExternalScopeProvider scopeProvider) => _scopeProvider = scopeProvider;
 
@@ -3042,7 +3044,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         string category,
         List<LogRecord> records,
         object sync,
-        Func<IExternalScopeProvider> scopeProvider) : ILogger
+        Func<IExternalScopeProvider> scopeProvider, Func<bool> throwBoundaryDiagnostics) : ILogger
     {
         public IDisposable BeginScope<TState>(TState state)
             where TState : notnull
@@ -3057,6 +3059,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             Exception? exception,
             Func<TState, Exception?, string> formatter)
         {
+            if (throwBoundaryDiagnostics() && category == "Hexalith.Timesheets.MagicLinkBoundary")
+                throw new IOException("Diagnostic provider unavailable.");
             string[] structuredState = state is IEnumerable<KeyValuePair<string, object?>> values
                 ? values.Select(static value => $"{value.Key}={value.Value}").ToArray()
                 : [];

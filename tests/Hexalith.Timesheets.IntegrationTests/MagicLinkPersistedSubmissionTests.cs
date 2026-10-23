@@ -651,6 +651,28 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     }
 
     [Fact]
+    public async Task ExistingTimeEntryIssueProducesNoTokenAndNoDurableSubmission()
+    {
+        var generator = new CountingMagicLinkTokenGenerator();
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false, tokenGenerator: generator);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("catalog-seed"), new TimeEntryId("entry-seed"));
+        var capabilityId = new MagicLinkCapabilityId("existing-issue-denied");
+        var command = new IssueMagicLinkConfirmationCapability(capabilityId,
+            new MagicLinkConfirmationScope(Contributor(), TimeEntryTargetReference.ForProject(Project()), ActivityId(),
+                new("entry-existing-denied"), MagicLinkTargetKind.ExistingTimeEntry), MagicLinkAllowedAction.Confirm,
+            ObservedAtUtc.AddDays(1), new("timesheets", "existing-issue"));
+        int submitted = factory.Gateway.SubmissionCount;
+        using HttpResponseMessage response = await factory.PostProtectedManagementAsync(client,
+            "/api/timesheets/magic-links/confirmation-capabilities", command);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        generator.GenerationCount.ShouldBe(0);
+        factory.Gateway.SubmissionCount.ShouldBe(submitted);
+        factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Issue_returns_token_only_after_issuance_is_stored_in_capability_stream()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
