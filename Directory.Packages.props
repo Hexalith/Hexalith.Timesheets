@@ -25,9 +25,10 @@
     <PackageVersion Update="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
     <PackageVersion Update="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
   </ItemGroup>
-  <!-- The shared catalog no longer versions this consumer contract. Package-mode
-       restore still needs the published 1.0.2 pin. -->
+  <!-- Older standalone Builds catalogs omit this consumer contract. Supply its
+       published 1.0.2 pin only when the imported catalog has no exact entry. -->
   <ItemGroup>
-    <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.2" />
+    <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.2"
+                    Condition="'@(PackageVersion->WithMetadataValue('Identity', 'Hexalith.Works.Contracts'))' == ''" />
   </ItemGroup>
 </Project>
