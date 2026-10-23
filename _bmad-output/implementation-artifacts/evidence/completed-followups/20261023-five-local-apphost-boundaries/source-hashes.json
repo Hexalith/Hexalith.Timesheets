@@ -1,0 +1,13 @@
+{
+  "scripts/check_magic_link_apphost_guards.py": "7d1ab5302c78e9c1ea228368763be28a9adab37cd38456c842bc70246bb66aba",
+  "scripts/local_aspire_magic_link_journey.py": "c70fafd1f444a21250297939d8049711a05dcda4b9d65f13790bfaca7498add4",
+  "scripts/local_aspire_projection_probe.py": "252e92b707a43966583ff9314fd45c03eec64e2abf277ea6fc44ea4771a2676d",
+  "scripts/local_runtime_admission.py": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006",
+  "scripts/run_isolated_magic_link_dapr.py": "91aaf62eb46c1f5b875a372fe02e7b4b62542038ae762118843985ed8520b604",
+  "scripts/test_isolated_magic_link_dapr.py": "3e36b3a04e6b148c6575da82350d4ae0d9963c02d501c849c17ec55f7526934c",
+  "src/Hexalith.Timesheets.AppHost/Program.cs": "9bc4d73f3647c1330a320378a08b198d57d2b7cbbedaf3810b5c77e012bab5fd",
+  "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj": "ec0cab666dd2f870571d42a268744b80e210289c6862b8b82c30dfb7ed68e04d",
+  "tests/Hexalith.Timesheets.IntegrationTests/InternalSurfaceConfigurationSyntax.cs": "d1839e3815c96035b5b8f79ed218c237eb633a64cc7a6555924049621969ef54",
+  "tests/Hexalith.Timesheets.IntegrationTests/InternalSurfaceConfigurationSyntaxTests.cs": "6608113a6ee45549d0220da9c2164756011c9594f73ca68afcfa061a7778bb52",
+  "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs": "65baf785a031e7fd3682c56f851a09789dd95ec040193153705acb979fcb9490"
+}

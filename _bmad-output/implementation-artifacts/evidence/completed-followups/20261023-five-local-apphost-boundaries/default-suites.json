@@ -1,0 +1,104 @@
+[
+  {
+    "project": "Hexalith.Timesheets.ArchitectureTests",
+    "command": [
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 11.935,
+    "executable_sha256": "c94697e4cecf20f81c0dd8cad17e32a9798cb7decd52b8ee0f9834bbfc2b1b80",
+    "summary": [
+      "Hexalith.Timesheets.ArchitectureTests  Total: 109, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 11.701s"
+    ],
+    "log": "default-ArchitectureTests.log.gz",
+    "total": 109,
+    "passed": 109,
+    "skipped": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.Contracts.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.695,
+    "executable_sha256": "dcaf76716e32e78c6b98bb41254934b5b375af914dd029690d5ff7e5a8455aa9",
+    "summary": [
+      "Hexalith.Timesheets.Contracts.Tests  Total: 92, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0.489s"
+    ],
+    "log": "default-Contracts.Tests.log.gz",
+    "total": 92,
+    "passed": 92,
+    "skipped": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.Server.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 7.87,
+    "executable_sha256": "fe0a1a1acc505aa7553bf4b961ed570d0cb35ee321aa850a134ba08c9ced8f6a",
+    "summary": [
+      "Hexalith.Timesheets.Server.Tests  Total: 693, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 7.622s"
+    ],
+    "log": "default-Server.Tests.log.gz",
+    "total": 693,
+    "passed": 693,
+    "skipped": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.Projections.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 912.889,
+    "executable_sha256": "8b8bff88fabe5522ddc7f14a21d2450c246a23f141d56665fdcab8040c2c1843",
+    "summary": [
+      "Hexalith.Timesheets.Projections.Tests  Total: 697, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 912.604s"
+    ],
+    "log": "default-Projections.Tests.log.gz",
+    "total": 697,
+    "passed": 697,
+    "skipped": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.IntegrationTests",
+    "command": [
+      "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 824.365,
+    "executable_sha256": "2cf4ddb70ee13f761d9a1ae50b32fe00053e5d15cf6aaea7787b1df9982feba9",
+    "summary": [
+      "Hexalith.Timesheets.IntegrationTests  Total: 915, Errors: 0, Failed: 0, Skipped: 5, Not Run: 0, Time: 824.091s"
+    ],
+    "log": "default-IntegrationTests.log.gz",
+    "total": 915,
+    "passed": 910,
+    "skipped": 5
+  },
+  {
+    "project": "Hexalith.Timesheets.Works.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.484,
+    "executable_sha256": "6af93b8c10069b58937560f7ef9f20784f66a0ffad77c4478ed7f92bcc4739fd",
+    "summary": [
+      "Hexalith.Timesheets.Works.Tests  Total: 76, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0.288s"
+    ],
+    "log": "default-Works.Tests.log.gz",
+    "total": 76,
+    "passed": 76,
+    "skipped": 0
+  }
+]

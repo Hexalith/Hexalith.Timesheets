@@ -1,0 +1,51 @@
+{
+  "baseline_commit": "40eb8590153e0585b419f5c29e956354d1725a5b",
+  "dependency_mode": "Debug/source",
+  "eventstore_version": "3.127.0",
+  "sdk": "10.0.402",
+  "focused_integration": {
+    "passed": 24,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 4.501,
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class '*InternalSurfaceConfigurationSyntaxTests' -class '*MagicLinkConfirmationCapabilityEndpointTests' -noColor",
+    "receipt": "Root tool execution summary; additional implementation-side syntax/export logs retained separately"
+  },
+  "python": {
+    "passed": 112,
+    "failed": 0,
+    "log": "python-tests.log.gz"
+  },
+  "compiled_probes": {
+    "total": 62,
+    "configuration_cases": 59,
+    "endpoint_models": 3,
+    "passed": 62,
+    "results": "guards.json"
+  },
+  "review": {
+    "findings_triaged": 13,
+    "patch_groups": 12,
+    "all_patches_complete": true,
+    "targeted_independent_rechecks": [
+      "V1 hardcoded journey-initialization mutation now fails",
+      "E1 explicit proxy-mode mutation is refused"
+    ]
+  },
+  "preexisting_runtime_followup": "Duplicate gateway app-channel parameter registration remains separately tracked; endpoint model is not full graph/runtime qualification",
+  "full_default_suites": {
+    "total": 2582,
+    "passed": 2577,
+    "skipped": 5,
+    "failures": 0,
+    "errors": 0,
+    "not_run": 0,
+    "results": "default-suites.json",
+    "scope": "Unfiltered first implementation run, supplemented by post-review focused C# tests and repeated affected builds/Python/compiled-probe checks; no runtime/deployed acceptance"
+  },
+  "commitlint": "passed",
+  "remote_divergence_before_commit": {
+    "local_only": 0,
+    "remote_only": 0
+  }
+}

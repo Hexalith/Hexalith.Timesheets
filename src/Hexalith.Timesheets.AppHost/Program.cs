@@ -8,6 +8,10 @@ using Hexalith.Timesheets.AppHost;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
+const int DefaultPublicPort = 8080;
+const int InternalPort = 8081;
+int publicPort = ResolveLocalPublicPort(builder, DefaultPublicPort);
+
 string defaultComponentsDirectory = Path.Combine(builder.AppHostDirectory, "DaprComponents");
 string componentsDirectory = defaultComponentsDirectory;
 bool fixtureEnabled = builder.Configuration["TIMESHEETS_LIVE_DAPR_FIXTURE"] == "1";
@@ -38,7 +42,11 @@ if (fixtureEnabled || fixtureComponents is not null)
     }
 
     componentsDirectory = Path.GetFullPath(fixtureComponents);
-    ValidateFixtureComponents(defaultComponentsDirectory, componentsDirectory);
+    int redisPort = ValidateFixtureComponents(defaultComponentsDirectory, componentsDirectory);
+    if (redisPort == publicPort)
+    {
+        throw new InvalidOperationException("Local public port is missing or unsafe.");
+    }
     ValidateFixtureControlPlane(builder.Configuration[AspireDaprLocalServiceEndpoints.PlacementHostAddressKey],
         builder.Configuration[AspireDaprLocalServiceEndpoints.SchedulerHostAddressKey]);
 }
@@ -67,32 +75,31 @@ if (builder.ExecutionContext.IsRunMode)
 }
 _ = builder.AddHexalithEventStoreSecurity();
 
-// The Timesheets host publishes two HTTP surfaces that must not share a listener:
+// The Timesheets host declares two local HTTP surfaces that must not share a listener:
 //
-//   "public"   — the public ingress. It carries the deliberately anonymous magic-link confirm and
-//                adjust routes, so it is reachable by external contributors by design.
+//   "public"   — local anonymous magic-link confirm and adjust routes. Anonymous route metadata
+//                grants no deployment ingress or external network exposure.
 //   "internal" — the EventStore domain-service routes (/process, /replay-state, /query, /project*,
 //                /admin/*). They carry no authorization of their own and can write the cross-tenant
 //                token-hash index, the trust-bearing Activity Type catalog, and dispatch domain
-//                commands. Declared non-external so it is not published off the pod network.
+//                commands. The current endpoint model leaves IsExternal false on both endpoints;
+//                that publish-time annotation does not prove deployed network isolation.
 //
 // InternalSurfaceGuard enforces the split inside the host: it refuses the domain-service paths on
 // any port other than the one named here, and refuses them everywhere when nothing is configured.
 // Declaring the port here is what turns that from an assumption into a wired control.
 //
-const int PublicPort = 8080;
-const int InternalPort = 8081;
-
 // Both endpoints are declared explicitly. This project ships no launchSettings.json, so AddProject
 // contributes no endpoint of its own — declaring only the internal one would leave the magic-link
-// routes unpublished rather than merely unauthenticated.
+// routes without a local public listener.
 IResourceBuilder<ProjectResource> timesheets = builder
     .AddProject<Projects.Hexalith_Timesheets>("timesheets")
-    .WithHttpEndpoint(name: "public", port: PublicPort, isProxied: false)
+    .WithHttpEndpoint(name: "public", port: publicPort, isProxied: false)
     .WithHttpEndpoint(name: "internal", port: InternalPort, isProxied: false)
     .WithEnvironment(
         "Timesheets__InternalSurface__Port",
-        InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture))
+    .WithEnvironment("Timesheets__LocalPublicPort", publicPort.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
 if (builder.ExecutionContext.IsRunMode)
 {
@@ -157,8 +164,20 @@ if (builder.ExecutionContext.IsRunMode)
         _ = timesheets.WithEnvironment("Timesheets__LiveDaprFixture__Enabled", "true");
     }
 
+    // All endpoint-affecting wiring is complete. The model probe does not need
+    // generated app-channel secrets or a runnable resource graph.
+    if (ReportEndpointModelIfRequested(builder, timesheets))
+    {
+        return;
+    }
+
     _ = eventStore.WithGeneratedEventStoreAppChannelToken();
     _ = timesheets.WithGeneratedEventStoreAppChannelToken();
+}
+
+if (ReportEndpointModelIfRequested(builder, timesheets))
+{
+    return;
 }
 
 await builder
@@ -166,13 +185,66 @@ await builder
     .RunAsync()
     .ConfigureAwait(false);
 
+static bool ReportEndpointModelIfRequested(
+    IDistributedApplicationBuilder builder,
+    IResourceBuilder<ProjectResource> timesheets)
+{
+    if (builder.Configuration["TIMESHEETS_LIVE_DAPR_MODEL_ONLY"] != "1")
+    {
+        return false;
+    }
+
+    // Only allowlisted nonsensitive endpoint fields leave the model. This is
+    // before Build/Run and endpoint allocation, and proves no runtime acceptance.
+    Console.WriteLine("Timesheets endpoint model: " + System.Text.Json.JsonSerializer.Serialize(
+        timesheets.Resource.Annotations.OfType<EndpointAnnotation>()
+            .OrderBy(static endpoint => endpoint.Name, StringComparer.Ordinal)
+            .Select(static endpoint => new { name = endpoint.Name, port = endpoint.Port,
+                isExternal = endpoint.IsExternal, isExplicitlyProxied = endpoint.IsExplicitlyProxied })));
+    return true;
+}
+
+static int ResolveLocalPublicPort(IDistributedApplicationBuilder builder, int defaultPort)
+{
+    string? configured = builder.Configuration["Timesheets:LocalPublicPort"];
+    if (configured is not null && !builder.ExecutionContext.IsRunMode)
+    {
+        throw new InvalidOperationException("Local public port overrides require run mode.");
+    }
+
+    int port = defaultPort;
+    if (configured is not null && (!Regex.IsMatch(configured, "^[0-9]+$")
+        || !int.TryParse(configured, System.Globalization.NumberStyles.None,
+            System.Globalization.CultureInfo.InvariantCulture, out port)
+        || port is < 1024 or > 65535 or 8081 or 8082 or 3501 or 6379 or 2379 or 6050 or 6060 or 50005 or 50006))
+    {
+        throw new InvalidOperationException("Local public port is missing or unsafe.");
+    }
+
+    foreach (string key in new[] { AspireDaprLocalServiceEndpoints.PlacementHostAddressKey,
+        AspireDaprLocalServiceEndpoints.SchedulerHostAddressKey })
+    {
+        string? endpoint = builder.Configuration[key]?.Trim();
+        if (endpoint is not null
+            && int.TryParse(endpoint.AsSpan(endpoint.LastIndexOf(':') + 1), System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture, out int infrastructurePort)
+            && infrastructurePort == port)
+        {
+            throw new InvalidOperationException("Local public port is missing or unsafe.");
+        }
+    }
+
+    return port;
+}
+
 // Fixture files are exact copies of the tracked defaults with only redisHost replaced.
 // Comparing the remaining text preserves component names, scopes, database separation,
 // and credential/key-prefix settings without adding a YAML dependency or parser dialect.
-static void ValidateFixtureComponents(string defaults, string fixture)
+static int ValidateFixtureComponents(string defaults, string fixture)
 {
     string[] relativePaths = ["statestore.yaml", Path.Combine("Timesheets", "timesheets-readmodels.yaml"), "pubsub.yaml"];
     string? endpoint = null;
+    int redisPort = 0;
     try
     {
         string[] actual = Directory.GetFiles(fixture, "*", SearchOption.AllDirectories);
@@ -196,6 +268,7 @@ static void ValidateFixtureComponents(string defaults, string fixture)
             }
 
             endpoint = match.Groups[1].Value;
+            redisPort = port;
             string normalized = contents.Remove(match.Index, match.Length).Insert(
                 match.Index, "    - name: redisHost\n      value: \"localhost:6379\"");
             if (!string.Equals(expected, normalized, StringComparison.Ordinal))
@@ -203,6 +276,7 @@ static void ValidateFixtureComponents(string defaults, string fixture)
                 throw new InvalidOperationException();
             }
         }
+        return redisPort;
     }
     catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
     {
@@ -233,7 +307,7 @@ static void ValidateFixtureControlPlane(string? placement, string? scheduler)
     HashSet<int> ports = [];
     foreach (string? address in addresses)
     {
-        Match match = Regex.Match(address ?? string.Empty, "^127\\.0\\.0\\.1:([0-9]{1,5})$");
+        Match match = Regex.Match(address?.Trim() ?? string.Empty, "^127\\.0\\.0\\.1:([0-9]{1,5})$");
         if (!match.Success || !int.TryParse(match.Groups[1].Value, out int port)
             || port is < 1024 or > 65535 || port is 6050 or 6060 or 50005 or 50006
             || !ports.Add(port))

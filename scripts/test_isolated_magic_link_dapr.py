@@ -1,5 +1,6 @@
 """Failure-injected fixture checks; never start an AppHost or Docker container."""
 
+import ast
 import contextlib
 import io
 import os
@@ -14,8 +15,9 @@ import subprocess
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
+import local_runtime_admission as admission
 import run_isolated_magic_link_dapr as fixture
 import check_magic_link_apphost_guards as guards
 
@@ -91,6 +93,289 @@ class IsolatedFixtureTests(unittest.TestCase):
         inventory.start()
         self.addCleanup(inventory.stop)
 
+    def test_public_port_validation_and_explicit_runner_environment(self):
+        for invalid in ("", " ", "abc", "18.080", "+18080", "-1", True, None, 1023, 65536,
+                        8081, 8082, 3501, 6379, 2379, 6050, 6060, 50005, 50006):
+            with self.subTest(value=invalid), self.assertRaises(fixture.FixtureError):
+                fixture.IsolatedFixture(public_port=invalid, log_directory=self.logs)
+        caller = dict(os.environ)
+        with patch.dict(os.environ, {"timesheets__localpublicport": "8081", "ASPIRE_Timesheets__LocalPublicPort": "8082"}):
+            instance = fixture.IsolatedFixture(public_port=18080, log_directory=self.logs)
+        self.assertEqual(caller, dict(os.environ))
+        self.assertEqual("18080", instance.environment["Timesheets__LocalPublicPort"])
+        self.assertNotIn("timesheets__localpublicport", instance.environment)
+        self.assertNotIn("ASPIRE_Timesheets__LocalPublicPort", instance.environment)
+        self.assertEqual(8080, fixture.validate_public_port("8080"))
+        self.assertEqual(1024, fixture.validate_public_port("1024"))
+        self.assertEqual(65535, fixture.validate_public_port("65535"))
+        with patch.object(fixture, "assert_ports_available") as check:
+            instance.port_check()
+            check.assert_called_once_with(18080)
+
+    def test_selected_public_port_checks_a_real_listener_before_infrastructure(self):
+        with socket.socket(socket.AF_INET) as listener:
+            listener.bind(("127.0.0.1", 0))
+            listener.listen()
+            commands = Commands()
+            instance = fixture.IsolatedFixture(command=commands, public_port=listener.getsockname()[1], log_directory=self.logs)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(1, instance.execute())
+            self.assertFalse(commands.redis_attempted)
+
+    def test_journey_public_request_expressions_use_the_selected_origin(self):
+        source = (fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text()
+        tree = ast.parse(source)
+        self.assertNotIn("http://127.0.0.1:8080", source)
+        # Evaluate the actual management, display and submit URL expressions with
+        # a selected origin, without importing the runtime journey or starting it.
+        namespace = self.public_initialization(source, {"Timesheets__LocalPublicPort": "18080"},
+                                               {"Timesheets__LocalPublicPort": "18080"})
+        origin = namespace["public_origin"]
+        self.assertEqual("http://127.0.0.1:18080", origin)
+        management = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "management")
+        namespace.update({"tenant": "isolated", "actor": "actor", "app_token": "app-token",
+                          "sign": lambda *args, **kwargs: "assertion", "call": lambda url, *args, **kwargs: url})
+        exec(compile(ast.Module(body=[management], type_ignores=[]), "journey-management", "exec"), namespace)
+        self.assertEqual(origin + "/management", namespace["management"]("/management", {}))
+        urls = [node for node in ast.walk(tree) if isinstance(node, ast.JoinedStr)
+                and any(isinstance(part, ast.FormattedValue) and isinstance(part.value, ast.Name)
+                        and part.value.id == "public_origin" for part in node.values)]
+        self.assertEqual(2, len(urls))
+        evaluated = [eval(compile(ast.Expression(node), "journey-url", "eval"),
+                          {"public_origin": origin, "route": "confirm"}) for node in urls]
+        self.assertEqual({origin + "/api/timesheets/magic-links/confirm",
+                          origin + "/api/timesheets/magic-links/confirm/submit"}, set(evaluated))
+
+    @staticmethod
+    def public_initialization(source, host_environment, caller_environment=None):
+        # Execute the production initialization statements, including environment
+        # lookup, validation, agreement and origin construction, without runtime I/O.
+        tree = ast.parse(source)
+        start = next(index for index, node in enumerate(tree.body) if isinstance(node, ast.Assign)
+                     and any(isinstance(target, ast.Name) and target.id == "public_port" for target in node.targets))
+        end = next(index for index, node in enumerate(tree.body) if isinstance(node, ast.Assign)
+                   and any(isinstance(target, ast.Name) and target.id == "public_origin" for target in node.targets))
+        required = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "require"]
+        from types import SimpleNamespace
+        namespace = {"environment": host_environment, "os": SimpleNamespace(environ=caller_environment or {}),
+                     "validate_public_port": fixture.validate_public_port}
+        exec(compile(ast.Module(body=required + tree.body[start:end + 1], type_ignores=[]), "public-initialization", "exec"), namespace)
+        return namespace
+
+    def test_journey_initialization_refuses_mismatch_and_hardcoded_default_mutant(self):
+        source = (fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text()
+        for host in ("8080", "malformed", None):
+            with self.subTest(host=host), self.assertRaises(RuntimeError):
+                self.public_initialization(source, {"Timesheets__LocalPublicPort": host}, {"Timesheets__LocalPublicPort": "18080"})
+        with self.assertRaises(fixture.FixtureError):
+            self.public_initialization(source, {"Timesheets__LocalPublicPort": "18080"}, {"Timesheets__LocalPublicPort": "bad"})
+        mutation = source.replace('public_port = validate_public_port(os.environ.get("Timesheets__LocalPublicPort", "8080"))',
+                                  'public_port = 8080')
+        self.assertNotEqual(source, mutation)
+        with self.assertRaises(RuntimeError):
+            self.public_initialization(mutation, {"Timesheets__LocalPublicPort": "18080"}, {"Timesheets__LocalPublicPort": "18080"})
+
+    def test_projection_probe_uses_validated_process_public_port(self):
+        source = (fixture.ROOT / "scripts/local_aspire_projection_probe.py").read_text()
+        namespace = self.public_initialization(source, {"Timesheets__LocalPublicPort": "18080"})
+        self.assertEqual("http://127.0.0.1:18080", namespace["public_origin"])
+        urls = [keyword.value for node in ast.walk(ast.parse(source)) if isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name) and node.func.id == "post"
+                for keyword in node.keywords if keyword.arg == "url"]
+        self.assertEqual(1, len(urls))
+        self.assertEqual("http://127.0.0.1:18080/project/v2", eval(compile(ast.Expression(urls[0]), "projection-url", "eval"), namespace))
+        self.assertNotIn("http://127.0.0.1:8080", source)
+        for value in (None, "bad", "8081", "65536"):
+            with self.subTest(value=value), self.assertRaises(fixture.FixtureError):
+                self.public_initialization(source, {"Timesheets__LocalPublicPort": value})
+
+    def test_private_allocations_exclude_selected_public_listener_and_each_other(self):
+        ports = iter((18080, 16379, 18080, 16379, 16050, 18080, 16379, 16050, 16060))
+        def allocated_socket():
+            listener = MagicMock()
+            listener.__enter__.return_value = listener
+            listener.getsockname.return_value = ("127.0.0.1", next(ports))
+            return listener
+        commands = Commands()
+        instance = fixture.IsolatedFixture(command=commands, public_port=18080, log_directory=self.logs)
+        try:
+            with patch.object(fixture.socket, "socket", side_effect=allocated_socket), contextlib.redirect_stdout(io.StringIO()):
+                instance.start_infrastructure()
+            bindings = [args[args.index("--publish") + 1] for args, _ in commands.calls if args[:2] == ["docker", "run"]]
+            self.assertEqual(["127.0.0.1:16379:6379", "127.0.0.1:16050:50005", "127.0.0.1:16060:50006"], bindings)
+        finally:
+            instance.cleanup()
+
+    def test_runtime_children_discard_probe_only_settings_and_provider_aliases(self):
+        pollution = {prefix + name: "1" for prefix in ("", "ASPIRE_", "DOTNET_", "ASPNETCORE_")
+                     for name in ("TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "timesheets_live_dapr_validate_only")}
+        caller = dict(os.environ)
+        commands = Commands()
+        with patch.dict(os.environ, pollution):
+            instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                ownership_check=lambda: commands.started and not commands.stopped)
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(0, instance.execute())
+        self.assertEqual(caller, dict(os.environ))
+        for _, kwargs in commands.calls:
+            self.assertFalse(set(pollution) & set(kwargs["env"]))
+
+    @staticmethod
+    def admission_probe(cwd, tmpdir):
+        environment = dict(os.environ, PYTHONPATH=str(fixture.ROOT / "scripts"), TMPDIR=str(tmpdir))
+        code = ("from local_runtime_admission import LocalRuntimeAdmission, RuntimeAdmissionError\n"
+                "try:\n with LocalRuntimeAdmission(): print('admitted')\n"
+                "except RuntimeAdmissionError as error:\n print(str(error)); raise SystemExit(7)\n")
+        return subprocess.run([sys.executable, "-c", code], cwd=cwd, env=environment,
+                              capture_output=True, text=True, timeout=5)
+
+    def test_runtime_admission_contends_across_process_checkout_and_tmpdir_and_releases(self):
+        other = Path(self.temporary.name) / "other-checkout"
+        other.mkdir()
+        alternate_tmp = Path(self.temporary.name) / "other-tmp"
+        alternate_tmp.mkdir()
+        with admission.LocalRuntimeAdmission():
+            result = self.admission_probe(other, alternate_tmp)
+            self.assertEqual(7, result.returncode)
+            self.assertIn("admission is busy or unsafe", result.stdout)
+            self.assertNotIn(str(fixture.ROOT), result.stdout + result.stderr)
+        self.assertEqual(0, self.admission_probe(other, alternate_tmp).returncode)
+        self.assertTrue(admission.LOCK_PATH.is_file())
+
+    def test_runtime_admission_releases_after_graceful_and_abrupt_process_exit(self):
+        import select
+        code = ("import sys\nfrom local_runtime_admission import LocalRuntimeAdmission\n"
+                "with LocalRuntimeAdmission():\n print('held', flush=True)\n sys.stdin.read()\n")
+        for abrupt in (False, True):
+            with self.subTest(abrupt=abrupt):
+                process = subprocess.Popen([sys.executable, "-c", code], stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                    env=dict(os.environ, PYTHONPATH=str(fixture.ROOT / "scripts")))
+                try:
+                    ready, _, _ = select.select([process.stdout], [], [], 5)
+                    self.assertTrue(ready, "Admission holder did not become ready")
+                    self.assertEqual("held", process.stdout.readline().strip())
+                    self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+                    if abrupt:
+                        process.kill()
+                    process.communicate(input="", timeout=5)
+                    self.assertEqual(0, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                    process.communicate(timeout=5)
+
+    def test_admission_refuses_unsafe_paths_and_unavailable_locking(self):
+        with patch.object(admission, "fcntl", None), self.assertRaises(admission.RuntimeAdmissionError):
+            with admission.LocalRuntimeAdmission():
+                self.fail("Unavailable locking was accepted")
+        with tempfile.TemporaryDirectory(dir="/tmp", prefix="timesheets-lock-check-") as directory:
+            unsafe = Path(directory) / "symlink"
+            unsafe.symlink_to(admission.LOCK_PATH)
+            with patch.object(admission, "LOCK_PATH", unsafe), self.assertRaises(admission.RuntimeAdmissionError):
+                with admission.LocalRuntimeAdmission():
+                    self.fail("Unsafe lock path was accepted")
+        descriptor, path = tempfile.mkstemp(dir="/tmp", prefix="timesheets-unsafe-lock-")
+        os.close(descriptor)
+        unsafe = Path(path)
+        try:
+            unsafe.chmod(0o644)
+            with patch.object(admission, "LOCK_PATH", unsafe), self.assertRaises(admission.RuntimeAdmissionError):
+                with admission.LocalRuntimeAdmission():
+                    self.fail("A publicly writable/readable lock was accepted")
+            unsafe.unlink()
+            unsafe.symlink_to(admission.LOCK_PATH)
+            with patch.object(admission, "LOCK_PATH", unsafe), self.assertRaises(admission.RuntimeAdmissionError):
+                with admission.LocalRuntimeAdmission():
+                    self.fail("A symlink lock was accepted")
+        finally:
+            unsafe.unlink(missing_ok=True)
+
+    def test_configuration_guards_need_no_runtime_lock_and_refuse_endpoint_model_changes(self):
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        for changed in (None, "isExternal", "isExplicitlyProxied"):
+            with self.subTest(changed=changed):
+                commands = self.guard_commands()
+                original = commands.failure
+                if changed:
+                    def mutation(arguments):
+                        result = original(arguments)
+                        if "--guard-probe=model-default" in arguments:
+                            result.stdout = result.stdout.replace('"' + changed + '": false', '"' + changed + '": true')
+                        return result
+                    commands.failure = mutation
+                instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+                with patch.object(guards, "LocalRuntimeAdmission", side_effect=AssertionError("Unexpected admission lock")), \
+                        patch.object(guards, "IsolatedFixture", return_value=instance), \
+                        patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(1 if changed else 0, guards.run_guards(configuration_only=True))
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.containers)
+
+    def test_invalid_public_port_cli_refuses_without_infrastructure(self):
+        for value in ("invalid", "8081", "65536"):
+            result = subprocess.run([sys.executable, str(fixture.ROOT / "scripts/run_isolated_magic_link_dapr.py"),
+                                     "--public-port", value], capture_output=True, text=True, timeout=5)
+            self.assertEqual(2, result.returncode)
+            self.assertIn("Local public port is missing or unsafe", result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+
+    def test_both_runtime_drivers_refuse_contention_before_creating_infrastructure(self):
+        commands = Commands()
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        with admission.LocalRuntimeAdmission(), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(1, instance.execute())
+            with patch.object(guards, "IsolatedFixture", side_effect=AssertionError("Unexpected fixture creation")):
+                self.assertEqual(1, guards.run_guards())
+        self.assertFalse(commands.calls)
+
+    def test_admission_is_held_through_failure_cleanup_and_preservation(self):
+        commands = Commands(lambda args: subprocess.CompletedProcess(args, 42, "", "failed")
+                            if args[:2] == ["aspire", "start"] else None)
+        instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+            ownership_check=lambda: commands.started and not commands.stopped)
+        snapshot = self.shared_snapshot()
+        snapshot["scheduler"]["revision"] = "1"
+        instance.shared_before = snapshot
+        cleanup = instance.cleanup
+        def while_cleanup():
+            self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+            return cleanup()
+        def while_preservation():
+            self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+            return snapshot
+        with patch.object(instance, "cleanup", side_effect=while_cleanup), \
+                patch.object(fixture, "read_only_shared_snapshot", side_effect=while_preservation), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(42, instance.execute())
+        self.assertFalse(Path(instance.scratch).exists())
+        self.assertEqual(0, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+
+    def test_guard_admission_is_held_through_failure_cleanup_and_preservation(self):
+        commands = self.guard_commands(failed=True)
+        instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
+        snapshot = self.shared_snapshot()
+        snapshot["scheduler"]["revision"] = "1"
+        cleanup = instance.cleanup
+        def while_cleanup():
+            self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+            return cleanup()
+        def while_preservation():
+            self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+            return snapshot
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                patch.object(guards, "read_only_shared_snapshot", side_effect=while_preservation), \
+                patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                patch.object(instance, "cleanup", side_effect=while_cleanup), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(1, guards.run_guards())
+        self.assertFalse(Path(instance.scratch).exists())
+        self.assertEqual(0, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
+
     def run_fixture(self, commands, port_check=lambda: None, owned=None):
         instance = fixture.IsolatedFixture(command=commands, port_check=port_check,
             log_directory=self.logs, ownership_check=owned or (lambda: commands.started and not commands.stopped))
@@ -116,14 +401,28 @@ class IsolatedFixtureTests(unittest.TestCase):
             name = names[0]
             if failed:
                 return subprocess.CompletedProcess(arguments, 42, "Guard failed", "")
+            if name.startswith("model-"):
+                port = 18080 if name == "model-alternate" else 8080
+                output = "Timesheets endpoint model: " + json.dumps([
+                    {"name": "internal", "port": 8081, "isExternal": False, "isExplicitlyProxied": False},
+                    {"name": "public", "port": port, "isExternal": False, "isExplicitlyProxied": False}])
+                return subprocess.CompletedProcess(arguments, 0, output, "")
+            if name.endswith("local-port") and name != "valid-local-port":
+                message = ("Local public port overrides require run mode." if name.startswith("publish-")
+                           else "Local public port is missing or unsafe.")
+                return subprocess.CompletedProcess(arguments, -6, "", message)
             if package and "compiled" in name:
                 return subprocess.CompletedProcess(arguments, -6, "",
                     "Compiled gateway launch requires a Debug/source AppHost build.")
-            if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated"):
+            if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated", "valid-local-port",
+                        "valid-component-without-diagnostic", "valid-component-with-misleading-diagnostic", "valid-trimmed-control"):
                 message = "Dapr component selection: " + ("checked-in defaults" if name == "ordinary-defaults" else "isolated fixture")
                 message += "\nGateway launch selection: " + ("compiled executable" if name == "valid-compiled-isolated" else "project")
                 return subprocess.CompletedProcess(arguments, 0, message, "")
             message = "Isolated Dapr components are missing or unsafe."
+            if name in ("default-control-collision", "default-trimmed-control-collision", "component-redis-collision",
+                        "default-component-redis-collision", "misleading-component-redis-collision"):
+                message = "Local public port is missing or unsafe."
             if name in ("missing-opt-in", "publish-fixture", "publish-bare-fixture"):
                 message = "Isolated Dapr components require an explicit run-mode fixture opt-in."
             if name in ("bare-fixture-flag", "missing-components", "empty-components", "whitespace-components"):
@@ -429,10 +728,13 @@ class IsolatedFixtureTests(unittest.TestCase):
             self.assertEqual(0, guards.run_guards())
         probes = {arguments[1].split("=", 1)[1]: (arguments, kwargs["env"])
                   for arguments, kwargs in commands.calls if arguments[0] == str(executable)}
-        self.assertEqual(35, len(probes))
+        self.assertEqual(62, len(probes))
         for name, (arguments, environment) in probes.items():
+            model = name.startswith("model-")
             self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"], name)
-            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", arguments)
+            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
+            if model:
+                self.assertIn("--TIMESHEETS_LIVE_DAPR_MODEL_ONLY=1", arguments)
         for name in ("bare-fixture-flag", "missing-components", "empty-components", "whitespace-components"):
             environment = probes[name][1]
             self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_FIXTURE"])
@@ -469,12 +771,13 @@ class IsolatedFixtureTests(unittest.TestCase):
                 patch.object(guards, "read_only_shared_snapshot", side_effect=AssertionError("Unexpected storage read")), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, guards.run_guards(configuration_only=True))
-        self.assertEqual(35, len(commands.calls))
+        self.assertEqual(62, len(commands.calls))
         for arguments, kwargs in commands.calls:
             self.assertEqual(str(executable), arguments[0])
             self.assertEqual("1", kwargs["env"]["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"])
             self.assertTrue(all(isinstance(value, str) for value in kwargs["env"].values()))
-            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", arguments)
+            model = arguments[1].split("=", 1)[1].startswith("model-")
+            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
             self.assertFalse(set(polluted) & set(kwargs["env"]))
         self.assertIsNone(instance.scratch)
         self.assertFalse(commands.containers)
@@ -494,10 +797,11 @@ class IsolatedFixtureTests(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, guards.run_guards(configuration_only=True, configuration="Release"))
         self.assertEqual(caller, dict(os.environ))
-        self.assertEqual(35, len(commands.calls))
+        self.assertEqual(62, len(commands.calls))
         for arguments, kwargs in commands.calls:
             self.assertEqual(str(executable), arguments[0])
-            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", arguments)
+            model = arguments[1].split("=", 1)[1].startswith("model-")
+            self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
             self.assertEqual("Release", kwargs["env"]["Configuration"])
             self.assertEqual("false", kwargs["env"]["UseHexalithProjectReferences"])
             self.assertEqual("true", kwargs["env"]["UseNuGetDeps"])
@@ -676,7 +980,9 @@ class IsolatedFixtureTests(unittest.TestCase):
         launch = next(args for args, _ in commands.calls if args[:2] == ["docker", "run"])
         self.assertIn("--pull=never", launch)
         self.assertIn(commands.image, launch)
-        self.assertEqual("127.0.0.1::6379", launch[launch.index("--publish") + 1])
+        binding = launch[launch.index("--publish") + 1]
+        self.assertRegex(binding, r"^127\.0\.0\.1:[0-9]+:6379$")
+        self.assertNotEqual(8080, int(binding.split(":")[1]))
         self.assertEqual("/data", launch[launch.index("--tmpfs") + 1])
         self.assertNotIn("--volume", launch)
         self.assertNotIn("-v", launch)

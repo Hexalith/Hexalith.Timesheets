@@ -1,8 +1,8 @@
 """Repeatable compiled-AppHost configuration checks on owned private services.
 
 Run after the matching AppHost build (Debug/source locally, Release/package in CI).
-Every probe exits before constructing
-resources. Shared/missing-control probes and ordinary-default selection cannot
+Configuration probes exit before constructing resources; model probes inspect
+annotations before Build/Run. Shared/missing-control probes and ordinary-default selection cannot
 activate retained storage even if the validation under test regresses.
 --configuration-only runs the same no-resource probes without starting private
 services or requiring an idle runtime; it supplies unused loopback test values.
@@ -15,6 +15,8 @@ import signal
 import subprocess
 import tempfile
 
+from local_runtime_admission import LocalRuntimeAdmission, RuntimeAdmissionError
+
 from run_isolated_magic_link_dapr import (
     APPHOST, COMPONENT_FILES, GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
     IsolatedFixture, FixtureError, available_control_port, json_output, read_only_shared_snapshot,
@@ -23,6 +25,19 @@ from run_isolated_magic_link_dapr import (
 
 
 def run_guards(log_directory=None, configuration_only=False, configuration="Debug"):
+    require(configuration == "Debug" or configuration_only,
+            "Release guard checks require --configuration-only")
+    try:
+        if configuration_only:
+            return _run_guards(log_directory, configuration_only, configuration)
+        with LocalRuntimeAdmission():
+            return _run_guards(log_directory, configuration_only, configuration)
+    except RuntimeAdmissionError as error:
+        print(str(error), flush=True)
+        return 1
+
+
+def _run_guards(log_directory, configuration_only, configuration):
     require(configuration in ("Debug", "Release"), "Unsupported AppHost build configuration")
     require(configuration == "Debug" or configuration_only,
             "Release guard checks require --configuration-only")
@@ -34,13 +49,13 @@ def run_guards(log_directory=None, configuration_only=False, configuration="Debu
     # to :. Remove caller overrides, including host-prefixed providers, so
     # missing-setting probes actually exercise missing settings.
     controlled = {key.casefold() for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
-        "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY", "TIMESHEETS_LIVE_DAPR_REDIS_HOST",
+        "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY", "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_REDIS_HOST",
         GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
-        "Dapr:PlacementHostAddress", "Dapr:SchedulerHostAddress", "AppHost:Operation", "Publishing:Publisher")}
+        "Timesheets:LocalPublicPort", "Dapr:PlacementHostAddress", "Dapr:SchedulerHostAddress", "AppHost:Operation", "Publishing:Publisher")}
     for key in tuple(fixture.environment):
         normalized = key.replace("__", ":").casefold()
         aliases = [normalized]
-        for prefix in ("aspire_", "dotnet_"):
+        for prefix in ("aspire_", "dotnet_", "aspnetcore_"):
             if normalized.startswith(prefix):
                 aliases.append(normalized[len(prefix):])
         if any(alias in controlled for alias in aliases):
@@ -76,7 +91,15 @@ def run_guards(log_directory=None, configuration_only=False, configuration="Debu
                  "valid-compiled-isolated", "compiled-executable-only", "compiled-directory-only",
                  "compiled-empty-executable", "compiled-empty-directory", "compiled-blank-executable", "compiled-blank-directory",
                  "ordinary-compiled", "ordinary-compiled-executable-only", "ordinary-compiled-directory-only",
-                 "publish-compiled", "unsafe-components-compiled", "missing-placement-compiled")
+                 "publish-compiled", "unsafe-components-compiled", "missing-placement-compiled",
+                 "valid-local-port", "publish-local-port", "empty-local-port", "blank-local-port",
+                 "malformed-local-port", "negative-local-port", "low-local-port", "high-local-port",
+                 "internal-local-port", "gateway-local-port", "sidecar-local-port", "placement-local-port",
+                 "scheduler-local-port", "redis-local-port", "padded-local-port", "trimmed-local-port",
+                 "default-control-collision", "default-trimmed-control-collision",
+                 "component-redis-collision", "default-component-redis-collision",
+                 "misleading-component-redis-collision", "valid-component-without-diagnostic",
+                 "valid-component-with-misleading-diagnostic", "valid-trimmed-control")
         results = []
         for name in cases:
             with tempfile.TemporaryDirectory(prefix="timesheets-guard-components-") as directory:
@@ -89,6 +112,38 @@ def run_guards(log_directory=None, configuration_only=False, configuration="Debu
                 # provider. A regressed admission guard still cannot run resources.
                 arguments = [str(executable), "--guard-probe=" + name,
                              "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1", "--AppHost:Operation=" + mode]
+                if name.endswith("local-port"):
+                    values = {"valid": "18080", "publish": "18080", "empty": "", "blank": " \t ",
+                              "malformed": "not-a-port", "negative": "-1", "low": "1023", "high": "65536",
+                              "internal": "8081", "gateway": "8082", "sidecar": "3501",
+                              "placement": baseline["Dapr__PlacementHostAddress"].rsplit(":", 1)[1],
+                              "scheduler": baseline["Dapr__SchedulerHostAddress"].rsplit(":", 1)[1],
+                              "redis": baseline["TIMESHEETS_LIVE_DAPR_REDIS_HOST"].rsplit(":", 1)[1], "padded": "8080", "trimmed": "18080"}
+                    arguments.append("--Timesheets:LocalPublicPort=" + values[name.split("-")[0]])
+                    if name == "padded-local-port":
+                        arguments.append("--Dapr:PlacementHostAddress=127.0.0.1:08080")
+                    if name == "trimmed-local-port":
+                        arguments.append("--Dapr:PlacementHostAddress= 127.0.0.1:18080 \t")
+                    expected = ("Local public port overrides require run mode." if name.startswith("publish-")
+                                else "Local public port is missing or unsafe.")
+                if name in ("default-control-collision", "default-trimmed-control-collision"):
+                    address = "127.0.0.1:8080" if name == "default-control-collision" else " 127.0.0.1:8080 \t"
+                    arguments.append("--Dapr:PlacementHostAddress=" + address)
+                    expected = "Local public port is missing or unsafe."
+                if name in ("component-redis-collision", "default-component-redis-collision", "misleading-component-redis-collision"):
+                    port = 8080 if name.startswith("default-") else 18080
+                    write_components(directory, "127.0.0.1:" + str(port))
+                    if port != 8080:
+                        arguments.append("--Timesheets:LocalPublicPort=" + str(port))
+                    if name != "misleading-component-redis-collision":
+                        fixture.environment.pop("TIMESHEETS_LIVE_DAPR_REDIS_HOST", None)
+                    expected = "Local public port is missing or unsafe."
+                if name == "valid-component-without-diagnostic":
+                    fixture.environment.pop("TIMESHEETS_LIVE_DAPR_REDIS_HOST", None)
+                if name == "valid-component-with-misleading-diagnostic":
+                    fixture.environment["TIMESHEETS_LIVE_DAPR_REDIS_HOST"] = "127.0.0.1:8080"
+                if name == "valid-trimmed-control":
+                    arguments.append("--Dapr:PlacementHostAddress= " + baseline["Dapr__PlacementHostAddress"] + " \t")
                 if "compiled" in name:
                     fixture.environment.update({GATEWAY_EXECUTABLE_SETTING: str(executable),
                                                 GATEWAY_DIRECTORY_SETTING: str(executable.parent)})
@@ -172,7 +227,9 @@ def run_guards(log_directory=None, configuration_only=False, configuration="Debu
                 # Build/Run or resource construction. It is not an AppHost launch.
                 result = fixture.run_command(arguments, check=False)
                 output = (result.stdout or "") + (result.stderr or "")
-                if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated") and not package_refusal:
+                if name in ("valid-isolated", "ordinary-defaults", "valid-compiled-isolated", "valid-local-port",
+                            "valid-component-without-diagnostic", "valid-component-with-misleading-diagnostic",
+                            "valid-trimmed-control") and not package_refusal:
                     marker = "checked-in defaults" if name == "ordinary-defaults" else "isolated fixture"
                     require(result.returncode == 0 and "Dapr component selection: " + marker in output,
                             name + " selection was not verified")
@@ -186,12 +243,35 @@ def run_guards(log_directory=None, configuration_only=False, configuration="Debu
                     fixture.preflight()
                 results.append({"case": name, "exit": result.returncode, "passed": True})
                 print(name + ": compiled configuration check passed; exit " + str(result.returncode), flush=True)
+        # These execute the real completed resource wiring, then return before Build/Run.
+        # Omitted IsExternal currently evaluates to false for both actual endpoints.
+        for name, mode, port in (("model-default", "run", 8080), ("model-alternate", "run", 18080),
+                                 ("model-publish", "publish", 8080)):
+            fixture.environment = dict(baseline)
+            for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
+                        "Dapr__PlacementHostAddress", "Dapr__SchedulerHostAddress"):
+                fixture.environment.pop(key, None)
+            arguments = [str(executable), "--guard-probe=" + name,
+                         "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=0", "--TIMESHEETS_LIVE_DAPR_MODEL_ONLY=1",
+                         "--AppHost:Operation=" + mode]
+            if port != 8080:
+                arguments.append("--Timesheets:LocalPublicPort=" + str(port))
+            result = fixture.run_command(arguments, check=False)
+            marker = "Timesheets endpoint model: "
+            lines = [line[len(marker):] for line in (result.stdout or "").splitlines() if line.startswith(marker)]
+            require(result.returncode == 0 and len(lines) == 1, name + " model was not verified")
+            model = json.loads(lines[0])
+            require(model == [{"name": "internal", "port": 8081, "isExternal": False, "isExplicitlyProxied": False},
+                              {"name": "public", "port": port, "isExternal": False, "isExplicitlyProxied": False}],
+                    name + " endpoint names, ports, external flags, or explicit proxy modes changed")
+            results.append({"case": name, "exit": result.returncode, "passed": True, "endpoints": model})
+            print(name + ": compiled endpoint model check passed", flush=True)
         fixture.write_evidence("guards.json", json.dumps(results, indent=2) + "\n")
         fixture.environment = baseline
         status = 0
     except KeyboardInterrupt:
         status = 130
-    except (FixtureError, OSError, subprocess.TimeoutExpired) as error:
+    except (FixtureError, OSError, ValueError, subprocess.TimeoutExpired) as error:
         print(str(error) if isinstance(error, FixtureError) else "Guard checks could not complete safely", flush=True)
     finally:
         if not fixture.cleanup() and status == 0:

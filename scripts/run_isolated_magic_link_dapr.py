@@ -24,6 +24,8 @@ import tempfile
 import time
 import urllib.request
 
+from local_runtime_admission import LocalRuntimeAdmission, RuntimeAdmissionError
+
 ROOT = Path(__file__).resolve().parents[1]
 APPHOST = ROOT / "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj"
 GATEWAY_PROJECT = ROOT / "references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj"
@@ -64,6 +66,25 @@ class FixtureError(RuntimeError):
 def require(condition, message):
     if not condition:
         raise FixtureError(message)
+
+
+def validate_public_port(value):
+    """Select a local listener without colliding with fixed topology listeners."""
+    require(not isinstance(value, bool) and isinstance(value, (str, int))
+            and re.fullmatch(r"[0-9]+", str(value)) is not None,
+            "Local public port is missing or unsafe")
+    port = int(value)
+    require(1024 <= port <= 65535 and port not in (8081, 8082, 3501, 6379, 2379, *SHARED_CONTROL_PORTS),
+            "Local public port is missing or unsafe")
+    return port
+
+
+def public_port_argument(value):
+    """Return argparse's usual fixed error for an invalid public listener."""
+    try:
+        return validate_public_port(value)
+    except FixtureError as error:
+        raise argparse.ArgumentTypeError(str(error)) from None
 
 
 def private_endpoint(endpoint, forbidden=()):
@@ -115,8 +136,8 @@ def write_components(directory, endpoint):
     validate_components(directory, endpoint)
 
 
-def assert_ports_available():
-    for port in REQUIRED_PORTS:
+def assert_ports_available(public_port=8080):
+    for port in (public_port if port == 8080 else port for port in REQUIRED_PORTS):
         for family, address in ((socket.AF_INET, "0.0.0.0"), (socket.AF_INET6, "::")):
             try:
                 with socket.socket(family) as listener:
@@ -129,12 +150,12 @@ def assert_ports_available():
                 raise FixtureError(f"Required port {port} is occupied; no AppHost started") from None
 
 
-def available_control_port():
+def available_control_port(excluded=()):
     for _ in range(20):
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
-        if port not in SHARED_CONTROL_PORTS + REQUIRED_PORTS:
+        if port not in SHARED_CONTROL_PORTS + REQUIRED_PORTS + tuple(excluded):
             return port
     raise FixtureError("Could not allocate a private control-service endpoint")
 
@@ -646,11 +667,12 @@ return {redis.call('TIME'), rows}
 class IsolatedFixture:
     """Own private infrastructure and one exact Aspire AppHost lifecycle."""
 
-    def __init__(self, command=None, port_check=assert_ports_available, log_directory=None,
-                 ownership_check=None, resource_check=bound_resource_processes):
+    def __init__(self, command=None, port_check=None, log_directory=None,
+                 ownership_check=None, resource_check=bound_resource_processes, public_port=8080):
+        self.public_port = validate_public_port(public_port)
         self.command = command or self._command
         self.injected_command = command is not None
-        self.port_check = port_check
+        self.port_check = port_check or (lambda: assert_ports_available(self.public_port))
         if log_directory:
             parent = Path(log_directory)
             parent.mkdir(parents=True, exist_ok=True)
@@ -668,12 +690,14 @@ class IsolatedFixture:
         # the process environment on Linux can contain differently cased keys.
         controlled = {name.casefold() for name in ("Configuration", "UseHexalithProjectReferences", "UseNuGetDeps",
                                                   GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
+                                                  "Timesheets:LocalPublicPort",
+                                                  "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY",
                                                   *SDK_LAUNCH_OVERRIDES)}
         self.environment = {}
         for name, value in os.environ.items():
             normalized = name.replace("__", ":").casefold()
             aliases = [normalized]
-            for prefix in ("aspire_", "dotnet_"):
+            for prefix in ("aspire_", "dotnet_", "aspnetcore_"):
                 if normalized.startswith(prefix):
                     aliases.append(normalized[len(prefix):])
             if not any(alias in controlled for alias in aliases):
@@ -682,7 +706,7 @@ class IsolatedFixture:
         # runtime on the Debug source graph built for this local journey even
         # when the repository or caller defaults to Release/package mode.
         self.environment.update({"Configuration": "Debug", "UseHexalithProjectReferences": "true",
-                                 "UseNuGetDeps": "false"})
+                                 "UseNuGetDeps": "false", "Timesheets__LocalPublicPort": str(self.public_port)})
         self.ownership_check = ownership_check or self._owned_apphost
         self.resource_check = resource_check
         self.start_attempted = False
@@ -987,10 +1011,12 @@ class IsolatedFixture:
 
     def start_infrastructure(self):
         images = {service: self.installed_image("dapr_" + service) for service in ("redis", "placement", "scheduler")}
+        redis_port = available_control_port((self.public_port,))
         self.container_id = self.create_container("redis", images["redis"],
-            ["--publish", "127.0.0.1::6379", "--tmpfs", "/data"],
+            ["--publish", f"127.0.0.1:{redis_port}:6379", "--tmpfs", "/data"],
             ["redis-server", "--save", "", "--appendonly", "no"])
         endpoint = self.container_endpoint(self.container_id, 6379)
+        require(endpoint == "127.0.0.1:" + str(redis_port), "Redis publication does not match its selected private endpoint")
         for attempt in range(10):
             ready = self.run_command(["docker", "exec", self.container_id, "redis-cli", "ping"], check=False)
             if ready.returncode == 0 and ready.stdout.strip() == "PONG":
@@ -998,13 +1024,15 @@ class IsolatedFixture:
             if attempt < 9:
                 time.sleep(0.2)
         require(ready.returncode == 0 and ready.stdout.strip() == "PONG", "Disposable Redis did not become ready")
+        placement_port = available_control_port((self.public_port, redis_port))
         placement_id = self.create_container("placement", images["placement"],
-            ["--entrypoint", "/placement", "--publish", "127.0.0.1::50005"],
+            ["--entrypoint", "/placement", "--publish", f"127.0.0.1:{placement_port}:50005"],
             ["--mode=standalone", "--inmem-store-enabled=true"])
         self.placement = self.container_endpoint(placement_id, 50005)
+        require(self.placement == "127.0.0.1:" + str(placement_port), "Placement publication does not match its selected private endpoint")
         # Scheduler advertises the host endpoint; select it before launch. A
         # competing bind fails Docker startup rather than selecting a shared port.
-        scheduler_port = available_control_port()
+        scheduler_port = available_control_port((self.public_port, redis_port, placement_port))
         self.scheduler = "127.0.0.1:" + str(scheduler_port)
         scheduler_id = self.create_container("scheduler", images["scheduler"],
             ["--entrypoint", "/scheduler", "--publish", f"127.0.0.1:{scheduler_port}:50006", "--tmpfs", "/data"],
@@ -1020,6 +1048,14 @@ class IsolatedFixture:
         print("isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler", flush=True)
 
     def execute(self):
+        try:
+            with LocalRuntimeAdmission():
+                return self._execute_admitted()
+        except RuntimeAdmissionError as error:
+            print(str(error), flush=True)
+            return 1
+
+    def _execute_admitted(self):
         exit_code = 1
         try:
             self.run_command(["aspire", "--version"])
@@ -1135,13 +1171,15 @@ def dapr_manifests(directory):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log-directory", type=Path)
+    parser.add_argument("--public-port", type=public_port_argument, default=8080,
+                        help="Local public listener (default: 8080); internal and gateway ports stay fixed")
     arguments = parser.parse_args()
 
     def interrupted(_signal, _frame):
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, interrupted)
-    return IsolatedFixture(log_directory=arguments.log_directory).execute()
+    return IsolatedFixture(log_directory=arguments.log_directory, public_port=arguments.public_port).execute()
 
 
 if __name__ == "__main__":

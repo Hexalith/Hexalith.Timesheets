@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 using Hexalith.Timesheets.Runtime;
 
 using Shouldly;
@@ -13,33 +11,13 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
     {
         string appHost = File.ReadAllText(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets.AppHost", "Program.cs"));
         string host = File.ReadAllText(TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Program.cs"));
-        // Commented-out wiring must not satisfy the source fitness assertions.
-        appHost = RemoveComments(appHost);
-        host = RemoveComments(host);
-
-        // Count configuration-key prefixes across separators and command-line arguments.
-        Regex.Matches(appHost, @"Timesheets(?:__|:)InternalSurface(?:__|:)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant).Count.ShouldBe(1);
-        appHost.ShouldNotContain("AllowOnAnyPort", Case.Insensitive);
-        host.ShouldNotContain("AllowOnAnyPort", Case.Insensitive);
+        InternalSurfaceConfigurationSyntax.Validate(appHost, host).ShouldBeEmpty();
 
         InternalSurfaceOptions.SectionName.ShouldBe("Timesheets:InternalSurface");
         new InternalSurfaceOptions().AllowOnAnyPort.ShouldBeFalse();
         new InternalSurfaceOptions().Port.ShouldBeNull();
         string environmentKey = InternalSurfaceOptions.SectionName.Replace(":", "__", StringComparison.Ordinal) + "__Port";
         environmentKey.ShouldBe("Timesheets__InternalSurface__Port");
-
-        // Keep the listener values aligned with the configured-port HTTP fixture.
-        appHost.ShouldNotMatch(@"(?m)^\s*#\s*(?:if|elif|else|endif)\b");
-        host.ShouldNotMatch(@"(?m)^\s*#\s*(?:if|elif|else|endif)\b");
-        appHost.ShouldMatch(@"(?m)^\s*const\s+int\s+PublicPort\s*=\s*8080\s*;");
-        appHost.ShouldMatch(@"(?m)^\s*const\s+int\s+InternalPort\s*=\s*8081\s*;");
-        Match resource = Regex.Match(appHost, @"\.AddProject<Projects\.Hexalith_Timesheets>\s*\(\s*""timesheets""\s*\)(?<chain>[^;]*);");
-        resource.Success.ShouldBeTrue("The Timesheets resource must declare its listener configuration.");
-        string chain = resource.Groups["chain"].Value;
-        chain.ShouldMatch(@"\.WithHttpEndpoint\s*\(\s*name\s*:\s*""public""\s*,\s*port\s*:\s*PublicPort\s*,\s*isProxied\s*:\s*false\s*\)");
-        chain.ShouldMatch(@"\.WithHttpEndpoint\s*\(\s*name\s*:\s*""internal""\s*,\s*port\s*:\s*InternalPort\s*,\s*isProxied\s*:\s*false\s*\)");
-        chain.ShouldMatch($@"\.WithEnvironment\s*\(\s*""{Regex.Escape(environmentKey)}""\s*,\s*InternalPort\.ToString\s*\(\s*System\.Globalization\.CultureInfo\.InvariantCulture\s*\)\s*\)");
-        host.ShouldMatch(@"\.Configure<InternalSurfaceOptions>\s*\(\s*builder\.Configuration\.GetSection\s*\(\s*InternalSurfaceOptions\.SectionName\s*\)\s*\)");
     }
 
     [Fact]
@@ -136,14 +114,4 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         fault.ShouldContain("The link request could not be completed.");
     }
 
-    private static string RemoveComments(string source)
-    {
-        // Match literals first so URLs and comment markers inside them remain source text.
-        return Regex.Replace(
-            source,
-            @"(?<raw>""{3,})[\s\S]*?\k<raw>|@\$*""(?:""""|[^""])*""|""(?:\\.|[^""\\])*""|'(?:\\.|[^'\\])'|//[^\r\n]*|/\*[\s\S]*?\*/",
-            static match => match.Value.StartsWith("//", StringComparison.Ordinal) || match.Value.StartsWith("/*", StringComparison.Ordinal)
-                ? string.Empty
-                : match.Value);
-    }
 }

@@ -17,11 +17,15 @@ import urllib.parse
 import urllib.request
 from datetime import datetime, timedelta, timezone
 
+from run_isolated_magic_link_dapr import validate_public_port
+
 pids = subprocess.check_output(['pgrep', '-f', '/Hexalith.Timesheets$'], text=True).splitlines()
 if len(pids) != 1:
     raise RuntimeError(f'Expected one Timesheets process, found {len(pids)}')
 pid = int(pids[0])
 environment = dict(item.split('=', 1) for item in open(f'/proc/{pid}/environ', 'rb').read().decode().split('\0') if '=' in item)
+public_port = validate_public_port(environment.get('Timesheets__LocalPublicPort'))
+public_origin = f'http://127.0.0.1:{public_port}'
 key = environment['Authentication__JwtBearer__SigningKey'].encode()
 apps = subprocess.check_output(['dapr', 'list'], text=True).splitlines()
 def dapr_app(app_id, expected_app_port):
@@ -103,7 +107,7 @@ dispatch = {
     'catalogFingerprint': fingerprint,
 }
 public_status, _ = post('/project/v2', dispatch, assertion('domain-service:project'),
-                        url='http://127.0.0.1:8080/project/v2',
+                        url=public_origin + '/project/v2',
                         app_api_token=environment['APP_API_TOKEN'])
 assert public_status == 404, public_status
 print('public projection route unavailable', public_status)

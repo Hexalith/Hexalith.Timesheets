@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
 from magic_link_index_selection import legacy_index_diagnostics, selected_candidate, selected_index_snapshot
-from run_isolated_magic_link_dapr import verify_runtime_components
+from run_isolated_magic_link_dapr import validate_public_port, verify_runtime_components
 
 
 def require(condition, message):
@@ -78,6 +78,10 @@ require(environment.get("Timesheets__LiveDaprFixture__Enabled") == "true",
         "The run-mode live Dapr fixture setting is required")
 require(os.environ.get("TIMESHEETS_LIVE_DAPR_FIXTURE") == "1",
         "The isolated fixture runner opt-in is required")
+public_port = validate_public_port(os.environ.get("Timesheets__LocalPublicPort", "8080"))
+require(environment.get("Timesheets__LocalPublicPort") == str(public_port),
+        "Timesheets public listener does not match the isolated fixture")
+public_origin = f"http://127.0.0.1:{public_port}"
 verify_runtime_components(os.environ.get("TIMESHEETS_LIVE_DAPR_REDIS_HOST", ""),
                           os.environ.get("TIMESHEETS_LIVE_DAPR_COMPONENTS", ""),
                           os.environ.get("Dapr__PlacementHostAddress", ""),
@@ -149,7 +153,7 @@ def gateway(method, path, body=None, operation=None, scoped_tenant=tenant):
 
 def management(path, body, scoped_tenant=tenant):
     return call(
-        "http://127.0.0.1:8080" + path, "POST", body,
+        public_origin + path, "POST", body,
         sign("timesheets", "eventstore", "domain-service:process", scoped_tenant, actor), app_token,
     )
 
@@ -560,7 +564,7 @@ def journey(action, race=False):
     suffix = "?t=" + urllib.parse.quote(token, safe="")
     assert_runtime_unique()
     await_success(
-        lambda: call(f"http://127.0.0.1:8080/api/timesheets/magic-links/{route}" + suffix),
+        lambda: call(f"{public_origin}/api/timesheets/magic-links/{route}" + suffix),
         200, f"Valid {route} GET",
         lambda: valid_get_diagnostics(token_hash, capability, entry))
     assert_runtime_unique()
@@ -568,7 +572,7 @@ def journey(action, race=False):
         "serviceDate": now.date().isoformat(), "durationMinutes": 45,
         "activityTypeId": {"value": activity}, "billableState": "Billable",
     }
-    submit_url = f"http://127.0.0.1:8080/api/timesheets/magic-links/{route}/submit" + suffix
+    submit_url = f"{public_origin}/api/timesheets/magic-links/{route}/submit" + suffix
     if race:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
             replies = list(pool.map(lambda _: call(submit_url, "POST", payload), range(2)))

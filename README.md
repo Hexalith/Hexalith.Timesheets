@@ -57,7 +57,19 @@ After the Debug/source build, run the compiled AppHost configuration probes as p
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --configuration-only
 ```
 
-These probes exit before resource construction and require no Docker, Dapr, Aspire CLI, or idle runtime. CI runs them in its blocking `apphost-configuration` job after a fresh Release/package AppHost build, passing `--configuration Release`. Package builds must reject the private compiled-gateway adapter; local Debug/source builds verify its valid selection as well. This lane checks configuration admission and supplies no running-topology or deployed acceptance evidence.
+Configuration probes exit before resource construction; model probes inspect the completed endpoint annotations before Build/Run. Both require no Docker, Dapr, Aspire CLI, runtime admission lock, or idle runtime. CI runs them in its blocking `apphost-configuration` job after a fresh Release/package AppHost build, passing `--configuration Release`. Package builds must reject the private compiled-gateway adapter; local Debug/source builds verify its valid selection as well. This lane checks configuration admission and endpoint names, ports, `IsExternal` and explicit proxy modes (`IsExplicitlyProxied=false` for both listeners); it supplies no running-topology or deployed acceptance evidence.
+
+`src/Hexalith.Timesheets.AppHost` declares the local anonymous public routes on port `8080`, the guarded internal listener on `8081`, and the EventStore gateway on `8082`. Both Timesheets endpoint annotations currently have `IsExternal=false`; anonymous route metadata does not configure deployment ingress, and this annotation alone does not prove deployed network isolation. Publish-mode exposure flags remain unchanged.
+
+For local runs, set `Timesheets__LocalPublicPort` (configuration key `Timesheets:LocalPublicPort`) to an integer from `1024` through `65535`, excluding the internal, gateway, sidecar and reserved infrastructure listener ports. The default remains `8080`. Both the default and an override are checked against normalized control addresses and the Redis endpoint in validated fixture components; the optional Redis diagnostic environment key does not define that endpoint. Publish mode rejects any override. The isolated journey accepts the same selection explicitly:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --public-port 18080
+```
+
+The runner checks the selected port, excludes it from every private infrastructure port allocation, and passes it to the AppHost and all public journey requests. The standalone projection probe derives its public origin from the selected Timesheets process configuration. Runtime child environments discard probe-only settings and their provider aliases. Runtime runner and infrastructure-backed guard checks share a nonblocking OS advisory lock at `/tmp/hexalith-timesheets-local-runtime.lock`, independent of checkout and `TMPDIR`. They retain it through admission, execution, owned cleanup and shared-service preservation, then release it without deleting the lock file. Contention, unavailable locking or an unsafe lock path causes an immediate refusal without holder details. This serializes cooperating tools only; the existing idle-runtime prerequisite still applies and foreign apps are never stopped.
+
+The test-only Roslyn fitness check decodes identifiers and constant strings in the two checked entry points. It requires the immutable internal port `8081`, its export on the Timesheets resource, and the canonical host options binding. It rejects additional qualified or post-configuration bindings, unsupported checked configuration expressions, and direct Timesheets annotation mutations. These are bounded source-wiring checks; they do not establish arbitrary C# program semantics.
 
 The capture and governance command performance lane (NFR10 command-acknowledgement evidence) is **skipped by default** and opted in with `TIMESHEETS_PERF=1`, so it never enters the fast baseline. Set the variable on the same executable invocation:
 
