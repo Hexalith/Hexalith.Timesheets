@@ -28,16 +28,16 @@ Existing checkouts upgrading from the tracked hook file should run setup again; 
 Use the pinned .NET SDK `10.0.402` (`rollForward: latestPatch`), with a writable CLI home in restricted environments:
 
 ```bash
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.127.0 -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.127.0 -warnaserror -m:1 /nr:false
 ```
 
-Use the same source-reference mode for restore and build. CI/CD uses Release/published packages; configuration-free restore defaults to that graph. Do not reuse assets between dependency modes. Works forwards its own EventStore default; when it differs from the consuming catalog, pass `-p:HexalithEventStoreVersion=<catalog version>` to both local commands until the owned build follow-up closes. At the 2026-10-20 baseline both defaults are `3.126.0`. The Timesheets Works adapter and its test project now preserve Configuration during solution traversal of external source references; [integration handoff verification](_bmad-output/implementation-artifacts/tests/five-integration-handoffs.md) records that bounded correction. Version-forwarding remains separately open because NuGet restore does not propagate the version through per-reference metadata.
+Use the same source-reference mode for restore and build. CI/CD uses Release/published packages; configuration-free restore defaults to that graph. Do not reuse assets between dependency modes. Timesheets selects published EventStore `3.127.0` for its per-send gateway options API; Works still forwards its own `3.126.0` default. Pass the consuming version explicitly to both local commands as shown until the owned version-forwarding follow-up closes. The Timesheets Works adapter and its test project preserve Configuration during solution traversal of external source references; [integration handoff verification](_bmad-output/implementation-artifacts/tests/five-integration-handoffs.md) records that bounded correction. Version-forwarding remains separately open because NuGet restore does not propagate the version through per-reference metadata.
 
 After building, run each test project individually. `global.json` selects Microsoft.Testing.Platform; use `--project` and the same configuration and dependency mode as the build:
 
 ```bash
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Debug --no-build -p:UseHexalithProjectReferences=true
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Debug --no-build -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.127.0
 ```
 
 Repeat for Contracts.Tests, Server.Tests, Projections.Tests, IntegrationTests, and Works.Tests using their respective project paths. The built xUnit v3 executables are also supported and run the same suites directly:
@@ -77,7 +77,21 @@ See `docs/performance-evidence.md` for the measured p95 numbers, the NFR11 verdi
 
 See `docs/launch-readiness.md` for the final story-complete versus launch-complete classification record and release-gate decision. The current overall release decision is `FAIL`: deployed magic-link authority, inventory/continuity, and shared-rebuild acceptance remain unfinished. The isolated local persisted journey passed on 2026-10-18 on the earlier AppHost graph; current NuGet-orchestration runtime qualification remains open. Package currency separately remains `CONCERNS`; other integrations retain explicit waivers or post-v1 decisions.
 
-As of 2026-10-10, valid magic-link GET displays return `200` and valid confirm and adjust POST routes return `202` in the in-process HTTP fixture after EventStore reports `Completed` and the exact stored batch is read back. Invalid and uncertain outcomes return the shared opaque `403`. Status polling defaults to a five-second deadline with 100-ms intervals and is configurable through `Timesheets:MagicLinks:SubmissionPolling`. Actor persistence tests prove rejection replay and valid work after recreation. These fixtures do not prove deployed Dapr persistence. The loader retains only sanitized status for well-formed non-Fresh catalogs. Deployed capability and Time Entry histories could not be inventoried with the available access; Story 3.6 remains in progress.
+The default gateway binds `Timesheets:EventStoreGateway` through host configuration. `Endpoint` must be an HTTP/HTTPS origin without credentials, a path, query, or fragment; invalid endpoints fall back to `HttpPort`, then `http://localhost:3500`. `AppId` defaults to `eventstore`; `ApiToken` is optional. `DAPR_HTTP_ENDPOINT`, `DAPR_HTTP_PORT`, and `DAPR_API_TOKEN` configuration keys supply fallbacks (the composed host's normal environment provider includes Dapr sidecar settings). Configuration reload changes the endpoint for newly resolved clients and changes the target and credential on the next send by existing clients. Set `ApiToken` to an empty string to remove a configured fallback credential. Caller-provided gateways and transports retain their own configuration.
+
+Standalone `ServiceCollection` consumers should register their caller-owned `IConfiguration` before `AddTimesheetsServerKernel()`. Include an environment provider when the `DAPR_*` fallbacks come from process environment settings:
+
+```csharp
+IConfiguration configuration = new ConfigurationBuilder()
+    .AddEnvironmentVariables()
+    .Build();
+services.AddSingleton<IConfiguration>(configuration);
+services.AddTimesheetsServerKernel();
+```
+
+Without a supplied configuration, standalone composition uses an empty configuration and the approved defaults: `http://localhost:3500`, target `eventstore`, and no API token.
+
+As of 2026-10-10, valid magic-link GET displays return `200` and valid confirm and adjust POST routes return `202` in the in-process HTTP fixture after EventStore reports `Completed` and the exact stored batch is read back. Invalid and uncertain outcomes return the shared opaque `403`. Status polling defaults to a five-second deadline with 100-ms intervals and is configurable through `Timesheets:MagicLinks:SubmissionPolling`. Stored-event reads have a separate two-second `ReadbackTimeout` (positive and at most thirty seconds), bounded by the remaining submission deadline, including non-cooperative transports; caller cancellation propagates. Set `Timeout`, `PollInterval`, and `ReadbackTimeout` under that section. Actor persistence tests prove rejection replay and valid work after recreation. These fixtures do not prove deployed Dapr persistence. The loader retains only sanitized status for well-formed non-Fresh catalogs. Deployed capability and Time Entry histories could not be inventoried with the available access; Story 3.6 remains in progress.
 
 The integration test project contains in-process workflow coverage for metadata endpoints, AI-assisted Time Entry capture, submission, approval authority, entry approval/rejection, rejected-entry correction, approved-entry correction, period submission, period approval/rejection, external contribution submission/confirmation, magic-link capability issue/revoke/confirm/adjust workflows, operational Time Entry queries, Approved-Time Ledger queries, Project/Work actual-time reports, approved billable-time export, and the Timesheets dashboard overview. The default IntegrationTests run retains five declared skips: two reserved infrastructure/performance placeholders, two opt-in in-process performance tests, and the isolated live Dapr test. Opt-in local persistence proof exists; deployed acceptance and EventStore-backed wire-path performance remain separate open evidence.
 

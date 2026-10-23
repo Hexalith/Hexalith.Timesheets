@@ -33,6 +33,9 @@ public sealed class MagicLinkDurableSubmissionServiceTests
         var defaults = new MagicLinkSubmissionPollingOptions();
         defaults.Timeout.ShouldBe(TimeSpan.FromSeconds(5));
         defaults.PollInterval.ShouldBe(TimeSpan.FromMilliseconds(100));
+        defaults.ReadbackTimeout.ShouldBe(TimeSpan.FromSeconds(2));
+        new MagicLinkSubmissionPollingOptions { ReadbackTimeout = TimeSpan.Zero }.IsValid().ShouldBeFalse();
+        new MagicLinkSubmissionPollingOptions { ReadbackTimeout = TimeSpan.FromSeconds(31) }.IsValid().ShouldBeFalse();
         defaults.IsValid().ShouldBeTrue();
         new MagicLinkSubmissionPollingOptions { Timeout = TimeSpan.Zero }.IsValid().ShouldBeFalse();
         new MagicLinkSubmissionPollingOptions { Timeout = TimeSpan.FromMinutes(1) }.IsValid().ShouldBeFalse();
@@ -269,6 +272,242 @@ public sealed class MagicLinkDurableSubmissionServiceTests
             .ShouldBe(!changedPrior);
     }
 
+    [Theory]
+    [InlineData("issue", false)]
+    [InlineData("transition", false)]
+    [InlineData("use", false)]
+    [InlineData("issue", true)]
+    [InlineData("transition", true)]
+    [InlineData("use", true)]
+    public async Task StoredEventReadDeadlineBoundsNonCooperativeTransportAndPropagatesCallerCancellation(string operation, bool cancelCaller)
+    {
+        IEventStoreGatewayClient gateway = ReceiptGateway(Intent());
+        string aggregate = operation == "issue" ? "capability-1" : "time-entry-1";
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<CommandStatusQueryResponse?>(new(
+                call.ArgAt<string>(1), nameof(CommandStatus.Completed), (int)CommandStatus.Completed, MessageId: call.ArgAt<string>(1))
+                { CommittedEventSequence = 3, EventCount = operation == "use" ? 2 : 1,
+                    TenantId = "tenant-1", Domain = "timesheets", AggregateId = aggregate }));
+        var stalled = new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken transportToken = default;
+        int reads = 0;
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                if (++reads > 1)
+                    return Task.FromException<StreamReadPage>(new InvalidOperationException("Stop after proving the first read budget."));
+                transportToken = call.ArgAt<CancellationToken>(1);
+                started.TrySetResult();
+                return stalled.Task;
+            });
+        var service = new MagicLinkDurableSubmissionService(gateway, Options.Create(new MagicLinkSubmissionPollingOptions
+        {
+            Timeout = TimeSpan.FromSeconds(5), PollInterval = TimeSpan.FromMilliseconds(10),
+            ReadbackTimeout = TimeSpan.FromMilliseconds(35)
+        }));
+        using var caller = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        Stopwatch elapsed = Stopwatch.StartNew();
+        Task<bool> submission = SubmitOperationAsync(service, operation, caller.Token);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        if (cancelCaller)
+        {
+            caller.Cancel();
+            await Should.ThrowAsync<OperationCanceledException>(() => submission.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        }
+        else
+        {
+            (await submission.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeFalse();
+            elapsed.Elapsed.ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(25));
+            elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(1));
+            reads.ShouldBe(operation == "transition" ? 1 : 2);
+        }
+        transportToken.IsCancellationRequested.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("issue")]
+    [InlineData("use")]
+    public async Task RepeatedStoredEventReadTimeoutsExhaustTheOriginalSubmissionDeadline(string operation)
+    {
+        IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
+        int statuses = 0;
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<CommandStatusQueryResponse?>(++statuses == 1
+                ? null : OperationStatus(operation, call.ArgAt<string>(1))));
+        var readTokens = new List<CancellationToken>();
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            readTokens.Add(call.ArgAt<CancellationToken>(1));
+            return new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+        });
+        var service = new MagicLinkDurableSubmissionService(gateway, Options.Create(new MagicLinkSubmissionPollingOptions
+        {
+            Timeout = TimeSpan.FromMilliseconds(200), PollInterval = TimeSpan.FromMilliseconds(10),
+            ReadbackTimeout = TimeSpan.FromMilliseconds(35)
+        }));
+        Stopwatch elapsed = Stopwatch.StartNew();
+
+        (await SubmitOperationAsync(service, operation, TestContext.Current.CancellationToken)
+            .WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeFalse();
+
+        readTokens.Count.ShouldBeGreaterThanOrEqualTo(2);
+        readTokens.ShouldAllBe(token => token.IsCancellationRequested);
+        elapsed.Elapsed.ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(160));
+        elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromMilliseconds(800));
+        await gateway.Received(1).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("issue")]
+    [InlineData("use")]
+    public async Task StoredEventReadTimeoutRecoversExactEvidenceWithoutResubmitting(string operation)
+    {
+        CommitMagicLinkUse intent = Intent();
+        int reads = 0;
+        CancellationToken firstReadToken = default;
+        Task<StreamReadPage> Read(StreamReadPage page, CancellationToken token)
+        {
+            if (++reads != 1) return Task.FromResult(page);
+            firstReadToken = token;
+            return new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+        }
+        IEventStoreGatewayClient gateway = operation == "issue" ? IssueReceiptGateway(Read) : ReceiptGateway(intent, readback: Read);
+        var service = new MagicLinkDurableSubmissionService(gateway, Options.Create(new MagicLinkSubmissionPollingOptions
+        {
+            Timeout = TimeSpan.FromMilliseconds(500), PollInterval = TimeSpan.FromMilliseconds(10),
+            ReadbackTimeout = TimeSpan.FromMilliseconds(35)
+        }));
+        Stopwatch elapsed = Stopwatch.StartNew();
+        Task<bool> submission = operation == "issue"
+            ? service.SubmitIssueAsync(IssueIntent(), "request", TestContext.Current.CancellationToken)
+            : service.SubmitUseAsync(intent, "request", TestContext.Current.CancellationToken);
+
+        (await submission.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeTrue();
+
+        reads.ShouldBe(2);
+        firstReadToken.IsCancellationRequested.ShouldBeTrue();
+        elapsed.Elapsed.ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(25));
+        await gateway.Received(1).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("issue")]
+    [InlineData("transition")]
+    [InlineData("use")]
+    public async Task StatusPollingLeavesOnlyTheOriginalRemainingBudgetForStoredReadback(string operation)
+    {
+        IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
+        Stopwatch elapsed = Stopwatch.StartNew();
+        int statuses = 0;
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<CommandStatusQueryResponse?>(++statuses == 1 ? null
+                : OperationStatus(operation, call.ArgAt<string>(1), elapsed.Elapsed < TimeSpan.FromMilliseconds(400)
+                    ? CommandStatus.Processing : CommandStatus.Completed)));
+        TimeSpan readStarted = default;
+        CancellationToken readToken = default;
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            readStarted = elapsed.Elapsed;
+            readToken = call.ArgAt<CancellationToken>(1);
+            return new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+        });
+        TimeSpan timeout = TimeSpan.FromMilliseconds(600);
+        var service = new MagicLinkDurableSubmissionService(gateway, Options.Create(new MagicLinkSubmissionPollingOptions
+        { Timeout = timeout, PollInterval = TimeSpan.FromMilliseconds(10), ReadbackTimeout = TimeSpan.FromSeconds(2) }));
+        elapsed.Restart();
+
+        (await SubmitOperationAsync(service, operation, TestContext.Current.CancellationToken)
+            .WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeFalse();
+
+        readStarted.ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(400));
+        readStarted.ShouldBeLessThan(timeout);
+        TimeSpan remaining = timeout - readStarted;
+        (elapsed.Elapsed - readStarted).ShouldBeLessThan(remaining + TimeSpan.FromMilliseconds(100));
+        elapsed.Elapsed.ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(550));
+        readToken.IsCancellationRequested.ShouldBeTrue();
+        await gateway.Received(1).ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+        await gateway.Received(1).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("issue")]
+    [InlineData("transition")]
+    [InlineData("use")]
+    public async Task StoredEventReadPreservesAShorterSubmissionDeadline(string operation)
+    {
+        IEventStoreGatewayClient gateway = ReceiptGateway(Intent());
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<CommandStatusQueryResponse?>(new(
+                call.ArgAt<string>(1), nameof(CommandStatus.Completed), (int)CommandStatus.Completed, MessageId: call.ArgAt<string>(1))
+                { CommittedEventSequence = 3, EventCount = operation == "use" ? 2 : 1,
+                    TenantId = "tenant-1", Domain = "timesheets", AggregateId = operation == "issue" ? "capability-1" : "time-entry-1" }));
+        CancellationToken transportToken = default;
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            transportToken = call.ArgAt<CancellationToken>(1);
+            return new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously).Task;
+        });
+        var service = new MagicLinkDurableSubmissionService(gateway, Options.Create(new MagicLinkSubmissionPollingOptions
+        { Timeout = TimeSpan.FromMilliseconds(40), PollInterval = TimeSpan.FromMilliseconds(10), ReadbackTimeout = TimeSpan.FromSeconds(2) }));
+        Stopwatch elapsed = Stopwatch.StartNew();
+        (await SubmitOperationAsync(service, operation, TestContext.Current.CancellationToken).WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeFalse();
+        elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(1));
+        transportToken.IsCancellationRequested.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("issue")]
+    [InlineData("transition")]
+    public async Task ValidIssueAndTransitionStoredEvidenceRetainsSuccess(string operation)
+    {
+        IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
+        string aggregate = operation == "issue" ? "capability-1" : "time-entry-1";
+        string messageId = string.Empty;
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            messageId = call.ArgAt<string>(1);
+            return Task.FromResult<CommandStatusQueryResponse?>(new(messageId, nameof(CommandStatus.Completed),
+                (int)CommandStatus.Completed, MessageId: messageId)
+                { CommittedEventSequence = 1, EventCount = 1, TenantId = "tenant-1", Domain = "timesheets", AggregateId = aggregate });
+        });
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            CommitMagicLinkIssue issue = IssueIntent();
+            CommitMagicLinkTransition transition = TransitionIntent();
+            object evidence = operation == "issue"
+                ? new MagicLinkConfirmationCapabilityIssued(issue.Command.CapabilityId, issue.Tenant, issue.Command.Scope.Contributor,
+                    issue.Command.Scope.Target, issue.Command.Scope.ActivityTypeId, issue.Command.Scope.TimeEntryId,
+                    issue.Command.Scope.TargetKind, issue.Command.AllowedAction, issue.TokenHash, issue.Command.ExpiresAtUtc,
+                    issue.Issuer, issue.IssuedAtUtc, issue.Command.Source, true)
+                : new MagicLinkConfirmationCapabilityRevoked(transition.CapabilityId, transition.Tenant,
+                    transition.Actor!, transition.AtUtc, transition.Source) { TimeEntryId = transition.TimeEntryId };
+            var stored = new StreamReadEvent(1, evidence.GetType().FullName!,
+                JsonSerializer.SerializeToUtf8Bytes(evidence, evidence.GetType(), new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+                "json", 1, "event-1", messageId, messageId, issue.IssuedAtUtc, "fixture");
+            return Task.FromResult(new StreamReadPage("tenant-1", "timesheets", aggregate, [stored], new(0, null, 1, 1, 1, false, null)));
+        });
+        (await SubmitOperationAsync(Service(gateway, 500, 10), operation, TestContext.Current.CancellationToken)).ShouldBeTrue();
+    }
+
+    private static Task<bool> SubmitOperationAsync(MagicLinkDurableSubmissionService service, string operation, CancellationToken token)
+        => operation switch
+        {
+            "issue" => service.SubmitIssueAsync(IssueIntent(), "request", token),
+            "transition" => service.SubmitTransitionAsync(TransitionIntent(), "request", token),
+            _ => service.SubmitUseAsync(Intent(), "request", token)
+        };
+
+    private static readonly DateTimeOffset _intentTime = new(2026, 10, 23, 8, 0, 0, TimeSpan.Zero);
+
+    private static CommitMagicLinkIssue IssueIntent() => new(new(new("capability-1"),
+        new(new("contributor-1"), TimeEntryTargetReference.ForProject(new("project-1")), new("activity-1"),
+            new("time-entry-1"), MagicLinkTargetKind.ProposedTimeEntry), MagicLinkAllowedAction.Confirm,
+        _intentTime.AddDays(1), new("timesheets", "issue")), new("tenant-1"), new("issuer-1"), new("hash-1"), _intentTime);
+
+    private static CommitMagicLinkTransition TransitionIntent() => new(new("capability-1"), new("tenant-1"), new("time-entry-1"),
+        new("issuer-1"), MagicLinkTransitionAction.Revoke, new("timesheets", "revoke"), _intentTime);
+
     private static ServerMagicLinkCapabilityState ResolvedCapability(CommitMagicLinkUse intent)
     {
         var state = new ServerMagicLinkCapabilityState();
@@ -291,7 +530,8 @@ public sealed class MagicLinkDurableSubmissionServiceTests
         { ActivityTypeScope = ActivityTypeScope.Tenant };
 
     private static IEventStoreGatewayClient ReceiptGateway(CommitMagicLinkUse intent,
-        Func<StreamReadEvent, StreamReadEvent>? transform = null)
+        Func<StreamReadEvent, StreamReadEvent>? transform = null,
+        Func<StreamReadPage, CancellationToken, Task<StreamReadPage>>? readback = null)
     {
         IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
         string? messageId = null;
@@ -324,8 +564,47 @@ public sealed class MagicLinkDurableSubmissionServiceTests
                 return Task.FromResult(new SubmitCommandResponse(messageId, MessageId: messageId));
             });
         gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
-            .Returns(_ => Task.FromResult(new StreamReadPage("tenant-1", "timesheets", intent.TimeEntryId.Value,
-                events, new StreamReadMetadata(1, null, 3, 3, 2, false, null))));
+            .Returns(call =>
+            {
+                var page = new StreamReadPage("tenant-1", "timesheets", intent.TimeEntryId.Value,
+                    events, new StreamReadMetadata(1, null, 3, 3, 2, false, null));
+                return readback?.Invoke(page, call.ArgAt<CancellationToken>(1)) ?? Task.FromResult(page);
+            });
+        return gateway;
+    }
+
+    private static CommandStatusQueryResponse OperationStatus(string operation, string messageId,
+        CommandStatus status = CommandStatus.Completed)
+        => new(messageId, status.ToString(), (int)status, MessageId: messageId)
+        {
+            CommittedEventSequence = 3, EventCount = operation == "use" ? 2 : 1,
+            TenantId = "tenant-1", Domain = "timesheets", AggregateId = operation == "issue" ? "capability-1" : "time-entry-1"
+        };
+
+    private static IEventStoreGatewayClient IssueReceiptGateway(Func<StreamReadPage, CancellationToken, Task<StreamReadPage>> readback)
+    {
+        IEventStoreGatewayClient gateway = GatewayWithAcceptedSubmission();
+        string? messageId = null;
+        gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            messageId = call.ArgAt<SubmitCommandRequest>(0).MessageId;
+            return Task.FromResult(new SubmitCommandResponse(messageId, MessageId: messageId));
+        });
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<CommandStatusQueryResponse?>(messageId is null ? null : OperationStatus("issue", messageId)));
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            CommitMagicLinkIssue issue = IssueIntent();
+            var evidence = new MagicLinkConfirmationCapabilityIssued(issue.Command.CapabilityId, issue.Tenant, issue.Command.Scope.Contributor,
+                issue.Command.Scope.Target, issue.Command.Scope.ActivityTypeId, issue.Command.Scope.TimeEntryId,
+                issue.Command.Scope.TargetKind, issue.Command.AllowedAction, issue.TokenHash, issue.Command.ExpiresAtUtc,
+                issue.Issuer, issue.IssuedAtUtc, issue.Command.Source, true);
+            var stored = new StreamReadEvent(3, evidence.GetType().FullName!,
+                JsonSerializer.SerializeToUtf8Bytes(evidence, new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+                "json", 1, "issued-event", messageId!, messageId, issue.IssuedAtUtc, "fixture");
+            return readback(new StreamReadPage("tenant-1", "timesheets", issue.Command.CapabilityId.Value, [stored],
+                new(1, null, 3, 3, 1, false, null)), call.ArgAt<CancellationToken>(1));
+        });
         return gateway;
     }
 

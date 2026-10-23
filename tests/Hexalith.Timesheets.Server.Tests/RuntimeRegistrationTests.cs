@@ -43,20 +43,24 @@ public sealed class RuntimeRegistrationTests
                 .GetRequiredService<IOptions<MagicLinkSubmissionPollingOptions>>().Value;
             options.Timeout.ShouldBe(TimeSpan.FromSeconds(2));
             options.PollInterval.ShouldBe(TimeSpan.FromMilliseconds(25));
+            options.ReadbackTimeout.ShouldBe(TimeSpan.FromMilliseconds(75));
         }
 
         using ServiceProvider invalid = BuildPollingProvider("00:00:02", "00:00:00.001");
         Should.Throw<OptionsValidationException>(() => invalid.GetRequiredService<IStartupValidator>().Validate());
+        using ServiceProvider invalidReadback = BuildPollingProvider("00:00:02", "00:00:00.025", "00:00:00");
+        Should.Throw<OptionsValidationException>(() => invalidReadback.GetRequiredService<IStartupValidator>().Validate());
     }
 
-    private static ServiceProvider BuildPollingProvider(string timeout, string interval)
+    private static ServiceProvider BuildPollingProvider(string timeout, string interval, string readback = "00:00:00.075")
     {
         IServiceCollection services = new ServiceCollection();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["Timesheets:MagicLinks:SubmissionPolling:Timeout"] = timeout,
-                ["Timesheets:MagicLinks:SubmissionPolling:PollInterval"] = interval
+                ["Timesheets:MagicLinks:SubmissionPolling:PollInterval"] = interval,
+                ["Timesheets:MagicLinks:SubmissionPolling:ReadbackTimeout"] = readback
             }).Build());
         services.AddTimesheetsServerKernel();
         return services.BuildServiceProvider();
@@ -185,43 +189,93 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
+    public async Task GatewayConfigurationReloadUpdatesExistingCredentialsAndNewClientEndpoints()
+    {
+        string? environmentToken = Environment.GetEnvironmentVariable("DAPR_API_TOKEN");
+        string? environmentEndpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["DAPR_HTTP_ENDPOINT"] = "https://fallback.test/", ["DAPR_API_TOKEN"] = "fallback-token",
+            ["Timesheets:EventStoreGateway:Endpoint"] = "https://first.test/",
+            ["Timesheets:EventStoreGateway:AppId"] = "first-target",
+            ["Timesheets:EventStoreGateway:ApiToken"] = "first-token"
+        }).Build();
+        var services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddTimesheetsServerKernel();
+        services.AddTimesheetsServerKernel();
+        var recorder = new RecordingHandler();
+        services.Configure<HttpClientFactoryOptions>(nameof(IEventStoreGatewayClient), options =>
+            options.HttpMessageHandlerBuilderActions.Add(builder => builder.PrimaryHandler = recorder));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEventStoreGatewayClient existing = provider.GetRequiredService<IEventStoreGatewayClient>();
+        var request = new StreamReadRequest("tenant-1", "timesheets", "capability-1");
+        _ = await existing.ReadStreamAsync(request, TestContext.Current.CancellationToken);
+        recorder.RequestUri.ShouldNotBeNull().Host.ShouldBe("first.test");
+        recorder.AppId.ShouldBe("first-target"); recorder.ApiToken.ShouldBe("first-token");
+        configuration["Timesheets:EventStoreGateway:Endpoint"] = "https://second.test/";
+        configuration["Timesheets:EventStoreGateway:AppId"] = "second-target";
+        configuration["Timesheets:EventStoreGateway:ApiToken"] = "rotated-token";
+        configuration.Reload();
+        _ = await existing.ReadStreamAsync(request, TestContext.Current.CancellationToken);
+        recorder.RequestUri.Host.ShouldBe("first.test");
+        recorder.AppId.ShouldBe("second-target"); recorder.ApiToken.ShouldBe("rotated-token");
+        _ = await provider.GetRequiredService<IEventStoreGatewayClient>().ReadStreamAsync(request, TestContext.Current.CancellationToken);
+        recorder.RequestUri.Host.ShouldBe("second.test");
+        // Empty explicitly removes the credential, including a configured fallback token.
+        configuration["Timesheets:EventStoreGateway:ApiToken"] = "";
+        configuration.Reload();
+        _ = await existing.ReadStreamAsync(request, TestContext.Current.CancellationToken);
+        recorder.ApiToken.ShouldBeNull();
+        Environment.GetEnvironmentVariable("DAPR_API_TOKEN").ShouldBe(environmentToken);
+        Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT").ShouldBe(environmentEndpoint);
+    }
+
+    [Fact]
+    public async Task GatewayUsesConfigurationDaprFallbacksWithoutProcessMutation()
+    {
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["DAPR_HTTP_ENDPOINT"] = "https://fallback.test/", ["DAPR_API_TOKEN"] = "configured-token"
+        }).Build();
+        var services = new ServiceCollection(); services.AddSingleton<IConfiguration>(configuration);
+        services.AddTimesheetsServerKernel(); var recorder = new RecordingHandler();
+        services.Configure<HttpClientFactoryOptions>(nameof(IEventStoreGatewayClient), options =>
+            options.HttpMessageHandlerBuilderActions.Add(builder => builder.PrimaryHandler = recorder));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        _ = await provider.GetRequiredService<IEventStoreGatewayClient>().ReadStreamAsync(
+            new("tenant-1", "timesheets", "capability-1"), TestContext.Current.CancellationToken);
+        recorder.RequestUri.ShouldNotBeNull().Host.ShouldBe("fallback.test");
+        recorder.AppId.ShouldBe("eventstore"); recorder.ApiToken.ShouldBe("configured-token");
+        configuration["DAPR_HTTP_ENDPOINT"] = "https://invalid.test/path";
+        configuration["DAPR_HTTP_PORT"] = "4555";
+        configuration["DAPR_API_TOKEN"] = null;
+        configuration.Reload();
+        _ = await provider.GetRequiredService<IEventStoreGatewayClient>().ReadStreamAsync(
+            new("tenant-1", "timesheets", "capability-1"), TestContext.Current.CancellationToken);
+        recorder.RequestUri.Port.ShouldBe(4555); recorder.RequestUri.Host.ShouldBe("localhost");
+        recorder.ApiToken.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task Server_kernel_default_gateway_routes_through_configured_dapr_origin_and_headers()
     {
-        string? previousEndpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
-        string? previousPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
-        string? previousToken = Environment.GetEnvironmentVariable("DAPR_API_TOKEN");
-        try
+        var recorder = new RecordingHandler();
+        IServiceCollection services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", "https://127.0.0.1:4545/");
-            Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", null);
-            Environment.SetEnvironmentVariable("DAPR_API_TOKEN", "routing-test-token");
-            var recorder = new RecordingHandler();
-            IServiceCollection services = new ServiceCollection();
-            services.AddLogging();
-            services.AddTimesheetsServerKernel();
-            services.Configure<HttpClientFactoryOptions>(
-                nameof(IEventStoreGatewayClient),
-                options => options.HttpMessageHandlerBuilderActions.Add(
-                    builder => builder.PrimaryHandler = recorder));
-
-            using ServiceProvider provider = services.BuildServiceProvider();
-            IEventStoreGatewayClient gateway = provider.GetRequiredService<IEventStoreGatewayClient>();
-            _ = await gateway.ReadStreamAsync(
-                new StreamReadRequest("tenant-1", "timesheets", "capability-1"),
-                TestContext.Current.CancellationToken);
-
-            recorder.RequestUri.ShouldNotBeNull().ToString()
-                .ShouldStartWith("https://127.0.0.1:4545/api/v1/streams/read");
-            recorder.AppId.ShouldBe("eventstore");
-            recorder.ApiToken.ShouldBe("routing-test-token");
-            recorder.RequestUri.ToString().ShouldNotContain("routing-test-token");
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", previousEndpoint);
-            Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", previousPort);
-            Environment.SetEnvironmentVariable("DAPR_API_TOKEN", previousToken);
-        }
+            ["DAPR_HTTP_ENDPOINT"] = "https://127.0.0.1:4545/", ["DAPR_API_TOKEN"] = "routing-test-token"
+        }).Build());
+        services.AddTimesheetsServerKernel();
+        services.Configure<HttpClientFactoryOptions>(nameof(IEventStoreGatewayClient), options =>
+            options.HttpMessageHandlerBuilderActions.Add(builder => builder.PrimaryHandler = recorder));
+        using ServiceProvider provider = services.BuildServiceProvider();
+        _ = await provider.GetRequiredService<IEventStoreGatewayClient>().ReadStreamAsync(
+            new("tenant-1", "timesheets", "capability-1"), TestContext.Current.CancellationToken);
+        recorder.RequestUri.ShouldNotBeNull().ToString().ShouldStartWith("https://127.0.0.1:4545/api/v1/streams/read");
+        recorder.AppId.ShouldBe("eventstore"); recorder.ApiToken.ShouldBe("routing-test-token");
+        recorder.RequestUri.ToString().ShouldNotContain("routing-test-token");
     }
 
     [Fact]
@@ -266,64 +320,30 @@ public sealed class RuntimeRegistrationTests
     [Fact]
     public void Server_kernel_falls_back_to_the_dapr_http_port_when_no_endpoint_is_configured()
     {
-        string? previousEndpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
-        string? previousPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
-        try
-        {
-            // Without this, deleting the DAPR_HTTP_PORT branch entirely would keep every test green,
-            // because the only other case expects http://localhost:3500 — byte-identical to the
-            // hard-coded fallback. In a sidecar that publishes only the port variable on a non-default
-            // port, that silently sends every gateway call to the wrong place, and the loader's
-            // fail-closed read makes the result indistinguishable from an invalid magic link.
-            Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", null);
-            Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", "3501");
-            IServiceCollection services = new ServiceCollection();
-            services.AddTimesheetsServerKernel();
-
-            using ServiceProvider provider = services.BuildServiceProvider();
-            provider.GetRequiredService<IOptions<EventStoreGatewayClientOptions>>()
-                .Value.BaseAddress.ShouldBe(new Uri("http://localhost:3501"));
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", previousEndpoint);
-            Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", previousPort);
-        }
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        { ["DAPR_HTTP_PORT"] = "3501" }).Build());
+        services.AddTimesheetsServerKernel();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        provider.GetRequiredService<IOptionsMonitor<TimesheetsEventStoreGatewayOptions>>()
+            .CurrentValue.BaseAddress.ShouldBe(new Uri("http://localhost:3501"));
     }
 
-    [Fact]
-    public void Server_kernel_rejects_non_origin_endpoints_and_non_numeric_ports()
+    [Theory]
+    [InlineData("https://example.test/path")]
+    [InlineData("https://example.test/?query=value")]
+    [InlineData("https://example.test/#fragment")]
+    [InlineData("https://user@example.test/")]
+    [InlineData("ftp://example.test/")]
+    public void GatewayRejectsNonOriginEndpointsAndNonNumericPorts(string endpoint)
     {
-        string? previousEndpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
-        string? previousPort = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
-        try
-        {
-            string[] invalidEndpoints =
-            [
-                "https://example.test/path",
-                "https://example.test/?query=value",
-                "https://user@example.test/"
-            ];
-            foreach (string invalidEndpoint in invalidEndpoints)
-            {
-                Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", invalidEndpoint);
-                // Deliberately not "3500...": the fallback is http://localhost:3500, so a rejected
-                // port that happens to read 3500 makes the assertion below unable to tell "parsed
-                // and rejected" from "no port branch at all".
-                Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", "3501@off-host.example");
-                IServiceCollection services = new ServiceCollection();
-                services.AddTimesheetsServerKernel();
-
-                using ServiceProvider provider = services.BuildServiceProvider();
-                provider.GetRequiredService<IOptions<EventStoreGatewayClientOptions>>()
-                    .Value.BaseAddress.ShouldBe(new Uri("http://localhost:3500"));
-            }
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("DAPR_HTTP_ENDPOINT", previousEndpoint);
-            Environment.SetEnvironmentVariable("DAPR_HTTP_PORT", previousPort);
-        }
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+        { ["DAPR_HTTP_ENDPOINT"] = endpoint, ["DAPR_HTTP_PORT"] = "3501@off-host.example" }).Build());
+        services.AddTimesheetsServerKernel();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        provider.GetRequiredService<IOptionsMonitor<TimesheetsEventStoreGatewayOptions>>()
+            .CurrentValue.BaseAddress.ShouldBe(new Uri("http://localhost:3500"));
     }
 
     [Fact]

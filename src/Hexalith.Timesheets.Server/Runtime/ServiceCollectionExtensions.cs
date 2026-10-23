@@ -1,5 +1,3 @@
-using System.Globalization;
-
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
@@ -17,6 +15,8 @@ using Hexalith.EventStore.Client.Registration;
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Handlers;
 
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -58,10 +58,22 @@ public static class ServiceCollectionExtensions
         if (!services.Any(static descriptor => !descriptor.IsKeyedService
             && descriptor.ServiceType == typeof(IEventStoreGatewayClient)))
         {
-            services.AddEventStoreGatewayClient(options => options.BaseAddress = ResolveDaprHttpEndpoint())
+            services.TryAddSingleton<IConfiguration>(_ => new ConfigurationBuilder().Build());
+            services.AddOptions<TimesheetsEventStoreGatewayOptions>()
+                .Configure<IConfiguration>((options, configuration) =>
+                {
+                    options.Endpoint = configuration["DAPR_HTTP_ENDPOINT"];
+                    options.HttpPort = configuration["DAPR_HTTP_PORT"];
+                    options.ApiToken = configuration["DAPR_API_TOKEN"];
+                })
+                .BindConfiguration("Timesheets:EventStoreGateway");
+            services.AddEventStoreGatewayClient()
+                .ConfigureHttpClient((provider, client) => client.BaseAddress = provider
+                    .GetRequiredService<IOptionsMonitor<TimesheetsEventStoreGatewayOptions>>().CurrentValue.BaseAddress)
                 .AddEventStoreDaprServiceInvocation(
-                    "eventstore",
-                    Environment.GetEnvironmentVariable("DAPR_API_TOKEN"));
+                    provider => provider.GetRequiredService<IOptionsMonitor<TimesheetsEventStoreGatewayOptions>>().CurrentValue,
+                    options => options.AppId,
+                    options => options.ApiToken);
         }
 
         services.AddEventStoreReadModelStore();
@@ -130,23 +142,4 @@ public static class ServiceCollectionExtensions
         return services;
     }
 
-    private static Uri ResolveDaprHttpEndpoint()
-    {
-        string? endpoint = Environment.GetEnvironmentVariable("DAPR_HTTP_ENDPOINT");
-        if (Uri.TryCreate(endpoint, UriKind.Absolute, out Uri? configured)
-            && (configured.Scheme == Uri.UriSchemeHttp || configured.Scheme == Uri.UriSchemeHttps)
-            && string.IsNullOrEmpty(configured.UserInfo)
-            && configured.AbsolutePath == "/"
-            && string.IsNullOrEmpty(configured.Query)
-            && string.IsNullOrEmpty(configured.Fragment))
-        {
-            return new Uri(configured.GetLeftPart(UriPartial.Authority), UriKind.Absolute);
-        }
-
-        string? portText = Environment.GetEnvironmentVariable("DAPR_HTTP_PORT");
-        return int.TryParse(portText, NumberStyles.None, CultureInfo.InvariantCulture, out int port)
-            && port is > 0 and <= 65535
-                ? new UriBuilder(Uri.UriSchemeHttp, "localhost", port).Uri
-                : new Uri("http://localhost:3500", UriKind.Absolute);
-    }
 }

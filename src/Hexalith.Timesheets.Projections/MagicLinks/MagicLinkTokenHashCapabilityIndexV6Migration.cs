@@ -64,9 +64,9 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
             throw new InvalidOperationException("A legacy single-root index requires a separate certified migration.");
         // Validate every selected source page before reserving the global writer fence. A malformed
         // v6 source cannot strand owner delivery in Building. The digest pins the preflight source.
-        var preflight = await FindNextTenantAsync(scope, before.ActiveGeneration, null,
-            cancellationToken).ConfigureAwait(false);
-        string preflightDigest = preflight.Digest;
+        string? preflightDigest = before.IsBuilding ? null
+            : (await FindNextTenantAsync(scope, before.ActiveGeneration, null,
+                cancellationToken).ConfigureAwait(false)).Digest;
         long epoch = await coordinator.BeginAsync(scope, operationId, certifiedInventoryFingerprint,
             new Dictionary<string, long>(StringComparer.Ordinal), cancellationToken,
             operationTenantId: scope.TenantId).ConfigureAwait(false);
@@ -75,14 +75,11 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         if (status.ActiveGeneration == epoch && !status.IsBuilding) return;
         if (!status.IsBuilding || status.Epoch != epoch || status.ActiveGeneration >= epoch)
             throw new InvalidOperationException("The certified v6 migration epoch is not building.");
-        if (status.StageFingerprint is not null)
-        {
-            await coordinator.CommitAsync(scope, operationId, cancellationToken).ConfigureAwait(false);
-            return;
-        }
         try
         {
         long sourceGeneration = status.ActiveGeneration;
+        preflightDigest ??= (await FindNextTenantAsync(scope, sourceGeneration, null,
+            cancellationToken).ConfigureAwait(false)).Digest;
         ReadModelEntry<MagicLinkTokenHashCapabilityIndexTreeFormat> oldFormat = await coordinator
             .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexTreeFormat>(scope, sourceGeneration,
                 MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey, cancellationToken)
@@ -116,9 +113,14 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
                         || current.NextPageOrdinal <= checkpoint.NextPageOrdinal
                         || current.SourceDigest != checkpoint.SourceDigest))
                 throw new InvalidOperationException("A private migration checkpoint is inconsistent.");
+            if (status.StageFingerprint is not null)
+                await ValidateSealedCheckpointAsync(scope, epoch, sourceGeneration, preflightDigest,
+                    current, checkpoint, cancellationToken).ConfigureAwait(false);
             SharedProjectionStreamingStageStatus stage = await coordinator
                 .GetStreamingStageStatusAsync(scope, operationId, cancellationToken)
                 .ConfigureAwait(false);
+            if (stage.CompletedPageCount < current.NextPageOrdinal && stage.IsSealed)
+                throw new InvalidOperationException("A sealed migration checkpoint exceeds the completed stage.");
             if (stage.CompletedPageCount < current.NextPageOrdinal)
                 await coordinator.AppendStreamingPageAsync(scope, operationId,
                     current.NextPageOrdinal - 1,
@@ -129,6 +131,8 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
 
         if (checkpoint is null)
         {
+            if (status.StageFingerprint is not null)
+                throw new InvalidOperationException("A sealed migration has no persisted checkpoint.");
             checkpoint = new MagicLinkTokenHashCapabilityIndexMigrationCheckpoint(0,
                 sourceGeneration, preflightDigest, null,
                 new MagicLinkTokenHashCapabilityIndexTreeRoot(7, 0, null, null), 0, 1);
@@ -146,6 +150,14 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         string sourceDigest = checkpoint.SourceDigest;
         if (sourceDigest != preflightDigest)
             throw new InvalidOperationException("The certified v6 source changed before resume.");
+
+        if (status.StageFingerprint is not null)
+        {
+            await ValidateSealedStageAsync(scope, operationId, epoch, checkpoint, cancellationToken)
+                .ConfigureAwait(false);
+            await coordinator.CommitAsync(scope, operationId, cancellationToken).ConfigureAwait(false);
+            return;
+        }
 
         for (; ; )
         {
@@ -168,6 +180,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
             await coordinator.AppendStreamingPageAsync(scope, operationId, pageOrdinal,
                 [ReadModelBatchOperation.Write(CheckpointKey(epoch, tenantOrdinal), completed,
                     ReadModelBatchConcurrency.LastWrite)], cancellationToken).ConfigureAwait(false);
+            checkpoint = completed;
             pageOrdinal++;
             tenantOrdinal++;
             lastTenant = nextTenant;
@@ -185,9 +198,11 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
                 root, ReadModelBatchConcurrency.LastWrite)
         ], cancellationToken).ConfigureAwait(false);
         _ = await coordinator.SealStreamingAsync(scope, operationId, cancellationToken).ConfigureAwait(false);
+        await ValidateSealedStageAsync(scope, operationId, epoch, checkpoint, cancellationToken).ConfigureAwait(false);
         await coordinator.CommitAsync(scope, operationId, cancellationToken).ConfigureAwait(false);
         }
-        catch (InvalidOperationException)
+        catch (Exception exception) when (exception is InvalidOperationException
+            || exception is SharedProjectionReadUnavailableException { InnerException: InvalidOperationException })
         {
             SharedProjectionEpochStatus failed = await coordinator.GetStatusAsync(scope,
                 CancellationToken.None).ConfigureAwait(false);
@@ -204,9 +219,156 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         }
     }
 
+    private async Task ValidateSealedCheckpointAsync(SharedProjectionScope scope, long epoch,
+        long sourceGeneration, string sourceDigest, MagicLinkTokenHashCapabilityIndexMigrationCheckpoint current,
+        MagicLinkTokenHashCapabilityIndexMigrationCheckpoint? previous, CancellationToken cancellationToken)
+    {
+        MagicLinkTokenHashCapabilityIndexMigrationCheckpoint expected;
+        if (previous is null)
+        {
+            expected = new(0, sourceGeneration, sourceDigest, null,
+                new MagicLinkTokenHashCapabilityIndexTreeRoot(7, 0, null, null), 0, 1);
+        }
+        else
+        {
+            var source = await FindNextTenantAsync(scope, sourceGeneration, previous.LastTenantId,
+                cancellationToken).ConfigureAwait(false);
+            if (source.TenantId is null || source.Digest != sourceDigest)
+                throw new InvalidOperationException("A sealed migration checkpoint has no matching source tenant.");
+            var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope);
+            var builder = new MagicLinkTokenHashCapabilityIndexTreeBuilder(reader, previous.Root, epoch);
+            await builder.ReplaceTenantAsync(source.TenantId, source.Rows, cancellationToken).ConfigureAwait(false);
+            int completedPages = PageOperations(builder.Operations(false, previous.NextRetirementOrdinal)).Count();
+            expected = new(checked(previous.Ordinal + 1), sourceGeneration, sourceDigest, source.TenantId,
+                builder.SnapshotRoot, checked(previous.NextRetirementOrdinal + builder.RetirementCount),
+                checked(previous.NextPageOrdinal + completedPages + 1));
+        }
+        if (current != expected)
+            throw new InvalidOperationException("A sealed migration checkpoint differs from its deterministic source fold.");
+    }
+
+    private async Task ValidateSealedStageAsync(SharedProjectionScope scope, string operationId,
+        long epoch, MagicLinkTokenHashCapabilityIndexMigrationCheckpoint checkpoint,
+        CancellationToken cancellationToken)
+    {
+        SharedProjectionStreamingStageStatus stage = await coordinator.GetStreamingStageStatusAsync(
+            scope, operationId, cancellationToken).ConfigureAwait(false);
+        ReadModelEntry<MagicLinkTokenHashCapabilityIndexTreeFormat> format = await coordinator
+            .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexTreeFormat>(scope, epoch,
+                MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey, cancellationToken).ConfigureAwait(false);
+        ReadModelEntry<MagicLinkTokenHashCapabilityIndexTreeRoot> final = await coordinator
+            .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope, epoch,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, cancellationToken).ConfigureAwait(false);
+        MagicLinkTokenHashCapabilityIndexTreeRoot root = final.Value
+            ?? throw new InvalidOperationException("A sealed migration has no final staged root.");
+        if (!stage.IsSealed || stage.CompletedPageCount <= checkpoint.NextPageOrdinal
+            || stage.CompletedPageCount != stage.ReservedPageCount
+            || format.Value?.StorageVersion != 7 || root.StorageVersion != 7
+            || root != checkpoint.Root || root.NextNodeId < 0)
+            throw new InvalidOperationException("The sealed migration stage differs from its checkpoint.");
+
+        var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope);
+        long contributions = 0;
+        long tenants = 0;
+        int maximumPathLength = 0;
+        string? lastTenant = null;
+        while (true)
+        {
+            var source = await FindNextTenantAsync(scope, checkpoint.SourceGeneration, lastTenant,
+                cancellationToken).ConfigureAwait(false);
+            if (source.Digest != checkpoint.SourceDigest)
+                throw new InvalidOperationException("The sealed migration source changed before promotion.");
+            if (source.TenantId is null) break;
+            IReadOnlyList<MagicLinkTokenHashCapabilityIndexDirectoryEntry>? roster = await reader
+                .ReadRosterAsync(root.TenantRoot, source.TenantId, cancellationToken).ConfigureAwait(false);
+            if (roster is null || roster.Count != source.Rows.Count
+                || !new HashSet<MagicLinkTokenHashCapabilityIndexDirectoryEntry>(roster).SetEquals(source.Rows))
+                throw new InvalidOperationException("A staged tenant roster differs from the v6 source.");
+            maximumPathLength = Math.Max(maximumPathLength,
+                MagicLinkTokenHashCapabilityIndexTreeReader.TenantPath(source.TenantId).Length);
+            foreach (MagicLinkTokenHashCapabilityIndexDirectoryEntry row in source.Rows)
+            {
+                maximumPathLength = Math.Max(maximumPathLength, Math.Max(
+                    MagicLinkTokenHashCapabilityIndexTreeReader.TokenPath(row.TokenHash, row.Candidate).Length,
+                    MagicLinkTokenHashCapabilityIndexTreeReader.OwnerPath(source.TenantId, row.Candidate.CapabilityId.Value).Length));
+                if (!await reader.ContainsExactRowAsync(root.TokenRoot, row, cancellationToken).ConfigureAwait(false)
+                    || await reader.FindOwnerAsync(root.OwnerRoot, source.TenantId,
+                        row.Candidate.CapabilityId.Value, cancellationToken).ConfigureAwait(false) != row)
+                    throw new InvalidOperationException("A staged contribution differs from the v6 source.");
+            }
+            contributions = checked(contributions + source.Rows.Count);
+            tenants++;
+            lastTenant = source.TenantId;
+        }
+        if (checkpoint.Ordinal != tenants || checkpoint.LastTenantId != lastTenant)
+            throw new InvalidOperationException("The final migration checkpoint does not cover the source tenants.");
+        // Traverse every leaf, with bounded path memory and a finite source-derived node budget.
+        long budget = checked((contributions + tenants + 1) * 3 * (maximumPathLength + 1L));
+        if (await CountMembershipAsync(root.TokenRoot, 0, string.Empty, new(), cancellationToken)
+                .ConfigureAwait(false) != contributions
+            || await CountMembershipAsync(root.OwnerRoot, 1, string.Empty, new(), cancellationToken)
+                .ConfigureAwait(false) != contributions
+            || await CountMembershipAsync(root.TenantRoot, 2, string.Empty, new(), cancellationToken)
+                .ConfigureAwait(false) != tenants)
+            throw new InvalidOperationException("The sealed migration has unexpected staged membership.");
+        SharedProjectionEpochStatus boundary = await coordinator.GetStatusAsync(scope, cancellationToken)
+            .ConfigureAwait(false);
+        if (!boundary.IsBuilding || boundary.Epoch != epoch || boundary.OperationId != operationId
+            || boundary.ActiveGeneration != checkpoint.SourceGeneration || boundary.PendingDeliveryCount != 0
+            || (await FindNextTenantAsync(scope, checkpoint.SourceGeneration, null, cancellationToken)
+                .ConfigureAwait(false)).Digest != checkpoint.SourceDigest)
+            throw new InvalidOperationException("The migration source or selected epoch changed before promotion.");
+
+        async Task<long> CountMembershipAsync(MagicLinkTokenHashCapabilityIndexNodeReference? reference,
+            int tree, string path, HashSet<(long Generation, long NodeId)> ancestors, CancellationToken token)
+        {
+            if (reference is null) return 0;
+            if (--budget < 0 || reference.Generation != epoch || reference.NodeId >= root.NextNodeId
+                || !ancestors.Add((reference.Generation, reference.NodeId)))
+                throw new InvalidOperationException("A staged index node exceeds its allocation or traversal bounds.");
+            try
+            {
+                MagicLinkTokenHashCapabilityIndexTreeNode node = await reader.ReadNodeAsync(reference, token).ConfigureAwait(false);
+                path += node.Prefix;
+                if (path.Length > maximumPathLength)
+                    throw new InvalidOperationException("A staged index path exceeds the source membership bounds.");
+                long count = 0;
+                if (node.Row is { } row)
+                {
+                    string expected = tree == 0
+                        ? MagicLinkTokenHashCapabilityIndexTreeReader.TokenPath(row.TokenHash, row.Candidate)
+                        : MagicLinkTokenHashCapabilityIndexTreeReader.OwnerPath(row.Candidate.Tenant.TenantId, row.Candidate.CapabilityId.Value);
+                    if (tree == 2 || path != expected)
+                        throw new InvalidOperationException("A staged contribution has an inconsistent path.");
+                    count++;
+                }
+                if (node.Roster is { } roster)
+                {
+                    if (tree != 2 || path != MagicLinkTokenHashCapabilityIndexTreeReader.TenantPath(roster.TenantId)
+                        || roster.Pages.Any(page => page.Page.Generation != epoch || page.Page.NodeId >= root.NextNodeId))
+                        throw new InvalidOperationException("A staged roster has an inconsistent path.");
+                    count++;
+                }
+                foreach ((char edge, MagicLinkTokenHashCapabilityIndexNodeReference child) in node.Children)
+                    count = checked(count + await CountMembershipAsync(child, tree, path + edge, ancestors, token).ConfigureAwait(false));
+                return count;
+            }
+            finally { ancestors.Remove((reference.Generation, reference.NodeId)); }
+        }
+    }
+
     private async Task<int> AppendOperationsAsync(SharedProjectionScope scope, string operationId,
         IEnumerable<ReadModelBatchOperation> operations, int pageOrdinal,
         CancellationToken cancellationToken)
+    {
+        foreach (IReadOnlyList<ReadModelBatchOperation> page in PageOperations(operations))
+            await coordinator.AppendStreamingPageAsync(scope, operationId, pageOrdinal++, page,
+                cancellationToken).ConfigureAwait(false);
+        return pageOrdinal;
+    }
+
+    private static IEnumerable<IReadOnlyList<ReadModelBatchOperation>> PageOperations(
+        IEnumerable<ReadModelBatchOperation> operations)
     {
         var page = new List<ReadModelBatchOperation>(AppendWidth);
         int pageBytes = 0;
@@ -218,18 +380,14 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
                 throw new InvalidOperationException("A private v6 migration value exceeds the SDK append limit.");
             if (page.Count == AppendWidth || pageBytes + bytes > AppendByteLimit)
             {
-                await coordinator.AppendStreamingPageAsync(scope, operationId, pageOrdinal++, page,
-                    cancellationToken).ConfigureAwait(false);
+                yield return page;
                 page = new List<ReadModelBatchOperation>(AppendWidth);
                 pageBytes = 0;
             }
             page.Add(operation);
             pageBytes += bytes;
         }
-        if (page.Count != 0)
-            await coordinator.AppendStreamingPageAsync(scope, operationId, pageOrdinal++, page,
-                cancellationToken).ConfigureAwait(false);
-        return pageOrdinal;
+        if (page.Count != 0) yield return page;
     }
 
     private async Task<(int PageOrdinal, long RetirementOrdinal)> AppendV6RetirementsAsync(
@@ -371,8 +529,3 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
             + ordinal.ToString("D16", System.Globalization.CultureInfo.InvariantCulture);
 
 }
-
-/// <summary>Private staged migration progress, addressed only by epoch and numeric ordinal.</summary>
-public sealed record MagicLinkTokenHashCapabilityIndexMigrationCheckpoint(
-    long Ordinal, long SourceGeneration, string SourceDigest, string? LastTenantId,
-    MagicLinkTokenHashCapabilityIndexTreeRoot Root, long NextRetirementOrdinal, int NextPageOrdinal);

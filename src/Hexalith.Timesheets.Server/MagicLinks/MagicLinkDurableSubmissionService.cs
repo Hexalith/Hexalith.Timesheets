@@ -35,7 +35,7 @@ public sealed class MagicLinkDurableSubmissionService(
         : throw new OptionsValidationException(
             nameof(MagicLinkSubmissionPollingOptions),
             typeof(MagicLinkSubmissionPollingOptions),
-            ["Timeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
+            ["Timeout and ReadbackTimeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
 
     /// <summary>
     /// Builds an internal commit intent from the server's resolved capability state.
@@ -91,14 +91,13 @@ public sealed class MagicLinkDurableSubmissionService(
                 {
                     try
                     {
-                        using CancellationTokenSource probe = CreateProbeDeadline(deadline.Token);
-                        page = await gateway.ReadWorkloadStreamAsync(
+                        page = await ReadStoredEventsAsync(
                             new StreamReadRequest(
                                 intent.Tenant.TenantId, TimesheetsEventStoreIntegration.DomainName,
                                 intent.Command.CapabilityId.Value,
                                 FromSequence: status!.CommittedEventSequence!.Value - 1,
                                 PageSize: 1),
-                            probe.Token).WaitAsync(probe.Token).ConfigureAwait(false);
+                            deadline.Token).ConfigureAwait(false);
                         if (!IsStaleReadback(page, status.CommittedEventSequence.Value, 1))
                         {
                             break;
@@ -155,21 +154,23 @@ public sealed class MagicLinkDurableSubmissionService(
             $"transition\n{intent.Tenant.TenantId}\n{intent.CapabilityId.Value}\n{intent.Action}\n{requestId}");
         try
         {
+            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            deadline.CancelAfter(_polling.Timeout);
             CommandStatusQueryResponse? status = await SubmitAndReadStatusAsync(
                 messageId, intent.Tenant.TenantId, intent.TimeEntryId.Value, intent,
-                typeof(CommitMagicLinkTransition), cancellationToken).ConfigureAwait(false);
+                typeof(CommitMagicLinkTransition), deadline.Token).ConfigureAwait(false);
             if (!HasCommittedStatus(status, messageId, intent.Tenant.TenantId, intent.TimeEntryId.Value, 1))
             {
                 return false;
             }
 
-            StreamReadPage page = await gateway.ReadWorkloadStreamAsync(
+            StreamReadPage page = await ReadStoredEventsAsync(
                 new StreamReadRequest(
                     intent.Tenant.TenantId, TimesheetsEventStoreIntegration.DomainName,
                     intent.TimeEntryId.Value,
                     FromSequence: status!.CommittedEventSequence!.Value - 1,
                     PageSize: 1),
-                cancellationToken).ConfigureAwait(false);
+                deadline.Token).ConfigureAwait(false);
             if (page.Tenant != intent.Tenant.TenantId
                 || page.Domain != TimesheetsEventStoreIntegration.DomainName
                 || page.AggregateId != intent.TimeEntryId.Value
@@ -255,10 +256,8 @@ public sealed class MagicLinkDurableSubmissionService(
                 {
                     try
                     {
-                        using CancellationTokenSource probe = CreateProbeDeadline(deadline.Token);
                         bool? verified = await VerifyCommittedBatchAsync(intent, messageId, status, capability,
-                            trustedPreviousValues, expectedComment, probe.Token)
-                            .WaitAsync(probe.Token).ConfigureAwait(false);
+                            trustedPreviousValues, expectedComment, deadline.Token).ConfigureAwait(false);
                         if (verified is not null)
                         {
                             return verified.Value;
@@ -377,6 +376,15 @@ public sealed class MagicLinkDurableSubmissionService(
             .WaitAsync(probe.Token).ConfigureAwait(false);
     }
 
+    private async Task<StreamReadPage> ReadStoredEventsAsync(StreamReadRequest request,
+        CancellationToken cancellationToken)
+    {
+        using CancellationTokenSource readback = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        readback.CancelAfter(_polling.ReadbackTimeout);
+        return await gateway.ReadWorkloadStreamAsync(request, readback.Token)
+            .WaitAsync(readback.Token).ConfigureAwait(false);
+    }
+
     private CancellationTokenSource CreateProbeDeadline(CancellationToken deadlineToken)
     {
         CancellationTokenSource probe = CancellationTokenSource.CreateLinkedTokenSource(deadlineToken);
@@ -414,7 +422,7 @@ public sealed class MagicLinkDurableSubmissionService(
         }
 
         long lastSequence = status.CommittedEventSequence.Value;
-        StreamReadPage page = await gateway.ReadWorkloadStreamAsync(
+        StreamReadPage page = await ReadStoredEventsAsync(
             new StreamReadRequest(
                 intent.Tenant.TenantId,
                 TimesheetsEventStoreIntegration.DomainName,

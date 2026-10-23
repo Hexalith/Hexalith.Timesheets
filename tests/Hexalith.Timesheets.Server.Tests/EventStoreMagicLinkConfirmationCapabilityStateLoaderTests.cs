@@ -333,8 +333,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
         var gateway = new ScriptedGatewayClient()
             .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, readModels);
 
         MagicLinkEndpointTokenState state = await loader
@@ -383,8 +382,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 Event(2, "capability-2", Used()),
                 Event(1, "capability-1", Issued()),
                 Event(2, "capability-2", Used()))
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, readModels);
 
         MagicLinkEndpointTokenState state = await loader
@@ -574,8 +572,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     {
         // The index resolves a candidate, but the capability stream folds to no state.
         var gateway = new ScriptedGatewayClient()
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         MagicLinkEndpointTokenState state = await loader
@@ -595,8 +592,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 Tenant().TenantId,
                 CapabilityId().Value,
                 Event(1, "capability-1", Issued(hash: new MagicLinkTokenHash("rotated-hash"))))
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         MagicLinkEndpointTokenState state = await loader
@@ -616,8 +612,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 Tenant().TenantId,
                 CapabilityId().Value,
                 Event(1, "capability-1", Issued(tenant: new TenantReference("tenant-2"))))
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         MagicLinkEndpointTokenState state = await loader
@@ -631,8 +626,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     public async Task LoadTokenStateAsync_fails_closed_when_scoped_time_entry_is_not_recorded()
     {
         var gateway = new ScriptedGatewayClient()
-            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "capability-1", Issued()));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         MagicLinkEndpointTokenState state = await loader
@@ -870,8 +864,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
     {
         var gateway = new ScriptedGatewayClient()
             .WithThrow(Tenant().TenantId, CapabilityId().Value)
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         MagicLinkEndpointTokenState state = await loader
@@ -996,8 +989,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 CapabilityId().Value,
                 Event(1, "capability-1", Issued()),
                 Event(2, "capability-2", Revoked()))
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         MagicLinkEndpointTokenState state = await loader
@@ -1017,8 +1009,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 CapabilityId().Value,
                 Event(1, "capability-1", Issued()),
                 Event(2, "capability-2", Used()))
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var shuffledWithDuplicates = new ScriptedGatewayClient()
             .WithStream(
                 Tenant().TenantId,
@@ -1031,8 +1022,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 Tenant().TenantId,
                 TimeEntryId().Value,
                 Event(1, "time-1", Recorded()),
-                Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+                Event(1, "time-1", Recorded()));
 
         MagicLinkEndpointTokenState first = await CreateLoader(ascending, new InMemoryReadModelStore(IndexWith(Hash())))
             .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken)
@@ -1303,8 +1293,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 CapabilityId().Value,
                 Event(1, "capability-1", Issued()),
                 Event(2, "capability-2", Expired()))
-            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()))
-            .WithStream(Tenant().TenantId, null, Event(1, "activity-1", ActivityCreated()));
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "time-1", Recorded()));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         MagicLinkEndpointTokenState state = await loader
