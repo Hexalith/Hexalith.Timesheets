@@ -157,3 +157,55 @@ Run owner-repository focused tests, Timesheets Debug source-reference restore/bu
 all six test executables individually and the disposable Dapr acceptance runner.
 Inspect unified diffs without staging or Git mutations. Record source revisions,
 changed-file hashes and successful and failed commands in the new evidence packet.
+
+## Local resumption — 2026-10-22
+
+Offline inspection at **2026-10-22T18:03:01.309419+00:00** checked these clean
+`main` source identities directly with `git rev-parse HEAD` in each repository:
+
+| Repository | Checked source revision |
+| --- | --- |
+| Timesheets | `482a55ecd7bc20fca855c706a10b0135b8ef1f21` |
+| Platform | `c65d87a6f8f4a05fa3bea4e24ac778bf23f12cd6` |
+| EventStore | `5ce5f1d84b88c808cc8a526b9decf149de977e55` |
+
+The [Platform handoff](../../references/Hexalith.Platform/eng/timesheets-deployment/platform-managed-operations.json)
+still reports `BLOCKED_NOT_FOR_EXECUTION`, `approvalGranted=false` and
+`executableDispatcherExists=false`. Both approved staging values files remain
+absent. Its exact tool `/tmp/timesheets-hosting-helm-4.2.0/helm` is also absent:
+`ls -la /tmp/timesheets-hosting-helm-4.2.0/helm` exited **2**, reporting
+`No such file or directory`. Both retained chart archives exist and their SHA-256
+digests match the handoff; those local matches supply no release or deployment
+acceptance. Platform staging foundation/deployment stories 4.14–4.22 remain
+`backlog`, and recovery Story 4.27 remains `in-progress`.
+
+EventStore's [2026-10-18 authority withdrawal](../../references/Hexalith.EventStore/_bmad-output/implementation-artifacts/evidence/6-4-historical-retirement-20261018/authority-overlay.json)
+withdraws present qualification authority from the dependent **187/187** and
+both **83-case** authority preparation/review results, with replacement evidence
+recorded as null. The earlier implementation and review paragraphs above retain
+their dated meaning; they must be read together with this withdrawal. Original
+source snapshots and receipts remain preserved. The newer [2026-10-18 direct
+EventStore proof](evidence/3-6/20261018-direct-eventstore-local-proof/README.md)
+records local SDK 10.0.402 qualification and explicitly excludes deployed and
+legacy acceptance; it supplies no replacement authority qualification.
+
+The latest recovery allocation found in the scoped local `4-0` custody directory
+and Platform Story 4.27 evidence remains unsigned/incomplete RID
+`20261017t143202z`. Its unchanged exclusive ceiling **2026-10-18T14:32:02Z** is
+past the observation time. No newer recovery/enrollment record or approved
+staging values were found in those inspected locations; this bounded local
+inspection makes no claim about uninspected sources. The original expired
+candidate and verifier refusal remain unchanged. No remote or native request
+was made, so the 2026-10-17 TLS/client/rights observations remain historical.
+
+The remaining live task stays unchecked. A concrete operational approval still
+depends on qualified current recovery/adapters, retained immutable Release
+closure, Platform environment values/foundations, actual issuer/signer/client
+grants, server-side providers and full legacy inventory/continuity/maintenance
+evidence. The missing pinned tool must also be supplied and qualified before
+its command can be reviewed for execution. Story 3.6 stays `in-progress`;
+spec-23 stays `draft`, the 4.1 operational gate stays closed and release stays
+**FAIL**. Only this additive spec entry changes; no earlier evidence, code,
+dependency, gitlink, task status or parent status is rewritten. Local JSON/path/
+package inspection passed; unchanged builds, suites, old verifiers and the
+disposable runtime were not repeated for this documentation-only resumption.
