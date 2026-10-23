@@ -11,6 +11,20 @@
   <Import Project="$(Hexalith1BuildPackageProps)" Condition="Exists('$(Hexalith1BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith2BuildPackageProps)" Condition="Exists('$(Hexalith2BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
+  <!-- Published EventStore 3.127.0 dependency floors exceed the pinned shared catalog. -->
+  <ItemGroup>
+    <PackageVersion Update="Aspire.Hosting" Version="13.6.3" />
+    <PackageVersion Update="Aspire.Hosting.Keycloak" Version="13.6.3-preview.1.26521.2" />
+    <PackageVersion Update="Aspire.Hosting.Redis" Version="13.6.3" />
+    <PackageVersion Update="Aspire.Hosting.Testing" Version="13.6.3" />
+    <PackageVersion Update="ModelContextProtocol" Version="2.3.0" />
+    <PackageVersion Update="OpenTelemetry" Version="1.20.1" />
+    <PackageVersion Update="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
+    <PackageVersion Update="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
+    <PackageVersion Update="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
+    <PackageVersion Update="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
+    <PackageVersion Update="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
+  </ItemGroup>
   <!-- The shared catalog no longer versions this consumer contract. Package-mode
        restore still needs the published 1.0.2 pin. -->
   <ItemGroup>
