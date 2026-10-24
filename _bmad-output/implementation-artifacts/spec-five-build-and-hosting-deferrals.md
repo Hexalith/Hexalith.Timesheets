@@ -72,20 +72,20 @@ context:
 
 - User approved and continued on 2026-10-24. Re-read the unchanged spec from disk before acceptance; frozen intent is locked. Implementation handoff is sequential; publication follows verification and review.
 
-- Both repositories were clean on main at the recorded revisions. No product-policy decision or migration is required. Cross-repository footprint and independent deliverables select dispatch; the batch/spec checkpoint remains pending.
+- Both repositories were clean on main at the recorded revisions. No product-policy decision or migration is required. Cross-repository footprint and independent deliverables select dispatch; the batch/spec checkpoint was approved by the user.
 - Foreign Tenants/Dapr applications block the fixture's idle-runtime prerequisite. Leave them untouched; full construction qualifies only duplicate registration.
 - Fresh npm audit reports two moderate/one high unrelated findings. GHSA-vfj7-8cjw-p6xm was withdrawn 2026-10-23: https://github.com/advisories/GHSA-vfj7-8cjw-p6xm. Revalidate during implementation.
 
 - Root acceptance caught 52 Works runtime failures after the first patch: NuGet assets selected Contracts 3.126.0 while Works referenced 3.127.0. Reference metadata alone did not reach NuGet's path walk. The consumer version is now promoted through solution/project restore traversal as well as source build edges, without a CLI workaround or Works edit.
-- Four new restore/build/runtime graph regressions cover solution and standalone entry points with differing defaults and explicit overrides. A mutant removing only restore forwarding fails both default cases while preserving the two explicit overrides. Original configuration was restored byte-for-byte. Corrected Works passes 76/76 and Architecture 113/113; remaining suites are rerunning against the corrected graph.
+- Four new restore/build/runtime graph regressions cover solution and standalone entry points with differing defaults and explicit overrides. A mutant removing only restore forwarding fails both default cases while preserving the two explicit overrides. Original configuration was restored byte-for-byte. Corrected Works passes 76/76 and Architecture 113/113; the subsequent complete suite results are recorded below.
 
 - Root completed the full affected Server telemetry namespace as the broad-run fallback: 41 passed, including privacy and existing telemetry behavior. Metadata remains 95 passed. Monolithic upstream attempts remain explicitly incomplete. Final compiled AppHost guards pass 63/63 on the corrected source build.
 
-- Root diff audit also found that the new legacy registry enumeration dereferenced a null Domains list, unlike the preexisting legacy factory. The enumeration now treats null as empty, with two aggregate-discovery compatibility cases queued for the final metadata class run. V2 behavior remains unchanged.
+- Root diff audit also found that the new legacy registry enumeration dereferenced a null Domains list, unlike the preexisting legacy factory. The enumeration now treats null as empty, with two aggregate-discovery compatibility cases included in the final metadata class run. V2 behavior remains unchanged.
 
 - Invalid legacy names are filtered before keyed-service lookup and before publication: a null service key means an unkeyed processor in DI and must not fabricate a null metadata domain. A non-keyed-processor regression joins the two null/empty-list compatibility cases.
 
-- The shared request-log guard now constrains existing rules and inserts its default fallback at lowest precedence, preserving stricter Error/None thresholds and existing global predicates. Five configuration regressions supplement the real Console/OTel captures; final upstream checks will run after the current Timesheets suites.
+- The shared request-log guard now constrains existing rules and inserts its default fallback at lowest precedence, preserving stricter Error/None thresholds and existing global predicates. Five configuration regressions supplement the real Console/OTel captures; final upstream results are recorded below.
 
 - All code tasks/matrix rows are verified: six suites 2,589 passed/five skips, upstream metadata 98 and telemetry 48, final consuming build zero warnings/errors, HTTP filter 3 and Works 76. Publication bookkeeping moves below so the no-remote implementation phase does not mark review/push complete.
 
@@ -133,13 +133,15 @@ Edge-case and verification-gap reviewers returned no findings. All findings abov
 
 - The five local implementation/advisory dispositions and original-ledger preservation are recorded in [the verification report](tests/five-build-and-hosting-deferrals.md); exact commands, results, hashes and audit/withdrawal JSON are in [the dated evidence directory](evidence/five-build-and-hosting-deferrals/20261024/).
 - Final Timesheets Debug/source restore/build passes without a version override (consumer `3.127.0`, read-only Works default `3.126.0`), with zero warnings/errors. Individual suite/probe results are recorded in the report and receipt as they complete.
-- EventStore affected project builds and completed focused metadata/privacy checks pass. The initial temporary-cache NU5037 is retained alongside the successful intact-user-cache restore. Both broad upstream attempts remain incomplete; the nested-Tenants guard failure and exact elapsed/termination evidence are retained. They are not demonstrated regressions or passing broad gates. Root review will assess any longer retry.
-- Exactly five additive ledger resolutions preserve all original evidence; a separate open entry tracks the three unrelated npm packages. Launch FAIL, historical/runtime obligations and frozen intent are retained. Independent review and publication remain pending the root workflow phase; no commit, fetch, push, package publication or deployment was performed by implementation.
+- EventStore affected project builds and completed focused metadata/privacy checks pass. The initial temporary-cache NU5037 is retained alongside the successful intact-user-cache restore. Both broad upstream attempts remain incomplete; the nested-Tenants guard failure and exact elapsed/termination evidence are retained. They are not demonstrated regressions or passing broad gates. Root review completed an adequately bounded Server retry; its final result and incoming guard blocker are recorded below.
+- Exactly five additive ledger resolutions preserve all original evidence; a separate open entry tracks the three unrelated npm packages. Launch FAIL, historical/runtime obligations and frozen intent are retained. Root completed independent review and publication after this implementation receipt; see Publication Gate. No commit, fetch, push, package publication or deployment was performed by the implementation agent.
 
 ## Publication Gate
 
 - [x] Complete independent review and triage findings.
-- [ ] Validate exact Conventional Commits, inspect remote divergence, and push EventStore changes to main.
-- [ ] Commit Timesheets content and the owned EventStore gitlink separately; push main and verify both remote heads.
+- [x] Validate exact Conventional Commits, inspect remote divergence, and push EventStore changes to main.
+- [x] Commit Timesheets content and the owned EventStore gitlink separately; push main and verify both remote heads.
 
-Given passing checks/review, when publication runs, then owned commits reach both main branches and Timesheets references the pushed upstream commit. Approved publication intent is unchanged; this gate remains pending until actual operations succeed.
+Ordinary main pushes completed and both implementation remote heads were verified. EventStore: `dcd3dce42b67a305b608f03c4dab2b812791abae`; Timesheets content: `231e413bc607d8fecd74f8c0d99b070dc57ce982`; separate pointer: `f759f688e085277fa1f262903c3ea66deaf4a30a`. The parent pointer matches the pushed SDK commit. [Publication receipt](evidence/five-build-and-hosting-deferrals/20261024/publication.json) records exact heads and observed CI runs; hosted CI remains pending. This completion record is committed after implementation publication.
+
+CI runs observed after publication: [Timesheets CI](https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40063665856) and [EventStore CI](https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600875). These links record queued/in-progress runs, not passing results.

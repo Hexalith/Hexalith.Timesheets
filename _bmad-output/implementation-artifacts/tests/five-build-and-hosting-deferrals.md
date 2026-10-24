@@ -44,7 +44,9 @@ Historical receipts remain identified as such. The first build-only forwarding p
 Launch remains **FAIL**. Construction does not qualify DCP/dashboard/resource startup. Current-graph runtime, deployed authority/persistence, certified inventory/rebuild and browser acceptance stay open. No foreign application was started/stopped. Shared fixes qualify the source checkout; no published dependency version changed and Timesheets retains its interim logging control. No package publication or deployment was invoked in this session.
 
 <!-- publication-results -->
-Independent review and triage are complete. Authorized main publication is pending; upstream must publish first and its owned gitlink must be committed separately from Timesheets content.
+Independent review and triage are complete. Pushed EventStore `dcd3dce42b67a305b608f03c4dab2b812791abae`, Timesheets content `231e413bc607d8fecd74f8c0d99b070dc57ce982`, and separate gitlink `f759f688e085277fa1f262903c3ea66deaf4a30a` to main. Both implementation remote heads were verified and the parent gitlink matches the pushed SDK commit. [Publication receipt](../evidence/five-build-and-hosting-deferrals/20261024/publication.json) records the operations. This completion record follows publication.
+
+[Timesheets CI](https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40063665856) and [EventStore CI](https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600875) were queued/in progress when inspected. Upstream Commitlint had passed; other hosted results were not awaited or claimed green.
 
 ## Reproduction
 

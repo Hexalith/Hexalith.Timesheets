@@ -1,0 +1,99 @@
+{
+  "observed_at_utc": "2026-10-24 04:47:55 UTC",
+  "authorization": "User requested pushes to main and approved continuation.",
+  "eventstore_commit": "dcd3dce42b67a305b608f03c4dab2b812791abae",
+  "timesheets_content_commit": "231e413bc607d8fecd74f8c0d99b070dc57ce982",
+  "timesheets_gitlink_commit": "f759f688e085277fa1f262903c3ea66deaf4a30a",
+  "verified_implementation_remote_heads": {
+    "Hexalith/Hexalith.EventStore": "dcd3dce42b67a305b608f03c4dab2b812791abae",
+    "Hexalith/Hexalith.Timesheets": "f759f688e085277fa1f262903c3ea66deaf4a30a"
+  },
+  "ordinary_main_pushes_completed": true,
+  "gitlink_commit_contains_only_owned_pointer": true,
+  "commitlint_evidence": "commitlint-preflight.json",
+  "ci_observation": [
+    {
+      "repository": "Hexalith/Hexalith.Timesheets",
+      "command_exit": 0,
+      "runs": [
+        {
+          "conclusion": "",
+          "databaseId": 40063665856,
+          "status": "queued",
+          "url": "https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40063665856",
+          "workflowName": "CI"
+        },
+        {
+          "conclusion": "",
+          "databaseId": 40063665869,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40063665869",
+          "workflowName": "CodeQL"
+        },
+        {
+          "conclusion": "",
+          "databaseId": 40063665871,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40063665871",
+          "workflowName": "Commitlint"
+        }
+      ]
+    },
+    {
+      "repository": "Hexalith/Hexalith.EventStore",
+      "command_exit": 0,
+      "runs": [
+        {
+          "conclusion": "",
+          "databaseId": 40063600899,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600899",
+          "workflowName": "CodeQL"
+        },
+        {
+          "conclusion": "",
+          "databaseId": 40063600845,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600845",
+          "workflowName": "Payload Protection"
+        },
+        {
+          "conclusion": "success",
+          "databaseId": 40063600918,
+          "status": "completed",
+          "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600918",
+          "workflowName": "Commitlint"
+        },
+        {
+          "conclusion": "",
+          "databaseId": 40063600875,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600875",
+          "workflowName": "CI"
+        },
+        {
+          "conclusion": "",
+          "databaseId": 40063600734,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600734",
+          "workflowName": "Payload Protection Lifecycle"
+        },
+        {
+          "conclusion": "",
+          "databaseId": 40063600716,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600716",
+          "workflowName": "Integration Tests"
+        },
+        {
+          "conclusion": "",
+          "databaseId": 40063600717,
+          "status": "in_progress",
+          "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40063600717",
+          "workflowName": "Advisory Tests"
+        }
+      ]
+    }
+  ],
+  "qualification": "Remote implementation heads were verified with git ls-remote after both ordinary pushes. This receipt is recorded in a subsequent documentation commit; hosted CI remains pending except the successful upstream Commitlint run observed here. No package publication or deployment was invoked."
+}
