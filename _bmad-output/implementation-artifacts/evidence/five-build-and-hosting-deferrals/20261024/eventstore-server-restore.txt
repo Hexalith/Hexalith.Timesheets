@@ -1,0 +1,5 @@
+  Determining projects to restore...
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/Hexalith.EventStore.Admin.Abstractions.csproj (in 464 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj (in 379 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Gateway/Hexalith.EventStore.Gateway.csproj (in 488 ms).
+  13 of 16 projects are up-to-date for restore.

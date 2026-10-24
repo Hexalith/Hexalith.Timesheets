@@ -1,0 +1,115 @@
+[
+  {
+    "name": "apphost-guards-final",
+    "command": [
+      "python3",
+      "scripts/check_magic_link_apphost_guards.py",
+      "--configuration-only",
+      "--log-directory",
+      "/tmp/five-build-root-final-apphost-guards"
+    ],
+    "working_directory": ".",
+    "exit": 0,
+    "timeout_seconds": 300,
+    "elapsed_seconds": 28.642,
+    "log": "/tmp/five-build-root-corrected-apphost-guards-final.log",
+    "sha256": "f5b93947d56aa71c017999b4a010161cd4befcf91435c6d3793ed5694bbf12ce"
+  },
+  {
+    "name": "eventstore-telemetry",
+    "command": [
+      "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+      "-class",
+      "Hexalith.EventStore.Server.Tests.Telemetry.*"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "exit": 0,
+    "timeout_seconds": 600,
+    "elapsed_seconds": 4.977,
+    "log": "/tmp/five-build-root-corrected-eventstore-telemetry.log",
+    "sha256": "5b5baebf510eabc2a123b8dd2a49a6358e1ff7b6fb361a1a8e2150a5407f7b9c",
+    "counts": {
+      "total": 41,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Contracts.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests"
+    ],
+    "working_directory": ".",
+    "exit": 0,
+    "timeout_seconds": 1800,
+    "elapsed_seconds": 0.566,
+    "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.Contracts.Tests.log",
+    "sha256": "10dee0552d8604133765c42a83d5513671c78f2db6a86a0fe7dab08a627d6903",
+    "counts": {
+      "total": 92,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Server.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests"
+    ],
+    "working_directory": ".",
+    "exit": 0,
+    "timeout_seconds": 1800,
+    "elapsed_seconds": 7.683,
+    "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.Server.Tests.log",
+    "sha256": "fff558bdf77d4de703ecf2fdc1fe417adcbea5255671445cc39ffea29278de44",
+    "counts": {
+      "total": 693,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Projections.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests"
+    ],
+    "working_directory": ".",
+    "exit": 0,
+    "timeout_seconds": 1800,
+    "elapsed_seconds": 703.343,
+    "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.Projections.Tests.log",
+    "sha256": "4f4494e223df79d2597243631119cc77638b6653e933e39296970435b1a0248c",
+    "counts": {
+      "total": 697,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.IntegrationTests",
+    "command": [
+      "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+    ],
+    "working_directory": ".",
+    "exit": 0,
+    "timeout_seconds": 1800,
+    "elapsed_seconds": 760.418,
+    "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.IntegrationTests.log",
+    "sha256": "f8637080aa3ef39aa0019431ba9c6bf772e63bb68100a154ae4689691b385043",
+    "counts": {
+      "total": 923,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 5,
+      "not_run": 0
+    }
+  }
+]

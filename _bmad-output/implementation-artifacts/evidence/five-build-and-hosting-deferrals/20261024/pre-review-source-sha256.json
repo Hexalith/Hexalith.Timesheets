@@ -1,0 +1,31 @@
+{
+  "timesheets_baseline": "c712954a9e0d768d78c968c85d0b788ac6f09de6",
+  "eventstore_baseline": "e1d8b17160202761ab5c9606cafbcf4d1a4b92c3",
+  "frozen_block_sha256": "a7e75a2edbf56795858367d9b0a66ae9dfe993b3207eda57d627c9cbe7cd2253",
+  "files_sha256": {
+    ".github/copilot-instructions.md": "974b069bc2125ba58d08e6ec6b23e62aa1c07fc51245a5392cd462b1e36cb143",
+    "AGENTS.md": "974b069bc2125ba58d08e6ec6b23e62aa1c07fc51245a5392cd462b1e36cb143",
+    "CLAUDE.md": "974b069bc2125ba58d08e6ec6b23e62aa1c07fc51245a5392cd462b1e36cb143",
+    "Directory.Build.targets": "b90ac7534a79a5ce4752ff51ba2b93e0f5235b89f2c17228e9a7ba0da9de8b89",
+    "Directory.Solution.props": "4a0a74f2a814b0ab81aa2cc04cf599cecbeedbdaf5b846d5cc43523303791b59",
+    "Directory.Solution.targets": "1f4f2228a6641ae8ce60cb5ae3f0b72920c919ed0d1297ba995c5990350e90f5",
+    "README.md": "b4f7f54058e64ac51f1e2f54776690df3efb64e4bc6974b7aebc1cc9059a8459",
+    "docs/ci-cd.md": "527a73ea33243f5672336f5334af10a5c524882644bc41c74e76579603e14f10",
+    "docs/launch-readiness.md": "cbc706a48d137dba49b32086353332a2ce9721104f10577ffff640b8a29a86dc",
+    "scripts/check_magic_link_apphost_guards.py": "6deac7486fbe235ae78db8e965fc541d38914d48ea3a2e9a9d5ea87bc46ace90",
+    "scripts/run_isolated_magic_link_dapr.py": "e7faaa6605c41f06fb8776964ab64dbcd96efba2013f79e8e52b1d685dd5df97",
+    "scripts/test_isolated_magic_link_dapr.py": "827e6c6bf5c860e689c7cef49a8ba0d0a889e3236a1aa813e2013951d1abf983",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "f14214873a844d16ca8941536e04d1e9907c2309b7366b5104956b161cd1c781",
+    "src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj": "5b5d1fa2ca9bcfd4db82aa38e9f1e0588fce3fd729e98158a1b28ca26db388a5",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs": "7fd7715e5c8f7a2e82dc02662edd8c5addaccb9e77da203aee5337f924c3c530",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/WorksReferencePropagationTests.cs": "c579588330fb1023f91ac1c731fee6db8c7a981b46e4ca3071e43fff478a2739",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/SourceVersionGraphTests.cs": "70cf40b110ba5a93b0bbbdd9b22ca5e9f9f36e1e25c57fe6a4ce18462ebad5ff",
+    "tests/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.csproj": "71b5a86e0d96f0bfd7e9fdd71f1eed5db2c3600e2a7b9be0713f5d40b4264bd5",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/AdminOperationalIndexMetadata.cs": "36801e3b791d5774a3988060a8929433dbc2aefc0874cdcf0b7449658732f831",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/EventStoreDomainServiceExtensions.cs": "f3a41ab3c0dde8e218c8c18e8102bc02668a9bb7631127198f97953bd4b047a5",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/Extensions.cs": "2b82dd10563457186e6e166d1b4c72ac6f89bdee794d5c0d9f21648df80acac1",
+    "references/Hexalith.EventStore/tests/Hexalith.EventStore.DomainService.Tests/EventStoreDomainServiceExtensionsTests.cs": "4f84ffaca4e50eefc73793fdc840a23df809b5afcc0d2c1c4b1072c0132feb63",
+    "references/Hexalith.EventStore/tests/Hexalith.EventStore.Server.Tests/Telemetry/RequestLogPrivacyTests.cs": "dae73fc2855daf7441a311cb88da45f91a826f1cf3d1fbfdd73357589cb8949e",
+    "references/Hexalith.EventStore/tests/Hexalith.EventStore.Server.Tests/Telemetry/RequestPrivacyLogExporter.cs": "1a194c6825ac949e30ac5fea9acf4fa841e687b96d9d764ce743b20565022b08"
+  }
+}

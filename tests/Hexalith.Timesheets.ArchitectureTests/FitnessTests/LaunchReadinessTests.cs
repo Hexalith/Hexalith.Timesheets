@@ -421,6 +421,9 @@ public sealed class LaunchReadinessTests
         string keycloakVersion = GetPackageVersion(centralCatalog, "Aspire.Hosting.Keycloak");
         string communityToolkitDaprVersion = GetPackageVersion(centralCatalog, "CommunityToolkit.Aspire.Hosting.Dapr");
         string fluentUiVersion = GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components");
+        XDocument rootOverrides = XDocument.Load(RepositoryRoot.PathTo("Directory.Packages.props"));
+        string effectiveAspireVersion = GetPackageVersion(rootOverrides, "Aspire.Hosting");
+        string effectiveKeycloakVersion = GetPackageVersion(rootOverrides, "Aspire.Hosting.Keycloak");
 
         // Anchored to the baseline sentence: the approval-evidence sentence also names both versions.
         currentVerdict.ShouldContain(
@@ -464,10 +467,11 @@ public sealed class LaunchReadinessTests
         transitive[3].ShouldContain("without a compatibility, security, or deterministic-build reason");
 
         string[] platform = ReadPackageVerdictRow(packageVerdict, "Platform and submodule alignment");
-        platform[1].ShouldBe("waived / open divergence");
+        platform[1].ShouldBe("waived / source aligned");
         platform[2].ShouldContain($"SDK `{sdkVersion}`");
         platform[2].ShouldContain($"AppHost SDK `{appHostVersion}`");
-        platform[2].ShouldContain($"Aspire packages at stable `{aspireVersion}`");
+        platform[2].ShouldContain($"imported catalog defaults to Aspire.Hosting `{aspireVersion}`");
+        platform[2].ShouldContain($"root overrides select Aspire.Hosting `{effectiveAspireVersion}` and `Aspire.Hosting.Keycloak` `{effectiveKeycloakVersion}`");
         platform[2].ShouldContain($"Dapr family at stable `{daprVersion}`");
         platform[2].ShouldContain($"`Aspire.Hosting.Keycloak` `{keycloakVersion}`");
         platform[2].ShouldContain($"`CommunityToolkit.Aspire.Hosting.Dapr` `{communityToolkitDaprVersion}`");
@@ -477,13 +481,14 @@ public sealed class LaunchReadinessTests
         platform[3].ShouldContain("Risk:");
         platform[3].ShouldContain("Revisit condition:");
 
-        // The launch-scope waiver row must name the same current prerelease lines as the verdict table.
+        // Retain the waiver's dated catalog baseline while disclosing the effective root overrides.
         string[] prerelease = ReadClassificationRow(readiness, "Platform prerelease dependency exception");
         prerelease[1].ShouldContain($"Aspire `{aspireVersion}`");
         prerelease[1].ShouldContain($"Dapr `{daprVersion}`");
         prerelease[1].ShouldContain($"Keycloak `{keycloakVersion}`");
         prerelease[1].ShouldContain($"CommunityToolkit Aspire Dapr `{communityToolkitDaprVersion}`");
         prerelease[1].ShouldContain($"Fluent UI V5 policy-surface catalog entry is `{fluentUiVersion}`");
+        prerelease[1].ShouldContain($"effective root graph selects Aspire.Hosting `{effectiveAspireVersion}` and Keycloak `{effectiveKeycloakVersion}`");
         prerelease[2].ShouldBe("waived");
 
         string[] packageGate = ReadReleaseGateRow(readiness, "Package currency");
@@ -896,7 +901,7 @@ public sealed class LaunchReadinessTests
     private static string GetPackageVersion(XDocument centralCatalog, string packageId)
     {
         string version = centralCatalog.Descendants("PackageVersion")
-            .Single(element => string.Equals(element.Attribute("Include")?.Value, packageId, StringComparison.Ordinal))
+            .Single(element => string.Equals(element.Attribute("Include")?.Value ?? element.Attribute("Update")?.Value, packageId, StringComparison.Ordinal))
             .Attribute("Version")
             .ShouldNotBeNull()
             .Value;

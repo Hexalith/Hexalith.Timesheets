@@ -1,0 +1,41 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: Hexalith.Timesheets.ArchitectureTests
+  Discovered:  Hexalith.Timesheets.ArchitectureTests
+  Starting:    Hexalith.Timesheets.ArchitectureTests
+    Hexalith.Timesheets.ArchitectureTests.FitnessTests.SourceVersionGraphTests.ConsumerVersionSurvivesRestoreBuildAndRuntime(solution: True, suppliedVersion: null) [FAIL]
+      Shouldly.ShouldAssertException : identities
+          should be
+      ["Hexalith.EventStore.Contracts/4.5.6"]
+          but was (case sensitive comparison)
+      ["Hexalith.EventStore.Contracts/1.2.3"]
+          difference
+      [*"Hexalith.EventStore.Contracts/1.2.3"*]
+      Stack Trace:
+        tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/SourceVersionGraphTests.cs(110,0): at Hexalith.Timesheets.ArchitectureTests.FitnessTests.SourceVersionGraphTests.ConsumerVersionSurvivesRestoreBuildAndRuntime(Boolean solution, String suppliedVersion)
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+        --- End of stack trace from previous location ---
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+    Hexalith.Timesheets.ArchitectureTests.FitnessTests.SourceVersionGraphTests.ConsumerVersionSurvivesRestoreBuildAndRuntime(solution: False, suppliedVersion: null) [FAIL]
+      Shouldly.ShouldAssertException : identities
+          should be
+      ["Hexalith.EventStore.Contracts/4.5.6"]
+          but was (case sensitive comparison)
+      ["Hexalith.EventStore.Contracts/1.2.3"]
+          difference
+      [*"Hexalith.EventStore.Contracts/1.2.3"*]
+      Stack Trace:
+        tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/SourceVersionGraphTests.cs(110,0): at Hexalith.Timesheets.ArchitectureTests.FitnessTests.SourceVersionGraphTests.ConsumerVersionSurvivesRestoreBuildAndRuntime(Boolean solution, String suppliedVersion)
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+        --- End of stack trace from previous location ---
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Finished:    Hexalith.Timesheets.ArchitectureTests (ID = '388847c10d4588ad9adbd2f7d429b2f35dd0506c05e0b388b7efafe3d5bae84f')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.ArchitectureTests  Total: 4, Errors: 0, Failed: 2, Skipped: 0, Not Run: 0, Time: 4.362s

@@ -1,0 +1,15 @@
+{
+  "integration_pid": 416682,
+  "supervisor_wrapper_pid": 172923,
+  "supervisor_wrapper_state": "State:\tT (stopped)",
+  "integration_command": "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+  "integration_log": "/tmp/five-build-Hexalith.Timesheets.IntegrationTests.log",
+  "original_tool_session_id": 3365,
+  "budget_monitor_tool_session_id": 59204,
+  "effective_timeout_seconds": 1800,
+  "budget_monitor_shell_pid": 428651,
+  "budget_monitor_pid": 428652,
+  "handoff_note": "Poll original session 3365 for suite completion. The monitor in session 59204 resumes the paused wrapper after Integration exits. Do not resume/stop the healthy test. If Works is absent from the resulting JSON, run its executable individually with a separate adequate timeout. Final compiled AppHost guard repeat remains pending.",
+  "completed": true,
+  "completion_note": "All handed-off processes exited. Root completed all six corrected suites and final focused checks; retained PIDs are historical."
+}

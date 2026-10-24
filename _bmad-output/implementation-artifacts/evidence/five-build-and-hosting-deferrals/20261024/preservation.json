@@ -1,0 +1,8 @@
+{
+  "exactly_five_additive_resolutions": true,
+  "original_ledger_evidence_preserved": true,
+  "unrelated_advisories_tracked_separately": true,
+  "entry_points_synchronized": true,
+  "works_worktree_unchanged": true,
+  "launch_fail_retained": true
+}

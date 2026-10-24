@@ -692,6 +692,7 @@ class IsolatedFixture:
                                                   GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
                                                   "Timesheets:LocalPublicPort",
                                                   "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY",
+                                                  "TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY",
                                                   *SDK_LAUNCH_OVERRIDES)}
         self.environment = {}
         for name, value in os.environ.items():

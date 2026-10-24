@@ -3,5 +3,12 @@
        same graph as its subsequent Release build. Explicit Debug remains local. -->
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <UseHexalithProjectReferences Condition="'$(UseHexalithProjectReferences)' == '' and '$(Configuration)' == 'Debug'">true</UseHexalithProjectReferences>
+    <TimesheetsSolutionPackageProps Condition="'$(DirectoryPackagesPropsPath)' != ''">$(DirectoryPackagesPropsPath)</TimesheetsSolutionPackageProps>
+    <TimesheetsSolutionPackageProps Condition="'$(TimesheetsSolutionPackageProps)' == ''">$(MSBuildThisFileDirectory)Directory.Packages.props</TimesheetsSolutionPackageProps>
   </PropertyGroup>
+  <!-- NuGet's solution walk discards project-reference metadata. Select the
+       consumer catalog before promoting its version through the whole graph. -->
+  <Import Project="$(TimesheetsSolutionPackageProps)"
+          Condition="'$(Configuration)' == 'Debug' and '$(UseHexalithProjectReferences)' == 'true'" />
 </Project>

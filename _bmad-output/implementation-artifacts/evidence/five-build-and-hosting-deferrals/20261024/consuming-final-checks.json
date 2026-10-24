@@ -1,0 +1,89 @@
+[
+  {
+    "name": "consuming-restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "Hexalith.Timesheets.slnx",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "exit": 0,
+    "elapsed_seconds": 2.07,
+    "log": "/tmp/five-build-root-consuming-restore.log",
+    "sha256": "d75cfbb03fe6441ef175f897de3b087080dac85e884d3c570bb1dc91339234af",
+    "retained_log": "consuming-restore.txt"
+  },
+  {
+    "name": "consuming-build",
+    "command": [
+      "dotnet",
+      "build",
+      "Hexalith.Timesheets.slnx",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "exit": 0,
+    "elapsed_seconds": 17.386,
+    "log": "/tmp/five-build-root-consuming-build.log",
+    "sha256": "ee332daa25282fe7feb3404f37de91627cd7672fa58acb7accf43b36de842dcb",
+    "retained_log": "consuming-build.txt"
+  },
+  {
+    "name": "consuming-http-logging",
+    "command": [
+      "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-method",
+      "*HostingDiagnosticsFilter*"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "exit": 0,
+    "elapsed_seconds": 1.374,
+    "log": "/tmp/five-build-root-consuming-http-logging.log",
+    "sha256": "0e46e52af1292568713c40d7531046287f71854612817a83373cf317708088ab",
+    "counts": {
+      "total": 3,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    },
+    "retained_log": "consuming-http-logging.txt"
+  },
+  {
+    "name": "consuming-works",
+    "command": [
+      "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "exit": 0,
+    "elapsed_seconds": 0.467,
+    "log": "/tmp/five-build-root-consuming-works.log",
+    "sha256": "7ef069255368e54fbfcdcac9a767e61f0c7fabe6d8419e3ff27db2c2e03f2882",
+    "counts": {
+      "total": 76,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    },
+    "retained_log": "consuming-works.txt"
+  }
+]

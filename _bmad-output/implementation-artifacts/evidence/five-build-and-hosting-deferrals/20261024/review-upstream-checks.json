@@ -1,0 +1,201 @@
+[
+  {
+    "name": "Hexalith.EventStore.DomainService.Tests-restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "tests/Hexalith.EventStore.DomainService.Tests/Hexalith.EventStore.DomainService.Tests.csproj",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 1.219,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.EventStore.DomainService.Tests-restore.log",
+    "raw_sha256": "bbe74862d697df9e271da02d284c5d80540ad8a48cd8a8d05ec36d78c8684428",
+    "retained_log": "review-Hexalith.EventStore.DomainService.Tests-restore.txt",
+    "retained_sha256": "bbe74862d697df9e271da02d284c5d80540ad8a48cd8a8d05ec36d78c8684428",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "Hexalith.EventStore.DomainService.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.DomainService.Tests/Hexalith.EventStore.DomainService.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-warnaserror",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 13.622,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.EventStore.DomainService.Tests-build.log",
+    "raw_sha256": "ef6985027d21fafbc76b0ce23371b6860942b79e5a5a9129ef5c8caf464b4fc2",
+    "retained_log": "review-Hexalith.EventStore.DomainService.Tests-build.txt",
+    "retained_sha256": "ef6985027d21fafbc76b0ce23371b6860942b79e5a5a9129ef5c8caf464b4fc2",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "Hexalith.EventStore.Server.Tests-restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 2.403,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.EventStore.Server.Tests-restore.log",
+    "raw_sha256": "8c6e9304594ae24665d9800fb335c913b8fb34ace5d0e2b0abc90a79a87ab705",
+    "retained_log": "review-Hexalith.EventStore.Server.Tests-restore.txt",
+    "retained_sha256": "8c6e9304594ae24665d9800fb335c913b8fb34ace5d0e2b0abc90a79a87ab705",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "Hexalith.EventStore.Server.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-warnaserror",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 16.929,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.EventStore.Server.Tests-build.log",
+    "raw_sha256": "1c39dd5bd2c8be23fc16a6cb66439c6709281db6c6b8584307ca12cd12e61b9b",
+    "retained_log": "review-Hexalith.EventStore.Server.Tests-build.txt",
+    "retained_sha256": "1c39dd5bd2c8be23fc16a6cb66439c6709281db6c6b8584307ca12cd12e61b9b",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "metadata",
+    "command": [
+      "tests/Hexalith.EventStore.DomainService.Tests/bin/Debug/net10.0/Hexalith.EventStore.DomainService.Tests",
+      "-class",
+      "*EventStoreDomainServiceExtensionsTests"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 13.479,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-metadata.log",
+    "raw_sha256": "f93a8fc0f30d2be500bddf863cc7d52290bf4ac8ba53cb636f90530636604e5f",
+    "retained_log": "review-metadata.txt",
+    "retained_sha256": "f93a8fc0f30d2be500bddf863cc7d52290bf4ac8ba53cb636f90530636604e5f",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 99,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "telemetry",
+    "command": [
+      "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+      "-class",
+      "Hexalith.EventStore.Server.Tests.Telemetry.*"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 5.174,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-telemetry.log",
+    "raw_sha256": "544bc9cd0115846cd84e24fb921d566bc1aa0eea4817b3edff8985d0ce3db043",
+    "retained_log": "review-telemetry.txt",
+    "retained_sha256": "544bc9cd0115846cd84e24fb921d566bc1aa0eea4817b3edff8985d0ce3db043",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 49,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "server-full",
+    "command": [
+      "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+      "-longRunning",
+      "60"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 1,
+    "elapsed_seconds": 209.735,
+    "timeout_seconds": 3600,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-server-full.log",
+    "raw_sha256": "e00c9f3a4f80188ab2d20f1ee6192040a6d08e1edc7e3af8f03bd37660f373c4",
+    "retained_log": "review-server-full.txt",
+    "retained_sha256": "2489efb815dea8ac38311fd368ec2ac26f44c05e7f614aee258551b62a4a92d1",
+    "retention_policy": "Full raw stdout/stderr retained in deterministic gzip archive; readable excerpt retains the xUnit failure block and final summary, with LF and trailing whitespace normalized. raw_sha256 binds decompressed archive bytes.",
+    "counts": {
+      "total": 5757,
+      "errors": 0,
+      "failed": 1,
+      "skipped": 25,
+      "not_run": 0
+    },
+    "raw_log_archive": "review-server-full.log.gz",
+    "raw_archive_sha256": "298f9159f98b110f2dc18080c3d92f5436b07cee0df5f023b9c886d16e6a624a"
+  }
+]

@@ -1,0 +1,25 @@
+{
+  "reason": "Interrupt old-baseline runs to integrate ten newly fetched upstream EventStore commits before validating the final candidate. This is not a failure, hang diagnosis, or green gate.",
+  "incoming_head": "6e927633d920eafcefa2635a124810b541264489",
+  "interrupted_processes": [
+    [
+      2637671,
+      2637671,
+      "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests -longRunning 60"
+    ],
+    [
+      2657286,
+      2657286,
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests"
+    ],
+    [
+      2657288,
+      2657288,
+      "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+    ]
+  ],
+  "forced_after_grace_pids": [
+    2657288
+  ],
+  "qualification": "A composed HTTP rebuild 500 appears in the interrupted run output. The incomplete run does not establish whether termination or a regression caused it. Integrated-candidate verification must settle this; the interrupted run is not green."
+}

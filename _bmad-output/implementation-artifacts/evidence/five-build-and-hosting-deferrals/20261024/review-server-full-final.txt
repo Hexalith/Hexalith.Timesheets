@@ -1,0 +1,17 @@
+    Hexalith.EventStore.Server.Tests.Security.SecretsProtectionTests.TrackedReusableContent_DoesNotContainUsableSecrets [FAIL]
+      Shouldly.ShouldAssertException : violations.Length
+          should be
+      0
+          but was
+      15
+
+      Additional Info:
+          Tracked reusable content contains secret material. Only path and line are reported: tests/Hexalith.EventStore.Admin.UI.Tests/Services/AdminUiDaprTargetTests.cs:44, tests/Hexalith.EventStore.Admin.UI.Tests/Services/AdminUiDaprTargetTests.cs:46, tests/Hexalith.EventStore.PayloadProtection.Tests/ChangingGetterPayload.cs:8, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:177, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:205, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:232, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:28, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:49, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:71, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:84, tests/Hexalith.EventStore.PayloadProtection.Tests/PolicyLifecycleTests.cs:87, tests/Hexalith.EventStore.PayloadProtection.Tests/RuntimeSubstitutionPayload.cs:8, tests/Hexalith.EventStore.PayloadProtection.Tests/WholeObjectSelectionPayload.cs:10, tests/Hexalith.EventStore.Sample.Tests/BlazorUI/SampleUiDaprTargetTests.cs:49, tests/Hexalith.EventStore.Sample.Tests/BlazorUI/SampleUiDaprTargetTests.cs:51
+      Stack Trace:
+        tests/Hexalith.EventStore.Server.Tests/Security/SecretsProtectionTests.cs(30,0): at Hexalith.EventStore.Server.Tests.Security.SecretsProtectionTests.TrackedReusableContent_DoesNotContainUsableSecrets()
+           at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+           at System.RuntimeMethodHandle.InvokeMethod(ObjectHandleOnStack target, Void** arguments, ObjectHandleOnStack sig, BOOL isConstructor, ObjectHandleOnStack result)
+           at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+           at System.Reflection.RuntimeMethodInfo.Invoke(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.EventStore.Server.Tests  Total: 5757, Errors: 0, Failed: 1, Skipped: 25, Not Run: 0, Time: 238.778s

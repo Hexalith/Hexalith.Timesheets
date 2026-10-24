@@ -1,0 +1,200 @@
+[
+  {
+    "name": "Hexalith.EventStore.DomainService.Tests-restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "tests/Hexalith.EventStore.DomainService.Tests/Hexalith.EventStore.DomainService.Tests.csproj",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 1.267,
+    "retained_log": "Hexalith.EventStore.DomainService.Tests-restore.txt",
+    "raw_log": "/tmp/five-build-root-Hexalith.EventStore.DomainService.Tests-restore.log",
+    "raw_sha256": "8dafeaf45badc02755df3725e6f525c1e192718244dc88ea19c9e510f29b80b1",
+    "retained_sha256": "8dafeaf45badc02755df3725e6f525c1e192718244dc88ea19c9e510f29b80b1",
+    "retained_log_policy": {
+      "excerpt": "All raw log lines retained.",
+      "raw_line_range_inclusive": [
+        1,
+        9
+      ],
+      "normalization": "Decode UTF-8, normalize line endings to LF, strip trailing whitespace from each selected line, preserve one final newline. Raw and retained SHA-256 values bind their respective bytes."
+    }
+  },
+  {
+    "name": "Hexalith.EventStore.DomainService.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.DomainService.Tests/Hexalith.EventStore.DomainService.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 7.692,
+    "retained_log": "Hexalith.EventStore.DomainService.Tests-build.txt",
+    "raw_log": "/tmp/five-build-root-Hexalith.EventStore.DomainService.Tests-build.log",
+    "raw_sha256": "e943a85e4d349027d8c1746aa17a56b2923f7552301028ecbd67571e40e5ba59",
+    "retained_sha256": "e943a85e4d349027d8c1746aa17a56b2923f7552301028ecbd67571e40e5ba59",
+    "retained_log_policy": {
+      "excerpt": "All raw log lines retained.",
+      "raw_line_range_inclusive": [
+        1,
+        16
+      ],
+      "normalization": "Decode UTF-8, normalize line endings to LF, strip trailing whitespace from each selected line, preserve one final newline. Raw and retained SHA-256 values bind their respective bytes."
+    }
+  },
+  {
+    "name": "Hexalith.EventStore.Server.Tests-restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 1.52,
+    "retained_log": "Hexalith.EventStore.Server.Tests-restore.txt",
+    "raw_log": "/tmp/five-build-root-Hexalith.EventStore.Server.Tests-restore.log",
+    "raw_sha256": "5bfb83c1cc23088fbfb381fbc1c92b4b4a56f2d8fecac1b35b6defcc779aef2a",
+    "retained_sha256": "5bfb83c1cc23088fbfb381fbc1c92b4b4a56f2d8fecac1b35b6defcc779aef2a",
+    "retained_log_policy": {
+      "excerpt": "All raw log lines retained.",
+      "raw_line_range_inclusive": [
+        1,
+        5
+      ],
+      "normalization": "Decode UTF-8, normalize line endings to LF, strip trailing whitespace from each selected line, preserve one final newline. Raw and retained SHA-256 values bind their respective bytes."
+    }
+  },
+  {
+    "name": "Hexalith.EventStore.Server.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 11.125,
+    "retained_log": "Hexalith.EventStore.Server.Tests-build.txt",
+    "raw_log": "/tmp/five-build-root-Hexalith.EventStore.Server.Tests-build.log",
+    "raw_sha256": "27ad68615c680a71686e7e0ba4598c635560a3f47997059ca59e6172b032d144",
+    "retained_sha256": "27ad68615c680a71686e7e0ba4598c635560a3f47997059ca59e6172b032d144",
+    "retained_log_policy": {
+      "excerpt": "All raw log lines retained.",
+      "raw_line_range_inclusive": [
+        1,
+        28
+      ],
+      "normalization": "Decode UTF-8, normalize line endings to LF, strip trailing whitespace from each selected line, preserve one final newline. Raw and retained SHA-256 values bind their respective bytes."
+    }
+  },
+  {
+    "name": "metadata-final",
+    "command": [
+      "tests/Hexalith.EventStore.DomainService.Tests/bin/Debug/net10.0/Hexalith.EventStore.DomainService.Tests",
+      "-class",
+      "*EventStoreDomainServiceExtensionsTests"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 13.564,
+    "counts": {
+      "total": 98,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    },
+    "retained_log": "metadata-final-summary.txt",
+    "raw_log": "/tmp/five-build-root-metadata-final.log",
+    "raw_sha256": "a14815ff315868502d6c94faa033d9f7a9d2870d9b6073d51f1617a6ad9cc37d",
+    "retained_sha256": "35e9d154320379d52b260b0f0104408355b8aba315707b02d060b844db242034",
+    "retained_log_policy": {
+      "excerpt": "Last seven raw log lines (summary excerpt); earlier activation output omitted.",
+      "raw_line_range_inclusive": [
+        94,
+        100
+      ],
+      "normalization": "Decode UTF-8, normalize line endings to LF, strip trailing whitespace from each selected line, preserve one final newline. Raw and retained SHA-256 values bind their respective bytes."
+    }
+  },
+  {
+    "name": "telemetry-final",
+    "command": [
+      "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+      "-class",
+      "Hexalith.EventStore.Server.Tests.Telemetry.*"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 5.28,
+    "counts": {
+      "total": 46,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    },
+    "retained_log": "telemetry-final.txt",
+    "raw_log": "/tmp/five-build-root-telemetry-final.log",
+    "raw_sha256": "81dddcbbc55e589bcd2a96217a091a1cdb9c0eca844871a56735c10061df8d6f",
+    "retained_sha256": "81dddcbbc55e589bcd2a96217a091a1cdb9c0eca844871a56735c10061df8d6f",
+    "retained_log_policy": {
+      "excerpt": "All raw log lines retained.",
+      "raw_line_range_inclusive": [
+        1,
+        7
+      ],
+      "normalization": "Decode UTF-8, normalize line endings to LF, strip trailing whitespace from each selected line, preserve one final newline. Raw and retained SHA-256 values bind their respective bytes."
+    }
+  }
+]

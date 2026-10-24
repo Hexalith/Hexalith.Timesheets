@@ -1,0 +1,18 @@
+    Hexalith.EventStore.DomainService.Tests.DomainModuleAuthoringGuardrailTests.TenantsDomainService_DoesNotReferenceGeneratedApiHostOrDeclarePerMessageControllers [FAIL]
+      Shouldly.ShouldAssertException : File.Exists(csproj)
+          should be
+      True
+          but was
+      False
+
+      Additional Info:
+          Expected the root-declared Tenants submodule project at /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/references/Hexalith.Tenants/src/Hexalith.Tenants/Hexalith.Tenants.csproj; boundary verification must not pass without its subject.
+      Stack Trace:
+        tests/Hexalith.EventStore.DomainService.Tests/DomainModuleAuthoringGuardrailTests.cs(423,0): at Hexalith.EventStore.DomainService.Tests.DomainModuleAuthoringGuardrailTests.TenantsDomainService_DoesNotReferenceGeneratedApiHostOrDeclarePerMessageControllers()
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+        --- End of stack trace from previous location ---
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)

@@ -251,14 +251,27 @@ submodule pointer, hosted workflow, or registry state was changed during local
 implementation. This CI/CD work does not close the separate launch-readiness
 failures in `docs/launch-readiness.md`.
 
+The 2026-10-24 advisory refresh closes the original braces/micromatch finding.
+[GitHub withdrew GHSA-vfj7-8cjw-p6xm on 2026-10-23](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm)
+because it is not practically exploitable. Today's `npm audit --json` exits 1
+with three unrelated vulnerable packages: `fast-uri` and `ip-address` (moderate),
+and `undici` (high). It reports no braces/micromatch finding. The original eight
+high findings and the 2026-10-20 gate correction below remain historical evidence.
+The [dated audit and withdrawal receipts](../_bmad-output/implementation-artifacts/tests/five-build-and-hosting-deferrals.md)
+retain exact inputs and outcomes. No manifest, lockfile, or dependency version
+changed for this withdrawal. The three current packages remain a separate CI/CD
+release-tooling follow-up and keep package currency at **CONCERNS**; launch remains
+**FAIL**.
+
+**Historical 2026-10-18 finding and 2026-10-20 gate correction:**
 The locked Node release-tooling graph passes signature/attestation verification.
-Current `npm audit` still reports **eight high findings**, all from the upstream
+The 2026-10-18 `npm audit` reported **eight high findings**, all from the upstream
 unpatched braces/micromatch chain and affected semantic-release dependents.
 Compatible refreshes, including bundled npm **11.21.1**, removed the critical
 Handlebars finding and all bundled npm findings. The official registry still
 identifies braces **3.0.3** and micromatch **4.0.8** as latest; braces is affected by
 [GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm).
-No forced downgrade or broad override was used. This is an **activation and merge
+No forced downgrade or broad override was used. It was recorded as an **activation and merge
 blocker**: the unchanged shared dependency-review gate rejects high-severity
 introductions. Do not merge or activate this configuration as green until an
 upstream fix or separately reviewed resolution exists. Correction (2026-10-20):
@@ -269,4 +282,4 @@ The existing braces lockfile findings stay outside this gate unless a pull reque
 changes the affected packages; no workflow runs an npm vulnerability audit; the pinned commitlint workflow and the shared release workflow (`domain-release.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9`, called by `release.yml`) run `npm audit signatures` for provenance verification. The gate has not
 evaluated these findings; the `Root npm applicability` row in
 `docs/launch-readiness.md` keeps them open. The NuGet audit gate
-remains enabled and is separate from this Node tooling blocker.
+remains enabled and is separate from Node tooling concerns.

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+    "-class",
+    "*SourceVersionGraphTests"
+  ],
+  "mutation": "Remove restore-walk version forwarding; retain build/reference forwarding.",
+  "exit": 1,
+  "counts": {
+    "total": 4,
+    "errors": 0,
+    "failed": 2,
+    "skipped": 0,
+    "not_run": 0
+  },
+  "expected_default_failures": 2,
+  "explicit_overrides_preserved": 2,
+  "elapsed_seconds": 4.577,
+  "log_sha256": "e9292a07b1c15f63ecbd9d793ac68e4ffcf856b85b53fb414c9f43d27812db20"
+}

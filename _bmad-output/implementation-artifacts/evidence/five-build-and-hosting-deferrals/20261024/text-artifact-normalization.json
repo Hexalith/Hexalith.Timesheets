@@ -1,0 +1,10 @@
+{
+  "policy": "Text excerpts normalize line endings and trailing whitespace; raw hashes and the raw mutant gzip are retained.",
+  "changes": [
+    {
+      "file": "restore-walk-mutant.txt",
+      "original_sha256": "e9292a07b1c15f63ecbd9d793ac68e4ffcf856b85b53fb414c9f43d27812db20",
+      "normalized_sha256": "a7cb37136a28fd311bb8f85e24188e15c2b79fb8dc2f96c52e58ca88411c4551"
+    }
+  ]
+}

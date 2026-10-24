@@ -1,0 +1,363 @@
+[
+  {
+    "case": "valid-isolated",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "ordinary-defaults",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "bare-fixture-flag",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-components",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "empty-components",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "whitespace-components",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "publish-fixture",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "publish-bare-fixture",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-opt-in",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "wrong-scope",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-component",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-pubsub",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "unsafe-pubsub",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-placement",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "shared-placement",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-scheduler",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "shared-scheduler",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "duplicate-control-endpoint",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "shared-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "mismatched-actor-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "mismatched-readmodel-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "mismatched-pubsub-redis",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "valid-compiled-isolated",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "compiled-executable-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-directory-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-empty-executable",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-empty-directory",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-blank-executable",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "compiled-blank-directory",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "ordinary-compiled",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "ordinary-compiled-executable-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "ordinary-compiled-directory-only",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "publish-compiled",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "unsafe-components-compiled",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "missing-placement-compiled",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "valid-local-port",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "publish-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "empty-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "blank-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "malformed-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "negative-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "low-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "high-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "internal-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "gateway-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "sidecar-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "placement-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "scheduler-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "redis-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "padded-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "trimmed-local-port",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "default-control-collision",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "default-trimmed-control-collision",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "component-redis-collision",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "default-component-redis-collision",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "misleading-component-redis-collision",
+    "exit": -6,
+    "passed": true
+  },
+  {
+    "case": "valid-component-without-diagnostic",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "valid-component-with-misleading-diagnostic",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "valid-trimmed-control",
+    "exit": 0,
+    "passed": true
+  },
+  {
+    "case": "model-default",
+    "exit": 0,
+    "passed": true,
+    "endpoints": [
+      {
+        "name": "internal",
+        "port": 8081,
+        "isExternal": false,
+        "isExplicitlyProxied": false
+      },
+      {
+        "name": "public",
+        "port": 8080,
+        "isExternal": false,
+        "isExplicitlyProxied": false
+      }
+    ]
+  },
+  {
+    "case": "model-alternate",
+    "exit": 0,
+    "passed": true,
+    "endpoints": [
+      {
+        "name": "internal",
+        "port": 8081,
+        "isExternal": false,
+        "isExplicitlyProxied": false
+      },
+      {
+        "name": "public",
+        "port": 18080,
+        "isExternal": false,
+        "isExplicitlyProxied": false
+      }
+    ]
+  },
+  {
+    "case": "model-publish",
+    "exit": 0,
+    "passed": true,
+    "endpoints": [
+      {
+        "name": "internal",
+        "port": 8081,
+        "isExternal": false,
+        "isExplicitlyProxied": false
+      },
+      {
+        "name": "public",
+        "port": 8080,
+        "isExternal": false,
+        "isExplicitlyProxied": false
+      }
+    ]
+  },
+  {
+    "case": "full-construction",
+    "exit": 0,
+    "passed": true,
+    "credentials": {
+      "gatewayCredentials": 1,
+      "timesheetsCredentials": 1
+    }
+  }
+]

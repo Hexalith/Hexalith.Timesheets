@@ -28,16 +28,16 @@ Existing checkouts upgrading from the tracked hook file should run setup again; 
 Use the pinned .NET SDK `10.0.402` (`rollForward: latestPatch`), with a writable CLI home in restricted environments:
 
 ```bash
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.127.0 -m:1 /nr:false
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.127.0 -warnaserror -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
 ```
 
-Use the same source-reference mode for restore and build. CI/CD uses Release/published packages; configuration-free restore defaults to that graph. Do not reuse assets between dependency modes. Timesheets selects published EventStore `3.127.0` for its per-send gateway options API. Root package overrides also honor that release's Aspire hosting, OpenTelemetry and MCP dependency floors. Works still forwards its own `3.126.0` default. Pass the consuming version explicitly to both local commands as shown until the owned version-forwarding follow-up closes. The Timesheets Works adapter and its test project preserve Configuration during solution traversal of external source references; [integration handoff verification](_bmad-output/implementation-artifacts/tests/five-integration-handoffs.md) records that bounded correction. Version-forwarding remains separately open because NuGet restore does not propagate the version through per-reference metadata.
+Use the same source-reference mode for restore and build. CI/CD uses Release/published packages; configuration-free restore defaults to that graph. Do not reuse assets between dependency modes. Timesheets selects published EventStore `3.127.0` for its per-send gateway options API. Root package overrides also honor that release's Aspire hosting, OpenTelemetry and MCP dependency floors. Works source references receive the evaluated consuming EventStore version, including explicit caller overrides, on direct and SDK-added transitive edges. No version workaround is required. [Build and hosting verification](_bmad-output/implementation-artifacts/tests/five-build-and-hosting-deferrals.md) records differing-default and explicit-override regressions.
 
 After building, run each test project individually. `global.json` selects Microsoft.Testing.Platform; use `--project` and the same configuration and dependency mode as the build:
 
 ```bash
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Debug --no-build -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.127.0
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Debug --no-build -p:UseHexalithProjectReferences=true
 ```
 
 Repeat for Contracts.Tests, Server.Tests, Projections.Tests, IntegrationTests, and Works.Tests using their respective project paths. The built xUnit v3 executables are also supported and run the same suites directly:

@@ -1,0 +1,20 @@
+{
+  "build_command": [
+    "dotnet",
+    "build",
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj",
+    "--configuration",
+    "Debug",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=true",
+    "-p:BuildProjectReferences=false",
+    "-warnaserror",
+    "-m:1",
+    "/nr:false"
+  ],
+  "build_exit": 0,
+  "probe_exit": -6,
+  "duplicate_resource_rejected": true,
+  "construction_marker_emitted": false,
+  "start_or_run_called": false
+}

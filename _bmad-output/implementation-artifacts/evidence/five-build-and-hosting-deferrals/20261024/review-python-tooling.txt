@@ -1,0 +1,27 @@
+...................................................................Release verify prerequisites passed for five packages at 1.2.3
+Frozen release identity: {"artifactsSha256": "a362a3ddcf629ab1a6b9ac0fa425b5e7d81f99792393b11d290c40d7fb4b7994", "version": "1.2.3"}
+Release artifact SHA256 ledger:
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Client.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Contracts.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Projections.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Server.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Testing.1.2.3.nupkg
+..Frozen release identity: {"artifactsSha256": "a362a3ddcf629ab1a6b9ac0fa425b5e7d81f99792393b11d290c40d7fb4b7994", "version": "1.2.3"}
+Release artifact SHA256 ledger:
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Client.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Contracts.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Projections.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Server.1.2.3.nupkg
+a14338a1e0d66d8dde7613f4525aff3453f5b47490371c9cbb3499d7fc629742  Hexalith.Timesheets.Testing.1.2.3.nupkg
+...................
+----------------------------------------------------------------------
+Ran 88 tests in 0.987s
+
+OK
+Validated exactly five packages and symbols at 1.2.3
+Publication is frozen: repository HEXALITH_RELEASE_PUBLISH_ENABLED is not exactly 'true'.
+Publication is frozen: repository HEXALITH_RELEASE_PUBLISH_ENABLED is not exactly 'true'.
+Publication is frozen: repository HEXALITH_RELEASE_PUBLISH_ENABLED is not exactly 'true'.
+Publication is frozen: repository HEXALITH_RELEASE_PUBLISH_ENABLED is not exactly 'true'.
+Publication is frozen: repository HEXALITH_RELEASE_PUBLISH_ENABLED is not exactly 'true'.
+Validated successful TRX evidence for all six projects, including Works.Tests

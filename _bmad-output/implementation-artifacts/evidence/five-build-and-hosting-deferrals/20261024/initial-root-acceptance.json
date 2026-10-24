@@ -1,0 +1,20 @@
+[
+  {
+    "name": "works-final",
+    "command": [
+      "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests"
+    ],
+    "working_directory": ".",
+    "timeout_seconds": 1800,
+    "exit": 1,
+    "elapsed_seconds": 0.466,
+    "log": "/tmp/five-build-root-works-final.log",
+    "counts": {
+      "total": 76,
+      "errors": 0,
+      "failed": 52,
+      "skipped": 0,
+      "not_run": 0
+    }
+  }
+]

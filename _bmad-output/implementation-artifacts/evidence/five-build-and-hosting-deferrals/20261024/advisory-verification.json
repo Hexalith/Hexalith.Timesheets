@@ -1,0 +1,26 @@
+{
+  "checked_on": "2026-10-24",
+  "inputs_sha256": {
+    "package.json": "bb79fe1fa554249a1fdbf38bd1d8fb6754c4845e46d92605ace5ba5e077cc4b8",
+    "package-lock.json": "0a79816042b7558a43a22384246358fa8fbaac134fb4e3854141384806ac4ae7",
+    "global.json": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652"
+  },
+  "audit_command": "npm audit --json",
+  "audit_exit": 1,
+  "vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 2,
+    "high": 1,
+    "critical": 0,
+    "total": 3
+  },
+  "affected_packages": [
+    "fast-uri",
+    "ip-address",
+    "undici"
+  ],
+  "withdrawal_url": "https://github.com/advisories/GHSA-vfj7-8cjw-p6xm",
+  "withdrawn_at": "2026-10-23T12:53:02Z",
+  "dependency_changes": false
+}

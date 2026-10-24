@@ -1,0 +1,12 @@
+<Project>
+  <!-- NuGet walks project paths rather than ProjectReference items, so their
+       AdditionalProperties alone cannot keep restore and build versions aligned. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(UseHexalithProjectReferences)' == 'true'">
+    <_GenerateRestoreGraphProjectEntryInputProperties>$(_GenerateRestoreGraphProjectEntryInputProperties);HexalithEventStoreVersion=$(HexalithEventStoreVersion)</_GenerateRestoreGraphProjectEntryInputProperties>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(Configuration)' == 'Debug' and '$(UseHexalithProjectReferences)' == 'true'">
+    <ProjectReference Update="@(ProjectReference)">
+      <AdditionalProperties>%(ProjectReference.AdditionalProperties);HexalithEventStoreVersion=$(HexalithEventStoreVersion)</AdditionalProperties>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

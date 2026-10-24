@@ -1,0 +1,32 @@
+[
+  {
+    "name": "domain-nested-tenants-guard",
+    "command": [
+      "tests/Hexalith.EventStore.DomainService.Tests/bin/Debug/net10.0/Hexalith.EventStore.DomainService.Tests",
+      "-method",
+      "*TenantsDomainService_DoesNotReferenceGeneratedApiHostOrDeclarePerMessageControllers"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 1,
+    "elapsed_seconds": 0.416,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-domain-nested-tenants-guard.log",
+    "raw_sha256": "8f5742dd78e8801e8783d610240fd1339fcc55c56245e0117f22ebaf23729a03",
+    "retained_log": "review-domain-nested-tenants-guard.txt",
+    "retained_sha256": "061df97338004481342189b5bbd9fb7e2eb447637158246ed78360ab1b57c177",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 1,
+      "errors": 0,
+      "failed": 1,
+      "skipped": 0,
+      "not_run": 0
+    },
+    "qualification": "Expected existing broad-suite prerequisite failure: nested Tenants project is absent, and repository instructions prohibit initializing it for this task. Focused affected metadata tests pass 99/99; this guard is not green."
+  }
+]

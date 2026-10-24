@@ -17,7 +17,8 @@
     <!-- Pure kernel seam (IWorkReferenceValidator, ReferenceValidationResult, request context). -->
     <ProjectReference Include="..\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
     <!-- Works consumer contract: WorkItemView, WorkItemStatus. Contracts only, never the Works server. -->
-    <ProjectReference Include="$(HexalithWorksRoot)\src\Hexalith.Works.Contracts\Hexalith.Works.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithWorksRoot)\src\Hexalith.Works.Contracts\Hexalith.Works.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'"
+                      AdditionalProperties="HexalithEventStoreVersion=$(HexalithEventStoreVersion)" />
     <!-- EventStore consumer query CONTRACTS only: QueryEnvelope, QueryResult. The concrete
          IDomainQueryInvoker (in the EventStore web host) is bound to IWorksQueryChannel at the
          composed-host level so this domain adapter stays a light, conflict-free library. -->

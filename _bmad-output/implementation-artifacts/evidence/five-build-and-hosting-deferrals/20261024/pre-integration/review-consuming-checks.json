@@ -1,0 +1,205 @@
+[
+  {
+    "name": "restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "Hexalith.Timesheets.slnx",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 2.486,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-restore.log",
+    "raw_sha256": "6fcf1a8f171bbd55579fab720f6ee87beee7dbe6091141c7790b22458bd1dbb9",
+    "retained_log": "review-restore.txt",
+    "retained_sha256": "6fcf1a8f171bbd55579fab720f6ee87beee7dbe6091141c7790b22458bd1dbb9",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "build",
+    "command": [
+      "dotnet",
+      "build",
+      "Hexalith.Timesheets.slnx",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-warnaserror",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 25.418,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-build.log",
+    "raw_sha256": "66858455b04081226c7feed601b27ca49b62a78aec2d1738d718c5bc75387a80",
+    "retained_log": "review-build.txt",
+    "retained_sha256": "66858455b04081226c7feed601b27ca49b62a78aec2d1738d718c5bc75387a80",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "Hexalith.Timesheets.ArchitectureTests",
+    "command": [
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 14.954,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.ArchitectureTests.log",
+    "raw_sha256": "8c4bc37230e69512ce0b505325b69fa6a73ea15571b3b3a032cd15515d2cf80a",
+    "retained_log": "review-Hexalith.Timesheets.ArchitectureTests.txt",
+    "retained_sha256": "8c4bc37230e69512ce0b505325b69fa6a73ea15571b3b3a032cd15515d2cf80a",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 117,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Contracts.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 0.72,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Contracts.Tests.log",
+    "raw_sha256": "facded50e4f987eeeadca7aaeed86f2ee95573d6c60b6e6240b56d5bf48b1928",
+    "retained_log": "review-Hexalith.Timesheets.Contracts.Tests.txt",
+    "retained_sha256": "facded50e4f987eeeadca7aaeed86f2ee95573d6c60b6e6240b56d5bf48b1928",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 92,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Server.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 7.865,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Server.Tests.log",
+    "raw_sha256": "efc2a26b50ad4f42da63765e14ef7e6c39d97ccb0c89449c0fdd2c5e176dde08",
+    "retained_log": "review-Hexalith.Timesheets.Server.Tests.txt",
+    "retained_sha256": "efc2a26b50ad4f42da63765e14ef7e6c39d97ccb0c89449c0fdd2c5e176dde08",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 693,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Works.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 0.72,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Works.Tests.log",
+    "raw_sha256": "ac7b034e17712b59c3f289a94f08d551bcea8565ca871de4bee740cd4cc725a7",
+    "retained_log": "review-Hexalith.Timesheets.Works.Tests.txt",
+    "retained_sha256": "ac7b034e17712b59c3f289a94f08d551bcea8565ca871de4bee740cd4cc725a7",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 76,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Projections.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": -15,
+    "elapsed_seconds": 149.211,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Projections.Tests.log",
+    "raw_sha256": "134237c959604d0e4300548fd04a9e07c095710791f31889b3bcb261fb17da28",
+    "retained_log": "review-Hexalith.Timesheets.Projections.Tests.txt",
+    "retained_sha256": "134237c959604d0e4300548fd04a9e07c095710791f31889b3bcb261fb17da28",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "Hexalith.Timesheets.IntegrationTests",
+    "command": [
+      "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": -9,
+    "elapsed_seconds": 183.684,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.IntegrationTests.log",
+    "raw_sha256": "291ccdf119712fc496444933b99284056595c294ecf303d353f25f3f36ab2688",
+    "retained_log": "review-Hexalith.Timesheets.IntegrationTests.txt",
+    "retained_sha256": "291ccdf119712fc496444933b99284056595c294ecf303d353f25f3f36ab2688",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  }
+]

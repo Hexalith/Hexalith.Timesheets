@@ -1,0 +1,10 @@
+{
+  "command": "tests/Hexalith.EventStore.DomainService.Tests/bin/Debug/net10.0/Hexalith.EventStore.DomainService.Tests",
+  "elapsed_seconds_before_termination": 295,
+  "log_idle_seconds": 255.8,
+  "termination": "SIGTERM to verified owned test executable after stalled broad run",
+  "completed": false,
+  "reported_failure": "DomainModuleAuthoringGuardrailTests.TenantsDomainService_DoesNotReferenceGeneratedApiHostOrDeclarePerMessageControllers",
+  "reason": "Required nested EventStore/references/Hexalith.Tenants/src/Hexalith.Tenants/Hexalith.Tenants.csproj is absent; nested initialization is forbidden.",
+  "raw_log_sha256": "1c4aa89ada29da3c91a69b1f04a6ae34e6e5834c086d0f32fcc4bacf942d7199"
+}

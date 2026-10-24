@@ -1,0 +1,92 @@
+[
+  {
+    "name": "server-final-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-warnaserror",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 24.048,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-server-final-build.log",
+    "raw_sha256": "09170a126b61a1ada54a24031e9907d531a1949bdc0f36bf01e27acd8d3bb386",
+    "retained_log": "review-server-final-build.txt",
+    "retained_sha256": "09170a126b61a1ada54a24031e9907d531a1949bdc0f36bf01e27acd8d3bb386",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "telemetry-final",
+    "command": [
+      "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+      "-class",
+      "Hexalith.EventStore.Server.Tests.Telemetry.*"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 5.384,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-telemetry-final.log",
+    "raw_sha256": "d4d3bd87b9f42b3ce7a8c12d86fa90c02652513e8a296aa67731244435c601c5",
+    "retained_log": "review-telemetry-final.txt",
+    "retained_sha256": "d4d3bd87b9f42b3ce7a8c12d86fa90c02652513e8a296aa67731244435c601c5",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 49,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "server-full-final",
+    "command": [
+      "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+      "-longRunning",
+      "60"
+    ],
+    "working_directory": "references/Hexalith.EventStore",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 1,
+    "elapsed_seconds": 239.35,
+    "timeout_seconds": 3600,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-server-full-final.log",
+    "raw_sha256": "6473171badc973009386a968a1d7a6f784094bda87410d822d463ece0b76084f",
+    "retained_log": "review-server-full-final.txt",
+    "retained_sha256": "b40f3d91b239a1a82e87649edc14203de8643b13ff70e9910f764875e5877bbb",
+    "retention_policy": "Full raw stdout/stderr retained in deterministic gzip archive; readable excerpt retains the xUnit failure block and final summary, with LF and trailing whitespace normalized. raw_sha256 binds decompressed archive bytes.",
+    "counts": {
+      "total": 5757,
+      "errors": 0,
+      "failed": 1,
+      "skipped": 25,
+      "not_run": 0
+    },
+    "qualification": "Completed full suite: 5,731 passed, 25 skipped, one tracked-secret guard failure on exactly the 15 byte-identical incoming fixture lines. No owned privacy-marker finding remains. This broad gate is not green.",
+    "raw_log_archive": "review-server-full-final.log.gz",
+    "raw_archive_sha256": "628afdaddf7eee1b32543f0ea43dd6c04f44c59c5475c647496b6db8a5c7930c"
+  }
+]

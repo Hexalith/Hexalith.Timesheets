@@ -208,7 +208,8 @@ class IsolatedFixtureTests(unittest.TestCase):
 
     def test_runtime_children_discard_probe_only_settings_and_provider_aliases(self):
         pollution = {prefix + name: "1" for prefix in ("", "ASPIRE_", "DOTNET_", "ASPNETCORE_")
-                     for name in ("TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "timesheets_live_dapr_validate_only")}
+                     for name in ("TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "timesheets_live_dapr_validate_only",
+                                  "TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY")}
         caller = dict(os.environ)
         commands = Commands()
         with patch.dict(os.environ, pollution):
@@ -401,6 +402,9 @@ class IsolatedFixtureTests(unittest.TestCase):
             name = names[0]
             if failed:
                 return subprocess.CompletedProcess(arguments, 42, "Guard failed", "")
+            if name == "full-construction":
+                return subprocess.CompletedProcess(arguments, 0,
+                    'Timesheets construction model: {"gatewayCredentials": 1, "timesheetsCredentials": 1}', "")
             if name.startswith("model-"):
                 port = 18080 if name == "model-alternate" else 8080
                 output = "Timesheets endpoint model: " + json.dumps([
@@ -728,13 +732,16 @@ class IsolatedFixtureTests(unittest.TestCase):
             self.assertEqual(0, guards.run_guards())
         probes = {arguments[1].split("=", 1)[1]: (arguments, kwargs["env"])
                   for arguments, kwargs in commands.calls if arguments[0] == str(executable)}
-        self.assertEqual(62, len(probes))
+        self.assertEqual(63, len(probes))
         for name, (arguments, environment) in probes.items():
-            model = name.startswith("model-")
+            model = name.startswith("model-") or name == "full-construction"
             self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"], name)
             self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
-            if model:
+            if name.startswith("model-"):
                 self.assertIn("--TIMESHEETS_LIVE_DAPR_MODEL_ONLY=1", arguments)
+            if name == "full-construction":
+                self.assertIn("--TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY=1", arguments)
+                self.assertIn("--TIMESHEETS_LIVE_DAPR_MODEL_ONLY=0", arguments)
         for name in ("bare-fixture-flag", "missing-components", "empty-components", "whitespace-components"):
             environment = probes[name][1]
             self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_FIXTURE"])
@@ -771,18 +778,43 @@ class IsolatedFixtureTests(unittest.TestCase):
                 patch.object(guards, "read_only_shared_snapshot", side_effect=AssertionError("Unexpected storage read")), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, guards.run_guards(configuration_only=True))
-        self.assertEqual(62, len(commands.calls))
+        self.assertEqual(63, len(commands.calls))
         for arguments, kwargs in commands.calls:
             self.assertEqual(str(executable), arguments[0])
             self.assertEqual("1", kwargs["env"]["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"])
             self.assertTrue(all(isinstance(value, str) for value in kwargs["env"].values()))
-            model = arguments[1].split("=", 1)[1].startswith("model-")
+            probe = arguments[1].split("=", 1)[1]
+            model = probe.startswith("model-") or probe == "full-construction"
             self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
             self.assertFalse(set(polluted) & set(kwargs["env"]))
         self.assertIsNone(instance.scratch)
         self.assertFalse(commands.containers)
         self.assertEqual({"configuration": "Debug", "configuration_only": True, "resources_enabled": False},
                          json.loads((instance.log_directory / "guards-mode.json").read_text()))
+
+    def test_full_construction_probe_refuses_duplicate_missing_or_failed_credentials_without_starting(self):
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        for changed, exit_code in (("gatewayCredentials", 0), ("timesheetsCredentials", 0), (None, -6)):
+            with self.subTest(changed=changed, exit_code=exit_code):
+                commands = self.guard_commands()
+                original = commands.failure
+                def mutation(arguments):
+                    result = original(arguments)
+                    if "--guard-probe=full-construction" in arguments:
+                        result.returncode = exit_code
+                        if changed:
+                            result.stdout = result.stdout.replace('"' + changed + '": 1',
+                                '"' + changed + '": ' + ("2" if changed == "gatewayCredentials" else "0"))
+                    return result
+                commands.failure = mutation
+                instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+                with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                        patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(1, guards.run_guards(configuration_only=True))
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.containers)
 
     def test_release_configuration_guards_select_package_assets_and_require_adapter_refusal(self):
         commands = self.guard_commands(package=True)
@@ -797,10 +829,11 @@ class IsolatedFixtureTests(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, guards.run_guards(configuration_only=True, configuration="Release"))
         self.assertEqual(caller, dict(os.environ))
-        self.assertEqual(62, len(commands.calls))
+        self.assertEqual(63, len(commands.calls))
         for arguments, kwargs in commands.calls:
             self.assertEqual(str(executable), arguments[0])
-            model = arguments[1].split("=", 1)[1].startswith("model-")
+            probe = arguments[1].split("=", 1)[1]
+            model = probe.startswith("model-") or probe == "full-construction"
             self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
             self.assertEqual("Release", kwargs["env"]["Configuration"])
             self.assertEqual("false", kwargs["env"]["UseHexalithProjectReferences"])

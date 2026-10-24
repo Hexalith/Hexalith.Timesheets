@@ -1,0 +1,18 @@
+{
+  "initial_command": [
+    "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests"
+  ],
+  "initial_exit": 1,
+  "initial_total": 76,
+  "initial_failed": 52,
+  "copied_contracts_assembly_version": "3.126.0.0",
+  "works_contracts_reference_version": "3.127.0.0",
+  "metadata_inspector": "dnx dotnet-inspect -y -- library <assembly> -s \"Library Info\" / References",
+  "cause": "NuGet discards ProjectReference metadata during its project-path walk; build-only forwarding produced differing restore and compiler versions.",
+  "correction": "Promote the evaluated consumer version through solution/project restore traversal and source build edges.",
+  "failure_log_sha256": "8dce5aabf9587098c133662e1cabb52cca9f704e0665b905474a6151e47e6a35",
+  "corrected_default_restore_exit": 0,
+  "corrected_default_build_exit": 0,
+  "version_workaround": false,
+  "works_read_only": true
+}

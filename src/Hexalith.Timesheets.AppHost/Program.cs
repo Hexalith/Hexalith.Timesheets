@@ -171,12 +171,30 @@ if (builder.ExecutionContext.IsRunMode)
         return;
     }
 
-    _ = eventStore.WithGeneratedEventStoreAppChannelToken();
+    // AddHexalithEventStore already generates the gateway's app-channel credential.
     _ = timesheets.WithGeneratedEventStoreAppChannelToken();
 }
 
 if (ReportEndpointModelIfRequested(builder, timesheets))
 {
+    return;
+}
+
+if (builder.Configuration["TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY"] == "1")
+{
+    if (!builder.ExecutionContext.IsRunMode)
+    {
+        throw new InvalidOperationException("Full construction probes require run mode.");
+    }
+
+    // Construct and dispose the complete graph, including credential generation.
+    // Never start resources. Report counts only; parameter values remain secret.
+    await using DistributedApplication application = builder.Build();
+    Console.WriteLine("Timesheets construction model: " + System.Text.Json.JsonSerializer.Serialize(new
+    {
+        gatewayCredentials = builder.Resources.OfType<ParameterResource>().Count(parameter => parameter.Name == "eventstore-app-api-token"),
+        timesheetsCredentials = builder.Resources.OfType<ParameterResource>().Count(parameter => parameter.Name == "timesheets-app-api-token"),
+    }));
     return;
 }
 

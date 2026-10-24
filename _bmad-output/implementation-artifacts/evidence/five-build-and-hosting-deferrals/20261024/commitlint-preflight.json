@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-24",
+  "results": [
+    {
+      "name": "timesheets-content",
+      "command": [
+        "node",
+        "node_modules/@commitlint/cli/cli.js",
+        "--edit",
+        "/tmp/five-build-timesheets-commit.txt",
+        "--verbose"
+      ],
+      "working_directory": ".",
+      "cli_version": "21.2.2",
+      "configuration_sha256": "e8fdeb85881747c8ec254f49fcffcd0c5ecba08042ed41907a8dea8e9b45e920",
+      "candidate": "fix: close five build and hosting deferrals\n",
+      "candidate_sha256": "899f255f6ec548bf7d8b14b2be97bca757046d8ea65b38c436df75b9fa4f85e1",
+      "exit": 0,
+      "output": "\u29d7   --- input ---\nfix: close five build and hosting deferrals\n\u2714   found 0 problems, 0 warnings\n"
+    },
+    {
+      "name": "timesheets-pointer",
+      "command": [
+        "node",
+        "node_modules/@commitlint/cli/cli.js",
+        "--edit",
+        "/tmp/five-build-gitlink-commit.txt",
+        "--verbose"
+      ],
+      "working_directory": ".",
+      "cli_version": "21.2.2",
+      "configuration_sha256": "e8fdeb85881747c8ec254f49fcffcd0c5ecba08042ed41907a8dea8e9b45e920",
+      "candidate": "build(deps): consume shared hosting boundary fixes\n",
+      "candidate_sha256": "a1166609b1ee21296a23f552077c9d3cf2cfb1455e6241c4fdb1ab0c31c46375",
+      "exit": 0,
+      "output": "\u29d7   --- input ---\nbuild(deps): consume shared hosting boundary fixes\n\u2714   found 0 problems, 0 warnings\n"
+    },
+    {
+      "name": "eventstore-content",
+      "command": [
+        "node",
+        "node_modules/@commitlint/cli/cli.js",
+        "--edit",
+        "/tmp/five-build-eventstore-commit.txt",
+        "--verbose"
+      ],
+      "working_directory": "references/Hexalith.EventStore",
+      "cli_version": "21.1.0",
+      "configuration_sha256": "796a04abdd8c35e645f654c9d8d571556f34ccf4ab3611c9327697a452add38d",
+      "candidate": "fix: protect request logs and expose legacy keyed domains\n",
+      "candidate_sha256": "cb5219b382920f5a211bc967e34c2b9e03717ce3e96330a596a49f176a8bd908",
+      "exit": 0,
+      "output": "\u29d7   --- input ---\nfix: protect request logs and expose legacy keyed domains\n\u2714   found 0 problems, 0 warnings\n"
+    },
+    {
+      "name": "publication-results",
+      "command": [
+        "node",
+        "node_modules/@commitlint/cli/cli.js",
+        "--edit",
+        "/tmp/five-build-publication-docs-commit.txt",
+        "--verbose"
+      ],
+      "working_directory": ".",
+      "cli_version": "21.2.2",
+      "configuration_sha256": "e8fdeb85881747c8ec254f49fcffcd0c5ecba08042ed41907a8dea8e9b45e920",
+      "candidate": "docs: record deferred-work publication results\n",
+      "candidate_sha256": "cf1d2b639ef24b445e17e765506562380a268c4c3d9d52ab66e188976ac6ea67",
+      "exit": 0,
+      "output": "\u29d7   --- input ---\ndocs: record deferred-work publication results\n\u2714   found 0 problems, 0 warnings\n"
+    }
+  ]
+}

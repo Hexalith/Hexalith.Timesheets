@@ -1,0 +1,7 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: Hexalith.Timesheets.Works.Tests
+  Discovered:  Hexalith.Timesheets.Works.Tests
+  Starting:    Hexalith.Timesheets.Works.Tests
+  Finished:    Hexalith.Timesheets.Works.Tests (ID = '4dc2ba346df86e546bf40ea26104c1ab5d8a392022d27975cd17ffc12276ef86')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.Works.Tests  Total: 76, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0.332s

@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <!-- The SDK adds a direct Works.Contracts reference from transitive restore assets. -->
+    <!-- The SDK adds a direct Works.Contracts reference from transitive restore assets.
+         ForwardTimesheetsWorksVersion in Directory.Build.targets supplies its consumer version; solution/project restore traversal uses the same version. -->
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
   </PropertyGroup>
 

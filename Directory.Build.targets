@@ -1,4 +1,24 @@
 <Project>
+  <PropertyGroup Condition="$(MSBuildProjectName.StartsWith('Hexalith.Timesheets')) and '$(UseHexalithProjectReferences)' == 'true'">
+    <_GenerateRestoreGraphProjectEntryInputProperties>$(_GenerateRestoreGraphProjectEntryInputProperties);HexalithEventStoreVersion=$(HexalithEventStoreVersion)</_GenerateRestoreGraphProjectEntryInputProperties>
+  </PropertyGroup>
+  <ItemGroup Condition="$(MSBuildProjectName.StartsWith('Hexalith.Timesheets')) and '$(UseHexalithProjectReferences)' == 'true'">
+    <ProjectReference Update="@(ProjectReference)">
+      <AdditionalProperties>%(ProjectReference.AdditionalProperties);HexalithEventStoreVersion=$(HexalithEventStoreVersion)</AdditionalProperties>
+    </ProjectReference>
+  </ItemGroup>
+  <!-- IncludeTransitiveProjectReferences can add Works edges after project evaluation.
+       Apply the evaluated consumer version before SDK solution configuration assignment. -->
+  <Target Name="ForwardTimesheetsWorksVersion" BeforeTargets="AssignProjectConfiguration"
+          DependsOnTargets="IncludeTransitiveProjectReferences"
+          Condition="$(MSBuildProjectName.StartsWith('Hexalith.Timesheets')) and '$(UseHexalithProjectReferences)' == 'true'">
+    <ItemGroup>
+      <ProjectReference Update="@(ProjectReference)">
+        <AdditionalProperties>%(ProjectReference.AdditionalProperties);HexalithEventStoreVersion=$(HexalithEventStoreVersion)</AdditionalProperties>
+      </ProjectReference>
+    </ItemGroup>
+  </Target>
+
   <!-- Some root-declared dependencies have no Directory.Build.targets and MSBuild
        searches upward. This module's policy must never govern their own tool builds. -->
   <Target Name="ValidateTimesheetsDependencyMode" BeforeTargets="CollectPackageReferences;CoreCompile"

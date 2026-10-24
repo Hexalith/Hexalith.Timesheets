@@ -1,0 +1,13 @@
+{
+  "reason": "Restart the broad Server run after correcting its newly discovered fixed-marker scanner failure; keep all scanner rules and unrelated fixtures unchanged. No silence-based termination.",
+  "owned_processes": [],
+  "previous_run_completed_before_restart": true,
+  "terminated_process_count": 0,
+  "previous_run_counts": {
+    "total": 5757,
+    "failed": 1,
+    "skipped": 25,
+    "errors": 0,
+    "not_run": 0
+  }
+}

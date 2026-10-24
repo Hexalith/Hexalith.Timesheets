@@ -1,0 +1,9 @@
+{
+  "reason": "Prior retained successful baseline took 912.604 s for Projections and 824.091 s for Integration; shared 900 s budget is inadequate.",
+  "old_shared_timeout_seconds": 900,
+  "new_projections_total_timeout_seconds": 1800,
+  "suite_elapsed_at_extension_seconds": 504,
+  "test_process_interrupted": false,
+  "wrapper_only_suspended_until_child_exit": true,
+  "wrapper_resumed": true
+}

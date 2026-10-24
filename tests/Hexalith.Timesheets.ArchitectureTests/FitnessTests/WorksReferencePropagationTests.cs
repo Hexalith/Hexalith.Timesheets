@@ -35,6 +35,7 @@ public sealed class WorksReferencePropagationTests
             XElement properties = new("Project", new XElement("PropertyGroup",
                 new XElement("TargetFramework", "net10.0"),
                 new XElement("HexalithWorksRoot", works),
+                new XElement("HexalithEventStoreVersion", new XAttribute("Condition", "'$(HexalithEventStoreVersion)' == ''"), "4.5.6"),
                 new XElement("UseHexalithProjectReferences", new XAttribute("Condition", "'$(Configuration)' == 'Debug'"), "true"),
                 new XElement("UseHexalithProjectReferences", new XAttribute("Condition", "'$(UseHexalithProjectReferences)' == ''"), "false")));
             if (testConsumer)
@@ -46,8 +47,9 @@ public sealed class WorksReferencePropagationTests
                         Path.Combine(works, "src", "Hexalith.Works.Contracts", "Hexalith.Works.Contracts.csproj")))));
             }
             new XDocument(properties).Save(Path.Combine(consumer, "Directory.Build.props"));
+            File.Copy(RepositoryRoot.PathTo("Directory.Build.targets"), Path.Combine(consumer, "Directory.Build.targets"));
             // Mirror the referenced module's pre-SDK defaults without restoring packages or
-            // depending on a populated sibling checkout. Version forwarding remains separately deferred.
+            // depending on a populated sibling checkout. Its default intentionally differs from the consumer.
             File.WriteAllText(Path.Combine(works, "Directory.Build.props"), """
                 <Project>
                   <PropertyGroup>
@@ -70,7 +72,7 @@ public sealed class WorksReferencePropagationTests
                     <Error Condition="'$(Configuration)' == 'Release' and ('@(_WorksEdge)' != '' or ('$(MSBuildProjectName)' == 'Hexalith.Timesheets.Works' and '@(_WorksPackage)' == ''))" Text="Release must not select the external Works project." />
                     <Error Condition="'$(Configuration)' == 'Debug' and '@(_WorksEdge)' == ''" Text="Debug must select the external Works project." />
                     <MSBuild Projects="@(_WorksEdge)" Targets="ProbeChild"
-                             Properties="%(_WorksEdge.SetConfiguration);%(_WorksEdge.SetPlatform)"
+                             Properties="%(_WorksEdge.SetConfiguration);%(_WorksEdge.SetPlatform);%(_WorksEdge.AdditionalProperties)"
                              RemoveProperties="%(_WorksEdge.GlobalPropertiesToRemove)" />
                   </Target>
                   <Target Name="ProbeChild">
@@ -117,7 +119,7 @@ public sealed class WorksReferencePropagationTests
             process.ExitCode.ShouldBe(0, (await output) + (await error));
             if (configuration == "Debug")
             {
-                File.ReadAllLines(result).ShouldBe(["Debug", "true", suppliedVersion ?? "1.2.3"]);
+                File.ReadAllLines(result).ShouldBe(["Debug", "true", suppliedVersion ?? "4.5.6"]);
             }
             else
             {

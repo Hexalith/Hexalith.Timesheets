@@ -1,0 +1,10 @@
+{
+  "original_eventstore_baseline": "e1d8b17160202761ab5c9606cafbcf4d1a4b92c3",
+  "integrated_eventstore_baseline": "6e927633d920eafcefa2635a124810b541264489",
+  "fast_forward_only": true,
+  "incoming_commits": 10,
+  "direct_patch_overlap": [],
+  "patch_file_hashes_preserved": true,
+  "stash_recovery_id": "c3bb1c48179e99bc5a11bd3476c1d9afe78555c2",
+  "nested_submodule_updates": false
+}

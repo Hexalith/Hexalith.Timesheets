@@ -1,0 +1,14 @@
+{
+  "consumer_eventstore_version": [
+    "3.127.0"
+  ],
+  "works_default_eventstore_version": [
+    "3.126.0"
+  ],
+  "works_build_props_sha256": "ca0995d82be6ebc96815114de8c0c0ceeaf3bb78607c21c8cf7849d816096598",
+  "version_override_supplied": false,
+  "consumer_path": "Directory.Packages.props",
+  "works_path": "references/Hexalith.Works/Directory.Build.props",
+  "source": true,
+  "configuration": "Debug"
+}

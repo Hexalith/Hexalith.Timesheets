@@ -1,0 +1,9 @@
+{
+  "command": "timeout 300s tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+  "elapsed_seconds_before_termination": 215,
+  "log_idle_seconds": 205.3,
+  "termination": "SIGTERM to verified owned test executable after stalled broad run (before outer 300s bound)",
+  "completed": false,
+  "raw_log_sha256": "4d1bacf0c52acd592f54410f0af9d0d1f450623f7a12bcacd97fb363659596c6",
+  "observed_test_failure": false
+}

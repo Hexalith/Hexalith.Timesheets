@@ -1,0 +1,22 @@
+{
+  "works": {
+    "passed": true,
+    "coverage": "Final integrated Architecture 117 includes six traversal and eight restore/build/runtime cases (including lowercase property pollution and Works assets/compiled references); Works 76 passed. The historical restore mutant fails two default cases and preserves two explicit overrides."
+  },
+  "construction": {
+    "passed": true,
+    "coverage": "63 compiled probes; full construction counts 1/1; duplicate mutant rejected."
+  },
+  "logging": {
+    "passed": true,
+    "coverage": "Final upstream telemetry 49 includes ten privacy/filter cases, including late provider post-configuration and validation ordering. The unchanged consuming HTTP filter is exercised by the final Integration suite."
+  },
+  "metadata": {
+    "passed": true,
+    "coverage": "Final metadata 99 includes both keyed processor forms, null/empty/invalid names, case-insensitive merge with retained query metadata, orphan refusal and unchanged v2 capability/fingerprint."
+  },
+  "advisory": {
+    "passed": true,
+    "coverage": "Official withdrawal and fresh audit asserted; input hashes unchanged; unrelated findings separately tracked."
+  }
+}

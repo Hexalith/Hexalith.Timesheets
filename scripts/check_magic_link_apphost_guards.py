@@ -4,6 +4,7 @@ Run after the matching AppHost build (Debug/source locally, Release/package in C
 Configuration probes exit before constructing resources; model probes inspect
 annotations before Build/Run. Shared/missing-control probes and ordinary-default selection cannot
 activate retained storage even if the validation under test regresses.
+The full construction probe builds and disposes the complete run-mode graph without Start/Run.
 --configuration-only runs the same no-resource probes without starting private
 services or requiring an idle runtime; it supplies unused loopback test values.
 """
@@ -49,7 +50,7 @@ def _run_guards(log_directory, configuration_only, configuration):
     # to :. Remove caller overrides, including host-prefixed providers, so
     # missing-setting probes actually exercise missing settings.
     controlled = {key.casefold() for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
-        "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY", "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_REDIS_HOST",
+        "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY", "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY", "TIMESHEETS_LIVE_DAPR_REDIS_HOST",
         GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
         "Timesheets:LocalPublicPort", "Dapr:PlacementHostAddress", "Dapr:SchedulerHostAddress", "AppHost:Operation", "Publishing:Publisher")}
     for key in tuple(fixture.environment):
@@ -266,6 +267,21 @@ def _run_guards(log_directory, configuration_only, configuration):
                     name + " endpoint names, ports, external flags, or explicit proxy modes changed")
             results.append({"case": name, "exit": result.returncode, "passed": True, "endpoints": model})
             print(name + ": compiled endpoint model check passed", flush=True)
+        fixture.environment = dict(baseline)
+        for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
+                    "Dapr__PlacementHostAddress", "Dapr__SchedulerHostAddress"):
+            fixture.environment.pop(key, None)
+        result = fixture.run_command([str(executable), "--guard-probe=full-construction",
+            "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=0", "--TIMESHEETS_LIVE_DAPR_MODEL_ONLY=0",
+            "--TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY=1", "--AppHost:Operation=run"], check=False)
+        marker = "Timesheets construction model: "
+        lines = [line[len(marker):] for line in (result.stdout or "").splitlines() if line.startswith(marker)]
+        require(result.returncode == 0 and len(lines) == 1, "full-construction model was not verified")
+        construction = json.loads(lines[0])
+        require(construction == {"gatewayCredentials": 1, "timesheetsCredentials": 1},
+                "Full construction must retain exactly one gateway and one Timesheets credential")
+        results.append({"case": "full-construction", "exit": result.returncode, "passed": True, "credentials": construction})
+        print("full-construction: compiled graph construction/disposal passed without Start/Run", flush=True)
         fixture.write_evidence("guards.json", json.dumps(results, indent=2) + "\n")
         fixture.environment = baseline
         status = 0

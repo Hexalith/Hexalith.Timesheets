@@ -1,0 +1,47 @@
+{
+  "root_log_audit": "Build success and zero warnings/errors confirmed against retained logs; restore logs retained with implementation-reported exit codes.",
+  "builds": [
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+      "working_directory": ".",
+      "result_reported_by_implementation": 0,
+      "log": "timesheets-final-restore.txt",
+      "sha256": "68a1bea73bc5c2218b3c209b2b9a6b260749dbe178670c8c1efbe2f9f04e62e6"
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+      "working_directory": ".",
+      "result_reported_by_implementation": 0,
+      "log": "timesheets-final-build.txt",
+      "sha256": "fdd55a7490a94735793c1f1abc05b3581dc9628cdb39577477c8e6513c6adfed"
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home NUGET_PACKAGES=/home/administrator/.nuget/packages dotnet restore tests/Hexalith.EventStore.DomainService.Tests/Hexalith.EventStore.DomainService.Tests.csproj -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+      "working_directory": "references/Hexalith.EventStore",
+      "result_reported_by_implementation": 0,
+      "log": "eventstore-domain-restore-usercache.txt",
+      "sha256": "08c0da94ac6d9b75a5d5e89a0f4e113c7b6e3f5f689429c1896cf144ae455015"
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home NUGET_PACKAGES=/home/administrator/.nuget/packages dotnet build tests/Hexalith.EventStore.DomainService.Tests/Hexalith.EventStore.DomainService.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+      "working_directory": "references/Hexalith.EventStore",
+      "result_reported_by_implementation": 0,
+      "log": "eventstore-domain-build.txt",
+      "sha256": "2a1a9ad0e3e1262b720033520c3d839246f0559705a4b8479a12591578f7b0e1"
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home NUGET_PACKAGES=/home/administrator/.nuget/packages dotnet restore tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+      "working_directory": "references/Hexalith.EventStore",
+      "result_reported_by_implementation": 0,
+      "log": "eventstore-server-restore.txt",
+      "sha256": "b78fb83d053a1758f00af75070ddde902fe71e98e75953d645317f97f6cb30ff"
+    },
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home NUGET_PACKAGES=/home/administrator/.nuget/packages dotnet build tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+      "working_directory": "references/Hexalith.EventStore",
+      "result_reported_by_implementation": 0,
+      "log": "eventstore-server-build.txt",
+      "sha256": "447c127f11f757b2c02bdc548155da16db5bc2e80629f8c7e49830743448a42b"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "command": "root evidence integrity and advisory assertions",
+  "passed": true,
+  "five_resolution_notes": 5,
+  "original_ledger_lines_preserved": true,
+  "entry_points_synchronized": true,
+  "advisory_inputs_identical_to_baseline": true,
+  "withdrawn_at": "2026-10-23T12:53:02Z",
+  "unrelated_packages": [
+    "fast-uri",
+    "ip-address",
+    "undici"
+  ],
+  "works_unchanged": true
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests",
+    "-class",
+    "Hexalith.EventStore.Server.Tests.Telemetry.*"
+  ],
+  "working_directory": "references/Hexalith.EventStore",
+  "exit": 0,
+  "elapsed_seconds": 5.079,
+  "log_sha256": "312db6321fe8665941252c50a6a9dd375222750062245d96ffcdeef0eba0769d",
+  "counts": {
+    "total": 48,
+    "errors": 0,
+    "failed": 0,
+    "skipped": 0,
+    "not_run": 0
+  }
+}

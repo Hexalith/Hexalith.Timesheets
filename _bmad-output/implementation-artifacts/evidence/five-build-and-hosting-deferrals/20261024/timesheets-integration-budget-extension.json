@@ -1,0 +1,8 @@
+{
+  "old_shared_timeout_seconds": 900,
+  "effective_integration_total_timeout_seconds": 1800,
+  "suite_elapsed_at_extension_seconds": 44,
+  "reason": "Give Integration its own 30-minute budget after Projections consumed most of the shared allowance.",
+  "test_process_interrupted": false,
+  "wrapper_only_suspended_until_child_exit": true
+}

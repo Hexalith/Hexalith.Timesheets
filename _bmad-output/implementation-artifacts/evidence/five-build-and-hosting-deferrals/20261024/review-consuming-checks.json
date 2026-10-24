@@ -1,0 +1,295 @@
+[
+  {
+    "name": "restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "Hexalith.Timesheets.slnx",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 2.381,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-restore.log",
+    "raw_sha256": "26dfafa5cad8b7eb6123a7c534acaae8dc6fbe78cbce5371aeaf641560a74aa0",
+    "retained_log": "review-restore.txt",
+    "retained_sha256": "26dfafa5cad8b7eb6123a7c534acaae8dc6fbe78cbce5371aeaf641560a74aa0",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "build",
+    "command": [
+      "dotnet",
+      "build",
+      "Hexalith.Timesheets.slnx",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-warnaserror",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 25.886,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-build.log",
+    "raw_sha256": "8dfddde32a54f2fbeecfaabb8e7f73e6483f23500c55f2fa8a28158182e08ff8",
+    "retained_log": "review-build.txt",
+    "retained_sha256": "8dfddde32a54f2fbeecfaabb8e7f73e6483f23500c55f2fa8a28158182e08ff8",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "Hexalith.Timesheets.ArchitectureTests",
+    "command": [
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 17.935,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.ArchitectureTests.log",
+    "raw_sha256": "3b89251d9c82652408e44867573a0c55e420eb0f65c7603e6ac4894d0c17144f",
+    "retained_log": "review-Hexalith.Timesheets.ArchitectureTests.txt",
+    "retained_sha256": "3b89251d9c82652408e44867573a0c55e420eb0f65c7603e6ac4894d0c17144f",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 117,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Contracts.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 0.67,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Contracts.Tests.log",
+    "raw_sha256": "d2496734bcc320e29628e8dc9505877b97783c5412476c5eeb064565dba32135",
+    "retained_log": "review-Hexalith.Timesheets.Contracts.Tests.txt",
+    "retained_sha256": "d2496734bcc320e29628e8dc9505877b97783c5412476c5eeb064565dba32135",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 92,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Server.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 7.958,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Server.Tests.log",
+    "raw_sha256": "21b221f1387b4d3e2d8143b4a8ab1f7be39f8183eb083426c89f927408123ca3",
+    "retained_log": "review-Hexalith.Timesheets.Server.Tests.txt",
+    "retained_sha256": "21b221f1387b4d3e2d8143b4a8ab1f7be39f8183eb083426c89f927408123ca3",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 693,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Works.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 0.57,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Works.Tests.log",
+    "raw_sha256": "11bcaa3cd69d474a270be742a4cb9e05657ec37465b640e311c0c31d52fb2118",
+    "retained_log": "review-Hexalith.Timesheets.Works.Tests.txt",
+    "retained_sha256": "11bcaa3cd69d474a270be742a4cb9e05657ec37465b640e311c0c31d52fb2118",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 76,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.Projections.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 886.431,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.Projections.Tests.log",
+    "raw_sha256": "f7641f8b788b317616729a344e2c0c1f7eea4d3c1019c1dac0658bae96ca2309",
+    "retained_log": "review-Hexalith.Timesheets.Projections.Tests.txt",
+    "retained_sha256": "f7641f8b788b317616729a344e2c0c1f7eea4d3c1019c1dac0658bae96ca2309",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 697,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "Hexalith.Timesheets.IntegrationTests",
+    "command": [
+      "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 752.214,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-Hexalith.Timesheets.IntegrationTests.log",
+    "raw_sha256": "9eb78bd56b5830562ad6a4a52abb0330ac686ee48aa0d05ed70d494a799c2f06",
+    "retained_log": "review-Hexalith.Timesheets.IntegrationTests.txt",
+    "retained_sha256": "9eb78bd56b5830562ad6a4a52abb0330ac686ee48aa0d05ed70d494a799c2f06",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized.",
+    "counts": {
+      "total": 923,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 5,
+      "not_run": 0
+    }
+  },
+  {
+    "name": "apphost",
+    "command": [
+      "python3",
+      "scripts/check_magic_link_apphost_guards.py",
+      "--configuration-only"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 21.77,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-apphost.log",
+    "raw_sha256": "30c9ff9c28616c5186f4e0572b5292b71cc98bef5ee5f836e40e7b4b8c401f2f",
+    "retained_log": "review-apphost.txt",
+    "retained_sha256": "30c9ff9c28616c5186f4e0572b5292b71cc98bef5ee5f836e40e7b4b8c401f2f",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "python-fixture",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "scripts",
+      "-p",
+      "test_*.py"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 22.118,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-python-fixture.log",
+    "raw_sha256": "18905b114bc22f2445fd3a30e2ea125ac90c6834ec58e418639bc06db3867b5b",
+    "retained_log": "review-python-fixture.txt",
+    "retained_sha256": "18905b114bc22f2445fd3a30e2ea125ac90c6834ec58e418639bc06db3867b5b",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  },
+  {
+    "name": "python-tooling",
+    "command": [
+      "python3",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "scripts/tests",
+      "-p",
+      "test_*.py"
+    ],
+    "working_directory": ".",
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+      "NUGET_PACKAGES": "/home/administrator/.nuget/packages"
+    },
+    "exit": 0,
+    "elapsed_seconds": 1.067,
+    "timeout_seconds": 1800,
+    "timed_out": false,
+    "raw_log": "/tmp/five-build-review-python-tooling.log",
+    "raw_sha256": "39c573f8fec3c44bd2f96441fe70b9e088da5938a70c45591e477cd4d25dcaf5",
+    "retained_log": "review-python-tooling.txt",
+    "retained_sha256": "39c573f8fec3c44bd2f96441fe70b9e088da5938a70c45591e477cd4d25dcaf5",
+    "retention_policy": "Full stdout/stderr, ANSI removed, LF and trailing whitespace normalized."
+  }
+]

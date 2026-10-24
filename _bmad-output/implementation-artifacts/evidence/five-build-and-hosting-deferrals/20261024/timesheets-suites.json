@@ -1,0 +1,66 @@
+[
+  {
+    "project": "Hexalith.Timesheets.ArchitectureTests",
+    "command": [
+      "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 11.277,
+    "overall_timeout_seconds": 900,
+    "counts": {
+      "total": 109,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "project": "Hexalith.Timesheets.Contracts.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 0.617,
+    "overall_timeout_seconds": 900,
+    "counts": {
+      "total": 92,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "project": "Hexalith.Timesheets.Server.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 7.784,
+    "overall_timeout_seconds": 900,
+    "counts": {
+      "total": 693,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  },
+  {
+    "project": "Hexalith.Timesheets.Projections.Tests",
+    "command": [
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests"
+    ],
+    "exit": 0,
+    "elapsed_seconds": 724.488,
+    "overall_timeout_seconds": 900,
+    "counts": {
+      "total": 697,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0
+    }
+  }
+]

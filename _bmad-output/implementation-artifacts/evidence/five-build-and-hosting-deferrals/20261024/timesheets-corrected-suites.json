@@ -1,0 +1,131 @@
+{
+  "total": 2594,
+  "passed": 2589,
+  "skipped": 5,
+  "failed": 0,
+  "suites": [
+    {
+      "name": "works-corrected",
+      "command": [
+        "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.467,
+      "log": "/tmp/five-build-root-works-corrected.log",
+      "counts": {
+        "total": 76,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0
+      },
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "retained_log": "Hexalith.Timesheets.Works.Tests.txt",
+      "sha256": "7ef069255368e54fbfcdcac9a767e61f0c7fabe6d8419e3ff27db2c2e03f2882"
+    },
+    {
+      "name": "architecture-corrected",
+      "command": [
+        "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 9.539,
+      "log": "/tmp/five-build-root-architecture-corrected.log",
+      "counts": {
+        "total": 113,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0
+      },
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "retained_log": "Hexalith.Timesheets.ArchitectureTests.txt",
+      "sha256": "3b6c5dd057c1d3f25ee2736cd9596d1b341a03f4fd04b1f911b545a161212b13"
+    },
+    {
+      "name": "Hexalith.Timesheets.Contracts.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests"
+      ],
+      "working_directory": ".",
+      "exit": 0,
+      "timeout_seconds": 1800,
+      "elapsed_seconds": 0.566,
+      "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.Contracts.Tests.log",
+      "sha256": "10dee0552d8604133765c42a83d5513671c78f2db6a86a0fe7dab08a627d6903",
+      "counts": {
+        "total": 92,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0
+      },
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "retained_log": "Hexalith.Timesheets.Contracts.Tests.txt"
+    },
+    {
+      "name": "Hexalith.Timesheets.Server.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests"
+      ],
+      "working_directory": ".",
+      "exit": 0,
+      "timeout_seconds": 1800,
+      "elapsed_seconds": 7.683,
+      "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.Server.Tests.log",
+      "sha256": "fff558bdf77d4de703ecf2fdc1fe417adcbea5255671445cc39ffea29278de44",
+      "counts": {
+        "total": 693,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0
+      },
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "retained_log": "Hexalith.Timesheets.Server.Tests.txt"
+    },
+    {
+      "name": "Hexalith.Timesheets.Projections.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests"
+      ],
+      "working_directory": ".",
+      "exit": 0,
+      "timeout_seconds": 1800,
+      "elapsed_seconds": 703.343,
+      "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.Projections.Tests.log",
+      "sha256": "4f4494e223df79d2597243631119cc77638b6653e933e39296970435b1a0248c",
+      "counts": {
+        "total": 697,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0
+      },
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "retained_log": "Hexalith.Timesheets.Projections.Tests.txt"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+      ],
+      "working_directory": ".",
+      "exit": 0,
+      "timeout_seconds": 1800,
+      "elapsed_seconds": 760.418,
+      "log": "/tmp/five-build-root-corrected-Hexalith.Timesheets.IntegrationTests.log",
+      "sha256": "f8637080aa3ef39aa0019431ba9c6bf772e63bb68100a154ae4689691b385043",
+      "counts": {
+        "total": 923,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 5,
+        "not_run": 0
+      },
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "retained_log": "Hexalith.Timesheets.IntegrationTests.txt"
+    }
+  ],
+  "qualification": "All six individual suites verified the corrected default version graph. Later SDK-only legacy-input/filter refinements have final focused upstream and consuming-host evidence."
+}

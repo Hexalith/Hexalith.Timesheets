@@ -1,0 +1,23 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.13)
+  Discovering: Hexalith.Timesheets.IntegrationTests
+  Discovered:  Hexalith.Timesheets.IntegrationTests
+  Starting:    Hexalith.Timesheets.IntegrationTests
+    Hexalith.Timesheets.IntegrationTests.PerformanceEvidenceLaneTests.PerformanceLaneIsReservedForLaunchLatencyEvidence [SKIP]
+      Performance evidence requires realistic EventStore-backed command/report fixtures in a later data-bearing story.
+    Hexalith.Timesheets.IntegrationTests.MagicLinkLiveDaprTests.RecordedMagicLinksCommitOneUseAndSurviveActorRestart [SKIP]
+      Set TIMESHEETS_LIVE_DAPR=1 to run the local EventStore/Dapr acceptance journey.
+    Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests.CaptureAndGovernanceCommandAcknowledgementsRecordNfr10P95Evidence [SKIP]
+      Set TIMESHEETS_PERF=1 to run the command performance lane.
+    Hexalith.Timesheets.IntegrationTests.InfrastructureLaneTests.RuntimeIntegrationLaneIsReservedForEventstoreStateStoreEvidence [SKIP]
+      Infrastructure-dependent EventStore/Dapr/Aspire tests are isolated until a data-bearing story adds runtime fixtures.
+    Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests.ReportExportAndDashboardQueryLatencyRecordsNfr11P95Evidence [SKIP]
+      Set TIMESHEETS_PERF=1 to run the report/export/dashboard performance lane.
+    Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ActorGroundedSharedSourceProducerCommitsComposedCapabilityAndSelectedReadback(extraOwners: 9998) [FAIL]
+      System.Net.Http.HttpRequestException : Response status code does not indicate success: 500 (Internal Server Error).
+      Stack Trace:
+           at System.Net.Http.HttpResponseMessage.EnsureSuccessStatusCode()
+        tests/Hexalith.Timesheets.IntegrationTests/SharedSourceCapabilityRebuildTests.cs(231,0): at Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ComposedRebuildGateway.SendAsync(DomainSharedProjectionRebuildRequest request, CancellationToken cancellationToken)
+        references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Projections/SharedProjectionSourceBeginProducer.cs(531,0): at Hexalith.EventStore.Server.Projections.SharedProjectionSourceBeginProducer.SendOwnerPartsAsync(DomainSharedProjectionRebuildIdentity identity, Int32 ownerOrdinal, SharedProjectionCapturedSourceOwner owner, CancellationToken cancellationToken)
+        references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Projections/SharedProjectionSourceBeginProducer.cs(316,0): at Hexalith.EventStore.Server.Projections.SharedProjectionSourceBeginProducer.RebuildAsync(DomainSharedProjectionRebuildIdentity identity, CancellationToken cancellationToken)
+        tests/Hexalith.Timesheets.IntegrationTests/SharedSourceCapabilityRebuildTests.cs(140,0): at Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ActorGroundedSharedSourceProducerCommitsComposedCapabilityAndSelectedReadback(Int32 extraOwners)
+        --- End of stack trace from previous location ---

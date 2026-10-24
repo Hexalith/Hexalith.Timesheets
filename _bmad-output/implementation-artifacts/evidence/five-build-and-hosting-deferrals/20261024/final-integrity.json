@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "frozen_intent_preserved": true,
+  "source_hashes_verified": 25,
+  "original_ledger_lines_preserved": true,
+  "additive_resolutions": 5,
+  "entry_points_synchronized": true,
+  "works_clean": true,
+  "retained_byte_bindings_verified": true
+}
