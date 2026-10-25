@@ -2,136 +2,79 @@
 
 ### DW-1: Codex hooks hard-code this machine path and still call deleted bmad-story-automator.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
-location: .codex/hooks.json
-source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
-reason: `.codex/hooks.json` Stop/SessionStart commands use `/home/administrator/projects/hexalith/timesheets/...`; the first Stop entry still execs `.agents/skills/bmad-story-automator/scripts/story-automator`, which is not on disk.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-make-codex-hooks-local.md`: generated `.codex/hooks.json` is no longer tracked and is ignored at the repository root; README documents per-checkout `bmad-loop init --cli codex --no-skills`. The current checkout retains its installed Stop/SessionStart relays with the deleted automator hook removed.
-
-summary: Codex hooks hard-code this machine path and still call deleted bmad-story-automator.
-evidence: `.codex/hooks.json` Stop/SessionStart commands use `/home/administrator/projects/hexalith/timesheets/...`; the first Stop entry still execs `.agents/skills/bmad-story-automator/scripts/story-automator`, which is not on disk.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
+archived: 2026-10-25
 
 ### DW-2: BMAD party-mode, forge-idea, and customization-merge tests do not pin the 6.12 override behavior.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
-location: n/a
-source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
-reason: Override tests check only name/source; party-mode has no non-string member case; `--project-root` tests stub the resolver so `structural_merge` never runs.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-pin-bmad-customization-override-behavior.md`. Both persona suites now assert preserved installed fields and explicit empty overrides; party-mode covers malformed member tokens; both wrappers exercise the real resolver with base/team/user layers and a conflicting working directory. The mirrored `.agents` and `.claude` suites pass 86 test executions, and all 35 representative mutations were caught in temporary copies. CI discovery remains a separate follow-up below.
-
-summary: BMAD party-mode, forge-idea, and customization-merge tests do not pin the 6.12 override behavior.
-evidence: Override tests check only name/source; party-mode has no non-string member case; `--project-root` tests stub the resolver so `structural_merge` never runs.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
+archived: 2026-10-25
 
 ### DW-3: bmad-loop hook can crash on non-UTF-8 stdin.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
-location: .bmad-loop/bmad_loop_hook.py
-source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
-reason: `json.load(sys.stdin)` in `.bmad-loop/bmad_loop_hook.py` catches JSONDecodeError and ValueError only, not UnicodeDecodeError.
 status: done 2026-10-21
-resolution: Closed 2026-10-21 by `spec-pin-bmad-loop-malformed-input-behavior.md`: the reported crash is refuted because `UnicodeDecodeError` inherits from the already-caught `ValueError`. New subprocess regression tests in `scripts/tests/test_bmad_loop_hook.py` verify quiet exit 0 and complete events for malformed byte input under strict UTF-8 and surrogateescape, valid Unicode metadata, and inactive-session no-ops. Existing CI discovery includes the suite. Runtime hook behavior is unchanged; strict decoding discards malformed payload metadata, while surrogateescape retains invalid bytes inside JSON strings as escaped surrogates.
-
-summary: bmad-loop hook can crash on non-UTF-8 stdin.
-evidence: `json.load(sys.stdin)` in `.bmad-loop/bmad_loop_hook.py` catches JSONDecodeError and ValueError only, not UnicodeDecodeError.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
+archived: 2026-10-25
 
 ### DW-4: bmad-loop event filenames are not sanitized for path separators.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
-location: n/a
-source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
-reason: `_write_event` uses `{ts}-{task_id}-{event_name}.json` with POSIX dir_fd open; a `task_id` containing `..` can walk out of the events directory.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-confine-bmad-loop-event-filenames.md`: `_write_event` rejects both separator forms, Windows drive/stream syntax, NUL, and empty/dot names before filesystem access. Invalid task/event names follow the existing quiet no-op policy; normal filenames and payload metadata are preserved. Regression tests reproduce traversal with an existing intermediate directory and protect outside sentinels through the POSIX and forced path-based writers. Bare `..` inside a basename does not itself traverse.
-
-summary: bmad-loop event filenames are not sanitized for path separators.
-evidence: `_write_event` uses `{ts}-{task_id}-{event_name}.json` with POSIX dir_fd open; a `task_id` containing `..` can walk out of the events directory.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
+archived: 2026-10-25
 
 ### DW-5: Copilot agent wrappers do not cover every installed BMAD skill.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
-location: n/a
-source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
-reason: Updated skills such as bmad-agent-tech-writer and bmad-architecture have no matching `.github/agents` entry after the BMAD installer refresh.
 status: done 2026-10-21
-resolution: Closed 2026-10-21 as stale by `spec-close-five-tooling-diagnostic-deferrals.md`: all 13 installed BMAD personas with `[agent]` metadata already have Copilot wrappers targeting their installed SKILL.md. The cited technical-writer persona is absent; architecture is a workflow rather than a persona. A CI-discovered inventory check now rejects missing, stale or misdirected persona wrappers. Workflow skills do not require persona wrappers.
-
-summary: Copilot agent wrappers do not cover every installed BMAD skill.
-evidence: Updated skills such as bmad-agent-tech-writer and bmad-architecture have no matching `.github/agents` entry after the BMAD installer refresh.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-move-submodules-to-references.md
+archived: 2026-10-25
 
 ### DW-6: Historical Epic 5 planning artifacts still describe sibling-only Works checkout ownership.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
-location: epics.md
-source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
-reason: `epics.md` Story 5.3, `epic-5-context.md`, and `sprint-change-proposal-2026-07-20.md` still require no Timesheets Works gitlink and default `HexalithWorksRoot` to `../Hexalith.Works` only. Live docs now pin `references/Hexalith.Works`.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-submodule-governance-deferrals.md`. The epic requirement and Story 5.3 criteria now match approved Option B: retain the references gitlink, preserve explicit roots, prefer references, and allow sibling fallback. The July proposal leads with the current policy and explicitly labels its original sibling-only/removal instructions and backlog handoff as superseded historical evidence. The already-correct epic context is unchanged.
-
-summary: Historical Epic 5 planning artifacts still describe sibling-only Works checkout ownership.
-evidence: `epics.md` Story 5.3, `epic-5-context.md`, and `sprint-change-proposal-2026-07-20.md` still require no Timesheets Works gitlink and default `HexalithWorksRoot` to `../Hexalith.Works` only. Live docs now pin `references/Hexalith.Works`. Update 2026-10-18: Story 5.2 corrected `epic-5-context.md` to the test-enforced `references/Hexalith.Works` rule; `epics.md` and the dated 2026-07-20 proposal remain.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
+archived: 2026-10-25
 
 ### DW-7: The move-spec review log still describes Story 5.3 as draft or backlog.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
-location: spec-move-submodules-to-references.md
-source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
-reason: `spec-move-submodules-to-references.md` BH3/BH4/BH8/BH14 and VG1 were written before this story’s tests and doc sync landed.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-submodule-governance-deferrals.md`. A historical-review label and dated reconciliation record Story 5.3 as done in its spec and sprint status, identify the delivered Works checkout tests and document synchronization, and explain the strengthened VG1 guards. Original review observations and frozen move-spec intent are preserved.
-
-summary: The move-spec review log still describes Story 5.3 as draft or backlog.
-evidence: `spec-move-submodules-to-references.md` BH3/BH4/BH8/BH14 and VG1 were written before this story’s tests and doc sync landed.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
+archived: 2026-10-25
 
 ### DW-8: Move-spec `DependencyDirectionTests` assertions miss some slash and quote forms of a root Exists probe.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
-location: n/a
-source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
-reason: The added `Exists('$(MSBuildThisFileDirectory)Hexalith.` substring does not catch `/Hexalith.` or `\\Hexalith.` variants. Those assertions came from the parallel move-spec review.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-submodule-governance-deferrals.md`. The actual Directory.Build.props guard now parses XML conditions, recognizes either MSBuild quote form and spacing, decodes literal percent escapes once, and normalizes both separators and dot segments before rejecting repository-root Hexalith probes. It skips quoted condition strings. Regression cases cover slash/backslash, double quotes, case/spacing, dot paths, escaped characters and traversal, while retaining references and sibling probes. This remains a bounded literal-path fitness check rather than full MSBuild semantic analysis.
-
-summary: Move-spec `DependencyDirectionTests` assertions miss some slash and quote forms of a root Exists probe.
-evidence: The added `Exists('$(MSBuildThisFileDirectory)Hexalith.` substring does not catch `/Hexalith.` or `\\Hexalith.` variants. Those assertions came from the parallel move-spec review.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
+archived: 2026-10-25
 
 ### DW-9: The managed bmad:context block is stale relative to the Story 5.3 Works checkout pin.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
-location: AGENTS.md
-source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
-reason: `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` never state the `references/Hexalith.Works` rule, still say README omits Works.Tests, pin the superseded SDK `10.0.302`, and rewrote the shared-baseline sentence. Fixes that edit those agent-context files are deferred.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-submodule-governance-deferrals.md`. Prior guidance synchronization already corrected the SDK, Works.Tests, and baseline text. All three byte-identical entry points now also state the sole default Works checkout, explicit-root preservation, references-first/sibling-second resolution, read-only dependency treatment and repository-root checkout prohibition inside the managed block. The existing managed-entry-point architecture test now checks that rule; the shared baseline is unchanged.
-
-summary: The managed bmad:context block is stale relative to the Story 5.3 Works checkout pin.
-evidence: `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` never state the `references/Hexalith.Works` rule, still say README omits Works.Tests, pin the superseded SDK `10.0.302`, and rewrote the shared-baseline sentence. Fixes that edit those agent-context files are deferred.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
+archived: 2026-10-25
 
 ### DW-10: Move-spec ScaffoldGovernanceTests treat any path starting with `references/` as under references/.
 
-origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
-location: n/a
-source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
-reason: `references/../Hexalith.Works` would pass `StartsWith("references/")`. That assertion is a parallel move-spec review edit, not this story’s Works checkout class.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-submodule-governance-deferrals.md`. Git's native config parser reads every path assignment, including compact, tabbed, quoted and commented forms. The guard normalizes separators and resolves dot segments before requiring a strict descendant of the repository's references directory, then uses that normalized path for nested-checkout inspection. Regression cases reject escapes, absolute/root paths, prefix lookalikes and references itself, while allowing ordinary dependencies and harmless normalization within references. Containment is lexical; symlink target governance is outside this entry. Final architecture verification passed 103/103; actual guard experiments rejected all 20 forbidden configurations and accepted all five allowed/baseline inputs.
-
-summary: Move-spec ScaffoldGovernanceTests treat any path starting with `references/` as under references/.
-evidence: `references/../Hexalith.Works` would pass `StartsWith("references/")`. That assertion is a parallel move-spec review edit, not this story’s Works checkout class.
+origin: migrated from legacy ledger ("source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-5-3-consume-umbrella-owned-hexalith-works-checkout.md
+archived: 2026-10-25
 
 ### DW-11: The `bmad:context` block was added to `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` although this story deferred editing those files, and it ships stale: it never states the `references/Hexalith.Works` rule the story exists to pin, says "README omits Works.Tests", pins the superseded SDK `10.0.302`, and rewrites a sentence the shared baseline header declares normalized across the Codex, Claude, and Copilot entry points.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-3-consume-umbrella-owned-hexalith-works-checkout (2026-09-12)"), 2026-10-25
-location: AGENTS.md
-reason: The `bmad:context` block was added to `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` although this story deferred editing those files, and it ships stale: it never states the `references/Hexalith.Works` rule the story exists to pin, says "README omits Works.Tests", pins the superseded SDK `10.0.302`, and rewrites a sentence the shared baseline header declares normalized across the Codex, Claude, and Copilot entry points.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-guidance-catalog-dispositions.md`. This prose-resolved historical duplicate is satisfied by the canonical managed-context disposition and `spec-close-five-submodule-governance-deferrals.md`: synchronized entry points name the current SDK, all six test executables and Works checkout policy. The earlier Resolution line and original observation are preserved. See `tests/five-guidance-catalog-dispositions.md`; no new managed-context refresh or runtime acceptance is claimed.
-
-<a id="deferred-from-code-review-of-spec-5-3-consume-umbrella-owned-hexalith-works-checkout-2026-09-12"></a>
-legacy_section: Deferred from: code review of spec-5-3-consume-umbrella-owned-hexalith-works-checkout (2026-09-12)
-evidence: The `bmad:context` block was added to `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` although this story deferred editing those files, and it ships stale: it never states the `references/Hexalith.Works` rule the story exists to pin, says "README omits Works.Tests", pins the superseded SDK `10.0.302`, and rewrites a sentence the shared baseline header declares normalized across the Codex, Claude, and Copilot entry points.
-legacy_note: Resolution (2026-10-21): superseded by the resolved managed-context entry above and `spec-close-five-submodule-governance-deferrals.md`; the SDK, test instructions, normalized baseline and Works checkout guidance are synchronized.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-3-consume-umbrella-owned-hexalith-works-checkout (2026-09-12)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-12: The `references/Hexalith.EventStore` pin bump changes the AppHost's composed security topology (`AddHexalithEventStoreSecurity` now creates generated secret parameters and injects `HEXALITH_EVENTSTORE_CLIENT_USERNAME`/`_PASSWORD` into Keycloak), guarded only by a text read of `Program.cs` in `ScaffoldGovernanceTests`. An Aspire hosting test belongs to a later infrastructure story, since the AppHost is deliberately a minimal scaffold.
 
@@ -144,13 +87,9 @@ evidence: The `references/Hexalith.EventStore` pin bump changes the AppHost's co
 
 ### DW-13: `docs/launch-readiness.md:21` misstates the imported Builds catalog: it claims Dapr `1.18.4`, Aspire Hosting `13.4.6`, `Microsoft.FluentUI.Components` `4.11.6`, while the catalog at both the old (`35c3d1e`) and new (`a32cb42`) pin has `Dapr.AspNetCore` `1.18.5`, `Aspire.Hosting` `13.5.3`, `Microsoft.FluentUI.AspNetCore.Components` `5.0.0-rc.5-26219.1`. Story 5.2 evidence, already wrong at baseline. (Resolved 2026-10-18 by Story 5.2: the launch-readiness package section no longer states those values; its current verdict rows, the prerelease waiver row, and `architecture.md` version notes now carry catalog versions that `LaunchReadinessTests` derives from the imported catalog.)
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-3-consume-umbrella-owned-hexalith-works-checkout (2026-09-12)"), 2026-10-25
-location: docs/launch-readiness.md:21
-reason: `docs/launch-readiness.md:21` misstates the imported Builds catalog: it claims Dapr `1.18.4`, Aspire Hosting `13.4.6`, `Microsoft.FluentUI.Components` `4.11.6`, while the catalog at both the old (`35c3d1e`) and new (`a32cb42`) pin has `Dapr.AspNetCore` `1.18.5`, `Aspire.Hosting` `13.5.3`, `Microsoft.FluentUI.AspNetCore.Components` `5.0.0-rc.5-26219.1`. Story 5.2 evidence, already wrong at baseline. (Resolved 2026-10-18 by Story 5.2: the launch-readiness package section no longer states those values; its current verdict rows, the prerelease waiver row, and `architecture.md` version notes now carry catalog versions that `LaunchReadinessTests` derives from the imported catalog.)
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-guidance-catalog-dispositions.md`. This inline-resolved historical catalog diagnosis was corrected by Story 5.2. Current readiness platform/waiver rows and architecture notes agree with the imported catalog: Dapr 1.18.10, Aspire Hosting 13.6.1 and Fluent UI V5 5.0.1. Existing architecture tests derive those values from the catalog. Preserve historical observations and separate package concerns; no new package audit, upgrade, waiver or AppHost qualification is supplied. See `tests/five-guidance-catalog-dispositions.md`.
-
-evidence: `docs/launch-readiness.md:21` misstates the imported Builds catalog: it claims Dapr `1.18.4`, Aspire Hosting `13.4.6`, `Microsoft.FluentUI.Components` `4.11.6`, while the catalog at both the old (`35c3d1e`) and new (`a32cb42`) pin has `Dapr.AspNetCore` `1.18.5`, `Aspire.Hosting` `13.5.3`, `Microsoft.FluentUI.AspNetCore.Components` `5.0.0-rc.5-26219.1`. Story 5.2 evidence, already wrong at baseline. (Resolved 2026-10-18 by Story 5.2: the launch-readiness package section no longer states those values; its current verdict rows, the prerelease waiver row, and `architecture.md` version notes now carry catalog versions that `LaunchReadinessTests` derives from the imported catalog.)
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-3-consume-umbrella-owned-hexalith-works-checkout (2026-09-12)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-14: `src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json` hardcodes `admin-pass`, `tenant-a-pass`, `tenant-b-pass`, `readonly-pass`, and `no-tenant-pass`, where the upstream file it was copied from uses `__HEXALITH_*_PASSWORD__` substitution placeholders. Pre-existing and outside the diff; the EventStore pin bump widens the drift.
 
@@ -163,48 +102,28 @@ evidence: `src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json` h
 
 ### DW-15: Reconcile the overall launch-readiness verdict while Stories 3.6 and 5.1 remain open (owner: Story 5.1).
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: The approved 2026-09-12 correction requires `FAIL` until valid-link Magic-Link resolution and final Story 5.1 documentation synchronization complete, while the pre-existing launch record still said `CONCERNS`; final release classification belongs to Story 5.1 rather than this package-baseline story. Update 2026-10-18: Story 5.2 moved this entry from the Story 5.3 review section and replaced its absolute `source_spec` path; the current record already says `Overall release decision: **FAIL**`, and the final classification remains open for Story 5.1.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-process-verdict-deferrals.md`. Story 5.1 delivered the honest overall FAIL assessment and received scoped reconciliation acceptance on October 20. Package CONCERNS and unfinished runtime/deployed/legal/tenant/product gates remain separate; the historical premise that Story 5.1 is open is superseded. This closes the verdict-correction request, not release acceptance. See `tests/five-process-verdict-deferrals.md`.
-
-<a id="deferred-from-code-review-of-spec-5-2-reconcile-package-currency-and-platform-dependency-versions-2026-09-12"></a>
-legacy_section: Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)
-summary: Reconcile the overall launch-readiness verdict while Stories 3.6 and 5.1 remain open (owner: Story 5.1).
-evidence: The approved 2026-09-12 correction requires `FAIL` until valid-link Magic-Link resolution and final Story 5.1 documentation synchronization complete, while the pre-existing launch record still said `CONCERNS`; final release classification belongs to Story 5.1 rather than this package-baseline story. Update 2026-10-18: Story 5.2 moved this entry from the Story 5.3 review section and replaced its absolute `source_spec` path; the current record already says `Overall release decision: **FAIL**`, and the final classification remains open for Story 5.1.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-16: `AGENTS.md:92`, `CLAUDE.md:92`, and `.github/copilot-instructions.md:92` still say the `global.json` SDK is `10.0.302`, now two steps behind the approved `10.0.401`. The fix edits agent-context files and the spec's Never clause assigns agent-guidance synchronization to Story 5.1; the existing ledger entries above describe the pre-baseline drift and should be refreshed when 5.1 runs. (Update 2026-10-18: `global.json` now pins `10.0.402`, so the entry points are three steps behind the current pin; the sync remains Story 5.1's.)
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
-location: AGENTS.md:92
-reason: `AGENTS.md:92`, `CLAUDE.md:92`, and `.github/copilot-instructions.md:92` still say the `global.json` SDK is `10.0.302`, now two steps behind the approved `10.0.401`. The fix edits agent-context files and the spec's Never clause assigns agent-guidance synchronization to Story 5.1; the existing ledger entries above describe the pre-baseline drift and should be refreshed when 5.1 runs. (Update 2026-10-18: `global.json` now pins `10.0.402`, so the entry points are three steps behind the current pin; the sync remains Story 5.1's.)
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-guidance-catalog-dispositions.md`. This prose-resolved SDK duplicate is satisfied by Story 5.1's completed synchronization: all three unchanged entry points agree with global.json at SDK 10.0.402 and latestPatch. The original dated observations and earlier Resolution remain intact; this supplies no SDK update or additional story acceptance. See `tests/five-guidance-catalog-dispositions.md`.
-
-evidence: `AGENTS.md:92`, `CLAUDE.md:92`, and `.github/copilot-instructions.md:92` still say the `global.json` SDK is `10.0.302`, now two steps behind the approved `10.0.401`. The fix edits agent-context files and the spec's Never clause assigns agent-guidance synchronization to Story 5.1; the existing ledger entries above describe the pre-baseline drift and should be refreshed when 5.1 runs. (Update 2026-10-18: `global.json` now pins `10.0.402`, so the entry points are three steps behind the current pin; the sync remains Story 5.1's.)
-legacy_note: Resolution (2026-10-21): this duplicate is historical; all three entry points already name `10.0.402` and the managed-context resolution above records the completed guidance synchronization.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-17: `docs/launch-readiness.md:78` still records the overall release decision as `CONCERNS`, while `_bmad-output/implementation-artifacts/epic-5-context.md:19` (rewritten in this change) and the approved 2026-09-12 course correction both require `FAIL` until Stories 3.6 and 5.1 close. Final release classification belongs to Story 5.1. Note that the same change cites proposal §7 as approval evidence for its prerelease waiver while not honoring §3/§4 of the same document. (Update 2026-10-18: the record now says `Overall release decision: FAIL`; this bullet is superseded by the moved Story 5.1 entry at the top of this section, which keeps the final classification open.)
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
-location: docs/launch-readiness.md:78
-reason: `docs/launch-readiness.md:78` still records the overall release decision as `CONCERNS`, while `_bmad-output/implementation-artifacts/epic-5-context.md:19` (rewritten in this change) and the approved 2026-09-12 course correction both require `FAIL` until Stories 3.6 and 5.1 close. Final release classification belongs to Story 5.1.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-process-verdict-deferrals.md`. This duplicate verdict correction was already superseded by the canonical Story 5.1 reconciliation and its scoped sign-off. The existing October 18 update and original observation are preserved; current overall FAIL and separate package CONCERNS remain unchanged. See `tests/five-process-verdict-deferrals.md`.
-
-evidence: `docs/launch-readiness.md:78` still records the overall release decision as `CONCERNS`, while `_bmad-output/implementation-artifacts/epic-5-context.md:19` (rewritten in this change) and the approved 2026-09-12 course correction both require `FAIL` until Stories 3.6 and 5.1 close. Final release classification belongs to Story 5.1. Note that the same change cites proposal §7 as approval evidence for its prerelease waiver while not honoring §3/§4 of the same document. (Update 2026-10-18: the record now says `Overall release decision: **FAIL**`; this bullet is superseded by the moved Story 5.1 entry at the top of this section, which keeps the final classification open.)
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-18: The AppHost SDK `13.5.3` and `AspireUseCliBundle=true` change orchestration-runtime dependency resolution, but no test loads or starts the host: `ScaffoldGovernanceTests` parses the csproj XML and `LaunchReadinessTests` asserts prose. The only runtime proof is a one-off manual `aspire start` smoke run. An `Aspire.Hosting.Testing` lane would pull Docker/Keycloak into the default ArchitectureTests path, so it belongs to the later infrastructure story — the existing entry above covers only the composed security topology and should be widened to cover CLI-bundle resolution. (Update 2026-10-18: the Option 2 decision removed the CLI bundle; the AppHost now restores `Aspire.Hosting.Orchestration` and `Aspire.Dashboard.Sdk` from NuGet at `13.6.1`, so no CLI-bundle resolution remains to test. The remaining start-the-host gap stays with the infrastructure-owned automated AppHost runtime smoke entry.)
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
-location: n/a
-reason: The AppHost SDK `13.5.3` and `AspireUseCliBundle=true` change orchestration-runtime dependency resolution, but no test loads or starts the host: `ScaffoldGovernanceTests` parses the csproj XML and `LaunchReadinessTests` asserts prose. The only runtime proof is a one-off manual `aspire start` smoke run.
 status: done 2026-10-25
-resolution: Closed 2026-10-25 as a superseded CLI-bundle diagnosis by `spec-five-historical-verification-deferrals.md`. The original October 18 update already records removal of CLI-bundle selection; the current AppHost declares AspireUseCliBundle=false and retains SDK-added NuGet orchestration/dashboard packages. The existing open “Add automated AppHost runtime smoke evidence for the resolved Aspire and Keycloak package graph” and current NuGet-orchestration startup entry retain all runtime obligations. XML governance and compilation do not prove DCP/dashboard/resource startup or security topology. See `tests/five-historical-verification-deferrals.md`.
-
-evidence: The AppHost SDK `13.5.3` and `AspireUseCliBundle=true` change orchestration-runtime dependency resolution, but no test loads or starts the host: `ScaffoldGovernanceTests` parses the csproj XML and `LaunchReadinessTests` asserts prose. The only runtime proof is a one-off manual `aspire start` smoke run. An `Aspire.Hosting.Testing` lane would pull Docker/Keycloak into the default ArchitectureTests path, so it belongs to the later infrastructure story — the existing entry above covers only the composed security topology and should be widened to cover CLI-bundle resolution. (Update 2026-10-18: the Option 2 decision removed the CLI bundle; the AppHost now restores `Aspire.Hosting.Orchestration` and `Aspire.Dashboard.Sdk` from NuGet at `13.6.1`, so no CLI-bundle resolution remains to test. The remaining start-the-host gap stays with the infrastructure-owned automated AppHost runtime smoke entry.)
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-19: Commit `ee76a92` is messaged `build: align SDK and Aspire package baseline` but also rewrites roughly 60 lines of Epic 5 governance text (`epic-5-context.md`). Correcting the message requires a history rewrite.
 
@@ -217,13 +136,9 @@ evidence: Commit `ee76a92` is messaged `build: align SDK and Aspire package base
 
 ### DW-20: Commit `ee76a92` was made directly on `main`; the shared agent guidance says to branch first. Already committed, so the correction is procedural.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
-location: n/a
-reason: Commit `ee76a92` was made directly on `main`; the shared agent guidance says to branch first. Already committed, so the correction is procedural.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-process-verdict-deferrals.md`. The current Hexalith Git instructions explicitly default to main, superseding the earlier branch-first procedure. The historical commit and observation are preserved; no retroactive compliance or history rewrite is claimed, and the adjacent commit-message follow-up is not closed. See `tests/five-process-verdict-deferrals.md`.
-
-evidence: Commit `ee76a92` was made directly on `main`; the shared agent guidance says to branch first. Already committed, so the correction is procedural.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-09-12)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-21: A lagging EventStore replica reporting `LatestSequence` equal to the last returned sequence would let `EventStoreMagicLinkConfirmationCapabilityStateLoader.ReadAllEventsAsync` treat a stale prefix as a complete history, folding a Revoked/Used capability as still Issued and leaving the link reusable. Unverified: settled by whether `ReadStreamAsync` guarantees read-your-writes/linearizable reads against the writing actor. Would be high severity if confirmed.
 
@@ -238,43 +153,27 @@ evidence: A lagging EventStore replica reporting `LatestSequence` equal to the l
 
 ### DW-22: The stream paging loop (`EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:307`) has no page or event cap, so a gateway returning `IsTruncated` pages indefinitely causes unbounded memory growth and a hung external magic-link request. Not demonstrated reachable with a trusted gateway.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:307
-reason: The stream paging loop (`EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:307`) has no page or event cap, so a gateway returning `IsTruncated` pages indefinitely causes unbounded memory growth and a hung external magic-link request. Not demonstrated reachable with a trusted gateway.
 status: done 2026-10-25
-resolution: Closed 2026-10-25 by verification in `spec-five-historical-verification-deferrals.md`. This original unbounded-loop report duplicates the resolved total-read-budget entry. Current invocation-local allowances bound raw pages, events, payload bytes and awaited reads across streams; growing-history and exact/over-limit regressions verify refusal without partial authority. This supplies no deployed transport or stale-replica consistency guarantee. See `tests/five-historical-verification-deferrals.md`.
-
-evidence: The stream paging loop (`EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:307`) has no page or event cap, so a gateway returning `IsTruncated` pages indefinitely causes unbounded memory growth and a hung external magic-link request. Not demonstrated reachable with a trusted gateway.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-23: Non-`Fresh` catalog states (`Stale`, `Rebuilding`, `Degraded`, `Unknown`) are collapsed to `Unavailable` by the loader, losing the explicit freshness vocabulary AC2 requires. Fail-closed behavior is preserved. Resolution depends on how the catalog-freshness decision item is settled.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-reason: Non-`Fresh` catalog states (`Stale`, `Rebuilding`, `Degraded`, `Unknown`) are collapsed to `Unavailable` by the loader, losing the explicit freshness vocabulary AC2 requires. Fail-closed behavior is preserved.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-historical-host-integration-deferrals.md`. This original freshness-collapse observation is superseded by the delivered loader sanitization already recorded under the canonical “Preserve explicit non-Fresh catalog state” entry. Validated non-Fresh catalogs retain only their internal status, with no items/cursor/time/detail or resolved capability/Time Entry; malformed input remains unavailable. Existing loader and HTTP tests preserve opaque public denial. See `tests/five-historical-host-integration-deferrals.md`.
-
-evidence: Non-`Fresh` catalog states (`Stale`, `Rebuilding`, `Degraded`, `Unknown`) are collapsed to `Unavailable` by the loader, losing the explicit freshness vocabulary AC2 requires. Fail-closed behavior is preserved. Resolution depends on how the catalog-freshness decision item is settled.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-24: The valid-path HTTP acceptance is proven with `ITimesheetsAccessGuard` replaced by `ScriptedAccessGuard` and `IEventStoreGatewayClient` replaced by `ScriptedEventStoreGateway`, so the claim that valid links succeed "in the live host" exceeds the evidence; production `DenyAllTimesheetsTenantAccessValidator`/`DenyAllContributorPartyValidator` still deny. The fail-closed defaults are intentional per CLAUDE.md and cannot change without a story that wires real validators.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-reason: The valid-path HTTP acceptance is proven with `ITimesheetsAccessGuard` replaced by `ScriptedAccessGuard` and `IEventStoreGatewayClient` replaced by `ScriptedEventStoreGateway`, so the claim that valid links succeed "in the live host" exceeds the evidence; production `DenyAllTimesheetsTenantAccessValidator`/`DenyAllContributorPartyValidator` still deny. The fail-closed defaults are intentional per CLAUDE.md and cannot change without a story that wires real validators.
 status: done 2026-10-25
-resolution: Closed 2026-10-25 as a corrected historical evidence claim by `spec-five-historical-verification-deferrals.md`. Current launch-readiness documentation distinguishes in-process HTTP fixtures, historical isolated local persistence and unfinished current-graph/deployed acceptance. Scripted access and gateway seams remain test evidence; production defaults stay fail-closed. The existing open “Supply trusted tenant and actor identity to production magic-link management routes” and runtime/deployed qualification entries retain their acceptance obligations. See `tests/five-historical-verification-deferrals.md`.
-
-evidence: The valid-path HTTP acceptance is proven with `ITimesheetsAccessGuard` replaced by `ScriptedAccessGuard` and `IEventStoreGatewayClient` replaced by `ScriptedEventStoreGateway`, so the claim that valid links succeed "in the live host" exceeds the evidence; production `DenyAllTimesheetsTenantAccessValidator`/`DenyAllContributorPartyValidator` still deny. The fail-closed defaults are intentional per CLAUDE.md and cannot change without a story that wires real validators.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-25: `src/Hexalith.Timesheets.AppHost` declares no `eventstore` resource, so the gateway's default target does not exist in the local topology. Topology changes are forbidden by the spec's Never clause and CLAUDE.md.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-reason: `src/Hexalith.Timesheets.AppHost` declares no `eventstore` resource, so the gateway's default target does not exist in the local topology. Topology changes are forbidden by the spec's Never clause and CLAUDE.md.
 status: done 2026-10-22
-resolution: Superseded 2026-10-22 by verification in `spec-close-five-historical-host-integration-deferrals.md`: the run-mode AppHost now declares the EventStore gateway and Timesheets domain-module/sidecar registration. Historical isolated local persistence proof exists, so the missing-resource diagnosis no longer applies. Publish/deployed topology is not qualified; current NuGet-orchestration runtime qualification and automated AppHost smoke remain open under their existing canonical entries. See `tests/five-historical-host-integration-deferrals.md`.
-
-evidence: `src/Hexalith.Timesheets.AppHost` declares no `eventstore` resource, so the gateway's default target does not exist in the local topology. Topology changes are forbidden by the spec's Never clause and CLAUDE.md.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-26: The tenant-wide Activity Type catalog is persisted under the magic-link-scoped key `timesheets:magic-links:activity-type-catalog:{tenant}:v1` while `TenantActivityTypeCatalogProjectionHandler` declares itself canonical writer for the whole tenant catalog, inviting a second divergent writer later. Changing a persisted state key is a data migration, not a direct correction.
 
@@ -287,35 +186,22 @@ evidence: The tenant-wide Activity Type catalog is persisted under the magic-lin
 
 ### DW-27: Story artifact and agent context are stale after this change: `3-6-…md` Completion Notes still claim the index "has no live `IDomainProjectionHandler` wiring" and that the loader folds the catalog from a domain-wide (`aggregateId: null`) read — both now false; the File List omits all eight new files; and the CLAUDE.md "Known pitfalls" entry about the unwired `MagicLinkTokenHashCapabilityIndexProjection` is obsolete. The fix edits spec and agent-context files.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-reason: Story artifact and agent context are stale after this change: `3-6-…md` Completion Notes still claim the index "has no live `IDomainProjectionHandler` wiring" and that the loader folds the catalog from a domain-wide (`aggregateId: null`) read — both now false; the File List omits all eight new files; and the CLAUDE.md "Known pitfalls" entry about the unwired `MagicLinkTokenHashCapabilityIndexProjection` is obsolete. The fix edits spec and agent-context files.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-historical-story-tracking-deferrals.md`. Story 3.6 labels its initial Completion Notes historical, explicitly supersedes the wiring/domain-wide-read diagnoses, and lists the delivered handler/helper additions in its cumulative inventory. The three synchronized entry points already describe registered projections and unfinished acceptance. Original observations remain for provenance; no current-graph runtime or deployed proof is inferred. See `tests/five-historical-story-tracking-deferrals.md`.
-
-evidence: Story artifact and agent context are stale after this change: `3-6-…md` Completion Notes still claim the index "has no live `IDomainProjectionHandler` wiring" and that the loader folds the catalog from a domain-wide (`aggregateId: null`) read — both now false; the File List omits all eight new files; and the CLAUDE.md "Known pitfalls" entry about the unwired `MagicLinkTokenHashCapabilityIndexProjection` is obsolete. The fix edits spec and agent-context files.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-28: Authorization for the EventStore domain-service route group mapped by `app.UseEventStoreDomainService()` (`/process`, `/replay-state`, `/query`, `/project`, `/project/v2`, the rebuild routes and `/admin/operational-index-metadata`). These are reachable anonymously on the Timesheets host, which registers no authentication or authorization middleware, alongside the anonymous magic-link routes; `MagicLinkConfirmationHttpBoundaryTests.cs:792` shows an anonymous `POST /project/v2` returning `200 OK` while mutating the token-hash index and the trust-bearing catalog read model. Per code-review decision 2 (2026-09-14) the auth scheme belongs to the platform: the Hexalith baseline forbids a domain module re-implementing hosting/DAPR plumbing. Raise upstream against Hexalith.EventStore; `docs/launch-readiness.md` records sidecar/network isolation as the interim control.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: MagicLinkConfirmationHttpBoundaryTests.cs:792
-reason: Authorization for the EventStore domain-service route group mapped by `app.UseEventStoreDomainService()` (`/process`, `/replay-state`, `/query`, `/project`, `/project/v2`, the rebuild routes and `/admin/operational-index-metadata`). These are reachable anonymously on the Timesheets host, which registers no authentication or authorization middleware, alongside the anonymous magic-link routes; `MagicLinkConfirmationHttpBoundaryTests.cs:792` shows an anonymous `POST /project/v2` returning `200 OK` while mutating the token-hash index and the trust-bearing catalog read model.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-historical-host-integration-deferrals.md`. The HTTP host now composes SDK workload authentication/authorization and InternalSurfaceGuard. Existing HTTP tests reject missing/forged credentials, refuse projection delivery on the public listener without changing selected index/catalog contents, and verify authenticated mapped delivery on the internal listener. Public capability routes retain their opaque authorization behavior. Production tenant/Party identity, operator authority and deployed network/runtime acceptance remain separate open gates. See `tests/five-historical-host-integration-deferrals.md`.
-
-evidence: Authorization for the EventStore domain-service route group mapped by `app.UseEventStoreDomainService()` (`/process`, `/replay-state`, `/query`, `/project`, `/project/v2`, the rebuild routes and `/admin/operational-index-metadata`). These are reachable anonymously on the Timesheets host, which registers no authentication or authorization middleware, alongside the anonymous magic-link routes; `MagicLinkConfirmationHttpBoundaryTests.cs:792` shows an anonymous `POST /project/v2` returning `200 OK` while mutating the token-hash index and the trust-bearing catalog read model. Per code-review decision 2 (2026-09-14) the auth scheme belongs to the platform: the Hexalith baseline forbids a domain module re-implementing hosting/DAPR plumbing. Raise upstream against Hexalith.EventStore; `docs/launch-readiness.md` records sidecar/network isolation as the interim control.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-29: Harden projection and loader correctness across the Story 3.6 review patch items that are not part of live-host catalog freshness.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. Covers ETag-presence-instead-of-value concurrency selection in both projection handlers, the loader's same-sequence equivalence check being weaker than `ProjectionEventReader.Equivalent` with only the first MessageId entering the uniqueness set, null-guard gaps in `ProjectionEventReader` (`Matches<T>` JSON-null `EventTypeName`, null `ProjectionFreshness` in `Merge`/`ParseCursor`), the missing `[EventStoreDomain]` attribute on both handlers that leaves `AddEventStoreDomainTelemetry` registering nothing, the non-`TryAdd` gateway guard in `AddTimesheetsServerKernel`, dead code left by the refactor (`OrderedDistinct`, the first `hasMore` assignment, uncalled `MagicLinkTokenHashCapabilityIndexProjection.Rebuild`), and the bare `"index"` literal / unused logging reference / omitted `ReadModelWritePolicy` logger arguments.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. Delivered concurrency/envelope/null guards, telemetry discovery, caller-owned gateway preservation, dead-code cleanup and named-slot/logger wiring satisfy this original request. The pure Rebuild helper was deliberately retained and documented; its narrower retention follow-up and transport-diagnostic follow-up already have their own resolutions. Logging.Abstractions is now used. This does not close the broader eight-goal re-verification entry, its obsolete loader fixture setup, shape-layering or gateway-options work. See `tests/five-runtime-correctness-carry-forwards.md`.
-
-summary: Harden projection and loader correctness across the Story 3.6 review patch items that are not part of live-host catalog freshness.
-evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. Covers ETag-presence-instead-of-value concurrency selection in both projection handlers, the loader's same-sequence equivalence check being weaker than `ProjectionEventReader.Equivalent` with only the first MessageId entering the uniqueness set, null-guard gaps in `ProjectionEventReader` (`Matches<T>` JSON-null `EventTypeName`, null `ProjectionFreshness` in `Merge`/`ParseCursor`), the missing `[EventStoreDomain]` attribute on both handlers that leaves `AddEventStoreDomainTelemetry` registering nothing, the non-`TryAdd` gateway guard in `AddTimesheetsServerKernel`, dead code left by the refactor (`OrderedDistinct`, the first `hasMore` assignment, uncalled `MagicLinkTokenHashCapabilityIndexProjection.Rebuild`), and the bare `"index"` literal / unused logging reference / omitted `ReadModelWritePolicy` logger arguments.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-30: Move the shared magic-link read-model and address shapes to Hexalith.Timesheets.Contracts and drop the Projections to Server project reference.
 
@@ -330,53 +216,31 @@ evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an indepen
 
 ### DW-31: Bind the EventStore gateway target and API token through IConfiguration/options instead of process environment variables at registration time.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal; code-review decision 4 resolved to option A. `ResolveDaprHttpEndpoint()` reads `DAPR_HTTP_ENDPOINT`/`DAPR_HTTP_PORT` and `DAPR_API_TOKEN` via `Environment.GetEnvironmentVariable` with the app id hardcoded as `"eventstore"`, so nothing is bindable, overridable per environment, or testable without process mutation; `RuntimeRegistrationTests` swaps process-wide env vars under parallel xUnit collections, and a rotated `DAPR_API_TOKEN` is never picked up after registration.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-runtime-deferrals.md` and published EventStore `3.127.0` (`e1d8b17160202761ab5c9606cafbcf4d1a4b92c3`). The kernel binds gateway options and DAPR configuration fallbacks without process reads; existing clients use current per-send targets/credentials, new clients use the current endpoint, and caller overrides are preserved. Isolated reload/rotation/removal and routing regressions pass, including a falsifying fixed-options control. See `tests/five-magic-link-runtime-deferrals.md`.
-
-summary: Bind the EventStore gateway target and API token through IConfiguration/options instead of process environment variables at registration time.
-evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal; code-review decision 4 resolved to option A. `ResolveDaprHttpEndpoint()` reads `DAPR_HTTP_ENDPOINT`/`DAPR_HTTP_PORT` and `DAPR_API_TOKEN` via `Environment.GetEnvironmentVariable` with the app id hardcoded as `"eventstore"`, so nothing is bindable, overridable per environment, or testable without process mutation; `RuntimeRegistrationTests` swaps process-wide env vars under parallel xUnit collections, and a rotated `DAPR_API_TOKEN` is never picked up after registration.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-32: Record the two Story 3.6 review documentation outcomes in docs/launch-readiness.md.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. Code-review decision 2 (option C) requires recording sidecar/network isolation as the stated interim control for the unauthenticated EventStore SDK route group; decision 5 (option C) requires recording the `Hexalith.Timesheets.ServiceDefaults` ownership handover to the EventStore SDK, leaving removal to a story that names that project per CLAUDE.md.
 status: done 2026-10-21
-resolution: Superseded 2026-10-21 by the canonical ServiceDefaults handover disposition in `spec-close-five-runtime-guidance-deferrals.md`. Its resolution note below closes decision 5; the original interim-control proposal was already superseded by the delivered InternalSurfaceGuard described in that canonical entry. Original review evidence is retained.
-
-summary: Record the two Story 3.6 review documentation outcomes in docs/launch-readiness.md.
-evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. Code-review decision 2 (option C) requires recording sidecar/network isolation as the stated interim control for the unauthenticated EventStore SDK route group; decision 5 (option C) requires recording the `Hexalith.Timesheets.ServiceDefaults` ownership handover to the EventStore SDK, leaving removal to a story that names that project per CLAUDE.md.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-33: Strengthen the Story 3.6 test suite where assertions cannot currently catch the regressions they imply.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. No test asserts `ReadModelBatchOperation.Concurrency`, so inverting both handler ternaries to always emit `CreateOnly` leaves every test green; the HTTP `"cross-tenant"` case became `null` and is now indistinguishable from `"unknown"`, leaving the external cross-tenant defense on one loader comparison with a single unit test; and the test read-model doubles ignore `storeName`, `Concurrency`, and operation `Kind` while `ScriptedReadModelStore` returns one global version as the ETag for every key.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. Existing tests assert rebuild StoreName, operation Kind and Concurrency, exercise a real cross-tenant candidate through all four public routes, and verify per-component/key ETag isolation and refused-write end state. The narrower remaining-double follow-up is already resolved by `spec-close-five-magic-link-operability-deferrals.md`; the HTTP double delegates to the platform InMemoryReadModelStore. These are local regression proofs, not deployed isolation acceptance. See `tests/five-runtime-correctness-carry-forwards.md`.
-
-summary: Strengthen the Story 3.6 test suite where assertions cannot currently catch the regressions they imply.
-evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal. No test asserts `ReadModelBatchOperation.Concurrency`, so inverting both handler ternaries to always emit `CreateOnly` leaves every test green; the HTTP `"cross-tenant"` case became `null` and is now indistinguishable from `"unknown"`, leaving the external cross-tenant defense on one loader comparison with a single unit test; and the test read-model doubles ignore `storeName`, `Concurrency`, and operation `Kind` while `ScriptedReadModelStore` returns one global version as the ETag for every key.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-34: Eight prior-round deferred goals re-verified against the current tree and confirmed still accurate; not re-filed.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-14)"), 2026-10-25
-location: EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:373-377
-source_spec: _bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md
-reason: Re-verified during the `eb11472..f38214d` review. ETag-presence-instead-of-value concurrency selection survives in both `FinalizeAsync` methods and no test asserts `ReadModelBatchOperation.Concurrency`, `StoreName` or `Kind`; the loader's same-sequence equivalence check at `EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:373-377` still compares only `EventTypeName`/`SerializationFormat`/`Payload` while `ProjectionEventReader.Equivalent` also compares `MessageId`, and only the first group member's `MessageId` enters the uniqueness set; `Matches<T>` still splits a possibly JSON-null `EventTypeName` and `Merge`/`ParseCursor` still dereference `ProjectionFreshness`; neither handler carries `[EventStoreDomain]` and no Timesheets type derives from `EventStoreAggregate<>`/`EventStoreProjection<>`, so `GetHandlerDomainNames` yields nothing and `AddEventStoreDomainTelemetry` registers no domain; `OrderedDistinct` can no longer filter anything now that `ReadAllEventsAsync` normalizes and de-duplicates before both call sites, the first `hasMore` assignment is always overwritten, `MagicLinkTokenHashCapabilityIndexProjection.Rebuild` has no production caller, and eleven loader fixtures still script the removed domain-wide stream; the bare `"index"` slot literal, the unused `Microsoft.Extensions.Logging.Abstractions` reference and the omitted `ReadModelWritePolicy` logger arguments all remain; the HTTP `"cross-tenant"` case is byte-identical to `"unknown"` because `MagicLinkExternalRequestContext.FromResolvedCapability` derives the request tenant from the capability itself; and `ResolveDaprHttpEndpoint` still reads `DAPR_HTTP_ENDPOINT`/`DAPR_HTTP_PORT`/`DAPR_API_TOKEN` from process environment with fixtures mutating them process-wide under parallel xUnit collections.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by reconciliation in `spec-five-magic-link-runtime-deferrals.md`. Existing correctness, telemetry, gateway, ETag-fixture, cross-tenant, cleanup and slot/logger deliveries retain their prior reports; this increment completes configuration reload and removes all eleven obsolete domain-wide loader arrangements while preserving aggregate/catalog evidence and assertions. The pure Rebuild helper remains deliberately supported. Separate shape-layering and deployed-qualification entries stay open. See `tests/five-magic-link-runtime-deferrals.md` and its three linked carry-forward reports.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loading-2026-09-14"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-14)
-summary: Eight prior-round deferred goals re-verified against the current tree and confirmed still accurate; not re-filed.
-evidence: Re-verified during the `eb11472..f38214d` review. ETag-presence-instead-of-value concurrency selection survives in both `FinalizeAsync` methods and no test asserts `ReadModelBatchOperation.Concurrency`, `StoreName` or `Kind`; the loader's same-sequence equivalence check at `EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:373-377` still compares only `EventTypeName`/`SerializationFormat`/`Payload` while `ProjectionEventReader.Equivalent` also compares `MessageId`, and only the first group member's `MessageId` enters the uniqueness set; `Matches<T>` still splits a possibly JSON-null `EventTypeName` and `Merge`/`ParseCursor` still dereference `ProjectionFreshness`; neither handler carries `[EventStoreDomain]` and no Timesheets type derives from `EventStoreAggregate<>`/`EventStoreProjection<>`, so `GetHandlerDomainNames` yields nothing and `AddEventStoreDomainTelemetry` registers no domain; `OrderedDistinct` can no longer filter anything now that `ReadAllEventsAsync` normalizes and de-duplicates before both call sites, the first `hasMore` assignment is always overwritten, `MagicLinkTokenHashCapabilityIndexProjection.Rebuild` has no production caller, and eleven loader fixtures still script the removed domain-wide stream; the bare `"index"` slot literal, the unused `Microsoft.Extensions.Logging.Abstractions` reference and the omitted `ReadModelWritePolicy` logger arguments all remain; the HTTP `"cross-tenant"` case is byte-identical to `"unknown"` because `MagicLinkExternalRequestContext.FromResolvedCapability` derives the request tenant from the capability itself; and `ResolveDaprHttpEndpoint` still reads `DAPR_HTTP_ENDPOINT`/`DAPR_HTTP_PORT`/`DAPR_API_TOKEN` from process environment with fixtures mutating them process-wide under parallel xUnit collections.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-14)"), 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md
+archived: 2026-10-25
 
 ### DW-35: The kernel-reference fitness rule cannot observe what Hexalith.Timesheets.Projections pulls in transitively.
 
@@ -391,36 +255,21 @@ evidence: `DependencyDirectionTests.cs:111-130` reads only direct `Include` attr
 
 ### DW-36: The repeated agent-context finding is consolidated into the canonical open 2026-09-16 Story 3.6 entry below.
 
-origin: migrated from legacy ledger ("Deferred from: code review of story-3.6 (2026-09-14)"), 2026-10-25
-location: n/a
-reason: The repeated agent-context finding is consolidated into the canonical open 2026-09-16 Story 3.6 entry below.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-process-verdict-deferrals.md`. The canonical September 16 unwired-index guidance request is already closed by spec-close-five-agent-guidance-carry-forwards.md and its report, which expressly supersede historical references calling it open. Historical-story-tracking reconciliation separately closes the combined tracking/guidance request. This duplicate adds no remaining guidance task; entry points and unfinished runtime/deployed gates are unchanged. See `tests/five-process-verdict-deferrals.md`.
-
-legacy_context: The repeated 2026-09-14 agent-context findings are consolidated into the canonical open 2026-09-16 Story 3.6 entry below; they do not create additional work items.
-<a id="deferred-from-code-review-of-story-36-2026-09-14"></a>
-legacy_section: Deferred from: code review of story-3.6 (2026-09-14)
-evidence: The repeated agent-context finding is consolidated into the canonical open 2026-09-16 Story 3.6 entry below.
+origin: migrated from legacy ledger ("Deferred from: code review of story-3.6 (2026-09-14)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-37: Sprint-status header count disagrees with the story.
 
-origin: migrated from legacy ledger ("Deferred from: code review of story-3.6 (2026-09-14)"), 2026-10-25
-location: _bmad-output/implementation-artifacts/sprint-status.yaml:2
-reason: **Sprint-status header count disagrees with the story.** `_bmad-output/implementation-artifacts/sprint-status.yaml:2` records "2 decisions resolved and applied, 5 patch action items open, 3 deferred" while `3-6-implement-eventstore-backed-magic-link-state-loading.md` carries 24 unchecked `[ ]` review items across rounds. Deferred because the fix edits other spec/tracking artifacts.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-historical-story-tracking-deferrals.md`. The sprint header no longer publishes those obsolete counts. The story's dated reconciliation records the historical 37 dispositions (28 implemented/superseded and nine deferred), and checked Defer rows expressly mean triaged follow-up rather than implemented work. Story and sprint both retain in-progress. See `tests/five-historical-story-tracking-deferrals.md`.
-
-evidence: **Sprint-status header count disagrees with the story.** `_bmad-output/implementation-artifacts/sprint-status.yaml:2` records "2 decisions resolved and applied, 5 patch action items open, 3 deferred" while `3-6-implement-eventstore-backed-magic-link-state-loading.md` carries 24 unchecked `[ ]` review items across rounds. Deferred because the fix edits other spec/tracking artifacts.
+origin: migrated from legacy ledger ("Deferred from: code review of story-3.6 (2026-09-14)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-38: `RuntimeRegistrationTests` mutate process-wide environment variables.
 
-origin: migrated from legacy ledger ("Deferred from: code review of story-3.6 (2026-09-14)"), 2026-10-25
-location: tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs:45-112
-reason: **`RuntimeRegistrationTests` mutate process-wide environment variables.** `tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs:45-112` sets `DAPR_HTTP_ENDPOINT`, `DAPR_HTTP_PORT` and `DAPR_API_TOKEN` process-wide while xUnit runs test classes in parallel, adding two more writers to a coupling already recorded here. `DAPR_API_TOKEN` is additionally read once at registration time, so a rotated token never takes effect.
 status: done 2026-10-25
-resolution: Closed 2026-10-25 by verification in `spec-five-historical-verification-deferrals.md`. This duplicate is satisfied by the resolved IConfiguration gateway work. Current registration tests use in-memory configuration, verify credential reload/rotation on an existing client, endpoint changes on a new client, configured Dapr fallbacks and unchanged process values; the class contains no environment writes. No configuration or runtime binding changed in this reconciliation. See `tests/five-historical-verification-deferrals.md`.
-
-evidence: **`RuntimeRegistrationTests` mutate process-wide environment variables.** `tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs:45-112` sets `DAPR_HTTP_ENDPOINT`, `DAPR_HTTP_PORT` and `DAPR_API_TOKEN` process-wide while xUnit runs test classes in parallel, adding two more writers to a coupling already recorded here. `DAPR_API_TOKEN` is additionally read once at registration time, so a rotated token never takes effect. Deferred because the existing `IConfiguration`-binding ledger item owns the real fix.
+origin: migrated from legacy ledger ("Deferred from: code review of story-3.6 (2026-09-14)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-39: Move the shared magic-link read-model and address shapes to Hexalith.Timesheets.Contracts and drop the Projections to Server project reference.
 
@@ -437,149 +286,87 @@ evidence: Split from the Story 3.6 remaining-work intent (2026-09-15); the user 
 
 ### DW-40: Bind the EventStore gateway target and API token through IConfiguration/options instead of process environment variables at registration time.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: Split from the Story 3.6 remaining-work intent (2026-09-15). Re-verified open at `fe82c7d`: `src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:49,52,98-100` still call `Environment.GetEnvironmentVariable` for `DAPR_HTTP_ENDPOINT`/`DAPR_HTTP_PORT`/`DAPR_API_TOKEN`, and `RuntimeRegistrationTests` still mutates them process-wide under parallel xUnit collections.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-runtime-deferrals.md` and published EventStore `3.127.0` (`e1d8b17160202761ab5c9606cafbcf4d1a4b92c3`). The kernel binds gateway options and DAPR configuration fallbacks without process reads; existing clients use current per-send targets/credentials, new clients use the current endpoint, and caller overrides are preserved. Isolated reload/rotation/removal and routing regressions pass, including a falsifying fixed-options control. See `tests/five-magic-link-runtime-deferrals.md`.
-
-summary: Bind the EventStore gateway target and API token through IConfiguration/options instead of process environment variables at registration time.
-evidence: Split from the Story 3.6 remaining-work intent (2026-09-15). Re-verified open at `fe82c7d`: `src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:49,52,98-100` still call `Environment.GetEnvironmentVariable` for `DAPR_HTTP_ENDPOINT`/`DAPR_HTTP_PORT`/`DAPR_API_TOKEN`, and `RuntimeRegistrationTests` still mutates them process-wide under parallel xUnit collections. Carries the earlier decision-4 entry forward unchanged.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-41: Record the Hexalith.Timesheets.ServiceDefaults ownership handover to the EventStore SDK in docs/launch-readiness.md.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: docs/launch-readiness.md:73-88
-source_spec: none
-reason: Split from the Story 3.6 remaining-work intent (2026-09-15). The decision-2 half of the earlier documentation goal is superseded: `docs/launch-readiness.md:73-88` now records the enforced `InternalSurfaceGuard` port split as a wired control instead of the planned sidecar/network-isolation note.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-runtime-guidance-deferrals.md`. The readiness host-controls section now records that AddEventStoreDomainService delegates observability, health, discovery, and HTTP resilience to EventStore.ServiceDefaults. The architecture-required local project and host reference remain; removal still requires a story naming that project. This documentation handover supplies no runtime or deployed acceptance.
-
-summary: Record the Hexalith.Timesheets.ServiceDefaults ownership handover to the EventStore SDK in docs/launch-readiness.md.
-evidence: Split from the Story 3.6 remaining-work intent (2026-09-15). The decision-2 half of the earlier documentation goal is superseded: `docs/launch-readiness.md:73-88` now records the enforced `InternalSurfaceGuard` port split as a wired control instead of the planned sidecar/network-isolation note. Decision 5 remains open -- `ServiceDefaults` appears nowhere in the readiness record, and removal stays with a story that names that project per CLAUDE.md.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-42: Synchronize Story 3.6 tracking artifacts and the three agent-context entry points with the delivered implementation.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: sprint-status.yaml:2
-source_spec: none
-reason: Split from the Story 3.6 remaining-work intent (2026-09-15); this is the only remaining goal that lets `3-6-implement-eventstore-backed-magic-link-state-loading` leave `in-progress`. The story's Completion Notes still claim the index has no live `IDomainProjectionHandler` wiring and that the loader folds a domain-wide read, its File List omits the files added after `eb11472`, its review checkboxes read 24 unchecked items that later increments closed, `sprint-status.yaml:2` disagrees with that count, and the "Known pitfalls" entry in `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` is false now that `src/Hexalith.Timesheets/Program.cs:15-17` registers the Projections assembly.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-historical-story-tracking-deferrals.md` as a tracking/guidance request already satisfied by the historical-note labels, explicit supersession, cumulative implementation inventory, reconciled review dispositions, corrected sprint header and synchronized entry points. The original assertion that synchronization alone permits story completion is superseded: deployed authority/inventory/shared-rebuild and current-graph runtime gates remain open, so Story 3.6 stays in-progress and release stays FAIL. See `tests/five-historical-story-tracking-deferrals.md`.
-
-summary: Synchronize Story 3.6 tracking artifacts and the three agent-context entry points with the delivered implementation.
-evidence: Split from the Story 3.6 remaining-work intent (2026-09-15); this is the only remaining goal that lets `3-6-implement-eventstore-backed-magic-link-state-loading` leave `in-progress`. The story's Completion Notes still claim the index has no live `IDomainProjectionHandler` wiring and that the loader folds a domain-wide read, its File List omits the files added after `eb11472`, its review checkboxes read 24 unchecked items that later increments closed, `sprint-status.yaml:2` disagrees with that count, and the "Known pitfalls" entry in `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` is false now that `src/Hexalith.Timesheets/Program.cs:15-17` registers the Projections assembly.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-43: Restore loader fold integrity for same-sequence events and remove the inert de-duplication path.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:382-385
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
-reason: Split from that spec at the 2026-09-15 token gate (~2900 tokens) so the Projections layer ships first. `EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:382-385` compares only `EventTypeName`, `SerializationFormat` and `Payload` where `ProjectionEventReader.Equivalent` (`ProjectionEventReader.cs:82-90`) compares eight fields, so two events at one sequence differing only by `MessageId` collapse silently instead of being rejected as ambiguous.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-eventstore-handoffs.md`. The loader already normalizes contiguous sequences, compares full event envelopes and rejects blank/repeated message IDs; inert OrderedDistinct and write-only applied-ID paths are gone. Existing regressions cover conflicting metadata and equivalent duplicates, and the concrete-loader HTTP test now supplies an actual cross-tenant candidate across all four public routes. Current verification is recorded in `tests/five-eventstore-handoffs.md`; no new loader behavior or deployed acceptance is claimed.
-
-summary: Restore loader fold integrity for same-sequence events and remove the inert de-duplication path.
-evidence: Split from that spec at the 2026-09-15 token gate (~2900 tokens) so the Projections layer ships first. `EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:382-385` compares only `EventTypeName`, `SerializationFormat` and `Payload` where `ProjectionEventReader.Equivalent` (`ProjectionEventReader.cs:82-90`) compares eight fields, so two events at one sequence differing only by `MessageId` collapse silently instead of being rejected as ambiguous. `OrderedDistinct` (`:397-411`) is now a pass-through because `:369-394` already normalizes and `:386` throws on repeated MessageIds, leaving `appliedMessageIds` (`:166`, `:219`) write-only. Also covers the degenerate HTTP `"cross-tenant"` case at `MagicLinkConfirmationHttpBoundaryTests.cs:1036`, which maps to `null` and is byte-identical to the `"unknown"` arm at `:1032`, leaving the loader comparison at `:89` on one unit test (`EventStoreMagicLinkConfirmationCapabilityStateLoaderTests.cs:181`).
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
+archived: 2026-10-25
 
 ### DW-44: Make the kernel's EventStore gateway registrations independent so a pre-registered client cannot suppress them.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:47
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
-reason: Split from that spec at the 2026-09-15 token gate. `src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:47` is the only non-`TryAdd` guard in `AddTimesheetsServerKernel`; a caller that pre-registers just `IEventStoreGatewayClient` silently skips the `EventStoreGatewayClientOptions` configuration at `:49`, the typed/named `HttpClient`, `AddEventStoreDaprServiceInvocation` at `:50-52`, and the `ICommandStatusLocationBuilder` that `AddEventStoreGatewayClient` registers internally.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-integration-handoffs.md`. SDK supporting options/HTTP-factory services and its own default command-status Location descriptor are registered independently. Caller gateway descriptors, options and named transport configuration remain untouched; only the default gateway receives sidecar origin/routing. Repeated composition has no duplicate routing handler. Regression coverage includes a preconfigured real SDK gateway, scoped/enumerable overrides, and default/custom Location policy. IConfiguration/token-rotation binding remains separately open.
-
-summary: Make the kernel's EventStore gateway registrations independent so a pre-registered client cannot suppress them.
-evidence: Split from that spec at the 2026-09-15 token gate. `src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs:47` is the only non-`TryAdd` guard in `AddTimesheetsServerKernel`; a caller that pre-registers just `IEventStoreGatewayClient` silently skips the `EventStoreGatewayClientOptions` configuration at `:49`, the typed/named `HttpClient`, `AddEventStoreDaprServiceInvocation` at `:50-52`, and the `ICommandStatusLocationBuilder` that `AddEventStoreGatewayClient` registers internally. This block is the same code the deferred `IConfiguration`-binding goal rewrites, so the two should be scheduled together.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
+archived: 2026-10-25
 
 ### DW-45: Settle whether a rebuild plan may carry LastWrite for an existing read-model row that comes back without an ETag.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: MagicLinkTokenHashCapabilityIndexProjection.cs:75-88
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
-reason: Deferred from that spec's review as unverified. `ReadModelBatchConcurrency`'s remarks state "A missing ETag is never silently translated into last-write behavior", and the index plan's value is merged from `current.Value` through `ReplaceTenant` (`MagicLinkTokenHashCapabilityIndexProjection.cs:75-88`), which carries other tenants' entries, so an unconditional write across the dispatcher's read-to-commit window would lose a concurrent update.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-projection-rebuild-deferrals.md`. Legacy single-row rebuild plan creation now refuses an existing value with a null ETag, and every empty or whitespace ETag even when the value materializes as null, instead of selecting LastWrite or an unusable CreateOnly. Only a null value paired with a null ETag selects CreateOnly. Absent rows retain CreateOnly; existing rows, including JSON-null materialization, retain exact ETag Match. Both handlers have refusal and unchanged-state/ETag regressions. The SDK already blocks writes over foreign envelopes; this closes the unsafe plan fallback without claiming demonstrated default-store data loss.
-
-summary: Settle whether a rebuild plan may carry LastWrite for an existing read-model row that comes back without an ETag.
-evidence: Deferred from that spec's review as unverified. `ReadModelBatchConcurrency`'s remarks state "A missing ETag is never silently translated into last-write behavior", and the index plan's value is merged from `current.Value` through `ReplaceTenant` (`MagicLinkTokenHashCapabilityIndexProjection.cs:75-88`), which carries other tenants' entries, so an unconditional write across the dispatcher's read-to-commit window would lose a concurrent update. The concrete path is refuted today: staging rejects `foreignEnvelope || !SatisfiesConcurrency` (`ReadModelBatchProtocol.cs:471-472`), which blocks envelope-wrapped rows for every mode including Unconditional, and the envelope path (`ResolveVisibleAsync`, `:315-327`) is the only way either shipped store returns an existing row with an empty ETag. What would settle it: an `IReadModelStore` implementation that returns an existing, non-envelope row with an empty ETag.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
+archived: 2026-10-25
 
 ### DW-46: Guard the magic-link index rebuild path against null-deserialized entry fields the way the catalog path now guards freshness.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
-reason: Deferred from that spec's review as pre-existing. Neither `AccumulateAsync` nor `FinalizeAsync` in `MagicLinkTokenHashCapabilityIndexProjectionHandler` calls `Guarded`, while `ReplaceTenant` reads `pair.Value.Tenant.TenantId` and `CanonicalCandidate` reads the same chain -- all non-nullable by declaration and all populated by a JSON `null` exactly as `ProjectionFreshness` is.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-projection-rebuild-deferrals.md`. Legacy shared-candidate decoding (`AccumulateAsync`/`FinalizeAsync`) validates collections, entries, token hashes, tenants and capability identifiers before canonical ordering. The separate streamed partition decoder is outside this closure and has a follow-up below. Finalization guards persisted merge inputs and tenant replacement. Serialized null-shape regressions cover accumulation (including empty history) and finalization, and verify unchanged persisted contents/ETags and no saves.
-
-summary: Guard the magic-link index rebuild path against null-deserialized entry fields the way the catalog path now guards freshness.
-evidence: Deferred from that spec's review as pre-existing. Neither `AccumulateAsync` nor `FinalizeAsync` in `MagicLinkTokenHashCapabilityIndexProjectionHandler` calls `Guarded`, while `ReplaceTenant` reads `pair.Value.Tenant.TenantId` and `CanonicalCandidate` reads the same chain -- all non-nullable by declaration and all populated by a JSON `null` exactly as `ProjectionFreshness` is. The spec's matrix named the one field the catalog owns rather than the defect class, so the sibling handler got neither a guard nor a test.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
+archived: 2026-10-25
 
 ### DW-47: Guard the catalog rebuild candidate's Items collection against JSON-null the way its freshness is guarded.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
-reason: Deferred from that spec's review as pre-existing. `TenantActivityTypeCatalogProjectionHandler.FinalizeAsync` rewrites only `ProjectionFreshness` inside the guarded block, so a candidate deserialized with `"items":null` passes through untouched and the plan publishes a `Fresh` catalog whose `Items` is null, moving the dereference to every consumer of the read model.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-projection-rebuild-deferrals.md`. Candidate decoding rejects null Items, null members and missing/blank item identifiers before either rebuild stage can publish them; empty collections remain valid. Live merge also refuses an existing null Items collection rather than treating it as empty. Malformed candidates are checked even when the supplied history contributes nothing.
-
-summary: Guard the catalog rebuild candidate's Items collection against JSON-null the way its freshness is guarded.
-evidence: Deferred from that spec's review as pre-existing. `TenantActivityTypeCatalogProjectionHandler.FinalizeAsync` rewrites only `ProjectionFreshness` inside the guarded block, so a candidate deserialized with `"items":null` passes through untouched and the plan publishes a `Fresh` catalog whose `Items` is null, moving the dereference to every consumer of the read model.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
+archived: 2026-10-25
 
 ### DW-48: Extend ProjectionEventReader's wire-payload hardening beyond EventTypeName to SerializationFormat and Payload.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
-reason: Deferred from that spec's review as pre-existing and outside the one field the spec named. Once an event matches, `Deserialize` still trusts `SerializationFormat` (a JSON-null format produces the misleading "does not use JSON serialization" message) and `Payload`, and `Equivalent` compares `left.Payload.AsSpan().SequenceEqual(right.Payload)`, where a JSON-null payload reads as an empty span and compares equal to another empty payload -- so two distinct malformed events at one sequence can be treated as equivalent instead of ambiguous.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-projection-rebuild-deferrals.md`. Normalize rejects null/blank formats and null payloads before equivalence, including duplicate unknown events. Direct recognized-event deserialization also rejects these malformed envelopes; empty, invalid-JSON, JSON-null and non-JSON recognized payload controls exercise existing deterministic failures. Valid unknown events remain ignorable.
-
-summary: Extend ProjectionEventReader's wire-payload hardening beyond EventTypeName to SerializationFormat and Payload.
-evidence: Deferred from that spec's review as pre-existing and outside the one field the spec named. Once an event matches, `Deserialize` still trusts `SerializationFormat` (a JSON-null format produces the misleading "does not use JSON serialization" message) and `Payload`, and `Equivalent` compares `left.Payload.AsSpan().SequenceEqual(right.Payload)`, where a JSON-null payload reads as an empty span and compares equal to another empty payload -- so two distinct malformed events at one sequence can be treated as equivalent instead of ambiguous.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
+archived: 2026-10-25
 
 ### DW-49: Reconcile the two rebuild handlers' malformed-candidate exception types.
 
-origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
-location: MagicLinkStateProjectionHandlerTests.cs:378
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
-reason: Deferred from that spec's review. Bringing the catalog rebuild path under `Guarded` reclassifies a malformed-candidate `InvalidOperationException` from `FromCandidate` as the internal `ProjectionFoldException`, while `MagicLinkTokenHashCapabilityIndexProjectionHandler.FromCandidate` still raises `InvalidOperationException` for the same condition -- asserted as such at `MagicLinkStateProjectionHandlerTests.cs:378`.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-projection-rebuild-deferrals.md`. Both legacy shared-candidate decoders (`FromCandidate`) map malformed JSON and invalid/null shapes to ProjectionFoldException; index merge and foreign-tenant rejection use the same deterministic boundary. Store awaits stay outside fold guards, preserving transport exceptions. Existing freshness/cross-tenant tests and a shared serialized-candidate matrix verify the contract.
-
-summary: Reconcile the two rebuild handlers' malformed-candidate exception types.
-evidence: Deferred from that spec's review. Bringing the catalog rebuild path under `Guarded` reclassifies a malformed-candidate `InvalidOperationException` from `FromCandidate` as the internal `ProjectionFoldException`, while `MagicLinkTokenHashCapabilityIndexProjectionHandler.FromCandidate` still raises `InvalidOperationException` for the same condition -- asserted as such at `MagicLinkStateProjectionHandlerTests.cs:378`. Two handlers on one `IAsyncDomainSharedProjectionRebuildHandler` contract now report the same condition with two types. No caller depends on either today; `DomainSharedProjectionRebuildDispatcher` catches `Exception` and returns `Indeterminate`/`HandlerFailure` for both.
+origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-projection-write-and-fold-correctness.md`
+archived: 2026-10-25
 
 ### DW-50: Decide how loaders should treat unknown future events in authority streams.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `EventStoreMagicLinkConfirmationCapabilityStateLoader.Deserialize` returns null for an unrecognized event and folding continues, so a future revocation-like event after otherwise valid state could be ignored. Every current capability and Time Entry event type is recognized; a current producer or planned event with authorization-changing semantics would settle this maybe-false risk.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. Complete capability/Time Entry admission rejects unknown events, preserves known stored/domain aliases, rejection no-ops and ordinary owner events, and returns no partial authority. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loading-2026-09-15"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)
-summary: Decide how loaders should treat unknown future events in authority streams.
-evidence: `EventStoreMagicLinkConfirmationCapabilityStateLoader.Deserialize` returns null for an unrecognized event and folding continues, so a future revocation-like event after otherwise valid state could be ignored. Every current capability and Time Entry event type is recognized; a current producer or planned event with authorization-changing semantics would settle this maybe-false risk.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-51: Add a total read budget if realistic aggregate history can amplify one magic-link request.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `ReadAllEventsAsync` pages until the pinned latest sequence is reached and has no total page or event cap. EventStore limits each page and current domain flows keep these aggregates bounded; evidence of a realistically oversized or continuously advancing stream causing request amplification would settle the risk.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. Invocation-local history allowances share page/event/payload/deadline limits across repeated streams, charge raw duplicates before buffering, and bound non-cooperative awaited stream reads. Validated options default to 64 pages, 10,000 events, 16 MiB and five seconds. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
-
-summary: Add a total read budget if realistic aggregate history can amplify one magic-link request.
-evidence: `ReadAllEventsAsync` pages until the pinned latest sequence is reached and has no total page or event cap. EventStore limits each page and current domain flows keep these aggregates bounded; evidence of a realistically oversized or continuously advancing stream causing request amplification would settle the risk.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-52: Prove or close the stale-snapshot authorization risk across the loader's separate reads.
 
@@ -594,51 +381,30 @@ evidence: Capability, Time Entry, and catalog state are loaded separately, so a 
 
 ### DW-53: Wire and prove an EventStore resource in the default live AppHost topology.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
-location: Hexalith.Timesheets.AppHost/Program.cs
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `Hexalith.Timesheets.AppHost/Program.cs` deliberately declares no EventStore resource, so a valid link cannot complete AC1 in the default live topology. `docs/launch-readiness.md` already records this High gap as an infrastructure-owned waiver, and repository policy prevents this chunk from changing topology.
 status: done 2026-10-22
-resolution: Superseded 2026-10-22 by verification in `spec-close-five-historical-host-integration-deferrals.md`. This duplicate no-resource diagnosis is replaced by delivered local run-mode wiring and dated isolated persistence proof from `spec-3-6-local-aspire-dapr-topology.md`; the retained October 18 final journey passed 1/1 in 131.536 s on the earlier graph. The surviving proof requirement is consolidated into the existing automated AppHost smoke and NuGet-backed current-graph qualification entries; neither those gates nor deployed acceptance is closed here. See `tests/five-historical-host-integration-deferrals.md`.
-
-summary: Wire and prove an EventStore resource in the default live AppHost topology.
-evidence: `Hexalith.Timesheets.AppHost/Program.cs` deliberately declares no EventStore resource, so a valid link cannot complete AC1 in the default live topology. `docs/launch-readiness.md` already records this High gap as an infrastructure-owned waiver, and repository policy prevents this chunk from changing topology.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-54: Preserve explicit non-Fresh catalog state only when the no-disclosure bundle can represent it safely.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: The loader collapses stale, rebuilding, degraded, unknown, absent, and malformed catalogs into the same unavailable bundle even though AC2 names the states explicitly. The story and code already defer this Medium gap because exposing an honest category requires revisiting the approved indistinguishable-response design.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. The concrete loader validates catalog shape, retains only the defined non-Fresh status internally, clears items/cursor/time/detail and withholds capability/Time Entry state; malformed or missing input stays unavailable. Existing tests cover all five non-Fresh states and malformed controls, while the HTTP boundary retains opaque denial. No public status disclosure or product-policy change is introduced. See `tests/five-runtime-correctness-carry-forwards.md`.
-
-summary: Preserve explicit non-Fresh catalog state only when the no-disclosure bundle can represent it safely.
-evidence: The loader collapses stale, rebuilding, degraded, unknown, absent, and malformed catalogs into the same unavailable bundle even though AC2 names the states explicitly. The story and code already defer this Medium gap because exposing an honest category requires revisiting the approved indistinguishable-response design.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-55: Correct the launch-readiness UI revisit condition to match the FrontComposer policy.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
-location: docs/launch-readiness.md:54
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `docs/launch-readiness.md:54` says a future UI-bearing story should scaffold `Hexalith.Timesheets.UI` and `.UI.Tests`, while current repository guidance forbids a Timesheets UI project and assigns future UI to FrontComposer. This is a pre-existing Story 5.1 documentation issue outside the loader-core chunk.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-runtime-guidance-deferrals.md`. The already-delivered NFR13 classification assigns rendered Fluent UI V5 and WCAG evidence to the consuming FrontComposer host and explicitly forbids scaffolding Timesheets UI projects. The existing consumer-host architecture check enforces this policy; no new UI implementation or rendering acceptance is claimed.
-
-summary: Correct the launch-readiness UI revisit condition to match the FrontComposer policy.
-evidence: `docs/launch-readiness.md:54` says a future UI-bearing story should scaffold `Hexalith.Timesheets.UI` and `.UI.Tests`, while current repository guidance forbids a Timesheets UI project and assigns future UI to FrontComposer. This is a pre-existing Story 5.1 documentation issue outside the loader-core chunk.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-15)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-56: Unknown future capability or Time Entry authority events are silently ignored after otherwise valid state. Every event emitted by current producers is recognized; a current or planned authorization-changing event would settle whether unknown-event tolerance can make a stale link usable.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading rerun (2026-09-15)"), 2026-10-25
-location: n/a
-reason: Unknown future capability or Time Entry authority events are silently ignored after otherwise valid state. Every event emitted by current producers is recognized; a current or planned authorization-changing event would settle whether unknown-event tolerance can make a stale link usable.
 status: done 2026-10-25
-resolution: Closed 2026-10-25 by verification in `spec-five-historical-verification-deferrals.md`. This repeated tolerance report is satisfied by the canonical resolved unknown-authority-event entry. Complete capability and owner admission sets reject an unknown suffix opaquely; known aliases and rejection no-ops remain supported. This does not settle cross-snapshot consistency or future schema migration policy. See `tests/five-historical-verification-deferrals.md`.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loading-rerun-2026-09-15"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading rerun (2026-09-15)
-evidence: Unknown future capability or Time Entry authority events are silently ignored after otherwise valid state. Every event emitted by current producers is recognized; a current or planned authorization-changing event would settle whether unknown-event tolerance can make a stale link usable.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading rerun (2026-09-15)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-57: Capability, Time Entry, and catalog are read as separate snapshots without a final capability revision check. Establish whether downstream EventStore dispatch can commit from this stale loaded state without optimistic revalidation; the default topology does not currently provide that live path.
 
@@ -651,13 +417,9 @@ evidence: Capability, Time Entry, and catalog are read as separate snapshots wit
 
 ### DW-58: Non-`Fresh` catalog states collapse to one `Unavailable` bundle instead of preserving the AC2 freshness vocabulary. This real Medium gap remains deferred because preserving individual states requires changing the approved no-disclosure bundle contract.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading rerun (2026-09-15)"), 2026-10-25
-location: n/a
-reason: Non-`Fresh` catalog states collapse to one `Unavailable` bundle instead of preserving the AC2 freshness vocabulary. This real Medium gap remains deferred because preserving individual states requires changing the approved no-disclosure bundle contract.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-historical-host-integration-deferrals.md`. This repeated collapse observation is superseded by the canonical resolved “Preserve explicit non-Fresh catalog state” entry and the original September 13 observation reconciled above. Loader status-only sanitization and indistinguishable HTTP denial already satisfy this concern without exposing freshness publicly. Missing/malformed catalogs still fail closed. See `tests/five-historical-host-integration-deferrals.md`.
-
-evidence: Non-`Fresh` catalog states collapse to one `Unavailable` bundle instead of preserving the AC2 freshness vocabulary. This real Medium gap remains deferred because preserving individual states requires changing the approved no-disclosure bundle contract.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading rerun (2026-09-15)"), 2026-10-25
+archived: 2026-10-25
 
 ### DW-59: Decide whether contributor confirmation remains valid after a Time Entry has already been approved or corrected.
 
@@ -674,27 +436,17 @@ evidence: `ValidateConfirmationScope` and `TimeEntry.ValidateExternalConfirmatio
 
 ### DW-60: Determine whether capability folds must reject illegal transition sequences found in EventStore history.
 
-origin: migrated from legacy ledger ("Deferred from: build review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-2 (2026-09-16)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
-reason: `MagicLinkCapabilityState.Apply` accepts a later issuance event after a used, revoked, or expired terminal event and thereby reopens the folded capability. Sanctioned writers do not emit that transition.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Capability folds now require one issuance followed by at most one terminal transition, refusing malformed raw or wrapped replay before mutation. State snapshots remain unchanged on refusal and loader regressions prove opaque denial. This defensive check establishes neither sanctioned-writer reachability nor deployed corruption or acceptance.
-
-summary: Determine whether capability folds must reject illegal transition sequences found in EventStore history.
-evidence: `MagicLinkCapabilityState.Apply` accepts a later issuance event after a used, revoked, or expired terminal event and thereby reopens the folded capability. Sanctioned writers do not emit that transition. Evidence that the EventStore command boundary can admit such a sequence, or an inventory of one in deployed streams, would establish a reachable integrity defect.
+origin: migrated from legacy ledger ("Deferred from: build review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-2 (2026-09-16)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+archived: 2026-10-25
 
 ### DW-61: Determine whether Time Entry folds must reject lifecycle events in illegal orders found in EventStore history.
 
-origin: migrated from legacy ledger ("Deferred from: build review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-2 (2026-09-16)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
-reason: `TimeEntryState.Apply` can fold sequences such as a correction while Draft or another Recorded event after recording, although sanctioned writers reject those transitions before emission. Evidence that the EventStore command boundary can admit such sequences, or an inventory of one in deployed streams, would establish a reachable integrity defect.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Authoritative and evidence folds now require recording and the sanctioned lifecycle predecessor, refuse repeated recording and illegal corrections before mutation/materialization, and share full/incremental evidence transition checks. Regressions retain valid correction/resubmission, wrapped replay, rejected-command no-ops, owner filtering and canonical redelivery. Invalid full/suffix deliveries preserve persisted contents and ETags; confirmation-after-approval policy and Time Entry terminal-capability bookkeeping are unchanged. No deployed acceptance is inferred.
-
-summary: Determine whether Time Entry folds must reject lifecycle events in illegal orders found in EventStore history.
-evidence: `TimeEntryState.Apply` can fold sequences such as a correction while Draft or another Recorded event after recording, although sanctioned writers reject those transitions before emission. Evidence that the EventStore command boundary can admit such sequences, or an inventory of one in deployed streams, would establish a reachable integrity defect.
+origin: migrated from legacy ledger ("Deferred from: build review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-2 (2026-09-16)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+archived: 2026-10-25
 
 ### DW-62: Decide whether contributor confirmation must check Activity Type availability the way the display path does.
 
@@ -723,46 +475,24 @@ evidence: The magic-link path consumes the tenant catalog, while project restric
 
 ### DW-64: Refresh the agent-context files that still describe the token-hash index as unwired.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-16)"), 2026-10-25
-location: CLAUDE.md
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
-reason: `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` each still state that `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". The shipped projection handlers, this story's 2026-09-16 supersession notice, and the new `LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers` fitness test (which asserts the readiness document must not contain "no projection-host wiring") all contradict it.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. The synchronized managed entry points already state that the HTTP host registers the projection assembly and EventStore processing, corroborated by Program.cs. They explicitly preserve unfinished deployed authority/shared-rebuild and current-graph runtime acceptance. The historical unwired-index diagnosis is superseded by delivered guidance; the older references elsewhere in this ledger calling this the canonical open 2026-09-16 guidance entry are superseded by this disposition. No runtime wiring or context regeneration is introduced here. See `tests/five-agent-guidance-carry-forwards.md`.
-
-summary: Refresh the agent-context files that still describe the token-hash index as unwired.
-evidence: `CLAUDE.md`, `AGENTS.md`, and `.github/copilot-instructions.md` each still state that `MagicLinkTokenHashCapabilityIndexProjection` "has no projection-host wiring; valid links fail closed until a story wires it". The shipped projection handlers, this story's 2026-09-16 supersession notice, and the new `LaunchReadinessRecordsStructuredMagicLinkOwnershipAndTimingWaivers` fitness test (which asserts the readiness document must not contain "no projection-host wiring") all contradict it. The fix edits agent-context files, which is outside a code review's remit. Consolidated here from repeated findings since 2026-09-13; every agent session loads this as fact about a security-relevant path.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-16)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
+archived: 2026-10-25
 
 ### DW-65: Implement durable, atomic magic-link confirmation and adjustment persistence for unfinished Story 3.3/3.4 behavior.
 
-origin: migrated from legacy ledger ("Deferred from: build planning for Story 3.6 (2026-09-17)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-reason: The live POST endpoints return `202 Accepted` from in-memory domain results without calling `IEventStoreGatewayClient.SubmitCommandAsync`, so neither the Time Entry event nor capability-use event is persisted and concurrent reuse is not prevented. The current EventStore gateway accepts one aggregate per submission and exposes no atomic multi-aggregate API; sequential submissions would violate the approved atomicity requirement.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`, standardizing the existing October 10 supersession below. Current processing emits use plus matching Time Entry effect in one owner-stream batch; success requires Completed status and exact stored-event readback. Current HTTP and actor-recreation tests verify stored end state, single-use/replay and in-process concurrency. Deployed histories, distributed/live Dapr acceptance, uncertain cross-request outcomes and readback-budget policy remain separately open. See `tests/five-completed-implementation-followups.md`.
-
-<a id="deferred-from-build-planning-for-story-36-2026-09-17"></a>
-legacy_section: Deferred from: build planning for Story 3.6 (2026-09-17)
-summary: Implement durable, atomic magic-link confirmation and adjustment persistence for unfinished Story 3.3/3.4 behavior.
-evidence: The live POST endpoints return `202 Accepted` from in-memory domain results without calling `IEventStoreGatewayClient.SubmitCommandAsync`, so neither the Time Entry event nor capability-use event is persisted and concurrent reuse is not prevented. The current EventStore gateway accepts one aggregate per submission and exposes no atomic multi-aggregate API; sequential submissions would violate the approved atomicity requirement. A dedicated high-priority remediation must choose a platform coordination or aggregate-boundary design and prove persisted end state, concurrency, replay rejection, and partial-failure safety.
-update_2026_10_10: Both public POST routes now return the shared opaque `403` after pure domain decisions, and the in-process fixture observes zero EventStore submit attempts. The durable atomic write, persisted concurrency proof, and deployed-history inventory remain open; the earlier `202` behavior above is historical evidence.
-resolution_2026_10_10: Superseded by the later EventStore-backed submission increment. Both public POST routes now submit one atomic Time Entry owner batch, return `202` only after `Completed` status and exact stored-batch readback, and have local actor persistence, rejection replay, and concurrency tests. Deployed-history inventory and live Dapr-backed acceptance remain separate open release gates.
+origin: migrated from legacy ledger ("Deferred from: build planning for Story 3.6 (2026-09-17)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+archived: 2026-10-25
 
 ### DW-66: Remove the launch-readiness instruction to scaffold forbidden Timesheets UI projects.
 
-origin: migrated from legacy ledger ("Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-reason: The NFR13 revisit condition still directs a future story to create `Hexalith.Timesheets.UI` and `.UI.Tests`, contrary to repository policy assigning future UI to FrontComposer. This is pre-existing Story 5.1 documentation drift rather than a change caused by the review-evidence increment.
 status: done 2026-10-21
-resolution: Superseded 2026-10-21 by the canonical "Correct the launch-readiness UI revisit condition" disposition in `spec-close-five-runtime-guidance-deferrals.md`. The NFR13 row already assigns rendering and WCAG evidence to the consuming FrontComposer host and forbids Timesheets UI scaffolding; its existing architecture check passed. This duplicate supplies no separate open UI task.
-
-<a id="deferred-from-build-review-of-story-36-review-evidence-increment-2026-09-17"></a>
-legacy_section: Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)
-legacy_context: The managed agent-context drift found again in this review points to the canonical open 2026-09-16 Story 3.6 entry above; no duplicate work item is added here.
-summary: Remove the launch-readiness instruction to scaffold forbidden Timesheets UI projects.
-evidence: The NFR13 revisit condition still directs a future story to create `Hexalith.Timesheets.UI` and `.UI.Tests`, contrary to repository policy assigning future UI to FrontComposer. This is pre-existing Story 5.1 documentation drift rather than a change caused by the review-evidence increment.
+origin: migrated from legacy ledger ("Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+archived: 2026-10-25
 
 ### DW-67: Add automated AppHost runtime smoke evidence for the resolved Aspire and Keycloak package graph.
 
@@ -777,72 +507,38 @@ evidence: Existing fitness tests inspect AppHost source and project text but do 
 
 ### DW-68: Decide whether authoritative Time Entry folds must reject approved-correction events without a preceding approval transition.
 
-origin: migrated from legacy ledger ("Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-reason: `LoadTimeEntryAsync` accepts `TimeEntryApprovedCorrected` after only `TimeEntryRecorded`; sanctioned writers do not emit that sequence, but malformed EventStore history can be folded as approved correction evidence. The behavior predates this increment and needs the broader illegal-transition state-machine decision already identified for Time Entry history.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Approved correction now requires a recorded, approved, previously uncorrected Time Entry with approval evidence. State/evidence regressions refuse correction before approval, preserve preceding state and persisted selection, and retain equivalent valid approved-correction full/suffix replay. Positive loader correction fixtures now contain their required submission and approval/rejection predecessors.
-
-legacy_context: VG-02 is resolved rather than deferred: the current package-readiness inventory records `Microsoft.NET.Test.Sdk` `18.10.1`; the `18.10.0` occurrences remain only in dated historical planning and review records.
-summary: Decide whether authoritative Time Entry folds must reject approved-correction events without a preceding approval transition.
-evidence: `LoadTimeEntryAsync` accepts `TimeEntryApprovedCorrected` after only `TimeEntryRecorded`; sanctioned writers do not emit that sequence, but malformed EventStore history can be folded as approved correction evidence. The behavior predates this increment and needs the broader illegal-transition state-machine decision already identified for Time Entry history.
+origin: migrated from legacy ledger ("Deferred from: build review of Story 3.6 review-evidence increment (2026-09-17)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+archived: 2026-10-25
 
 ### DW-69: Decide whether Time Entry aggregate and evidence-projection folds must reject nested adjustment-scope disagreement the way the magic-link loader now does.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-reason: `EventStoreMagicLinkConfirmationCapabilityStateLoader.LoadTimeEntryAsync` throws when explicit nested adjustment scopes disagree with authoritative lineage, then fail-closes. `TimeEntryState.Apply(TimeEntryAdjustedThroughMagicLink)` and `TimeEntryEvidenceProjection` still take top-level `ActivityTypeScope` and store nested snapshots as-is, so malformed history can publish contradictory evidence.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Both folds refuse an explicit previous adjustment scope that differs from folded scope or an explicit adjusted scope that differs from the top-level scope before mutation. Direct, wrapped and supported omitted-scope replay remain deterministic without catalog inference; loader and handler fences remain in place. Full/suffix delivery regressions verify unchanged persisted contents and ETags after contradictory evidence.
-
-<a id="deferred-from-code-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-3md-2026-09-17"></a>
-legacy_section: Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)
-legacy_context: The independent review reconfirmed the single AppHost runtime-smoke VG-01 item recorded above: `references/Hexalith.Builds` resolves Aspire `13.5.4` and `Aspire.Hosting.Keycloak` `13.5.4-preview.1.26464.4`; Timesheets fitness tests require the readiness record to distinguish the historical 2026-09-15 smoke from the unverified current graph, but no automated test starts the topology. No duplicate work item is added here.
-summary: Decide whether Time Entry aggregate and evidence-projection folds must reject nested adjustment-scope disagreement the way the magic-link loader now does.
-evidence: `EventStoreMagicLinkConfirmationCapabilityStateLoader.LoadTimeEntryAsync` throws when explicit nested adjustment scopes disagree with authoritative lineage, then fail-closes. `TimeEntryState.Apply(TimeEntryAdjustedThroughMagicLink)` and `TimeEntryEvidenceProjection` still take top-level `ActivityTypeScope` and store nested snapshots as-is, so malformed history can publish contradictory evidence. Spec-3 forbade changing those folds; a later integrity story would have to own the fold-level guard.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+archived: 2026-10-25
 
 ### DW-70: Decide whether magic-link Time Entry folding must reject correction `PreviousValues` whose recorded scope disagrees with folded state.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
-reason: `LoadTimeEntryAsync` applies `TimeEntryCorrected` and `TimeEntryApprovedCorrected` with no previous-scope check, while the new adjustment guard covers only `TimeEntryAdjustedThroughMagicLink`. Sanctioned writers emit both snapshots or omit both.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-replay-integrity-deferrals.md`. Rejected and approved correction folds now refuse explicit previous-scope disagreement before field changes. Loader regressions prove opaque denial and evidence regressions prove full/suffix refusal without replacing persisted selection. Supported legacy omitted scopes inherit the preceding scope deterministically, with equivalent valid replay and canonical redelivery. No history rewrite, catalog inference, migration or deployed-readiness claim is made.
-
-summary: Decide whether magic-link Time Entry folding must reject correction `PreviousValues` whose recorded scope disagrees with folded state.
-evidence: `LoadTimeEntryAsync` applies `TimeEntryCorrected` and `TimeEntryApprovedCorrected` with no previous-scope check, while the new adjustment guard covers only `TimeEntryAdjustedThroughMagicLink`. Sanctioned writers emit both snapshots or omit both. Spec-2 rejected adding this guard as malformed-history-only; settling it needs the same illegal-history state-machine decision already ledgered for Time Entry folds.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md (2026-09-17)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
+archived: 2026-10-25
 
 ### DW-71: Rewrite historical Story 3.6 Completion Notes that still describe the token-hash index as unwired.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md (2026-09-17)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md`
-reason: Completion Notes and the 2026-06-22 senior-review carry-forward still say there is no live `IDomainProjectionHandler` wiring, which contradicts host discovery and the 2026-09-16 supersession in the same file. Pre-existing; this terminal-patches increment did not rewrite historical completion notes.
 status: done 2026-10-22
-resolution: Superseded 2026-10-22 by verification in `spec-close-five-historical-story-tracking-deferrals.md`. The Completion Notes are already explicitly historical and the September 16 notice expressly supersedes the old wiring/catalog observations without rewriting the historical review record. Current managed guidance corroborates handler registration while retaining unfinished runtime/deployed acceptance. Preserve those original notes rather than reselecting them as a current implementation defect. See `tests/five-historical-story-tracking-deferrals.md`.
-
-<a id="deferred-from-code-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-4md-2026-09-17"></a>
-legacy_section: Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md (2026-09-17)
-summary: Rewrite historical Story 3.6 Completion Notes that still describe the token-hash index as unwired.
-evidence: Completion Notes and the 2026-06-22 senior-review carry-forward still say there is no live `IDomainProjectionHandler` wiring, which contradicts host discovery and the 2026-09-16 supersession in the same file. Pre-existing; this terminal-patches increment did not rewrite historical completion notes.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md (2026-09-17)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-4.md`
+archived: 2026-10-25
 
 ### DW-72: Confirm whether Aspire publishes the Timesheets internal HTTP endpoint off the pod network when `isExternal` is omitted.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-18)"), 2026-10-25
-location: src/Hexalith.Timesheets.AppHost/Program.cs:16
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `src/Hexalith.Timesheets.AppHost/Program.cs:16` comments that the internal listener is "Declared non-external so it is not published off the pod network", but `:33` calls `WithHttpEndpoint(name: "internal", port: 8081, isProxied: false)` with no `isExternal: false`. `InternalSurfaceGuard` still refuses domain-service paths on any port but the configured one.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-local-apphost-boundary-deferrals.md`. The real compiled current AppHost endpoint model reports IsExternal=false for the internal listener in run and publish modes. Default and alternate public-port models retain internal port 8081. Comments now distinguish the annotation from actual network isolation; no deployment or Kubernetes isolation claim is made. See `tests/five-local-apphost-boundary-deferrals.md`.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loading-2026-09-18"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-18)
-legacy_context: Implementation File List chunk (`24a37c1c...307b2d7`, 36 runtime/contracts/server/projection files). Re-verified and not re-filed: DenyAll live-host valid-journey, missing AppHost EventStore resource, loader AC2 freshness collapse, Projections→Server layering move, and kernel gateway/`DaprClient` composition.
-summary: Confirm whether Aspire publishes the Timesheets internal HTTP endpoint off the pod network when `isExternal` is omitted.
-evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:16` comments that the internal listener is "Declared non-external so it is not published off the pod network", but `:33` calls `WithHttpEndpoint(name: "internal", port: 8081, isProxied: false)` with no `isExternal: false`. `InternalSurfaceGuard` still refuses domain-service paths on any port but the configured one. What would settle it: Aspire 13.5.3 publish/Kubernetes default for an unspecified `isExternal` on a second HTTP endpoint. Unverified medium if that default is external.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-73: Decide whether a magic-link adjustment may move a Time Entry off a retired recorded Activity Type.
 
@@ -860,15 +556,10 @@ evidence: `DescribeAdjustmentAsync` passes `requireCaptureAvailability: true` fo
 
 ### DW-74: Reconcile the launch-readiness package waiver rows with the current imported catalog, and scope the fitness pin to those rows.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)"), 2026-10-25
-location: docs/launch-readiness.md:26
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
-reason: The 2026-10-03 observation paragraph supplies the strings `LaunchReadinessTests` pins (Aspire `13.6.0`, Dapr `1.18.10`, Keycloak and CommunityToolkit `13.6.0-preview`, Fluent UI `5.0.0`). The alignment waiver row (`docs/launch-readiness.md:26`) and the prerelease exception (`:64`) still list Aspire `13.5.4`, Dapr `1.18.7`, Keycloak `13.5.4-preview.1.26464.4`, CommunityToolkit `13.5.1-beta.752` and Fluent UI `5.0.0-rc.5`.
 status: done 2026-10-18
-resolution: Resolved 2026-10-18 by Story 5.2. The `Platform and submodule alignment` verdict row and the `Platform prerelease dependency exception` classification row now record the restored 2026-10-18 graph (Aspire `13.6.1`, Dapr `1.18.10`, Keycloak `13.6.1-preview.1.26506.6`, CommunityToolkit Dapr `13.6.1-beta.935`, Fluent UI V5 catalog `5.0.1`), and `LaunchReadinessTests` now reads those named rows and the current-verdict paragraph instead of the whole section, so dated observation paragraphs cannot satisfy it.
-
-summary: Reconcile the launch-readiness package waiver rows with the current imported catalog, and scope the fitness pin to those rows.
-evidence: The 2026-10-03 observation paragraph supplies the strings `LaunchReadinessTests` pins (Aspire `13.6.0`, Dapr `1.18.10`, Keycloak and CommunityToolkit `13.6.0-preview`, Fluent UI `5.0.0`). The alignment waiver row (`docs/launch-readiness.md:26`) and the prerelease exception (`:64`) still list Aspire `13.5.4`, Dapr `1.18.7`, Keycloak `13.5.4-preview.1.26464.4`, CommunityToolkit `13.5.1-beta.752` and Fluent UI `5.0.0-rc.5`. The current previews have no waiver row, and `ShouldContain` over the whole section accepts the observation paragraph. Owner: Story 5.2's package-currency refresh.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+archived: 2026-10-25
 
 ### DW-75: Capture the cause of the 2026-10-03 AppHost smoke in which the Timesheets resource did not stay up.
 
@@ -895,123 +586,66 @@ resolution_note: Superseded diagnosis / open identity handoff (2026-10-22), veri
 
 ### DW-77: Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items before the story is marked done.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)"), 2026-10-25
-location: 3-6-implement-eventstore-backed-magic-link-state-loading.md
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
-reason: Earlier review rounds in `3-6-implement-eventstore-backed-magic-link-state-loading.md` (lines 75-94, 129-132, 207-212, 248-255) remain `[ ]`. Several were implemented by later increments (catalog `Fresh` promotion, capability/Time Entry `ActivityTypeId` agreement).
 status: done 2026-10-04
-resolution: Resolved on 2026-10-04. The evidence above is historical; the reconciliation recorded all 37 dispositions in the Story 3.6 file: 28 implemented or superseded and nine deferred. This dated entry is retained for traceability; acceptance and release gates remain open.
-
-summary: Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items before the story is marked done.
-evidence: Earlier review rounds in `3-6-implement-eventstore-backed-magic-link-state-loading.md` (lines 75-94, 129-132, 207-212, 248-255) remain `[ ]`. Several were implemented by later increments (catalog `Fresh` promotion, capability/Time Entry `ActivityTypeId` agreement). Others became ledgered deferrals (moving the shapes to Contracts, `IConfiguration` gateway binding). Each needs a tick, or a conversion to Defer with its ledger reference.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+archived: 2026-10-25
 
 ### DW-78: Refresh the agent-context SDK version and build instruction.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)"), 2026-10-25
-location: CLAUDE.md
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
-reason: `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` state SDK `10.0.302`, while `global.json` is `10.0.401`. They also direct a bare `Hexalith.Timesheets.slnx` restore/build, which currently fails with `HXW0002` (176 errors).
 status: done 2026-10-21
-resolution: Superseded 2026-10-21 by the canonical explicit-Debug build-flow and current runner/workflow dispositions in `spec-close-five-runtime-guidance-deferrals.md`. The entry points already pin SDK 10.0.402 and matching Debug/source restore/build; current MTP guidance replaces obsolete VSTest rejection wording. The separate Works configuration/forwarding follow-ups remain open.
-
-summary: Refresh the agent-context SDK version and build instruction.
-evidence: `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` state SDK `10.0.302`, while `global.json` is `10.0.401`. They also direct a bare `Hexalith.Timesheets.slnx` restore/build, which currently fails with `HXW0002` (176 errors). The wording depends on the 2026-10-03 Build-gate decision.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
+archived: 2026-10-25
 
 ### DW-79: Preserve the external Works reference's Configuration so the bare Timesheets solution build selects the intended dependency mode.
 
-origin: migrated from legacy ledger ("Deferred from: build guidance review patches for Story 3.6 (2026-10-04)"), 2026-10-25
-location: Microsoft.Common.CurrentVersion.targets
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
-reason: The 2026-10-03 bare solution build and explicit-Debug retry failed with `HXW0002` and missing Works serialization references (176 errors). SDK `Microsoft.Common.CurrentVersion.targets` enables `ShouldUnsetParentConfigurationAndPlatform` for solution traversal, stripping Configuration from out-of-solution references including `src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj` → `Hexalith.Works.Contracts`.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-integration-handoffs.md`. The Timesheets Works adapter and Works.Tests set ShouldUnsetParentConfigurationAndPlatform=false locally, covering both explicit and SDK-added transitive Works.Contracts edges. Actual no-global-mode Debug solution restore/build passes with zero warnings/errors; isolated SDK traversal regressions exercise both real consumer projects and retain Release package selection. Documented solution verification continues to use explicit Debug/source mode; no sibling settings, graph policy, or auditing gate changed.
-
-<a id="deferred-from-build-guidance-review-patches-for-story-36-2026-10-04"></a>
-legacy_section: Deferred from: build guidance review patches for Story 3.6 (2026-10-04)
-summary: Preserve the external Works reference's Configuration so the bare Timesheets solution build selects the intended dependency mode.
-owner: Timesheets build configuration maintainer, coordinating with Hexalith.Works.
-evidence: The 2026-10-03 bare solution build and explicit-Debug retry failed with `HXW0002` and missing Works serialization references (176 errors). SDK `Microsoft.Common.CurrentVersion.targets` enables `ShouldUnsetParentConfigurationAndPlatform` for solution traversal, stripping Configuration from out-of-solution references including `src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj` → `Hexalith.Works.Contracts`. Works then defaults to package mode while emitting Debug assets and reports `HXW0002` under warnings-as-errors. The diagnostic was introduced by Works `d1b94bb5533ced7cb4ac19a949b260ca8468802c`, pulled into Timesheets on 2026-09-19 by `aef3f4ed4b4bb9bfee270d75361d637013c13551` / `b92344d1f6828d7f07227d02110195e5aff97bde`. Update 2026-10-20 (Story 5.2 round-6 review of `180d9fd..62de12f`): the bare half no longer reproduces. Since `c4695a5`, `Directory.Build.props:20-22` makes a bare restore/build `Release` with `UseHexalithProjectReferences=false`, the package graph, so the out-of-solution Works project is not built; Story 5.2's 2026-10-18 forced no-cache bare restore and `-warnaserror` build passed (15 projects, 0 warnings, 0 errors). The explicit `-c Debug` solution build without `-p:UseHexalithProjectReferences=true` was not rerun, so that half and the follow-up below stay open. The stale `README.md:14` wording is tracked by the Story 5.2 round-4 entry "Correct the agent entry points…".
-follow_up: First verify the narrow per-reference propagation `AdditionalProperties="NuGetAudit=false;Configuration=$(Configuration)"`; if solution traversal still strips it, evaluate `ShouldUnsetParentConfigurationAndPlatform=false` with its wider effect on external references. Re-run matching restores and bare/explicit-Debug solution builds with warnings-as-errors, and check Release package-mode selection before accepting either fix. These are candidate fixes, not verified changes in this increment. Keep the README's verified source-reference Debug commands and the Build gate's PASS until that follow-up is implemented and proven.
+origin: migrated from legacy ledger ("Deferred from: build guidance review patches for Story 3.6 (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
+archived: 2026-10-25
 
 ### DW-80: Restore a working `dotnet test` path for the Timesheets test projects under SDK `10.0.401`.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md (2026-10-04)"), 2026-10-25
-location: global.json
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
-reason: `dotnet test <project> --no-build` exits 1 with "Testing with VSTest target is no longer supported by Microsoft.Testing.Platform on .NET 10 SDK and later". This was reproduced on Works.Tests during spec-7 and on IntegrationTests during review.
 status: done 2026-10-21
-resolution: Superseded 2026-10-21 by the canonical runner/workflow disposition in `spec-close-five-runtime-guidance-deferrals.md`. The global.json Microsoft.Testing.Platform opt-in and workflows were already delivered; current guidance now documents the verified individual dotnet test --project command. The no-workflows/VSTest-failure statements above are historical evidence, not current instructions.
-
-<a id="deferred-from-code-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-7md-2026-10-04"></a>
-legacy_section: Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md (2026-10-04)
-legacy_context: Increment `887db47..c00c2be` (build guidance and verification evidence patches).
-summary: Restore a working `dotnet test` path for the Timesheets test projects under SDK `10.0.401`.
-evidence: `dotnet test <project> --no-build` exits 1 with "Testing with VSTest target is no longer supported by Microsoft.Testing.Platform on .NET 10 SDK and later". This was reproduced on Works.Tests during spec-7 and on IntegrationTests during review. `global.json` lacks the `"test": { "runner": "Microsoft.Testing.Platform" }` opt-in that `references/Hexalith.Builds/global.json` carries. The README now uses the direct xUnit v3 executables, and spec-7 deliberately left runner configuration unchanged. The repository has no `.github/workflows`, so the per-project executables are the only working runner. Pre-existing; adopting the opt-in also changes the `dotnet test` invocation syntax (`--project`) and must be verified on every lane. Update 2026-10-20: this premise no longer holds. Commit `c4695a5` (2026-10-18) added the `global.json` opt-in and `.github/workflows/ci.yml`, and `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj -c Release --no-build` passed 64/64. The remaining work is the stale wording tracked by the Story 5.2 round-4 entry "Correct the agent entry points and the `dotnet test` runner entry…".
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
+archived: 2026-10-25
 
 ### DW-81: Extend the agent-context refresh entry above ("Refresh the agent-context SDK version and build instruction") to cover the test runner, now that the Build decision is made.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md (2026-10-04)"), 2026-10-25
-location: CLAUDE.md:92-94
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
-reason: `CLAUDE.md:92-94`, `AGENTS.md` and `.github/copilot-instructions.md` still state SDK `10.0.302`, direct agents to the bare solution restore/build (fails with `HXW0002`), and present `dotnet test` as the primary path with the executable only as a VSTest-socket fallback. The earlier entry says its wording "depends on the 2026-10-03 Build-gate decision"; decision (a) is now implemented in `c00c2be`.
 status: done 2026-10-21
-resolution: Superseded 2026-10-21 by the canonical explicit-Debug build-flow and runner/workflow dispositions in `spec-close-five-runtime-guidance-deferrals.md`. SDK, build graph, workflow existence, and runner wording are synchronized in all three managed entry points; this duplicate does not create another open guidance goal.
-
-summary: Extend the agent-context refresh entry above ("Refresh the agent-context SDK version and build instruction") to cover the test runner, now that the Build decision is made.
-evidence: `CLAUDE.md:92-94`, `AGENTS.md` and `.github/copilot-instructions.md` still state SDK `10.0.302`, direct agents to the bare solution restore/build (fails with `HXW0002`), and present `dotnet test` as the primary path with the executable only as a VSTest-socket fallback. The earlier entry says its wording "depends on the 2026-10-03 Build-gate decision"; decision (a) is now implemented in `c00c2be`. The fix edits agent-context files.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
+archived: 2026-10-25
 
 ### DW-82: Resolve the fixed Timesheets AppHost public port 8080 colliding with other Hexalith AppHosts.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md (2026-10-04)"), 2026-10-25
-location: src/Hexalith.Timesheets.AppHost/Program.cs:24
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
-reason: `src/Hexalith.Timesheets.AppHost/Program.cs:24` declares `PublicPort = 8080` with `isProxied: false`. The EventStore, Parties and FrontComposer AppHosts also use 8080.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-local-apphost-boundary-deferrals.md`. A validated run-only Timesheets:LocalPublicPort override preserves default 8080 and internal/gateway ports, while the isolated runner accepts --public-port and checks/propagates that explicit selection. Compiled admission/model checks and resource-free evaluation of the actual management/display/submit URL expressions cover alternate ports, invalid/reserved ports and normalized infrastructure collisions. The idle-runtime prerequisite and separate complete-graph/runtime qualification remain open. See `tests/five-local-apphost-boundary-deferrals.md`.
-
-summary: Resolve the fixed Timesheets AppHost public port 8080 colliding with other Hexalith AppHosts.
-evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:24` declares `PublicPort = 8080` with `isProxied: false`. The EventStore, Parties and FrontComposer AppHosts also use 8080. `Hexalith.EventStore.Aspire` reserves 8080 as `KeycloakFastStartPorts.ReservedEventStoreAppPort`. At review time `127.0.0.1:8080` was held by another AppHost's `dcp`. The 2026-10-04 smoke recorded exit 134 with `Failed to bind to address http://127.0.0.1:8080: address already in use`. The existing AppHost-smoke entry ("Capture the cause of the 2026-10-03 AppHost smoke…") is not annotated with this captured cause. The new endpoint fitness test pins 8080/8081, so any port change must update both the AppHost and the test. Pre-existing since `fe82c7d`; AppHost ports and topology are infrastructure-owned.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-7.md`
+archived: 2026-10-25
 
 ### DW-83: Bring test method names in line with the baseline PascalCase rule.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md (2026-10-04)"), 2026-10-25
-location: hexalith-llm-instructions.md
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md`
-reason: `hexalith-llm-instructions.md` (Testing Standards) requires PascalCase test method names. About 653 test methods under `tests/` use underscores, including `Host_maps_narrow_magic_link_confirmation_routes_without_authority_body_fields`, `Magic_link_endpoint_denial_copy_is_opaque` and `Magic_link_external_routes_share_one_denial_helper` in `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs`, next to the PascalCase method renamed in `4c538c8`.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-recovery-and-verification-deferrals.md`. All 786 attributed underscore methods in 83 files now use PascalCase. Roslyn collision/source-preservation checks and before/after discovery preserve attributes, data, assertions and 2,546 cases; 16 later recovery/capacity audit cases bring the full-gate discovery to 2,562. Those six executable suites passed (2,557 passed, zero failed, five expected skips). Eight subsequent test-only review cases have supplementary focused evidence and were not included in those six full runs; no active external filter required updating. Historical receipts retain their names. Evidence and remaining deployment obligations are in `tests/five-recovery-and-verification-deferrals.md`.
-
-<a id="deferred-from-code-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-8md-2026-10-04"></a>
-legacy_section: Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md (2026-10-04)
-legacy_context: Increment `c825bff..4c538c8` (configuration fitness and contributor guidance patches).
-summary: Bring test method names in line with the baseline PascalCase rule.
-evidence: `hexalith-llm-instructions.md` (Testing Standards) requires PascalCase test method names. About 653 test methods under `tests/` use underscores, including `Host_maps_narrow_magic_link_confirmation_routes_without_authority_body_fields`, `Magic_link_endpoint_denial_copy_is_opaque` and `Magic_link_external_routes_share_one_denial_helper` in `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationCapabilityEndpointTests.cs`, next to the PascalCase method renamed in `4c538c8`. Pre-existing. The spec-7 review patch renamed only the new method, and a repository-wide rename is a separate mechanical change.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md`
+archived: 2026-10-25
 
 ### DW-84: Make the AppHost endpoint comment use the declared endpoint name.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md (2026-10-04)"), 2026-10-25
-location: src/Hexalith.Timesheets.AppHost/Program.cs:11
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md`
-reason: `src/Hexalith.Timesheets.AppHost/Program.cs:11` describes the public ingress as `"http"`, while line 32 declares `.WithHttpEndpoint(name: "public", ...)`. Aspire and `aspire describe` show the endpoint as `public`.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by verification in `spec-close-five-integration-handoffs.md`. The checked-in AppHost comment already names the public ingress "public", matching WithHttpEndpoint(name: "public"). Current source inspection and MagicLinkConfirmationCapabilityEndpointTests verify the declared endpoint identity. No AppHost source/topology changed, and no running-host or deployed-exposure qualification is claimed.
-
-summary: Make the AppHost endpoint comment use the declared endpoint name.
-evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:11` describes the public ingress as `"http"`, while line 32 declares `.WithHttpEndpoint(name: "public", ...)`. Aspire and `aspire describe` show the endpoint as `public`. Pre-existing in Story 3.6 history. CLAUDE.md allows AppHost changes only when a story names the project.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-8.md`
+archived: 2026-10-25
 
 ### DW-85: Semantic analysis of escaped or computed configuration keys and escaped C# property identifiers remains outside the bounded source fitness check.
 
-origin: migrated from legacy ledger ("Deferred from: alternate-configuration and literal-parsing patches for Story 3.6 (2026-10-04)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-9.md`
-reason: Verified medium developer-verification gap: the selected AppHostExportsTheInternalListenerPortToTheHostOptionsSection test passes when the canonical AppHost export is followed by `.WithArgs("--Timesheets:Internal\u0053urface:Port=8080")` or `.WithArgs("--Timesheets:Internal" + "Surface:Port=8080")`, or when the host binding is followed by `builder.Services.Configure<InternalSurfaceOptions>(o => o.AllowOnAny\u0050ort = true);`. Each reproduction ran exactly one test with zero failures and restored production bytes.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-local-apphost-boundary-deferrals.md`. Catalog-pinned test-only Roslyn checks decode identifiers and constant strings, reject the three recorded Unicode/concatenation bypasses plus ordinary spellings, and refuse unsupported expressions in the bounded checked chain. Healthy wiring and harmless comments/constant arguments pass within the 24 focused integration cases. This is bounded syntax/constant analysis, not arbitrary C# semantic completeness or effective deployed configuration proof. See `tests/five-local-apphost-boundary-deferrals.md`.
-
-<a id="deferred-from-alternate-configuration-and-literal-parsing-patches-for-story-36-2026-10-04"></a>
-legacy_section: Deferred from: alternate-configuration and literal-parsing patches for Story 3.6 (2026-10-04)
-summary: Semantic analysis of escaped or computed configuration keys and escaped C# property identifiers remains outside the bounded source fitness check.
-evidence: Verified medium developer-verification gap: the selected AppHostExportsTheInternalListenerPortToTheHostOptionsSection test passes when the canonical AppHost export is followed by `.WithArgs("--Timesheets:Internal\u0053urface:Port=8080")` or `.WithArgs("--Timesheets:Internal" + "Surface:Port=8080")`, or when the host binding is followed by `builder.Services.Configure<InternalSurfaceOptions>(o => o.AllowOnAny\u0050ort = true);`. Each reproduction ran exactly one test with zero failures and restored production bytes. These forms resolve to an overriding setting/property in C# but escape raw-source matching; the HTTP fixtures overwrite the Configure value. The current production sources contain none of these forms. Owner: infrastructure/configuration-verification follow-up; resolve through syntax-aware or effective-configuration validation rather than expanding the four accepted literal-wiring patches into a parser.
+origin: migrated from legacy ledger ("Deferred from: alternate-configuration and literal-parsing patches for Story 3.6 (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-9.md`
+archived: 2026-10-25
 
 ### DW-86: Perform the deployed magic-link Activity Type ownership inventory and approved remediation before rollout.
 
@@ -1028,121 +662,66 @@ evidence: The tenant-only issuance, adjustment and loader policy is implemented,
 
 ### DW-87: Record correlation-safe projection transport-failure outcomes without logging exception payloads or protected material.
 
-origin: migrated from legacy ledger ("Deferred from: historical review reconciliation for Story 3.6 (2026-10-04)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
-reason: Both projection handlers now supply logger/context to ReadModelWritePolicy, which logs only concurrency conflicts/exhaustion. Exceptions from GetAsync or TrySaveAsync still reach the handlers’ generic catch and return Retryable(DeliveryStateUnavailable) without a local category trace.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-magic-link-operability-deferrals.md`. Both canonical live handlers emit event 1302 with a fixed projection/outcome and platform trace ID on retryable store failure. No exception, message, payload, correlation input, state key, or owner is emitted. Complete structured-record allowlists and throwing-provider/cancellation controls preserve retryable outcomes.
-
-legacy_context: Reconciliation note: the earlier “Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items…” follow-up is satisfied by this increment’s per-item dispositions and focused full-bundle determinism regression. Historical ledger observations remain dated evidence; the nine deferred dispositions continue to point to their existing follow-ups or the inventory entry above, or the three residual annotations below. This does not close infrastructure, durable-write or release gates.
-summary: Record correlation-safe projection transport-failure outcomes without logging exception payloads or protected material.
-evidence: Both projection handlers now supply logger/context to ReadModelWritePolicy, which logs only concurrency conflicts/exhaustion. Exceptions from GetAsync or TrySaveAsync still reach the handlers’ generic catch and return Retryable(DeliveryStateUnavailable) without a local category trace. This pre-existing residual was exposed by the reconciliation review; the named-slot/logger-wiring portions are implemented, while transport diagnostics remain deferred under the original Story 3.6 logging finding.
+origin: migrated from legacy ledger ("Deferred from: historical review reconciliation for Story 3.6 (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
+archived: 2026-10-25
 
 ### DW-88: Decide whether to retain the test-only static magic-link index Rebuild helper or retire its unsupported surface.
 
-origin: migrated from legacy ledger ("Deferred from: historical review reconciliation for Story 3.6 (2026-10-04)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
-reason: MagicLinkTokenHashCapabilityIndexProjection.Rebuild still has test callers and no production caller; canonical projection handlers populate the actual index. This annotation isolates the remaining helper concern from the earlier broad “Harden projection and loader correctness…” entry.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-integration-handoffs.md`. Retained the existing public signature as a supported pure issuance-to-candidate composition helper. XML documentation explicitly excludes persistence, generation selection, source-coverage/owner-continuity certification and migration authorization. Focused tests verify empty/null input, duplicate issuance, order independence and retained cross-tenant hash ambiguity; existing loader fixtures still use it. Canonical handlers/coordinator remain the persisted rebuild path.
-
-summary: Decide whether to retain the test-only static magic-link index Rebuild helper or retire its unsupported surface.
-evidence: MagicLinkTokenHashCapabilityIndexProjection.Rebuild still has test callers and no production caller; canonical projection handlers populate the actual index. This annotation isolates the remaining helper concern from the earlier broad “Harden projection and loader correctness…” entry. OrderedDistinct, write-only applied-ID sets and the dead hasMore assignment are already removed and must not be reopened as part of this follow-up.
+origin: migrated from legacy ledger ("Deferred from: historical review reconciliation for Story 3.6 (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
+archived: 2026-10-25
 
 ### DW-89: Complete store-component isolation and optimistic-concurrency enforcement in the projection and HTTP read-model doubles.
 
-origin: migrated from legacy ledger ("Deferred from: historical review reconciliation for Story 3.6 (2026-10-04)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
-reason: ScriptedReadModelStore in MagicLinkStateProjectionHandlerTests still keys by read-model key without storeName and its TrySaveAsync simulates conflicts without checking the supplied ETag. ProjectionBackedReadModelStore in MagicLinkConfirmationHttpBoundaryTests also keys reads/writes without storeName, although its TrySaveAsync already enforces per-key ETags.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-magic-link-operability-deferrals.md`. The remaining ScriptedReadModelStore keys values/versions by component and key and rejects foreign, stale, missing-update, and create-conflict ETags without changing contents or versions. ETag component encoding is unambiguous. The HTTP fixture already uses the platform InMemoryReadModelStore; no production persistence changed.
-
-summary: Complete store-component isolation and optimistic-concurrency enforcement in the projection and HTTP read-model doubles.
-evidence: ScriptedReadModelStore in MagicLinkStateProjectionHandlerTests still keys by read-model key without storeName and its TrySaveAsync simulates conflicts without checking the supplied ETag. ProjectionBackedReadModelStore in MagicLinkConfirmationHttpBoundaryTests also keys reads/writes without storeName, although its TrySaveAsync already enforces per-key ETags. Per-key ETags, explicit rebuild-plan StoreName/Kind/Concurrency assertions, real cross-tenant HTTP coverage and loader store/key assertions are already implemented. This annotation isolates the remaining test-double semantics from the historical mixed test-hardening ledger entries.
+origin: migrated from legacy ledger ("Deferred from: historical review reconciliation for Story 3.6 (2026-10-04)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-10.md`
+archived: 2026-10-25
 
 ### DW-90: State the status intent of future build specs as "in-progress until finalization" so reviews stop re-raising the settled finalization question.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: spec-3-6-close-current-review-patches.md:19
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: The 2026-10-05 review of `15d085c..aab64cf` rejected, as already resolved (option a), three layers' finding that finalization moved the story to `review` although the frozen intent said to keep it `in-progress`. That rejection names the wording fix, but only inside a rejected bullet (the record-correction review's first rejected bullet, under `### Review Findings — record-correction increment (2026-10-05)`).
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-process-verdict-deferrals.md`. This increment documents the explicit future-authoring convention and exact sample in tests/five-process-verdict-deferrals.md#future-build-spec-status-wording. Earlier spec-12/13 manual examples alone did not close this request; the new convention and disposition supersede that historical interpretation and the completed-implementation report/October 18 hook-maintenance handoffs that still call it open. Earlier frozen intent, PascalCase test naming, automatic skill generation and Story 3.6 acceptance remain outside this closure; the final story status follows its workflow. See `tests/five-process-verdict-deferrals.md`.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loadingmd-2026-10-05"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)
-legacy_context: Increment `aab64cf..09e11a7` (review-patch commit, reworded in review as `bb3ec0e`).
-summary: State the status intent of future build specs as "in-progress until finalization" so reviews stop re-raising the settled finalization question.
-evidence: The 2026-10-05 review of `15d085c..aab64cf` rejected, as already resolved (option a), three layers' finding that finalization moved the story to `review` although the frozen intent said to keep it `in-progress`. That rejection names the wording fix, but only inside a rejected bullet (the record-correction review's first rejected bullet, under `### Review Findings — record-correction increment (2026-10-05)`). `spec-3-6-close-current-review-patches.md:19` and `spec-3-6-implement-eventstore-backed-magic-link-state-loading-11.md:19` use the "Keep the story … in-progress" wording that triggers it; spec-10 already says "Keep the story in review". Pre-existing; the fix belongs to how future build specs are written, not to this story's files.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-91: Replace the drifted `docs/launch-readiness.md` line pointers in the spec-6 waiver-reconciliation entry with the row names.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: docs/launch-readiness.md
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: The 2026-10-03 entry "Reconcile the launch-readiness package waiver rows with the current imported catalog" cites the alignment waiver row as `docs/launch-readiness.md:26` and the prerelease exception as `:64`. At `1b83d19` those rows are at `:28` and `:66`; `:26` is the root npm applicability row and `:64` is external stakeholder acceptance.
 status: done 2026-10-18
-resolution: Resolved 2026-10-18 by Story 5.2. The spec-6 entry is resolved, and its resolution note names both rows by name; no line pointer remains load-bearing.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loadingmd-2026-10-05-1"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)
-legacy_context: Increment `07a7411..1b83d19` (record-reference closure).
-summary: Replace the drifted `docs/launch-readiness.md` line pointers in the spec-6 waiver-reconciliation entry with the row names.
-evidence: The 2026-10-03 entry "Reconcile the launch-readiness package waiver rows with the current imported catalog" cites the alignment waiver row as `docs/launch-readiness.md:26` and the prerelease exception as `:64`. At `1b83d19` those rows are at `:28` and `:66`; `:26` is the root npm applicability row and `:64` is external stakeholder acceptance. The entry still applies (the prerelease exception still lists Aspire `13.5.4` and Dapr `1.18.7`) and names both rows, so a sweep can locate them by name. Older entries citing `:21`, `:78` and `:54` describe claims that no longer hold and belong to a ledger sweep. Pre-existing; the `07a7411..1b83d19` range does not touch those entries or launch readiness.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-92: Authorize admin issue/revoke/expire requests before the loader replays capability streams or reads the tenant catalog.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: MagicLinkConfirmationCapabilityEndpoints.cs:36
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `MagicLinkConfirmationCapabilityEndpoints.cs:36` and `:39`, plus the revoke and expire routes, call `LoadActivityTypeCatalogAsync`/`LoadCapabilityAsync` before the command service runs `_accessGuard.AuthorizeAsync`. This order predates Story 3.6 (Story 3.2 endpoints), and the story task accepted it.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. Issuance authorizes its known contributor and Project/Work references before catalog/capability reads. Revoke and expire require tenant/role admission before loading and retain complete resource authorization afterwards. Focused HTTP regressions prove denied admission performs no loader reads or submissions, and resource denial preserves stored state after successful coarse admission. Production fail-closed defaults remain unchanged.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loadingmd-2026-10-05-2"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)
-legacy_context: Holistic production-code review (`24a37c1..91fcb50`, File List `src/` scope). Seven further deferrals were re-verified against existing entries and not re-filed.
-summary: Authorize admin issue/revoke/expire requests before the loader replays capability streams or reads the tenant catalog.
-evidence: `MagicLinkConfirmationCapabilityEndpoints.cs:36` and `:39`, plus the revoke and expire routes, call `LoadActivityTypeCatalogAsync`/`LoadCapabilityAsync` before the command service runs `_accessGuard.AuthorizeAsync`. This order predates Story 3.6 (Story 3.2 endpoints), and the story task accepted it. It cannot be reached today because no authentication scheme is registered, so the accessor's tenant is null and the loader returns before any I/O. Once the authentication entry above lands, an authenticated but unauthorized caller makes the host fold capability IDs it chose, plus its claimed tenant's catalog, before denial.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-93: Reconcile the agent guidance "Leave `AddTimesheetsServerKernel` fail-closed" with the spec-mandated EventStore loader registration in the kernel.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: ServiceCollectionExtensions.cs:46-57
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `ServiceCollectionExtensions.cs:46-57` registers a Dapr-invocation `IEventStoreGatewayClient` when none exists, calls `AddEventStoreReadModelStore()` and `TryAddScoped`s `EventStoreMagicLinkConfirmationCapabilityStateLoader`, as the Story 3.6 task required. `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` still say the kernel stays `DenyAll*`/`Unavailable*`.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-runtime-guidance-deferrals.md`. The three synchronized managed entry points now distinguish fail-closed authorization, reference, policy, and unavailable projection/reporting defaults from the intentionally concrete EventStore loader/gateway/store registrations. Standalone consumers must supply the EventStore read dependencies, as the composed host does; the existing kernel-resolution test supplies those seams. Runtime registrations are unchanged.
-
-summary: Reconcile the agent guidance "Leave `AddTimesheetsServerKernel` fail-closed" with the spec-mandated EventStore loader registration in the kernel.
-evidence: `ServiceCollectionExtensions.cs:46-57` registers a Dapr-invocation `IEventStoreGatewayClient` when none exists, calls `AddEventStoreReadModelStore()` and `TryAddScoped`s `EventStoreMagicLinkConfirmationCapabilityStateLoader`, as the Story 3.6 task required. `CLAUDE.md`, `AGENTS.md` and `.github/copilot-instructions.md` still say the kernel stays `DenyAll*`/`Unavailable*`. A kernel consumer without `AddEventStoreDomainService` (tests only today) now fails to resolve the Dapr-backed store instead of getting a fail-closed loader. The fix edits agent-context files, or moves the binding to an opt-in host extension, which would contradict the story task.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-94: Give the magic-link loader a correlation-safe internal outcome channel so dependency outages and integrity failures are distinguishable from invalid links.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:177
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `IsFailClosedReadException` (`EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:177`, `:228` and the other catches) maps transport faults, `JsonException`s, the loader's own integrity `InvalidOperationException`s and plain bugs to the same unavailable state. The loader has no logger, and the endpoints log only `Malformed` or `Unknown` (13 of 15 `MagicLinkInvalidLinkOutcomeCategory` values are never produced).
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-magic-link-operability-deferrals.md`. An optional logger factory enables event 1301 for fixed index/capability/entry/catalog operations and exception-type failure categories, correlated only with the platform trace ID. Complete structured-record tests cover legacy reads and a production-coordinator wrapped outage; provider faults cannot alter opaque outcomes, and caller cancellation/unknown links emit no dependency-failure record. Public denial semantics and authority gates are unchanged.
-
-summary: Give the magic-link loader a correlation-safe internal outcome channel so dependency outages and integrity failures are distinguishable from invalid links.
-evidence: `IsFailClosedReadException` (`EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:177`, `:228` and the other catches) maps transport faults, `JsonException`s, the loader's own integrity `InvalidOperationException`s and plain bugs to the same unavailable state. The loader has no logger, and the endpoints log only `Malformed` or `Unknown` (13 of 15 `MagicLinkInvalidLinkOutcomeCategory` values are never produced). AC4's "only correlation-safe categories" holds, and category wiring is optional for v1 (Story 3.5 follow-up #3). However, an EventStore or state-store outage looks the same as an expired link, and a serialization regression would deny every link without a trace. This is related to the AC2 freshness collapse above and the projection transport-diagnostics entry; it needs an interface or constructor change.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-95: Establish how the token-hash index and tenant catalog are populated for histories that predate handler deployment.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: MagicLinkTokenHashCapabilityIndexProjectionHandler.cs:61
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: Unverified; medium if confirmed. Both handlers (`MagicLinkTokenHashCapabilityIndexProjectionHandler.cs:61`, `TenantActivityTypeCatalogProjectionHandler.cs`) write only on a live `/project/v2` delivery for an aggregate that receives events, and nothing in the repository triggers `/project/rebuild/shared/v1`.
 status: done 2026-10-23
-resolution: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. The October 11 canonical deployed inventory/rebuild task retains full source coverage, including histories predating handlers with no read-model rows, and population/verification of both index and tenant catalog before traffic. The chosen replay/rebuild/migration procedure and its verification must be documented in the deployment runbook. No automatic replay, completed initialization or qualified runbook is established. See `tests/five-operational-followups.md`.
-
-summary: Establish how the token-hash index and tenant catalog are populated for histories that predate handler deployment.
-evidence: Unverified; medium if confirmed. Both handlers (`MagicLinkTokenHashCapabilityIndexProjectionHandler.cs:61`, `TenantActivityTypeCatalogProjectionHandler.cs`) write only on a live `/project/v2` delivery for an aggregate that receives events, and nothing in the repository triggers `/project/rebuild/shared/v1`. A capability issued, or an Activity Type created, before the handlers went live would have no index entry or catalog item, and its valid token would fail closed. Settle it by checking whether EventStore admission of a newly registered named projection replays existing aggregates, or whether deployment must run an initial shared rebuild per tenant (then record it in the runbook).
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-96: Confirm that unfenced shared rebuilds cannot drop live index or catalog writes made between aggregate enumeration and FinalizeAsync.
 
@@ -1157,117 +736,66 @@ evidence: Unverified; medium if confirmed. Index `FinalizeAsync` (`MagicLinkToke
 
 ### DW-97: Declare the Timesheets public magic-link listener external in the deployed app model, or correct the AppHost comment that says it is.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: src/Hexalith.Timesheets.AppHost/Program.cs:11-13
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `src/Hexalith.Timesheets.AppHost/Program.cs:11-13` describes the public endpoint as reachable by external contributors by design, but `:32` declares `WithHttpEndpoint(name: "public", …)` without `isExternal`/`WithExternalHttpEndpoints()`. Aspire endpoints default to `IsExternal = false`, so a published app model exposes neither listener and magic links would be unreachable off the pod network.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-local-apphost-boundary-deferrals.md` through the documented comment-correction alternative. AppHost/README describe local anonymous routes separately from deployment ingress; real run/publish model checks report IsExternal=false for both listeners. No exposure flags or ingress topology changed, and external reachability remains a deployment acceptance obligation. See `tests/five-local-apphost-boundary-deferrals.md`.
-
-summary: Declare the Timesheets public magic-link listener external in the deployed app model, or correct the AppHost comment that says it is.
-evidence: `src/Hexalith.Timesheets.AppHost/Program.cs:11-13` describes the public endpoint as reachable by external contributors by design, but `:32` declares `WithHttpEndpoint(name: "public", …)` without `isExternal`/`WithExternalHttpEndpoints()`. Aspire endpoints default to `IsExternal = false`, so a published app model exposes neither listener and magic links would be unreachable off the pod network. Deployment topology is infrastructure-owned (CLAUDE.md forbids adding topology); this complements the internal-endpoint `isExternal` question above.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-98: Bound the cross-tenant magic-link token-hash index: prune terminal capabilities and size or shard the single key.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: MagicLinkTokenHashCapabilityIndexProjection.cs:14
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: Code-review decision (2026-10-05), option a — defer with a sizing note. Reason: pruning on `Used` belongs with the durable `Used` writes, which do not exist yet while the release decision is `FAIL`.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-eventstore-handoffs.md`, selecting the original bounded-storage alternative. The delivered v7 numeric trie and candidate/tenant-roster pages replace the single global dictionary; capacity and tenant-replacement tests cover 10,000 high-entropy, concentrated-collision and long-owner contributions, selected lookup and cross-tenant ambiguity/pruning. Automatic terminal-event garbage collection is not claimed. Legacy migration, deployed inventory and runtime acceptance retain their separate gates; see `tests/five-eventstore-handoffs.md`.
-
-summary: Bound the cross-tenant magic-link token-hash index: prune terminal capabilities and size or shard the single key.
-evidence: Code-review decision (2026-10-05), option a — defer with a sizing note. Reason: pruning on `Used` belongs with the durable `Used` writes, which do not exist yet while the release decision is `FAIL`. `MagicLinkTokenHashCapabilityIndexProjection.StateKey` (`MagicLinkTokenHashCapabilityIndexProjection.cs:14`) is one fixed key holding every tenant's hashes, and `FoldIssuance` reads only `Issued`, so used, revoked and expired links are never removed. Every anonymous magic-link request deserializes the whole dictionary in `ResolveCandidateAsync`. Every capability event delivery re-reads and rewrites it through `ReadModelWritePolicy.UpdateAsync` under one ETag shared by every tenant, and per-tenant `FinalizeAsync` rebuilds contend for the same ETag. The document grows toward state-store item limits (about 2 MB on Cosmos DB), and a tenant's hashes cannot be erased at offboarding without a rebuild. Options recorded: prune on terminal events in live delivery and `AccumulateAsync`, or shard the key by token hash, which needs a `ReplaceTenant` redesign.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-99: Redact query-string values from request logs in the shared EventStore ServiceDefaults.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: Code-review decision (2026-10-05), option a — the Timesheets host now filters `Microsoft.AspNetCore.Hosting.Diagnostics` to `Warning` as the interim control. ASP.NET Core 10.0.12 logs `Request starting/finished … {Path}{QueryString}` at Information.
 status: done 2026-10-24
-resolution: Resolved 2026-10-24 by `spec-five-build-and-hosting-deferrals.md`. Shared defaults enforce the hosting Warning floor after provider filter binding. Real request tests capture Console JSON and OpenTelemetry formatted/structured/scope exports, reject secret query values under provider-specific Information overrides, and retain Warning and unrelated Information records. Nine privacy/filter cases and all 48 telemetry tests pass, including stricter/global rule controls; see `tests/five-build-and-hosting-deferrals.md` for broad-suite limits. Ingress, sidecar and deployed logging remain outside this boundary.
-
-summary: Redact query-string values from request logs in the shared EventStore ServiceDefaults.
-evidence: Code-review decision (2026-10-05), option a — the Timesheets host now filters `Microsoft.AspNetCore.Hosting.Diagnostics` to `Warning` as the interim control. ASP.NET Core 10.0.12 logs `Request starting/finished … {Path}{QueryString}` at Information. `AddEventStoreDomainService` wires JSON console and OpenTelemetry logging with `IncludeFormattedMessage = true` and no category filter, so any module that carries a secret in a query string (Timesheets magic links use `?t=`) logs it unless that module filters the hosting category itself. The fix belongs in `references/Hexalith.EventStore` (`Hexalith.EventStore.ServiceDefaults`), outside this repository.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-100: Reject null capability identifiers on revoke and expire before dereferencing them.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-14 independent review (2026-10-05)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
-reason: Both unchanged management endpoints dereference command.CapabilityId.Value before the loader; otherwise-valid in-process null-id requests reproduce HTTP 500. This predates the current loader hardening.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. Both transition routes check for a null CapabilityId before its Value or any protected work. HTTP regressions exercise explicit null and omitted IDs for revoke and expire, requiring the opaque denial, zero loader/authorization/submission/token work, and empty stored capability state.
-
-<a id="deferred-from-story-36-spec-14-independent-review-2026-10-05"></a>
-legacy_section: Deferred from: Story 3.6 spec-14 independent review (2026-10-05)
-summary: Reject null capability identifiers on revoke and expire before dereferencing them.
-evidence: Both unchanged management endpoints dereference command.CapabilityId.Value before the loader; otherwise-valid in-process null-id requests reproduce HTTP 500. This predates the current loader hardening.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-14 independent review (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+archived: 2026-10-25
 
 ### DW-101: Capture exported log scopes and exception text in the HTTP privacy test harness.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-14 independent review (2026-10-05)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
-reason: CapturingLogger.BeginScope returns NullScope and LogRecord omits Exception; sentinel probes in these fields disappear from assertions while EventStore ServiceDefaults enables IncludeScopes. The test harness predates this increment.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-http-privacy-deferrals.md`. The capturing provider now supports external scopes, snapshots scalar and structured scopes, and retains full exception text including inner exceptions. Privacy assertions scan every captured field. Independent scalar/structured/exception sentinels, nested-scope disposal and concurrent asynchronous scope controls verify capture and isolation.
-
-summary: Capture exported log scopes and exception text in the HTTP privacy test harness.
-evidence: CapturingLogger.BeginScope returns NullScope and LogRecord omits Exception; sentinel probes in these fields disappear from assertions while EventStore ServiceDefaults enables IncludeScopes. The test harness predates this increment.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-14 independent review (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+archived: 2026-10-25
 
 ### DW-102: Verify malformed-body and exception-path diagnostics cannot disclose query values (unverified, medium if confirmed).
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-14 independent review (2026-10-05)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
-reason: Existing malformed-body HTTP coverage checks response bodies only. No Warning/Error leak was demonstrated; capture scopes and exceptions, send query sentinels through malformed and throwing request paths, and compare emitted diagnostics to settle the claim.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-http-privacy-deferrals.md`. Both malformed submit routes now scan captured diagnostics plus response bodies and headers, require actual exception diagnostics and verify no gateway submission. A throwing loader exercises the composed exception middleware on all four real public routes; each returns 500, captures its Error exception, excludes query sentinels and submits nothing. These in-process probes found no protected-value disclosure; unexpected-exception response policy and deployed acceptance remain separate decisions.
-
-summary: Verify malformed-body and exception-path diagnostics cannot disclose query values (unverified, medium if confirmed).
-evidence: Existing malformed-body HTTP coverage checks response bodies only. No Warning/Error leak was demonstrated; capture scopes and exceptions, send query sentinels through malformed and throwing request paths, and compare emitted diagnostics to settle the claim.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-14 independent review (2026-10-05)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+archived: 2026-10-25
 
 ### DW-103: Require the capability id, contributor, Time Entry id and audit source in magic-link issuance validation.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md (2026-10-08)"), 2026-10-25
-location: src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapability.cs:245
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
-reason: `ValidateIssue` (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapability.cs:245`) checks scope, target, target kind, action, expiry and token hash, but not `CapabilityId`, `Scope.Contributor`, `Scope.TimeEntryId` or `Source`. `TimesheetsAccessGuard.cs:159` treats a null contributor as optional.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. Aggregate validation now requires all four members; the HTTP boundary refuses incomplete commands before protected work and the direct service refuses them before token generation. Aggregate/service tests assert required-field rejections and no issuance event/token, while HTTP tests cover omitted and explicit-null scope, contributor, Time Entry ID and source, alongside existing capability-ID controls.
-
-<a id="deferred-from-code-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-14md-2026-10-08"></a>
-legacy_section: Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md (2026-10-08)
-summary: Require the capability id, contributor, Time Entry id and audit source in magic-link issuance validation.
-evidence: `ValidateIssue` (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapability.cs:245`) checks scope, target, target kind, action, expiry and token hash, but not `CapabilityId`, `Scope.Contributor`, `Scope.TimeEntryId` or `Source`. `TimesheetsAccessGuard.cs:159` treats a null contributor as optional. An authorized issuance body that omits the contributor, Time Entry id or source returns 202 with a one-time token, and `HandleIssue` emits `MagicLinkConfirmationCapabilityIssued` with null members. The HTTP route persists nothing until durable submission lands. Pre-existing; the `8f89a6e` endpoint guard covers only `CapabilityId`. Medium once issuance is durable.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md (2026-10-08)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+archived: 2026-10-25
 
 ### DW-104: Refresh the CLAUDE.md `timesheets` block's SDK pin.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md (2026-10-08)"), 2026-10-25
-location: global.json
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
-reason: The block says `global.json` pins `10.0.302` with `rollForward: latestPatch`, but `global.json` pins `10.0.401`, and `latestPatch` does not roll across feature bands. Agent-context file; refresh it through the project-context workflow.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. CLAUDE.md and both synchronized entry points already name SDK 10.0.402 with latestPatch, matching global.json. This predecessor of the delivered SDK/build guidance reconciliation in `spec-close-five-runtime-guidance-deferrals.md` is stale; no SDK or managed-context change is required. See `tests/five-agent-guidance-carry-forwards.md`.
-
-summary: Refresh the CLAUDE.md `timesheets` block's SDK pin.
-evidence: The block says `global.json` pins `10.0.302` with `rollForward: latestPatch`, but `global.json` pins `10.0.401`, and `latestPatch` does not roll across feature bands. Agent-context file; refresh it through the project-context workflow.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md (2026-10-08)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-14.md`
+archived: 2026-10-25
 
 ### DW-105: Integrate Timesheets public capability routes and authenticated internal HTTP fixtures with the current EventStore domain-service security contract.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-15 verification and review (2026-10-08)"), 2026-10-25
-location: tests/3-6-test-summary.md
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
-reason: Historical 2026-10-08, superseded for in-process routes by the 2026-10-09 public-route increment: the prior dependency update `da172a8effe484be96c17aaef1c007e1ecb8f27c` enables workload fallback authorization; rebuilding this increment yields 42 unexpected-401 IntegrationTests failures (28 magic-link boundary cases, 14 internal-guard cases), all before the changed assertion helpers. EventStoreDomainServiceEndpointInventory allows anonymous metadata only on health probes, so adding AllowAnonymous to public capability routes would fail the SDK contract.
 status: done 2026-10-09
-resolution: On 2026-10-09, the EventStore SDK gained an exact-route public marker with startup inventory enforcement; Timesheets applied it to four capability routes and metadata, kept management routes protected, and authenticated projection and management test requests. The focused SDK public-route/startup tests passed 24/24. Both requested HTTP classes passed 482/482, including all four routes without an injected principal, and the four scratch-root privacy cases passed. The full IntegrationTests lane passed 557 tests with four intentional skips. This closes the in-process route/fixture regression only; the live AppHost still fails startup without APP_API_TOKEN and JWT Authority/SigningKey, and Story 3.6 durable and topology gates remain open.
-
-<a id="deferred-from-story-36-spec-15-verification-and-review-2026-10-08"></a>
-legacy_section: Deferred from: Story 3.6 spec-15 verification and review (2026-10-08)
-summary: Integrate Timesheets public capability routes and authenticated internal HTTP fixtures with the current EventStore domain-service security contract.
-evidence: Historical 2026-10-08, superseded for in-process routes by the 2026-10-09 public-route increment: the prior dependency update `da172a8effe484be96c17aaef1c007e1ecb8f27c` enables workload fallback authorization; rebuilding this increment yields 42 unexpected-401 IntegrationTests failures (28 magic-link boundary cases, 14 internal-guard cases), all before the changed assertion helpers. EventStoreDomainServiceEndpointInventory allows anonymous metadata only on health probes, so adding AllowAnonymous to public capability routes would fail the SDK contract. Since `da172a8effe484be96c17aaef1c007e1ecb8f27c`, the host answers every external magic-link request and `/metadata/timesheets` with 401. AC1, AC3 and AC4 are regressed in the running host, not only in test fixtures; the fix remains deferred to the EventStore domain-service contract work. Owner: EventStore domain-service contract / Timesheets integration. Add a supported public-capability route opt-in that `EventStoreDomainServiceEndpointInventory` accepts, preserve server-side capability authorization, and migrate internal projection fixtures to configured app-channel credentials and signed workload assertions. Current AppHost startup also requires APP_API_TOKEN and JWT Authority/SigningKey configuration; no passing live-topology proof exists. Completion requires restored public capability and metadata reachability plus all three HTTP privacy methods passing (four cases): `Invalid_magic_link_http_boundary_emits_no_timesheets_sensitive_diagnostics`, both `HostingDiagnosticsFilterSurvivesProviderSpecificInformationConfiguration` cases, and `Empty_magic_link_token_records_the_malformed_outcome_category_without_sensitive_diagnostics`. Run these methods also with `ASPNETCORE_TEST_CONTENTROOT_HEXALITH_TIMESHEETS` pointing at a created scratch directory whose path contains the generic vocabulary, using the exact commands in `tests/3-6-test-summary.md` under the implementation-artifact directory. Passing helper-only checks do not close this HTTP requirement. Before closing the SDK integration entry, the full `MagicLinkConfirmationHttpBoundaryTests` and `InternalSurfaceGuardTests` classes must pass, including `Concrete_loader_reaches_all_valid_http_routes_after_projection_delivery_without_read_model_seeding`, the configured-internal-port persisted index/catalog and public-port refusal journeys, and all fourteen currently failing guard/reachability cases.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-15 verification and review (2026-10-08)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
+archived: 2026-10-25
 
 ### DW-106: Configure required internal credentials for a live Timesheets AppHost runtime smoke.
 
@@ -1282,83 +810,45 @@ evidence: On 2026-10-09, `aspire wait timesheets --apphost src/Hexalith.Timeshee
 
 ### DW-107: Refresh Story 5.2 launch-readiness catalog observations after the prior Builds update.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-15 verification and review (2026-10-08)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
-reason: The current ArchitectureTests executable fails Launch_readiness_record_captures_package_currency_verdict_dimensions because the imported catalog now supplies Aspire 13.6.1 while the dated 2026-10-03 verdict records 13.6.0. The same prior dependency update moves the Keycloak catalog entry to 13.6.1-preview.1.26506.6.
 status: done 2026-10-18
-resolution: Resolved 2026-10-18 by Story 5.2. The package-currency section now leads with the 2026-10-18 restored-graph verdict for Aspire `13.6.1` and Keycloak `13.6.1-preview.1.26506.6`; the 2026-10-03 observation and the 2026-09-17 audits remain dated history, and the package-verdict fitness test passes again.
-
-summary: Refresh Story 5.2 launch-readiness catalog observations after the prior Builds update.
-evidence: The current ArchitectureTests executable fails Launch_readiness_record_captures_package_currency_verdict_dimensions because the imported catalog now supplies Aspire 13.6.1 while the dated 2026-10-03 verdict records 13.6.0. The same prior dependency update moves the Keycloak catalog entry to 13.6.1-preview.1.26506.6. Owner: Story 5.2 package-readiness reconciliation. Record new dated observations and audits without rewriting historical results or claiming they apply to the new graph; this increment does not change dependency pins.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-15 verification and review (2026-10-08)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
+archived: 2026-10-25
 
 ### DW-108: Make the launch-readiness full-suite fitness assertion check current evidence instead of a historical zero-failure sentence.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-08)"), 2026-10-25
-location: tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:102
-source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
-reason: `Launch_readiness_record_publishes_a_per_gate_release_decision_table` (`tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:102`) matches `Final total: \d+ tests, \d+ pass, \d+ intentional skips, 0 failures`. Since spec-15 set the Tests (full suite) gate to FAIL, only the historical spec-14 clause in that row (`docs/launch-readiness.md:147`) satisfies it, so the test no longer checks current evidence, and it fails whenever the history is reworded (spec-15 hit this).
 status: done 2026-10-09
-resolution: Resolved before this increment by `d6b337b423367927b2ea7b212214c335fb477171` (2026-10-09), re-validated 2026-10-20 for Story 5.2 round 7. `Launch_readiness_record_publishes_a_per_gate_release_decision_table` now uses `ReadReleaseGateRow(readiness, "Tests (full suite)")`; no `Final total:` regex remains in `LaunchReadinessTests.cs`. The separate Story 5.1 entry still owns refreshing the evidence in that row.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loadingmd-2026-10-08"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-08)
-summary: Make the launch-readiness full-suite fitness assertion check current evidence instead of a historical zero-failure sentence.
-evidence: `Launch_readiness_record_publishes_a_per_gate_release_decision_table` (`tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs:102`) matches `Final total: \d+ tests, \d+ pass, \d+ intentional skips, 0 failures`. Since spec-15 set the Tests (full suite) gate to FAIL, only the historical spec-14 clause in that row (`docs/launch-readiness.md:147`) satisfies it, so the test no longer checks current evidence, and it fails whenever the history is reworded (spec-15 hit this). The test comment says it asserts the evidence's shape, not its arithmetic. Pre-existing test design exposed by the `da172a8` regression. Owner: launch-readiness fitness (Story 5.2 reconciliation).
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-08)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
+archived: 2026-10-25
 
 ### DW-109: Replace substring-based numeric privacy exclusions with assertions that distinguish business values from permitted diagnostic correlation and timestamp fields.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-16 independent review (2026-10-09)"), 2026-10-25
-location: MagicLinkConfirmationCapabilityEndpoints.cs
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md`
-reason: This predates spec-16: `AssertSensitiveMaterialAbsent` rejects the generic substring `60` in Timesheets records and response bodies. The production `LogExternalLinkDenial` message in `MagicLinkConfirmationCapabilityEndpoints.cs` emits permitted TimestampUtc and HttpContext.TraceIdentifier correlation data, which can contain `60`; a safe record with `CorrelationId=request-60` is therefore rejected by the existing helper.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-http-privacy-deferrals.md`. Numeric assertions identify the known duration sentinel outside explicitly permitted diagnostic metadata occurrences and top-level response metadata fields. Protected-string and vocabulary checks still inspect the original content. Controls accept request-60 and fractional timestamps, reject actual duration in messages/state/scopes/exceptions/responses, and reject mixed permitted metadata plus leaked duration so no global value replacement can hide it. Protocol header lengths are checked separately from business evidence.
-
-<a id="deferred-from-story-36-spec-16-independent-review-2026-10-09"></a>
-legacy_section: Deferred from: Story 3.6 spec-16 independent review (2026-10-09)
-summary: Replace substring-based numeric privacy exclusions with assertions that distinguish business values from permitted diagnostic correlation and timestamp fields.
-evidence: This predates spec-16: `AssertSensitiveMaterialAbsent` rejects the generic substring `60` in Timesheets records and response bodies. The production `LogExternalLinkDenial` message in `MagicLinkConfirmationCapabilityEndpoints.cs` emits permitted TimestampUtc and HttpContext.TraceIdentifier correlation data, which can contain `60`; a safe record with `CorrelationId=request-60` is therefore rejected by the existing helper. The new independent theory preserves the accepted vocabulary policy and adds realistic safe diagnostics without changing production logging. Owner: HTTP privacy assertion follow-up. Use a field-aware assertion design that still rejects disclosed duration evidence, prove numeric correlation/timestamp controls, and rerun HTTP privacy after the supported EventStore route contract lands. This is a test false-positive risk, not proof of a production disclosure.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-16 independent review (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md`
+archived: 2026-10-25
 
 ### DW-110: Refresh the launch posture in the agent entry points' `timesheets` block.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md (2026-10-09)"), 2026-10-25
-location: CLAUDE.md:72
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md`
-reason: `CLAUDE.md:72`, `AGENTS.md:72` and `.github/copilot-instructions.md:72` say "launch posture is `docs/launch-readiness.md` (CONCERNS, not PASS)". But `docs/launch-readiness.md:159` and `README.md:43` record the overall release decision as `FAIL`, with package currency separately at `CONCERNS`.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. All three current managed entry points already describe the overall launch verdict as FAIL and deployed acceptance as unfinished, consistent with the current launch-readiness assessment. Package currency remains separately CONCERNS. This is a disposition of previously delivered guidance, with no new acceptance or classification change. See `tests/five-agent-guidance-carry-forwards.md`.
-
-<a id="deferred-from-code-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-16md-2026-10-09"></a>
-legacy_section: Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md (2026-10-09)
-summary: Refresh the launch posture in the agent entry points' `timesheets` block.
-evidence: `CLAUDE.md:72`, `AGENTS.md:72` and `.github/copilot-instructions.md:72` say "launch posture is `docs/launch-readiness.md` (CONCERNS, not PASS)". But `docs/launch-readiness.md:159` and `README.md:43` record the overall release decision as `FAIL`, with package currency separately at `CONCERNS`. This predates spec-16, which corrected only the README. Agent-context file: refresh it through the project-context workflow, together with the deferred SDK-pin refresh.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-16.md`
+archived: 2026-10-25
 
 ### DW-111: Check protected magic-link material in HTTP response headers as well as bodies.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-17 independent review (2026-10-09)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-17.md`
-reason: `CaptureFailureAsync` compares header sets across invalid cases but scans only the body for protected values. Identical leaked tenant identifiers, token material, or target identifiers in every response header would pass the equality check.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-http-privacy-deferrals.md`. Failure capture scans header names and values in both response and content collections, including Date even though equivalence intentionally omits its variable value. Case-insensitive sentinels cover tokens, hashes, tenants, parties, targets, entries and comments in each valid header channel; safe Content-Length: 60, correlation and protocol vocabulary remain accepted.
-
-<a id="deferred-from-story-36-spec-17-independent-review-2026-10-09"></a>
-legacy_section: Deferred from: Story 3.6 spec-17 independent review (2026-10-09)
-summary: Check protected magic-link material in HTTP response headers as well as bodies.
-evidence: `CaptureFailureAsync` compares header sets across invalid cases but scans only the body for protected values. Identical leaked tenant identifiers, token material, or target identifiers in every response header would pass the equality check. This predates spec-17; the 2026-10-09 public-route repair now allows the HTTP class to run, but does not add this header scan. Owner: Story 3.6 HTTP no-disclosure assertion follow-up; add header controls without treating routine protocol header vocabulary or numeric lengths as domain disclosure, then rerun the full HTTP class against the repaired public-route contract.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-17 independent review (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-17.md`
+archived: 2026-10-25
 
 ### DW-112: Check protected material in early non-403 magic-link HTTP responses before asserting the expected status.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-17 independent review (2026-10-09)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-17.md`
-reason: `CaptureFailureAsync` asserts 403 before its response-body privacy check, so the 2026-10-08 and pre-repair 2026-10-09 401 responses never reached that check. The 2026-10-09 public-route increment repaired the in-process 401 regression; the assertion-order gap remains.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-http-privacy-deferrals.md`. Body and header privacy checks now precede status, content-type and JSON-shape assertions. Independent 401/500 body/header controls verify the privacy sentinel causes the first failure; a safe 401 still fails the required Forbidden status gate. Historical 401 responses are not reclassified as disclosures.
-
-summary: Check protected material in early non-403 magic-link HTTP responses before asserting the expected status.
-evidence: `CaptureFailureAsync` asserts 403 before its response-body privacy check, so the 2026-10-08 and pre-repair 2026-10-09 401 responses never reached that check. The 2026-10-09 public-route increment repaired the in-process 401 regression; the assertion-order gap remains. This predates spec-17 and is not evidence that the historical 401 responses disclosed protected data. Owner: Story 3.6 HTTP no-disclosure assertion follow-up; scan protected material before status and payload-shape assertions while preserving the failing 401 gate, then rerun the full HTTP class against the repaired public-route contract.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-17 independent review (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-17.md`
+archived: 2026-10-25
 
 ### DW-113: Supply trusted tenant and actor identity to production magic-link management routes.
 
@@ -1375,67 +865,38 @@ evidence: EventStore workload authentication yields a workload caller and operat
 
 ### DW-114: Give magic-link management endpoints a route-specific workload policy.
 
-origin: migrated from legacy ledger ("Deferred from: public-route compatibility review (2026-10-09)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
-reason: The SDK fallback policy checks for an authenticated workload and any operation claim. The unchanged issuance, revoke, and expire endpoints declare no specific operation policy; a signed assertion for an unrelated operation can reach their handlers.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. The management group requires the existing EventStoreDomainServicePolicies.Process policy, matching the successful fixture and local journey's domain-service:process assertions. Signed Query and Project assertions are refused on all three routes before handler authorization, loader reads or submission. Public capability routes remain outside the protected management group; this does not supply production tenant/actor identity.
-
-summary: Give magic-link management endpoints a route-specific workload policy.
-evidence: The SDK fallback policy checks for an authenticated workload and any operation claim. The unchanged issuance, revoke, and expire endpoints declare no specific operation policy; a signed assertion for an unrelated operation can reach their handlers. Issue and revoke still use the Timesheets access guard. Select a management operation and test wrong-operation refusal in a dedicated authorization increment.
+origin: migrated from legacy ledger ("Deferred from: public-route compatibility review (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
+archived: 2026-10-25
 
 ### DW-115: Add the missing server-side authorization decision to magic-link expiry before durable submission.
 
-origin: migrated from legacy ledger ("Deferred from: public-route compatibility review (2026-10-09)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
-reason: `MagicLinkConfirmationCapabilityCommandService.Expire` calls `HandleExpire` without the access-guard check present in `IssueAsync` and `RevokeAsync`. The current HTTP route has workload fallback and does not durably submit the returned event, but future management wiring must not make this result an unauthorized write.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-management-boundary-deferrals.md`. The endpoint uses ExpireAsync and requires an authorized successful result before submission; EventStore processing retains its independent ExpireResolvedAsync revalidation. The retained synchronous Expire is obsolete and fails closed, with migration guidance in README. Service and HTTP tests deny already-expired capabilities without state changes, isolating authorization from premature-expiry rejection; existing authorized expiry and no-human-actor controls remain required.
-
-summary: Add the missing server-side authorization decision to magic-link expiry before durable submission.
-evidence: `MagicLinkConfirmationCapabilityCommandService.Expire` calls `HandleExpire` without the access-guard check present in `IssueAsync` and `RevokeAsync`. The current HTTP route has workload fallback and does not durably submit the returned event, but future management wiring must not make this result an unauthorized write.
+origin: migrated from legacy ledger ("Deferred from: public-route compatibility review (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
+archived: 2026-10-25
 
 ### DW-116: Set cache and referrer controls on public token-bearing magic-link responses.
 
-origin: migrated from legacy ledger ("Deferred from: public-route compatibility review (2026-10-09)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
-reason: The four pre-existing routes accept `?t=` and return sensitive valid display data, but set neither `Cache-Control: no-store` nor a restrictive `Referrer-Policy`. Add controls and verify them for successful and opaque-denial responses before public exposure.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by verification in `spec-close-five-integration-handoffs.md`. The existing shared endpoint helper already applies Cache-Control: no-store and Referrer-Policy: no-referrer on all four token handlers. Focused HTTP coverage now checks all four malformed-token denials, the public opaque-denial matrix, and mapped concrete-loader GET 200/POST 202 responses after persisted projection delivery. This closes the stale implementation follow-up with local evidence only; malformed-body framework responses and deployed ingress acceptance are outside this handler-response claim.
-
-summary: Set cache and referrer controls on public token-bearing magic-link responses.
-evidence: The four pre-existing routes accept `?t=` and return sensitive valid display data, but set neither `Cache-Control: no-store` nor a restrictive `Referrer-Policy`. Add controls and verify them for successful and opaque-denial responses before public exposure.
+origin: migrated from legacy ledger ("Deferred from: public-route compatibility review (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-restore-public-capability-routes.md`
+archived: 2026-10-25
 
 ### DW-117: Refresh the managed repository agent context for the current launch posture and magic-link projection wiring.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 public-route review reconciliation (2026-10-09)"), 2026-10-25
-location: AGENTS.md
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-18.md`
-reason: `AGENTS.md` still describes launch readiness as `CONCERNS` and says the token-hash projection lacks host wiring, while current launch readiness is `FAIL` and the in-process host discovers the projection handler. This can misdirect future agent work.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. This combined carry-forward duplicates the SDK-independent launch-posture and projection-wiring guidance requests resolved above. The three entry points already agree on FAIL, registered projections/processing, and the remaining acceptance limits. Their managed-context generation stamp is retained; this increment verifies delivered text rather than claiming a new full context refresh. See `tests/five-agent-guidance-carry-forwards.md`.
-
-<a id="deferred-from-story-36-public-route-review-reconciliation-2026-10-09"></a>
-legacy_section: Deferred from: Story 3.6 public-route review reconciliation (2026-10-09)
-summary: Refresh the managed repository agent context for the current launch posture and magic-link projection wiring.
-evidence: `AGENTS.md` still describes launch readiness as `CONCERNS` and says the token-hash projection lacks host wiring, while current launch readiness is `FAIL` and the in-process host discovers the projection handler. This can misdirect future agent work. Agent-context files require their own managed refresh and synchronized entry points.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 public-route review reconciliation (2026-10-09)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-18.md`
+archived: 2026-10-25
 
 ### DW-118: Decide how public magic-link routes should handle unexpected loader or command-service exceptions.
 
-origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-close-remaining-acceptance-gaps.md`
-reason: The confirm and adjust POST handlers already awaited loader and command services before this increment, and an uncaught access-guard or domain-service exception can still produce a framework error response instead of the common opaque denial. A dedicated error-handling decision should distinguish unexpected faults and cancellation from invalid links, then verify the public response and privacy-safe diagnostics without masking operational failures.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. The approved policy returns fixed opaque HTTP 500 with private headers and sanitized Error diagnostics across all four public handlers. Invalid links retain 403; genuine cancellation propagates and diagnostic-provider failures cannot alter outcomes. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
-
-<a id="deferred-from-fail-closed-story-36-review-2026-10-10"></a>
-legacy_section: Deferred from: fail-closed Story 3.6 review (2026-10-10)
-summary: Decide how public magic-link routes should handle unexpected loader or command-service exceptions.
-evidence: The confirm and adjust POST handlers already awaited loader and command services before this increment, and an uncaught access-guard or domain-service exception can still produce a framework error response instead of the common opaque denial. A dedicated error-handling decision should distinguish unexpected faults and cancellation from invalid links, then verify the public response and privacy-safe diagnostics without masking operational failures.
+origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-close-remaining-acceptance-gaps.md`
+archived: 2026-10-25
 
 ### DW-119: Wire and measure token-hash index projection readiness before treating a newly issued link as immediately resolvable.
 
@@ -1451,53 +912,31 @@ update_2026_10_10: The original unwired-index observation was superseded by the 
 
 ### DW-120: Add a production EventStore recording writer for Time Entry owner streams before live magic-link acceptance.
 
-origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
-reason: `MagicLinkDurableSubmissionService` is the only production magic-link submitter and no production code records a Time Entry into its EventStore owner stream. `MagicLinkEventStoreDomainProcessor` requires `timeEntry.IsRecorded` for use, so live confirm and adjust currently fail closed even after topology and issuer gates close.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-eventstore-handoffs.md`. TimeEntryRecordSubmissionService and the external-contribution endpoint now submit through the existing keyed MagicLinkEventStoreDomainProcessor.ProcessRecordAsync branch, with Completed status and exact stored-event verification. Actor-backed HTTP regressions prove recording before use, atomic record/submission, retry/concurrency behavior and persisted owner state. Fail-closed production authorization, current-graph runtime and deployed acceptance remain separate; see `tests/five-eventstore-handoffs.md`.
-
-summary: Add a production EventStore recording writer for Time Entry owner streams before live magic-link acceptance.
-evidence: `MagicLinkDurableSubmissionService` is the only production magic-link submitter and no production code records a Time Entry into its EventStore owner stream. `MagicLinkEventStoreDomainProcessor` requires `timeEntry.IsRecorded` for use, so live confirm and adjust currently fail closed even after topology and issuer gates close. `AddTimesheetsMagicLinkEventStoreProcessing` owns the keyed `timesheets` processor; the future recording path must compose with that processor instead of registering a competing keyed processor. This is a release gate.
+origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+archived: 2026-10-25
 
 ### DW-121: Wire production capability and Time Entry read-model projection handlers for stored magic-link events.
 
-origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
-reason: Local read-model and HTTP fixtures exercise the stored wrappers, but production handlers for the capability and Time Entry read models remain unwired. Reconcile BH8, L1-BH12, L2-BH3, L3-BH12 and L4-BH8 from the durable-submission review before claiming live read-model freshness.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-eventstore-handoffs.md`. The composed host discovers MagicLinkConfirmationCapabilityProjectionHandler and TimeEntryEvidenceProjectionHandler from its registered projection assembly. Stored-wrapper unit tests and mapped named-delivery/rebuild integration cases assert selected capability and Time Entry state, including the 10,000-event lineage. These implementations supersede the historical unwired-handler diagnosis. Automatic subscriber delivery, deployed rebuild and current-graph AppHost qualification remain separately open; see `tests/five-eventstore-handoffs.md`.
-
-summary: Wire production capability and Time Entry read-model projection handlers for stored magic-link events.
-evidence: Local read-model and HTTP fixtures exercise the stored wrappers, but production handlers for the capability and Time Entry read models remain unwired. Reconcile BH8, L1-BH12, L2-BH3, L3-BH12 and L4-BH8 from the durable-submission review before claiming live read-model freshness.
+origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+archived: 2026-10-25
 
 ### DW-122: Resolve magic-link helper collision cases before broadening production command routing.
 
-origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
-reason: Durable-submission review items L2-EC3, L3-BH9 and L4-EC1 remain deferred. Review the helper collision behavior with the future recording/processor composition work and pin the chosen routing semantics with actor-level tests.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-eventstore-handoffs.md`. The pure capability projection helper now filters recognized unrelated capability facts before local-sequence deduplication and lifecycle ordering. Direct mixed-stream regressions cover raw/stored issuance, use/revoke/expiry, both orders and repeated selected deliveries; selected tenant/Time Entry conflicts, contradictory same-capability evidence and unknown-payload normalization remain protected. The production handler currently calls this helper with singleton issuance; existing actor tests independently verify the single keyed recording/use processor, without claiming a mixed-stream actor caller. See `tests/five-eventstore-handoffs.md`.
-
-summary: Resolve magic-link helper collision cases before broadening production command routing.
-evidence: Durable-submission review items L2-EC3, L3-BH9 and L4-EC1 remain deferred. Review the helper collision behavior with the future recording/processor composition work and pin the chosen routing semantics with actor-level tests.
+origin: migrated from legacy ledger ("Deferred from: fail-closed Story 3.6 review (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+archived: 2026-10-25
 
 ### DW-123: Decide whether `ExistingTimeEntry` magic links are usable, or stop issuing them.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-10)"), 2026-10-25
-location: MagicLinkConfirmationCapability.cs:274
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
-reason: Issuance accepts `MagicLinkTargetKind.ExistingTimeEntry` (`MagicLinkConfirmationCapability.cs:274`), while use validation requires `ProposedTimeEntry` (`:371`). The asymmetry predates `61d6fc7`, but durable issuance now commits such links, so the issuer receives a token that every confirm or adjust denies.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. The approved policy rejects new ExistingTimeEntry issuance before token generation and at aggregate/durable processing boundaries. Historical event reads, enum compatibility and existing use denial remain; Story 3.2 issuance scope is explicitly narrowed without additional approval/correction behavior. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
-
-<a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loadingmd-2026-10-10"></a>
-legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-10)
-summary: Decide whether `ExistingTimeEntry` magic links are usable, or stop issuing them.
-evidence: Issuance accepts `MagicLinkTargetKind.ExistingTimeEntry` (`MagicLinkConfirmationCapability.cs:274`), while use validation requires `ProposedTimeEntry` (`:371`). The asymmetry predates `61d6fc7`, but durable issuance now commits such links, so the issuer receives a token that every confirm or adjust denies.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
+archived: 2026-10-25
 
 ### DW-124: Define the authorization principal for system-initiated magic-link expiry (medium, unverified).
 
@@ -1512,65 +951,38 @@ evidence: With a null `Actor`, `MagicLinkEventStoreDomainProcessor.ProcessTransi
 
 ### DW-125: Re-run vulnerable, deprecated, and transitive package audits against the current 13.6.1 catalog graph.
 
-origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-10)"), 2026-10-25
-location: docs/launch-readiness.md:25
-source_spec: `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: `docs/launch-readiness.md:25` and the transitive-drift row still cite 2026-09-17 audits of the earlier graph. Story 3.6 updated only the platform-alignment row, labeled as catalog evidence.
 status: done 2026-10-18
-resolution: Resolved 2026-10-18 by Story 5.2. After the AppHost moved to `Aspire.AppHost.Sdk` `13.6.1` and a forced no-cache restore, the direct, vulnerable, and deprecated audits covered all 15 projects and were clean; the solution/AppHost transitive lane still fails with `error: Sequence contains no matching element`, the 14 project fallbacks plus a manual AppHost registry fallback were reviewed with no pin, and the results are recorded in the launch-readiness package-currency verdict.
-
-summary: Re-run vulnerable, deprecated, and transitive package audits against the current 13.6.1 catalog graph.
-evidence: `docs/launch-readiness.md:25` and the transitive-drift row still cite 2026-09-17 audits of the earlier graph. Story 3.6 updated only the platform-alignment row, labeled as catalog evidence. The prose still pairs `Aspire.AppHost.Sdk` `13.5.3` with Aspire `13.6.1` packages. The catalog moved in `46265ba`, before the reviewed range.
+origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading.md (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-126: Decide and enforce a deadline for magic-link stored-event readback after terminal status.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
-reason: `MagicLinkDurableSubmissionService` bounds status polling, but its pre-existing issue, transition, and use `ReadWorkloadStreamAsync` calls use only the request token. A stalled read can delay a public response indefinitely.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-runtime-deferrals.md`. Every issue, transition and use stored-event read has a linked, independently timed WaitAsync budget: two seconds by default, positive and at most thirty seconds, respecting shorter submission deadlines and caller cancellation. Successful evidence and non-cooperative transport regressions pass; removing either timer or wait bound produces the expected failures. This establishes local bounded-response policy, without deployed latency acceptance. See `tests/five-magic-link-runtime-deferrals.md`.
-
-<a id="deferred-from-story-36-review-of-polling-and-projection-scope-2026-10-10"></a>
-legacy_section: Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)
-summary: Decide and enforce a deadline for magic-link stored-event readback after terminal status.
-evidence: `MagicLinkDurableSubmissionService` bounds status polling, but its pre-existing issue, transition, and use `ReadWorkloadStreamAsync` calls use only the request token. A stalled read can delay a public response indefinitely. A deployed latency policy and topology measurements should set the readback budget.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+archived: 2026-10-25
 
 ### DW-127: Bind magic-link receipt events to the submitted command's correlation and causation identity.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
-reason: EventStore `EventPersister` sets persisted event correlation and causation from the command, while pre-existing receipt verification checks sequence and payload but not those metadata fields. Decide the exact metadata policy across issue, transition, and use, then add tamper tests.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-audit-integrity-deferrals.md`. Current-path issue, revoke, expire, confirm, and adjust receipts require correlation and causation equal to the submitted command identity on every event. Existing exact status/batch verification, bounded polling, cancellation, and opaque denials remain in place. Regression coverage tampers both metadata fields with missing/foreign values across all receipt actions and both use-event positions; the focused receipt matrix passes. This supplies no deployed acceptance.
-
-summary: Bind magic-link receipt events to the submitted command's correlation and causation identity.
-evidence: EventStore `EventPersister` sets persisted event correlation and causation from the command, while pre-existing receipt verification checks sequence and payload but not those metadata fields. Decide the exact metadata policy across issue, transition, and use, then add tamper tests.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+archived: 2026-10-25
 
 ### DW-128: Verify complete prior-value audit snapshots for magic-link adjustments.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
-reason: Existing adjustment readback compares the effect's new values to the submitted intent but does not compare prior service date, duration, billable state, or comment to the loaded Time Entry state. Pass trustworthy pre-submit state into receipt verification and test corrupted prior-value snapshots.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-audit-integrity-deferrals.md`. The HTTP adjustment handler captures the complete trusted Time Entry snapshot before dispatch; receipt verification requires its exact equality with stored PreviousValues, including target, contributor, activity/scope, date, duration, billable state, category, AI metrics, and comment. Existing overloads remain callable, but adjustment success requires a trusted snapshot. Focused tests reject tampering of every prior field and retain matching receipt success and opaque response behavior; no stored events are rewritten.
-
-summary: Verify complete prior-value audit snapshots for magic-link adjustments.
-evidence: Existing adjustment readback compares the effect's new values to the submitted intent but does not compare prior service date, duration, billable state, or comment to the loaded Time Entry state. Pass trustworthy pre-submit state into receipt verification and test corrupted prior-value snapshots.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+archived: 2026-10-25
 
 ### DW-129: Enforce checkpoint tenant scope consistently in Timesheets read-model projections.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
-reason: A Fresh `TimesheetsProjectionCheckpoint` from another tenant can mark matching-envelope evidence and ledger export preview ready because the pre-existing folds do not compare `checkpoint.TenantId` with the requested tenant. Define a common checkpoint validation across evidence, period, list, ledger, and report folds.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. This historical request is satisfied by the existing `spec-enforce-projection-checkpoint-tenant-scope.md` implementation and the dated Projection checkpoint tenant isolation Resolution below. The shared ordinal guard covers full/incremental evidence, list, period, ledger, both reports/catalog views and capability issuance; explicit-tenant history folds refuse foreign checkpoints before enumeration. Matching-scope behavior and identifier-free errors remain tested. See `tests/five-runtime-correctness-carry-forwards.md`.
-
-summary: Enforce checkpoint tenant scope consistently in Timesheets read-model projections.
-evidence: A Fresh `TimesheetsProjectionCheckpoint` from another tenant can mark matching-envelope evidence and ledger export preview ready because the pre-existing folds do not compare `checkpoint.TenantId` with the requested tenant. Define a common checkpoint validation across evidence, period, list, ledger, and report folds.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling and projection scope (2026-10-10)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
+archived: 2026-10-25
 
 ### DW-130: Reconcile an uncertain committed magic-link use across separate HTTP retries.
 
@@ -1585,17 +997,10 @@ evidence: Public endpoints pass a new `HttpContext.TraceIdentifier` on each requ
 
 ### DW-131: Commit and pin the EventStore-owned AppPort and metadata changes in a later authorized repository update.
 
-origin: migrated from legacy ledger ("Deferred from: local Aspire/Dapr topology review (2026-10-11)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
-reason: The Timesheets AppHost uses an optional EventStore Aspire overload added in the modified `references/Hexalith.EventStore` worktree. The user explicitly prohibited staging, committing, and pushing for this task, so a clean checkout of the current gitlink does not yet contain that overload.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-runtime-correctness-carry-forwards.md`. EventStore commit `86d8847616b1f56064fa2dddf3d0ca07837b188f` committed the AppPort and capability-bound keyed-domain metadata changes and is an ancestor of the already-recorded gitlink `5ce5f1d84b88c808cc8a526b9decf149de977e55` at Timesheets baseline `7533cbd95557d0d02943a619a115fc85552d25c4`. This resolves only the historical uncommitted-source/pin handoff; no new pointer, platform test-run, current-graph runtime or deployed acceptance is claimed. See `tests/five-runtime-correctness-carry-forwards.md`.
-
-<a id="deferred-from-local-aspiredapr-topology-review-2026-10-11"></a>
-legacy_section: Deferred from: local Aspire/Dapr topology review (2026-10-11)
-summary: Commit and pin the EventStore-owned AppPort and metadata changes in a later authorized repository update.
-evidence: The Timesheets AppHost uses an optional EventStore Aspire overload added in the modified `references/Hexalith.EventStore` worktree. The user explicitly prohibited staging, committing, and pushing for this task, so a clean checkout of the current gitlink does not yet contain that overload.
+origin: migrated from legacy ledger ("Deferred from: local Aspire/Dapr topology review (2026-10-11)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
+archived: 2026-10-25
 
 ### DW-132: Inventory deployed read-model components and rebuild or migrate prior magic-link index and catalog data before deployment.
 
@@ -1611,53 +1016,31 @@ followup_note: Open acceptance retained 2026-10-23 by `spec-consolidate-five-ope
 
 ### DW-133: Include keyed-only domains in the legacy operational metadata path when that path must serve them.
 
-origin: migrated from legacy ledger ("Deferred from: local Aspire/Dapr topology review (2026-10-11)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
-reason: The pre-existing versionless metadata overload derives domains from discovered aggregates. The new capability-bound v2 path admits keyed processors, but versionless requests still omit keyed-only domains such as Timesheets.
 status: done 2026-10-24
-resolution: Resolved 2026-10-24 by `spec-five-build-and-hosting-deferrals.md`. Legacy metadata receives only requested domains confirmed by the server keyed registry, for IDomainProcessor and IAsyncDomainProcessor. Registered keyed-only domains appear without v2 advertisement; aggregate metadata, workload policy, named capability and v2 fingerprint behavior remain intact, while unknown/orphan domains stay absent. Null/empty lists retain aggregate discovery and invalid names cannot match unkeyed processors. The affected metadata class passed 98/98; see `tests/five-build-and-hosting-deferrals.md`.
-
-summary: Include keyed-only domains in the legacy operational metadata path when that path must serve them.
-evidence: The pre-existing versionless metadata overload derives domains from discovered aggregates. The new capability-bound v2 path admits keyed processors, but versionless requests still omit keyed-only domains such as Timesheets.
+origin: migrated from legacy ledger ("Deferred from: local Aspire/Dapr topology review (2026-10-11)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
+archived: 2026-10-25
 
 ### DW-134: Detect colliding local AppHost identities and Redis database use before running topology probes on shared developer machines.
 
-origin: migrated from legacy ledger ("Deferred from: local Aspire/Dapr topology review (2026-10-11)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
-reason: Dapr app ID `timesheets` is required and Redis logical databases 13 and 14 are fixed for this local composition. The probes reject duplicate matching app IDs and use random tenants, but no separate startup lock reserves those IDs or databases across concurrent workspaces.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-local-apphost-boundary-deferrals.md`. Both cooperating runtime drivers acquire one canonical /tmp/hexalith-timesheets-local-runtime.lock before admission and retain its nonblocking OS advisory lock through cleanup/preservation. Cross-process/workspace/TMPDIR contention, graceful/abrupt owner exit, unsafe/unavailable lock refusal and failure cleanup are covered by passing fixture tests. The lock file is retained; configuration-only probes need no lock. Foreign direct launches remain subject to existing preflight checks, and private fixture Redis does not qualify deployed databases. See `tests/five-local-apphost-boundary-deferrals.md`.
-
-summary: Detect colliding local AppHost identities and Redis database use before running topology probes on shared developer machines.
-evidence: Dapr app ID `timesheets` is required and Redis logical databases 13 and 14 are fixed for this local composition. The probes reject duplicate matching app IDs and use random tenants, but no separate startup lock reserves those IDs or databases across concurrent workspaces.
+origin: migrated from legacy ledger ("Deferred from: local Aspire/Dapr topology review (2026-10-11)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-local-aspire-dapr-topology.md`
+archived: 2026-10-25
 
 ### DW-135: Reconcile an uncertain committed magic-link use across separate HTTP retries.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 local persisted journey review (2026-10-11)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
-reason: The endpoint's per-request trace identifier changes the EventStore MessageId on a later HTTP retry; the local fixture proves stable retries within one request and replay denial, not cross-request status reconciliation. The earlier Story 3.6 deferred entry identifies the same release concern.
 status: done 2026-10-23
-resolution: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. This duplicate is carried by the earlier spec-19 task with the identical summary. Cross-request idempotency/status reconciliation remains open; within-request response-loss recovery and replay denial do not settle it. See `tests/five-operational-followups.md`.
-
-<a id="deferred-from-story-36-local-persisted-journey-review-2026-10-11"></a>
-legacy_section: Deferred from: Story 3.6 local persisted journey review (2026-10-11)
-summary: Reconcile an uncertain committed magic-link use across separate HTTP retries.
-evidence: The endpoint's per-request trace identifier changes the EventStore MessageId on a later HTTP retry; the local fixture proves stable retries within one request and replay denial, not cross-request status reconciliation. The earlier Story 3.6 deferred entry identifies the same release concern.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 local persisted journey review (2026-10-11)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
+archived: 2026-10-25
 
 ### DW-136: Verify deployed read-model component wiring and migration independently of the opt-in local journey.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 local persisted journey review (2026-10-11)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
-reason: Both loader and projection use `timesheets-readmodels`, and the local Dapr lane proves that component exists under the run-mode AppHost. Other hosting modes and prior deployed `statestore` data remain uninspected; default unit tests compare each route with its production constant and cannot detect a component mismatch.
 status: done 2026-10-23
-resolution: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. The October 11 canonical deployed inventory/rebuild task already retains actual component wiring, prior statestore content and applicable hosting modes. Local timesheets-readmodels proof does not establish deployed wiring or migration. That requirement remains open; see `tests/five-operational-followups.md`.
-
-summary: Verify deployed read-model component wiring and migration independently of the opt-in local journey.
-evidence: Both loader and projection use `timesheets-readmodels`, and the local Dapr lane proves that component exists under the run-mode AppHost. Other hosting modes and prior deployed `statestore` data remain uninspected; default unit tests compare each route with its production constant and cannot detect a component mismatch.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 local persisted journey review (2026-10-11)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-20.md`
+archived: 2026-10-25
 
 ### DW-137: Establish independently verified legacy owner delivery continuity and pending-journal recovery before enabling the v1 migration in a real environment.
 
@@ -1672,29 +1055,17 @@ evidence: The index inventory contains candidates, not authoritative owner event
 
 ### DW-138: Direct AppHost starts with bare TIMESHEETS_LIVE_DAPR_FIXTURE=1 enable development fixture authorization while retaining shared component defaults.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 local persisted journey review (2026-10-11)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-isolate-live-dapr-fixture-storage.md`
-reason: The exact branch and default selection are present at baseline 2af8a543229f6427d4b07d1bc592add9f87aa3b2; the new isolated runner supplies and validates all private settings before commands. A later configuration-hardening change should reject incomplete fixture startup with a harmless compiled probe, while preserving ordinary starts.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The completed startup-hardening implementation already refuses bare/incomplete fixture settings before resource construction. The current Debug/source compiled probes verify ordinary defaults and all unsafe fixture/control-plane cases; the new routine Release/package CI lane preserves these controls and separately requires the source-only adapter refusal. The original isolation spec and historical evidence are unchanged. This closes local startup admission, without deployed or current-graph runtime acceptance; see `tests/five-local-fixture-handoffs.md`.
-
-summary: Direct AppHost starts with bare TIMESHEETS_LIVE_DAPR_FIXTURE=1 enable development fixture authorization while retaining shared component defaults.
-evidence: The exact branch and default selection are present at baseline 2af8a543229f6427d4b07d1bc592add9f87aa3b2; the new isolated runner supplies and validates all private settings before commands. A later configuration-hardening change should reject incomplete fixture startup with a harmless compiled probe, while preserving ordinary starts.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 local persisted journey review (2026-10-11)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-isolate-live-dapr-fixture-storage.md`
+archived: 2026-10-25
 
 ### DW-139: The deferred bare TIMESHEETS_LIVE_DAPR_FIXTURE=1 startup gap is closed by a separate scoped increment.
 
-origin: migrated from legacy ledger ("Resolution: AppHost fixture startup hardening (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-harden-live-dapr-fixture-startup.md`
-reason: AppHost admission now requires run mode, a nonblank validated isolated component directory and explicit private placement/scheduler endpoints before resource setup or fixture authorization. All 22 compiled validation-only probes pass, including bare/missing/empty/whitespace settings and both publish-mode refusals; ordinary defaults and the supported isolated runner are preserved.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-local-recovery-carry-forwards.md` as a completed carry-forward. The startup-hardening spec and subsequent local-fixture handoff already delivered pre-resource run-mode, component and control-plane admission. Current focused verification is in `tests/five-local-recovery-carry-forwards.md`; the original historical results remain intact. This disposition adds no runtime implementation or current-graph live/deployed acceptance.
-
-<a id="resolution-apphost-fixture-startup-hardening-2026-10-13"></a>
-legacy_section: Resolution: AppHost fixture startup hardening (2026-10-13)
-summary: The deferred bare TIMESHEETS_LIVE_DAPR_FIXTURE=1 startup gap is closed by a separate scoped increment.
-evidence: AppHost admission now requires run mode, a nonblank validated isolated component directory and explicit private placement/scheduler endpoints before resource setup or fixture authorization. All 22 compiled validation-only probes pass, including bare/missing/empty/whitespace settings and both publish-mode refusals; ordinary defaults and the supported isolated runner are preserved. Initial infrastructure-backed guards and live validation refused a concurrent foreign Tenants/eventstore runtime before creating anything; after it exited independently, the guards passed 22/22 and isolated live journey passed 1/1 with preservation/cleanup proof. This resolves the historical entry sourced from [the completed isolation spec](spec-3-6-isolate-live-dapr-fixture-storage.md). Current local proof and exact results are in tests/3-6-test-summary.md; this closes the configuration gap only, without legacy/deployed certification or Story 3.6/release completion. The completed isolation spec and its frozen intent are unchanged.
+origin: migrated from legacy ledger ("Resolution: AppHost fixture startup hardening (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-harden-live-dapr-fixture-startup.md`
+archived: 2026-10-25
 
 ### DW-140: Verify whether any deployed direct legacy shard must be rejected before v7 bootstrap.
 
@@ -1711,27 +1082,17 @@ evidence: The bootstrap checks selected legacy shards and the direct v1 single r
 
 ### DW-141: Recover a committed external recording when its submit response is lost.
 
-origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
-reason: The recording service uses the response-first helper, so a post-commit transport fault can cause the endpoint to return 403 before status and exact stored-event readback. No recording-route lost-response test covers this case.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The delivered recording service observes the same command after a submit-response fault, requires Completed status and exact stored recording/submission readback, and does not resubmit. `ExternalRecordingRecoversCommittedBatchAfterSubmitResponseFault` covers Draft and Submitted results, persisted event values and an HTTP retry with one submission. This reconciles the original entry with the October 13 response-loss resolution below; it does not establish cross-request reconciliation for magic-link use or deployed acceptance. See `tests/five-local-fixture-handoffs.md`.
-
-summary: Recover a committed external recording when its submit response is lost.
-evidence: The recording service uses the response-first helper, so a post-commit transport fault can cause the endpoint to return 403 before status and exact stored-event readback. No recording-route lost-response test covers this case.
+origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+archived: 2026-10-25
 
 ### DW-142: Verify sealed v6 migration resume against a changed source or damaged staged root.
 
-origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
-reason: A sealed-stage retry calls CommitAsync before repeating source-digest and membership checks. SDK page digests protect staged bytes, and the global writer fence should prevent normal source changes; a fault test or evidence of an out-of-fence writer is needed to show the bad state is reachable.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-runtime-deferrals.md`. Sealed retries reconstruct checkpoints and revalidate source digests, final root/format, counts, rosters and bounded tree/owner membership before promotion, with no further stage appends. All 24 migration cases pass, including unchanged/long-tenant and multi-tenant success, damaged-state refusals and retryable transport/cancellation. Removing checkpoint reconstruction or staged-membership validation causes five failures each. Deployed inventory and operator binding remain separate. See `tests/five-magic-link-runtime-deferrals.md`.
-
-summary: Verify sealed v6 migration resume against a changed source or damaged staged root.
-evidence: A sealed-stage retry calls CommitAsync before repeating source-digest and membership checks. SDK page digests protect staged bytes, and the global writer fence should prevent normal source changes; a fault test or evidence of an out-of-fence writer is needed to show the bad state is reachable.
+origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+archived: 2026-10-25
 
 ### DW-143: Bind deployed migration authorization to the intended operator as well as its certified operation.
 
@@ -1746,15 +1107,10 @@ evidence: The endpoint requires authentication, while the authority port receive
 
 ### DW-144: Retire obsolete same-generation capability projection fragments after repeated large-view updates.
 
-origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
-reason: WriteView creates digest-keyed fragments for each new large view, and its changed-view path does not delete the prior digest's fragments. They remain unreachable but consume read-model storage until generation cleanup.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-recovery-and-verification-deferrals.md`. Validated catch-up replacements publish new fragments/pointer before exact old-digest IdempotentAbsent deletes when the ordered SDK fold fits 128 operations. Larger folds retain a validated reachable flat base and publish only bounded token-free transition fragments plus a scoped one-layer continuation, checking complete-view digest/length on read. Passing regressions cover all terminal kinds, terminal-first and legacy input, maximal entropy, unsupported complete capacity with journal preservation, malformed/foreign/nested bases, redelivery, interrupted publication/deletion and crossing readers. Rebuild staging remains flat; compatible readers must precede continuation writers at deployment. Evidence and remaining deployment obligations are in `tests/five-recovery-and-verification-deferrals.md`.
-
-summary: Retire obsolete same-generation capability projection fragments after repeated large-view updates.
-evidence: WriteView creates digest-keyed fragments for each new large view, and its changed-view path does not delete the prior digest's fragments. They remain unreachable but consume read-model storage until generation cleanup.
+origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+archived: 2026-10-25
 
 ### DW-145: Establish subscriber-driven projection delivery independently of manual mapped-route dispatch.
 
@@ -1769,261 +1125,143 @@ evidence: The isolated journey explicitly invokes `/project/v2` after reading st
 
 ### DW-146: Validate the complete selected v6 shard in the local Python candidate diagnostic.
 
-origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
-reason: An inline v6 candidate may be accepted without checking all manifest pages; the production loader validates the complete shard. Current isolated proof uses v7, but an old v6 diagnostic could overstate local evidence.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: the diagnostic validates the complete v6 manifest, reads every selected directory and collision page, checks identities, ordering, shard scope and content digests, and rechecks the selected generation/root before publishing a unique candidate. Inline hits and valid-GET diagnostics use this verified path. Regressions cover corrupt/missing unrelated pages and invalid manifest membership. This supplies no deployed or migration certification.
-
-summary: Validate the complete selected v6 shard in the local Python candidate diagnostic.
-evidence: An inline v6 candidate may be accepted without checking all manifest pages; the production loader validates the complete shard. Current isolated proof uses v7, but an old v6 diagnostic could overstate local evidence.
+origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+archived: 2026-10-25
 
 ### DW-147: Distinguish selected-format read failure from an absent v7 format in the local index diagnostic.
 
-origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
-reason: `_selected_index_snapshot` catches every RuntimeError while reading the v7 format and falls back to v6, so a transient store outage can be misreported as a legacy shape. Production admission remains fail-closed.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: the selected-format reader uses `allow_missing=True`, whose read seam returns absence only for 204/404. Store failures and malformed format data propagate instead of falling back to v6. Direct pure-helper regressions cover genuine absence, v7 selection, outages and invalid JSON/format shape; the live journey delegates to this helper.
-
-summary: Distinguish selected-format read failure from an absent v7 format in the local index diagnostic.
-evidence: `_selected_index_snapshot` catches every RuntimeError while reading the v7 format and falls back to v6, so a transient store outage can be misreported as a legacy shape. Production admission remains fail-closed.
+origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+archived: 2026-10-25
 
 ### DW-148: Put compiled AppHost fixture-control refusal probes in a routine verification lane.
 
-origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
-reason: The separate hardening increment ran its compiled guard driver successfully, but routine test executables do not run `check_magic_link_apphost_guards.py --configuration-only`; Python unit tests mock commands. A routine negative probe would catch removal of ValidateFixtureControlPlane.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-local-fixture-deferrals.md`. The blocking `apphost-configuration` CI job restores/builds a fresh Release/package AppHost and runs all 35 no-resource configuration probes, retaining sanitized per-probe evidence even on failure. The driver selects explicit Debug/Release assets, retains Debug defaults locally, and requires package-build refusal for private compiled-gateway settings. Release is rejected outside configuration-only mode. Fixture-driver, sanitizer and Release selection/failure regressions now also run in routine Python CI. Local Debug compiled checks pass; actual hosted Release execution is a distinct CI receipt, not a local runtime or deployment claim. See `tests/five-local-fixture-handoffs.md`.
-
-summary: Put compiled AppHost fixture-control refusal probes in a routine verification lane.
-evidence: The separate hardening increment ran its compiled guard driver successfully, but routine test executables do not run `check_magic_link_apphost_guards.py --configuration-only`; Python unit tests mock commands. A routine negative probe would catch removal of ValidateFixtureControlPlane.
+origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 materialization (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
+archived: 2026-10-25
 
 ### DW-149: The local recording lost-response follow-up from the final materialization review is implemented.
 
-origin: migrated from legacy ledger ("Resolution: Recording response-loss recovery (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md`
-reason: The existing helper now observes the same command after a submit-response fault and retries classified transient status failures within its original deadline, without resubmitting. Completed status and exact stored recording/submission evidence remain required; Draft/Submitted HTTP cases prove one stored batch and a retry without another submission.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-local-recovery-carry-forwards.md` as a completed carry-forward. Existing durable submission observes the same command after response loss without resubmission and the recording service requires Completed status plus exact stored recording/submission evidence. Current service and actor-backed HTTP regressions are documented in `tests/five-local-recovery-carry-forwards.md`. This closes the delivered recovery note; readback-budget and uncertain cross-request magic-link-use acceptance remain separate.
-
-<a id="resolution-recording-response-loss-recovery-2026-10-13"></a>
-legacy_section: Resolution: Recording response-loss recovery (2026-10-13)
-summary: The local recording lost-response follow-up from the final materialization review is implemented.
-evidence: The existing helper now observes the same command after a submit-response fault and retries classified transient status failures within its original deadline, without resubmitting. Completed status and exact stored recording/submission evidence remain required; Draft/Submitted HTTP cases prove one stored batch and a retry without another submission. Revoke/expire cases verify exact terminal evidence and reject corrupt receipts after response loss. Caller cancellation, transport timeout, delayed completion, mismatched accepted identity, and exhausted budget have regressions. Both public POST routes now share GET privacy headers, correcting the earlier all-route equivalence failure. This local fix does not establish deployed certification; existing readback-budget and still-pending-response concerns remain separate. Current validation and live limitations are in tests/3-6-test-summary.md.
+origin: migrated from legacy ledger ("Resolution: Recording response-loss recovery (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-22.md`
+archived: 2026-10-25
 
 ### DW-150: Extend the local diagnostic sanitizer to redact OTLP/API-key headers before retaining or displaying monitoring output.
 
-origin: migrated from legacy ledger ("Deferred from: Story 3.6 deployed qualification planning (2026-10-13)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md`
-reason: A manual baseline Aspire describe/monitoring dump passed through scripts/run_isolated_magic_link_dapr.py sanitized() but still displayed the runtime's temporary OTEL_EXPORTER_OTLP_HEADERS credential. Subsequent output used selected non-sensitive fields; no raw dump was saved as acceptance evidence, and all owning runtime identities exited.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The delivered redactor covers OTLP exporter headers and API keys in plain, structured, escaped and multiline forms, including command arguments, stdout/stderr and retained evidence. The current 97-test fixture suite passes and is now run by routine Python CI. This reconciles the canonical entry with the October 18 diagnostic-redaction resolution below; no new runtime or deployed evidence is claimed. See `tests/five-local-fixture-handoffs.md`.
-
-<a id="deferred-from-story-36-deployed-qualification-planning-2026-10-13"></a>
-legacy_section: Deferred from: Story 3.6 deployed qualification planning (2026-10-13)
-summary: Extend the local diagnostic sanitizer to redact OTLP/API-key headers before retaining or displaying monitoring output.
-evidence: A manual baseline Aspire describe/monitoring dump passed through scripts/run_isolated_magic_link_dapr.py sanitized() but still displayed the runtime's temporary OTEL_EXPORTER_OTLP_HEADERS credential. Subsequent output used selected non-sensitive fields; no raw dump was saved as acceptance evidence, and all owning runtime identities exited. The current sanitizer vocabulary covers domain/signing/channel credentials but misses this telemetry header. Add structured and plain-header regression cases in the separate diagnostic follow-up without broadening or weakening journey evidence.
+origin: migrated from legacy ledger ("Deferred from: Story 3.6 deployed qualification planning (2026-10-13)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md`
+archived: 2026-10-25
 
 ### DW-151: Address deferred projection storage and migration hardening in separate increments.
 
-origin: migrated from legacy ledger ("Deferred from: diagnostic credential-redaction scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected diagnostic credential redaction as the first independently shippable goal; storage and migration changes require their own investigation and verification.
 status: done 2026-10-23
-resolution: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. This generic scope-selection wrapper is represented by the existing specific open catalog-key/fencing, deployed inventory, legacy continuity, direct-shard, sealed-v6, operator-binding, fragment-cleanup, subscriber-delivery and selected-index validation tasks. No underlying requirement is completed. Exact successor coverage is in `tests/five-operational-followups.md`.
-
-<a id="deferred-from-diagnostic-credential-redaction-scope-selection-2026-10-18"></a>
-legacy_section: Deferred from: diagnostic credential-redaction scope selection (2026-10-18)
-summary: Address deferred projection storage and migration hardening in separate increments.
-evidence: The user selected diagnostic credential redaction as the first independently shippable goal; storage and migration changes require their own investigation and verification.
+origin: migrated from legacy ledger ("Deferred from: diagnostic credential-redaction scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-152: Address deferred BMAD hook and test-coverage maintenance in separate increments.
 
-origin: migrated from legacy ledger ("Deferred from: diagnostic credential-redaction scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected diagnostic credential redaction; the remaining tooling items are independent of the local diagnostic sanitizer.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`. The canonical local-hook, malformed-input, filename-confinement and customization-override regression increments already delivered this tooling carry-forward; routine CI now runs the hook suite and installed persona tests plus both Claude mirrors. Current scripts/tests discovery passes 88 tests, with 86 nested persona executions recorded separately. This resolves the scope-selection duplicate, not the independent open PascalCase naming or future-spec lifecycle-wording requests. See `tests/five-completed-implementation-followups.md`.
-
-summary: Address deferred BMAD hook and test-coverage maintenance in separate increments.
-evidence: The user selected diagnostic credential redaction; the remaining tooling items are independent of the local diagnostic sanitizer.
+origin: migrated from legacy ledger ("Deferred from: diagnostic credential-redaction scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-153: Refresh stale repository guidance and reconcile launch documentation separately.
 
-origin: migrated from legacy ledger ("Deferred from: diagnostic credential-redaction scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected diagnostic credential redaction; guidance and launch reconciliation require separate evidence and do not establish sanitizer correctness.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-guidance-catalog-dispositions.md`. This diagnostic-redaction scope-selection carry-forward is satisfied by Story 5.1 and the delivered runtime/agent-guidance reconciliations. Entry points, host registration and current launch assessment agree on projection wiring and unfinished acceptance; overall release remains FAIL. No diagnostic-redaction or deployed-acceptance claim is added. See `tests/five-guidance-catalog-dispositions.md`.
-
-summary: Refresh stale repository guidance and reconcile launch documentation separately.
-evidence: The user selected diagnostic credential redaction; guidance and launch reconciliation require separate evidence and do not establish sanitizer correctness.
+origin: migrated from legacy ledger ("Deferred from: diagnostic credential-redaction scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-154: The deferred local OTLP/API-key diagnostic sanitization gap is closed.
 
-origin: migrated from legacy ledger ("Resolution: Local diagnostic telemetry and API-key redaction (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-redact-diagnostic-telemetry-credentials.md`
-reason: The existing sanitizer now redacts OTLP exporter headers (including traces, metrics, and logs) and API keys in plain headers, assignments, direct/nested/encoded JSON, named JSON/YAML records in either field order, and multiline quoted values. Interrupted named JSON records are discarded without consuming unrelated earlier braced log text.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-local-recovery-carry-forwards.md` as a completed carry-forward. The dedicated redaction increment and later local-fixture handoff already delivered the plain/structured/escaped/multiline telemetry and API-key sanitizer with command/stream/timeout regressions. Current fixture-module verification is recorded in `tests/five-local-recovery-carry-forwards.md`. Original receipts are retained; no production logging or deployed privacy qualification is inferred.
-
-<a id="resolution-local-diagnostic-telemetry-and-api-key-redaction-2026-10-18"></a>
-legacy_section: Resolution: Local diagnostic telemetry and API-key redaction (2026-10-18)
-summary: The deferred local OTLP/API-key diagnostic sanitization gap is closed.
-evidence: The existing sanitizer now redacts OTLP exporter headers (including traces, metrics, and logs) and API keys in plain headers, assignments, direct/nested/encoded JSON, named JSON/YAML records in either field order, and multiline quoted values. Interrupted named JSON records are discarded without consuming unrelated earlier braced log text. Synthetic tests verify command-argument and stdout/stderr evidence, timeout byte streams, YAML comments/quoted keys, and retained safe progress. `python3 -m unittest discover -s scripts -p 'test_isolated_magic_link_dapr.py'` passes all 68 tests; the original 56-test baseline also passed. Independent review findings were patched with regressions. This diagnostic increment supplies no new deployed journey or launch-acceptance evidence.
+origin: migrated from legacy ledger ("Resolution: Local diagnostic telemetry and API-key redaction (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-redact-diagnostic-telemetry-credentials.md`
+archived: 2026-10-25
 
 ### DW-155: Harden the deferred BMAD hooks in a separate increment.
 
-origin: migrated from legacy ledger ("Deferred from: projection checkpoint scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected projection checkpoint tenant isolation as the next independently shippable goal. Event-filename containment and obsolete hook references have separate tooling verification requirements.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`. The canonical filename-confinement and local generated-hook fixes already satisfy this scope-selection carry-forward. Current hook regressions verify traversal refusal, outside-file preservation, redirected-directory and temporary-file conflict handling, normal publication and malformed-input/inactive-session behavior; generated Codex hook configuration is untracked and ignored, with per-checkout setup documented. See `tests/five-completed-implementation-followups.md`; no new hook implementation or native Windows qualification is claimed.
-
-<a id="deferred-from-projection-checkpoint-scope-selection-2026-10-18"></a>
-legacy_section: Deferred from: projection checkpoint scope selection (2026-10-18)
-summary: Harden the deferred BMAD hooks in a separate increment.
-evidence: The user selected projection checkpoint tenant isolation as the next independently shippable goal. Event-filename containment and obsolete hook references have separate tooling verification requirements.
+origin: migrated from legacy ledger ("Deferred from: projection checkpoint scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-156: Refresh stale repository guidance in a separate increment.
 
-origin: migrated from legacy ledger ("Deferred from: projection checkpoint scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected projection checkpoint tenant isolation. SDK, projection-wiring, and launch-status guidance reconciliation is independent of checkpoint validation and must preserve the synchronized agent entry points.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-agent-guidance-carry-forwards.md`. This scope-selection carry-forward is satisfied by the already-delivered SDK, projection-wiring, and launch-status guidance verified above; the three entry points remain byte-identical. The matching guidance carry-forward under EventStore restart timeout scope selection refers to these same satisfied facts and supplies no separate open refresh goal. No checkpoint behavior, story status, launch approval, or deployed/runtime acceptance is changed. See `tests/five-agent-guidance-carry-forwards.md`.
-
-summary: Refresh stale repository guidance in a separate increment.
-evidence: The user selected projection checkpoint tenant isolation. SDK, projection-wiring, and launch-status guidance reconciliation is independent of checkpoint validation and must preserve the synchronized agent entry points.
+origin: migrated from legacy ledger ("Deferred from: projection checkpoint scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-157: The deferred cross-tenant checkpoint freshness gap is closed across Timesheets projection folds.
 
-origin: migrated from legacy ledger ("Resolution: Projection checkpoint tenant isolation (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-enforce-projection-checkpoint-tenant-scope.md`
-reason: A shared internal ordinal tenant guard now protects Time Entry evidence (full and incremental), evidence lists, period summaries, approved ledgers, both actual-report targets, both activity-catalog views, and capability projections using their selected issuance. Explicit-tenant history paths reject before enumeration, including empty histories; no model is returned for a capability without its issuance.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md` as a completed carry-forward from `spec-enforce-projection-checkpoint-tenant-scope.md`. The ordinal guard and refusal/privacy/non-enumeration/incremental-prefix/selected-issuance regressions remain present. All seven affected projection test classes now pass 174 cases, retaining matching-tenant freshness and export behavior. Original red/green and full-suite historical evidence below is unchanged; this local fold proof supplies no deployed acceptance. See `tests/five-completed-implementation-followups.md`.
-
-<a id="resolution-projection-checkpoint-tenant-isolation-2026-10-18"></a>
-legacy_section: Resolution: Projection checkpoint tenant isolation (2026-10-18)
-summary: The deferred cross-tenant checkpoint freshness gap is closed across Timesheets projection folds.
-evidence: A shared internal ordinal tenant guard now protects Time Entry evidence (full and incremental), evidence lists, period summaries, approved ledgers, both actual-report targets, both activity-catalog views, and capability projections using their selected issuance. Explicit-tenant history paths reject before enumeration, including empty histories; no model is returned for a capability without its issuance. Parent checkpoint reuse and matching-tenant freshness/export behavior remain covered. All 36 new mismatch cases failed before the production fix. The Debug solution build passed with zero warnings/errors, and all six executable suites passed (1,936 passed, five intentional skips). After review, a zero-diagnostic test-project rebuild and 151/151 focused tests covered 11 additional cases, bringing distinct passing cases to 1,947. The independent reviewer confirmed all four test-gap findings addressed, with no unresolved findings or additional review deferrals. Another workspace's running AppHost blocked the read-only runtime preflight; no runtime was started or stopped. This local fold correction supplies no deployed journey or launch-acceptance evidence.
+origin: migrated from legacy ledger ("Resolution: Projection checkpoint tenant isolation (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-enforce-projection-checkpoint-tenant-scope.md`
+archived: 2026-10-25
 
 ### DW-158: Shared-state verification now refuses active baselines and reports the specific changed services without exposing state keys or values.
 
-origin: migrated from legacy ledger ("Resolution: Shared-state preservation admission and diagnostics (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-fix-shared-state-preservation-checks.md`
-reason: The historical failed retry gained 14 permanent Redis DB0 keys and changed scheduler contents; the aggregate evidence does not identify its writer. Both fixture drivers now require empty structured Dapr inventory plus an independent visible-sidecar cross-check, repeat runtime admission after baseline sampling, and compare two read-only observations before infrastructure creation.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-local-recovery-carry-forwards.md` as a completed carry-forward. Both existing fixture drivers retain runtime admission around two stable baseline observations, scheduler revision checks, privacy-safe service diagnostics, end-state preservation and owned cleanup. Current regression evidence is in `tests/five-local-recovery-carry-forwards.md`. The original failed preservation observations remain historical evidence without an attributed writer; no new live shared-state acceptance or concurrent-start reservation is claimed.
-
-<a id="resolution-shared-state-preservation-admission-and-diagnostics-2026-10-18"></a>
-legacy_section: Resolution: Shared-state preservation admission and diagnostics (2026-10-18)
-summary: Shared-state verification now refuses active baselines and reports the specific changed services without exposing state keys or values.
-evidence: The historical failed retry gained 14 permanent Redis DB0 keys and changed scheduler contents; the aggregate evidence does not identify its writer. Both fixture drivers now require empty structured Dapr inventory plus an independent visible-sidecar cross-check, repeat runtime admission after baseline sampling, and compare two read-only observations before infrastructure creation. Baseline scheduler revision drift also refuses admission. Reports record timing and Redis persistent/TTL plus scheduler identity/content differences; final end-state preservation, real-mutation failure, original failure status, and owned cleanup remain enforced. Python passes 80/80; compiled no-resource configuration checks pass 22/22; independent review confirmed all five follow-ups closed. A real infrastructure guard attempt preserved all shared state and removed its three private containers before a foreign AppHost interrupted verification. The final read-only audit caught genuine shared Redis/scheduler drift with no fixture resources running and correctly refused baseline admission. Full live acceptance and the independent EventStore restart issue remain open.
+origin: migrated from legacy ledger ("Resolution: Shared-state preservation admission and diagnostics (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-fix-shared-state-preservation-checks.md`
+archived: 2026-10-25
 
 ### DW-159: Diagnose the EventStore process-stop timeout that prevents the isolated journey's restart assertion.
 
-origin: migrated from legacy ledger ("Resolution: Shared-state preservation admission and diagnostics (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-fix-shared-state-preservation-checks.md`
-reason: The unchanged journey passed record/issue/index/display/confirm/adjust/replay/race/rebuild checks, then `aspire resource eventstore restart --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive` exited 16 after the EventStore process failed to stop in time. The 2026-10-18 failed retry log is `/tmp/timesheets-checkpoint-tenant-live-projects-complete/run-f0qmfl8y/25-Hexalith.Timesheets.IntegrationTests--class.log`; AppHost logs report `timed out waiting for process to stop`.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-local-fixture-deferrals.md`. The completed direct-execution correction uses the existing EventStore-owned launch adapter so DCP owns the native gateway. The checked-in runner requires actual native-command/direct-parent evidence and old/new PID/start replacement around normal restart; current Python regressions pass. The retained October 18 final corrected-source journey passed 1/1 in 131.536 s with preserved shared state and complete owned cleanup. That dated receipt closes the selected historical local restart correction, without identifying the exact managed shutdown stage or qualifying the later NuGet-orchestration graph. Preserve the original failed receipt and separate current-graph/deployed gates. See `tests/five-local-fixture-handoffs.md`.
-
-summary: Diagnose the EventStore process-stop timeout that prevents the isolated journey's restart assertion.
-evidence: The unchanged journey passed record/issue/index/display/confirm/adjust/replay/race/rebuild checks, then `aspire resource eventstore restart --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive` exited 16 after the EventStore process failed to stop in time. The 2026-10-18 failed retry log is `/tmp/timesheets-checkpoint-tenant-live-projects-complete/run-f0qmfl8y/25-Hexalith.Timesheets.IntegrationTests--class.log`; AppHost logs report `timed out waiting for process to stop`. No runtime restart repair is included in this preservation-only increment.
+origin: migrated from legacy ledger ("Resolution: Shared-state preservation admission and diagnostics (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-fix-shared-state-preservation-checks.md`
+archived: 2026-10-25
 
 ### DW-160: Harden BMAD hooks and remove obsolete hook references in a separate increment.
 
-origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected the recommended EventStore restart timeout investigation and repair; hook input handling and event-file containment have independent tooling validation.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-completed-implementation-followups.md`. This is another scope-selection duplicate of the already-delivered local generated-hook, malformed-input regression and filename-confinement increments. Existing ValueError handling already catches UnicodeDecodeError; the regression suite pins strict/surrogateescape and inactive-session behavior. README documents removal of deleted-automator registrations and generation of ignored checkout-local Codex hooks. Current CI-discovered tests pass; no installed hook is regenerated or runtime behavior changed here. See `tests/five-completed-implementation-followups.md`.
-
-<a id="deferred-from-eventstore-restart-timeout-scope-selection-2026-10-18"></a>
-legacy_section: Deferred from: EventStore restart timeout scope selection (2026-10-18)
-summary: Harden BMAD hooks and remove obsolete hook references in a separate increment.
-evidence: The user selected the recommended EventStore restart timeout investigation and repair; hook input handling and event-file containment have independent tooling validation.
+origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-161: Address projection storage and migration hardening in separate increments.
 
-origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected the EventStore restart timeout; deployed inventory, migration authorization, and storage cleanup require their own evidence.
 status: done 2026-10-23
-resolution: Superseded 2026-10-23 by tracking consolidation in `spec-consolidate-five-operational-followups.md`. This repeated scope-selection wrapper is represented by the same specific open storage/migration tasks enumerated in `tests/five-operational-followups.md`, including deployed inventory, authority and cleanup. Their evidence requirements remain open; neither restart repair nor this consolidation delivers them.
-
-summary: Address projection storage and migration hardening in separate increments.
-evidence: The user selected the EventStore restart timeout; deployed inventory, migration authorization, and storage cleanup require their own evidence.
+origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-162: Refresh synchronized repository guidance in a separate increment.
 
-origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: none
-reason: The user selected the EventStore restart timeout; SDK, projection-wiring, and launch-posture guidance can be reviewed and shipped independently.
 status: done 2026-10-22
-resolution: Closed 2026-10-22 by verification in `spec-close-five-guidance-catalog-dispositions.md`. This restart-timeout scope-selection duplicate was already explicitly covered by `spec-close-five-agent-guidance-carry-forwards.md` and its report. The synchronized SDK, projection-wiring and launch-posture facts remain correct; no separate guidance refresh is outstanding in this entry. Current-graph AppHost runtime qualification and deployed acceptance stay open. See `tests/five-guidance-catalog-dispositions.md`.
-
-summary: Refresh synchronized repository guidance in a separate increment.
-evidence: The user selected the EventStore restart timeout; SDK, projection-wiring, and launch-posture guidance can be reviewed and shipped independently.
+origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
+source_spec: none
+archived: 2026-10-25
 
 ### DW-163: Resolve the upstream braces/micromatch semantic-release advisory chain before merging or activating Timesheets CI/CD.
 
-origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
-location: ci.yml
-source_spec: `_bmad-output/implementation-artifacts/spec-implement-timesheets-ci-cd.md`
-reason: On 2026-10-18 the compatible lock refresh and signatures pass, but npm audit still reports eight high findings from GHSA-vfj7-8cjw-p6xm; latest braces 3.0.3 and micromatch 4.0.8 have no compatible fixed release, and the unchanged high-severity dependency-review gate blocks introduction. Update 2026-10-20 (Story 5.2 round-6 review of `180d9fd..62de12f`): the configuration is already active.
 status: done 2026-10-24
-resolution: Resolved 2026-10-24 by `spec-five-build-and-hosting-deferrals.md` through the authoritative 2026-10-23 withdrawal of GHSA-vfj7-8cjw-p6xm, independently revalidated with GitHub advisory JSON. Fresh npm audit exits 1 with two moderate/one high unrelated vulnerable packages and no braces finding. No dependency/lockfile changed. Dated history and gate limits are retained; the unrelated packages have a separate open release-tooling follow-up. See `tests/five-build-and-hosting-deferrals.md`.
-
-summary: Resolve the upstream braces/micromatch semantic-release advisory chain before merging or activating Timesheets CI/CD.
-evidence: On 2026-10-18 the compatible lock refresh and signatures pass, but npm audit still reports eight high findings from GHSA-vfj7-8cjw-p6xm; latest braces 3.0.3 and micromatch 4.0.8 have no compatible fixed release, and the unchanged high-severity dependency-review gate blocks introduction. Update 2026-10-20 (Story 5.2 round-6 review of `180d9fd..62de12f`): the configuration is already active. `ci.yml`, `codeql.yml`, and `commitlint.yml` have run on direct pushes to `main` since `c4695a5`, `dependency-review.yml` triggers only on pull requests, and no pull request exists, so the gate has not evaluated these findings. Update 2026-10-20 (Story 5.2 round-7 patch): dependency review evaluates only dependency changes introduced by a pull request; these existing braces lockfile findings stay outside the gate unless a pull request changes the affected packages, and no workflow runs an npm vulnerability audit; the pinned commitlint workflow and the shared release workflow (`domain-release.yml@544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9`, called by `release.yml`) run `npm audit signatures` for provenance verification. The advisory chain stays open; `docs/ci-cd.md` and the launch-readiness `Root npm applicability` row now say so.
+origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-implement-timesheets-ci-cd.md`
+archived: 2026-10-25
 
 ### DW-164: Align the existing Works EventStore-version forwarding with the consuming source-build catalog in a separate build increment.
 
-origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-direct-isolated-eventstore-execution.md`
-reason: Works Directory.Build.props defaults HexalithEventStoreVersion to 3.124.0 and forwards it on project references, while the current Timesheets catalog selects 3.125.1. Fresh Debug/source outputs contained Contracts 3.124.0.0 beside deps references to 3.125.1.0; an explicit verification property matching the catalog produced a consistent graph and all 1,949 default tests passed.
 status: done 2026-10-24
-resolution: Resolved 2026-10-24 by `spec-five-build-and-hosting-deferrals.md`. Timesheets solution/project NuGet walks and direct/SDK-added source build edges propagate the evaluated consumer version. Six MSBuild traversal cases cover differing defaults, overrides and Release/package selection; four restore/build/runtime graph regressions cover default and explicit versions through solution/standalone entry points, and a two-failure mutant proves restore forwarding is required. Corrected Works passes 76/76 and the default Debug/source restore/build passes without the workaround. Works remains read-only. Final individual-suite results are in `tests/five-build-and-hosting-deferrals.md`.
-
-summary: Align the existing Works EventStore-version forwarding with the consuming source-build catalog in a separate build increment.
-evidence: Works Directory.Build.props defaults HexalithEventStoreVersion to 3.124.0 and forwards it on project references, while the current Timesheets catalog selects 3.125.1. Fresh Debug/source outputs contained Contracts 3.124.0.0 beside deps references to 3.125.1.0; an explicit verification property matching the catalog produced a consistent graph and all 1,949 default tests passed. No dependency/configuration file was changed in the direct-execution fix. Update 2026-10-18: Story 5.2 reproduced it after the README Debug restore/build (Server.Tests 135, Projections.Tests 351, and IntegrationTests 249 failures loading `Hexalith.EventStore.Contracts, Version=3.125.1.0`) and records it in launch readiness as an open, unwaived platform/submodule divergence; verification again used `-p:HexalithEventStoreVersion=3.125.1`. Update 2026-10-20 (Story 5.2 round-8 review): at Timesheets commit `929ea22c977385590d77d95f73af86e8b051c4fc`, Works `64602575b902c0f8d3bfaa41a27565eee5682639` defaults `HexalithEventStoreVersion` to `3.126.0` and the `references/Hexalith.Builds` catalog `6a38cb0f2e74977d7457fc59e6af79457ed8196a` selects `3.126.0`, so the two values coincide. The structural defect remains, so this entry stays open: Works forwards its own hard-coded default rather than the consuming catalog's version, and the next catalog move without a matching Works change reopens the mismatch. The default README source-reference lane was not rerun at that commit.
+origin: migrated from legacy ledger ("Deferred from: EventStore restart timeout scope selection (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-direct-isolated-eventstore-execution.md`
+archived: 2026-10-25
 
 ### DW-165: The selected local restart timeout now has a reviewed and verified direct-execution correction.
 
-origin: migrated from legacy ledger ("Resolution: isolated EventStore restart timeout (2026-10-18)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-direct-isolated-eventstore-execution.md`
-reason: EventStore.Aspire supplies the additive native-launch helper; the existing isolated AppHost delegates to it in Debug/source mode. The checked-in lane verifies native command, direct DCP ownership and PID/start replacement around the unchanged restart.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-local-recovery-carry-forwards.md` as a completed carry-forward of the delivered native-launch correction. The October 18 retained verification records the 131.536 s journey, direct DCP ownership, replaced PID/start identity, shared preservation and complete cleanup. `tests/five-local-recovery-carry-forwards.md` separates that historical source proof from current source/driver checks. Current NuGet-orchestration AppHost runtime, Works version forwarding, deployed acceptance and overall launch FAIL remain separate.
-
-<a id="resolution-isolated-eventstore-restart-timeout-2026-10-18"></a>
-legacy_section: Resolution: isolated EventStore restart timeout (2026-10-18)
-summary: The selected local restart timeout now has a reviewed and verified direct-execution correction.
-evidence: EventStore.Aspire supplies the additive native-launch helper; the existing isolated AppHost delegates to it in Debug/source mode. The checked-in lane verifies native command, direct DCP ownership and PID/start replacement around the unchanged restart. Final verification passed 1,949 default tests with five intentional skips and the live journey 1/1 in 131.536s, with shared preservation and complete cleanup of all 16 captured identities, three containers and component copies. Durable receipts are under evidence/3-6/20261018-direct-eventstore-local-proof/. The existing Works version-forwarding mismatch remains separately deferred; deployment, legacy certification and release readiness are unchanged.
+origin: migrated from legacy ledger ("Resolution: isolated EventStore restart timeout (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-direct-isolated-eventstore-execution.md`
+archived: 2026-10-25
 
 ### DW-166: Prove that the `Aspire.AppHost.Sdk` `13.6.1` AppHost with NuGet-backed orchestration starts DCP, the dashboard, and its resources, including the DCP-owned compiled gateway.
 
@@ -2040,225 +1278,122 @@ evidence: Story 5.2 moved the AppHost from the CLI-bundle DCP to NuGet `Aspire.H
 
 ### DW-167: Qualify the release-gate `Build` and `Tests (full suite)` rows and the README/`docs/ci-cd.md` source-reference test instructions with the `HexalithEventStoreVersion` requirement.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
-location: docs/ci-cd.md
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: `docs/launch-readiness.md` release-gate rows say PASS citing round-20 runs, but on 2026-10-18 the default README source-reference Debug mode built cleanly and then failed 735 test cases (Server.Tests 135, Projections.Tests 351, IntegrationTests 249) loading `Hexalith.EventStore.Contracts, Version=3.125.1.0`; only `-p:HexalithEventStoreVersion=3.125.1` passes. The root cause is the pre-existing Works forwarding entry; the release-gate table belongs to Story 5.1's final reconciliation.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-launch-evidence-deferrals.md`. README already carries the corrected conditional policy. CI/CD guidance and both current Build/Tests gate notes now require the consuming catalog's EventStore version on both Debug/source restore and build whenever Works forwards a different default. Both defaults equal `3.126.0` at the inspected checkout; the historical `3.125.1` workaround is not reapplied. The underlying Works forwarding-policy item remains open and unwaived.
-
-summary: Qualify the release-gate `Build` and `Tests (full suite)` rows and the README/`docs/ci-cd.md` source-reference test instructions with the `HexalithEventStoreVersion` requirement.
-evidence: `docs/launch-readiness.md` release-gate rows say PASS citing round-20 runs, but on 2026-10-18 the default README source-reference Debug mode built cleanly and then failed 735 test cases (Server.Tests 135, Projections.Tests 351, IntegrationTests 249) loading `Hexalith.EventStore.Contracts, Version=3.125.1.0`; only `-p:HexalithEventStoreVersion=3.125.1` passes. The root cause is the pre-existing Works forwarding entry; the release-gate table belongs to Story 5.1's final reconciliation.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-168: Reconcile the launch record's classification vocabulary (`implemented`, `waived`, `post-v1`, `blocked`) with the approved `implemented/unfinished/waived/post-v1` dispositions.
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
-location: sprint-change-proposal-2026-09-12.md
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: `sprint-change-proposal-2026-09-12.md` §3 approves the `unfinished` disposition, while `docs/launch-readiness.md` uses `blocked` and compound labels; `epic-5-context.md` (2026-10-18) now names both sets and assigns the reconciliation to Story 5.1, but no ledger entry tracked that hand-off.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-launch-evidence-deferrals.md`. Story 5.1 already delivered the four approved atomic dispositions and structured fitness validation. The Epic 5 context now reflects that delivered reconciliation, treats blocked as an execution condition, and retains unfinished release gates independently of accepted story closure. No waiver, approval, or release classification was invented or changed.
-
-summary: Reconcile the launch record's classification vocabulary (`implemented`, `waived`, `post-v1`, `blocked`) with the approved `implemented/unfinished/waived/post-v1` dispositions.
-evidence: `sprint-change-proposal-2026-09-12.md` §3 approves the `unfinished` disposition, while `docs/launch-readiness.md` uses `blocked` and compound labels; `epic-5-context.md` (2026-10-18) now names both sets and assigns the reconciliation to Story 5.1, but no ledger entry tracked that hand-off.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-169: Point Story 5.1's version ground truth at the re-baselined Story 5.2 package state (owner: Story 5.1).
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
-location: 5-1-final-launch-readiness-gate-and-documentation-sync.md:295
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: Post-commit code review of `180d9fd..b85e810` (2026-10-18). `5-1-final-launch-readiness-gate-and-documentation-sync.md:295` still lists SDK `10.0.301`, `Aspire.Hosting` `13.4.6`, and `Microsoft.FluentUI.Components` `4.11.6`; `sprint-change-proposal-2026-09-12.md` (lines 21, 39-40, 64) names SDK `10.0.401`, AppHost `13.5.3`, and npm not applicable.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-launch-evidence-deferrals.md`. Story 5.1's active scope and a dated supersession note on the approved September proposal now link the accepted Story 5.2 record and Package-Currency Verdict: SDK `10.0.402`, AppHost SDK `13.6.1`, root npm applicable. The original version-ground-truth block, proposal targets, acceptance records, and historical receipts remain intact; new checks read executable configuration and the imported catalog.
-
-summary: Point Story 5.1's version ground truth at the re-baselined Story 5.2 package state (owner: Story 5.1).
-evidence: Post-commit code review of `180d9fd..b85e810` (2026-10-18). `5-1-final-launch-readiness-gate-and-documentation-sync.md:295` still lists SDK `10.0.301`, `Aspire.Hosting` `13.4.6`, and `Microsoft.FluentUI.Components` `4.11.6`; `sprint-change-proposal-2026-09-12.md` (lines 21, 39-40, 64) names SDK `10.0.401`, AppHost `13.5.3`, and npm not applicable. The 2026-10-18 option-A renegotiation (SDK `10.0.402`, AppHost `13.6.1`, root npm applicable) is recorded only in the Story 5.2 spec. Refresh Story 5.1's context from `docs/launch-readiness.md` before it runs; the fix edits another story spec and the approved proposal.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-170: Fix the agent entry points' "Running and verifying" flow, which runs `bin/Debug` test executables that its own bare restore/build never produces (owner: Story 5.1).
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
-location: AGENTS.md
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: Post-commit code review of `180d9fd..b85e810` (2026-10-18), restated by the round-4 review of `180d9fd..de3d57c` (2026-10-19). `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` tell agents to restore and build `Hexalith.Timesheets.slnx` and, when `dotnet test` fails, to run `tests/<Project>/bin/Debug/net10.0/<Project>`.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by verification in `spec-close-five-runtime-guidance-deferrals.md`. The already-delivered matching restore/build commands in all three entry points, README, and CI/CD guidance explicitly select Debug/source references before running Debug tests. Both conditional EventStore-version overrides remain catalog-derived; the distinct Works configuration and forwarding-policy follow-ups stay open. Current verification is recorded in `tests/five-runtime-guidance-handoffs.md`.
-
-summary: Fix the agent entry points' "Running and verifying" flow, which runs `bin/Debug` test executables that its own bare restore/build never produces (owner: Story 5.1).
-evidence: Post-commit code review of `180d9fd..b85e810` (2026-10-18), restated by the round-4 review of `180d9fd..de3d57c` (2026-10-19). `AGENTS.md`, `CLAUDE.md`, and `.github/copilot-instructions.md` tell agents to restore and build `Hexalith.Timesheets.slnx` and, when `dotnet test` fails, to run `tests/<Project>/bin/Debug/net10.0/<Project>`. `Directory.Build.props:20-22` makes a bare restore/build `Release` with `UseHexalithProjectReferences=false`, which is the package graph. That flow therefore cannot reproduce the 735 source-reference failures (the original question here), and it never writes the `bin/Debug` executables, so agents run stale or missing builds; a stale Debug dll produced a wrong result during the round-3 review. Name the configuration explicitly: run `bin/Release` after a bare build, or build the Debug source-reference mode with `-p:HexalithEventStoreVersion=3.125.1` (entry above) before running `bin/Debug`. Agent-context edits belong to Story 5.1's guidance sync. Update 2026-10-20 (Story 5.2 round-9 review): pass `-p:HexalithEventStoreVersion=<catalog version>` only when the Works default differs from the catalog. At `929ea22c977385590d77d95f73af86e8b051c4fc` both were `3.126.0`, so `3.125.1` would force an older EventStore.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-171: Correct the agent entry points and the `dotnet test` runner entry, which still say the repository has no `.github/workflows`, and the stale `README.md` build and test lines (owner: Story 5.1).
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-19)"), 2026-10-25
-location: README.md
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: Round-4 code review of `180d9fd..de3d57c` (2026-10-19). `AGENTS.md:93`, `CLAUDE.md:93`, and `.github/copilot-instructions.md:93` say "There is no `.github/workflows`", and the spec-3-6 runner entry above (line 312) says "The repository has no `.github/workflows`, so the per-project executables are the only working runner".
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-runtime-guidance-deferrals.md`. Workflow existence and explicit build-graph guidance were already synchronized. README, CI/CD guidance, and all three managed entry points now document the configured Microsoft.Testing.Platform runner using individual `dotnet test --project ... --configuration Debug --no-build -p:UseHexalithProjectReferences=true` commands, retaining direct xUnit executables as a supported alternative. See `tests/five-runtime-guidance-handoffs.md` for current verification, separately from historical failures.
-
-<a id="deferred-from-code-review-of-spec-5-2-reconcile-package-currency-and-platform-dependency-versions-2026-10-19"></a>
-legacy_section: Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-19)
-summary: Correct the agent entry points and the `dotnet test` runner entry, which still say the repository has no `.github/workflows`, and the stale `README.md` build and test lines (owner: Story 5.1).
-evidence: Round-4 code review of `180d9fd..de3d57c` (2026-10-19). `AGENTS.md:93`, `CLAUDE.md:93`, and `.github/copilot-instructions.md:93` say "There is no `.github/workflows`", and the spec-3-6 runner entry above (line 312) says "The repository has no `.github/workflows`, so the per-project executables are the only working runner". Commit `c4695a5` (2026-10-18) added `.github/workflows/ci.yml`, which runs the solution build and the six test projects through Hexalith.Builds `domain-ci.yml` with `test-platform: microsoft-testing-platform`. Pre-existing. The fix edits agent-context files, which belong to Story 5.1's guidance sync. Update 2026-10-20 (round-5 review of `180d9fd..419bc7c`): the same commit also added the `global.json` `"test": { "runner": "Microsoft.Testing.Platform" }` opt-in, so the runner entry's main premise is resolved, not only its workflow sentence; `dotnet test --project … -c Release --no-build` passed ArchitectureTests 64/64. Story 5.1 should also replace the entry points' VSTest-socket fallback wording with the `dotnet test --project` form. Update 2026-10-20 (round-6 review of `180d9fd..62de12f`): `README.md:16` says the current `dotnet test ... --no-build` configuration fails with "Testing with VSTest target is no longer supported…", but `dotnet test tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj -c Release --no-build` passed 64/64 in both the positional and the `--project` forms. `README.md:14` says the bare solution build fails with `HXW0002`, but since `c4695a5` `Directory.Build.props:20-22` makes a bare restore/build Release package mode, and Story 5.2's forced no-cache bare restore and `-warnaserror` build passed (15 projects, 0 warnings, 0 errors). Story 5.1 should correct both README lines with the entry points; the Works build-configuration entry ("Preserve the external Works reference's Configuration…") keeps the unverified explicit-Debug half.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-19)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-172: Refresh the release-gate `Build` and `Tests (full suite)` rows, which still call the round-20 runs "latest" (owner: Story 5.1).
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-19)"), 2026-10-25
-location: docs/launch-readiness.md:828
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: Round-4 code review of `180d9fd..de3d57c` (2026-10-19). `docs/launch-readiness.md:828` and `:830` cite "the latest round-20" build and executables.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-launch-evidence-deferrals.md`. Story 5.1 already replaced the active gates with dated October 20 build evidence and six selected suite receipts (1,955 passed, zero failed, five skipped), and selected the October 18 local journey (131.536 s). The active table now says selected October 20 executables rather than globally latest, and the assessment explicitly separates that dated evidence from later commits. Historical round-19/20 claims and all original failure/retry receipts remain under Historical Receipts; neither current-graph runtime nor deployed acceptance is inferred.
-
-summary: Refresh the release-gate `Build` and `Tests (full suite)` rows, which still call the round-20 runs "latest" (owner: Story 5.1).
-evidence: Round-4 code review of `180d9fd..de3d57c` (2026-10-19). `docs/launch-readiness.md:828` and `:830` cite "the latest round-20" build and executables. Newer runs exist: the 2026-10-18 direct-execution proof (1,949 default tests), run on the worktree based on Timesheets `72d9fdaa813daf9d39d296e268fd2e1086a8dd87` and EventStore `d55c6f7c11e9bce6f17d490a84c83f1561979d63`, both with uncommitted implementation changes; implementation was later published in EventStore `9b66153515687463fc1b1e929f8b0e73d8145e2c` and the proof in Timesheets `9523d94983a346d866246a2c45c3515b1bc54580`, then Story 5.2's Release package-mode build, its Debug source-reference Rebuild with `-p:HexalithEventStoreVersion=3.125.1` (1,958 tests), and ArchitectureTests 64/64 on 2026-10-19. Pre-existing before `180d9fd`. Handle it with the `HexalithEventStoreVersion` qualification entry above when Story 5.1 reconciles the release-gate table. Update 2026-10-20 (Story 5.2 round-7 patch): the Magic-link live-resolution classification row, the `Tests (full suite)` and `Magic-link durable confirm/adjust persistence` gate rows, and the `Overall release decision` paragraph also still call the 2026-10-12 round-19 106.313 s isolated journey "latest". The 2026-10-18 journey (1/1 in 131.536 s, `_bmad-output/implementation-artifacts/evidence/3-6/20261018-direct-eventstore-local-proof/post-review/verification.json`, same source identities and later publication above) supersedes all four statements. Story 5.1 owns correcting those rows; the package verdict now names the newer run without claiming it proves the NuGet-orchestration AppHost.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-19)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-173: Correct the stale "Current Timesheets HEAD pins EventStore `3099cb27`" claims in the durable confirm/adjust row and the overall release decision (owner: Story 5.1).
 
-origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-20)"), 2026-10-25
-location: docs/launch-readiness.md:835
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
-reason: Round-7 code review of `180d9fd..a6cfe69` (2026-10-20). `docs/launch-readiness.md:835` says "Current Timesheets HEAD pins EventStore `3099cb27`; the SDK changes in this worktree are uncommitted", and `:840` says "Current Timesheets HEAD pins EventStore `3099cb27`; this worktree's SDK changes are uncommitted".
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-launch-evidence-deferrals.md`. Story 5.1 already confined the obsolete `3099cb27`/uncommitted-SDK assertions to Historical Receipts. A dated reconciliation now identifies the actual committed EventStore gitlink `ae917d3e4dbab20b8982c5222a13611c3e3faf35` at inspection baseline `f62eb4a8404f7f497c57e0189f81b7f7fbeb565b`, while preserving the October 20 assessment's own source identities. This Git observation supplies no build/runtime/deployed acceptance and changes no pointer or archived receipt.
-
-<a id="deferred-from-code-review-of-spec-5-2-reconcile-package-currency-and-platform-dependency-versions-2026-10-20"></a>
-legacy_section: Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-20)
-summary: Correct the stale "Current Timesheets HEAD pins EventStore `3099cb27`" claims in the durable confirm/adjust row and the overall release decision (owner: Story 5.1).
-evidence: Round-7 code review of `180d9fd..a6cfe69` (2026-10-20). `docs/launch-readiness.md:835` says "Current Timesheets HEAD pins EventStore `3099cb27`; the SDK changes in this worktree are uncommitted", and `:840` says "Current Timesheets HEAD pins EventStore `3099cb27`; this worktree's SDK changes are uncommitted". Both sentences are present at `180d9fd`. HEAD pins `references/Hexalith.EventStore` at `9b66153` (recorded by `88f4ae0`, 2026-10-18), and on 2026-10-20 neither the Timesheets working tree nor the EventStore submodule had uncommitted changes. Pre-existing; the rows belong to Story 5.1's final reconciliation. Update 2026-10-20 (Story 5.2 round-9 review): since the workspace sync commit `929ea22c977385590d77d95f73af86e8b051c4fc`, Timesheets pins `references/Hexalith.EventStore` at `6c56c27bc1a8d63c83f9631f7162cf79fdde0a1e`. When correcting the rows, take the value from the current gitlink, not from `9b66153`.
+origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-20)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
+archived: 2026-10-25
 
 ### DW-174: Reassess catalog-owned EventStore `3.125.1 -> 3.126.0` package drift through the Builds/platform owner.
 
-origin: migrated from legacy ledger ("Deferred from: Story 5.2 round-7 patch verification review (2026-10-20)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions-2.md`
-reason: The 2026-10-20 direct audit of all 15 package-mode projects reports six distinct EventStore IDs (17 project/package occurrences) behind `3.126.0`, while the imported `references/Hexalith.Builds` catalog at `332b2c144defba546fe0a09626a4a72f2340e22f` still sets `HexalithEventStoreVersion=3.125.1`. Works Contracts `1.0.2` is current and vulnerability/deprecation audits are clean.
 status: done 2026-10-20
-resolution: Resolved 2026-10-20 by the workspace sync commit `929ea22c977385590d77d95f73af86e8b051c4fc`, which moved `references/Hexalith.Builds` to `6a38cb0f2e74977d7457fc59e6af79457ed8196a` (`HexalithEventStoreVersion=3.126.0`). The Story 5.2 round-8 review then ran the required Timesheets checks at that commit. The forced no-cache package-mode restore passed. The non-incremental `-warnaserror` Release build had 0 warnings and 0 errors. All six Release suites ran 1,959 tests: 1,954 passed, 5 intentional skips, 0 failures. The four NuGet audits found no direct update and clean vulnerable and deprecated results. The solution and AppHost transitive evaluation still fails, and the 14 project fallbacks report 19 transitive IDs with no pin. Receipts: `_bmad-output/implementation-artifacts/evidence/5-2/20261020-round8/verification.json.gz`.
-
-<a id="deferred-from-story-52-round-7-patch-verification-review-2026-10-20"></a>
-legacy_section: Deferred from: Story 5.2 round-7 patch verification review (2026-10-20)
-summary: Reassess catalog-owned EventStore `3.125.1 -> 3.126.0` package drift through the Builds/platform owner.
-evidence: The 2026-10-20 direct audit of all 15 package-mode projects reports six distinct EventStore IDs (17 project/package occurrences) behind `3.126.0`, while the imported `references/Hexalith.Builds` catalog at `332b2c144defba546fe0a09626a4a72f2340e22f` still sets `HexalithEventStoreVersion=3.125.1`. Works Contracts `1.0.2` is current and vulnerability/deprecation audits are clean. Owner: Hexalith.Builds / platform dependency maintainer. Risk: newer EventStore package compatibility is not yet qualified against this catalog; Timesheets cannot update it within this increment's read-only sibling boundary. Revisit when that owner validates and publishes an updated catalog or records a reason to retain `3.125.1`, then rerun Timesheets package-mode restore/build, affected tests and audits before adopting the catalog change. Audit receipts: `_bmad-output/implementation-artifacts/evidence/5-2/20261020-round7/verification.json.gz`.
+origin: migrated from legacy ledger ("Deferred from: Story 5.2 round-7 patch verification review (2026-10-20)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions-2.md`
+archived: 2026-10-25
 
 ### DW-175: Run the installed BMAD party-mode and forge-idea regression suites in CI.
 
-origin: migrated from legacy ledger ("Deferred from: review of BMAD customization override regression coverage (2026-10-21)"), 2026-10-25
-location: .github/workflows/ci.yml
-source_spec: `_bmad-output/implementation-artifacts/spec-pin-bmad-customization-override-behavior.md`
-reason: `.github/workflows/ci.yml` runs Python discovery only under `scripts/tests`, and its reusable domain CI job lists only the six .NET test projects. Neither `.agents/skills/bmad-party-mode/scripts/tests/test_resolve_party.py` nor `.agents/skills/bmad-forge-idea/scripts/tests/test_resolve_personas.py` is invoked, so the new override regression coverage currently requires explicit local execution.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: CI requires Python 3.11+ and its discovery runs both installed suites plus both Claude copies in separate subprocesses, rejects empty/failing suites, and checks both skill mirrors file-for-file. The index diagnostic suite is explicitly included too. Installer-owned skill files and dependency/action pins are unchanged.
-
-<a id="deferred-from-review-of-bmad-customization-override-regression-coverage-2026-10-21"></a>
-legacy_section: Deferred from: review of BMAD customization override regression coverage (2026-10-21)
-summary: Run the installed BMAD party-mode and forge-idea regression suites in CI.
-evidence: `.github/workflows/ci.yml` runs Python discovery only under `scripts/tests`, and its reusable domain CI job lists only the six .NET test projects. Neither `.agents/skills/bmad-party-mode/scripts/tests/test_resolve_party.py` nor `.agents/skills/bmad-forge-idea/scripts/tests/test_resolve_personas.py` is invoked, so the new override regression coverage currently requires explicit local execution. This automation gap predates the selected test-suite increment; a follow-up should run both suites with Python 3.11+ and verify their `.claude` mirrors.
+origin: migrated from legacy ledger ("Deferred from: review of BMAD customization override regression coverage (2026-10-21)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-pin-bmad-customization-override-behavior.md`
+archived: 2026-10-25
 
 ### DW-176: Harden the streamed magic-link index partition decoder independently of legacy shared-candidate decoding.
 
-origin: migrated from legacy ledger ("Deferred from: review of five projection rebuild integrity closures (2026-10-21)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-close-five-projection-rebuild-deferrals.md`
-reason: `MagicLinkTokenHashCapabilityIndexProjectionHandler.StreamFinalizedOperationsAsync` deserializes partition bytes outside the legacy FromCandidate/Guarded boundary. Invalid JSON raises JsonException and a contribution whose identity fields match but TokenHash is null reaches Encoding.UTF8.GetBytes and raises ArgumentNullException.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-magic-link-operability-deferrals.md`. Streamed contributions now reuse Guarded and ValidateCandidateEntry before hashing and check tenant/owner identity. Sixteen malformed-content regressions preserve selected contents/ETags and yield no writes. Producer JSON-null contributions commit an empty tenant roster; cancellation and cursor faults after valid content retain their original failure boundary.
-
-<a id="deferred-from-review-of-five-projection-rebuild-integrity-closures-2026-10-21"></a>
-legacy_section: Deferred from: review of five projection rebuild integrity closures (2026-10-21)
-summary: Harden the streamed magic-link index partition decoder independently of legacy shared-candidate decoding.
-evidence: `MagicLinkTokenHashCapabilityIndexProjectionHandler.StreamFinalizedOperationsAsync` deserializes partition bytes outside the legacy FromCandidate/Guarded boundary. Invalid JSON raises JsonException and a contribution whose identity fields match but TokenHash is null reaches Encoding.UTF8.GetBytes and raises ArgumentNullException. This path predates the selected legacy-candidate fixes and still fails before yielding writes; align its validation/exception contract and add streamed-cursor regression coverage in a separate increment. The current closure does not qualify streamed rebuild input validation.
+origin: migrated from legacy ledger ("Deferred from: review of five projection rebuild integrity closures (2026-10-21)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-close-five-projection-rebuild-deferrals.md`
+archived: 2026-10-25
 
 ### DW-177: Name the standalone kernel read dependencies explicitly in the synchronized managed agent guidance.
 
-origin: migrated from legacy ledger ("Deferred from: review of five runtime-guidance handoffs (2026-10-21)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-close-five-runtime-guidance-deferrals.md`
-reason: The corrected guidance accurately requires EventStore read dependencies but does not name DaprClient for the default Dapr-backed store, or explicit IReadModelStore and IReadModelBatchStore test seams for standalone composition. RuntimeRegistrationTests.ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride demonstrates those substitutions; the composed HTTP host supplies DaprClient through AddEventStoreDomainService.
 status: done 2026-10-21
-resolution: Resolved 2026-10-21 by `spec-close-five-tooling-diagnostic-deferrals.md`: all three synchronized entry points name DaprClient for the default store, supplied by AddEventStoreDomainService in the composed host, and the IEventStoreGatewayClient/IReadModelStore/IReadModelBatchStore standalone test seams demonstrated by RuntimeRegistrationTests.ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride. Runtime registration and fail-closed defaults are unchanged.
-
-<a id="deferred-from-review-of-five-runtime-guidance-handoffs-2026-10-21"></a>
-legacy_section: Deferred from: review of five runtime-guidance handoffs (2026-10-21)
-summary: Name the standalone kernel read dependencies explicitly in the synchronized managed agent guidance.
-evidence: The corrected guidance accurately requires EventStore read dependencies but does not name DaprClient for the default Dapr-backed store, or explicit IReadModelStore and IReadModelBatchStore test seams for standalone composition. RuntimeRegistrationTests.ServerKernelResolvesConcreteMagicLinkLoaderWithoutLoaderOverride demonstrates those substitutions; the composed HTTP host supplies DaprClient through AddEventStoreDomainService. This is a low-impact clarity improvement, not an unresolved runtime registration bug. The build workflow defers review suggestions editing managed agent instruction files; no runtime binding or default should be moved.
+origin: migrated from legacy ledger ("Deferred from: review of five runtime-guidance handoffs (2026-10-21)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-close-five-runtime-guidance-deferrals.md`
+archived: 2026-10-25
 
 ### DW-178: Align local index diagnostic readiness with the selected epoch lifecycle and pending delivery state.
 
-origin: migrated from legacy ledger ("Deferred from: review of five developer-tooling and diagnostic closures (2026-10-21)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-close-five-tooling-diagnostic-deferrals.md`
-reason: The preexisting snapshot diagnostic reads activeGeneration and compares generation/root content without evaluating epoch phase, journal, offboarding or conflict evidence. EventStore SharedProjectionEpochCoordinator.ReadAsync returns unavailable for offboarding and CatchingUp/Aborting, stale for pending journal or Capturing/Building, and degraded for conflict readiness issues.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-magic-link-operability-deferrals.md`. Selected snapshots require Open/drained epochs without offboarding, pending handoff, unresolved/malformed parking or conflict evidence, overflow, or conservative capacity exhaustion. Checks run before copying and before/after selected-root reads; final v6/v7 candidate rechecks inherit readiness checks. Twenty-five focused Python tests include a depth-500 refusal. Raw snapshots provide no ETag and the diagnostic does not implement complete SDK typed-state/boundary validation or deployed acceptance; the remaining full-validation limitation is recorded separately.
-
-<a id="deferred-from-review-of-five-developer-tooling-and-diagnostic-closures-2026-10-21"></a>
-legacy_section: Deferred from: review of five developer-tooling and diagnostic closures (2026-10-21)
-summary: Align local index diagnostic readiness with the selected epoch lifecycle and pending delivery state.
-evidence: The preexisting snapshot diagnostic reads activeGeneration and compares generation/root content without evaluating epoch phase, journal, offboarding or conflict evidence. EventStore SharedProjectionEpochCoordinator.ReadAsync returns unavailable for offboarding and CatchingUp/Aborting, stale for pending journal or Capturing/Building, and degraded for conflict readiness issues. An unchanged selected root can therefore produce a local unique-candidate diagnostic while the production coordinator refuses it. This developer-evidence gap predates these five closures; the HTTP journey still requires a successful production GET. Add lifecycle-aware diagnostic admission and regressions in a separate increment rather than treating candidate shape validation as production readiness or deployed acceptance.
+origin: migrated from legacy ledger ("Deferred from: review of five developer-tooling and diagnostic closures (2026-10-21)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-close-five-tooling-diagnostic-deferrals.md`
+archived: 2026-10-25
 
 ### DW-179: Reconcile omitted-scope legacy adjustment delivery between direct folds and persisted evidence handlers.
 
-origin: migrated from legacy ledger ("Deferred from: review of five replay-integrity closures (2026-10-21)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
-reason: Direct state/evidence folds and the loader preserve omitted nested adjustment scopes, but the pre-existing TimeEntryEvidenceProjectionHandler full, suffix and streamed validators compare prior snapshots and adjusted nested scope without legacy inheritance. Establish the supported delivery forms and add end-state regressions before claiming persisted legacy-adjustment compatibility; the current increment preserves existing direct-fold behavior and supplies no deployed migration acceptance.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-audit-integrity-deferrals.md`. Full, suffix, and streamed handlers inherit omitted previous scope from the preceding effective state and omitted adjusted scope from the top-level event. Comparisons and subsequent effective-value digests normalize scope while original audit snapshots retain their omissions. Focused projection tests pass repeated scope-changing adjustment/correction histories across all delivery forms and direct folds, canonical redelivery, explicit-contradiction refusals, and unchanged selected contents/ETags after refused delivery. No catalog inference, event migration, or deployed qualification is claimed.
-
-<a id="deferred-from-review-of-five-replay-integrity-closures-2026-10-21"></a>
-legacy_section: Deferred from: review of five replay-integrity closures (2026-10-21)
-summary: Reconcile omitted-scope legacy adjustment delivery between direct folds and persisted evidence handlers.
-evidence: Direct state/evidence folds and the loader preserve omitted nested adjustment scopes, but the pre-existing TimeEntryEvidenceProjectionHandler full, suffix and streamed validators compare prior snapshots and adjusted nested scope without legacy inheritance. Establish the supported delivery forms and add end-state regressions before claiming persisted legacy-adjustment compatibility; the current increment preserves existing direct-fold behavior and supplies no deployed migration acceptance.
+origin: migrated from legacy ledger ("Deferred from: review of five replay-integrity closures (2026-10-21)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
+archived: 2026-10-25
 
 ### DW-180: Align authoritative and direct evidence approved-correction decision attribution with the persisted handler fence.
 
-origin: migrated from legacy ledger ("Deferred from: review of five replay-integrity closures (2026-10-21)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
-reason: TimeEntryState and TimeEntryEvidenceProjection already accepted SourceApprovalDecisionId/SourceApprovalScope different from the preceding approval; the loader inherits the authoritative fold. TimeEntryEvidenceProjectionHandler checks both fields.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-audit-integrity-deferrals.md`. Authoritative state and the shared direct evidence full/incremental core now require SourceApprovalDecisionId and SourceApprovalScope to match the preceding approval before mutation/publication. Focused server, loader, and projection tests pass matching histories and reject foreign decision/scope attribution; loader failures remain opaque and refused persisted delivery leaves contents/ETags intact. Approval/correction product policy is unchanged.
-
-summary: Align authoritative and direct evidence approved-correction decision attribution with the persisted handler fence.
-evidence: TimeEntryState and TimeEntryEvidenceProjection already accepted SourceApprovalDecisionId/SourceApprovalScope different from the preceding approval; the loader inherits the authoritative fold. TimeEntryEvidenceProjectionHandler checks both fields. This predates the selected lifecycle-predecessor and Activity Type-scope guards; add matching-lineage guards and refusal/opaque-loader tests in a separate defensive increment.
+origin: migrated from legacy ledger ("Deferred from: review of five replay-integrity closures (2026-10-21)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
+archived: 2026-10-25
 
 ### DW-181: Align authoritative and direct evidence rejected-correction attribution with the persisted handler fence.
 
-origin: migrated from legacy ledger ("Deferred from: review of five replay-integrity closures (2026-10-21)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
-reason: TimeEntryState and direct evidence replay already accepted RejectionDecisionId/RejectionReason inconsistent with the preceding rejection, while TimeEntryEvidenceProjectionHandler validates those fields. The selected increment guards lifecycle order and Activity Type scope, preserving existing attribution behavior.
 status: done 2026-10-22
-resolution: Resolved 2026-10-22 by `spec-close-five-audit-integrity-deferrals.md`. Authoritative state and the shared direct evidence full/incremental core now require RejectionDecisionId and RejectionReason to match the preceding rejection before mutation/publication. Focused tests retain matching correction/resubmission behavior, reject foreign decision/reason attribution without changing prior state, deny loader replay opaquely, and preserve selected persisted contents/ETags on refused delivery. Existing rejection/correction policy is unchanged.
-
-summary: Align authoritative and direct evidence rejected-correction attribution with the persisted handler fence.
-evidence: TimeEntryState and direct evidence replay already accepted RejectionDecisionId/RejectionReason inconsistent with the preceding rejection, while TimeEntryEvidenceProjectionHandler validates those fields. The selected increment guards lifecycle order and Activity Type scope, preserving existing attribution behavior. A separate defensive increment should verify prior rejection lineage before mutation and exercise loader denial and persisted equivalence.
+origin: migrated from legacy ledger ("Deferred from: review of five replay-integrity closures (2026-10-21)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-close-five-replay-integrity-deferrals.md`
+archived: 2026-10-25
 
 ### DW-182: Assess complete SDK typed epoch and scope-boundary validation for the local selected-index diagnostic.
 
-origin: migrated from legacy ledger ("Deferred from: review of five magic-link operability closures (2026-10-22)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-close-five-magic-link-operability-deferrals.md`
-reason: The existing raw-JSON diagnostic never ran SharedProjectionEpochCoordinator.ValidateState/ValidateBoundary. The new bounded lifecycle/readiness checks intentionally do not claim full parity: inconsistent copyOnWriteAnchorGeneration, null checkpoint maps, required-writer mismatch, and invalid streaming counters can still pass local admission while SDK validation rejects them.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-recovery-and-verification-deferrals.md`. The supported Open/drained subset now validates required typed containers (including both evidence arrays), scalar fields, anchor, writer scope, checkpoints, retained names and streaming/cleanup counters. All four ledger corruptions, missing/null containers and healthy SDK-shaped controls pass in the 30-test diagnostic suite, including captured-digest length/alignment/count controls. The full-gate evidence covers 2,562 cases (2,557 passed, zero failed, five expected skips); eight later test-only review additions have supplementary focused evidence and were not part of those full runs. Unsupported staging/chunks refuse with fixed privacy-safe errors. Full SDK parity and ETag admission are explicitly not claimed. Evidence and remaining deployment obligations are in `tests/five-recovery-and-verification-deferrals.md`.
-
-<a id="deferred-from-review-of-five-magic-link-operability-closures-2026-10-22"></a>
-legacy_section: Deferred from: review of five magic-link operability closures (2026-10-22)
-summary: Assess complete SDK typed epoch and scope-boundary validation for the local selected-index diagnostic.
-evidence: The existing raw-JSON diagnostic never ran SharedProjectionEpochCoordinator.ValidateState/ValidateBoundary. The new bounded lifecycle/readiness checks intentionally do not claim full parity: inconsistent copyOnWriteAnchorGeneration, null checkpoint maps, required-writer mismatch, and invalid streaming counters can still pass local admission while SDK validation rejects them. A separate increment should assess sharing authoritative validation versus duplicating platform rules, reproduce these corrupt-state cases, and preserve fixed privacy-safe errors. JSON content equality also supplies no ETag-based concurrent admission; successful production HTTP resolution remains required.
+origin: migrated from legacy ledger ("Deferred from: review of five magic-link operability closures (2026-10-22)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-close-five-magic-link-operability-deferrals.md`
+archived: 2026-10-25
 
 ### DW-183: Abort an interrupted v6 migration when selected-source format/root/single metadata becomes invalid before resumed validation.
 
-origin: migrated from legacy ledger ("Deferred from: review of five magic-link operability closures (2026-10-22)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-runtime-deferrals.md`
-reason: Review B1 verified that MigrateAsync checks selected format/root and selected/direct legacy single-root metadata before its abort try/catch. If this metadata is added after sealing, retry rejects it while the existing global epoch remains Building and backpressures owner delivery.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-magic-link-safety-deferrals.md`. Selected metadata checks now participate in abort handling after validating operation and immutable inventory ownership. Corrupt sealed/unsealed retries initiate an owned abort without promotion or selected-source mutation; empty-journal aborts release Building. Pending corrupt-source journals and interrupted abort cleanup retain the separate pre-existing follow-ups below. Fresh malformed, foreign-operation/inventory, authority-denied, pre-abort transient/cancellation and completed-retry controls remain. Final Debug/source verification passed all six suites (2,515 passed, zero failed, five expected skips); independent review and its three corrections are complete. Evidence and preserved limitations are in `tests/five-magic-link-safety-deferrals.md`. No deployed acceptance is claimed.
-
-summary: Abort an interrupted v6 migration when selected-source format/root/single metadata becomes invalid before resumed validation.
-evidence: Review B1 verified that MigrateAsync checks selected format/root and selected/direct legacy single-root metadata before its abort try/catch. If this metadata is added after sealing, retry rejects it while the existing global epoch remains Building and backpressures owner delivery. The identical ordering exists in baseline 024d3aa24a804c5798017cd84b73041e4fb4dfec; test metadata corruption after an interrupted sealed migration, assert abort releases Building, and preserve the fresh-source preflight that reserves no fence for malformed input.
+origin: migrated from legacy ledger ("Deferred from: review of five magic-link operability closures (2026-10-22)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-runtime-deferrals.md`
+archived: 2026-10-25
 
 ### DW-184: Establish safe v6 migration abort recovery when pending deliveries encounter corrupt selected metadata.
 
@@ -2275,39 +1410,24 @@ evidence: Review B1 traced the unchanged normal FoldCatchUpAsync through SDK Abo
 
 ### DW-185: Resume an interrupted v6 migration abort through an operation-and-inventory-authorized recovery path.
 
-origin: migrated from legacy ledger ("Deferred from: review of five magic-link safety deferrals (2026-10-23)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
-reason: Review B2 and E1 verified that both baseline and current MigrateAsync lack an Aborting continuation, while SDK BeginAsync rejects that phase and AbortAsync itself supports resumption. A transient error after persisting Aborting can therefore leave later migration retries unable to finish cleanup.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-recovery-and-verification-deferrals.md`. A durable immutable scope/operation/inventory/epoch/source-generation witness is persisted after Begin and before abort handling. Recovery renews authority and rechecks status after witness loading, then resumes SDK abort without promotion; migration-only retry refuses success after cleanup. Passing tests cover cold/repeated recovery, foreign/missing/corrupt bindings, before/after-write faults with ETag-preserving retry, promotion refusal, replacement-epoch protection, migration-only cleanup before explicit recovery, healthy pending journals, and interruption after committed stage deletion. SDK status access may reconcile its own control/discovery indexes; witness refusal makes no Timesheets source, witness or fence writes. Witness-free Aborting stays refused. Pending corrupt-source journal repair remains separately open; the SDK lacks atomic expected-epoch/inventory binding, so unique operation IDs and serialized maintenance remain required. Evidence and remaining deployment obligations are in `tests/five-recovery-and-verification-deferrals.md`.
-
-summary: Resume an interrupted v6 migration abort through an operation-and-inventory-authorized recovery path.
-evidence: Review B2 and E1 verified that both baseline and current MigrateAsync lack an Aborting continuation, while SDK BeginAsync rejects that phase and AbortAsync itself supports resumption. A transient error after persisting Aborting can therefore leave later migration retries unable to finish cleanup. The SDK status does not expose the immutable inventory binding used by Begin, so a continuation must preserve certified operation/inventory authority rather than accept only an operation ID. Reproduce interrupted cleanup, foreign operation/inventory rejection and successful authorized recovery in a separate protocol increment; never claim generic abort recovery from the new pre-abort transient-read tests.
+origin: migrated from legacy ledger ("Deferred from: review of five magic-link safety deferrals (2026-10-23)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
+archived: 2026-10-25
 
 ### DW-186: Qualify candidate-index and catalog read deadlines separately from authority-history allowances.
 
-origin: migrated from legacy ledger ("Deferred from: review of five magic-link safety deferrals (2026-10-23)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
-reason: Review B3 is medium and unverified for the deployed transport. Existing ResolveCandidateAsync and LoadActivityTypeCatalogAsync await IReadModelStore/coordinator dependencies outside the new raw authority-history page/event/byte/deadline allowance; a non-cooperative implementation can stall until caller cancellation.
 status: done 2026-10-23
-resolution: Resolved 2026-10-23 by `spec-five-recovery-and-verification-deferrals.md`. One invocation deadline now bounds candidate-index/coordinator/tree and catalog awaits without charging history costs; standalone catalog calls have their own deadline. Eleven stalled-read/cancellation/late-completion controls include a late dependency fault, a cumulative remaining-deadline catalog case, explicit elapsed-time bounds with 300 ms scheduling allowance, finally-based release and awaited dependency completion. Healthy subsequent resolution passes within the 145-test loader class. This is transport-independent asynchronous-wait proof, with no deployed transport or runtime acceptance claim. Evidence and remaining deployment obligations are in `tests/five-recovery-and-verification-deferrals.md`.
-
-summary: Qualify candidate-index and catalog read deadlines separately from authority-history allowances.
-evidence: Review B3 is medium and unverified for the deployed transport. Existing ResolveCandidateAsync and LoadActivityTypeCatalogAsync await IReadModelStore/coordinator dependencies outside the new raw authority-history page/event/byte/deadline allowance; a non-cooperative implementation can stall until caller cancellation. Inspect or exercise actual Dapr transport deadlines and stalled read-model operations before deciding whether an additional bounded read-model or overall-resolution deadline is needed. The five-second StateLoading option is not a guarantee that all read-model awaits complete within five seconds.
+origin: migrated from legacy ledger ("Deferred from: review of five magic-link safety deferrals (2026-10-23)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
+archived: 2026-10-25
 
 ### DW-187: Remove duplicate gateway app-channel parameter registration before current-graph Timesheets AppHost runtime qualification.
 
-origin: migrated from legacy ledger ("Deferred from: review of five magic-link safety deferrals (2026-10-23)"), 2026-10-25
-location: n/a
-source_spec: `_bmad-output/implementation-artifacts/spec-five-local-apphost-boundary-deferrals.md`
-reason: The new endpoint-only probe initially exited -6 while constructing the unchanged run-mode graph. Source tracing shows AddHexalithEventStore already calls eventStore.WithGeneratedEventStoreAppChannelToken, followed by the pre-existing Timesheets AppHost call to the same non-idempotent helper; both add the same resource name.
 status: done 2026-10-24
-resolution: Resolved 2026-10-24 by `spec-five-build-and-hosting-deferrals.md` for the duplicate-registration defect only. The AppHost uses the SDK gateway credential and retains Timesheets generation. All 63 compiled configuration/model/construction probes pass; full Build/disposal reports exactly one credential per app without Start/Run. A compiled duplicate mutant fails registration before its success marker. Current-graph runtime-smoke and deployed acceptance remain open; see `tests/five-build-and-hosting-deferrals.md`.
-
-summary: Remove duplicate gateway app-channel parameter registration before current-graph Timesheets AppHost runtime qualification.
-evidence: The new endpoint-only probe initially exited -6 while constructing the unchanged run-mode graph. Source tracing shows AddHexalithEventStore already calls eventStore.WithGeneratedEventStoreAppChannelToken, followed by the pre-existing Timesheets AppHost call to the same non-idempotent helper; both add the same resource name. The sanitized failed receipt suppresses its credential-related exception line. The endpoint probe now returns after endpoint-affecting wiring and before these unchanged calls, so passing model checks do not qualify full graph construction or startup. Correct the owning authentication composition and prove the current graph starts in a separately scoped runtime increment; preserve existing token protections.
+origin: migrated from legacy ledger ("Deferred from: review of five magic-link safety deferrals (2026-10-23)"), 2026-10-25
+source_spec: `_bmad-output/implementation-artifacts/spec-five-local-apphost-boundary-deferrals.md`
+archived: 2026-10-25
 
 ### DW-188: Assess the unrelated fast-uri, ip-address, and undici npm release-tooling advisories in a separate dependency increment.
 
