@@ -9,7 +9,7 @@ public sealed class TimeEntryCommentPublicationIssuer(
     ITimeEntryCommentPublicationAuthority? authority = null)
 {
     /// <summary>The current issued-decision contract version.</summary>
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = Hexalith.Timesheets.Contracts.TimesheetsDomain.CommentPublicationVersion;
 
     private readonly ITimeEntryCommentPublicationAuthority _authority = authority
         ?? new DenyAllTimeEntryCommentPublicationAuthority();

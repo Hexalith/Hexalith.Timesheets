@@ -1,6 +1,6 @@
 # Timesheets CI/CD
 
-Timesheets builds and validates five NuGet libraries through the shared
+Timesheets builds and validates six NuGet libraries through the shared
 Hexalith.Builds domain workflows at immutable commit
 `544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9`. CI runs on pushes and pull requests to
 `main`. Publication is a separately authorized manual action.
@@ -105,12 +105,17 @@ weakened to change that count.
 |---|---|
 | Hexalith.Timesheets.Contracts | src/Hexalith.Timesheets.Contracts |
 | Hexalith.Timesheets.Client | src/Hexalith.Timesheets.Client |
+| Hexalith.Timesheets.ReadModels | src/Hexalith.Timesheets.ReadModels |
 | Hexalith.Timesheets.Server | src/Hexalith.Timesheets.Server |
 | Hexalith.Timesheets.Projections | src/Hexalith.Timesheets.Projections |
 | Hexalith.Timesheets.Testing | src/Hexalith.Timesheets.Testing |
 
+ReadModels carries the SDK-bound shared index helpers and stored payload wrappers
+required by Server and Projections. Its isolated consumer checks legacy shard
+addressing and its package assembly version.
+
 The packer rejects inventory drift, builds at the final version, requires an empty
-output directory, and emits five primary archives, five symbol archives, and a
+output directory, and emits six primary archives, six symbol archives, and a
 checksum ledger. Validation checks framework assemblies, identity/version,
 README, MIT expression, dependency XML, restore-backed dependency IDs/versions,
 unpublished/source leaks and unchanged archive bytes. Payloads are restricted to
@@ -130,7 +135,7 @@ python3 -m unittest discover -s scripts/tests -v
 
 Consumers live outside the repository, use their own Central Package Management
 and private NuGet cache, and clear inherited feeds. Each restores one exact local
-candidate through PackageReference. Exact package source mappings reserve all five
+candidate through PackageReference. Exact package source mappings reserve all six
 candidate IDs, including transitive edges, for the local feed; nuget.org supplies
 external dependencies. Validation compares each restored candidate archive byte for
 byte with its local archive and requires local-feed cache provenance. Each consumer
@@ -190,7 +195,7 @@ assets cannot be uploaded. No credential or push command is included in that
 evidence.
 
 After a release attempt, a separate job resolves the version from the tag pointing
-to the dispatched source and polls all five official NuGet indexes with bounded
+to the dispatched source and polls all six official NuGet indexes with bounded
 retries. Missing versions, partial publication and registry failures are retained
 per package and fail verification. Truncated HTTP bodies and protocol failures use
 the same bounded retry path and retain package-specific failure evidence. A
@@ -230,8 +235,10 @@ after the workspace sync moved the gitlinks, the `references/Hexalith.Builds` ca
 `64602575b902c0f8d3bfaa41a27565eee5682639` forwarded `3.126.0`. The package-mode
 direct audit then reported no update; these catalog-owned values are dated
 observations that later workspace syncs can move.
-Timesheets' five package IDs remain unpublished until a separately authorized
-release; a 404 is absence and never publication evidence. Official index URLs use
+The current release inventory contains six packages, including ReadModels.
+Publication requires a separately authorized release. The dated registry
+observations above do not establish publication of the added package; a 404 is
+absence and never publication evidence. Official index URLs use
 `https://api.nuget.org/v3-flatcontainer/<lowercase-package-id>/index.json`.
 
 Read-only GitHub checks at **2026-10-18T12:00:28Z** found:

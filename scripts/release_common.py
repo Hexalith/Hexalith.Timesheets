@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "tools/release-packages.json"
 BUILDS_SHA = "544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9"
 EXPECTED_IDS = frozenset("Hexalith.Timesheets." + area for area in
-                         ("Contracts", "Client", "Server", "Projections", "Testing"))
+                         ("Contracts", "Client", "ReadModels", "Server", "Projections", "Testing"))
 VERSION = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?")
 
 
@@ -43,8 +43,8 @@ def require_version(version: str) -> str:
 def load_manifest(manifest: Path = MANIFEST, root: Path = ROOT) -> list[dict[str, str]]:
     payload = read_json(manifest)
     rows = payload.get("packages")
-    if set(payload) != {"packages"} or not isinstance(rows, list) or len(rows) != 5:
-        raise ValueError("Release manifest must declare exactly five packages")
+    if set(payload) != {"packages"} or not isinstance(rows, list) or len(rows) != 6:
+        raise ValueError("Release manifest must declare exactly six packages")
     ids, projects = set(), set()
     for row in rows:
         if not isinstance(row, dict) or set(row) != {"id", "project"}:
@@ -139,8 +139,8 @@ def inventory(directory: Path, rows: list[dict], version: str | None = None) -> 
     if not directory.is_dir():
         raise ValueError(f"Package directory is missing: {directory}")
     archives = sorted(directory.glob("*.nupkg"))
-    if len(archives) != 5:
-        raise ValueError(f"Expected exactly five .nupkg archives, found {len(archives)}")
+    if len(archives) != 6:
+        raise ValueError(f"Expected exactly six .nupkg archives, found {len(archives)}")
     packages = {}
     for path in archives:
         metadata = archive_metadata(path)
@@ -157,7 +157,7 @@ def inventory(directory: Path, rows: list[dict], version: str | None = None) -> 
         packages[package_id] = metadata
     expected_symbols = {f"{row['id']}.{version}.snupkg" for row in rows}
     if {p.name for p in directory.glob("*.snupkg")} != expected_symbols:
-        raise ValueError("Symbol package inventory does not match the five primary archives")
+        raise ValueError("Symbol package inventory does not match the six primary archives")
     for path in directory.glob("*.snupkg"):
         metadata = archive_metadata(path)
         if (metadata["version"] != version or path.name != f"{metadata['id']}.{version}.snupkg"

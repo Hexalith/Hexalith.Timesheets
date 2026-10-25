@@ -1,5 +1,6 @@
 using Hexalith.Timesheets.Contracts.Events.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Models.ActivityTypes;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 
@@ -7,7 +8,7 @@ namespace Hexalith.Timesheets.Projections.ActivityTypes;
 
 public sealed class TenantActivityTypeCatalogProjection
 {
-    public const string ProjectionName = "tenant-activity-type-catalog";
+    public const string ProjectionName = TenantActivityTypeCatalogReadModelAddress.ProjectionName;
 
     public ActivityTypeCatalogReadModel Project(
         string tenantId,

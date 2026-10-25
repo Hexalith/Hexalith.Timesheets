@@ -12,6 +12,7 @@ public sealed class BuildConfigurationTests
         "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
         "src/Hexalith.Timesheets.Client/Hexalith.Timesheets.Client.csproj",
         "src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+        "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
         "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
         "src/Hexalith.Timesheets.Testing/Hexalith.Timesheets.Testing.csproj",
         "src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj",

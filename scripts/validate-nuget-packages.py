@@ -45,7 +45,7 @@ def validate(directory: Path) -> tuple[str, dict]:
     ledger = directory / "release-artifacts.sha256"
     if not ledger.is_file() or ledger.read_text(encoding="utf-8") != checksums(directory):
         raise ValueError("Package checksum ledger is missing or changed")
-    print(f"Validated exactly five packages and symbols at {version}")
+    print(f"Validated exactly six packages and symbols at {version}")
     return version, packages
 
 

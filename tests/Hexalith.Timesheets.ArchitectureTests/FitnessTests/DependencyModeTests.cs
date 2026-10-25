@@ -20,8 +20,9 @@ public sealed class DependencyModeTests
         string root = RepositoryRoot.Find().FullName;
         XDocument solution = XDocument.Load(Path.Combine(root, "Hexalith.Timesheets.slnx"));
         string[] projects = solution.Descendants("Project").Select(static row => row.Attribute("Path")!.Value).ToArray();
-        projects.Length.ShouldBe(15);
+        projects.Length.ShouldBe(16);
         int siblingEdges = 0;
+        var ownedEdges = new Dictionary<string, List<string>>(StringComparer.Ordinal);
         foreach (string project in projects)
         {
             ProcessStartInfo start = new("dotnet")
@@ -69,9 +70,13 @@ public sealed class DependencyModeTests
             JsonElement properties = evaluation.RootElement.GetProperty("Properties");
             properties.GetProperty("UseHexalithProjectReferences").GetString().ShouldBe(sourceMode, project);
             properties.GetProperty("NuGetAudit").GetString().ShouldBe("true", project);
+            string projectName = Path.GetFileNameWithoutExtension(project);
+            ownedEdges[projectName] = [];
             foreach (JsonElement reference in evaluation.RootElement.GetProperty("Items").GetProperty("ProjectReference").EnumerateArray())
             {
                 string path = Path.GetFullPath(reference.GetProperty("FullPath").GetString()!);
+                if (path.StartsWith(Path.Combine(root, "src") + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+                    ownedEdges[projectName].Add(Path.GetFileNameWithoutExtension(path));
                 if (!path.StartsWith(Path.Combine(root, "src") + Path.DirectorySeparatorChar, StringComparison.Ordinal)
                     && !path.StartsWith(Path.Combine(root, "tests") + Path.DirectorySeparatorChar, StringComparison.Ordinal))
                 {
@@ -80,6 +85,16 @@ public sealed class DependencyModeTests
                 }
             }
         }
+
+        var pending = new Stack<string>(new[] { "Hexalith.Timesheets.Projections", "Hexalith.Timesheets.ReadModels" });
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        while (pending.TryPop(out string? project))
+        {
+            project.ShouldNotBe("Hexalith.Timesheets.Server", configuration);
+            if (!visited.Add(project)) continue;
+            foreach (string dependency in ownedEdges[project]) pending.Push(dependency);
+        }
+        visited.ShouldContain("Hexalith.Timesheets.Contracts");
 
         if (configuration == "Debug")
         {

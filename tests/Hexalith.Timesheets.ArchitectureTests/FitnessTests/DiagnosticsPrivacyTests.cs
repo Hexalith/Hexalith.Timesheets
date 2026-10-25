@@ -441,11 +441,11 @@ public sealed class DiagnosticsPrivacyTests
     public void MagicLinkStateLoaderAndTokenHashIndexPersistNoRawTokenOrDecodedMaterial()
     {
         string indexReadModel = File.ReadAllText(RepositoryRoot.PathTo(
-            "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexReadModel.cs"));
+            "src", "Hexalith.Timesheets.Contracts", "Models", "MagicLinks", "MagicLinkTokenHashCapabilityIndexReadModel.cs"));
         string indexProjection = File.ReadAllText(RepositoryRoot.PathTo(
-            "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexProjection.cs"));
+            "src", "Hexalith.Timesheets.ReadModels", "MagicLinks", "MagicLinkTokenHashCapabilityIndexProjection.cs"));
         string indexEntry = File.ReadAllText(RepositoryRoot.PathTo(
-            "src", "Hexalith.Timesheets.Server", "MagicLinks", "MagicLinkTokenHashCapabilityIndexEntry.cs"));
+            "src", "Hexalith.Timesheets.Contracts", "Models", "MagicLinks", "MagicLinkTokenHashCapabilityIndexEntry.cs"));
         string indexWriter = File.ReadAllText(RepositoryRoot.PathTo(
             "src", "Hexalith.Timesheets.Projections", "MagicLinks", "MagicLinkTokenHashCapabilityIndexProjectionHandler.cs"));
         string loader = File.ReadAllText(RepositoryRoot.PathTo(

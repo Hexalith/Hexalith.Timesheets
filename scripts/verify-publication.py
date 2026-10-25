@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Require the exact released version on all five official NuGet indexes."""
+"""Require the exact released version on all six official NuGet indexes."""
 
 import argparse
 import json

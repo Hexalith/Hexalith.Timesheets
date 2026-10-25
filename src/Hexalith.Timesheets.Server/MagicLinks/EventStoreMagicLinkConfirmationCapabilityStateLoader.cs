@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using Hexalith.Timesheets.Contracts.Models.ActivityTypes;
+
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Streams;
@@ -626,8 +628,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
         {
             ReadModelEntry<ActivityTypeCatalogReadModel> entry = await budget.ReadModelAsync(
                 token => _readModelStore.GetAsync<ActivityTypeCatalogReadModel>(
-                    MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName,
-                    MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant), token),
+                    TenantActivityTypeCatalogReadModelAddress.StateStoreName,
+                    TenantActivityTypeCatalogReadModelAddress.StateKey(tenant), token),
                 cancellationToken).ConfigureAwait(false);
 
             ActivityTypeCatalogReadModel? catalog = entry.Value;

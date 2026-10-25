@@ -681,7 +681,7 @@ This keeps Timesheets aligned with Hexalith deployment patterns while preserving
 - Contracts live in `src/Hexalith.Timesheets.Contracts` and must not reference infrastructure packages.
 - Client abstractions live in `src/Hexalith.Timesheets.Client`.
 - Server command handling, policies, and application services live in `src/Hexalith.Timesheets.Server`.
-- Projection handlers and read models live in `src/Hexalith.Timesheets.Projections`.
+- Projection handlers live in `src/Hexalith.Timesheets.Projections`. Pure shared read-model DTOs and addresses live in `Contracts`; SDK-dependent index helpers and stored payload wrappers live in `src/Hexalith.Timesheets.ReadModels`, consumed independently by Server and Projections. Relocated public types retain their CLR namespaces with Server assembly forwarding for compatibility.
 - Test helpers live in `src/Hexalith.Timesheets.Testing`.
 - Aspire composition lives in `src/Hexalith.Timesheets.AppHost`.
 - Timesheets owns contracts and FrontComposer metadata in Contracts/Client/Server. A consuming FrontComposer host owns rendered Fluent UI V5 behavior and browser/accessibility evidence; do not add Timesheets UI projects.
@@ -919,10 +919,11 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 
 **Component Boundaries:**
 
-- `Contracts` contains commands, events, queries, IDs, value objects, UI descriptors, and OpenAPI artifacts only.
+- `Contracts` contains infrastructure-free commands, events, queries, IDs, value objects, shared read-model DTOs/addresses, policy options, UI descriptors, and OpenAPI artifacts.
 - `Client` wraps command/query/magic-link interaction for consumers and UI.
 - `Server` owns aggregate decisions, command handlers, policies, validation orchestration, export orchestration, and magic-link capability logic.
 - `Projections` owns read-model handlers, replay behavior, freshness, Approved-Time Ledger, and operational report models.
+- `ReadModels` owns Timesheets-specific SDK index helpers and persisted payload wrappers. It depends on Contracts and EventStore Client/Contracts; neither ReadModels nor Projections may depend on Timesheets Server. Projections explicitly consumes EventStore DomainService to implement SDK handler interfaces. The [boundary decision record](../../docs/boundary-decision-record.md#shared-read-model-ownership--2026-10-25) records address and type compatibility.
 - `Contracts`/`Client`/`Server` own UI-neutral contracts, action/status semantics, and FrontComposer metadata. A consuming FrontComposer host owns rendered Fluent UI V5 composition and WCAG evidence.
 - `AppHost` owns local topology and observability wiring, not domain rules.
 

@@ -1,0 +1,150 @@
+[
+  {
+    "configuration": "Debug",
+    "project": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+      "-nologo",
+      "-p:Configuration=Debug",
+      "-getProperty:UseHexalithProjectReferences,NuGetAudit",
+      "-getItem:ProjectReference,PackageReference"
+    ],
+    "properties": {
+      "UseHexalithProjectReferences": "true",
+      "NuGetAudit": "true"
+    },
+    "projectReferences": [],
+    "packageReferences": [
+      "MinVer"
+    ]
+  },
+  {
+    "configuration": "Debug",
+    "project": "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+      "-nologo",
+      "-p:Configuration=Debug",
+      "-getProperty:UseHexalithProjectReferences,NuGetAudit",
+      "-getItem:ProjectReference,PackageReference"
+    ],
+    "properties": {
+      "UseHexalithProjectReferences": "true",
+      "NuGetAudit": "true"
+    },
+    "projectReferences": [
+      "../Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj"
+    ],
+    "packageReferences": [
+      "MinVer"
+    ]
+  },
+  {
+    "configuration": "Debug",
+    "project": "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+      "-nologo",
+      "-p:Configuration=Debug",
+      "-getProperty:UseHexalithProjectReferences,NuGetAudit",
+      "-getItem:ProjectReference,PackageReference"
+    ],
+    "properties": {
+      "UseHexalithProjectReferences": "true",
+      "NuGetAudit": "true"
+    },
+    "projectReferences": [
+      "../Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+      "../Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj"
+    ],
+    "packageReferences": [
+      "MinVer",
+      "Microsoft.Extensions.Logging.Abstractions"
+    ]
+  },
+  {
+    "configuration": "Release",
+    "project": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+      "-nologo",
+      "-p:Configuration=Release",
+      "-getProperty:UseHexalithProjectReferences,NuGetAudit",
+      "-getItem:ProjectReference,PackageReference"
+    ],
+    "properties": {
+      "UseHexalithProjectReferences": "false",
+      "NuGetAudit": "true"
+    },
+    "projectReferences": [],
+    "packageReferences": [
+      "MinVer"
+    ]
+  },
+  {
+    "configuration": "Release",
+    "project": "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+      "-nologo",
+      "-p:Configuration=Release",
+      "-getProperty:UseHexalithProjectReferences,NuGetAudit",
+      "-getItem:ProjectReference,PackageReference"
+    ],
+    "properties": {
+      "UseHexalithProjectReferences": "false",
+      "NuGetAudit": "true"
+    },
+    "projectReferences": [
+      "../Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj"
+    ],
+    "packageReferences": [
+      "MinVer",
+      "Hexalith.EventStore.Client",
+      "Hexalith.EventStore.Contracts"
+    ]
+  },
+  {
+    "configuration": "Release",
+    "project": "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+    "command": [
+      "dotnet",
+      "msbuild",
+      "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+      "-nologo",
+      "-p:Configuration=Release",
+      "-getProperty:UseHexalithProjectReferences,NuGetAudit",
+      "-getItem:ProjectReference,PackageReference"
+    ],
+    "properties": {
+      "UseHexalithProjectReferences": "false",
+      "NuGetAudit": "true"
+    },
+    "projectReferences": [
+      "../Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+      "../Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj"
+    ],
+    "packageReferences": [
+      "MinVer",
+      "Microsoft.Extensions.Logging.Abstractions",
+      "Hexalith.EventStore.Client",
+      "Hexalith.EventStore.Contracts",
+      "Hexalith.EventStore.DomainService"
+    ]
+  }
+]

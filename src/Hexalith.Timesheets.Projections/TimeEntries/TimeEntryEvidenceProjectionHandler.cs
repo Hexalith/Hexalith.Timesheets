@@ -16,14 +16,14 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Policies;
-using Hexalith.Timesheets.Server.Runtime;
+using Hexalith.Timesheets.Contracts;
 
 namespace Hexalith.Timesheets.Projections.TimeEntries;
 
 /// <summary>Materializes validated, aggregate-owned Time Entry evidence.</summary>
 /// <param name="readModelStore">The SDK read-model store used for owned evidence.</param>
 /// <param name="evidencePolicyOptions">Trusted server policy for comment publication.</param>
-[EventStoreDomain(TimesheetsEventStoreIntegration.DomainName)]
+[EventStoreDomain(TimesheetsDomain.Name)]
 public sealed class TimeEntryEvidenceProjectionHandler(
     IReadModelStore readModelStore, TimesheetsEvidencePolicyOptions? evidencePolicyOptions = null) :
     IAsyncDomainProjectionRebuildHandler,
@@ -36,7 +36,7 @@ public sealed class TimeEntryEvidenceProjectionHandler(
     public static IReadOnlyList<ProjectionReadModelSlotDeclaration> ProjectionReadModelSlots { get; } =
     [
         new(
-            TimesheetsEventStoreIntegration.DomainName,
+            TimesheetsDomain.Name,
             TimeEntryEvidenceProjection.ProjectionName,
             TimeEntryEvidenceReadModelAddress.SlotName,
             ProjectionReadModelSlotKind.AggregateOwned,
@@ -44,7 +44,7 @@ public sealed class TimeEntryEvidenceProjectionHandler(
     ];
 
     /// <inheritdoc />
-    public string Domain => TimesheetsEventStoreIntegration.DomainName;
+    public string Domain => TimesheetsDomain.Name;
 
     /// <inheritdoc />
     public string ProjectionType => TimeEntryEvidenceProjection.ProjectionName;
@@ -924,7 +924,7 @@ public sealed class TimeEntryEvidenceProjectionHandler(
             && Enum.IsDefined(policy.InternalDisplay) && policy.InternalDisplay != TimesheetsCommentPolicyDecision.Unknown
             && Enum.IsDefined(policy.ExternalConfirmationDisplay) && policy.ExternalConfirmationDisplay != TimesheetsCommentPolicyDecision.Unknown
             && Enum.IsDefined(policy.ProjectionInclusion) && policy.ProjectionInclusion != TimesheetsCommentPolicyDecision.Unknown
-            && policy.ServerPublicationVersion is 0 or 1 or TimeEntryCommentPublicationIssuer.CurrentVersion
+            && policy.ServerPublicationVersion is 0 or 1 or TimesheetsDomain.CommentPublicationVersion
             && Enum.IsDefined(policy.ServerProjectionInclusion)
             && Enum.IsDefined(policy.ServerExternalConfirmationDisplay)
             && (policy.ServerExternalConfirmationDisplay == TimesheetsCommentPolicyDecision.PolicyRequired
@@ -1055,7 +1055,7 @@ public sealed class TimeEntryEvidenceProjectionHandler(
     private static void Validate(ProjectionRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (!string.Equals(request.Domain, TimesheetsEventStoreIntegration.DomainName, StringComparison.Ordinal))
+        if (!string.Equals(request.Domain, TimesheetsDomain.Name, StringComparison.Ordinal))
         {
             throw new ArgumentException("The projection request targets another domain.", nameof(request));
         }

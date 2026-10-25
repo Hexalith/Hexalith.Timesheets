@@ -115,6 +115,7 @@ public sealed class DependencyDirectionTests
         string[] kernelProjects =
         [
             RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Server", "Hexalith.Timesheets.Server.csproj"),
+            RepositoryRoot.PathTo("src", "Hexalith.Timesheets.ReadModels", "Hexalith.Timesheets.ReadModels.csproj"),
             RepositoryRoot.PathTo("src", "Hexalith.Timesheets.Projections", "Hexalith.Timesheets.Projections.csproj")
         ];
 
@@ -128,6 +129,32 @@ public sealed class DependencyDirectionTests
                 references.ShouldNotContain(reference => reference.Contains(forbidden, StringComparison.OrdinalIgnoreCase), projectPath);
             }
         }
+    }
+
+    /// <summary>Checks every owned edge, including conditional edges from either dependency mode.</summary>
+    [Fact]
+    public void ProjectionsAndReadModelsOwnedClosureCannotReachServer()
+    {
+        string sourceRoot = RepositoryRoot.PathTo("src");
+        var pending = new Stack<string>(new[] { "Hexalith.Timesheets.Projections", "Hexalith.Timesheets.ReadModels" });
+        var visited = new HashSet<string>(StringComparer.Ordinal);
+        while (pending.TryPop(out string? name))
+        {
+            name.ShouldNotBe("Hexalith.Timesheets.Server");
+            if (!visited.Add(name)) continue;
+            XDocument project = XDocument.Load(Path.Combine(sourceRoot, name, name + ".csproj"));
+            foreach (XElement reference in project.Descendants("ProjectReference"))
+            {
+                string include = reference.Attribute("Include")!.Value.Replace('\\', '/');
+                // SDK DomainService composition is intentional. Only Timesheets-owned edges
+                // define this module boundary; platform runtime dependencies are not module edges.
+                if (!include.StartsWith("../Hexalith.Timesheets.", StringComparison.Ordinal)) continue;
+                pending.Push(Path.GetFileNameWithoutExtension(include));
+            }
+        }
+        visited.ShouldContain("Hexalith.Timesheets.Contracts");
+        AssertNoReferences(Path.Combine(sourceRoot, "Hexalith.Timesheets.ReadModels",
+            "Hexalith.Timesheets.ReadModels.csproj"), "Hexalith.EventStore.DomainService", "Hexalith.Timesheets.Server");
     }
 
     [Fact]
@@ -280,9 +307,8 @@ public sealed class DependencyDirectionTests
             "src", "Hexalith.Timesheets.Projections", "ActivityTypes", "TenantActivityTypeCatalogProjectionHandler.cs"));
 
         hostProject.ShouldContain("Hexalith.Timesheets.Projections");
-        // Deliberately not asserted: the Projections -> Server project reference. It is the layering
-        // inversion decision 3 resolves by moving the four shared shapes to Contracts, so pinning it
-        // here would make that follow-up start by deleting this assertion.
+        projectionsProject.ShouldContain("Hexalith.Timesheets.ReadModels");
+        projectionsProject.ShouldNotContain("Hexalith.Timesheets.Server");
         projectionsProject.ShouldContain("Hexalith.EventStore.DomainService");
         program.ShouldContain("AddEventStoreDomainService");
         program.ShouldContain("TimesheetsProjectionsMarker");

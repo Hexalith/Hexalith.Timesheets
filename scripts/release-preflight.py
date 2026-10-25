@@ -77,7 +77,7 @@ def version_preflight(phase: str, version: str) -> None:
         or os.environ.get("HEXALITH_RELEASE_SOURCE_BRANCH") != "main"
         or os.environ.get("HEXALITH_RELEASE_SOURCE_CI_WORKFLOW") != "ci.yml"
         or os.environ.get("HEXALITH_RELEASE_PACKAGE_MANIFEST") != "tools/release-packages.json"
-        or os.environ.get("HEXALITH_RELEASE_EXPECTED_PACKAGE_COUNT") != "5"
+        or os.environ.get("HEXALITH_RELEASE_EXPECTED_PACKAGE_COUNT") != "6"
         or os.environ.get("HEXALITH_RELEASE_REQUIRE_AUTHORITY") != "false"):
         raise ValueError("Shared release inputs differ from the approved Timesheets contract")
     if not os.environ.get("NUGET_API_KEY", "").strip():
@@ -108,7 +108,7 @@ def version_preflight(phase: str, version: str) -> None:
             IDENTITY.write_text(json.dumps(frozen, sort_keys=True) + "\n", encoding="utf-8")
         elif frozen.get("artifactsSha256") != digest:
             raise ValueError("Candidate artifacts changed after prepare")
-    print(f"Release {phase} prerequisites passed for five packages at {version}")
+    print(f"Release {phase} prerequisites passed for six packages at {version}")
 
 
 if __name__ == "__main__":

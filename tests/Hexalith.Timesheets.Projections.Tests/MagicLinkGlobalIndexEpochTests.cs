@@ -857,6 +857,337 @@ public sealed class MagicLinkGlobalIndexEpochTests
         writes.ShouldBe(0);
     }
 
+    /// <summary>Exercises both bootstrap paths, boundary shards, and persisted recovery shapes.</summary>
+    public static TheoryData<bool, int, string> DirectShardCases
+    {
+        get
+        {
+            var cases = new TheoryData<bool, int, string>();
+            foreach (bool streamed in new[] { false, true })
+            {
+                foreach (int shard in new[] { 0, 255 })
+                foreach (string shape in new[] { "populated", "empty", "corrupt", "null", "invalid" })
+                    cases.Add(streamed, shard, shape);
+                cases.Add(streamed, -1, "null");
+            }
+            return cases;
+        }
+    }
+
+    /// <summary>Never replaces any direct legacy row, even empty, malformed or JSON-null evidence.</summary>
+    /// <param name="streamed">Whether to use tenant rebuild finalization.</param>
+    /// <param name="shard">The direct physical shard ordinal.</param>
+    /// <param name="shape">The persisted legacy row shape.</param>
+    [Theory]
+    [MemberData(nameof(DirectShardCases))]
+    public async Task DirectLegacyShardsRefuseBothBootstrapPathsWithoutLosingRecoveryEvidence(
+        bool streamed, int shard, string shape)
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new DirectShardObservingReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store, epochCoordinator: coordinator);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = shard < 0 ? MagicLinkTokenHashCapabilityIndexProjection.StateKey
+            : MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard);
+        using JsonDocument persisted = JsonDocument.Parse(shape switch
+        {
+            "populated" => """{"entries":{"legacy-hash":{"tenant":{"tenantId":"tenant-2"},"capabilityId":{"value":"legacy-owner"}}}}""",
+            "empty" => """{"entries":{}}""",
+            "corrupt" => """{"entries":null,"contributions":null}""",
+            "null" => "null",
+            "invalid" => "\"corrupt-row\"",
+            _ => throw new InvalidOperationException("Unknown persisted fixture.")
+        });
+        inner.SeedRaw(scope.StoreName, key, persisted);
+        byte[] before = inner.SnapshotRaw(scope.StoreName, key).ShouldNotBeNull();
+        string? beforeETag = (await inner.GetAsync<object>(scope.StoreName, key,
+            TestContext.Current.CancellationToken)).ETag;
+        await PrepareBootstrapAttemptAsync(streamed, handler, coordinator, scope);
+        SharedProjectionEpochStatus recovery = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+
+        await Should.ThrowAsync<SharedProjectionReadUnavailableException>(() => AttemptBootstrapAsync(
+            streamed, handler, coordinator, scope, TestContext.Current.CancellationToken));
+
+        inner.SnapshotRaw(scope.StoreName, key).ShouldBe(before);
+        (await inner.GetAsync<object>(scope.StoreName, key, TestContext.Current.CancellationToken))
+            .ETag.ShouldBe(beforeETag);
+        await AssertBootstrapUnpublishedAsync(coordinator, scope, recovery);
+        if (shard < 0) store.DirectReads.ShouldBeEmpty();
+        else store.MaximumConcurrentReads.ShouldBeInRange(1, 16);
+    }
+
+    /// <summary>Scans all direct shards before a selected v6 shard can short-circuit ordinary detection.</summary>
+    /// <param name="streamed">Whether to use tenant rebuild finalization.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SelectedLegacyShardCannotHideLastDirectLegacyShard(bool streamed)
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new DirectShardObservingReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store, epochCoordinator: coordinator);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        _ = await coordinator.RegisterWriterAsync(scope, handler.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        _ = await coordinator.BeginAsync(scope, "seed-first-selected", "selected-inventory",
+            new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        _ = await coordinator.StageAsync(scope, "seed-first-selected", [ReadModelBatchOperation.Write(
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey(0),
+            MagicLinkTokenHashCapabilityIndexProjection.FromContributions([]), ReadModelBatchConcurrency.LastWrite)],
+            TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(scope, "seed-first-selected", TestContext.Current.CancellationToken);
+        string key = MagicLinkTokenHashCapabilityIndexProjection.ShardKey(255);
+        await inner.SaveAsync(scope.StoreName, key, MagicLinkTokenHashCapabilityIndexProjection.FromContributions([]),
+            TestContext.Current.CancellationToken);
+        byte[] before = inner.SnapshotRaw(scope.StoreName, key).ShouldNotBeNull();
+        string? beforeETag = (await inner.GetAsync<object>(scope.StoreName, key,
+            TestContext.Current.CancellationToken)).ETag;
+        await PrepareBootstrapAttemptAsync(streamed, handler, coordinator, scope);
+        SharedProjectionEpochStatus recovery = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+
+        await Should.ThrowAsync<SharedProjectionReadUnavailableException>(() => AttemptBootstrapAsync(
+            streamed, handler, coordinator, scope, TestContext.Current.CancellationToken));
+
+        store.DirectReads.Count.ShouldBe(256);
+        inner.SnapshotRaw(scope.StoreName, key).ShouldBe(before);
+        (await inner.GetAsync<object>(scope.StoreName, key, TestContext.Current.CancellationToken))
+            .ETag.ShouldBe(beforeETag);
+        await AssertBootstrapUnpublishedAsync(coordinator, scope, recovery);
+        (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey(0), TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull();
+    }
+
+    /// <summary>Proves all 256 direct addresses are inspected under the fixed concurrency ceiling.</summary>
+    /// <param name="streamed">Whether to use tenant rebuild finalization.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EmptyDirectShardInventoryBootstrapsWithAtMostSixteenConcurrentReads(bool streamed)
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new DirectShardObservingReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store, epochCoordinator: coordinator);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        await PrepareBootstrapAttemptAsync(streamed, handler, coordinator, scope);
+
+        await AttemptBootstrapAsync(streamed, handler, coordinator, scope, TestContext.Current.CancellationToken);
+        if (streamed) await coordinator.CommitAsync(scope, "direct-shard-bootstrap", TestContext.Current.CancellationToken);
+
+        store.DirectReads.Keys.Order(StringComparer.Ordinal).ShouldBe(Enumerable.Range(0, 256)
+            .Select(MagicLinkTokenHashCapabilityIndexProjection.ShardKey).Order(StringComparer.Ordinal));
+        store.MaximumConcurrentReads.ShouldBeInRange(1, 16);
+        (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull().StorageVersion.ShouldBe(7);
+    }
+
+    /// <summary>Preserves direct-root/shard failures and cancellation with retryable recovery evidence.</summary>
+    /// <param name="streamed">Whether to use tenant rebuild finalization.</param>
+    /// <param name="failure">The injected direct read failure.</param>
+    /// <param name="singleRoot">Whether to fault the legacy single-root address.</param>
+    [Theory]
+    [InlineData(false, "io", false)]
+    [InlineData(true, "io", false)]
+    [InlineData(false, "json", false)]
+    [InlineData(true, "json", false)]
+    [InlineData(false, "cancel", false)]
+    [InlineData(true, "cancel", false)]
+    [InlineData(false, "io", true)]
+    [InlineData(true, "io", true)]
+    [InlineData(false, "json", true)]
+    [InlineData(true, "json", true)]
+    [InlineData(false, "cancel", true)]
+    [InlineData(true, "cancel", true)]
+    public async Task DirectIndexReadFailureOrCancellationKeepsBootstrapRetryable(
+        bool streamed, string failure, bool singleRoot)
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new DirectShardObservingReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store, epochCoordinator: coordinator);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        string key = singleRoot ? MagicLinkTokenHashCapabilityIndexProjection.StateKey
+            : MagicLinkTokenHashCapabilityIndexProjection.ShardKey(255);
+        using JsonDocument? persisted = singleRoot ? JsonDocument.Parse("null") : null;
+        if (persisted is not null) inner.SeedRaw(scope.StoreName, key, persisted);
+        byte[]? before = inner.SnapshotRaw(scope.StoreName, key);
+        string? beforeETag = (await inner.GetAsync<object>(scope.StoreName, key,
+            TestContext.Current.CancellationToken)).ETag;
+        await PrepareBootstrapAttemptAsync(streamed, handler, coordinator, scope);
+        SharedProjectionEpochStatus recovery = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        Exception outage = failure == "json" ? new JsonException("Direct index unavailable.")
+            : new IOException("Direct index unavailable.");
+        store.BeforeGet = address =>
+        {
+            if (address != key) return;
+            if (failure == "cancel")
+            {
+                cancellation.Cancel();
+                cancellation.Token.ThrowIfCancellationRequested();
+            }
+            throw outage;
+        };
+        if (failure == "cancel")
+            await Should.ThrowAsync<OperationCanceledException>(() => AttemptBootstrapAsync(
+                streamed, handler, coordinator, scope, cancellation.Token));
+        else
+        {
+            SharedProjectionReadUnavailableException exception = await Should.ThrowAsync<SharedProjectionReadUnavailableException>(
+                () => AttemptBootstrapAsync(streamed, handler, coordinator, scope, cancellation.Token));
+            exception.InnerException.ShouldBeSameAs(outage);
+        }
+        inner.SnapshotRaw(scope.StoreName, key).ShouldBe(before);
+        (await inner.GetAsync<object>(scope.StoreName, key, TestContext.Current.CancellationToken))
+            .ETag.ShouldBe(beforeETag);
+        await AssertBootstrapUnpublishedAsync(coordinator, scope, recovery);
+        if (singleRoot) store.DirectReads.ShouldBeEmpty();
+        else store.MaximumConcurrentReads.ShouldBeInRange(1, 16);
+
+        store.BeforeGet = null;
+        if (singleRoot)
+        {
+            // Recovering transport access must not discard the persisted JSON-null root.
+            await Should.ThrowAsync<SharedProjectionReadUnavailableException>(() => AttemptBootstrapAsync(
+                streamed, handler, coordinator, scope, TestContext.Current.CancellationToken));
+            inner.SnapshotRaw(scope.StoreName, key).ShouldBe(before);
+            (await inner.GetAsync<object>(scope.StoreName, key, TestContext.Current.CancellationToken))
+                .ETag.ShouldBe(beforeETag);
+            await AssertBootstrapUnpublishedAsync(coordinator, scope, recovery);
+        }
+        else
+        {
+            await AttemptBootstrapAsync(streamed, handler, coordinator, scope, TestContext.Current.CancellationToken);
+            if (streamed) await coordinator.CommitAsync(scope, "direct-shard-bootstrap", TestContext.Current.CancellationToken);
+            (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken))
+                .Value.ShouldNotBeNull().StorageVersion.ShouldBe(7);
+        }
+    }
+
+    /// <summary>Drains held reads after a synchronous store fault before refusal or retry can complete.</summary>
+    /// <param name="streamed">Whether to use tenant rebuild finalization.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SynchronousDirectShardFaultDrainsStartedReadsBeforeRetry(bool streamed)
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new DirectShardObservingReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store, epochCoordinator: coordinator);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        await PrepareBootstrapAttemptAsync(streamed, handler, coordinator, scope);
+        SharedProjectionEpochStatus recovery = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var faultReached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var outage = new IOException("Synchronous direct read failure.");
+        store.BeforeGet = key =>
+        {
+            if (key != MagicLinkTokenHashCapabilityIndexProjection.ShardKey(1)) return;
+            faultReached.TrySetResult();
+            throw outage;
+        };
+        store.BeforeDirectRead = (_, token) => release.Task.WaitAsync(token);
+        Task attempt = AttemptBootstrapAsync(streamed, handler, coordinator, scope, TestContext.Current.CancellationToken);
+        bool returnedBeforeDrain;
+        int heldReads;
+        try
+        {
+            await faultReached.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+            returnedBeforeDrain = attempt.IsCompleted;
+            heldReads = store.ActiveReads;
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+        SharedProjectionReadUnavailableException exception = await Should.ThrowAsync<SharedProjectionReadUnavailableException>(
+            () => attempt.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        exception.InnerException.ShouldBeSameAs(outage);
+        returnedBeforeDrain.ShouldBeFalse();
+        heldReads.ShouldBeInRange(1, 15);
+        store.ActiveReads.ShouldBe(0);
+        store.MaximumConcurrentReads.ShouldBeInRange(1, 16);
+        await AssertBootstrapUnpublishedAsync(coordinator, scope, recovery);
+
+        store.BeforeGet = null;
+        store.BeforeDirectRead = null;
+        await AttemptBootstrapAsync(streamed, handler, coordinator, scope, TestContext.Current.CancellationToken);
+        if (streamed) await coordinator.CommitAsync(scope, "direct-shard-bootstrap", TestContext.Current.CancellationToken);
+        store.ActiveReads.ShouldBe(0);
+        store.MaximumConcurrentReads.ShouldBeInRange(1, 16);
+        (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull().StorageVersion.ShouldBe(7);
+    }
+
+    private static async Task PrepareBootstrapAttemptAsync(bool streamed,
+        MagicLinkTokenHashCapabilityIndexProjectionHandler handler, SharedProjectionEpochCoordinator coordinator,
+        SharedProjectionScope scope)
+    {
+        SharedProjectionLease lease = await coordinator.RegisterWriterAsync(scope, handler.OrdinaryWriterId,
+            TestContext.Current.CancellationToken);
+        if (streamed)
+            _ = await coordinator.BeginAsync(scope, "direct-shard-bootstrap", "direct-shard-inventory",
+                new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        else
+            (await coordinator.JournalAsync(scope, lease, BootstrapDelivery(), TestContext.Current.CancellationToken))
+                .ShouldBe(SharedProjectionJournalResult.Journaled);
+    }
+
+    private static async Task AttemptBootstrapAsync(bool streamed,
+        MagicLinkTokenHashCapabilityIndexProjectionHandler handler, SharedProjectionEpochCoordinator coordinator,
+        SharedProjectionScope scope, CancellationToken cancellationToken)
+    {
+        if (streamed)
+        {
+            var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets", handler.ProjectionType,
+                "direct-shard-bootstrap", "catalog");
+            _ = await coordinator.StageStreamingAsync(scope, identity.OperationId,
+                handler.StreamFinalizedOperationsAsync(identity, new FixedCursor([]), cancellationToken), cancellationToken);
+        }
+        else
+            (await coordinator.CatchUpAsync(scope, (delivery, generation, token) =>
+                handler.FoldCatchUpAsync(delivery, generation, coordinator, token), cancellationToken)).ShouldBe(1);
+    }
+
+    private static async Task AssertBootstrapUnpublishedAsync(SharedProjectionEpochCoordinator coordinator,
+        SharedProjectionScope scope, SharedProjectionEpochStatus before)
+    {
+        SharedProjectionEpochStatus after = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+        after.Epoch.ShouldBe(before.Epoch);
+        after.OperationId.ShouldBe(before.OperationId);
+        after.IsBuilding.ShouldBe(before.IsBuilding);
+        after.PendingDeliveryCount.ShouldBe(before.PendingDeliveryCount);
+        after.PendingFoldFailures.ShouldBe(before.PendingFoldFailures);
+        after.ParkingEvidence.ShouldBe(before.ParkingEvidence);
+        (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+        (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeFormat>(scope,
+            MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey, TestContext.Current.CancellationToken)).Value.ShouldBeNull();
+    }
+
+    private static SharedProjectionDelivery BootstrapDelivery()
+    {
+        var issued = new MagicLinkConfirmationCapabilityIssued(new MagicLinkCapabilityId("fresh-owner"),
+            new TenantReference("tenant-1"), new PartyReference("party-1"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-1")), new ActivityTypeId("activity-1"),
+            new TimeEntryId("entry-1"), MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm,
+            new MagicLinkTokenHash("fresh-ordinary-hash"), DateTimeOffset.UtcNow.AddDays(1),
+            new PartyReference("issuer-1"), DateTimeOffset.UtcNow, new MagicLinkAuditMetadata("timesheets", "bootstrap"), true);
+        var projectionEvent = new ProjectionEventDto(typeof(MagicLinkConfirmationCapabilityIssued).FullName!,
+            JsonSerializer.SerializeToUtf8Bytes(issued, s_json), "json", 1, DateTimeOffset.UtcNow,
+            "correlation-bootstrap", "message-bootstrap", "issuer-1", 1);
+        byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-1", "timesheets",
+            "fresh-owner", [projectionEvent]), s_json);
+        return new SharedProjectionDelivery("tenant-1:timesheets:fresh-owner", 1, payload, [], OwnerSequenceNumber: 1);
+    }
+
     private sealed class FixedCursor(IReadOnlyList<DomainSharedProjectionRebuildPartition> partitions,
         Exception? readException = null,
         Action? beforeYield = null)

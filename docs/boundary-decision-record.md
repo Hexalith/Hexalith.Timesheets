@@ -27,6 +27,16 @@ Timesheets durable events and read models store stable Tenant, Party, Project, a
 
 Aggregates stay pure. Authorization, tenant lookup, sibling validation, HTTP calls, logging, clocks, filesystem access, and UI shaping stay outside aggregate decisions.
 
+## Shared Read-Model Ownership — 2026-10-25
+
+`Hexalith.Timesheets.Contracts` owns pure index DTOs, shared policy options and domain/publication constants. `Hexalith.Timesheets.ReadModels` owns the Timesheets-specific SDK index helper, tree reader/builder and stored event wrappers; it references Contracts and EventStore Client/Contracts, with no Server or hosting dependency. Server and Projections consume ReadModels independently. Projections retains its explicit EventStore DomainService dependency for SDK projection handlers; that intentional SDK runtime closure is distinct from a dependency on Timesheets Server.
+
+Relocated public types retain their CLR namespaces. Server forwards those types to their new assemblies, preserving existing type resolution; stored payload full names and JSON shapes remain unchanged. ReadModels adds a library package, with no additional host or topology.
+
+`TenantActivityTypeCatalogReadModelAddress` in Contracts is the canonical tenant catalog address. The historical `timesheets:magic-links:activity-type-catalog:{tenant}:v1` key, `timesheets-readmodels` store and `catalog` slot are intentional compatibility contracts. The old magic-link address delegates to this owner. `TenantActivityTypeCatalogProjectionHandler` remains the sole canonical catalog writer; introducing another physical key would require an explicit migration decision.
+
+Both fresh v7 index bootstrap paths inspect every direct legacy shard with bounded concurrency and refuse persisted rows, including empty, malformed and JSON-null rows. Refusal preserves legacy contents and pending recovery state. This conservative guard removes the need to assume an absent direct-shard layout; it does not inventory a deployment or authorize concurrent obsolete writers. Deployed inventory, certified migration and shared-rebuild acceptance remain required under Story 3.6.
+
 ## Current Scaffold Note
 
 `Hexalith.Projects` and `Hexalith.Works` are present as `references/` submodules in this workspace. The sole default Works checkout is `<workspace>/references/Hexalith.Works`; a repository-root `Hexalith.Works` checkout is forbidden, and `Hexalith.Timesheets/Hexalith.Works` must never be initialized. Their contract surfaces are verified by the stories that perform trust-bearing integration with those modules.

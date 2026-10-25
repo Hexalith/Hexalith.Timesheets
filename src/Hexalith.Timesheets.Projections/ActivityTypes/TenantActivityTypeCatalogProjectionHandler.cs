@@ -9,8 +9,8 @@ using Hexalith.Timesheets.Contracts.Events.ActivityTypes;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
-using Hexalith.Timesheets.Server.MagicLinks;
-using Hexalith.Timesheets.Server.Runtime;
+using Hexalith.Timesheets.Contracts.Models.ActivityTypes;
+using Hexalith.Timesheets.Contracts;
 
 using Microsoft.Extensions.Logging;
 
@@ -22,7 +22,7 @@ namespace Hexalith.Timesheets.Projections.ActivityTypes;
 /// scan: that scan only instantiates handlers exposing a parameterless constructor, which this
 /// store-injected handler deliberately does not.
 /// </remarks>
-[EventStoreDomain(TimesheetsEventStoreIntegration.DomainName)]
+[EventStoreDomain(TimesheetsDomain.Name)]
 public sealed class TenantActivityTypeCatalogProjectionHandler(
     IReadModelStore readModelStore,
     ILogger<TenantActivityTypeCatalogProjectionHandler>? logger = null) :
@@ -35,21 +35,21 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
     public static IReadOnlyList<ProjectionReadModelSlotDeclaration> ProjectionReadModelSlots { get; } =
     [
         new(
-            TimesheetsEventStoreIntegration.DomainName,
+            TimesheetsDomain.Name,
             TenantActivityTypeCatalogProjection.ProjectionName,
-            MagicLinkActivityTypeCatalogReadModelAddress.SlotName,
+            TenantActivityTypeCatalogReadModelAddress.SlotName,
             ProjectionReadModelSlotKind.Shared,
             declaresCanonicalWriter: true)
     ];
 
     /// <inheritdoc />
-    public string Domain => TimesheetsEventStoreIntegration.DomainName;
+    public string Domain => TimesheetsDomain.Name;
 
     /// <inheritdoc />
     public string ProjectionType => TenantActivityTypeCatalogProjection.ProjectionName;
 
     /// <inheritdoc />
-    public string RebuildStoreName => MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName;
+    public string RebuildStoreName => TenantActivityTypeCatalogReadModelAddress.StateStoreName;
 
     /// <inheritdoc />
     public async Task<DomainProjectionHandlerResult> ProjectAsync(
@@ -81,10 +81,10 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             _ = await ReadModelWritePolicy.UpdateAsync<ActivityTypeCatalogReadModel>(
                 readModelStore,
                 RebuildStoreName,
-                MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant),
+                TenantActivityTypeCatalogReadModelAddress.StateKey(tenant),
                 current => Guarded(() => Merge(current, aggregate, request.AggregateId, promoteCompleteLiveHistory: true)),
                 new ReadModelWriteContext(
-                    MagicLinkActivityTypeCatalogReadModelAddress.SlotName,
+                    TenantActivityTypeCatalogReadModelAddress.SlotName,
                     ProjectionType).WithEventDiagnostics(request.Events),
                 logger,
                 cancellationToken: cancellationToken).ConfigureAwait(false);
@@ -161,7 +161,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         cancellationToken.ThrowIfCancellationRequested();
 
         TenantReference tenant = new(identity.TenantId);
-        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant);
+        string key = TenantActivityTypeCatalogReadModelAddress.StateKey(tenant);
         ReadModelEntry<ActivityTypeCatalogReadModel> current = await readModelStore
             .GetAsync<ActivityTypeCatalogReadModel>(RebuildStoreName, key, cancellationToken)
             .ConfigureAwait(false);
@@ -352,7 +352,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(dispatchId);
-        if (!string.Equals(request.Domain, TimesheetsEventStoreIntegration.DomainName, StringComparison.Ordinal)
+        if (!string.Equals(request.Domain, TimesheetsDomain.Name, StringComparison.Ordinal)
             || string.IsNullOrWhiteSpace(request.TenantId)
             || string.IsNullOrWhiteSpace(request.AggregateId))
         {
@@ -363,7 +363,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
     private static void Validate(DomainSharedProjectionRebuildIdentity identity)
     {
         ArgumentNullException.ThrowIfNull(identity);
-        if (!string.Equals(identity.Domain, TimesheetsEventStoreIntegration.DomainName, StringComparison.Ordinal)
+        if (!string.Equals(identity.Domain, TimesheetsDomain.Name, StringComparison.Ordinal)
             || !string.Equals(identity.ProjectionType, TenantActivityTypeCatalogProjection.ProjectionName, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("The shared rebuild identity targets a different projection.");

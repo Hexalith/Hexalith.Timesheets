@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile and execute five independent NuGet-only consumers outside the repository."""
+"""Compile and execute six independent NuGet-only consumers outside the repository."""
 
 import argparse
 import hashlib
@@ -19,6 +19,12 @@ if (tenant.TenantId != "consumer") throw new InvalidOperationException("Tenant r
     "Client": ("Hexalith.Timesheets.Client.TimesheetsClientOptions", '''
 var options = new Hexalith.Timesheets.Client.TimesheetsClientOptions { Endpoint = new Uri("https://example.invalid") };
 if (options.Endpoint.Host != "example.invalid") throw new InvalidOperationException("Client options failed");'''),
+    "ReadModels": ("Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProjection", '''
+if (Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProjection.ShardKey(255)
+        != "timesheets:magic-links:token-hash-capability-index:v2:shard:FF"
+    || Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProjection.StateStoreName
+        != "timesheets-readmodels")
+    throw new InvalidOperationException("Read-model address compatibility failed");'''),
     "Server": ("Hexalith.Timesheets.Server.Authorization.TimesheetsAuthorizationDecision", '''
 var decision = Hexalith.Timesheets.Server.Authorization.TimesheetsAuthorizationDecision.Denied("consumer");
 if (decision.IsAuthorized || decision.Reason != "consumer") throw new InvalidOperationException("Authorization decision failed");'''),
@@ -76,7 +82,7 @@ def main(directory: Path) -> None:
         for package_id in sorted(EXPECTED_IDS):
             ET.SubElement(candidate, "package", pattern=package_id)
         # Exact ID mappings take precedence over the fallback wildcard, so these
-        # five IDs are eligible only from candidate, including transitive edges.
+        # six IDs are eligible only from candidate, including transitive edges.
         external = ET.SubElement(mappings, "packageSource", key="nuget.org")
         ET.SubElement(external, "package", pattern="*")
         ET.ElementTree(config).write(root / "NuGet.Config", encoding="utf-8", xml_declaration=True)

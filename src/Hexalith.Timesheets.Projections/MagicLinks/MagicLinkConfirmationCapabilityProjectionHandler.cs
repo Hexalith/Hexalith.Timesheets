@@ -14,12 +14,12 @@ using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks;
-using Hexalith.Timesheets.Server.Runtime;
+using Hexalith.Timesheets.Contracts;
 
 namespace Hexalith.Timesheets.Projections.MagicLinks;
 
 /// <summary>Materializes token-free capability displays through the shared epoch fence.</summary>
-[EventStoreDomain(TimesheetsEventStoreIntegration.DomainName)]
+[EventStoreDomain(TimesheetsDomain.Name)]
 public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
     IAsyncDomainSharedProjectionScratchCleanupHandler,
     IAsyncDomainSharedProjectionStreamedOwnerHandler,
@@ -42,7 +42,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
     public static IReadOnlyList<ProjectionReadModelSlotDeclaration> ProjectionReadModelSlots { get; } =
     [
         new(
-            TimesheetsEventStoreIntegration.DomainName,
+            TimesheetsDomain.Name,
             MagicLinkConfirmationCapabilityProjection.ProjectionName,
             MagicLinkCapabilityReadModelAddress.SlotName,
             ProjectionReadModelSlotKind.Shared,
@@ -50,7 +50,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
     ];
 
     /// <inheritdoc />
-    public string Domain => TimesheetsEventStoreIntegration.DomainName;
+    public string Domain => TimesheetsDomain.Name;
 
     /// <inheritdoc />
     public string ProjectionType => MagicLinkConfirmationCapabilityProjection.ProjectionName;
@@ -1325,7 +1325,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
     private static void Validate(ProjectionRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (request.Domain != TimesheetsEventStoreIntegration.DomainName
+        if (request.Domain != TimesheetsDomain.Name
             || string.IsNullOrWhiteSpace(request.TenantId)
             || string.IsNullOrWhiteSpace(request.AggregateId)
             || request.Events is null)
@@ -1337,7 +1337,7 @@ public sealed class MagicLinkConfirmationCapabilityProjectionHandler :
     private static void Validate(DomainSharedProjectionRebuildIdentity identity)
     {
         ArgumentNullException.ThrowIfNull(identity);
-        if (identity.Domain != TimesheetsEventStoreIntegration.DomainName
+        if (identity.Domain != TimesheetsDomain.Name
             || identity.ProjectionType != MagicLinkConfirmationCapabilityProjection.ProjectionName)
         {
             throw new InvalidOperationException("The rebuild identity targets another projection.");

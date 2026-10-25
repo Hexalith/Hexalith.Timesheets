@@ -2,6 +2,8 @@
 
 Hexalith Timesheets is a domain module for trusted time capture, approval, confirmation, reporting, and finance export.
 
+Shared read-model DTOs and addresses live in `Contracts`. The `ReadModels` library holds Timesheets-specific SDK index helpers and stored payload wrappers, and is consumed by both `Server` and `Projections`. Projections has no Server dependency. Existing CLR namespaces are retained through Server type forwarding; persisted payload identities and state keys remain compatible. See the [boundary decision record](docs/boundary-decision-record.md).
+
 ## Local Codex Hooks
 
 For BMAD Loop orchestration with Codex, use Codex CLI 0.139 or newer and install `bmad-loop` using its [installation guide](https://github.com/bmad-code-org/bmad-loop/blob/main/docs/setup-guide.md). Run this command from each checkout root:

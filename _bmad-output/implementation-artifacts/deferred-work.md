@@ -180,9 +180,11 @@ archived: 2026-10-25
 origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
 location: n/a
 reason: The tenant-wide Activity Type catalog is persisted under the magic-link-scoped key `timesheets:magic-links:activity-type-catalog:{tenant}:v1` while `TenantActivityTypeCatalogProjectionHandler` declares itself canonical writer for the whole tenant catalog, inviting a second divergent writer later. Changing a persisted state key is a data migration, not a direct correction.
-status: open
+status: done 2026-10-25
 
 evidence: The tenant-wide Activity Type catalog is persisted under the magic-link-scoped key `timesheets:magic-links:activity-type-catalog:{tenant}:v1` while `TenantActivityTypeCatalogProjectionHandler` declares itself canonical writer for the whole tenant catalog, inviting a second divergent writer later. Changing a persisted state key is a data migration, not a direct correction.
+resolution_2026_10_25: Canonical tenant catalog ownership now lives in Contracts.Models.ActivityTypes.TenantActivityTypeCatalogReadModelAddress. Writer and loader use it; the old Server facade delegates. The exact v1 physical key/store/slot remain compatibility contracts, avoiding an unapproved data migration. Evidence: six-suite implementation run (2640 passed, five declared skips, zero failures/errors), followed by the passing post-review build, affected bootstrap/release checks and six isolated NuGet consumers; see `tests/five-read-model-boundaries/README.md`.
+resolution_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary-deferrals.md
 
 ### DW-27: Story artifact and agent context are stale after this change: `3-6-…md` Completion Notes still claim the index "has no live `IDomainProjectionHandler` wiring" and that the loader folds the catalog from a domain-wide (`aggregateId: null`) read — both now false; the File List omits all eight new files; and the CLAUDE.md "Known pitfalls" entry about the unwired `MagicLinkTokenHashCapabilityIndexProjection` is obsolete. The fix edits spec and agent-context files.
 
@@ -209,10 +211,12 @@ origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implemen
 location: n/a
 source_spec: none
 reason: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal; code-review decision 3 resolved to option A. `Hexalith.Timesheets.Projections` references `Hexalith.Timesheets.Server` and `Hexalith.EventStore.DomainService` to reach four shapes, inverting layering and satisfying `Kernel_projects_do_not_reference_runtime_hosting_ui_or_direct_persistence_packages` in letter only because it string-matches direct `Include` values.
-status: open
+status: done 2026-10-25
 
 summary: Move the shared magic-link read-model and address shapes to Hexalith.Timesheets.Contracts and drop the Projections to Server project reference.
 evidence: Split from the Story 3.6 remediation intent (2026-09-14) as an independently shippable goal; code-review decision 3 resolved to option A. `Hexalith.Timesheets.Projections` references `Hexalith.Timesheets.Server` and `Hexalith.EventStore.DomainService` to reach four shapes, inverting layering and satisfying `Kernel_projects_do_not_reference_runtime_hosting_ui_or_direct_persistence_packages` in letter only because it string-matches direct `Include` values. Moves `MagicLinkTokenHashCapabilityIndexEntry`, `MagicLinkTokenHashCapabilityIndexReadModel`, `MagicLinkTokenHashCapabilityIndexProjection`, and `MagicLinkActivityTypeCatalogReadModelAddress`.
+resolution_2026_10_25: Pure index DTOs and policy options moved to Contracts; the now SDK-bound index helper, reader/builder and stored payload wrappers moved to shared ReadModels. Projections no longer references Server. All 26 relocated public types retain their full names with Server type forwarding; the old four-file proposal was expanded to cover current dependencies. Evidence: six-suite implementation run (2640 passed, five declared skips, zero failures/errors), followed by the passing post-review build, affected bootstrap/release checks and six isolated NuGet consumers; see `tests/five-read-model-boundaries/README.md`.
+resolution_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary-deferrals.md
 
 ### DW-31: Bind the EventStore gateway target and API token through IConfiguration/options instead of process environment variables at registration time.
 
@@ -248,10 +252,12 @@ origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implemen
 location: DependencyDirectionTests.cs:111-130
 source_spec: _bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md
 reason: `DependencyDirectionTests.cs:111-130` reads only direct `Include` attribute values via `ReadIncludeValues`, so the new `Hexalith.EventStore.DomainService` project reference — which carries `FrameworkReference Microsoft.AspNetCore.App` and `PackageReference Dapr.AspNetCore` — enters the kernel closure with `Kernel_projects_do_not_reference_runtime_hosting_ui_or_direct_persistence_packages` still green. Ledger decision 3 (move the four shared shapes to `Hexalith.Timesheets.Contracts` and drop the `Projections`→`Server` reference) removes the leak and is the better fix than adding transitive-closure checks to the rule.
-status: open
+status: done 2026-10-25
 
 summary: The kernel-reference fitness rule cannot observe what Hexalith.Timesheets.Projections pulls in transitively.
 evidence: `DependencyDirectionTests.cs:111-130` reads only direct `Include` attribute values via `ReadIncludeValues`, so the new `Hexalith.EventStore.DomainService` project reference — which carries `FrameworkReference Microsoft.AspNetCore.App` and `PackageReference Dapr.AspNetCore` — enters the kernel closure with `Kernel_projects_do_not_reference_runtime_hosting_ui_or_direct_persistence_packages` still green. Ledger decision 3 (move the four shared shapes to `Hexalith.Timesheets.Contracts` and drop the `Projections`→`Server` reference) removes the leak and is the better fix than adding transitive-closure checks to the rule.
+resolution_2026_10_25: Static and evaluated Debug/source and Release/package tests now prohibit Server in the owned Projections/ReadModels closure. The boundary record explicitly retains the required EventStore DomainService composition and its intentional platform runtime closure; removing Server is not claimed to remove that SDK closure. Evidence: six-suite implementation run (2640 passed, five declared skips, zero failures/errors), followed by the passing post-review build, affected bootstrap/release checks and six isolated NuGet consumers; see `tests/five-read-model-boundaries/README.md`.
+resolution_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary-deferrals.md
 
 ### DW-36: The repeated agent-context finding is consolidated into the canonical open 2026-09-16 Story 3.6 entry below.
 
@@ -277,12 +283,14 @@ origin: migrated from legacy ledger ("Deferred from: bmad-build scope split of s
 location: n/a
 source_spec: none
 reason: Split from the Story 3.6 remaining-work intent (2026-09-15); the user chose to ship projection/loader correctness plus its falsifying tests first. Re-verified open at `fe82c7d`: `Hexalith.Timesheets.Projections.csproj:13,16` still reference `Hexalith.Timesheets.Server` and `Hexalith.EventStore.DomainService`.
-status: open
+status: done 2026-10-25
 
 <a id="deferred-from-bmad-build-scope-split-of-story-36-remaining-work-2026-09-15"></a>
 legacy_section: Deferred from: bmad-build scope split of story 3.6 remaining work (2026-09-15)
 summary: Move the shared magic-link read-model and address shapes to Hexalith.Timesheets.Contracts and drop the Projections to Server project reference.
 evidence: Split from the Story 3.6 remaining-work intent (2026-09-15); the user chose to ship projection/loader correctness plus its falsifying tests first. Re-verified open at `fe82c7d`: `Hexalith.Timesheets.Projections.csproj:13,16` still reference `Hexalith.Timesheets.Server` and `Hexalith.EventStore.DomainService`. Carries the earlier decision-3 entry forward unchanged.
+resolution_2026_10_25: Resolved together with DW-30: Projections consumes Contracts and ReadModels independently of Server, including the SDK-dependent helpers and payload wrappers added since the original four-shape proposal. Forwarding, persisted shape and both dependency-mode checks pass. Evidence: six-suite implementation run (2640 passed, five declared skips, zero failures/errors), followed by the passing post-review build, affected bootstrap/release checks and six isolated NuGet consumers; see `tests/five-read-model-boundaries/README.md`.
+resolution_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary-deferrals.md
 
 ### DW-40: Bind the EventStore gateway target and API token through IConfiguration/options instead of process environment variables at registration time.
 
@@ -1073,12 +1081,14 @@ origin: migrated from legacy ledger ("Deferred from: final review of Story 3.6 m
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-materialize-magic-link-read-models.md`
 reason: The bootstrap checks selected legacy shards and the direct v1 single root. No released direct-shard writer is established here; deployed key-layout inspection or historical writer evidence would settle whether a direct shard can be present.
-status: open
+status: done 2026-10-25
 
 <a id="deferred-from-final-review-of-story-36-materialization-2026-10-13"></a>
 legacy_section: Deferred from: final review of Story 3.6 materialization (2026-10-13)
 summary: Verify whether any deployed direct legacy shard must be rejected before v7 bootstrap.
 evidence: The bootstrap checks selected legacy shards and the direct v1 single root. No released direct-shard writer is established here; deployed key-layout inspection or historical writer evidence would settle whether a direct shard can be present.
+resolution_2026_10_25: Both fresh v7 bootstrap paths now conservatively refuse any persisted direct legacy shard, including empty, malformed and JSON-null rows. Forty passing regressions cover both paths, boundary shards, selected-shard early return, failures/cancellation, retry, bounded concurrency and preserved legacy/recovery state. No deployed layout was inventoried; deployed inventory and obsolete-writer fencing remain separate open acceptance under DW-132 and Story 3.6. Evidence: six-suite implementation run (2640 passed, five declared skips, zero failures/errors), followed by the passing post-review build, affected bootstrap/release checks and six isolated NuGet consumers; see `tests/five-read-model-boundaries/README.md`.
+resolution_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary-deferrals.md
 
 ### DW-141: Recover a committed external recording when its submit response is lost.
 
@@ -1454,3 +1464,12 @@ status: open
 legacy_section: Deferred from: integrated upstream validation of five build and hosting deferrals (2026-10-24)
 summary: Reconcile the 15 incoming EventStore fixture findings in the tracked reusable-content secret guard without weakening its checks.
 evidence: Integrated baseline `6e927633d920eafcefa2635a124810b541264489` contains all 15 reported lines unchanged in Admin UI, PayloadProtection and Sample test fixtures. The full Server executable completed 5,757 tests with one failed guard; the owned privacy-test literal was then replaced by a generated per-test marker, and focused scanning retains only the 15 incoming lines. Exact paths, baseline fingerprints and final broad/focused results are retained by `tests/five-build-and-hosting-deferrals.md` and its dated receipts. Owner: Hexalith.EventStore test/security maintainers. This is a pre-existing integrated-baseline verification blocker, not a passing broad gate; do not add scanner exclusions merely to suppress it.
+
+### DW-190: Qualify the combined fresh-v7 bootstrap read cost against its delivery deadline.
+
+status: open
+origin: review of five read-model boundary deferrals, 2026-10-25
+source_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary-deferrals.md
+location: src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexProjectionHandler.cs
+reason: Unverified medium latency risk: refusing direct legacy layouts adds a direct single-root and 256 bounded shard reads before selected-layout inspection. Peak concurrency/cancellation are verified, but no current deployed combined-path latency acceptance is established.
+evidence: Blind review B10. Measure the combined direct and selected bootstrap path with controlled read delays and the actual delivery cancellation/deadline, then include it in current-graph runtime qualification. No timeout failure has been demonstrated and no runtime acceptance is claimed; deployment inventory and obsolete-writer fencing remain required.

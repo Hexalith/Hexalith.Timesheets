@@ -72,10 +72,21 @@ class InventoryTests(unittest.TestCase):
         return directory
 
     def test_exact_inventory_passes(self):
-        self.assertEqual(len(common.load_manifest(self.manifest, self.root)), 5)
+        self.assertEqual(len(common.load_manifest(self.manifest, self.root)), 6)
         version, packages = common.inventory(self.archives(), self.rows)
         self.assertEqual(version, "1.2.3")
         self.assertEqual(packages.keys(), common.EXPECTED_IDS)
+
+    def test_current_manifest_and_consumers_include_required_readmodels_package(self):
+        self.assertEqual({row["id"] for row in common.load_manifest()}, common.EXPECTED_IDS)
+        self.assertIn("Hexalith.Timesheets.ReadModels", common.EXPECTED_IDS)
+        self.assertEqual({"Hexalith.Timesheets." + area for area in consumer.SURFACES}, common.EXPECTED_IDS)
+
+    def test_omitting_readmodels_from_manifest_refuses(self):
+        self.rows = [row for row in self.rows if row["id"] != "Hexalith.Timesheets.ReadModels"]
+        self.save()
+        with self.assertRaisesRegex(ValueError, "exactly six"):
+            common.load_manifest(self.manifest, self.root)
 
     def test_duplicate_json_properties_refuse(self):
         self.manifest.write_text('{"packages": [], "packages": []}')
@@ -88,7 +99,7 @@ class InventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Duplicate"):
             common.load_manifest(self.manifest, self.root)
 
-    def test_host_cannot_become_sixth_or_replacement_package(self):
+    def test_host_cannot_become_seventh_or_replacement_package(self):
         self.rows[-1] = {"id": "Hexalith.Timesheets.AppHost", "project": "src/host.csproj"}
         self.save()
         with self.assertRaisesRegex(ValueError, "Forbidden"):
@@ -103,13 +114,13 @@ class InventoryTests(unittest.TestCase):
     def test_missing_archive_refuses(self):
         directory = self.archives()
         next(directory.glob("*.nupkg")).unlink()
-        with self.assertRaisesRegex(ValueError, "exactly five"):
+        with self.assertRaisesRegex(ValueError, "exactly six"):
             common.inventory(directory, self.rows)
 
     def test_extra_archive_refuses(self):
         directory = self.archives()
         (directory / "unshipped.nupkg").write_bytes(b"")
-        with self.assertRaisesRegex(ValueError, "exactly five"):
+        with self.assertRaisesRegex(ValueError, "exactly six"):
             common.inventory(directory, self.rows)
 
     def test_expected_version_mismatch_refuses(self):
@@ -303,7 +314,7 @@ class PrePublicationTests(unittest.TestCase):
             "HEXALITH_RELEASE_ENVIRONMENT": "production", "HEXALITH_RELEASE_SOURCE_BRANCH": "main",
             "HEXALITH_RELEASE_SOURCE_CI_WORKFLOW": "ci.yml",
             "HEXALITH_RELEASE_PACKAGE_MANIFEST": "tools/release-packages.json",
-            "HEXALITH_RELEASE_EXPECTED_PACKAGE_COUNT": "5", "HEXALITH_RELEASE_REQUIRE_AUTHORITY": "false",
+            "HEXALITH_RELEASE_EXPECTED_PACKAGE_COUNT": "6", "HEXALITH_RELEASE_REQUIRE_AUTHORITY": "false",
         }
         for mock in (patch.dict(os.environ, values, clear=True), patch.object(preflight, "MANIFEST", self.manifest),
                      patch.object(preflight, "IDENTITY", self.identity), patch.object(preflight, "check_source", return_value=True),
@@ -319,6 +330,12 @@ class PrePublicationTests(unittest.TestCase):
 
     def test_changed_builds_identity_prevents_identity_creation(self):
         os.environ["HEXALITH_BUILDS_EXECUTION_SHA"] = "b" * 40
+        with self.assertRaisesRegex(ValueError, "approved Timesheets contract"):
+            preflight.version_preflight("verify", "1.2.3")
+        self.assertFalse(self.identity.exists())
+
+    def test_stale_five_package_count_prevents_identity_creation(self):
+        os.environ["HEXALITH_RELEASE_EXPECTED_PACKAGE_COUNT"] = "5"
         with self.assertRaisesRegex(ValueError, "approved Timesheets contract"):
             preflight.version_preflight("verify", "1.2.3")
         self.assertFalse(self.identity.exists())
@@ -420,9 +437,9 @@ class PublicationTests(unittest.TestCase):
         with patch.object(verification, "published_versions", side_effect=lambda package: ["1.0.1"] if package == first else []):
             result = verification.verify("1.0.1", attempts=1)
         self.assertFalse(result["complete"])
-        self.assertEqual(sum(v == "missing" for v in result["packages"].values()), 4)
+        self.assertEqual(sum(v == "missing" for v in result["packages"].values()), 5)
 
-    def test_all_five_exact_versions_pass(self):
+    def test_all_six_exact_versions_pass(self):
         with patch.object(verification, "published_versions", return_value=["1.0.1"]):
             self.assertTrue(verification.verify("1.0.1", attempts=1)["complete"])
 
@@ -452,10 +469,10 @@ class PublisherBoundaryTests(unittest.TestCase):
             mock.start()
             self.addCleanup(mock.stop)
 
-    def test_unchanged_candidate_invokes_exactly_five_pushes(self):
+    def test_unchanged_candidate_invokes_exactly_six_pushes(self):
         with patch.object(publisher.subprocess, "run", return_value=SimpleNamespace(returncode=0)) as push:
             publisher.main("1.2.3")
-        self.assertEqual(push.call_count, 5)
+        self.assertEqual(push.call_count, 6)
         for call, row in zip(push.call_args_list, self.rows):
             self.assertEqual(Path(call.args[0][3]).name, row['id'] + ".1.2.3.nupkg")
             self.assertNotIn("--skip-duplicate", call.args[0])
@@ -551,11 +568,11 @@ class PublicationCliTests(unittest.TestCase):
             self.assertEqual(set(evidence["packages"]), common.EXPECTED_IDS)
             return evidence
 
-    def test_actual_cli_partial_publication_fails_and_retains_all_five_results(self):
+    def test_actual_cli_partial_publication_fails_and_retains_all_six_results(self):
         missing = "Hexalith.Timesheets.Testing"
         evidence = self.run_retained_failure(lambda package: [] if package == missing else ["1.0.1"])
         self.assertEqual(evidence["packages"][missing], "missing")
-        self.assertEqual(list(evidence["packages"].values()).count("published"), 4)
+        self.assertEqual(list(evidence["packages"].values()).count("published"), 5)
 
     def test_exhausted_protocol_failure_retains_per_package_evidence(self):
         failed = "Hexalith.Timesheets.Testing"
@@ -567,7 +584,7 @@ class PublicationCliTests(unittest.TestCase):
             evidence = self.run_retained_failure(lookup)
         self.assertEqual(request.call_count, 18)  # Six publication polls, each with three transport attempts.
         self.assertIn("unavailable", evidence["packages"][failed])
-        self.assertEqual(list(evidence["packages"].values()).count("published"), 4)
+        self.assertEqual(list(evidence["packages"].values()).count("published"), 5)
 
 
 class ConsumerRestoreTests(unittest.TestCase):
@@ -614,6 +631,11 @@ class ConsumerRestoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Wrong restored candidate version"):
             self.validate()
 
+    def test_wrong_transitive_readmodels_candidate_version_refuses(self):
+        self.assets["libraries"]["Hexalith.Timesheets.ReadModels/1.2.2"] = {"type": "package"}
+        with self.assertRaisesRegex(ValueError, "Wrong restored candidate version"):
+            self.validate()
+
 
 class RestoreBackedValidatorTests(unittest.TestCase):
     def setUp(self):
@@ -644,6 +666,19 @@ class RestoreBackedValidatorTests(unittest.TestCase):
             return validator.validate(self.directory)
 
     def test_restore_backed_exact_dependency_versions_pass(self):
+        self.assertEqual(self.validate()[0], "1.2.3")
+
+    def test_server_dependency_on_shipped_readmodels_passes(self):
+        row = next(row for row in self.fixture.rows if row["id"] == "Hexalith.Timesheets.Server")
+        assets_path = (self.fixture.root / row["project"]).parent / "obj/project.assets.json"
+        assets = json.loads(assets_path.read_text())
+        assets["projectFileDependencyGroups"]["net10.0"].append("Hexalith.Timesheets.ReadModels >= 1.2.3")
+        assets["libraries"]["Hexalith.Timesheets.ReadModels/1.2.3"] = {"type": "project"}
+        assets_path.write_text(json.dumps(assets))
+        self.fixture.mutate_spec(self.directory / "Hexalith.Timesheets.Server.1.2.3.nupkg",
+                                 lambda text: text.replace('</group>',
+                                     '<dependency id="Hexalith.Timesheets.ReadModels" version="1.2.3" /></group>'))
+        self.ledger()
         self.assertEqual(self.validate()[0], "1.2.3")
 
     def test_underdeclared_restored_dependency_refuses(self):

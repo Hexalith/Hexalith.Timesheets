@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Projections;
+using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 
 namespace Hexalith.Timesheets.Server.MagicLinks;
@@ -35,7 +36,7 @@ public static class MagicLinkTokenHashCapabilityIndexProjection
 
     /// <summary>Gets the fixed global selection scope shared by all tenant slices.</summary>
     public static SharedProjectionScope GlobalScope()
-        => new(StateStoreName, "global-index", "timesheets", ProjectionName, [OrdinaryWriterId])
+        => new(StateStoreName, "global-index", TimesheetsDomain.Name, ProjectionName, [OrdinaryWriterId])
         {
             CopyOnWrite = true
         };

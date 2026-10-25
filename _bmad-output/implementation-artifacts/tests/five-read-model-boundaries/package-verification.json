@@ -1,0 +1,58 @@
+{
+  "base": "/tmp/timesheets-package-verification-62132hs9",
+  "checkout": "/tmp/timesheets-package-verification-62132hs9/source",
+  "version": "0.0.0-ci-read-model-boundaries",
+  "root": "/home/administrator/projects/hexalith/timesheets",
+  "results": [
+    {
+      "name": "restore",
+      "command": [
+        "dotnet",
+        "restore",
+        "Hexalith.Timesheets.slnx",
+        "-p:Configuration=Release",
+        "-p:UseHexalithProjectReferences=false",
+        "-p:MinVerVersionOverride=0.0.0-ci-read-model-boundaries",
+        "-m:1",
+        "/nr:false"
+      ],
+      "exit_code": 0,
+      "seconds": 2.907
+    },
+    {
+      "name": "pack",
+      "command": [
+        "python3",
+        "scripts/pack-release-packages.py",
+        "/tmp/timesheets-package-verification-62132hs9/packages",
+        "0.0.0-ci-read-model-boundaries"
+      ],
+      "exit_code": 0,
+      "seconds": 14.625
+    },
+    {
+      "name": "validate",
+      "command": [
+        "python3",
+        "scripts/validate-nuget-packages.py",
+        "/tmp/timesheets-package-verification-62132hs9/packages"
+      ],
+      "exit_code": 0,
+      "seconds": 0.049
+    },
+    {
+      "name": "consumers",
+      "command": [
+        "python3",
+        "scripts/validate-consumer-package-references.py",
+        "/tmp/timesheets-package-verification-62132hs9/packages"
+      ],
+      "exit_code": 0,
+      "seconds": 20.807
+    }
+  ],
+  "source_baseline": "6fe2d21c132a4dcc286fdeb0d6b6e84db50c3c77",
+  "verified_source_files": 491,
+  "source_manifest_sha256": "e3ce2e6ba5e5495a9e454a8a82dbd12ac0684bf73d8f01465f253b715f4f4c6c",
+  "source_manifest": "package-source.sha256.gz"
+}

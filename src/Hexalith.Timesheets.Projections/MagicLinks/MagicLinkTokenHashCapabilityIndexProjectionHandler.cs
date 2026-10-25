@@ -11,7 +11,7 @@ using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.DomainService;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Server.MagicLinks;
-using Hexalith.Timesheets.Server.Runtime;
+using Hexalith.Timesheets.Contracts;
 
 using Microsoft.Extensions.Logging;
 
@@ -23,7 +23,7 @@ namespace Hexalith.Timesheets.Projections.MagicLinks;
 /// scan: that scan only instantiates handlers exposing a parameterless constructor, which this
 /// store-injected handler deliberately does not.
 /// </remarks>
-[EventStoreDomain(TimesheetsEventStoreIntegration.DomainName)]
+[EventStoreDomain(TimesheetsDomain.Name)]
 public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     IReadModelStore readModelStore,
     ILoggerFactory? loggerFactory = null,
@@ -48,7 +48,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     public static IReadOnlyList<ProjectionReadModelSlotDeclaration> ProjectionReadModelSlots { get; } =
     [
         new(
-            TimesheetsEventStoreIntegration.DomainName,
+            TimesheetsDomain.Name,
             MagicLinkTokenHashCapabilityIndexProjection.ProjectionName,
             SlotName,
             ProjectionReadModelSlotKind.Shared,
@@ -56,7 +56,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     ];
 
     /// <inheritdoc />
-    public string Domain => TimesheetsEventStoreIntegration.DomainName;
+    public string Domain => TimesheetsDomain.Name;
 
     /// <inheritdoc />
     public string ProjectionType => MagicLinkTokenHashCapabilityIndexProjection.ProjectionName;
@@ -317,13 +317,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
         if (single.Value is not null)
             throw new SharedProjectionReadUnavailableException(
                 new InvalidOperationException("A selected legacy single-root index requires migration."));
-        ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> direct = await readModelStore
-            .GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(RebuildStoreName,
-                MagicLinkTokenHashCapabilityIndexProjection.StateKey, cancellationToken)
-            .ConfigureAwait(false);
-        if (direct.Value is not null)
-            throw new SharedProjectionReadUnavailableException(
-                new InvalidOperationException("A direct legacy single-root index requires migration."));
+        await EnsureNoDirectLegacyIndexAsync(cancellationToken).ConfigureAwait(false);
         // The first v7 issuance must inspect every possible legacy shard before
         // bootstrapping. Bound the concurrent state reads so this check fits the
         // live projection deadline without flooding the Dapr state store.
@@ -342,6 +336,45 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
             if (existing.Any(entry => entry.Value is not null)) return true;
         }
         return false;
+    }
+
+    // Direct v1/v2 rows are outside the selected epoch. Their existence, including an empty
+    // value or an ETag-only row, requires explicit recovery before any fresh v7 selection.
+    private async Task EnsureNoDirectLegacyIndexAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> single = await readModelStore
+                .GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(RebuildStoreName,
+                    MagicLinkTokenHashCapabilityIndexProjection.StateKey, cancellationToken)
+                .ConfigureAwait(false);
+            if (single.Value is not null || single.ETag is not null)
+                throw new SharedProjectionReadUnavailableException(
+                    new InvalidOperationException("A direct legacy index requires a certified full migration."));
+
+            const int shardReadParallelism = 16;
+            for (int first = 0; first < MagicLinkTokenHashCapabilityIndexProjection.ShardCount;
+                first += shardReadParallelism)
+            {
+                Task<ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel>>[] reads =
+                    [.. Enumerable.Range(first, Math.Min(shardReadParallelism,
+                            MagicLinkTokenHashCapabilityIndexProjection.ShardCount - first))
+                        .Select(async shard => await readModelStore.GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(
+                            RebuildStoreName, MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard),
+                            cancellationToken).ConfigureAwait(false))];
+                ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel>[] existing =
+                    await Task.WhenAll(reads).ConfigureAwait(false);
+                if (existing.Any(entry => entry.Value is not null || entry.ETag is not null))
+                    throw new SharedProjectionReadUnavailableException(
+                        new InvalidOperationException("A direct legacy shard requires a certified full migration."));
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+        catch (SharedProjectionReadUnavailableException) { throw; }
+        catch (Exception exception)
+        {
+            throw new SharedProjectionReadUnavailableException(exception);
+        }
     }
 
     /// <inheritdoc />
@@ -582,13 +615,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
             if (!singleRoot.IsAvailable || singleRoot.Value is not null)
                 throw new SharedProjectionReadUnavailableException(
                     new InvalidOperationException("A legacy single-root index requires a certified full migration."));
-            ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> directSingleRoot = await readModelStore
-                .GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(RebuildStoreName,
-                    MagicLinkTokenHashCapabilityIndexProjection.StateKey, cancellationToken)
-                .ConfigureAwait(false);
-            if (directSingleRoot.Value is not null)
-                throw new SharedProjectionReadUnavailableException(
-                    new InvalidOperationException("A direct legacy index requires a certified full migration."));
+            await EnsureNoDirectLegacyIndexAsync(cancellationToken).ConfigureAwait(false);
             for (int shard = 0; shard < MagicLinkTokenHashCapabilityIndexProjection.ShardCount; shard++)
             {
                 SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexReadModel> legacy = await coordinator
@@ -912,7 +939,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentException.ThrowIfNullOrWhiteSpace(dispatchId);
-        if (!string.Equals(request.Domain, TimesheetsEventStoreIntegration.DomainName, StringComparison.Ordinal)
+        if (!string.Equals(request.Domain, TimesheetsDomain.Name, StringComparison.Ordinal)
             || string.IsNullOrWhiteSpace(request.TenantId)
             || string.IsNullOrWhiteSpace(request.AggregateId))
         {
@@ -923,7 +950,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
     private static void Validate(DomainSharedProjectionRebuildIdentity identity)
     {
         ArgumentNullException.ThrowIfNull(identity);
-        if (!string.Equals(identity.Domain, TimesheetsEventStoreIntegration.DomainName, StringComparison.Ordinal)
+        if (!string.Equals(identity.Domain, TimesheetsDomain.Name, StringComparison.Ordinal)
             || !string.Equals(identity.ProjectionType, MagicLinkTokenHashCapabilityIndexProjection.ProjectionName, StringComparison.Ordinal))
         {
             throw new InvalidOperationException("The shared rebuild identity targets a different projection.");
