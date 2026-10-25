@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 
 using Hexalith.EventStore.Client.Gateway;
+using Hexalith.EventStore.Client.Handlers;
 using Hexalith.EventStore.Client.Discovery;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Commands;
@@ -61,6 +62,147 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
     private static readonly DateTimeOffset ObservedAtUtc = new(2026, 6, 19, 13, 30, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
+    [Theory]
+    [InlineData("contributor")]
+    [InlineData("target")]
+    [InlineData("activity-type")]
+    [InlineData("activity-scope")]
+    public async Task CorrectedScopeChangesRefuseTheOldConfirmationLinkWithoutChangingHistory(string changedScope)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"capability-corrected-scope-{changedScope}");
+        var entryId = new TimeEntryId($"entry-corrected-scope-{changedScope}");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        StreamReadEvent seed = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Single();
+        var recorded = JsonSerializer.Deserialize<TimeEntryRecorded>(seed.Payload, JsonOptions)!;
+        object[] history = ConfirmationLifecycleHistory(recorded, approved: true, corrected: true);
+        var correction = (TimeEntryApprovedCorrected)history[^1];
+        TimeEntryCorrectionValues values = correction.CorrectedValues;
+        values = changedScope switch
+        {
+            "contributor" => values with { Contributor = new("corrected-party") },
+            "target" => values with { Target = TimeEntryTargetReference.ForProject(new("corrected-project")) },
+            "activity-type" => values with { ActivityTypeId = new("corrected-activity") },
+            "activity-scope" => values with { ActivityTypeScope = ActivityTypeScope.Project },
+            _ => throw new InvalidOperationException()
+        };
+        history[^1] = correction with { CorrectedValues = values };
+        DomainStateReplay.Rehydrate<TimeEntryState>(history).ShouldNotBeNull().CorrectionState
+            .ShouldBe(TimeEntryCorrectionState.Corrected);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value, history.Select((item, index) => seed with
+        {
+            SequenceNumber = index + 1,
+            MessageId = $"corrected-scope-event-{index + 1}",
+            EventTypeName = item.GetType().FullName!,
+            Payload = JsonSerializer.SerializeToUtf8Bytes(item, JsonOptions)
+        }).ToArray());
+        StreamReadEvent[] before = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+
+        using HttpResponseMessage display = await client.GetAsync(
+            $"/api/timesheets/magic-links/confirm?t={ValidConfirmToken()}", TestContext.Current.CancellationToken);
+        using HttpResponseMessage submit = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}", new ConfirmTimeThroughMagicLink(),
+            TestContext.Current.CancellationToken);
+        using HttpResponseMessage unknown = await client.GetAsync(
+            "/api/timesheets/magic-links/confirm?t=unknown-corrected-scope", TestContext.Current.CancellationToken);
+        CapturedFailure baseline = await CaptureFailureAsync(unknown, "unknown", "unknown-corrected-scope");
+        foreach (HttpResponseMessage response in new[] { display, submit })
+        {
+            CapturedFailure denial = await CaptureFailureAsync(response, changedScope, ValidConfirmToken());
+            denial.NormalizedBody.ShouldBe(baseline.NormalizedBody);
+            denial.Headers.ShouldBe(baseline.Headers);
+        }
+        factory.Gateway.SubmissionCount.ShouldBe(0);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).ShouldBe(before);
+    }
+
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public async Task ConfirmationAfterApprovalOrCorrectionPreservesLifecycleAndPersistedEvidence(bool approved, bool corrected)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"capability-lifecycle-{approved}-{corrected}");
+        var entryId = new TimeEntryId($"entry-lifecycle-{approved}-{corrected}");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, entryId, deactivateActivityType: true);
+        StreamReadEvent seed = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Single();
+        TimeEntryRecorded recorded = JsonSerializer.Deserialize<TimeEntryRecorded>(seed.Payload, JsonOptions)!;
+        object[] history = ConfirmationLifecycleHistory(recorded, approved, corrected);
+        factory.Gateway.WithStream(Tenant().TenantId, entryId.Value, history.Select((item, index) => seed with
+        {
+            SequenceNumber = index + 1,
+            MessageId = $"lifecycle-event-{index + 1}",
+            EventTypeName = item.GetType().FullName!,
+            Payload = JsonSerializer.SerializeToUtf8Bytes(item, JsonOptions)
+        }).ToArray());
+        TimeEntryState before = DomainStateReplay.Rehydrate<TimeEntryState>(history)!;
+
+        using HttpResponseMessage display = await client.GetAsync(
+            $"/api/timesheets/magic-links/confirm?t={ValidConfirmToken()}", TestContext.Current.CancellationToken);
+        using HttpResponseMessage submit = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+
+        display.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await display.Content.ReadFromJsonAsync<MagicLinkConfirmationDisplayResponse>(JsonOptions,
+            TestContext.Current.CancellationToken)).ShouldNotBeNull().DurationMinutes.ShouldBe(corrected ? 75 : 60);
+        submit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        stored.Length.ShouldBe(history.Length + 2);
+        StoredMagicLinkUsed used = JsonSerializer.Deserialize<StoredMagicLinkUsed>(stored[^2].Payload, JsonOptions)!;
+        StoredTimeEntryConfirmed confirmed = JsonSerializer.Deserialize<StoredTimeEntryConfirmed>(stored[^1].Payload, JsonOptions)!;
+        object[] confirmedHistory = [.. history, used, confirmed];
+        TimeEntryState after = DomainStateReplay.Rehydrate<TimeEntryState>(confirmedHistory)!;
+        after.ApprovalState.ShouldBe(before.ApprovalState);
+        after.CorrectionState.ShouldBe(before.CorrectionState);
+        after.LockState.ShouldBe(before.LockState);
+        after.CorrectedValues.ShouldBe(before.CorrectedValues);
+        after.TimeEntryApprovalDecisionId.ShouldBe(before.TimeEntryApprovalDecisionId);
+        after.TimeEntryCorrectionId.ShouldBe(before.TimeEntryCorrectionId);
+        after.ConfirmedContributor.ShouldBe(Contributor());
+        after.ContributorConfirmationSource.ShouldBe(new("magic-link", capabilityId.Value));
+        using HttpResponseMessage replay = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}",
+            new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        replay.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).Length.ShouldBe(stored.Length);
+    }
+
+    private static object[] ConfirmationLifecycleHistory(TimeEntryRecorded recorded, bool approved, bool corrected)
+    {
+        var decisionId = new TimeEntryApprovalDecisionId("lifecycle-decision");
+        var authority = new ApprovalAuthoritySourceAttribution(ApprovalAuthorityAction.EntryApproval,
+            ApprovalAuthoritySource.TenantAdministrator, ApprovalAuthorityDecisionState.Allowed,
+            "policy-1", "1", ProjectionFreshnessMetadata.Fresh);
+        List<object> history = [recorded, new TimeEntrySubmitted(recorded.TimeEntryId, Contributor(), Tenant(),
+            ObservedAtUtc.AddMinutes(-30), new("lifecycle-submission"), TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted)];
+        history.Add(approved
+            ? new TimeEntryApproved(recorded.TimeEntryId, Operator(), Tenant(), ObservedAtUtc.AddMinutes(-20),
+                decisionId, TimeEntryApprovalState.Approved, authority, TimeEntryApprovalScope.IndividualEntry)
+            : new TimeEntryRejected(recorded.TimeEntryId, Operator(), Tenant(), ObservedAtUtc.AddMinutes(-20),
+                decisionId, TimeEntryApprovalState.Rejected, authority, TimeEntryApprovalScope.IndividualEntry, new("Correction required")));
+        if (corrected)
+        {
+            var previous = new TimeEntryCorrectionValues(recorded.Target, recorded.Contributor, recorded.ActivityTypeId,
+                recorded.ServiceDate, recorded.DurationMinutes, recorded.BillableState, recorded.ContributorCategory, null)
+            { ActivityTypeScope = recorded.ActivityTypeScope };
+            TimeEntryCorrectionValues values = previous with { DurationMinutes = 75 };
+            history.Add(approved
+                ? new TimeEntryApprovedCorrected(recorded.TimeEntryId, new("lifecycle-correction"), Tenant(), Operator(),
+                    ObservedAtUtc.AddMinutes(-10), previous, values, new("Corrected duration"), decisionId,
+                    TimeEntryApprovalScope.IndividualEntry, TimeEntryApprovalState.Approved, TimeEntryCorrectionState.Corrected)
+                : new TimeEntryCorrected(recorded.TimeEntryId, new("lifecycle-correction"), Tenant(), Operator(),
+                    ObservedAtUtc.AddMinutes(-10), previous, values, new("Correction required"), decisionId,
+                    TimeEntryApprovalState.Draft, TimeEntryCorrectionState.Corrected));
+        }
+        return [.. history];
+    }
 
     /// <summary>
     /// Exercises privacy assertions without HTTP authorization or a running host.
@@ -371,7 +513,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
     /// <summary>Exercises the deactivation decision through projection delivery and all four HTTP routes.</summary>
     [Fact]
-    public async Task DeactivatedRecordedTypeCanBeDisplayedAndConfirmedWhileAdjustmentStaysDenied()
+    public async Task DeactivatedRecordedTypeCanBeConfirmedOrAdjustedToAnActiveReplacement()
     {
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
         using HttpClient client = factory.CreateClient();
@@ -379,10 +521,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             new MagicLinkCapabilityId("capability-confirm-inactive"), new TimeEntryId("time-entry-confirm-inactive"),
             deactivateActivityType: true);
         await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust,
-            new MagicLinkCapabilityId("capability-adjust-inactive"), new TimeEntryId("time-entry-adjust-inactive"));
+            new MagicLinkCapabilityId("capability-adjust-inactive"), new TimeEntryId("time-entry-adjust-inactive"),
+            replacementActivityTypeId: new("active-replacement"));
         ActivityTypeCatalogItem item = factory.Store
             .Get<ActivityTypeCatalogReadModel>(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
-            .Items.ShouldHaveSingleItem();
+            .Items.Single(item => item.ActivityTypeId == ActivityId());
         item.IsActive.ShouldBeFalse();
         item.IsAvailableForCapture.ShouldBeFalse();
 
@@ -393,19 +536,39 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
         using HttpResponseMessage adjustDisplay = await client.GetAsync(
             $"/api/timesheets/magic-links/adjust?t={ValidAdjustToken()}", TestContext.Current.CancellationToken);
-        using HttpResponseMessage adjustSubmit = await client.PostAsJsonAsync(
+        using HttpResponseMessage inactiveReplacement = await client.PostAsJsonAsync(
             $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
             AdjustCommand(), TestContext.Current.CancellationToken);
+        CapturedFailure retiredDenial = await CaptureFailureAsync(inactiveReplacement, "inactive-replacement", ValidAdjustToken());
+        using HttpResponseMessage unknownReplacement = await client.PostAsJsonAsync(
+            "/api/timesheets/magic-links/adjust/submit?t=unknown-retired-replacement", AdjustCommand(), TestContext.Current.CancellationToken);
+        CapturedFailure baseline = await CaptureFailureAsync(unknownReplacement, "unknown", "unknown-retired-replacement");
+        retiredDenial.NormalizedBody.ShouldBe(baseline.NormalizedBody);
+        retiredDenial.Headers.ShouldBe(baseline.Headers);
+        RawByteLength(retiredDenial.RawBody).ShouldBe(RawByteLength(baseline.RawBody));
+        factory.Gateway.StoredEvents(Tenant().TenantId, "time-entry-adjust-inactive").Length.ShouldBe(1);
+        using HttpResponseMessage adjustSubmit = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
+            AdjustCommand() with { ActivityTypeId = new("active-replacement") }, TestContext.Current.CancellationToken);
 
         confirmDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await confirmDisplay.Content.ReadFromJsonAsync<MagicLinkConfirmationDisplayResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull().ActivityTypeLabel.ShouldBe("Delivery");
-        // Recorded evidence remains confirmable after capture availability changes.
-        // The established Story 3.6 decision keeps the availability gate on adjustment.
         confirmSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
-        CapturedFailure displayDenial = await CaptureFailureAsync(adjustDisplay, "inactive-adjust-display", ValidAdjustToken());
-        CapturedFailure submitDenial = await CaptureFailureAsync(adjustSubmit, "inactive-adjust-submit", ValidAdjustToken());
-        displayDenial.NormalizedBody.ShouldBe(submitDenial.NormalizedBody);
+        adjustDisplay.StatusCode.ShouldBe(HttpStatusCode.OK);
+        inactiveReplacement.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        adjustSubmit.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        StreamReadEvent[] persisted = factory.Gateway.StoredEvents(Tenant().TenantId, "time-entry-adjust-inactive");
+        persisted.Length.ShouldBe(3);
+        var adjusted = JsonSerializer.Deserialize<StoredTimeEntryAdjusted>(persisted[2].Payload, JsonOptions)
+            .ShouldNotBeNull().Event;
+        adjusted.PreviousValues.ActivityTypeId.ShouldBe(ActivityId());
+        adjusted.AdjustedValues.ActivityTypeId.ShouldBe(new("active-replacement"));
+        using HttpResponseMessage replay = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}",
+            AdjustCommand() with { ActivityTypeId = new("active-replacement") }, TestContext.Current.CancellationToken);
+        replay.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        factory.Gateway.StoredEvents(Tenant().TenantId, "time-entry-adjust-inactive").Length.ShouldBe(3);
     }
 
     /// <summary>Proves configuration-bound internal delivery persists the loader's read models.</summary>
@@ -1784,7 +1947,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         ITimeEntryCommentPublicationAuthority? commentAuthority = null,
         InMemoryReadModelStore? batchStore = null,
         IMagicLinkConfirmationCapabilityStateLoader? stateLoader = null,
-        bool useLiveFixtureAdmission = false) : WebApplicationFactory<Program>
+        bool useLiveFixtureAdmission = false,
+        IMagicLinkSystemExpiryAuthorizer? systemExpiryAuthorizer = null) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
@@ -1816,7 +1980,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             MagicLinkAllowedAction action,
             MagicLinkCapabilityId capabilityId,
             TimeEntryId timeEntryId,
-            bool deactivateActivityType = false)
+            bool deactivateActivityType = false,
+            ActivityTypeId? replacementActivityTypeId = null)
         {
             MagicLinkConfirmationCapabilityIssued issued = new(
                 capabilityId,
@@ -1890,6 +2055,13 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
             Gateway.WithStream(Tenant().TenantId, capabilityId.Value, StreamEvent(1, issued));
             Gateway.WithStream(Tenant().TenantId, timeEntryId.Value, StreamEvent(1, recorded));
+            if (replacementActivityTypeId is not null)
+            {
+                await DispatchProjectionAsync(client,
+                    new ProjectionRequest(Tenant().TenantId, "timesheets", replacementActivityTypeId.Value,
+                        [ProjectionEvent(1, ActivityCreated(replacementActivityTypeId))]),
+                    TenantActivityTypeCatalogProjection.ProjectionName, "dispatch-active-replacement", fingerprint);
+            }
         }
 
         public async Task ProjectCrossTenantCandidateAsync(
@@ -2078,6 +2250,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 {
                     services.RemoveAll<ITimeEntryCommentPublicationAuthority>();
                     services.AddSingleton(commentAuthority);
+                }
+
+                if (systemExpiryAuthorizer is not null)
+                {
+                    services.RemoveAll<IMagicLinkSystemExpiryAuthorizer>();
+                    services.AddSingleton(systemExpiryAuthorizer);
                 }
 
                 if (tokenGenerator is not null)
@@ -2755,10 +2933,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 MagicLinkEventStoreDomainProcessor processor = scope.ServiceProvider
                     .GetRequiredService<MagicLinkEventStoreDomainProcessor>();
                 object? currentState = CurrentState(request);
-                string? actor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>()
-                    .HttpContext?.User.FindFirstValue("party_id")
-                    ?? scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>()
-                        .HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                string? actor = scope.ServiceProvider.GetRequiredService<ITimesheetsTrustedContextAccessor>()
+                    .CurrentActor?.PartyId;
                 Dictionary<string, string> verifiedExtensions = new(StringComparer.Ordinal)
                 {
                     [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets"

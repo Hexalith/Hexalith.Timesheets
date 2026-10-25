@@ -45,6 +45,61 @@ namespace Hexalith.Timesheets.IntegrationTests;
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SystemExpiryPersistsOnlyWithScopedWorkloadAuthorityAndSurvivesActorRecreation(bool allow)
+    {
+        var capabilityId = new MagicLinkCapabilityId("capability-system-expiry");
+        var entryId = new TimeEntryId("entry-system-expiry");
+        IMagicLinkSystemExpiryAuthorizer system = Substitute.For<IMagicLinkSystemExpiryAuthorizer>();
+        system.AuthorizeAsync("timesheets", Tenant(), capabilityId, entryId,
+            TimeEntryTargetReference.ForProject(Project()), Arg.Any<CancellationToken>()).Returns(allow);
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, systemExpiryAuthorizer: system);
+        using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            capabilityId, entryId);
+        StreamReadEvent seed = factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).Single();
+        MagicLinkConfirmationCapabilityIssued issued = JsonSerializer.Deserialize<MagicLinkConfirmationCapabilityIssued>(seed.Payload, JsonOptions)!;
+        factory.Gateway.WithStream(Tenant().TenantId, capabilityId.Value, seed with
+        {
+            Payload = JsonSerializer.SerializeToUtf8Bytes(issued with { ExpiresAtUtc = ObservedAtUtc }, JsonOptions)
+        });
+        using IServiceScope scope = factory.Services.CreateScope();
+        MagicLinkEventStoreDomainProcessor processor = scope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>();
+        IDomainServiceInvoker invoker = Substitute.For<IDomainServiceInvoker>();
+        invoker.InvokeAsync(Arg.Any<CommandEnvelope>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
+            .Returns(call => processor.ProcessAsync(call.ArgAt<CommandEnvelope>(0), call.ArgAt<object?>(1), call.ArgAt<CancellationToken>(2)));
+        var stateManager = new InMemoryStateManager();
+        var statusStore = new InMemoryCommandStatusStore();
+        AggregateActor actor = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        var intent = new CommitMagicLinkTransition(capabilityId, Tenant(), entryId, null,
+            MagicLinkTransitionAction.Expire, new("timesheets", "system-expiry"), ObservedAtUtc);
+        // The same text is an authorized Party in this fixture; it must supply no authority for actorless expiry.
+        CommandEnvelope envelope = ActorCommand(typeof(CommitMagicLinkTransition).FullName!, "system-expiry", entryId,
+            JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions)) with { UserId = Operator().PartyId };
+        int partyChecks = factory.AccessGuard.AuthorizationCount;
+
+        (await actor.ProcessCommandAsync(envelope, TestContext.Current.CancellationToken)).Accepted.ShouldBe(allow);
+
+        factory.AccessGuard.AuthorizationCount.ShouldBe(partyChecks);
+        var persisted = await actor.GetEventsAsync(0);
+        persisted.ShouldHaveSingleItem().EventTypeName.ShouldBe(allow
+            ? typeof(StoredMagicLinkExpired).FullName : typeof(MagicLinkCommitRejected).FullName);
+        AggregateActor restarted = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        (await restarted.GetEventsAsync(0)).Select(item => item.EventTypeName)
+            .ShouldBe(persisted.Select(item => item.EventTypeName));
+        if (allow)
+        {
+            (await restarted.ProcessCommandAsync(envelope with { MessageId = "system-expiry-replay" },
+                TestContext.Current.CancellationToken)).Accepted.ShouldBeFalse();
+            (await restarted.GetEventsAsync(0)).Count(item => item.EventTypeName == typeof(StoredMagicLinkExpired).FullName)
+                .ShouldBe(1);
+            await system.Received(1).AuthorizeAsync("timesheets", Tenant(), capabilityId, entryId,
+                TimeEntryTargetReference.ForProject(Project()), Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Theory]
     [InlineData(false, false, true, false)]
     [InlineData(false, true, true, false)]
     [InlineData(true, false, true, false)]
@@ -788,24 +843,20 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var statusStore = new InMemoryCommandStatusStore();
         AggregateActor actor = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
         var intent = new CommitMagicLinkTransition(
-            capabilityId, Tenant(), entryId, expire ? null : Operator(),
+            capabilityId, Tenant(), entryId, Operator(),
             expire ? MagicLinkTransitionAction.Expire : MagicLinkTransitionAction.Revoke,
             new MagicLinkAuditMetadata("timesheets", "proposed-terminal"), ObservedAtUtc);
         CommandEnvelope transition = ActorCommand(
             typeof(CommitMagicLinkTransition).FullName!, "proposed-transition", entryId,
-            JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions));
-        if (!expire)
+            JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions)) with
         {
-            transition = transition with
+            UserId = Operator().PartyId,
+            Extensions = new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                UserId = Operator().PartyId,
-                Extensions = new Dictionary<string, string>(StringComparer.Ordinal)
-                {
-                    [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
-                    [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = Operator().PartyId
-                }
-            };
-        }
+                [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
+                [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = Operator().PartyId
+            }
+        };
 
         (await actor.ProcessCommandAsync(transition, TestContext.Current.CancellationToken)).Accepted.ShouldBeTrue();
         (await actor.GetEventsAsync(0)).ShouldHaveSingleItem().EventTypeName.ShouldBe(expire

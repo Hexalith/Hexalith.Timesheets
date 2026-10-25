@@ -1,7 +1,6 @@
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.ServiceDefaults.Authentication;
 using Hexalith.Timesheets.Server.Runtime;
-using System.Security.Claims;
 
 namespace Hexalith.Timesheets.Runtime;
 
@@ -24,13 +23,9 @@ public sealed class EventStoreGatewayWorkloadAssertionSource(
             [EventStoreWorkloadAuthenticationDefaults.TenantBindingClaimType] = tenant,
             [EventStoreWorkloadAuthenticationDefaults.DomainBindingClaimType] = TimesheetsEventStoreIntegration.DomainName
         };
-        ClaimsPrincipal? user = httpContextAccessor.HttpContext?.User;
-        string? actor = user?.FindFirst("party_id")?.Value;
-        if (string.IsNullOrWhiteSpace(actor))
-        {
-            actor = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        }
-        if (user?.Identity?.IsAuthenticated == true && !string.IsNullOrWhiteSpace(actor))
+        var user = httpContextAccessor.HttpContext?.User;
+        string? actor = HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user);
+        if (user?.Identity?.IsAuthenticated == true && actor is not null)
         {
             bindings[EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType] = actor;
         }

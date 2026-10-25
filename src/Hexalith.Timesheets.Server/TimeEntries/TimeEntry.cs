@@ -13,6 +13,10 @@ namespace Hexalith.Timesheets.Server.TimeEntries;
 
 public static class TimeEntry
 {
+    /// <summary>Confirmation adds contributor evidence independently of approval, correction, or edit locks.</summary>
+    internal static bool CanConfirmExternally(TimeEntryState? state)
+        => state?.IsRecorded == true && state.ContributorCategory == ContributorCategory.ExternalContributor;
+
     public static TimesheetsDomainResult Handle(
         RecordTimeEntry command,
         TimeEntryState? state,
@@ -1007,7 +1011,7 @@ public static class TimeEntry
             return;
         }
 
-        if (state.ContributorCategory != ContributorCategory.ExternalContributor)
+        if (!CanConfirmExternally(state))
         {
             errors.Add(new("contributorCategory", "external-required", "External confirmation requires an external contributor Time Entry."));
         }

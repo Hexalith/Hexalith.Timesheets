@@ -35,6 +35,28 @@ namespace Hexalith.Timesheets.Server.Tests;
 public sealed class RuntimeRegistrationTests
 {
     [Fact]
+    public async Task KernelDeniesSystemExpiryAndPreservesAnExplicitAuthorizer()
+    {
+        typeof(MagicLinkEventStoreDomainProcessor).GetConstructor([
+            typeof(EventStoreMagicLinkConfirmationCapabilityStateLoader),
+            typeof(MagicLinkConfirmationCapabilityCommandService), typeof(ExternalContributionCommandService),
+            typeof(TimeProvider)]).ShouldNotBeNull();
+        using (ServiceProvider defaults = new ServiceCollection().AddTimesheetsServerKernel().BuildServiceProvider())
+        {
+            IMagicLinkSystemExpiryAuthorizer authorizer = defaults.GetRequiredService<IMagicLinkSystemExpiryAuthorizer>();
+            authorizer.ShouldBeOfType<DenyAllMagicLinkSystemExpiryAuthorizer>();
+            (await authorizer.AuthorizeAsync("timesheets", new("tenant-1"), new("capability-1"),
+                new("entry-1"), TimeEntryTargetReference.ForProject(new("project-1")),
+                TestContext.Current.CancellationToken)).ShouldBeFalse();
+        }
+
+        IMagicLinkSystemExpiryAuthorizer supplied = Substitute.For<IMagicLinkSystemExpiryAuthorizer>();
+        using ServiceProvider custom = new ServiceCollection().AddSingleton(supplied)
+            .AddTimesheetsServerKernel().BuildServiceProvider();
+        custom.GetRequiredService<IMagicLinkSystemExpiryAuthorizer>().ShouldBeSameAs(supplied);
+    }
+
+    [Fact]
     public void StateLoaderRetainsItsOriginalSevenParameterPublicConstructor()
     {
         typeof(EventStoreMagicLinkConfirmationCapabilityStateLoader).GetConstructor([

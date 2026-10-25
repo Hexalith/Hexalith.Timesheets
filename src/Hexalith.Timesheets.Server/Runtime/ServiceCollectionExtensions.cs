@@ -78,6 +78,7 @@ public static class ServiceCollectionExtensions
 
         services.AddEventStoreReadModelStore();
         services.TryAddSingleton<IMagicLinkTokenGenerator, CryptographicMagicLinkTokenGenerator>();
+        services.TryAddSingleton<IMagicLinkSystemExpiryAuthorizer, DenyAllMagicLinkSystemExpiryAuthorizer>();
         services.AddOptions<MagicLinkStateLoadingOptions>()
             .BindConfiguration("Timesheets:MagicLinks:StateLoading")
             .Validate(static options => options.IsValid(), "Magic-link state loading options must be bounded.")

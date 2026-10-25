@@ -11,6 +11,7 @@ using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Runtime;
 
 using Microsoft.Extensions.Logging;
 
@@ -49,7 +50,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ClaimsPrincipal user = httpContext.User;
                 var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
                     FirstClaimValue(user, "tenant_id", "tenant"),
-                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user),
                     httpContext.TraceIdentifier);
                 TimesheetsAuthorizationDecision admission = await accessGuard.AuthorizeAsync(
                     new(trustedContext, TimesheetsOperation.MagicLinkIssuance)
@@ -119,7 +120,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ClaimsPrincipal user = httpContext.User;
                 var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
                     FirstClaimValue(user, "tenant_id", "tenant"),
-                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user),
                     httpContext.TraceIdentifier);
                 TimesheetsTenantAccessResult admission = await tenantAccessValidator.ValidateAsync(
                     trustedContext, TimesheetsOperation.MagicLinkIssuance, cancellationToken).ConfigureAwait(false);
@@ -175,7 +176,7 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 ClaimsPrincipal user = httpContext.User;
                 var trustedContext = TimesheetsServerRequestContext.FromTrustedSources(
                     FirstClaimValue(user, "tenant_id", "tenant"),
-                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
+                    HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user),
                     httpContext.TraceIdentifier);
                 TimesheetsTenantAccessResult admission = await tenantAccessValidator.ValidateAsync(
                     trustedContext, TimesheetsOperation.MagicLinkIssuance, cancellationToken).ConfigureAwait(false);
@@ -188,14 +189,21 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     .LoadCapabilityAsync(command.CapabilityId, httpContext.RequestAborted)
                     .ConfigureAwait(false);
                 DateTimeOffset expiredAtUtc = timeProvider.GetUtcNow();
-                MagicLinkCapabilityCommandResult result = await service.ExpireAsync(
-                    trustedContext,
-                    command,
-                    state,
-                    expiredAtUtc,
-                    cancellationToken).ConfigureAwait(false);
-                return result.Authorization.IsAuthorized
-                    && result.DomainResult?.IsSuccess == true
+                // Tenant admission remains mandatory. Actorless requests gain authority only from
+                // the separate system policy during authoritative command processing.
+                bool eligible;
+                if (trustedContext.Actor is null)
+                {
+                    eligible = MagicLinkConfirmationCapability.HandleExpire(
+                        command, state, trustedContext.Tenant, expiredAtUtc).IsSuccess;
+                }
+                else
+                {
+                    MagicLinkCapabilityCommandResult result = await service.ExpireAsync(
+                        trustedContext, command, state, expiredAtUtc, cancellationToken).ConfigureAwait(false);
+                    eligible = result.Authorization.IsAuthorized && result.DomainResult?.IsSuccess == true;
+                }
+                return eligible
                     && state?.TimeEntryId is { } timeEntryId
                     && trustedContext.Tenant is { } tenant
                     && await submission.SubmitTransitionAsync(

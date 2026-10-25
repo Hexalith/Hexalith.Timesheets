@@ -6,6 +6,7 @@ using System.Text.Json;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.EventStore.Client.Gateway;
+using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.ServiceDefaults.Authentication;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -32,6 +33,94 @@ namespace Hexalith.Timesheets.IntegrationTests;
 
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task WorkloadSubjectIsNeverAnImplicitPartyOrOutboundActorBinding(bool explicitParty)
+    {
+        const string workloadSubject = "workload:eventstore";
+        List<Claim> claims = [new(ClaimTypes.NameIdentifier, workloadSubject),
+            new(EventStoreWorkloadAuthenticationDefaults.WorkloadClaimType, "eventstore"),
+            new("tenant_id", "tenant-a")];
+        if (explicitParty)
+        {
+            claims.Add(new("party_id", workloadSubject));
+        }
+        var accessor = new HttpContextAccessor
+        {
+            HttpContext = new DefaultHttpContext
+            {
+                User = new ClaimsPrincipal(new ClaimsIdentity(claims, EventStoreWorkloadAuthenticationDefaults.WorkloadScheme))
+            }
+        };
+        var context = new HttpContextTimesheetsTrustedContextAccessor(accessor);
+        context.CurrentActor.ShouldBe(explicitParty ? new PartyReference(workloadSubject) : null);
+        context.CurrentTenant.ShouldBe(new("tenant-a"));
+        IWorkloadAssertionIssuer issuer = Substitute.For<IWorkloadAssertionIssuer>();
+        issuer.CanBindResources.Returns(true);
+        issuer.IssueAsync(Arg.Any<WorkloadAssertionRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<string?>("signed"));
+        var source = new EventStoreGatewayWorkloadAssertionSource(issuer, accessor);
+
+        await source.IssueAsync(EventStoreWorkloadOperations.GatewayCommandSubmit, "tenant-a", TestContext.Current.CancellationToken);
+
+        await issuer.Received(1).IssueAsync(Arg.Is<WorkloadAssertionRequest>(request =>
+            request.Bindings != null
+            && request.Bindings.ContainsKey(EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType) == explicitParty
+            && (!explicitParty || request.Bindings[EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType] == workloadSubject)),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CatalogReplacementAfterValidPreflightRefusesUseWithoutDomainEffects(bool adjust)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"catalog-race-{adjust}");
+        var entryId = new TimeEntryId($"catalog-race-entry-{adjust}");
+        string token = adjust ? ValidAdjustToken() : ValidConfirmToken();
+        string route = adjust ? "adjust" : "confirm";
+        await factory.ProjectValidStateAsync(client, token,
+            adjust ? MagicLinkAllowedAction.Adjust : MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        using HttpResponseMessage display = await client.GetAsync(
+            $"/api/timesheets/magic-links/{route}?t={token}", TestContext.Current.CancellationToken);
+        display.StatusCode.ShouldBe(HttpStatusCode.OK);
+        bool changedAfterPreflight = false;
+        factory.Gateway.BeforeSubmitAsync = async (request, cancellationToken) =>
+        {
+            request.CommandType.ShouldBe(typeof(CommitMagicLinkUse).FullName);
+            string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant());
+            string store = MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName;
+            ReadModelEntry<ActivityTypeCatalogReadModel> current = await factory.Store
+                .GetAsync<ActivityTypeCatalogReadModel>(store, key, cancellationToken);
+            var replacement = new ActivityTypeCatalogReadModel(
+                [current.Value!.Items.Single() with { ActivityTypeId = new("other-active-type") }],
+                ProjectionFreshnessMetadata.Fresh);
+            (await factory.Store.TrySaveAsync(store, key, replacement, current.ETag!, cancellationToken)).ShouldBeTrue();
+            changedAfterPreflight = true;
+        };
+
+        using HttpResponseMessage response = adjust
+            ? await client.PostAsJsonAsync($"/api/timesheets/magic-links/{route}/submit?t={token}", AdjustCommand(), TestContext.Current.CancellationToken)
+            : await client.PostAsJsonAsync($"/api/timesheets/magic-links/{route}/submit?t={token}", new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        CapturedFailure denial = await CaptureFailureAsync(response, "catalog-race", token);
+        factory.Gateway.BeforeSubmitAsync = null;
+        using HttpResponseMessage unknown = adjust
+            ? await client.PostAsJsonAsync($"/api/timesheets/magic-links/{route}/submit?t=unknown-catalog-race", AdjustCommand(), TestContext.Current.CancellationToken)
+            : await client.PostAsJsonAsync($"/api/timesheets/magic-links/{route}/submit?t=unknown-catalog-race", new ConfirmTimeThroughMagicLink(), TestContext.Current.CancellationToken);
+        CapturedFailure baseline = await CaptureFailureAsync(unknown, "unknown", "unknown-catalog-race");
+        changedAfterPreflight.ShouldBeTrue();
+        denial.NormalizedBody.ShouldBe(baseline.NormalizedBody);
+        denial.Headers.ShouldBe(baseline.Headers);
+        StreamReadEvent[] stored = factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value);
+        stored.Count(item => item.EventTypeName == typeof(TimeEntryRecorded).FullName).ShouldBe(1);
+        stored.ShouldNotContain(item => item.EventTypeName == typeof(StoredMagicLinkUsed).FullName
+            || item.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName
+            || item.EventTypeName == typeof(StoredTimeEntryAdjusted).FullName);
+    }
+
     [Fact]
     public async Task ComposedHostRegistersAuthenticatedResourceBindingAssertionSource()
     {
@@ -1429,15 +1518,26 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 : typeof(StoredMagicLinkRevoked).FullName);
     }
 
-    [Fact]
-    public async Task ExpiryWithoutAHumanActorStillCommitsTheTerminalEvent()
+    [Theory]
+    [InlineData(false, false, true)]
+    [InlineData(true, false, true)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    public async Task HttpExpirySeparatesWorkloadAndExplicitPartyAuthority(bool systemAllowed, bool explicitParty, bool tenantAllowed)
     {
-        using MagicLinkHttpBoundaryFactory factory = new(
-            useConcreteLoader: true, useMismatchedClaims: false,
-            claims: [new Claim("tenant_id", Tenant().TenantId)]);
-        using HttpClient client = factory.CreateClient();
+        const string sameNamedParty = "workload:eventstore";
         var capabilityId = new MagicLinkCapabilityId("capability-expire-no-actor");
         var entryId = new TimeEntryId("time-entry-expire-no-actor");
+        IMagicLinkSystemExpiryAuthorizer system = Substitute.For<IMagicLinkSystemExpiryAuthorizer>();
+        system.AuthorizeAsync("timesheets", Tenant(), capabilityId, entryId,
+            TimeEntryTargetReference.ForProject(Project()), Arg.Any<CancellationToken>()).Returns(true);
+        Claim[] claims = explicitParty
+            ? [new("tenant_id", Tenant().TenantId), new("party_id", sameNamedParty)]
+            : [new("tenant_id", Tenant().TenantId)];
+        using MagicLinkHttpBoundaryFactory factory = new(
+            useConcreteLoader: true, useMismatchedClaims: false,
+            claims: claims, systemExpiryAuthorizer: systemAllowed ? system : null);
+        using HttpClient client = factory.CreateClient();
         await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
             capabilityId, entryId);
         StreamReadEvent seeded = factory.Gateway.StoredEvents(Tenant().TenantId, capabilityId.Value).ShouldHaveSingleItem();
@@ -1447,15 +1547,53 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             Payload = JsonSerializer.SerializeToUtf8Bytes(
                 issued with { ExpiresAtUtc = ObservedAtUtc }, JsonOptions)
         });
+        factory.AccessGuard.DecisionOverride = request => request.Context.Actor == new PartyReference(sameNamedParty)
+            ? TimesheetsAuthorizationDecision.Allowed()
+            : TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.UnconfiguredPolicy, "Party denied");
+        if (!tenantAllowed)
+        {
+            factory.TenantAccessValidator.ValidateAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimesheetsOperation>(), Arg.Any<CancellationToken>())
+                .Returns(TimesheetsTenantAccessResult.Denied(TimesheetsTenantAccessState.UnconfiguredPolicy, "Tenant denied"));
+        }
+        int partyChecks = factory.AccessGuard.AuthorizationCount;
+        CommitMagicLinkTransition? submitted = null;
+        factory.Gateway.BeforeSubmitAsync = (request, _) =>
+        {
+            submitted = request.Payload.Deserialize<CommitMagicLinkTransition>(JsonOptions);
+            return Task.CompletedTask;
+        };
 
         using HttpResponseMessage response = await factory.PostProtectedManagementAsync(
             client, $"/api/timesheets/magic-links/confirmation-capabilities/{capabilityId.Value}/expire",
             new ExpireMagicLinkConfirmationCapability(
                 capabilityId, new MagicLinkAuditMetadata("timesheets", "expiry-no-actor")));
 
-        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
-        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)[1].EventTypeName
-            .ShouldBe(typeof(StoredMagicLinkExpired).FullName);
+        bool allowed = tenantAllowed && (systemAllowed || explicitParty);
+        response.StatusCode.ShouldBe(allowed ? HttpStatusCode.Accepted : HttpStatusCode.Forbidden);
+        factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value)
+            .Count(item => item.EventTypeName == typeof(StoredMagicLinkExpired).FullName).ShouldBe(allowed ? 1 : 0);
+        if (tenantAllowed)
+        {
+            submitted.ShouldNotBeNull().Actor.ShouldBe(explicitParty ? new PartyReference(sameNamedParty) : null);
+        }
+        else
+        {
+            factory.Gateway.SubmissionCount.ShouldBe(0);
+            submitted.ShouldBeNull();
+        }
+        if (!explicitParty)
+        {
+            factory.AccessGuard.AuthorizationCount.ShouldBe(partyChecks);
+        }
+        if (systemAllowed && tenantAllowed && !explicitParty)
+        {
+            await system.Received(1).AuthorizeAsync("timesheets", Tenant(), capabilityId, entryId,
+                TimeEntryTargetReference.ForProject(Project()), Arg.Any<CancellationToken>());
+        }
+        else
+        {
+            await system.DidNotReceiveWithAnyArgs().AuthorizeAsync(default!, default!, default!, default!, default!, TestContext.Current.CancellationToken);
+        }
     }
 
     private static T Persisted<T>(StreamReadEvent streamEvent)

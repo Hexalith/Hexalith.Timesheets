@@ -12,6 +12,7 @@ using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Runtime;
@@ -25,9 +26,24 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     EventStoreMagicLinkConfirmationCapabilityStateLoader stateLoader,
     MagicLinkConfirmationCapabilityCommandService commandService,
     ExternalContributionCommandService externalContributionService,
-    TimeProvider clock) : IDomainProcessor, IAsyncDomainProcessor
+    TimeProvider clock,
+    IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer) : IDomainProcessor, IAsyncDomainProcessor
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+
+    /// <summary>Preserves the original constructor with system expiry denied by default.</summary>
+    /// <param name="stateLoader">The authoritative state loader.</param>
+    /// <param name="commandService">The capability command service.</param>
+    /// <param name="externalContributionService">The contribution command service.</param>
+    /// <param name="clock">The processing clock.</param>
+    public MagicLinkEventStoreDomainProcessor(
+        EventStoreMagicLinkConfirmationCapabilityStateLoader stateLoader,
+        MagicLinkConfirmationCapabilityCommandService commandService,
+        ExternalContributionCommandService externalContributionService,
+        TimeProvider clock)
+        : this(stateLoader, commandService, externalContributionService, clock, new DenyAllMagicLinkSystemExpiryAuthorizer())
+    {
+    }
 
     /// <inheritdoc/>
     public Task<DomainResult> ProcessAsync(CommandEnvelope command, object? currentState)
@@ -115,7 +131,7 @@ public sealed class MagicLinkEventStoreDomainProcessor(
 
         ActivityTypeCatalogReadModel catalog = await stateLoader.LoadCatalogForTenantAsync(
             intent.Tenant, cancellationToken).ConfigureAwait(false);
-        if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+        if (!MagicLinkConfirmationCapabilityCommandService.HasRecordedActivityTypeEvidence(capability, catalog))
         {
             return Reject();
         }
@@ -361,13 +377,35 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             || capability.IsTerminal
             || capability.Tenant != intent.Tenant
             || capability.TimeEntryId != intent.TimeEntryId
+            || capability.Target is null
+            || (intent.Action == MagicLinkTransitionAction.Expire && clock.GetUtcNow() < capability.ExpiresAtUtc)
             || (timeEntry?.IsRecorded != true && capability.TargetKind != MagicLinkTargetKind.ProposedTimeEntry))
         {
             return Reject();
         }
 
+        if (intent.Action == MagicLinkTransitionAction.Expire && intent.Actor is null)
+        {
+            // The reserved origin was verified at processor entry. A workload name never becomes a Party.
+            string verifiedWorkload = envelope.Extensions![EventStoreGatewayVerifiedOrigin.ExtensionKey];
+            if (systemExpiryAuthorizer is null
+                || !await systemExpiryAuthorizer.AuthorizeAsync(
+                    verifiedWorkload, capability.Tenant!, capability.CapabilityId!, capability.TimeEntryId!,
+                    capability.Target, cancellationToken).ConfigureAwait(false))
+            {
+                return Reject();
+            }
+
+            TimesheetsDomainResult expiry = MagicLinkConfirmationCapability.HandleExpire(
+                new ExpireMagicLinkConfirmationCapability(intent.CapabilityId, intent.Source),
+                capability, intent.Tenant, intent.AtUtc);
+            return expiry.Events is [MagicLinkConfirmationCapabilityExpired expired]
+                ? DomainResult.Success([new StoredMagicLinkExpired(expired with { TimeEntryId = intent.TimeEntryId })])
+                : Reject();
+        }
+
         TimesheetsRequestContext context = TimesheetsServerRequestContext.FromTrustedSources(
-            intent.Tenant.TenantId, intent.Actor?.PartyId ?? envelope.UserId, envelope.CorrelationId);
+            intent.Tenant.TenantId, intent.Actor!.PartyId, envelope.CorrelationId);
         MagicLinkCapabilityCommandResult result = intent.Action == MagicLinkTransitionAction.Revoke
             ? await commandService.RevokeAsync(
                 context,

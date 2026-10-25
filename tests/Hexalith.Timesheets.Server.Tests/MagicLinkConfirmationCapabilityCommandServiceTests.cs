@@ -24,6 +24,81 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
 {
+    [Theory]
+    [InlineData("valid")]
+    [InlineData("missing")]
+    [InlineData("foreign")]
+    [InlineData("ambiguous")]
+    [InlineData("stale")]
+    public async Task RetiredRecordedTypeRequiresHistoricalEvidenceAndAnActiveReplacement(string evidence)
+    {
+        var replacement = new ActivityTypeId("active-replacement");
+        ActivityTypeCatalogItem retired = FreshCatalog().Items.Single() with
+        {
+            IsActive = false,
+            IsAvailableForCapture = false
+        };
+        ActivityTypeCatalogItem active = retired with
+        {
+            ActivityTypeId = replacement,
+            IsActive = true,
+            IsAvailableForCapture = true
+        };
+        ActivityTypeCatalogItem[] items = evidence switch
+        {
+            "missing" => [active],
+            "foreign" => [retired with { Scope = ActivityTypeScope.Project, Project = Project() }, active],
+            "ambiguous" => [retired, retired, active],
+            _ => [retired, active]
+        };
+        var catalog = new ActivityTypeCatalogReadModel(items, evidence == "stale"
+            ? ProjectionFreshnessMetadata.Fresh with { State = ProjectionFreshnessState.Stale }
+            : ProjectionFreshnessMetadata.Fresh);
+        MagicLinkConfirmationCapabilityCommandService service = AuthorizedProjectFixture().CreateService();
+        CapabilityStateData capability = IssuedState(allowedAction: MagicLinkAllowedAction.Adjust);
+        TimeEntryState entry = RecordedExternalState();
+
+        MagicLinkAdjustmentDisplayResponse? display = await service.DescribeAdjustmentAsync(
+            Context(), "opaque-once", capability, entry, catalog, ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult result = await service.AdjustAsync(
+            Context(), "opaque-once", AdjustCommand() with { ActivityTypeId = replacement }, capability,
+            entry, catalog, ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+
+        (display is not null).ShouldBe(evidence == "valid");
+        result.WasDispatched.ShouldBe(evidence == "valid");
+        if (evidence == "valid")
+        {
+            display!.ActivityTypeId.ShouldBe(ActivityId());
+            var adjusted = result.AdjustmentResult!.DomainResult!.Events.ShouldHaveSingleItem()
+                .ShouldBeOfType<TimeEntryAdjustedThroughMagicLink>();
+            adjusted.PreviousValues.ActivityTypeId.ShouldBe(ActivityId());
+            adjusted.AdjustedValues.ActivityTypeId.ShouldBe(replacement);
+            MagicLinkConfirmationUseResult inactiveReplacement = await service.AdjustAsync(
+                Context(), "opaque-once", AdjustCommand(), capability, entry, catalog,
+                ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+            inactiveReplacement.WasDispatched.ShouldBeFalse();
+        }
+        else
+        {
+            result.TimeEntryResult.ShouldBeNull();
+            result.AdjustmentResult.ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task NonExternalEntryIsIneligibleForBothConfirmationDisplayAndCommit()
+    {
+        var entry = new TimeEntryState();
+        entry.Apply(new TimeEntryRecorded(TimeEntryId(), TimeEntryTargetReference.ForProject(Project()),
+            Contributor(), ActivityId(), ActivityTypeScope.Tenant, new DateOnly(2026, 6, 19), 60,
+            BillableState.Billable, TimeEntryApprovalState.Draft, ContributorCategory.Employee, null));
+        MagicLinkConfirmationCapabilityCommandService service = AuthorizedProjectFixture().CreateService();
+        (await service.DescribeAsync(Context(), "opaque-once", IssuedState(), entry, FreshCatalog(),
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken)).ShouldBeNull();
+        (await service.ConfirmAsync(Context(), "opaque-once", ConfirmCommand(), IssuedState(), entry,
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken)).WasDispatched.ShouldBeFalse();
+    }
+
     [Fact]
     public async Task ExistingTimeEntryIssuanceIsRejectedBeforeTokenGenerationAndByTheAggregate()
     {
@@ -1140,7 +1215,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
 
         display.ShouldNotBeNull().ActivityTypeLabel.ShouldBe("Delivery");
         confirmation.WasDispatched.ShouldBeTrue();
-        adjustmentDisplay.ShouldBeNull();
+        adjustmentDisplay.ShouldNotBeNull().ActivityTypeLabel.ShouldBe("Delivery");
         adjustment.WasDispatched.ShouldBeFalse();
         adjustment.AdjustmentResult.ShouldBeNull();
         issuance.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();

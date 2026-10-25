@@ -28,13 +28,27 @@ public sealed class HttpContextTimesheetsTrustedContextAccessor(
     {
         get
         {
-            string? actorId = FirstClaimValue("party_id", ClaimTypes.NameIdentifier);
+            string? actorId = ResolveActorId(_httpContextAccessor.HttpContext?.User);
             return string.IsNullOrWhiteSpace(actorId) ? null : new PartyReference(actorId);
         }
     }
 
     /// <inheritdoc/>
     public string? CurrentCorrelationId => _httpContextAccessor.HttpContext?.TraceIdentifier;
+
+    /// <summary>Resolves existing Party evidence without treating the SDK's synthetic workload subject as a Party.</summary>
+    internal static string? ResolveActorId(ClaimsPrincipal? user)
+    {
+        string? partyId = user?.FindFirst("party_id")?.Value;
+        if (!string.IsNullOrWhiteSpace(partyId))
+        {
+            return partyId;
+        }
+
+        string? subject = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return string.IsNullOrWhiteSpace(subject) || subject.StartsWith("workload:", StringComparison.Ordinal)
+            ? null : subject;
+    }
 
     private string? FirstClaimValue(params string[] claimTypes)
     {

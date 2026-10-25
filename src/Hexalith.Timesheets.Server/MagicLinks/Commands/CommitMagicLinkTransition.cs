@@ -8,7 +8,7 @@ namespace Hexalith.Timesheets.Server.MagicLinks.Commands;
 /// <param name="CapabilityId">The issued capability identifier.</param>
 /// <param name="Tenant">The server-resolved tenant.</param>
 /// <param name="TimeEntryId">The owning Time Entry identifier.</param>
-/// <param name="Actor">The authorized administrator for a revocation.</param>
+/// <param name="Actor">The verified Party actor for revocation or expiry; null requests separately authorized system expiry.</param>
 /// <param name="Action">The terminal action.</param>
 /// <param name="Source">The audit source.</param>
 /// <param name="AtUtc">The UTC transition instant.</param>

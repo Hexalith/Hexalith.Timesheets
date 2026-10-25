@@ -435,12 +435,14 @@ origin: migrated from legacy ledger ("Deferred from: build review of spec-3-6-im
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
 reason: `ValidateConfirmationScope` and `TimeEntry.ValidateExternalConfirmation` accept an otherwise-valid recorded contribution without excluding approved or corrected lifecycle state. The stories say confirmation must not itself approve, lock, or correct the entry, but do not define whether those prior transitions disqualify confirmation.
-status: open
+status: done 2026-10-25
 
 <a id="deferred-from-build-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-2-2026-09-16"></a>
 legacy_section: Deferred from: build review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-2 (2026-09-16)
 summary: Decide whether contributor confirmation remains valid after a Time Entry has already been approved or corrected.
 evidence: `ValidateConfirmationScope` and `TimeEntry.ValidateExternalConfirmation` accept an otherwise-valid recorded contribution without excluding approved or corrected lifecycle state. The stories say confirmation must not itself approve, lock, or correct the entry, but do not define whether those prior transitions disqualify confirmation. An explicit product policy for confirmation relative to approval and correction would settle the risk.
+
+resolution_2026_10_25: Closed by the user-approved 2026-10-25 recommendation: otherwise valid scoped external confirmation remains eligible after approval or correction and adds contributor evidence only. Named HTTP lifecycle cases verify unchanged approval, lock, correction values/identifiers, persisted confirmation/use evidence and replay refusal. See spec-five-magic-link-eligibility-deferrals.md and tests/five-magic-link-eligibility-deferrals.md; changed scope still refuses confirmation.
 
 ### DW-60: Determine whether capability folds must reject illegal transition sequences found in EventStore history.
 
@@ -462,13 +464,15 @@ origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implemen
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
 reason: `DescribeAsync` gates on `TryResolveDisplayLabel`, which requires `IsActive && IsAvailableForCapture`, while `ConfirmAsync` receives no `ActivityTypeCatalogReadModel` at all, so `ValidateConfirmationScope` cannot see availability. An Activity Type deactivated after issuance therefore yields GET 403 / POST 200 and confirmation still emits its event.
-status: open
+status: done 2026-10-25
 
 <a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loading-2026-09-16"></a>
 legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-16)
 summary: Decide whether contributor confirmation must check Activity Type availability the way the display path does.
 evidence: `DescribeAsync` gates on `TryResolveDisplayLabel`, which requires `IsActive && IsAvailableForCapture`, while `ConfirmAsync` receives no `ActivityTypeCatalogReadModel` at all, so `ValidateConfirmationScope` cannot see availability. An Activity Type deactivated after issuance therefore yields GET 403 / POST 200 and confirmation still emits its event. The 2026-09-16 remediation tightened display, confirm, and adjust symmetrically for tenant ownership but left availability asymmetric. Carried as BH-01 / R2-EC-01 / R3-BH-01 / R3-EC-01 across four review loops, each citing a prior ledger entry that did not exist; this is the first entry.
 resolution_note: The preceding evidence is historical. The 2026-09-18 decision selected confirm-as-is: confirmation describe may display the recorded tenant-owned Activity Type after deactivation, while issuance and adjustment describe retain capture-availability checks. Implemented by `887db4718bf611f9ea505fe7500b2c6ef53c27d1` on 2026-10-03; `DescribeAsync` no longer requires those flags and the former GET 403 / successful POST mismatch no longer describes confirmation. Retain this ledger entry for traceability without closing it or re-opening the settled confirmation decision; adjustment policy remains separately deferred below.
+
+resolution_2026_10_25: Closed in this approved five-item batch with current retired-type confirmation proof. The historical resolution_note and its then-current retention instruction are preserved; this dated disposition supersedes that retention decision without reopening confirm-as-is. Display and authoritative commit require fresh, unambiguous tenant-owned recorded-type evidence while permitting retirement. Adjustment policy is resolved separately by DW-73; Project restrictions remain open in DW-63. See tests/five-magic-link-eligibility-deferrals.md.
 
 ### DW-63: Decide whether the tenant Activity Type catalog must represent per-Project restriction rules for magic-link selection.
 
@@ -554,13 +558,15 @@ origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-imp
 location: MagicLinkConfirmationCapabilityCommandService.cs:246
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
 reason: `DescribeAdjustmentAsync` passes `requireCaptureAvailability: true` for the recorded `capabilityState.ActivityTypeId`. `AdjustAsync` (`MagicLinkConfirmationCapabilityCommandService.cs:246`) checks only the requested `command.ActivityTypeId`, and `ValidateAdjustmentScope` does not tie the two together.
-status: open
+status: done 2026-10-25
 
 <a id="deferred-from-code-review-of-spec-3-6-implement-eventstore-backed-magic-link-state-loading-6md-2026-10-03"></a>
 legacy_section: Deferred from: code review of spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md (2026-10-03)
 legacy_context: Increment `887db47^..887db47` (confirmation display and host verification patches).
 summary: Decide whether a magic-link adjustment may move a Time Entry off a retired recorded Activity Type.
 evidence: `DescribeAdjustmentAsync` passes `requireCaptureAvailability: true` for the recorded `capabilityState.ActivityTypeId`. `AdjustAsync` (`MagicLinkConfirmationCapabilityCommandService.cs:246`) checks only the requested `command.ActivityTypeId`, and `ValidateAdjustmentScope` does not tie the two together. After deactivation the adjust GET returns the opaque 403, while a POST naming another active tenant type returns 202. Pre-existing: `887db47` changed only confirmation display.
+
+resolution_2026_10_25: Closed by the user-approved 2026-10-25 recommendation: adjustment may replace a retired recorded type with an active type allowed by the supplied catalog capture gates. Display and submission require valid historical recorded-type evidence; selecting the retired type again refuses without partial domain writes. HTTP persisted previous/adjusted evidence and replay controls pass. Project-specific restriction evidence remains open under DW-63. See tests/five-magic-link-eligibility-deferrals.md.
 
 ### DW-74: Reconcile the launch-readiness package waiver rows with the current imported catalog, and scope the fitness pin to those rows.
 
@@ -586,11 +592,13 @@ origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-imp
 location: src/Hexalith.Timesheets/Program.cs
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
 reason: Neither `src/Hexalith.Timesheets/Program.cs` nor `AddEventStoreDomainService` calls `AddAuthentication`/`UseAuthentication`. `HttpContextTimesheetsTrustedContextAccessor` therefore reads an anonymous principal, and administrator issue/revoke fail closed in a deployment.
-status: open
+status: done 2026-10-25
 
 summary: Register an authentication scheme so the host's trusted-context accessor can receive tenant and actor claims in a deployment.
 evidence: Neither `src/Hexalith.Timesheets/Program.cs` nor `AddEventStoreDomainService` calls `AddAuthentication`/`UseAuthentication`. `HttpContextTimesheetsTrustedContextAccessor` therefore reads an anonymous principal, and administrator issue/revoke fail closed in a deployment. The 2026-10-03 HTTP tests inject claims through a test `IStartupFilter`. The concern pairs with the upstream route-group authorization entry above. Update 2026-10-09: workload authentication now runs through the SDK and Timesheets host, but supplies no Timesheets `tenant_id` or Party actor claim. The remaining management-identity work is cross-referenced in the public-route compatibility entry below.
 resolution_note: Superseded diagnosis / open identity handoff (2026-10-22), verified in `spec-close-five-historical-story-tracking-deferrals.md`. The SDK registers workload authentication and the host invokes authentication/authorization middleware; existing credential tests reject missing/forged assertions. This closes only the historical no-scheme/no-middleware diagnosis. Production tenant/Party identity remains open under “Supply trusted tenant and actor identity to production magic-link management routes”; fixture claims and local Development bindings are not deployed identity evidence. See `tests/five-historical-story-tracking-deferrals.md`.
+
+resolution_2026_10_25: Closed only for the superseded no-scheme/no-middleware diagnosis after rerunning composed HTTP credential regressions. The host authentication/authorization middleware and SDK workload scheme already exist. Missing/forged credentials are rejected, while production tenant/Party identity remains open in DW-113; fixture claims do not close it. Original evidence and resolution_note are preserved. See tests/five-magic-link-eligibility-deferrals.md.
 
 ### DW-77: Reconcile the 37 unchecked Story 3.6 `[Review][Patch]` items before the story is marked done.
 
@@ -952,10 +960,12 @@ origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implemen
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-durable-magic-link-submission.md`
 reason: With a null `Actor`, `MagicLinkEventStoreDomainProcessor.ProcessTransitionAsync` builds the management context from `envelope.UserId`, which is the workload identity when the assertion binds no actor (`:275`). The production kernel is `DenyAll`, so whether a concrete access guard denies system expiry or matches a same-named Party is unknown.
-status: open
+status: done 2026-10-25
 
 summary: Define the authorization principal for system-initiated magic-link expiry (medium, unverified).
 evidence: With a null `Actor`, `MagicLinkEventStoreDomainProcessor.ProcessTransitionAsync` builds the management context from `envelope.UserId`, which is the workload identity when the assertion binds no actor (`:275`). The production kernel is `DenyAll`, so whether a concrete access guard denies system expiry or matches a same-named Party is unknown. The concrete management/system-expiry authorization design settles it; see the existing `Expire` guard entry above.
+
+resolution_2026_10_25: Closed by explicit principal separation: actorless expiry requires IMagicLinkSystemExpiryAuthorizer for the gateway-verified workload and authoritative tenant/capability/entry/target scope; the kernel and compatibility constructor default to denial. Explicit Party actors retain the management gate. Name-collision, forged/missing evidence, default denial, authorized persistence and actor-recreation controls pass. No deployed provider or runtime acceptance is claimed. See tests/five-magic-link-eligibility-deferrals.md.
 
 ### DW-125: Re-run vulnerable, deprecated, and transitive package audits against the current 13.6.1 catalog graph.
 

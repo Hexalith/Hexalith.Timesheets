@@ -1,0 +1,701 @@
+{
+  "date": "2026-10-25",
+  "workflow_baseline_commit": "a71c2c1e14a8630eed87866b95e6c62445685481",
+  "verification_checkout": "1a80faec5360e0276cb908b594922a88895ff27e",
+  "sdk": "10.0.402",
+  "configuration": "Debug",
+  "use_hexalith_project_references": true,
+  "build": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "exit_code": 0,
+    "warnings": 0,
+    "errors": 0,
+    "post_comment_fix_log_sha256": "e635d55eef47bc73611a720385bdba0d789a71768011ee5f05ba8ad337aa5de1"
+  },
+  "applicable_full_runs": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -result-xml /tmp/timesheets-eligibility-post-review-architecture.xml",
+      "exit_code": 0,
+      "elapsed_seconds": 51.221,
+      "raw_counts": {
+        "passed": 118,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "qualified_counts": {
+        "passed": 118,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "run_date": "2026-10-25",
+      "run_time_utc": "11:21:56",
+      "xml_sha256": "abb7b8e9b47d4f26c96c0cf08d583147d549f820897d9e458625a8908b960a98",
+      "evidence_phase": "post-review"
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests -result-xml /tmp/timesheets-eligibility-final-contracts.xml",
+      "exit_code": 0,
+      "elapsed_seconds": 1.221,
+      "raw_counts": {
+        "passed": 108,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "qualified_counts": {
+        "passed": 108,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "run_date": "2026-10-25",
+      "run_time_utc": "10:24:53",
+      "xml_sha256": "d1cc49d275f9c19649e5795fc04357a187338adf4b0100a3cda4140f57e01f65",
+      "evidence_phase": "initial run; unchanged exercised paths"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -result-xml /tmp/timesheets-eligibility-post-review-server.xml",
+      "exit_code": 0,
+      "elapsed_seconds": 9.977,
+      "raw_counts": {
+        "passed": 720,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "qualified_counts": {
+        "passed": 720,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "run_date": "2026-10-25",
+      "run_time_utc": "11:21:47",
+      "xml_sha256": "8120773b07eac95e429d74e74a891f7637fcae452061d8baf12b33ce069b7f12",
+      "evidence_phase": "post-review"
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -result-xml /tmp/timesheets-eligibility-final-projections.xml",
+      "exit_code": 0,
+      "elapsed_seconds": 964.811,
+      "raw_counts": {
+        "passed": 737,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "qualified_counts": {
+        "passed": 737,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "run_date": "2026-10-25",
+      "run_time_utc": "10:25:40",
+      "xml_sha256": "a05a5b6f48934c039d9b6c29693f3ca9d02611e839e3dbc6809b3b93a46684da",
+      "evidence_phase": "initial run; unchanged exercised paths"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -result-xml /tmp/timesheets-eligibility-post-review-integration.xml",
+      "exit_code": 1,
+      "elapsed_seconds": 971.008,
+      "raw_counts": {
+        "passed": 933,
+        "skipped": 5,
+        "failed": 1,
+        "errors": 0,
+        "not_run": 0
+      },
+      "qualified_counts": {
+        "passed": 934,
+        "skipped": 5,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "run_date": "2026-10-25",
+      "run_time_utc": "11:22:47",
+      "xml_sha256": "0641bc677a91debf052a6a50d1c368c59bdc251e387839d2266f334c9d68f98d",
+      "evidence_phase": "post-review"
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests -result-xml /tmp/timesheets-eligibility-final-works.xml",
+      "exit_code": 0,
+      "elapsed_seconds": 0.471,
+      "raw_counts": {
+        "passed": 76,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "qualified_counts": {
+        "passed": 76,
+        "skipped": 0,
+        "failed": 0,
+        "errors": 0,
+        "not_run": 0
+      },
+      "run_date": "2026-10-25",
+      "run_time_utc": "10:25:02",
+      "xml_sha256": "61047adfa786705da09878cf8b199c458a18263bbfb4c1fd067cec947ac6e201",
+      "evidence_phase": "initial run; unchanged exercised paths"
+    }
+  ],
+  "qualified_totals": {
+    "passed": 2693,
+    "skipped": 5,
+    "failed": 0,
+    "errors": 0,
+    "not_run": 0
+  },
+  "qualification_note": "The last full Integration run had 933 passes, five skips and one source-fitness failure caused solely by the word EventStore in a new comment. That comment was corrected, the full solution rebuilt, and the entire affected source-fitness class passed 4/4. No runtime or test logic changed after that full run; it was not repeated. Qualified counts replace that one failure with its passing focused recheck and do not double-count the other three rechecked cases.",
+  "comment_only_recheck": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationCapabilityEndpointTests -result-xml /tmp/timesheets-eligibility-comment-fix-fitness.xml",
+    "exit_code": 0,
+    "passed": 4,
+    "xml_sha256": "c4b97c759550fd49d093612b017bf01924add23ec3bbda0b89de01428d3cc463",
+    "cases": [
+      {
+        "method": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationCapabilityEndpointTests.MagicLinkEndpointDenialCopyIsOpaque",
+        "original_case_id": "4d40b676-4471-4375-bb3a-3a04814abc84",
+        "original_result": "Pass",
+        "recheck_case_id": "51ce5036-0387-47e2-9e3f-e61db05cd09b",
+        "recheck_result": "Pass"
+      },
+      {
+        "method": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationCapabilityEndpointTests.HostMapsNarrowMagicLinkConfirmationRoutesWithoutAuthorityBodyFields",
+        "original_case_id": "54b594d9-6583-45dd-8a39-3aeebd6c92c1",
+        "original_result": "Fail",
+        "recheck_case_id": "a2562575-e2e0-4eec-85ba-1e0500640956",
+        "recheck_result": "Pass"
+      },
+      {
+        "method": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationCapabilityEndpointTests.MagicLinkExternalRoutesShareOneDenialHelper",
+        "original_case_id": "e30d8fc5-6770-4569-89ad-d52068c90f88",
+        "original_result": "Pass",
+        "recheck_case_id": "b97fe49b-0489-440e-b7b8-d3c28021b4b6",
+        "recheck_result": "Pass"
+      },
+      {
+        "method": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationCapabilityEndpointTests.AppHostExportsTheInternalListenerPortToTheHostOptionsSection",
+        "original_case_id": "6dcb8fac-884f-4a7b-861e-222fffa4f5e9",
+        "original_result": "Pass",
+        "recheck_case_id": "14026b9f-ce70-40b0-bae2-8dd5bf3a568d",
+        "recheck_result": "Pass"
+      }
+    ],
+    "only_source_delta": "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs"
+  },
+  "matrix_case_results": [
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "e450946a-5e2d-448e-b253-ebd1e5b5c851",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ConfirmationCommitRejectsFreshCatalogWithoutRecordedActivityType(hasRecordedType: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "1ee398ee-2786-4e54-ac56-f7688fedf3c0",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ConfirmationCommitRejectsFreshCatalogWithoutRecordedActivityType(hasRecordedType: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "35c4f160-da2a-42fe-889c-a114f80e436b",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ActorlessExpiryDeniesByDefaultEvenWhenTheWorkloadNameMatchesAnAuthorizedParty",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "9a6ef428-cad5-4d78-885f-b833340c7999",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.SystemExpiryRequiresTheMatchingRecordedOwner(mismatchedOwner: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "b7ed1e8d-4430-4ed5-8af2-4f0f74ff1406",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.SystemExpiryRequiresTheMatchingRecordedOwner(mismatchedOwner: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "4f435b1b-a463-4010-b8f5-cd76495374a4",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.SystemExpiryRequiresProcessingClockToReachExpiryEvenWithAFutureSubmittedInstant(atExpiry: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "2da3b687-4c78-43c3-92f8-4f4f518c30ea",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.SystemExpiryRequiresProcessingClockToReachExpiryEvenWithAFutureSubmittedInstant(atExpiry: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "fab00168-5782-4798-b756-e6796c210229",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.SystemExpiryBindsTheExactWorkReferenceRatherThanAnotherGrantedTarget(grantsAnotherWork: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "d41bf26c-22b1-4dad-bf15-ce0c4e4ffdab",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.SystemExpiryBindsTheExactWorkReferenceRatherThanAnotherGrantedTarget(grantsAnotherWork: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "2798cf2c-0da7-427b-8aec-4e69df335d3a",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ExpiryRejectsMissingForgedOrForeignEvidenceBeforeSystemAuthority(scenario: \\\"missing-origin\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "fb211cd5-e7b0-4dca-980e-8d3f769431d3",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ExpiryRejectsMissingForgedOrForeignEvidenceBeforeSystemAuthority(scenario: \\\"forged-origin\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "ed57a47c-c33a-4332-bdc2-cb289b1635bc",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ExpiryRejectsMissingForgedOrForeignEvidenceBeforeSystemAuthority(scenario: \\\"foreign-tenant\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "7cb03eca-a58d-4236-82f2-237098f7aa4c",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ExpiryRejectsMissingForgedOrForeignEvidenceBeforeSystemAuthority(scenario: \\\"foreign-owner\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "14a22556-e037-4135-bf43-da2483277fbb",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ExpiryRejectsMissingForgedOrForeignEvidenceBeforeSystemAuthority(scenario: \\\"forged-actor\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "ef482f70-d8c7-4de3-bd15-0813251cc0cf",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ExplicitExpiryActorUsesPartyManagementGateIndependentlyOfSystemAuthority(partyAllowed: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "79f34489-0128-434b-9964-f4f6a6dcf490",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ExplicitExpiryActorUsesPartyManagementGateIndependentlyOfSystemAuthority(partyAllowed: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "6895897e-f1de-4754-844c-eabed5183299",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ActorlessExpiryUsesScopedWorkloadAuthorityWithoutConsultingPartyAuthority(allow: False, userId: \\\"timesheets\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "d0afd443-c2a4-4e94-9da5-3f5bd40b30bf",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ActorlessExpiryUsesScopedWorkloadAuthorityWithoutConsultingPartyAuthority(allow: False, userId: \\\"actor-1\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "f6b8c3e8-3ce4-4100-949d-ad763d29c1f5",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ActorlessExpiryUsesScopedWorkloadAuthorityWithoutConsultingPartyAuthority(allow: True, userId: \\\"timesheets\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "46e38b0e-3d5a-4f73-adc8-9f6325d95099",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkEventStoreDomainProcessorTests.ActorlessExpiryUsesScopedWorkloadAuthorityWithoutConsultingPartyAuthority(allow: True, userId: \\\"actor-1\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "87e1305c-2152-4d11-91f2-ba9d9d038ca8",
+      "name": "Hexalith.Timesheets.Server.Tests.RuntimeRegistrationTests.KernelDeniesSystemExpiryAndPreservesAnExplicitAuthorizer",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "09cc478d-344f-4f3e-aa96-9a23ada43588",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RecordedActivityTypeRemainsConfirmableWhenUnavailableForCapture(isActive: False, isAvailableForCapture: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "db587fdc-4ec8-462e-8520-546efe9f567f",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RecordedActivityTypeRemainsConfirmableWhenUnavailableForCapture(isActive: True, isAvailableForCapture: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "90d2e436-af74-4f0e-b058-2c48cea6307f",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RecordedActivityTypeRemainsConfirmableWhenUnavailableForCapture(isActive: False, isAvailableForCapture: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "68cdf5ce-c61a-4ab3-9029-ba391114834d",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RetiredRecordedTypeRequiresHistoricalEvidenceAndAnActiveReplacement(evidence: \\\"valid\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "87961982-1227-41b9-9c18-ea7ab96f8843",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RetiredRecordedTypeRequiresHistoricalEvidenceAndAnActiveReplacement(evidence: \\\"missing\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "28d049f0-83ef-410a-8c15-0ca1b9c31a18",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RetiredRecordedTypeRequiresHistoricalEvidenceAndAnActiveReplacement(evidence: \\\"foreign\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "cf31cdfd-1249-4f8d-99f3-93031a6b0af4",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RetiredRecordedTypeRequiresHistoricalEvidenceAndAnActiveReplacement(evidence: \\\"ambiguous\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "87539f9d-373f-4844-b9d5-44eda746c182",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.RetiredRecordedTypeRequiresHistoricalEvidenceAndAnActiveReplacement(evidence: \\\"stale\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "id": "91b3f723-4f3a-49d6-9704-9c728f0d8989",
+      "name": "Hexalith.Timesheets.Server.Tests.MagicLinkConfirmationCapabilityCommandServiceTests.NonExternalEntryIsIneligibleForBothConfirmationDisplayAndCommit",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "86bf30aa-df75-493d-9d3e-b11f979a649c",
+      "name": "Hexalith.Timesheets.IntegrationTests.InternalSurfaceGuardTests.MagicLinkManagementRoutesRequireWorkloadCredentials(route: \\\"/api/timesheets/magic-links/confirmation-capabilit\\\"\u00b7\u00b7\u00b7)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "218321ac-3af9-4484-8aa0-a9be0dc140cc",
+      "name": "Hexalith.Timesheets.IntegrationTests.InternalSurfaceGuardTests.MagicLinkManagementRoutesRequireWorkloadCredentials(route: \\\"/api/timesheets/magic-links/confirmation-capabilit\\\"\u00b7\u00b7\u00b7)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "650f17c5-81d1-4c60-a6a3-20754e36b911",
+      "name": "Hexalith.Timesheets.IntegrationTests.InternalSurfaceGuardTests.MagicLinkManagementRoutesRequireWorkloadCredentials(route: \\\"/api/timesheets/magic-links/confirmation-capabilit\\\"\u00b7\u00b7\u00b7)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "d2ab2555-0648-492d-8327-b8ecdf3a4646",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ProposedEntryTerminalMarkerSurvivesActorRecreation(expire: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "dfbc73cf-4415-4c5c-81ff-0df79a5197ff",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ProposedEntryTerminalMarkerSurvivesActorRecreation(expire: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "6f1f9a8b-34f7-427d-8178-9c6e63476a98",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.SystemExpiryPersistsOnlyWithScopedWorkloadAuthorityAndSurvivesActorRecreation(allow: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "459a4613-26db-4275-9d90-84c905b35230",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.SystemExpiryPersistsOnlyWithScopedWorkloadAuthorityAndSurvivesActorRecreation(allow: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "f4bdec9a-5e5f-4b43-ad39-7f6da706b22b",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.InternalProjectionRouteRejectsMissingAndForgedCredentials",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "4e610cc9-a4fa-4422-b03a-abeb7b4d3451",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.WorkloadSubjectIsNeverAnImplicitPartyOrOutboundActorBinding(explicitParty: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "5f74a5a1-11d3-425d-86db-4de0d58b0652",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.WorkloadSubjectIsNeverAnImplicitPartyOrOutboundActorBinding(explicitParty: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "68560a90-50f5-4332-80a7-0bb39d0a0890",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.DeactivatedRecordedTypeCanBeConfirmedOrAdjustedToAnActiveReplacement",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "360e790b-c88f-41e8-9b99-694722704b0c",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.CorrectedScopeChangesRefuseTheOldConfirmationLinkWithoutChangingHistory(changedScope: \\\"contributor\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "c892cbca-3863-47db-a3ee-1d8a38cf6c42",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.CorrectedScopeChangesRefuseTheOldConfirmationLinkWithoutChangingHistory(changedScope: \\\"target\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "d254d44b-ac51-4ece-9f04-e353ecd07171",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.CorrectedScopeChangesRefuseTheOldConfirmationLinkWithoutChangingHistory(changedScope: \\\"activity-type\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "7f10e990-7abb-4a16-8249-ede6c67b2ec5",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.CorrectedScopeChangesRefuseTheOldConfirmationLinkWithoutChangingHistory(changedScope: \\\"activity-scope\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "188dd2ca-8009-48d9-986a-78df10b28e3f",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.HttpExpirySeparatesWorkloadAndExplicitPartyAuthority(systemAllowed: False, explicitParty: False, tenantAllowed: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "b8e9b3ad-49a9-44ba-b794-c11ea73005e5",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.HttpExpirySeparatesWorkloadAndExplicitPartyAuthority(systemAllowed: True, explicitParty: False, tenantAllowed: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "58909038-9402-46e3-9b35-2c798cbbdcce",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.HttpExpirySeparatesWorkloadAndExplicitPartyAuthority(systemAllowed: False, explicitParty: True, tenantAllowed: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "de732f8e-2272-449b-b9f6-611266a371d3",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.HttpExpirySeparatesWorkloadAndExplicitPartyAuthority(systemAllowed: True, explicitParty: False, tenantAllowed: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "b6327542-576a-40a1-b31c-08312aae6ade",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ConfirmationAfterApprovalOrCorrectionPreservesLifecycleAndPersistedEvidence(approved: True, corrected: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "1eb6019b-02da-4fd0-a9c9-70f66bfcdb6f",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ConfirmationAfterApprovalOrCorrectionPreservesLifecycleAndPersistedEvidence(approved: False, corrected: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "a26f67ee-5396-4df9-b668-185193fbc848",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ConfirmationAfterApprovalOrCorrectionPreservesLifecycleAndPersistedEvidence(approved: True, corrected: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "a808adbc-2f96-4758-98f5-6066a6eb8597",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.CatalogReplacementAfterValidPreflightRefusesUseWithoutDomainEffects(adjust: False)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "bfa6d5f2-422e-4757-aea8-0e9f49cd4be3",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.CatalogReplacementAfterValidPreflightRefusesUseWithoutDomainEffects(adjust: True)",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "735e4dcf-78f2-4f80-b0bb-8ed5432e4e2e",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ManagementRejectsSignedAssertionsForUnrelatedOperations(action: \\\"issue\\\", operation: \\\"domain-service:query\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "cc6dd226-2c71-4737-b3c6-146d810578cc",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ManagementRejectsSignedAssertionsForUnrelatedOperations(action: \\\"revoke\\\", operation: \\\"domain-service:query\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "83ae33f2-32b2-46f8-8675-39c8dc555ed0",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ManagementRejectsSignedAssertionsForUnrelatedOperations(action: \\\"expire\\\", operation: \\\"domain-service:query\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "b46c033a-a6e1-4db5-b352-4fdb7e20a371",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ManagementRejectsSignedAssertionsForUnrelatedOperations(action: \\\"issue\\\", operation: \\\"domain-service:project\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "43606977-399a-4773-9aa5-6cf9019c2a04",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ManagementRejectsSignedAssertionsForUnrelatedOperations(action: \\\"revoke\\\", operation: \\\"domain-service:project\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "c89cd83d-6747-4874-8890-949b11a675c4",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ManagementRejectsSignedAssertionsForUnrelatedOperations(action: \\\"expire\\\", operation: \\\"domain-service:project\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "cdb3a6b9-d3f2-42dc-b8da-0c4ce836aefa",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"standard\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "85a6aba6-42ac-4a5a-ab2a-52096561a125",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: True, claimVariant: \\\"standard\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "9a00e752-da88-468a-9074-d236c049a5e3",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"tenant-fallback\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "f16a0cdf-c100-42d3-b147-d20effacebbc",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"actor-fallback\\\")",
+      "result": "Pass"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "id": "ce43b4a3-0be3-4d55-b879-54028306ad97",
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"conflicting\\\")",
+      "result": "Pass"
+    }
+  ],
+  "management_route_parameter_evidence": {
+    "source": "tests/Hexalith.Timesheets.IntegrationTests/InternalSurfaceGuardTests.cs",
+    "method": "Hexalith.Timesheets.IntegrationTests.InternalSurfaceGuardTests.MagicLinkManagementRoutesRequireWorkloadCredentials",
+    "declared_route_parameters": [
+      "/api/timesheets/magic-links/confirmation-capabilities",
+      "/api/timesheets/magic-links/confirmation-capabilities/capability-1/revoke",
+      "/api/timesheets/magic-links/confirmation-capabilities/capability-1/expire"
+    ],
+    "passing_case_ids": [
+      "86bf30aa-df75-493d-9d3e-b11f979a649c",
+      "218321ac-3af9-4484-8aa0-a9be0dc140cc",
+      "650f17c5-81d1-4c60-a6a3-20754e36b911"
+    ],
+    "mapping_limitation": "The raw runner names truncate the route arguments. The declared parameter set and three passing case IDs are retained without assigning a route to an individual case ID."
+  },
+  "skipped_cases": [
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.PerformanceEvidenceLaneTests.PerformanceLaneIsReservedForLaunchLatencyEvidence",
+      "reason": "Performance evidence requires realistic EventStore-backed command/report fixtures in a later data-bearing story."
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests.CaptureAndGovernanceCommandAcknowledgementsRecordNfr10P95Evidence",
+      "reason": "Set TIMESHEETS_PERF=1 to run the command performance lane."
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.InfrastructureLaneTests.RuntimeIntegrationLaneIsReservedForEventstoreStateStoreEvidence",
+      "reason": "Infrastructure-dependent EventStore/Dapr/Aspire tests are isolated until a data-bearing story adds runtime fixtures."
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkLiveDaprTests.RecordedMagicLinksCommitOneUseAndSurviveActorRestart",
+      "reason": "Set TIMESHEETS_LIVE_DAPR=1 to run the local EventStore/Dapr acceptance journey."
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests.ReportExportAndDashboardQueryLatencyRecordsNfr11P95Evidence",
+      "reason": "Set TIMESHEETS_PERF=1 to run the report/export/dashboard performance lane."
+    }
+  ],
+  "owned_source_sha256": {
+    "src/Hexalith.Timesheets.Server/MagicLinks/Commands/CommitMagicLinkTransition.cs": "dc3b58902b4e3e7f2dce600774bbde354196543a947d0f2a44a01c4bc936b54b",
+    "src/Hexalith.Timesheets.Server/MagicLinks/DenyAllMagicLinkSystemExpiryAuthorizer.cs": "bcf6ad5813590a6d23407e99e1f6c3f924aac3d419ad6f57f01d94b95869c6a5",
+    "src/Hexalith.Timesheets.Server/MagicLinks/IMagicLinkSystemExpiryAuthorizer.cs": "1babc77ec9d3593c78c51ea2803d1af045de7b8c578971b99aaf5dff09ff8c20",
+    "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapabilityCommandService.cs": "e1be3df3e7e5e9a280d875f9bec8929ff7c63ebe4f110244635f50033200c058",
+    "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkEventStoreDomainProcessor.cs": "1a63e2b884468d44d002b59f0fd620e214d62f144865d700a39ee132ff63834d",
+    "src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs": "aba93678bff9d1883867dd59778f855f84521737346c030793c283f707005a96",
+    "src/Hexalith.Timesheets.Server/TimeEntries/TimeEntry.cs": "4ea2c076b0de7dba98d17d4d6c76dee8d6fc7dcd260c07cac53767246dafff6c",
+    "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs": "54ec006e52afb933b3b9c21d95b80f52214bc5988e111b6eee770c0db02b17ec",
+    "src/Hexalith.Timesheets/Runtime/EventStoreGatewayWorkloadAssertionSource.cs": "017af495dc71a56d4be54fca2759f844a0b1ee31cc754ab26a118cdadfb3dbd0",
+    "src/Hexalith.Timesheets/Runtime/HttpContextTimesheetsTrustedContextAccessor.cs": "8c9a663657b6a8fc81c346bcd6e33ecbfa731acf5952dfa3995017604e1ace50",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs": "4b2520155cb476202d2736788885f02809c0313c767f026e3562030197d322d1",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkEventStoreActorPersistenceTests.cs": "306203405a5847847a76d2101ceb2759a0c0418edd0bba20f3d6e3dd86e27001",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkPersistedSubmissionTests.cs": "83f09fb13affc79671f74c3bc4fc680da8edd5b7801a5ad282783d95c390a29d",
+    "tests/Hexalith.Timesheets.Server.Tests/MagicLinkConfirmationCapabilityCommandServiceTests.cs": "dc4695a832f6f8e861f302b4800fda63a3f5d7070f28c677c3ffce9ee71bcb46",
+    "tests/Hexalith.Timesheets.Server.Tests/MagicLinkEventStoreDomainProcessorTests.cs": "3cbedc7e274cda3fe145d553e2ee6026ebef9907ce9cc14c46cb9a4c384db7e6",
+    "tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs": "d8799bddf08fc08e079d1a196bf0737a84cbf4a79f4a28dd71fba99c07fc6b12"
+  },
+  "approved_intent_sha256": "4884875e6e26e447e91dfb483489e676d77cbe42d7222a218469768ad8caa3c5",
+  "review": {
+    "layers_run": [
+      "blind-hunter",
+      "edge-case-hunter",
+      "verification-gap"
+    ],
+    "filed_findings": 11,
+    "patched_findings": 10,
+    "rejected_spec_only_findings": 1,
+    "deferred_findings": 0,
+    "independent_rechecks": "Expiry identity handoff, processing-clock bound and authoritative confirmation regression were independently rechecked and resolved."
+  },
+  "focused_review_results": {
+    "server_passed": 98,
+    "integration_passed": 42
+  },
+  "mutation": {
+    "change": "Replaced recorded-type evidence admission with a freshness-only condition for the challenge, then restored the exact original source bytes in finally.",
+    "expected_failure": "ConfirmationCommitRejectsFreshCatalogWithoutRecordedActivityType(hasRecordedType: False)",
+    "mutant_test_exit_code": 1,
+    "restored_source_sha256": "1a63e2b884468d44d002b59f0fd620e214d62f144865d700a39ee132ff63834d",
+    "restored_build_log": "/tmp/timesheets-eligibility-review-server-restored-build.log"
+  },
+  "mutation_outcome": {
+    "expected_exit_code": 1,
+    "expected_failed_case": "ConfirmationCommitRejectsFreshCatalogWithoutRecordedActivityType(hasRecordedType: False)",
+    "restored_control_cases_passed": 2
+  },
+  "unchanged_results_reused": [
+    "Hexalith.Timesheets.Contracts.Tests",
+    "Hexalith.Timesheets.Projections.Tests",
+    "Hexalith.Timesheets.Works.Tests"
+  ],
+  "reuse_reason": "Review patches change expiry processing, HTTP identity handoff and their tests. Contracts and Works are unchanged. Projections and its tests are unchanged and do not invoke processor/expiry/HTTP identity paths; no applicable runtime path changed after its passing run.",
+  "deferred_ids_closed": [
+    59,
+    62,
+    73,
+    76,
+    124
+  ],
+  "remaining_boundaries": {
+    "project_restrictions": "DW-63 open",
+    "production_tenant_party_identity": "DW-113 open",
+    "runtime_deployed_acceptance": "unfinished",
+    "launch": "FAIL"
+  }
+}

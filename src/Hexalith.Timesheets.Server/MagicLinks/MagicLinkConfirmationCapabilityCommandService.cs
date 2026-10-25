@@ -195,6 +195,9 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             "Magic-link expiry requires asynchronous management authorization.", "capability", "authorization-required");
     }
 
+    /// <summary>Evaluates preliminary confirmation eligibility without authoritative catalog validation or persistence.</summary>
+    /// <remarks>Durable callers must submit through EventStore processing, which revalidates the catalog and current
+    /// capability/Time Entry state before atomically committing confirmation and capability use.</remarks>
     public async ValueTask<MagicLinkConfirmationUseResult> ConfirmAsync(
         TimesheetsRequestContext context,
         string oneTimeToken,
@@ -358,7 +361,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return new(InvalidLinkRejection(), null);
         }
 
-        if (activityTypeCatalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
+        if (!TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, out _))
         {
             return new(InvalidLinkRejection(), null);
         }
@@ -448,7 +451,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         }
 
         // Confirmation displays the recorded type even after capture availability changes.
-        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, requireCaptureAvailability: false, out string? activityTypeLabel)
+        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, out string? activityTypeLabel)
             ? new MagicLinkConfirmationDisplayResponse(
                 timeEntryState!.ServiceDate,
                 timeEntryState.DurationMinutes,
@@ -497,7 +500,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return null;
         }
 
-        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, requireCaptureAvailability: true, out string? activityTypeLabel)
+        // The recorded type remains historical evidence; the replacement must be active at commit.
+        return TryResolveDisplayLabel(capabilityState!, activityTypeCatalog, out string? activityTypeLabel)
             ? new MagicLinkAdjustmentDisplayResponse(
                 timeEntryState!.ServiceDate,
                 timeEntryState.DurationMinutes,
@@ -589,7 +593,10 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         MagicLinkCapabilityState? capabilityState,
         TimeEntryState? timeEntryState)
     {
-        if (capabilityState?.Exists != true || timeEntryState?.IsRecorded != true)
+        if (capabilityState?.Exists != true || capabilityState.CapabilityId is null
+            || !TimeEntry.CanConfirmExternally(timeEntryState)
+            || timeEntryState!.HasAmbiguousMagicLinkTerminalHistory
+            || timeEntryState.HasTerminalMagicLinkCapability(capabilityState.CapabilityId))
         {
             return InvalidLinkRejection();
         }
@@ -607,18 +614,12 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         MagicLinkCapabilityState? capabilityState,
         TimeEntryState? timeEntryState)
     {
-        if (capabilityState?.Exists != true || timeEntryState?.IsRecorded != true)
+        if (ValidateConfirmationScope(capabilityState, timeEntryState).IsRejection)
         {
             return InvalidLinkRejection();
         }
 
-        return timeEntryState.TimeEntryId == capabilityState.TimeEntryId
-            && timeEntryState.Contributor == capabilityState.Contributor
-            && timeEntryState.Target == capabilityState.Target
-            && timeEntryState.ActivityTypeId == capabilityState.ActivityTypeId
-            && timeEntryState.ActivityTypeScope == ActivityTypeScope.Tenant
-            && timeEntryState.ApprovalState == TimeEntryApprovalState.Draft
-            && timeEntryState.ContributorCategory == ContributorCategory.ExternalContributor
+        return timeEntryState!.ApprovalState == TimeEntryApprovalState.Draft
             && !timeEntryState.IsLockedFromDirectEdit
             && timeEntryState.CorrectionState == TimeEntryCorrectionState.None
             ? TimesheetsDomainResult.NoOp()
@@ -628,10 +629,13 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
     private static ExternalContributionSource ServerDerivedSource(MagicLinkCapabilityState state)
         => new("magic-link", state.CapabilityId!.Value);
 
+    /// <summary>Requires unambiguous historical catalog evidence without imposing capture availability.</summary>
+    internal static bool HasRecordedActivityTypeEvidence(MagicLinkCapabilityState state, ActivityTypeCatalogReadModel catalog)
+        => TryResolveDisplayLabel(state, catalog, out _);
+
     private static bool TryResolveDisplayLabel(
         MagicLinkCapabilityState state,
         ActivityTypeCatalogReadModel catalog,
-        bool requireCaptureAvailability,
         out string? label)
     {
         label = null;
@@ -648,8 +652,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
 
         if (matches.Length != 1
             || matches[0].Scope != ActivityTypeScope.Tenant
-            || matches[0].Project is not null
-            || (requireCaptureAvailability && (!matches[0].IsActive || !matches[0].IsAvailableForCapture)))
+            || matches[0].Project is not null)
         {
             return false;
         }
