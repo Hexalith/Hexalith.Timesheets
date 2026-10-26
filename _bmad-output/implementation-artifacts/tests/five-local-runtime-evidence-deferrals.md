@@ -1,0 +1,54 @@
+# Five local runtime evidence deferrals — 2026-10-26
+
+DW-75, the local portion of DW-190, and DW-191–DW-193 are complete. Independent review corrections and final verification pass. Launch remains **FAIL**: deployed bootstrap latency acceptance remains open under DW-194, alongside two explicit review follow-ups.
+
+The approved [spec](../spec-five-local-runtime-evidence-deferrals.md) starts from Timesheets `c940b5a1784bbc80014ace494aef6255e6157080`, EventStore `dcd3dce42b67a305b608f03c4dab2b812791abae`, and Commons `5c23c818f639c5bb3175f964c5549440bd5b876d`. No dependencies, gitlinks, topology or domain behavior changed.
+
+## Transport and provenance
+
+The runner verifies explicit TCP/TCP6 loopback listener inodes against the dashboard's PID/start and accessible descriptors before and after `/health`; all observable holders must be the recorded process. Missing, foreign, observably shared or changed listeners refuse qualification. A coexisting IPv6 wildcard cannot substitute for the required explicit IPv4 listener. Real IPv4, IPv6, mapped IPv6 and wildcard-coexistence tests pass. The health request connects to the verified numeric address with the configured Host header, independently of localhost resolution. Exclusivity against inaccessible additional holders remains an unverified follow-up.
+
+The fixture evaluates the AppHost and integration-test reference closure with inherited, case-insensitive globals, edge overrides/removals and project-relative roots. Alternate roots refuse admission before resources; ordinary build root overrides retain their existing support. Actual evaluated imports are fingerprinted from preprocessing held only in memory. Evidence stores paths/hashes, never imported source or property values. Recursive fingerprints cover every static file in all four executed output trees, including configuration, native assets and satellite assemblies. Final qualification records **19 project/property combinations, 278 unique imported build files and 926 execution/restore hashes**. Timesheets, EventStore, Commons and the imported Builds catalog all participate.
+
+Credential-bearing journey and metadata requests use the direct no-proxy/no-redirect opener. Real 302/307 and poisoned-proxy tests preserve response status/bytes without forwarding credentials. Projection receipts add only attempts, elapsed seconds and completion.
+
+## Bootstrap measurement and cancellation
+
+Both paths inspect the exact 257 direct legacy keys and 257 selected keys for the expected scope/generation. The logical profile delays foreground `IReadModelStore.GetAsync` calls, including setup and metadata. Counters and clock share one interval and freeze coherently; independent SDK cleanup is distinguished. It excludes raw SDK batch IO.
+
+A separate profile uses actual `DaprReadModelStore` and the existing public `InMemoryDaprStateClient.BeforeRead` seam to count every raw SDK state read, including envelopes, markers and batch manifests. It adds a bounded **25 microsecond** wait per raw read, includes setup and concurrent cleanup before foreground return, and excludes later cleanup. The public seam also exists in the current published Testing package: [API check](../evidence/five-local-runtime-evidence-deferrals/sdk-api-compatibility.json).
+
+| Path | Logical delay/read | Logical metadata | Direct / selected peak | Logical elapsed | Raw / batch-control reads | Raw-profile elapsed |
+| --- | ---: | ---: | --- | ---: | ---: | ---: |
+| Ordinary | 2 ms | 550 | 16 / 16 | 0.509 s | 1139 / 29 | 0.312 s |
+| Streamed | 2 ms | 1062 | 16 / 1 | 6.192 s | 1650 / 32 | 0.102 s |
+
+These are controlled local samples, not deployment percentiles. The ten-second reference budget comes from the installed `HttpStandardResilienceOptions` default; EventStore `AddServiceDefaults` installs standard resilience without an attempt-timeout override. Effective composed HTTP options and timeout propagation into a blocked raw read remain separately deferred. The manual journey's 45-second socket timeout and loader timeout are separate contracts.
+
+Four cancellation cases block a direct/selected shard in ordinary/streamed bootstrap, cancel at approximately ten seconds, drain foreground logical reads, preserve durable pending work and recover using fresh coordinator/handler instances. All completed paths establish persisted v7 and ordinary token-candidate recovery. A ninth regression verifies setup timing and an immutable snapshot despite later independent metadata reads. [Nine passing cases](../evidence/five-local-runtime-evidence-deferrals/suites/projections-post-review.xml.gz), [eight detailed profiles](../evidence/five-local-runtime-evidence-deferrals/bootstrap-profiles-post-review.json).
+
+## Historical startup reconciliation
+
+DW-75's October 3 smoke has no retained console exception or application exit receipt; its cause remains **unknown**. Its [original spec](../spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md) records readiness exit 18, Timesheets Finished and security Unhealthy.
+
+[Archived DW-82](../deferred-work-archive.md#dw-82-resolve-the-fixed-timesheets-apphost-public-port-8080-colliding-with-other-hexalith-apphosts) separately records October 4's exit 134 and occupied port 8080. The later [public-port override](five-local-apphost-boundary-deferrals.md) fixes that demonstrated collision. Subsequent local startup evidence and the final run supersede the outstanding diagnosis without attributing October 4's cause to October 3. All [eight historical checks](../evidence/five-local-runtime-evidence-deferrals/historical-reconciliation.json) pass with original artifact hashes retained.
+
+## Verification and review
+
+- Matching Debug/source restore and solution build pass; the [final build](../evidence/five-local-runtime-evidence-deferrals/build-post-review.json) has zero warnings/errors. Original [restore output](../evidence/five-local-runtime-evidence-deferrals/restore.log.gz) and [final build output](../evidence/five-local-runtime-evidence-deferrals/build-post-review.log.gz) are retained.
+- **208 Python tests pass** [locally](../evidence/five-local-runtime-evidence-deferrals/python-post-review.log.gz) and in a [clean archive with empty dependency directories](../evidence/five-local-runtime-evidence-deferrals/python-portability-post-review.json). Command: `PYTHONPATH=scripts python3 -m unittest discover -s scripts -p 'test_*.py'`.
+- Both isolated mutations are detected: [eight root-setting guard deletions](../evidence/five-local-runtime-evidence-deferrals/root-guard-mutation.json) and [recursive traversal deletion](../evidence/five-local-runtime-evidence-deferrals/traversal-mutation.json). The latter's healthy control passes and its mutated run fails the successful graph regression.
+- All [67 compiled guards](../evidence/five-local-runtime-evidence-deferrals/guards-post-review/run-ykwnqv17/guards.json) pass using `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --configuration-only`.
+- The six individual xUnit executables total **2,711 passed, 5 existing skips, zero failures/errors/not-run (2,716 cases)**. Final [Integration](../evidence/five-local-runtime-evidence-deferrals/suites/integration-post-review.json) and [Projections](../evidence/five-local-runtime-evidence-deferrals/suites/projections-post-review.json) receipts replace their earlier runs; the other four passed receipts remain in [verification.json](../evidence/five-local-runtime-evidence-deferrals/verification.json). Default skips supply no runtime acceptance.
+- Three independent review layers produced eleven patch entries and two deferrals, individually recorded in the [triage log](../spec-five-local-runtime-evidence-deferrals.md#review-triage-log). Corrections cover transitive properties/imports/assets, wildcard coexistence, the fixture true branch, exact selected keys and coherent logical/raw profiles. Initial failing broad receipts remain historical: they exposed a test-only source-checker false rejection and a background-cleanup assertion race, both corrected before final verification.
+- The [evidence scan](../evidence/five-local-runtime-evidence-deferrals/evidence-token-scan.json) found no structured JWTs or private keys in retained output. It is a bounded token-pattern check.
+
+## Final implementation runtime qualification
+
+[run-5b2g61ov](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/runtime-host.json) passes **one test with zero failures/errors/skips/not-run in 68.585 seconds**. The runner exits zero in 274.821 seconds. [Exact command and scoped certificate hash](../evidence/five-local-runtime-evidence-deferrals/runtime-attempt-04.json), [live output](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/58-Hexalith.Timesheets.IntegrationTests--class.log.gz), [independent audit](../evidence/five-local-runtime-evidence-deferrals/runtime-final-audit.json).
+
+The run verifies generated Keycloak login/required claims, negative tenant denial, persisted record/issue/index/rebuild, confirmation race, adjustment, replay denial and fresh post-restart link success. The NuGet dashboard owns two verified listener inodes; the health request uses numeric 127.0.0.1 and preserves Host. [Before](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/source-before.json) equals [after](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/source-after.json). [Native gateway replacement](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/gateway-process-replacement.json) proves a new PID/start under the same DCP controller and old identity exit. [Cleanup](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/cleanup.json) completes, [all captured processes exit](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/recorded-process-exit.json), and [shared preservation](../evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov/shared-preservation.json) matches Redis DB0/13/14 and scheduler identity/KV/revision.
+
+Earlier attempts remain retained: one refused during a preservation read, another refused when a foreign AppHost started, and pre-review run-2jlljrdv passed. The complete read-only diagnostic succeeded in 17.087 seconds without changing a timeout. FrontComposer/McpCli test AppHosts exited independently; no foreign process was stopped. All refusal cleanup completed before Timesheets resources were created.
+
+DW-75 is historically superseded; DW-190 is locally qualified with DW-194 open; DW-191–DW-193 are locally closed. The release/platform owner retains deployed acceptance. Inaccessible additional socket holders and composed HTTP cancellation proof remain separate review follow-ups. These local dispositions grant no release approval.

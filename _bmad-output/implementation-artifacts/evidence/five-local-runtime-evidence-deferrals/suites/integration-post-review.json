@@ -1,0 +1,32 @@
+{
+  "project": "Hexalith.Timesheets.IntegrationTests",
+  "command": [
+    "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "-noColor",
+    "-showLiveOutput",
+    "-result-xml",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/integration-post-review.xml"
+  ],
+  "exit": 0,
+  "elapsed_seconds": 705.293571295013,
+  "stats": {
+    "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+    "id": "42657dee-0b10-4d85-9523-601a71b18df7",
+    "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests.dll",
+    "run-date": "2026-10-26",
+    "run-time": "08:44:05",
+    "start-rtf": "2026-10-26T08:44:05.4686276+00:00",
+    "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+    "target-framework": ".NETCoreApp,Version=v10.0",
+    "errors": "0",
+    "failed": "0",
+    "finish-rtf": "2026-10-26T08:55:50.4558820+00:00",
+    "not-run": "0",
+    "passed": "942",
+    "skipped": "5",
+    "time": "705.015",
+    "time-rtf": "00:11:45.0150000",
+    "total": "947"
+  },
+  "xml_receipt": "suites/integration-post-review.xml.gz"
+}

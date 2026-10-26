@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "scripts/check_magic_link_apphost_guards.py",
+    "--configuration-only",
+    "--log-directory",
+    "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/guards-post-review"
+  ],
+  "exit": 0,
+  "elapsed_seconds": 25.79348708302132
+}

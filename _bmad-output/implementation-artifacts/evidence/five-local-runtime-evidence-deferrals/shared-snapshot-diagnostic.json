@@ -1,0 +1,35 @@
+{
+  "diagnostic_only": true,
+  "redis_socket_timeout_seconds": 120,
+  "coverage": "complete retained Redis DB0/13/14 plus scheduler range; unchanged fingerprint implementation",
+  "success": true,
+  "elapsed_seconds": 17.08659545102273,
+  "snapshot": {
+    "redis": {
+      "0": {
+        "keys": 828164,
+        "persistent_keys": 827395,
+        "persistent_sha256": "1be3cc4b872b158f612b245dadb25ae87338083e4d504ec9d7d2d80127e26c1c",
+        "expiring_keys": 769
+      },
+      "13": {
+        "keys": 0,
+        "persistent_keys": 0,
+        "persistent_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "expiring_keys": 0
+      },
+      "14": {
+        "keys": 0,
+        "persistent_keys": 0,
+        "persistent_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "expiring_keys": 0
+      }
+    },
+    "scheduler": {
+      "cluster_id": "14841639068965178418",
+      "revision": "18986",
+      "keys": 1569,
+      "sha256": "812f1acbf15d462422a651b5379f2b1a04b08f0bea3c483083bad7614d30829b"
+    }
+  }
+}

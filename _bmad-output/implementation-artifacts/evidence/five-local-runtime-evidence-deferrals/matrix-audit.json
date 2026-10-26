@@ -1,0 +1,54 @@
+{
+  "all_rows_passed": true,
+  "rows": {
+    "dashboard": {
+      "passed": true,
+      "tests": [
+        "test_dashboard_socket_inventory_refuses_missing_foreign_ambiguous_and_changed_owners",
+        "test_dashboard_health_verifies_real_tcp_and_tcp6_kernel_socket_owners",
+        "test_dashboard_health_pins_the_verified_listener_despite_poisoned_localhost_resolution",
+        "test_real_ipv6_wildcard_can_coexist_with_explicit_owned_ipv4_listener"
+      ],
+      "receipt": "python-post-review.log.gz"
+    },
+    "provenance": {
+      "passed": true,
+      "tests": [
+        "test_actual_msbuild_dependency_root_overrides_are_refused_before_any_resource_start",
+        "test_nondefault_dependency_root_is_the_only_reason_for_graph_refusal",
+        "test_source_capture_hashes_the_dotted_native_gateway_and_its_exact_companion_assembly",
+        "test_successful_recursive_msbuild_globals_relative_roots_and_import_identity"
+      ],
+      "receipt": "python-post-review.log.gz"
+    },
+    "http": {
+      "passed": true,
+      "tests": [
+        "test_journey_http_contract_refuses_redirects_bypasses_proxies_and_keeps_response_bytes",
+        "test_owned_http_opener_preserves_the_exact_callers_tls_context"
+      ],
+      "receipt": "python-post-review.log.gz"
+    },
+    "bootstrap": {
+      "passed": true,
+      "tests": [
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.CompleteRawSdkStateReadProfilePersistsV7(streamed: False)",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.CompleteRawSdkStateReadProfilePersistsV7(streamed: True)",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.LogicalSnapshotIncludesSetupAndRemainsFrozenAfterIndependentMetadataReads",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.DelayedCombinedInventoryPersistsV7WithinGatewayAttemptBudget(streamed: False)",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.DelayedCombinedInventoryPersistsV7WithinGatewayAttemptBudget(streamed: True)",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.GatewayBudgetCancellationInEitherInventoryPreservesPendingWorkAndRetrySucceeds(streamed: False, phase: \\\"direct\\\")",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.GatewayBudgetCancellationInEitherInventoryPreservesPendingWorkAndRetrySucceeds(streamed: False, phase: \\\"selected\\\")",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.GatewayBudgetCancellationInEitherInventoryPreservesPendingWorkAndRetrySucceeds(streamed: True, phase: \\\"direct\\\")",
+        "Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.GatewayBudgetCancellationInEitherInventoryPreservesPendingWorkAndRetrySucceeds(streamed: True, phase: \\\"selected\\\")"
+      ],
+      "receipt": "suites/projections-post-review.xml.gz"
+    },
+    "history": {
+      "passed": true,
+      "checks": 8,
+      "receipt": "historical-reconciliation.json"
+    }
+  },
+  "actual_runtime": "runtime/run-5b2g61ov"
+}

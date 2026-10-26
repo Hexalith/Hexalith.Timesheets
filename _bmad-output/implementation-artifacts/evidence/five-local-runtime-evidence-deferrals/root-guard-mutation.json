@@ -1,0 +1,9 @@
+{
+  "mutation": "remove only the evaluated dependency-root refusal in memory",
+  "healthy_test_passed": true,
+  "tests_run": 1,
+  "detected_subtest_failures": 8,
+  "unexpected_errors": 0,
+  "source_files_changed": false,
+  "passed": true
+}

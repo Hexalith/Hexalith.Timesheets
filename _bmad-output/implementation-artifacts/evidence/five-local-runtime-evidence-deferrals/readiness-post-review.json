@@ -1,0 +1,31 @@
+{
+  "command": [
+    "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+    "-class",
+    "Hexalith.Timesheets.ArchitectureTests.FitnessTests.LaunchReadinessTests",
+    "-noColor",
+    "-result-xml",
+    "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/readiness-post-review.xml"
+  ],
+  "exit": 0,
+  "elapsed_seconds": 0.49981091398512945,
+  "stats": {
+    "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+    "id": "df9e1755-e38f-4b98-9c26-ce14c2f8c44f",
+    "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll",
+    "run-date": "2026-10-26",
+    "run-time": "09:02:11",
+    "start-rtf": "2026-10-26T09:02:11.9759757+00:00",
+    "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+    "target-framework": ".NETCoreApp,Version=v10.0",
+    "errors": "0",
+    "failed": "0",
+    "finish-rtf": "2026-10-26T09:02:12.2938441+00:00",
+    "not-run": "0",
+    "passed": "16",
+    "skipped": "0",
+    "time": "0.318",
+    "time-rtf": "00:00:00.3180000",
+    "total": "16"
+  }
+}

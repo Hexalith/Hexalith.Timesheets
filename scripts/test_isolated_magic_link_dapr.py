@@ -57,8 +57,11 @@ class Commands:
             if result is not None:
                 return result
         output = ""
-        if arguments[:2] == ["dotnet", "msbuild"]:
-            output = json.dumps({"Properties": self.run_properties})
+        if "-preprocess" in arguments:
+            output = "<!--\n" + arguments[2] + "\n-->"
+        elif arguments[:2] == ["dotnet", "msbuild"]:
+            output = json.dumps({"Properties": {}, "Items": {"ProjectReference": []}} if "-getItem:ProjectReference" in arguments
+                                else {"Properties": self.run_properties})
         elif arguments[:2] in (["aspire", "ps"], ["dapr", "list"]):
             output = "[]"
         elif arguments[:3] == ["aspire", "describe", "security"]:
@@ -117,6 +120,20 @@ class IsolatedFixtureTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             worker.join(timeout=2)
+
+    @staticmethod
+    def dashboard_socket_fixture(process, port, *, inode="123", address="0100007F", owner="1"):
+        """Build a deterministic proc fixture; real kernel ownership is tested separately."""
+        network = process.parent / "net"
+        network.mkdir(exist_ok=True)
+        for table in ("tcp", "tcp6"):
+            (network / table).write_text("header\n" + (f"0: {address}:{port:04X} 00000000:0000 0A 0 0 0 0 0 {inode}\n"
+                if table == ("tcp" if len(address) == 8 else "tcp6") else ""))
+        descriptors = process.parent / owner / "fd"
+        descriptors.mkdir(parents=True, exist_ok=True)
+        link = descriptors / "3"
+        link.unlink(missing_ok=True)
+        link.symlink_to("socket:[" + inode + "]")
 
     def test_public_port_validation_and_explicit_runner_environment(self):
         for invalid in ("", " ", "abc", "18.080", "+18080", "-1", True, None, 1023, 65536,
@@ -222,7 +239,7 @@ class IsolatedFixtureTests(unittest.TestCase):
                  or isinstance(node, ast.Assign) and any(isinstance(target, ast.Name)
                     and target.id == "PROJECTION_FAILURE_REASON_CODES" for target in node.targets)]
         from magic_link_index_selection import legacy_index_diagnostics
-        namespace = {"tenant": "fixture-tenant", "json": json, "secrets": fixture.secrets, "time": MagicMock(),
+        namespace = {"tenant": "fixture-tenant", "json": json, "secrets": fixture.secrets, "time": MagicMock(monotonic=lambda: 1.0),
                      "timesheets": "private-origin", "ACTOR_RATE_LIMIT_RETRY_DELAYS": (1, 5, 15, 45),
                      "legacy_index_diagnostics": legacy_index_diagnostics, "read_model": lambda *_args, **_kwargs: None,
                      "sign": lambda *_args, **_kwargs: "unused"}
@@ -358,7 +375,8 @@ class IsolatedFixtureTests(unittest.TestCase):
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
                 namespace["project"]([{"sequenceNumber": 1, "globalPosition": 7}], "owner", "fixture-route", "catalog")
-            self.assertEqual("", output.getvalue())
+            self.assertEqual({"attempts": 1, "elapsed_seconds": 0.0, "completed": True},
+                json.loads(output.getvalue().removeprefix("Delivery timing: ")))
             self.assertEqual(1, namespace["call"].call_count)
 
     def test_private_allocations_exclude_selected_public_listener_and_each_other(self):
@@ -1212,6 +1230,7 @@ class IsolatedFixtureTests(unittest.TestCase):
         process = directory / "1"
         process.mkdir(parents=True)
         identity = {"pid": 1, "start": "current"}
+        self.dashboard_socket_fixture(process, 18888)
         private = fixture.secrets.token_hex(24)
         for defect in (None, "changed-start", "wildcard", "missing", "unavailable", "path", "query", "fragment",
                        "empty-query", "empty-fragment", "userinfo", "empty-userinfo", "control"):
@@ -1229,10 +1248,12 @@ class IsolatedFixtureTests(unittest.TestCase):
                 with patch.object(fixture, "owned_http_open", return_value=response,
                                   side_effect=OSError("unavailable") if defect == "unavailable" else None) as request:
                     if defect is None:
-                        self.assertEqual({"ready": True, "scheme": "https", "loopback": True, "port": 18888, "path": "/health"},
+                        self.assertEqual({"ready": True, "scheme": "https", "loopback": True, "port": 18888, "path": "/health",
+                                          "connect_host": "127.0.0.1", "ownership": {"pid": 1, "start": "current",
+                                          "socket_inodes": ["123"], "loopback_hosts": ["127.0.0.1"]}},
                                          fixture.verify_dashboard_ready(identity, directory))
                         request.assert_called_once()
-                        self.assertEqual("https://127.0.0.1:18888/health", request.call_args.args[0])
+                        self.assertEqual("https://127.0.0.1:18888/health", request.call_args.args[0].full_url)
                     else:
                         with self.assertRaises(fixture.FixtureError):
                             fixture.verify_dashboard_ready(identity, directory)
@@ -1253,6 +1274,7 @@ class IsolatedFixtureTests(unittest.TestCase):
         process.mkdir(parents=True)
         (process / "stat").write_text("1 (dashboard) " + " ".join(["S", "0", *(["0"] * 17), "current"]))
         with self.owned_http_server(dashboard) as origin:
+            self.dashboard_socket_fixture(process, fixture.urllib.parse.urlsplit(origin).port)
             try:
                 fixture.owned_http_open(origin, timeout=2)
                 self.fail("Browser root should challenge")
@@ -1266,7 +1288,9 @@ class IsolatedFixtureTests(unittest.TestCase):
                     (process / "environ").write_bytes(("ASPNETCORE_URLS=" + origin + suffix).encode())
                     result = fixture.verify_dashboard_ready({"pid": 1, "start": "current"}, process.parent)
                     self.assertEqual({"ready": True, "scheme": "http", "loopback": True,
-                        "port": fixture.urllib.parse.urlsplit(origin).port, "path": "/health"}, result)
+                        "port": fixture.urllib.parse.urlsplit(origin).port, "path": "/health", "connect_host": "127.0.0.1",
+                        "ownership": {"pid": 1, "start": "current", "socket_inodes": ["123"],
+                                      "loopback_hosts": ["127.0.0.1"]}}, result)
             self.assertEqual(["/health", "/health"], paths)
 
     def test_owned_dashboard_and_credentials_refuse_actual_redirects_without_leaking_response_or_credentials(self):
@@ -1292,6 +1316,7 @@ class IsolatedFixtureTests(unittest.TestCase):
                     handler.wfile.write(json.dumps({"error": "invalid_grant", "error_description": private}).encode())
 
                 with self.subTest(status=status), self.owned_http_server(redirect) as origin:
+                    self.dashboard_socket_fixture(process, fixture.urllib.parse.urlsplit(origin).port)
                     (process / "environ").write_bytes(("ASPNETCORE_URLS=" + origin).encode())
                     output = io.StringIO()
                     with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output), \
@@ -1336,6 +1361,158 @@ class IsolatedFixtureTests(unittest.TestCase):
                         self.assertEqual(b"owned", response.read())
         self.assertEqual(["GET", "GET"], owned_hits)
         self.assertEqual([], proxy_hits)
+
+    def test_dashboard_socket_inventory_refuses_missing_foreign_ambiguous_and_changed_owners(self):
+        process = Path(self.temporary.name) / "socket-proc" / "1"
+        process.mkdir(parents=True)
+        stat = "1 (dashboard) " + " ".join(["S", "0", *(["0"] * 17), "current"])
+        (process / "stat").write_text(stat)
+        (process / "environ").write_bytes(b"ASPNETCORE_URLS=http://127.0.0.1:18888")
+        identity = {"pid": 1, "start": "current"}
+        for defect in ("missing-table", "missing-listener", "foreign", "shared", "second-listener",
+                       "mapped-listener", "wildcard", "changed-start", "changed-socket"):
+            with self.subTest(defect=defect):
+                for candidate in process.parent.glob("*/fd/*"):
+                    candidate.unlink()
+                (process / "stat").write_text(stat)
+                self.dashboard_socket_fixture(process, 18888)
+                if defect == "missing-table": (process.parent / "net/tcp6").unlink()
+                if defect == "missing-listener": (process.parent / "net/tcp").write_text("header\n")
+                if defect == "foreign":
+                    (process / "fd/3").unlink()
+                    self.dashboard_socket_fixture(process, 18888, owner="2")
+                if defect == "shared": self.dashboard_socket_fixture(process, 18888, owner="2")
+                if defect == "second-listener":
+                    with (process.parent / "net/tcp").open("a") as table:
+                        table.write("1: 0100007F:49C8 00000000:0000 0A 0 0 0 0 0 456\n")
+                if defect == "mapped-listener":
+                    with (process.parent / "net/tcp6").open("a") as table:
+                        table.write("1: 0000000000000000FFFF00000100007F:49C8 00000000:0000 0A 0 0 0 0 0 456\n")
+                if defect == "wildcard": self.dashboard_socket_fixture(process, 18888, address="00000000")
+                response = MagicMock()
+                response.__enter__.return_value.status = 200
+                def request(*_args, **_kwargs):
+                    if defect == "changed-start": (process / "stat").write_text(stat.replace("current", "changed"))
+                    if defect == "changed-socket": self.dashboard_socket_fixture(process, 18888, inode="456")
+                    return response
+                with patch.object(fixture, "owned_http_open", side_effect=request) as opened, self.assertRaises(fixture.FixtureError):
+                    fixture.verify_dashboard_ready(identity, process.parent)
+                self.assertEqual(1 if defect.startswith("changed-") else 0, opened.call_count)
+
+    @contextlib.contextmanager
+    def real_dashboard_process(self, family=socket.AF_INET, advertised_origin=None, bind_host=None, advertise_host=None):
+        host = bind_host or ("127.0.0.1" if family == socket.AF_INET else "::1")
+        with socket.socket(family) as reservation:
+            reservation.bind((host, 0))
+            port = reservation.getsockname()[1]
+        origin = (f"http://127.0.0.1:{port}" if family == socket.AF_INET or host == "::ffff:127.0.0.1"
+                  else f"http://[{host}]:{port}")
+        if advertise_host:
+            advertised_origin = f"http://{advertise_host}:{port}"
+        code = """import http.server, socket, sys
+class Handler(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b'Healthy')
+    def log_message(self, *args): pass
+class Server(http.server.HTTPServer):
+    address_family = int(sys.argv[1])
+server = Server((sys.argv[2], int(sys.argv[3])), Handler)
+print('ready', flush=True)
+server.serve_forever()
+"""
+        process = subprocess.Popen([sys.executable, "-u", "-c", code, str(family), host, str(port)],
+            env=dict(os.environ, ASPNETCORE_URLS=advertised_origin or origin), stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE, text=True)
+        try:
+            self.assertEqual("ready\n", process.stdout.readline())
+            fields = Path(f"/proc/{process.pid}/stat").read_text().rsplit(")", 1)[1].split()
+            yield process, {"pid": process.pid, "start": fields[19]}, origin
+        finally:
+            process.terminate()
+            process.wait(timeout=5)
+            process.stdout.close()
+            process.stderr.close()
+
+    def test_dashboard_health_verifies_real_tcp_and_tcp6_kernel_socket_owners(self):
+        for family, bind_host in ((socket.AF_INET, None), (socket.AF_INET6, None), (socket.AF_INET6, "::ffff:127.0.0.1")):
+            with self.subTest(family=family, bind_host=bind_host), self.real_dashboard_process(family, bind_host=bind_host) as (_, identity, origin):
+                result = fixture.verify_dashboard_ready(identity)
+                self.assertTrue(result["ready"])
+                self.assertEqual(identity["pid"], result["ownership"]["pid"])
+                self.assertTrue(result["ownership"]["socket_inodes"])
+                self.assertEqual(fixture.urllib.parse.urlsplit(origin).port, result["port"])
+        with self.real_dashboard_process() as (_, foreign, origin):
+            with self.real_dashboard_process(advertised_origin=origin) as (_, identity, _):
+                with self.assertRaises(fixture.FixtureError):
+                    fixture.verify_dashboard_ready(identity)
+                self.assertTrue(fixture.verify_dashboard_ready(foreign)["ready"])
+
+    def test_dashboard_health_pins_the_verified_listener_despite_poisoned_localhost_resolution(self):
+        original_lookup = socket.getaddrinfo
+        localhost_lookups = []
+        def poisoned(host, *args, **kwargs):
+            if host == "localhost":
+                localhost_lookups.append(host)
+                return original_lookup("127.0.0.2", *args, **kwargs)
+            return original_lookup(host, *args, **kwargs)
+        with self.real_dashboard_process(advertise_host="localhost") as (_, identity, origin), \
+                patch.object(fixture.socket, "getaddrinfo", side_effect=poisoned), \
+                patch.object(fixture, "owned_http_open", wraps=fixture.owned_http_open) as opened:
+            result = fixture.verify_dashboard_ready(identity)
+            self.assertEqual("127.0.0.1", result["connect_host"])
+            self.assertEqual([], localhost_lookups)
+            request = opened.call_args.args[0]
+            self.assertEqual(origin + "/health", request.full_url)
+            self.assertEqual("localhost:" + str(result["port"]), request.get_header("Host"))
+
+    @staticmethod
+    def call_journey_namespace():
+        tree = ast.parse((fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text())
+        node = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "call")
+        namespace = {"json": json, "urllib": fixture.urllib, "owned_http_open": fixture.owned_http_open}
+        exec(compile(ast.Module(body=[node], type_ignores=[]), "journey-call", "exec"), namespace)
+        return namespace
+
+    def test_journey_http_contract_refuses_redirects_bypasses_proxies_and_keeps_response_bytes(self):
+        sink_hits, proxy_hits = [], []
+        def sink(handler):
+            sink_hits.append(dict(handler.headers))
+            handler.send_response(200)
+            handler.end_headers()
+        def proxy(handler):
+            proxy_hits.append(dict(handler.headers))
+            handler.send_response(502)
+            handler.end_headers()
+        with self.owned_http_server(sink) as destination, self.owned_http_server(proxy) as proxy_origin:
+            for status in (200, 302, 307, 400, 500):
+                origin_hits = []
+                def respond(handler):
+                    origin_hits.append((dict(handler.headers), handler.rfile.read(int(handler.headers.get("Content-Length", 0)))))
+                    handler.send_response(status)
+                    handler.send_header("Location", destination + "/credential-sink")
+                    handler.end_headers()
+                    handler.wfile.write(b'original-response\x00\xff')
+                with self.subTest(status=status), self.owned_http_server(respond) as origin:
+                    poison = {name: proxy_origin for name in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "ALL_PROXY", "all_proxy")}
+                    with patch.dict(os.environ, dict(poison, NO_PROXY="", no_proxy="")), \
+                            patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Default opener forbidden")):
+                        result = self.call_journey_namespace()["call"](origin, "POST", {"input": 1}, "assertion-secret", "channel-secret")
+                    self.assertEqual((status, b'original-response\x00\xff'), result)
+                    self.assertEqual(1, len(origin_hits))
+                    headers, body = origin_hits[0]
+                    self.assertEqual("assertion-secret", headers["X-Hexalith-Workload-Assertion"])
+                    self.assertEqual("channel-secret", headers["Dapr-Api-Token"])
+                    self.assertEqual(b'{"input":1}', body)
+        self.assertEqual([], sink_hits)
+        self.assertEqual([], proxy_hits)
+        tree = ast.parse((fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text())
+        self.assertFalse(any(isinstance(node, ast.Attribute) and node.attr == "urlopen" for node in ast.walk(tree)))
+        metadata_calls = [node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                          and isinstance(node.func, ast.Name) and node.func.id == "owned_http_open"
+                          and isinstance(node.args[0], ast.BinOp)]
+        self.assertEqual(2, len(metadata_calls))
 
     def test_owned_http_opener_preserves_the_exact_callers_tls_context(self):
         contexts = (fixture.ssl.create_default_context(), fixture.ssl._create_unverified_context())
@@ -1703,7 +1880,8 @@ class IsolatedFixtureTests(unittest.TestCase):
             instance, status = self.run_fixture(commands)
             self.assertEqual(0, status)
             self.assertEqual(caller, dict(os.environ))
-        query_index = next(index for index, (args, _) in enumerate(commands.calls) if args[:2] == ["dotnet", "msbuild"])
+        query_index = next(index for index, (args, _) in enumerate(commands.calls)
+                           if "-target:ComputeRunArguments" in args)
         arguments, options = commands.calls[query_index]
         self.assertEqual(str(fixture.GATEWAY_PROJECT), arguments[2])
         self.assertEqual(fixture.ROOT, options["cwd"])
@@ -1753,11 +1931,12 @@ class IsolatedFixtureTests(unittest.TestCase):
             path.write_bytes(contents)
         heads = {str(workspace): "a" * 40, str(gateway_project.parents[2]): "b" * 40}
         untracked = {root: [] for root in heads}
+        patches = {}
         def git(arguments):
             if arguments[:2] == ["git", "-C"]:
                 output = (heads[arguments[2]] if arguments[3:] == ["rev-parse", "HEAD"] else
                     "\0".join(untracked[arguments[2]]) if arguments[3:] == ["ls-files", "--others", "--exclude-standard", "-z"]
-                    else "local source patch")
+                    else patches.get(arguments[2], "local source patch"))
                 return subprocess.CompletedProcess(arguments, 0, output, "")
         commands = Commands(git)
         instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
@@ -1815,6 +1994,63 @@ class IsolatedFixtureTests(unittest.TestCase):
                     before = instance.capture_source_identity()
                     path.write_bytes(private + b"changed")
                     self.assertEqual(before, instance.capture_source_identity())
+            commons = workspace / "references/Hexalith.Commons"
+            commons.mkdir()
+            heads[str(commons)] = "c" * 40
+            untracked[str(commons)] = ["src/extra.cs"]
+            extra = commons / "src/extra.cs"
+            extra.parent.mkdir()
+            extra.write_bytes(private)
+            apphost_native = apphost.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+            apphost_native.write_bytes(b"native apphost")
+            gateway_assets = gateway_project.parent / "obj/project.assets.json"
+            gateway_assets.parent.mkdir()
+            gateway_assets.write_bytes(b"gateway restore graph")
+            dependency_assembly = module.parent / "Hexalith.Commons.dll"
+            dependency_assembly.write_bytes(b"dependency assembly")
+            manifest = module.parent / "Hexalith.Timesheets.deps.json"
+            manifest.write_bytes(b"launch manifest")
+            graph = {"repositories": ["Hexalith.Commons"], "projects": {
+                str(apphost.relative_to(workspace)): {}, str(gateway_project.relative_to(workspace)) + "|Version=1": {}}}
+            builds = workspace / "references/Hexalith.Builds"
+            builds.mkdir()
+            heads[str(builds)] = "d" * 40
+            untracked[str(builds)] = ["extra-catalog.props"]
+            catalog = builds / "extra-catalog.props"
+            catalog.write_bytes(private)
+            instance.dependency_graph = graph
+            with patch.object(instance, "evaluate_dependency_graph", return_value=graph):
+                before = instance.capture_source_identity()
+                self.assertEqual(graph, before["dependency_graph"])
+                self.assertEqual("c" * 40, before["Hexalith.Commons"]["head"])
+                self.assertEqual("d" * 40, before["Hexalith.Builds"]["head"])
+                patches[str(builds)] = "changed catalog patch"
+                self.assertNotEqual(before["Hexalith.Builds"]["diff_sha256"],
+                    instance.capture_source_identity()["Hexalith.Builds"]["diff_sha256"])
+                catalog.write_bytes(private + b"changed")
+                self.assertNotEqual(before["Hexalith.Builds"]["untracked_build_inputs"],
+                    instance.capture_source_identity()["Hexalith.Builds"]["untracked_build_inputs"])
+                self.assertEqual(fixture.hashlib.sha256(private).hexdigest(),
+                    before["Hexalith.Commons"]["untracked_build_inputs"]["src/extra.cs"])
+                nested = module.parent / "runtimes/linux-x64/native/helper.so"
+                nested.parent.mkdir(parents=True)
+                nested.write_bytes(private)
+                config = gateway.parent / "appsettings.Development.json"
+                config.write_bytes(private)
+                for asset in (dependency_assembly, manifest, apphost_native, gateway_assets, nested, config):
+                    before = instance.capture_source_identity()
+                    key = str(asset.relative_to(workspace))
+                    self.assertIn(key, before["files"])
+                    saved = asset.read_bytes()
+                    asset.write_bytes(saved + b"changed")
+                    self.assertNotEqual(before["files"][key], instance.capture_source_identity()["files"][key])
+                    asset.write_bytes(saved)
+                extra.write_bytes(private + b"changed")
+                self.assertNotEqual(before["Hexalith.Commons"]["untracked_build_inputs"],
+                    instance.capture_source_identity()["Hexalith.Commons"]["untracked_build_inputs"])
+            with patch.object(instance, "evaluate_dependency_graph", return_value={"changed": True}), \
+                    self.assertRaisesRegex(fixture.FixtureError, "graph changed"):
+                instance.capture_source_identity()
         self.assertFalse(commands.started)
         self.assertFalse(commands.redis_attempted)
         self.assertFalse(instance.start_attempted)
@@ -1836,25 +2072,194 @@ class IsolatedFixtureTests(unittest.TestCase):
         for payload in payloads:
             with self.subTest(payload=payload):
                 commands = Commands(lambda args: subprocess.CompletedProcess(args, 0, payload, "")
-                                    if args[:2] == ["dotnet", "msbuild"] else None)
+                                    if "-target:ComputeRunArguments" in args else None)
                 instance, status = self.run_fixture(commands)
                 self.assertNotEqual(0, status)
                 self.assertFalse(commands.started)
                 self.assertFalse(commands.redis_attempted)
                 self.assertIsNone(instance.scratch)
                 self.assertNotIn(fixture.GATEWAY_EXECUTABLE_SETTING, instance.environment)
+                self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
                 self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
 
     def test_gateway_query_failure_retains_sanitized_original_status_without_creating_resources(self):
         commands = Commands(lambda args: subprocess.CompletedProcess(args, 27, "Authorization: Bearer private-query-token", "")
-                            if args[:2] == ["dotnet", "msbuild"] else None)
+                            if "-target:ComputeRunArguments" in args else None)
         instance, status = self.run_fixture(commands)
         self.assertEqual(27, status)
+        self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
         self.assertFalse(commands.redis_attempted)
         self.assertFalse(commands.started)
         logs = "".join(path.read_text() for path in instance.log_directory.glob("*.log"))
         self.assertNotIn("private-query-token", logs)
         self.assertIn("redacted", logs)
+
+    def test_actual_msbuild_dependency_root_overrides_are_refused_before_any_resource_start(self):
+        alternate = Path(self.temporary.name) / "alternate dependency"
+        alternate.mkdir()
+        # Evaluation needs no package pins or restored submodules. Retain the
+        # actual consuming projects/props, but supply an empty CPM catalog so
+        # this refusal regression also runs in a source-only script checkout.
+        catalog = Path(self.temporary.name) / "evaluation-catalog.props"
+        catalog.write_text("<Project/>")
+        for setting in fixture.DEPENDENCY_ROOTS:
+            with self.subTest(setting=setting):
+                commands = Commands()
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None,
+                    log_directory=self.logs, ownership_check=lambda: commands.started and not commands.stopped)
+                instance.environment[setting] = str(alternate)
+                instance.environment["DirectoryPackagesPropsPath"] = str(catalog)
+                def real_query(arguments):
+                    if "-getItem:ProjectReference" in arguments:
+                        return subprocess.run(arguments, cwd=fixture.ROOT, env=instance.environment,
+                                              text=True, capture_output=True, timeout=30, check=False)
+                commands.failure = real_query
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertNotEqual(0, instance.execute())
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.redis_attempted)
+                self.assertFalse(instance.start_attempted)
+                self.assertIsNone(instance.scratch)
+                self.assertFalse((instance.log_directory / "source-before.json").exists())
+        # An evaluated project import is not discoverable by just screening the
+        # caller's root environment variables. Exercise the real MSBuild import.
+        custom = Path(self.temporary.name) / "alternate.props"
+        custom.write_text('<Project><Import Project="' + str(fixture.ROOT / "Directory.Build.props")
+            + '"/><PropertyGroup><HexalithWorksRoot>' + str(alternate)
+            + '</HexalithWorksRoot></PropertyGroup></Project>')
+        commands = Commands()
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        instance.environment["DirectoryBuildPropsPath"] = str(custom)
+        instance.environment["DirectoryPackagesPropsPath"] = str(catalog)
+        commands.failure = lambda args: subprocess.run(args, cwd=fixture.ROOT, env=instance.environment,
+            text=True, capture_output=True, timeout=30, check=False) if "-getItem:ProjectReference" in args else None
+        with self.assertRaisesRegex(fixture.FixtureError, "outside the recorded default roots"):
+            instance.validate_dependency_graph()
+        self.assertFalse(commands.started)
+        self.assertFalse(commands.redis_attempted)
+
+    def test_dependency_graph_refuses_escaped_project_edges_and_records_forwarded_properties(self):
+        commands = Commands()
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        outside = Path(self.temporary.name) / "foreign.csproj"
+        def graph(arguments):
+            if "-getItem:ProjectReference" in arguments:
+                return subprocess.CompletedProcess(arguments, 0, json.dumps({"Properties": {}, "Items": {
+                    "ProjectReference": [{"FullPath": str(outside), "AdditionalProperties": ";Version=1"}]}}), "")
+        commands.failure = graph
+        with self.assertRaises(fixture.FixtureError):
+            instance.validate_dependency_graph()
+        self.assertFalse(any(args[2] == str(outside) for args, _ in commands.calls))
+        self.assertFalse(commands.redis_attempted)
+
+    def test_successful_recursive_msbuild_globals_relative_roots_and_import_identity(self):
+        workspace = Path(self.temporary.name) / "recursive graph"
+        apphost = workspace / "src/AppHost/AppHost.csproj"
+        integration = workspace / "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj"
+        children = [workspace / f"src/{name}/{name}.csproj" for name in ("A", "B", "C")]
+        works = workspace / "references/Hexalith.Works"
+        works.mkdir(parents=True)
+        children[2] = works / "src/C/C.csproj"
+        (workspace / ".gitmodules").write_text('[submodule "Works"]\n path = references/Hexalith.Works\n')
+        imported = workspace / "shared.props"
+        private = fixture.secrets.token_hex(24)
+        imported.write_text('<Project><PropertyGroup><PrivateBuildInput>' + private + '</PrivateBuildInput></PropertyGroup></Project>')
+        for path in (apphost, integration, *children): path.parent.mkdir(parents=True, exist_ok=True)
+        integration.write_text('<Project/>')
+        apphost.write_text('<Project><ItemGroup><ProjectReference Include="' + str(children[0])
+            + '"><AdditionalProperties>Flavor=parent;DropMe=remove</AdditionalProperties></ProjectReference></ItemGroup></Project>')
+        relative = os.path.relpath(works, children[0].parent)
+        children[0].write_text('<Project><PropertyGroup><HexalithWorksRoot>' + relative + '</HexalithWorksRoot></PropertyGroup>'
+            '<ItemGroup><ProjectReference Include="' + str(children[1])
+            + '"><AdditionalProperties>fLaVoR=child;New=keep</AdditionalProperties>'
+            '<GlobalPropertiesToRemove>dRoPmE</GlobalPropertiesToRemove></ProjectReference></ItemGroup></Project>')
+        template = '<Project><Import Project="' + str(imported) + '"/><PropertyGroup>' \
+            '<HexalithWorksRoot Condition="\'$(Flavor)\' != \'child\' or \'$(New)\' != \'keep\' or \'$(DropMe)\' != \'\'">' \
+            + str(workspace / 'wrong-root') + '</HexalithWorksRoot></PropertyGroup>{edge}</Project>'
+        children[1].write_text(template.format(edge='<ItemGroup><ProjectReference Include="' + str(children[2]) + '"/></ItemGroup>'))
+        children[2].write_text(template.format(edge=''))
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture, "ROOT", workspace), patch.object(fixture, "APPHOST", apphost):
+            graph = instance.evaluate_dependency_graph()
+            self.assertEqual(5, len(graph["projects"]))
+            self.assertEqual(["Hexalith.Works"], graph["repositories"])
+            records = {record["project"]: record for record in graph["projects"].values()}
+            self.assertEqual("references/Hexalith.Works", records[str(children[0].relative_to(workspace))]["roots"]["HexalithWorksRoot"])
+            for child in children[1:]:
+                globals_ = records[str(child.relative_to(workspace))]["globals"]
+                self.assertEqual(fixture.hashlib.sha256(b"child").hexdigest(), globals_["flavor"])
+                self.assertEqual(fixture.hashlib.sha256(b"keep").hexdigest(), globals_["new"])
+                self.assertNotIn("dropme", globals_)
+            self.assertIn(str(imported), records[str(children[1].relative_to(workspace))]["imports"])
+            imported.write_text('<Project><PropertyGroup><PrivateBuildInput>changed</PrivateBuildInput></PropertyGroup></Project>')
+            self.assertNotEqual(graph, instance.evaluate_dependency_graph())
+            instance.dependency_graph = graph
+            with self.assertRaisesRegex(fixture.FixtureError, "graph changed"):
+                instance.capture_source_identity()
+            self.assertNotIn(private, json.dumps(graph))
+            self.assertNotIn(private, ''.join(path.read_text() for path in instance.log_directory.glob('*.log')))
+            children[2].write_text('<Project><PropertyGroup><HexalithWorksRoot>../../alternate</HexalithWorksRoot></PropertyGroup></Project>')
+            with self.assertRaises(fixture.FixtureError): instance.validate_dependency_graph()
+            self.assertFalse(instance.start_attempted)
+            for metadata in ('<AdditionalProperties>Configuration=Release</AdditionalProperties>',
+                             '<GlobalPropertiesToRemove>UseHexalithProjectReferences</GlobalPropertiesToRemove>'):
+                apphost.write_text('<Project><ItemGroup><ProjectReference Include="' + str(children[0]) + '">' + metadata
+                    + '</ProjectReference></ItemGroup></Project>')
+                with self.assertRaises(fixture.FixtureError): instance.validate_dependency_graph()
+
+    def test_real_ipv6_wildcard_can_coexist_with_explicit_owned_ipv4_listener(self):
+        for v6only in (True, False):
+            with self.subTest(v6only=v6only), socket.socket(socket.AF_INET6) as wildcard:
+                wildcard.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                wildcard.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+                wildcard.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, int(v6only))
+                wildcard.bind(('::', 0))
+                wildcard.listen()
+                port = wildcard.getsockname()[1]
+                class Server(http.server.ThreadingHTTPServer):
+                    allow_reuse_port = True
+                class Handler(http.server.BaseHTTPRequestHandler):
+                    def do_GET(self):
+                        self.send_response(200)
+                        self.end_headers()
+                    def log_message(self, *_): pass
+                with Server(('127.0.0.1', port), Handler) as explicit:
+                    worker = threading.Thread(target=explicit.serve_forever, daemon=True)
+                    worker.start()
+                    process = Path(self.temporary.name) / f'wildcard-{v6only}' / str(os.getpid())
+                    process.mkdir(parents=True)
+                    (process / 'stat').write_bytes(Path('/proc/self/stat').read_bytes())
+                    fields = Path('/proc/self/stat').read_text().rsplit(')', 1)[1].split()
+                    (process / 'environ').write_bytes(f'ASPNETCORE_URLS=http://127.0.0.1:{port}'.encode())
+                    (process / 'fd').symlink_to('/proc/self/fd', target_is_directory=True)
+                    (process.parent / 'net').symlink_to('/proc/net', target_is_directory=True)
+                    try:
+                        result = fixture.verify_dashboard_ready({'pid': os.getpid(), 'start': fields[19]}, process.parent)
+                        self.assertTrue(result['ready'])
+                        self.assertEqual(1, len(result['ownership']['socket_inodes']))
+                    finally:
+                        explicit.shutdown()
+                        worker.join(timeout=2)
+
+    def test_nondefault_dependency_root_is_the_only_reason_for_graph_refusal(self):
+        # Keep the project closure otherwise valid. A refusal caused only by a
+        # missing foreign project would not verify the evaluated-root policy.
+        for setting in fixture.DEPENDENCY_ROOTS:
+            with self.subTest(setting=setting):
+                commands = Commands()
+                instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+                # Remain inside the workspace so relative-path serialization
+                # cannot independently reject the otherwise valid graph.
+                properties = {setting: str(fixture.ROOT / "alternate-evaluated-root")}
+                commands.failure = lambda args: subprocess.CompletedProcess(args, 0, json.dumps({
+                    "Properties": properties, "Items": {"ProjectReference": []}}), "") \
+                    if "-getItem:ProjectReference" in args else None
+                with self.assertRaisesRegex(fixture.FixtureError, "outside the recorded default roots"):
+                    instance.validate_dependency_graph()
+                self.assertIsNone(instance.dependency_graph)
+                self.assertFalse((instance.log_directory / "dependency-graph.json").exists())
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.redis_attempted)
 
     def test_poisoned_sdk_run_and_start_environment_cannot_replace_the_gateway_query(self):
         # Query the real SDK's default native launch metadata without requiring a

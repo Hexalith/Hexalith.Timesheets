@@ -1,0 +1,32 @@
+{
+  "project": "Hexalith.Timesheets.Projections.Tests",
+  "command": [
+    "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+    "-noColor",
+    "-showLiveOutput",
+    "-result-xml",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/projections-post-review.xml"
+  ],
+  "exit": 0,
+  "elapsed_seconds": 739.6170208809781,
+  "stats": {
+    "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+    "id": "fa8c784b-42b9-450b-a95c-bf8ccddb17c1",
+    "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests.dll",
+    "run-date": "2026-10-26",
+    "run-time": "08:48:55",
+    "start-rtf": "2026-10-26T08:48:55.9904508+00:00",
+    "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+    "target-framework": ".NETCoreApp,Version=v10.0",
+    "errors": "0",
+    "failed": "0",
+    "finish-rtf": "2026-10-26T09:01:15.3391313+00:00",
+    "not-run": "0",
+    "passed": "747",
+    "skipped": "0",
+    "time": "739.378",
+    "time-rtf": "00:12:19.3780000",
+    "total": "747"
+  },
+  "xml_receipt": "suites/projections-post-review.xml.gz"
+}

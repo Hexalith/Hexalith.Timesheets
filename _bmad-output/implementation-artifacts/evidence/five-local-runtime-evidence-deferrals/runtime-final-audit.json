@@ -1,0 +1,19 @@
+{
+  "run": "runtime/run-5b2g61ov",
+  "passed": 1,
+  "failed": 0,
+  "skipped": 0,
+  "errors": 0,
+  "not_run": 0,
+  "test_seconds": 68.585,
+  "runner_seconds": 274.821,
+  "source_unchanged": true,
+  "owned_cleanup": true,
+  "captured_processes_exited": true,
+  "shared_preservation": true,
+  "native_gateway_replaced": true,
+  "execution_hashes": 926,
+  "graph_nodes": 19,
+  "unique_imports": 278,
+  "journey_log": "runtime/run-5b2g61ov/58-Hexalith.Timesheets.IntegrationTests--class.log.gz"
+}

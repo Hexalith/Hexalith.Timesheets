@@ -96,7 +96,7 @@ internal static class InternalSurfaceConfigurationSyntax
                             Expression: IdentifierNameSyntax { Identifier.ValueText: "timesheets" },
                         },
                     },
-                } && method != "OfType")
+                } && method != "OfType" && !IsFixtureGatewayWaitRemoval(invocation))
             {
                 failures.Add("Direct Timesheets annotation mutation is unsupported by the bounded wiring check.");
             }
@@ -168,5 +168,24 @@ internal static class InternalSurfaceConfigurationSyntax
                 failures.Add("The host must bind only the canonical internal listener options section.");
             }
         }
+    }
+
+    private static bool IsFixtureGatewayWaitRemoval(InvocationExpressionSyntax invocation)
+    {
+        // Fixture bootstrap replaces one SDK gateway wait so metadata discovery
+        // can finish. It does not alter endpoint or environment annotations.
+        ForEachStatementSyntax? loop = invocation.Ancestors().OfType<ForEachStatementSyntax>().FirstOrDefault();
+        StatementSyntax supported = SyntaxFactory.ParseStatement("""
+            foreach (WaitAnnotation wait in timesheets.Resource.Annotations.OfType<WaitAnnotation>()
+                .Where(wait => ReferenceEquals(wait.Resource, eventStore.Resource)).ToArray())
+            {
+                timesheets.Resource.Annotations.Remove(wait);
+            }
+            """);
+        IfStatementSyntax[] guards = loop?.Ancestors().OfType<IfStatementSyntax>()
+            .Where(static conditional => conditional.Condition is IdentifierNameSyntax
+                { Identifier.ValueText: "fixtureEnabled" }).ToArray() ?? [];
+        return loop is not null && SyntaxFactory.AreEquivalent(loop, supported) && guards.Length > 0
+            && guards.All(conditional => conditional.Statement.Span.Contains(loop.Span));
     }
 }

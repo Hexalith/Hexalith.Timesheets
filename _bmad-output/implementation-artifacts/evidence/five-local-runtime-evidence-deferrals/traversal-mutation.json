@@ -1,0 +1,8 @@
+{
+  "scope": "in-memory child-scheduling deletion only; no source file changed",
+  "test": "test_successful_recursive_msbuild_globals_relative_roots_and_import_identity",
+  "healthy_passed": true,
+  "mutation_detected": true,
+  "mutation_failures": 1,
+  "mutation_errors": 0
+}

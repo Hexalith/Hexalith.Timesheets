@@ -1,0 +1,26 @@
+{
+  "command": "historical source/ledger/report assertions against retained DW-75/DW-82 artifacts",
+  "checks": {
+    "original_records_readiness_18": true,
+    "later_records_exit_134_and_address_in_use": true,
+    "original_cause_explicitly_unknown": true,
+    "later_collision_explicitly_separate": true,
+    "no_retroactive_attribution": true,
+    "local_followup_superseded": true,
+    "deployed_latency_retained_open": true,
+    "report_preserves_unknown_cause": true
+  },
+  "inputs": {
+    "_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md": "d46cae6ae629725b0c9b16f490dbe6e5da1baf523211205abf3b115827eab820",
+    "_bmad-output/implementation-artifacts/deferred-work-archive.md": "0a3a4019412344cb147c8645503762c427172e038b48d76c675cff9f75a5f600"
+  },
+  "original_smoke": {
+    "date": "2026-10-03",
+    "cause": "unknown"
+  },
+  "later_reproduction": {
+    "date": "2026-10-04",
+    "cause": "port 8080 already in use",
+    "application_exit": 134
+  }
+}

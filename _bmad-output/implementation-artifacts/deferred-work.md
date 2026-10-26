@@ -593,10 +593,12 @@ origin: migrated from legacy ledger ("Deferred from: code review of spec-3-6-imp
 location: src/Hexalith.Timesheets.AppHost/Program.cs:22
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-6.md`
 reason: `aspire wait timesheets` exited 18; `aspire describe` showed Timesheets `Finished` and security `Unhealthy`. No console log, exit code or exception was recorded.
-status: open
+status: done 2026-10-26
 
 summary: Capture the cause of the 2026-10-03 AppHost smoke in which the Timesheets resource did not stay up.
 evidence: `aspire wait timesheets` exited 18; `aspire describe` showed Timesheets `Finished` and security `Unhealthy`. No console log, exit code or exception was recorded. `src/Hexalith.Timesheets.AppHost/Program.cs:22` still states that the host "comes up and fails closed". This extends the existing AppHost runtime-smoke entry (2026-09-18 section, "Add automated AppHost runtime smoke evidence…") and does not replace it.
+
+resolution 2026-10-26: Superseded historical diagnosis. The exact October 3 cause remains unknown because no console exception or application-exit receipt survives. Archived DW-82 separately records the October 4 port-8080 collision and exit 134; the later public-port override fixes that demonstrated conflict, and October 26 local qualification supplies successor startup/journey proof. No cause is retroactively attributed to October 3. See [reconciliation](tests/five-local-runtime-evidence-deferrals.md#historical-startup-reconciliation).
 
 ### DW-76: Register an authentication scheme so the host's trusted-context accessor can receive tenant and actor claims in a deployment.
 
@@ -1497,21 +1499,58 @@ evidence: Integrated baseline `6e927633d920eafcefa2635a124810b541264489` contain
 
 ### DW-190: Qualify the combined fresh-v7 bootstrap read cost against its delivery deadline.
 
-status: open
+status: done 2026-10-26
 origin: review of five read-model boundary deferrals, 2026-10-25
 source_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary-deferrals.md
 location: src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexProjectionHandler.cs
 reason: Unverified medium latency risk: refusing direct legacy layouts adds a direct single-root and 256 bounded shard reads before selected-layout inspection. Peak concurrency/cancellation are verified, but no current deployed combined-path latency acceptance is established.
 evidence: Blind review B10. Measure the combined direct and selected bootstrap path with controlled read delays and the actual delivery cancellation/deadline, then include it in current-graph runtime qualification. No timeout failure has been demonstrated and no runtime acceptance is claimed; deployment inventory and obsolete-writer fencing remain required.
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md`
-  summary: Medium, unverified — independently establish that the qualified Aspire dashboard owns the socket answering its loopback health probe.
-  evidence: The current checker validates PID/start, restored executable ancestry, process URL and direct HTTP health, but does not map that socket inode to the process; a real DCP launch showing a different recipient, or positive socket-inode ownership evidence, would settle the review claim.
+resolution 2026-10-26: Local combined bootstrap qualification is complete: both paths measure all direct/selected reads and metadata, nine logical/raw/snapshot/cancellation/recovery cases pass, and current-source run-5b2g61ov completes the persisted journey/restart with identical source hashes, owned cleanup and matching shared preservation. The deployed latency remainder is explicitly retained as open DW-194; this closure grants no deployed acceptance. See [verification](tests/five-local-runtime-evidence-deferrals.md).
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md`
-  summary: Medium, unverified — assess source provenance when qualification is invoked with alternate MSBuild dependency roots.
-  evidence: The runner resolves the exact default EventStore source project's native executable while the consuming graph supports explicit root overrides; qualify a real overridden graph and compare its evaluated project and assembly inputs with the receipt's recorded repository roots to establish whether any executed source is misidentified.
+### DW-191: Verify ownership of the dashboard socket answering the local health probe.
 
-- source_spec: `_bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md`
-  summary: Medium — use an exact-origin HTTP opener for the pre-existing credential-bearing local journey call helper.
-  evidence: `scripts/local_aspire_magic_link_journey.py` retains the baseline `urllib.request.urlopen` call with workload-assertion/app-channel headers, so default redirect and environment-proxy handling remains; the newly introduced readiness observer and generated-credential handoff use the owned direct-origin opener in this change.
+status: done 2026-10-26
+origin: review of five AppHost security/runtime deferrals, 2026-10-26
+source_spec: _bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md
+location: scripts/run_isolated_magic_link_dapr.py
+evidence: The previous checker validated PID/start, restored executable ancestry, process URL and direct HTTP health, but did not map the socket inode to the process. Positive kernel socket-inode ownership evidence and an actual DCP run are required.
+
+resolution 2026-10-26: Actual current-source run-5b2g61ov binds the NuGet dashboard to two kernel listener sockets and sends /health to verified numeric loopback before/after identical PID/start/inode checks. Native IPv4/IPv6/mapped, foreign/shared listeners, changed identity and poisoned-localhost regressions pass. See [verification](tests/five-local-runtime-evidence-deferrals.md).
+
+### DW-192: Bind local qualification to the evaluated MSBuild dependency roots.
+
+status: done 2026-10-26
+origin: review of five AppHost security/runtime deferrals, 2026-10-26
+source_spec: _bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md
+location: scripts/run_isolated_magic_link_dapr.py
+evidence: The runner resolved the default EventStore source executable while the consuming graph supported explicit root overrides. The approved local increment scopes this fixture to the evaluated default graph and refuses alternate roots before resource startup; ordinary build override support remains unchanged. Verification must compare the actual evaluated graph and hashed execution inputs with receipts.
+
+resolution 2026-10-26: The fixture admits only its evaluated default source graph before resource creation; all eight root-setting deletion mutations are detected. Current-source qualification retains 19 graph nodes, 278 unique evaluated import fingerprints, 926 execution/restore hashes, participating repository and imported Builds identities, with identical before/after snapshots. Ordinary build root overrides are unchanged. See [verification](tests/five-local-runtime-evidence-deferrals.md).
+
+### DW-193: Use direct HTTP transport for credential-bearing local journey calls.
+
+status: done 2026-10-26
+origin: review of five AppHost security/runtime deferrals, 2026-10-26
+source_spec: _bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md
+location: scripts/local_aspire_magic_link_journey.py
+evidence: The prior call helper used urllib.request.urlopen with workload-assertion/app-channel headers, permitting default redirects and environment proxies. The existing owned direct opener is reusable; real redirect/proxy tests and current-source journey evidence must verify the correction.
+
+resolution 2026-10-26: Journey credential and metadata calls use the existing direct opener; real 302/307 and poisoned-proxy cases preserve status/bytes without forwarding credentials. The actual persisted current-source journey passes 1/1 with no skips and matching cleanup/preservation. See [verification](tests/five-local-runtime-evidence-deferrals.md).
+
+### DW-194: Qualify deployed combined bootstrap latency against effective delivery budgets.
+
+status: open
+origin: deployed remainder of DW-190, retained by the approved five-local-runtime-evidence spec, 2026-10-26
+source_spec: _bmad-output/implementation-artifacts/spec-five-local-runtime-evidence-deferrals.md
+location: docs/launch-readiness.md
+reason: Controlled local measurements and the manual isolated journey do not establish deployed automatic-delivery latency or the deployed client's effective timeout configuration.
+evidence: [Local measurements](tests/five-local-runtime-evidence-deferrals.md#bootstrap-measurement-and-cancellation) cover exact direct/selected logical inventories and metadata, complete raw SDK state IO including batch reads, both bootstrap paths, the installed default ten-second reference budget, and cooperative cancellation/recovery. Owner: release/platform owner under Story 3.6. Before deployment acceptance, establish actual client options and cancellation propagation, current component/network latency across ordinary and streamed bootstrap, certified inventory, obsolete-writer fencing and automatic delivery. Keep deployed acceptance unfinished and launch FAIL until those gates pass.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-local-runtime-evidence-deferrals.md`
+  summary: Medium, unverified — establish whether the restored native dashboard can share its listener with a process whose descriptors cannot be inspected.
+  evidence: Review B6 shows that additional inaccessible holders cannot be ruled out by the observable FD inventory. The qualified dashboard's own socket ownership is positively verified; no supported native lifecycle transferring that listener to an inaccessible holder is demonstrated. An actual restored-process handoff and socket-inode trace would settle whether the probe recipient can differ. Do not infer system-wide exclusivity from visible owners alone.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-local-runtime-evidence-deferrals.md`
+  summary: Medium — independently verify effective composed gateway HTTP timeout options and cancellation propagation into a blocked projection read.
+  evidence: Review B10 confirms that current tests use the installed ten-second default with direct coordinator cancellation, while the manual journey uses its separate socket timeout. They do not constitute a composed HTTP attempt-timeout test. Reuse the actual gateway defaults and mapped projection endpoint to resolve configured options and observe cancellation reaching a blocked read; retain deployed acceptance and DW-194 separately.

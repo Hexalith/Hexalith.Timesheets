@@ -1,0 +1,7 @@
+{
+  "admitted": false,
+  "resources_started": false,
+  "infrastructure_started": false,
+  "apphost_start_attempted": false,
+  "reason": "An AppHost is already running; no AppHost started"
+}

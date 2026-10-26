@@ -1,0 +1,9 @@
+{
+  "scope": "retained evidence files; structured token/private-key patterns only",
+  "files_scanned": 523,
+  "patterns": [
+    "jwt",
+    "private_key"
+  ],
+  "findings": []
+}

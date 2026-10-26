@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_*.py"
+  ],
+  "exit": 0,
+  "elapsed_seconds": 39.82269125597668,
+  "construction": "git archive HEAD, three current script overlays, empty root reference directories; no dependency contents or git metadata",
+  "overlay": [
+    "scripts/run_isolated_magic_link_dapr.py",
+    "scripts/local_aspire_magic_link_journey.py",
+    "scripts/test_isolated_magic_link_dapr.py"
+  ]
+}

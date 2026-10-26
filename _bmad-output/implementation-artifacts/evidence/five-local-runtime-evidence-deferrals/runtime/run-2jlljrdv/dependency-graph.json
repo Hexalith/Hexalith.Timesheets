@@ -1,0 +1,483 @@
+{
+  "repositories": [
+    "Hexalith.Commons",
+    "Hexalith.EventStore"
+  ],
+  "projects": {
+    "references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/Hexalith.Commons.UniqueIds.csproj": {
+      "roots": {},
+      "references": []
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/Hexalith.EventStore.Admin.Abstractions.csproj": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": []
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/Hexalith.Commons.UniqueIds.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/Hexalith.Commons.UniqueIds.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/Hexalith.EventStore.ServiceDefaults.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/Hexalith.EventStore.ServiceDefaults.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Gateway/Hexalith.EventStore.Gateway.csproj": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/Hexalith.EventStore.Admin.Abstractions.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Hexalith.EventStore.Server.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/Hexalith.EventStore.ServiceDefaults.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Hexalith.EventStore.Server.csproj": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Hexalith.EventStore.Server.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/Hexalith.EventStore.ServiceDefaults.csproj": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Testing/Hexalith.EventStore.Testing.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": []
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Hexalith.EventStore.Server.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithCommonsRoot": "references/Hexalith.Commons",
+        "HexalithTenantsBasePath": "references/Hexalith.Tenants/src"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Gateway/Hexalith.EventStore.Gateway.csproj",
+          "properties": []
+        }
+      ]
+    },
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets/Hexalith.Timesheets.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        }
+      ]
+    },
+    "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": []
+    },
+    "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        }
+      ]
+    },
+    "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        }
+      ]
+    },
+    "src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        }
+      ]
+    },
+    "src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": []
+    },
+    "src/Hexalith.Timesheets/Hexalith.Timesheets.csproj|HexalithEventStoreVersion=3.127.0": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        }
+      ]
+    },
+    "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj": {
+      "roots": {
+        "HexalithEventStoreRoot": "references/Hexalith.EventStore",
+        "HexalithTenantsRoot": "references/Hexalith.Tenants",
+        "HexalithPartiesRoot": "references/Hexalith.Parties",
+        "HexalithProjectsRoot": "references/Hexalith.Projects",
+        "HexalithWorksRoot": "references/Hexalith.Works",
+        "HexalithFrontComposerRoot": "references/Hexalith.FrontComposer",
+        "HexalithCommonsRoot": "references/Hexalith.Commons"
+      },
+      "references": [
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Hexalith.EventStore.Server.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "references/Hexalith.EventStore/src/Hexalith.EventStore.Testing/Hexalith.EventStore.Testing.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        },
+        {
+          "project": "src/Hexalith.Timesheets/Hexalith.Timesheets.csproj",
+          "properties": [
+            "HexalithEventStoreVersion=3.127.0"
+          ]
+        }
+      ]
+    }
+  }
+}

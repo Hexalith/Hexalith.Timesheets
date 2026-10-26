@@ -1,0 +1,384 @@
+{
+  "status": "verified-local",
+  "baseline_commit": "c940b5a1784bbc80014ace494aef6255e6157080",
+  "scope": "local Debug/source; deployed acceptance and launch FAIL unchanged",
+  "suites": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noColor",
+        "-showLiveOutput",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/Hexalith.Timesheets.ArchitectureTests.xml"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 53.82369057400501,
+      "stats": {
+        "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+        "id": "221bb9f8-5a27-4a89-b8b2-02f080c4a6ce",
+        "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll",
+        "run-date": "2026-10-26",
+        "run-time": "05:54:17",
+        "start-rtf": "2026-10-26T05:54:17.9350913+00:00",
+        "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+        "target-framework": ".NETCoreApp,Version=v10.0",
+        "errors": "0",
+        "failed": "0",
+        "finish-rtf": "2026-10-26T05:55:11.4475153+00:00",
+        "not-run": "0",
+        "passed": "118",
+        "skipped": "0",
+        "time": "53.514",
+        "time-rtf": "00:00:53.5140000",
+        "total": "118"
+      },
+      "xml_receipt": "suites/Hexalith.Timesheets.ArchitectureTests.xml.gz"
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noColor",
+        "-showLiveOutput",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/Hexalith.Timesheets.Contracts.Tests.xml"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.7829401089984458,
+      "stats": {
+        "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+        "id": "39f7702e-f04e-4a14-88f9-3541ef1f91e5",
+        "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests.dll",
+        "run-date": "2026-10-26",
+        "run-time": "05:55:11",
+        "start-rtf": "2026-10-26T05:55:11.6925121+00:00",
+        "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+        "target-framework": ".NETCoreApp,Version=v10.0",
+        "errors": "0",
+        "failed": "0",
+        "finish-rtf": "2026-10-26T05:55:12.2323987+00:00",
+        "not-run": "0",
+        "passed": "108",
+        "skipped": "0",
+        "time": "0.540",
+        "time-rtf": "00:00:00.5400000",
+        "total": "108"
+      },
+      "xml_receipt": "suites/Hexalith.Timesheets.Contracts.Tests.xml.gz"
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor",
+        "-showLiveOutput",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/integration-post-review.xml"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 705.293571295013,
+      "stats": {
+        "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+        "id": "42657dee-0b10-4d85-9523-601a71b18df7",
+        "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests.dll",
+        "run-date": "2026-10-26",
+        "run-time": "08:44:05",
+        "start-rtf": "2026-10-26T08:44:05.4686276+00:00",
+        "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+        "target-framework": ".NETCoreApp,Version=v10.0",
+        "errors": "0",
+        "failed": "0",
+        "finish-rtf": "2026-10-26T08:55:50.4558820+00:00",
+        "not-run": "0",
+        "passed": "942",
+        "skipped": "5",
+        "time": "705.015",
+        "time-rtf": "00:11:45.0150000",
+        "total": "947"
+      },
+      "xml_receipt": "suites/integration-post-review.xml.gz"
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noColor",
+        "-showLiveOutput",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/projections-post-review.xml"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 739.6170208809781,
+      "stats": {
+        "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+        "id": "fa8c784b-42b9-450b-a95c-bf8ccddb17c1",
+        "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests.dll",
+        "run-date": "2026-10-26",
+        "run-time": "08:48:55",
+        "start-rtf": "2026-10-26T08:48:55.9904508+00:00",
+        "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+        "target-framework": ".NETCoreApp,Version=v10.0",
+        "errors": "0",
+        "failed": "0",
+        "finish-rtf": "2026-10-26T09:01:15.3391313+00:00",
+        "not-run": "0",
+        "passed": "747",
+        "skipped": "0",
+        "time": "739.378",
+        "time-rtf": "00:12:19.3780000",
+        "total": "747"
+      },
+      "xml_receipt": "suites/projections-post-review.xml.gz"
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noColor",
+        "-showLiveOutput",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/Hexalith.Timesheets.Server.Tests.xml"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 7.72809251700528,
+      "stats": {
+        "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+        "id": "7b76d77c-1ce2-4f5f-96a2-69b07e6fbf4d",
+        "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests.dll",
+        "run-date": "2026-10-26",
+        "run-time": "06:22:22",
+        "start-rtf": "2026-10-26T06:22:22.7022940+00:00",
+        "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+        "target-framework": ".NETCoreApp,Version=v10.0",
+        "errors": "0",
+        "failed": "0",
+        "finish-rtf": "2026-10-26T06:22:30.2157811+00:00",
+        "not-run": "0",
+        "passed": "720",
+        "skipped": "0",
+        "time": "7.514",
+        "time-rtf": "00:00:07.5140000",
+        "total": "720"
+      },
+      "xml_receipt": "suites/Hexalith.Timesheets.Server.Tests.xml.gz"
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "command": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noColor",
+        "-showLiveOutput",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/suites/Hexalith.Timesheets.Works.Tests.xml"
+      ],
+      "exit": 0,
+      "elapsed_seconds": 0.4196698410087265,
+      "stats": {
+        "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+        "id": "89fcb15e-b3af-443f-a6c0-f59c042c8674",
+        "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests.dll",
+        "run-date": "2026-10-26",
+        "run-time": "06:22:30",
+        "start-rtf": "2026-10-26T06:22:30.4026308+00:00",
+        "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+        "target-framework": ".NETCoreApp,Version=v10.0",
+        "errors": "0",
+        "failed": "0",
+        "finish-rtf": "2026-10-26T06:22:30.6498330+00:00",
+        "not-run": "0",
+        "passed": "76",
+        "skipped": "0",
+        "time": "0.247",
+        "time-rtf": "00:00:00.2470000",
+        "total": "76"
+      },
+      "xml_receipt": "suites/Hexalith.Timesheets.Works.Tests.xml.gz"
+    }
+  ],
+  "counts": {
+    "total": 2716,
+    "passed": 2711,
+    "failed": 0,
+    "skipped": 5,
+    "errors": 0,
+    "not-run": 0
+  },
+  "python": {
+    "command": "PYTHONPATH=scripts python3 -m unittest discover -s scripts -p test_*.py",
+    "passed": 208,
+    "receipt": "python-post-review.log.gz"
+  },
+  "bootstrap": {
+    "passed": 9,
+    "receipt": "suites/projections-post-review.xml.gz",
+    "profiles": "bootstrap-profiles-post-review.json",
+    "cancellation_budget_seconds": 10,
+    "scope": "installed default reference budget; logical and complete raw SDK profiles; composed HTTP cancellation deferred"
+  },
+  "compiled_guards": {
+    "passed": 67,
+    "receipt": "guards-post-review/run-ykwnqv17/guards.json"
+  },
+  "root_guard_mutation": {
+    "receipt": "root-guard-mutation.json",
+    "detected_settings": 8
+  },
+  "history": {
+    "receipt": "historical-reconciliation.json",
+    "passed": 8
+  },
+  "runtime_attempts": [
+    {
+      "command": [
+        "python3",
+        "scripts/run_isolated_magic_link_dapr.py",
+        "--security-smoke",
+        "--log-directory",
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "SSL_CERT_FILE": "/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt"
+      },
+      "certificate_sha256": "c57e5aea1c34a68486089564335bd8efa280dd6b74ef9985a85d56f2fc7f3b8e",
+      "started_utc": "2026-10-26T07:09:27Z",
+      "exit": 1,
+      "elapsed_seconds": 20.654225967999082,
+      "runs": [
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime/run-npij1wb2"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/run_isolated_magic_link_dapr.py",
+        "--security-smoke",
+        "--log-directory",
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "SSL_CERT_FILE": "/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt"
+      },
+      "certificate_sha256": "c57e5aea1c34a68486089564335bd8efa280dd6b74ef9985a85d56f2fc7f3b8e",
+      "started_utc": "2026-10-26T07:16:23Z",
+      "exit": 1,
+      "elapsed_seconds": 59.867119786009425,
+      "runs": [
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime/run-vfdac814"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/run_isolated_magic_link_dapr.py",
+        "--security-smoke",
+        "--log-directory",
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "SSL_CERT_FILE": "/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt"
+      },
+      "certificate_sha256": "c57e5aea1c34a68486089564335bd8efa280dd6b74ef9985a85d56f2fc7f3b8e",
+      "started_utc": "2026-10-26T07:31:55Z",
+      "exit": 0,
+      "elapsed_seconds": 232.74261092898087,
+      "runs": [
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime/run-2jlljrdv"
+      ]
+    },
+    {
+      "command": [
+        "python3",
+        "scripts/run_isolated_magic_link_dapr.py",
+        "--security-smoke",
+        "--log-directory",
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+        "SSL_CERT_FILE": "/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt"
+      },
+      "certificate_sha256": "c57e5aea1c34a68486089564335bd8efa280dd6b74ef9985a85d56f2fc7f3b8e",
+      "started_utc": "2026-10-26T08:50:19Z",
+      "exit": 0,
+      "elapsed_seconds": 274.82141852000495,
+      "runs": [
+        "_bmad-output/implementation-artifacts/evidence/five-local-runtime-evidence-deferrals/runtime/run-5b2g61ov"
+      ]
+    }
+  ],
+  "runtime": {
+    "run": "runtime/run-5b2g61ov",
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "not_run": 0,
+    "test_seconds": 68.585,
+    "runner_seconds": 274.821,
+    "source_unchanged": true,
+    "owned_cleanup": true,
+    "captured_processes_exited": true,
+    "shared_preservation": true,
+    "native_gateway_replaced": true,
+    "execution_hashes": 926,
+    "graph_nodes": 19,
+    "unique_imports": 278,
+    "journey_log": "runtime/run-5b2g61ov/58-Hexalith.Timesheets.IntegrationTests--class.log.gz"
+  },
+  "sources": {
+    "timesheets": {
+      "head": "c940b5a1784bbc80014ace494aef6255e6157080",
+      "diff_sha256": "d761165959e429d2c99bfa062a0e2b1d272ac3822564843e4d5593d44aada4d4",
+      "untracked_build_inputs": {
+        "tests/Hexalith.Timesheets.Projections.Tests/BootstrapReadMeasurement.cs": "bd141d1640cd4a53c977b4356fae069cedd4a5987f41e72aee2faf60b5aabf57"
+      }
+    },
+    "eventstore": {
+      "head": "dcd3dce42b67a305b608f03c4dab2b812791abae",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    },
+    "Hexalith.Commons": {
+      "head": "5c23c818f639c5bb3175f964c5549440bd5b876d",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    },
+    "Hexalith.EventStore": {
+      "head": "dcd3dce42b67a305b608f03c4dab2b812791abae",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    },
+    "Hexalith.Builds": {
+      "head": "359fee24aeca4d9eabed4b425d4cfa2520b2adda",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    }
+  },
+  "portability": {
+    "passed": 208,
+    "receipt": "python-portability-post-review.log.gz",
+    "command_receipt": "python-portability-post-review.json"
+  },
+  "review": {
+    "layers": 3,
+    "patched_entries": 11,
+    "deferred_entries": 2,
+    "triage": "../spec-five-local-runtime-evidence-deferrals.md"
+  },
+  "traversal_mutation": {
+    "receipt": "traversal-mutation.json",
+    "detected": true
+  },
+  "final_build": {
+    "receipt": "build-post-review.json",
+    "exit": 0
+  },
+  "final_readiness": {
+    "passed": 16,
+    "receipt": "readiness-post-review.json"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "package": "Hexalith.EventStore.Testing",
+  "version": "3.127.0",
+  "tfm": "net10.0",
+  "inspection": "dotnet-inspect package API",
+  "type": "Hexalith.EventStore.Testing.Fakes.InMemoryDaprStateClient",
+  "public_signature": "System.Action<string> BeforeRead { get; set; }",
+  "dependencies_changed": false
+}

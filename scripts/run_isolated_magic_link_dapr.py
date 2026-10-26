@@ -38,6 +38,9 @@ GATEWAY_DIRECTORY_SETTING = "TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY"
 SECURITY_SMOKE_SETTING = "TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE"
 SDK_LAUNCH_OVERRIDES = ("RunCommand", "RunArguments", "RunWorkingDirectory", "StartAction",
                         "StartProgram", "StartArguments", "StartWorkingDirectory")
+DEPENDENCY_ROOTS = {"Hexalith" + name + "Root": "Hexalith." + name for name in
+                    ("EventStore", "Tenants", "Parties", "Projects", "Works", "FrontComposer", "Commons")}
+DEPENDENCY_ROOTS["HexalithTenantsBasePath"] = "Hexalith.Tenants/src"
 DEFAULT_COMPONENTS = APPHOST.parent / "DaprComponents"
 COMPONENT_FILES = (Path("statestore.yaml"), Path("Timesheets/timesheets-readmodels.yaml"), Path("pubsub.yaml"))
 REQUIRED_PORTS = (8080, 8081, 8082, 3501)
@@ -917,6 +920,59 @@ def security_credential_handoff(container, public_port, diagnostics=None, descri
         raise FixtureError(message) from None
 
 
+def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
+    """Verify explicit listeners and their observable owners against one PID/start."""
+    message = "Owned dashboard socket ownership could not be verified"
+    directory = Path(directory)
+    process = directory / str(identity["pid"])
+    fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+    require(fields[19] == identity["start"] and fields[0] != "Z", message)
+    # Linux can expose an IPv4 loopback listener through an IPv6 mapped bind.
+    # It can answer the same IPv4 origin and must not escape the owner check.
+    ipv4_loopback = {"0100007F", "0000000000000000FFFF00000100007F"}
+    addresses = {"127.0.0.1": ipv4_loopback, "::1": {"00000000000000000000000001000000"},
+                 "localhost": ipv4_loopback | {"00000000000000000000000001000000"}}[endpoint.hostname]
+    sockets = set()
+    loopback_hosts = set()
+    for table in ("tcp", "tcp6"):
+        for line in (directory / "net" / table).read_text().splitlines()[1:]:
+            row = line.split()
+            address, port = row[1].split(":")
+            if int(port, 16) == endpoint.port and row[3] == "0A":
+                # Require explicit matching sockets. An unrelated IPv6 wildcard
+                # may coexist with a valid IPv4 listener (including v6only=false
+                # with reuse); it is not evidence for this numeric origin.
+                if address in addresses:
+                    require(row[9].isdigit() and int(row[9]) > 0, message)
+                    sockets.add(row[9])
+                    loopback_hosts.add("::1" if address == "00000000000000000000000001000000" else "127.0.0.1")
+    require(bool(sockets), message)
+    owners = {inode: set() for inode in sockets}
+    for candidate in directory.iterdir():
+        if not candidate.name.isdigit():
+            continue
+        try:
+            for descriptor in (candidate / "fd").iterdir():
+                try:
+                    target = os.readlink(descriptor)
+                except FileNotFoundError:
+                    continue
+                match = re.fullmatch(r"socket:\[([0-9]+)\]", target)
+                if match and match[1] in owners:
+                    owners[match[1]].add(int(candidate.name))
+        except (FileNotFoundError, PermissionError):
+            # Unrelated users' descriptors can be private. The required owner
+            # must still expose every listener inode in the inventory.
+            continue
+    require(all(pids == {identity["pid"]} for pids in owners.values()), message)
+    # Recheck after inventory: a PID may have exited or been reused while its
+    # descriptors were being inspected.
+    current = (process / "stat").read_text().rsplit(")", 1)[1].split()
+    require(current[19] == identity["start"] and current[0] != "Z", message)
+    return {"pid": identity["pid"], "start": identity["start"], "socket_inodes": sorted(sockets),
+            "loopback_hosts": sorted(loopback_hosts)}
+
+
 def verify_dashboard_ready(identity, directory=Path("/proc")):
     """Check the owned dashboard listener once after Aspire resource readiness."""
     message = "Owned dashboard HTTP readiness could not be verified"
@@ -934,22 +990,32 @@ def verify_dashboard_ready(identity, directory=Path("/proc")):
                 and all(ord(character) > 32 and ord(character) != 127 for character in urls[0]), message)
         # Aspire Dashboard 13.6.1 maps /health anonymously; the browser root may
         # challenge with a login redirect and is not a direct health probe.
-        health_url = urllib.parse.urlunsplit((endpoint.scheme, endpoint.netloc, "/health", "", ""))
-        # The process identity already binds this loopback listener. Local Aspire
+        before = dashboard_listener_identity(identity, endpoint, directory)
+        connect_host = (endpoint.hostname if endpoint.hostname != "localhost" else
+                        "127.0.0.1" if "127.0.0.1" in before["loopback_hosts"] else "::1")
+        authority = f"[{connect_host}]:{endpoint.port}" if ":" in connect_host else f"{connect_host}:{endpoint.port}"
+        health_url = urllib.parse.urlunsplit((endpoint.scheme, authority, "/health", "", ""))
+        # Preserve the configured HTTP host while connecting to the exact
+        # numeric listener proved above, independently of localhost resolution.
+        request = urllib.request.Request(health_url, headers={"Host": endpoint.netloc})
+        # The socket inventory binds this loopback listener. Local Aspire
         # developer certificates need not be installed in Python's CA bundle.
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
-        with owned_http_open(health_url, timeout=20, context=context) as response:
+        with owned_http_open(request, timeout=20, context=context) as response:
             require(response.status == 200, message)
-        return {"ready": True, "scheme": endpoint.scheme, "loopback": True, "port": endpoint.port, "path": "/health"}
+        after = dashboard_listener_identity(identity, endpoint, directory)
+        require(before == after, message)
+        return {"ready": True, "scheme": endpoint.scheme, "loopback": True, "port": endpoint.port,
+                "path": "/health", "connect_host": connect_host, "ownership": after}
     except urllib.error.HTTPError as error:
         try:
             error.close()
         except OSError:
             pass
         raise FixtureError(message) from None
-    except (OSError, ValueError, IndexError, KeyError, TypeError):
+    except (OSError, ValueError, IndexError, KeyError, TypeError, FixtureError):
         raise FixtureError(message) from None
 
 
@@ -1188,11 +1254,21 @@ class IsolatedFixture:
         self.admission_established = False
         self.fixture_backup = None
         self.redis_image = None
+        self.dependency_graph = None
 
     def capture_source_identity(self):
         """Bind runtime receipts to exact source diffs, restored packages and built assets."""
         identities = {}
-        for name, root in (("timesheets", ROOT), ("eventstore", GATEWAY_PROJECT.parents[2])):
+        roots = {"timesheets": ROOT, "eventstore": GATEWAY_PROJECT.parents[2]}
+        if self.dependency_graph is not None:
+            current = self.evaluate_dependency_graph()
+            require(current == self.dependency_graph, "Evaluated dependency graph changed during qualification")
+            roots.update({name: ROOT / "references" / name for name in self.dependency_graph["repositories"]})
+            # CPM imports Builds without a ProjectReference edge. Its dirty
+            # catalog changes must participate in the same source comparison.
+            roots["Hexalith.Builds"] = ROOT / "references/Hexalith.Builds"
+            identities["dependency_graph"] = self.dependency_graph
+        for name, root in roots.items():
             head = self.run_command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
             # Retain a digest of local modifications, never raw patch contents.
             patch = self.command(["git", "-C", str(root), "diff", "HEAD", "--no-ext-diff", "--binary"],
@@ -1228,8 +1304,126 @@ class IsolatedFixture:
                  APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll",
                  gateway, gateway_assembly, module, module.with_name(module.name + ".dll"),
                  integration, integration.with_name(integration.name + ".dll")]
+        if self.dependency_graph is not None:
+            # Fingerprint complete static output trees: configuration, native
+            # runtime assets, satellite assemblies and nested content all affect
+            # execution. Retain only paths and content digests, never contents.
+            for executable in (APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost", gateway, module, integration):
+                paths.append(executable)
+                paths.extend(path for path in executable.parent.rglob("*") if path.is_file())
+            paths.extend((ROOT / record.get("project", project.split("|", 1)[0])).parent / "obj/project.assets.json"
+                         for project, record in self.dependency_graph["projects"].items())
+            paths = [path.resolve() for path in paths]
         identities["files"] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
         return identities
+
+    def evaluated_import_identity(self, arguments, project):
+        """Read preprocessing only in memory; retain hashes of actual imported files."""
+        message = "Evaluated import identity is unavailable; no resources started"
+        result = self.command([*arguments, "-preprocess"], cwd=project.parent,
+                              env=self.environment, timeout=30)
+        require(result.returncode == 0, message)
+        # MSBuild surrounds every expanded import with a comment containing its
+        # absolute filename on a separate line. Never transcript this source XML.
+        paths = {project}
+        for comment in re.findall(r"<!--(.*?)-->", result.stdout, re.DOTALL):
+            for line in comment.splitlines():
+                candidate = Path(line.strip())
+                if candidate.is_absolute() and candidate.is_file():
+                    paths.add(candidate.resolve())
+        return {str(path): hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(paths)}
+
+    def evaluate_dependency_graph(self):
+        """Evaluate the real project closure with inherited, case-insensitive globals."""
+        message = "Evaluated dependency graph is outside the recorded default roots; no resources started"
+        declared = set(re.findall(r"(?m)^\s*path\s*=\s*(references/[^\r\n]+)", (ROOT / ".gitmodules").read_text()))
+        allowed = set()
+        for relative in declared:
+            candidate = (ROOT / relative).resolve()
+            require(candidate.is_relative_to(ROOT / "references"), message)
+            if candidate.is_dir():
+                allowed.add(candidate)
+        fixed = {"configuration": "Debug", "usehexalithprojectreferences": "true", "usenugetdeps": "false"}
+
+        def properties(values):
+            result = {}
+            for value in values.split(";"):
+                if not value:
+                    continue
+                name, separator, content = value.partition("=")
+                require(bool(separator) and bool(name.strip()), message)
+                result[name.strip().casefold()] = content
+            return result
+
+        def fingerprint(values):
+            return {name: hashlib.sha256(value.encode()).hexdigest() for name, value in sorted(values.items())}
+
+        projects = {}
+        repositories = set()
+        pending = [(APPHOST, fixed), (ROOT / "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj", fixed)]
+        seen = set()
+        while pending:
+            project, globals_ = pending.pop()
+            project = project.resolve()
+            signature = (str(project), tuple(sorted(globals_.items())))
+            if signature in seen:
+                continue
+            seen.add(signature)
+            require(all(globals_.get(name) == value for name, value in fixed.items()), message)
+            owner = next((root for root in allowed if project.is_relative_to(root)), None)
+            require(owner is not None or project.is_relative_to(ROOT / "src") or project.is_relative_to(ROOT / "tests"), message)
+            if owner is not None:
+                repositories.add(owner.name)
+            arguments = ["dotnet", "msbuild", str(project), "-nologo",
+                *["-p:" + name + "=" + value for name, value in sorted(globals_.items())], "-m:1", "/nr:false"]
+            # Globals may contain private values. Query output and preprocessing
+            # stay in memory; evidence records only property-value fingerprints.
+            result = self.command([*arguments, "-getProperty:" + ",".join(DEPENDENCY_ROOTS), "-getItem:ProjectReference"],
+                                  cwd=project.parent, env=self.environment, timeout=30)
+            require(result.returncode == 0, message)
+            try:
+                evaluated = json.loads(result.stdout)
+                evaluated_properties, references = evaluated["Properties"], evaluated["Items"]["ProjectReference"]
+                require(isinstance(evaluated_properties, dict) and isinstance(references, list), message)
+                roots = {}
+                for name, relative in DEPENDENCY_ROOTS.items():
+                    value = evaluated_properties.get(name, "")
+                    require(isinstance(value, str), message)
+                    if value:
+                        path = Path(value.replace("\\", "/"))
+                        root = (path if path.is_absolute() else project.parent / path).resolve()
+                        require(root == (ROOT / "references" / relative).resolve(), message)
+                        roots[name] = str(root.relative_to(ROOT))
+                edges = []
+                for reference in references:
+                    reference = {name.casefold(): value for name, value in reference.items()}
+                    path = Path(reference["fullpath"].replace("\\", "/"))
+                    target = (path if path.is_absolute() else project.parent / path).resolve()
+                    inherited = dict(globals_)
+                    # MSBuild edge properties replace inherited global values;
+                    # edge removals apply case-insensitively afterwards.
+                    for metadata in ("Properties", "AdditionalProperties", "SetConfiguration", "SetPlatform", "SetTargetFramework"):
+                        inherited.update(properties(reference.get(metadata.casefold(), "")))
+                    removed = reference.get("globalpropertiestoremove", "") + ";" + reference.get("undefineproperties", "")
+                    for name in removed.split(";"):
+                        inherited.pop(name.strip().casefold(), None)
+                    require(all(inherited.get(name) == value for name, value in fixed.items()), message)
+                    edges.append({"project": str(target.relative_to(ROOT)), "globals": fingerprint(inherited)})
+                    pending.append((target, inherited))
+                digest = hashlib.sha256(json.dumps(sorted(globals_.items())).encode()).hexdigest()
+                key = str(project.relative_to(ROOT)) + "|" + digest
+                projects[key] = {"project": str(project.relative_to(ROOT)), "globals": fingerprint(globals_), "roots": roots,
+                    "imports": self.evaluated_import_identity(arguments, project),
+                    "references": sorted(edges, key=lambda row: (row["project"], json.dumps(row["globals"], sort_keys=True)))}
+            except (ValueError, KeyError, TypeError, OSError):
+                raise FixtureError(message) from None
+        return {"repositories": sorted(repositories), "projects": dict(sorted(projects.items()))}
+
+    def validate_dependency_graph(self):
+        """Record the admitted graph before a build or any resource creation."""
+        self.dependency_graph = self.evaluate_dependency_graph()
+        require(self.write_evidence("dependency-graph.json", json.dumps(self.dependency_graph, indent=2) + "\n"),
+                "Dependency graph evidence is incomplete; no resources started")
 
     def verify_security_runtime(self):
         """Verify owned current-graph services after Aspire readiness, without disclosing secrets."""
@@ -1774,6 +1968,7 @@ class IsolatedFixture:
             if not self.injected_command:
                 self.capture_shared_baseline()
                 self.preflight()
+            self.validate_dependency_graph()
             self.resolve_gateway_invocation()
             if self.security_smoke:
                 # Rebuild only after idle admission. This binds the selected source

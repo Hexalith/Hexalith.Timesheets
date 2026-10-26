@@ -1,0 +1,153 @@
+{
+  "scope": "local controlled profiles; effective composed HTTP cancellation remains deferred",
+  "profiles": [
+    {
+      "profile": "raw DaprReadModelStore SDK state IO",
+      "path": "ordinary",
+      "includesSetup": true,
+      "waitMicroseconds": 25,
+      "elapsedSeconds": 0.3119337,
+      "budgetSeconds": 10,
+      "rawReads": 1139,
+      "distinctRawKeys": 787,
+      "batchReads": 29,
+      "rawWrites": 33,
+      "cleanup": "includes concurrent cleanup reads started before foreground return; later cleanup excluded",
+      "composedHttpCancellation": "deferred"
+    },
+    {
+      "profile": "raw DaprReadModelStore SDK state IO",
+      "path": "streamed",
+      "includesSetup": true,
+      "waitMicroseconds": 25,
+      "elapsedSeconds": 0.1020212,
+      "budgetSeconds": 10,
+      "rawReads": 1650,
+      "distinctRawKeys": 789,
+      "batchReads": 32,
+      "rawWrites": 37,
+      "cleanup": "includes concurrent cleanup reads started before foreground return; later cleanup excluded",
+      "composedHttpCancellation": "deferred"
+    },
+    {
+      "profile": "logical IReadModelStore.GetAsync; excludes raw batch IO",
+      "path": "ordinary",
+      "result": "completed",
+      "includesSetup": true,
+      "delayMilliseconds": 2,
+      "elapsedSeconds": 0.5089793,
+      "budgetSeconds": 10,
+      "reads": {
+        "metadata": 550,
+        "selected": 257,
+        "direct": 257
+      },
+      "maximumConcurrency": {
+        "metadata": 16,
+        "selected": 16,
+        "direct": 16
+      },
+      "independentMetadataReadsIncludingCleanup": 0
+    },
+    {
+      "profile": "logical IReadModelStore.GetAsync; excludes raw batch IO",
+      "path": "streamed",
+      "result": "completed",
+      "includesSetup": true,
+      "delayMilliseconds": 2,
+      "elapsedSeconds": 6.1923017,
+      "budgetSeconds": 10,
+      "reads": {
+        "metadata": 1062,
+        "selected": 257,
+        "direct": 257
+      },
+      "maximumConcurrency": {
+        "metadata": 1,
+        "selected": 1,
+        "direct": 16
+      },
+      "independentMetadataReadsIncludingCleanup": 0
+    },
+    {
+      "profile": "logical IReadModelStore.GetAsync; excludes raw batch IO",
+      "path": "ordinary",
+      "result": "cancelled-direct",
+      "includesSetup": true,
+      "delayMilliseconds": 0,
+      "elapsedSeconds": 9.9995129,
+      "budgetSeconds": 10,
+      "reads": {
+        "metadata": 20,
+        "selected": 1,
+        "direct": 17
+      },
+      "maximumConcurrency": {
+        "metadata": 1,
+        "selected": 1,
+        "direct": 16
+      },
+      "independentMetadataReadsIncludingCleanup": 0
+    },
+    {
+      "profile": "logical IReadModelStore.GetAsync; excludes raw batch IO",
+      "path": "ordinary",
+      "result": "cancelled-selected",
+      "includesSetup": true,
+      "delayMilliseconds": 0,
+      "elapsedSeconds": 10.000918,
+      "budgetSeconds": 10,
+      "reads": {
+        "metadata": 36,
+        "selected": 17,
+        "direct": 257
+      },
+      "maximumConcurrency": {
+        "metadata": 1,
+        "selected": 16,
+        "direct": 1
+      },
+      "independentMetadataReadsIncludingCleanup": 0
+    },
+    {
+      "profile": "logical IReadModelStore.GetAsync; excludes raw batch IO",
+      "path": "streamed",
+      "result": "cancelled-direct",
+      "includesSetup": true,
+      "delayMilliseconds": 0,
+      "elapsedSeconds": 10.0056831,
+      "budgetSeconds": 10,
+      "reads": {
+        "metadata": 25,
+        "selected": 1,
+        "direct": 17
+      },
+      "maximumConcurrency": {
+        "metadata": 1,
+        "selected": 1,
+        "direct": 16
+      },
+      "independentMetadataReadsIncludingCleanup": 0
+    },
+    {
+      "profile": "logical IReadModelStore.GetAsync; excludes raw batch IO",
+      "path": "streamed",
+      "result": "cancelled-selected",
+      "includesSetup": true,
+      "delayMilliseconds": 0,
+      "elapsedSeconds": 10.0015015,
+      "budgetSeconds": 10,
+      "reads": {
+        "metadata": 27,
+        "selected": 2,
+        "direct": 257
+      },
+      "maximumConcurrency": {
+        "metadata": 1,
+        "selected": 1,
+        "direct": 1
+      },
+      "independentMetadataReadsIncludingCleanup": 0
+    }
+  ]
+}

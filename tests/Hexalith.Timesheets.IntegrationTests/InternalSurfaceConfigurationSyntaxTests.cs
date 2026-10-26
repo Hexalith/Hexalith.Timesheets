@@ -89,6 +89,27 @@ public sealed class InternalSurfaceConfigurationSyntaxTests
         InternalSurfaceConfigurationSyntax.Validate(appHost, Host()).ShouldNotBeEmpty();
     }
 
+    [Theory]
+    [InlineData("WaitAnnotation", "EnvironmentCallbackAnnotation")]
+    [InlineData(".Remove(wait)", ".Clear()")]
+    [InlineData("ReferenceEquals(wait.Resource, eventStore.Resource)", "true")]
+    [InlineData("if (fixtureEnabled)", "if (true)")]
+    public void OnlyTheFixtureGatewayWaitRemovalIsAccepted(string original, string replacement)
+    {
+        string appHost = AppHost();
+        appHost.ShouldContain(original);
+        appHost = appHost.Replace(original, replacement, StringComparison.Ordinal);
+        InternalSurfaceConfigurationSyntax.Validate(appHost, Host()).ShouldNotBeEmpty();
+    }
+
+    [Fact]
+    public void FixtureGatewayWaitRemovalInElseBranchIsRejected()
+    {
+        string appHost = AppHost().Replace("if (fixtureEnabled)",
+            "if (fixtureEnabled) { } else", StringComparison.Ordinal);
+        InternalSurfaceConfigurationSyntax.Validate(appHost, Host()).ShouldNotBeEmpty();
+    }
+
     [Fact]
     public void HarmlessCommentsAndConstantArgumentsPass()
     {

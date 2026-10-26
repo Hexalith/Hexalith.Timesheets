@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
 from magic_link_index_selection import legacy_index_diagnostics, selected_candidate, selected_index_snapshot
-from run_isolated_magic_link_dapr import validate_public_port, verify_runtime_components, security_credential_handoff
+from run_isolated_magic_link_dapr import owned_http_open, validate_public_port, verify_runtime_components, security_credential_handoff
 
 
 def require(condition, message):
@@ -113,7 +113,7 @@ if os.environ.get("TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE") == "1":
 timesheets_sidecar = environment["DAPR_HTTP_ENDPOINT"].rstrip("/")
 eventstore_port = application("eventstore", 8082)
 application("timesheets", 8081)
-with urllib.request.urlopen(timesheets_sidecar + "/v1.0/metadata", timeout=20) as response:
+with owned_http_open(timesheets_sidecar + "/v1.0/metadata", timeout=20) as response:
     require(json.load(response).get("id") == "timesheets", "Timesheets points to another Dapr app")
 eventstore = timesheets_sidecar + "/v1.0/invoke/eventstore/method"
 timesheets = f"http://127.0.0.1:{eventstore_port}/v1.0/invoke/timesheets/method"
@@ -159,10 +159,11 @@ def call(url, method="GET", body=None, assertion=None, channel_token=None):
         headers=headers,
     )
     try:
-        with urllib.request.urlopen(request, timeout=45) as response:
+        with owned_http_open(request, timeout=45) as response:
             return response.status, response.read()
     except urllib.error.HTTPError as error:
-        return error.code, error.read()
+        with error:
+            return error.code, error.read()
     except (OSError, TimeoutError):
         raise RuntimeError("A local HTTP or Dapr request could not complete.") from None
 
@@ -291,6 +292,7 @@ def projection_failure_diagnostic(status, outcomes, legacy=None):
 
 
 def project(events, aggregate, projection, fingerprint, scoped_tenant=tenant):
+    started = time.monotonic()
     delivery_events = verified_positioned_events(events, aggregate)
     dispatch_id = "live-dapr-dispatch-" + secrets.token_hex(8)
     body = {
@@ -324,6 +326,8 @@ def project(events, aggregate, projection, fingerprint, scoped_tenant=tenant):
             and (outcome_status in (0, 1) or outcomes[0].get("state") is None))
         identity_conflict = outcome_reason == "delivery_identity_conflict"
         if valid_outcome and not identity_conflict and outcome_status in (0, 1):
+            print("Delivery timing: " + json.dumps({"attempts": attempt + 1,
+                "elapsed_seconds": round(time.monotonic() - started, 6), "completed": True}), flush=True)
             return
         # Consume the SDK's durable classification with this same immutable
         # dispatch/body. Unproven work must reach explicit completion; a failed
@@ -343,6 +347,8 @@ def project(events, aggregate, projection, fingerprint, scoped_tenant=tenant):
         # A separate line without a resource name survives strict credential
         # redaction. Never serialize the SDK response, state, or request here.
         print("Delivery outcome: " + json.dumps(projection_failure_diagnostic(status, outcomes, legacy)), flush=True)
+        print("Delivery timing: " + json.dumps({"attempts": attempt + 1,
+            "elapsed_seconds": round(time.monotonic() - started, 6), "completed": False}), flush=True)
         require(status == 200, f"{projection} delivery returned {status}")
         reason = ("delivery_state_unavailable" if single_outcome
                   and outcomes[0].get("reasonCode") == "delivery_state_unavailable" else "other")
@@ -730,7 +736,7 @@ subprocess.run([
 eventstore_port = application("eventstore", 8082)
 application("timesheets", 8081)
 timesheets = f"http://127.0.0.1:{eventstore_port}/v1.0/invoke/timesheets/method"
-with urllib.request.urlopen(timesheets_sidecar + "/v1.0/metadata", timeout=20) as response:
+with owned_http_open(timesheets_sidecar + "/v1.0/metadata", timeout=20) as response:
     require(json.load(response).get("id") == "timesheets", "Timesheets points to another Dapr app after restart")
 catalog_after = read_model(f"timesheets:magic-links:activity-type-catalog:{tenant}:v1")
 require(catalog_after["projectionFreshness"]["state"] == "Fresh"
