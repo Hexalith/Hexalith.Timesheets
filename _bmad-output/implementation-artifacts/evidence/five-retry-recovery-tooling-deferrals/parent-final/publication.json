@@ -1,0 +1,24 @@
+{
+  "timesheets_content_commit": "5002ab27df1787624d4ad304cfc6bf78b00df903",
+  "timesheets_gitlink_commit": "63817540d0d3f953338177f216894b3d601f1fa4",
+  "timesheets_remote_head_verified": "63817540d0d3f953338177f216894b3d601f1fa4",
+  "sdk_source_commit": "c613e55aefd0650c1e64ed0580c8495657585a89",
+  "sdk_remote_head_verified": "c613e55aefd0650c1e64ed0580c8495657585a89",
+  "completed_items": [
+    "DW-130",
+    "DW-188",
+    "DW-189",
+    "composed HTTP timeout follow-up B10"
+  ],
+  "open_item": "DW-184",
+  "pending_patch": "certified-repair-pending.patch.gz",
+  "consuming_published_sdk": "3.128.2",
+  "sdk_package_publication": "blocked by pre-existing exact-source Tenants Routing CI failures",
+  "package_or_container_release_dispatched": false,
+  "commitlint": {
+    "timesheets_cli": "21.2.2",
+    "sdk_cli": "21.1.0",
+    "all_exact_candidates_passed": true
+  },
+  "git_push_used_force": false
+}
