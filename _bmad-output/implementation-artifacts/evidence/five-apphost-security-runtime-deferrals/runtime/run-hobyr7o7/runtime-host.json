@@ -1,0 +1,187 @@
+{
+  "dcp": {
+    "pid": 8126,
+    "start": "12307455",
+    "state": "S",
+    "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+    "parent": 343,
+    "package": "aspire.hosting.orchestration.linux-x64",
+    "version": "13.6.1",
+    "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+    "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+  },
+  "dcp_controller": {
+    "pid": 8189,
+    "start": "12307463",
+    "state": "S",
+    "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+    "parent": 8126,
+    "package": "aspire.hosting.orchestration.linux-x64",
+    "version": "13.6.1",
+    "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+    "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+  },
+  "dashboard": {
+    "pid": 8466,
+    "start": "12307519",
+    "state": "S",
+    "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.1/tools/Aspire.Dashboard",
+    "parent": 8189,
+    "package": "aspire.dashboard.sdk.linux-x64",
+    "version": "13.6.1",
+    "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.1",
+    "sha256": "72e006b4f19c87c369315a908797926b4f633107d585aec4a5878ed0acd1201d"
+  },
+  "dcp_processes": [
+    {
+      "pid": 8126,
+      "start": "12307455",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 343,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 8189,
+      "start": "12307463",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8126,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 8428,
+      "start": "12307508",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 8470,
+      "start": "12307519",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 8471,
+      "start": "12307519",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 8472,
+      "start": "12307519",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 8575,
+      "start": "12307524",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 8577,
+      "start": "12307524",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 9471,
+      "start": "12307657",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 10090,
+      "start": "12307707",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 10528,
+      "start": "12307790",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 10681,
+      "start": "12307810",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    },
+    {
+      "pid": 10728,
+      "start": "12307902",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 8189,
+      "package": "aspire.hosting.orchestration.linux-x64",
+      "version": "13.6.1",
+      "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1",
+      "sha256": "3a64784ef47718959f8410a164b9e3a981ea6617b2af5dd0f11398a7a11e47f5"
+    }
+  ],
+  "exited_workers": [],
+  "dashboard_readiness": {
+    "ready": true,
+    "scheme": "https",
+    "loopback": true,
+    "port": 11409
+  }
+}

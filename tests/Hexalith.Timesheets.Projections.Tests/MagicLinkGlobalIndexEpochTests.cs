@@ -135,6 +135,39 @@ public sealed class MagicLinkGlobalIndexEpochTests
     }
 
     [Fact]
+    public async Task TwoOrdinaryOwnersInOneGenerationRemainSelectable()
+    {
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store,
+            epochCoordinator: coordinator);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        foreach ((string owner, string hash, long position) in new[]
+        {
+            ("first-owner", "first-synthetic-hash", 1L),
+            ("second-owner", "second-synthetic-hash", 2L),
+        })
+        {
+            SharedProjectionLease lease = await coordinator.RegisterWriterAsync(scope,
+                handler.OrdinaryWriterId, TestContext.Current.CancellationToken);
+            (await coordinator.JournalAsync(scope, lease, BootstrapDelivery(owner, hash, position),
+                TestContext.Current.CancellationToken)).ShouldBe(SharedProjectionJournalResult.Journaled);
+            (await coordinator.CatchUpAsync(scope,
+                (delivery, generation, token) => handler.FoldCatchUpAsync(delivery, generation,
+                    coordinator, token), TestContext.Current.CancellationToken)).ShouldBe(1);
+        }
+
+        SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexTreeRoot> selected = await coordinator
+            .ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken);
+        var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope);
+        foreach (string hash in new[] { "first-synthetic-hash", "second-synthetic-hash" })
+            (await reader.FindCandidatesAsync(selected.Value.ShouldNotBeNull().TokenRoot, hash,
+                TestContext.Current.CancellationToken)).Count.ShouldBe(1);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration.ShouldBe(0);
+    }
+
+    [Fact]
     public async Task OrdinaryDirectoryInsertionUsesFullOwnerOrderAcrossSameHashPages()
     {
         const string hash = "multi-page-ordinary-owner-order";
@@ -1172,20 +1205,21 @@ public sealed class MagicLinkGlobalIndexEpochTests
             MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey, TestContext.Current.CancellationToken)).Value.ShouldBeNull();
     }
 
-    private static SharedProjectionDelivery BootstrapDelivery()
+    private static SharedProjectionDelivery BootstrapDelivery(string owner = "fresh-owner",
+        string hash = "fresh-ordinary-hash", long position = 1)
     {
-        var issued = new MagicLinkConfirmationCapabilityIssued(new MagicLinkCapabilityId("fresh-owner"),
+        var issued = new MagicLinkConfirmationCapabilityIssued(new MagicLinkCapabilityId(owner),
             new TenantReference("tenant-1"), new PartyReference("party-1"),
             TimeEntryTargetReference.ForProject(new ProjectReference("project-1")), new ActivityTypeId("activity-1"),
             new TimeEntryId("entry-1"), MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm,
-            new MagicLinkTokenHash("fresh-ordinary-hash"), DateTimeOffset.UtcNow.AddDays(1),
+            new MagicLinkTokenHash(hash), DateTimeOffset.UtcNow.AddDays(1),
             new PartyReference("issuer-1"), DateTimeOffset.UtcNow, new MagicLinkAuditMetadata("timesheets", "bootstrap"), true);
         var projectionEvent = new ProjectionEventDto(typeof(MagicLinkConfirmationCapabilityIssued).FullName!,
             JsonSerializer.SerializeToUtf8Bytes(issued, s_json), "json", 1, DateTimeOffset.UtcNow,
-            "correlation-bootstrap", "message-bootstrap", "issuer-1", 1);
+            "correlation-bootstrap", "message-bootstrap", "issuer-1", position);
         byte[] payload = JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-1", "timesheets",
-            "fresh-owner", [projectionEvent]), s_json);
-        return new SharedProjectionDelivery("tenant-1:timesheets:fresh-owner", 1, payload, [], OwnerSequenceNumber: 1);
+            owner, [projectionEvent]), s_json);
+        return new SharedProjectionDelivery("tenant-1:timesheets:" + owner, position, payload, [], OwnerSequenceNumber: 1);
     }
 
     private sealed class FixedCursor(IReadOnlyList<DomainSharedProjectionRebuildPartition> partitions,

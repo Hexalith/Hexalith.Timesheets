@@ -1,0 +1,20 @@
+{
+  "timesheets": {
+    "head": "39e1455250206d6a59476f88c685d03f64887f81",
+    "diff_sha256": "196f1f32ae6ff1aacdb5714e3cc93a6a8466be4ee929e6e480b936fa87af6965"
+  },
+  "eventstore": {
+    "head": "dcd3dce42b67a305b608f03c4dab2b812791abae",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "files": {
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj": "f40e33834c47ecc348e72a29dd498c2fa0af2c44e85c2f26852679124e8b7f08",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "281139533f74bf8dc96b5fb40524593dfce48b5798b91501473707af83786092",
+    "src/Hexalith.Timesheets.AppHost/SecurityConstructionProbe.cs": "8af7add73c00ad051ea87d9eb69dd228a7cb80550b531994332026dd7fd34350",
+    "src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json": "8da9c8ce50614c45f2820c45f6c2dad412ff9ee085e1fc05080040e95f4c812b",
+    "src/Hexalith.Timesheets.AppHost/obj/project.assets.json": "6b7cee10c59539dc1e7b21662553588f38808cde3ae6e345823fd6038d8cfd3e",
+    "src/Hexalith.Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll": "53746febc1a288d6d4e45950d7e596a6e53af4632ec0b859d272688934d86501",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore": "8f9ec427f5d3c9e1c8e93812518b2650c50e08da292d31bebbb91e0046b1219b",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore.dll": "5571899618cf85d991b54c0eba2cfe3a61097a702faa6766c8880367d6614458"
+  }
+}

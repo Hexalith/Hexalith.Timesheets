@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
 from magic_link_index_selection import legacy_index_diagnostics, selected_candidate, selected_index_snapshot
-from run_isolated_magic_link_dapr import validate_public_port, verify_runtime_components
+from run_isolated_magic_link_dapr import validate_public_port, verify_runtime_components, security_credential_handoff
 
 
 def require(condition, message):
@@ -43,8 +43,8 @@ def await_success(operation, expected_status, label, diagnostics=None, retry_del
     raise RuntimeError(f"{label} remained denied after {len(retry_delays) + 1} bounded attempts{detail}")
 
 
-# EventStore's anonymous actor tenant limiter has a 60-second window and no queue.
-# These waits cross one window without changing the HTTP route's authorization result.
+# Retain bounded waits for temporarily unavailable callback/projection work,
+# preserving each route's exact authorization and completion expectations.
 ACTOR_RATE_LIMIT_RETRY_DELAYS = (1, 5, 15, 45)
 
 # The checked-in host uses AddTimesheetsServerKernel's FailClosedDefault
@@ -89,6 +89,27 @@ verify_runtime_components(os.environ.get("TIMESHEETS_LIVE_DAPR_REDIS_HOST", ""),
 print("isolated actor/read-model/pubsub and placement/scheduler endpoints verified")
 key = environment["Authentication__JwtBearer__SigningKey"].encode()
 app_token = environment["APP_API_TOKEN"]
+require(len(key) == 64 and all(character in b"0123456789ABCDEF" for character in key)
+        and len(app_token) == 64 and all(character in "0123456789abcdef" for character in app_token),
+        "Generated app-channel and signing credentials are missing or unsafe")
+print("generated app-channel and signing credentials verified")
+if os.environ.get("TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE") == "1":
+    listing = subprocess.run(["docker", "container", "ls", "--all", "--no-trunc", "--filter",
+        "label=hexalith.timesheets.components=" + os.environ["TIMESHEETS_LIVE_DAPR_COMPONENTS"], "--format", "{{.ID}}"],
+        text=True, capture_output=True, timeout=20, check=False)
+    require(listing.returncode == 0 and len(listing.stdout.split()) == 1, "Owned security container is unavailable")
+    inspected = subprocess.run(["docker", "inspect", listing.stdout.strip()], text=True,
+                               capture_output=True, timeout=20, check=False)
+    require(inspected.returncode == 0, "Owned security container is unavailable")
+    try:
+        security_container, = json.loads(inspected.stdout)
+        require(security_container["Id"] == listing.stdout.strip()
+                and security_container["Config"]["Labels"]["hexalith.timesheets.components"]
+                == os.environ["TIMESHEETS_LIVE_DAPR_COMPONENTS"], "Owned security container is unavailable")
+    except (ValueError, KeyError, TypeError):
+        raise RuntimeError("Owned security container is unavailable") from None
+    security_credential_handoff(security_container, public_port)
+    print("security smoke authenticated generated realm credentials")
 timesheets_sidecar = environment["DAPR_HTTP_ENDPOINT"].rstrip("/")
 eventstore_port = application("eventstore", 8082)
 application("timesheets", 8081)
@@ -236,6 +257,39 @@ def verified_positioned_events(events, aggregate):
     return events
 
 
+PROJECTION_FAILURE_REASON_CODES = frozenset({
+    "duplicate_projection_route", "unsupported_projection_route", "unsupported_dispatch_capability",
+    "malformed_projection_outcome", "projection_handler_failure", "projection_dispatch_cancelled",
+    "projection_partial_retry", "delivery_already_completed", "delivery_in_progress", "delivery_gap",
+    "delivery_identity_conflict", "delivery_reconciliation_required", "delivery_schema_regression",
+    "delivery_state_unavailable", "delivery_lease_reclaimed", "delivery_reconciled", "delivery_rebuild_required",
+    # The SDK forwards this fixed applied-proof result when the epoch ETag changes.
+    "head_changed",
+})
+
+
+def projection_failure_diagnostic(status, outcomes, legacy=None):
+    """Keep only the installed SDK's closed outcomes and known legacy booleans."""
+    outcome = outcomes[0] if isinstance(outcomes, list) and len(outcomes) == 1 and isinstance(outcomes[0], dict) else {}
+    outcome_status = outcome.get("status")
+    reason = outcome.get("reasonCode")
+    legacy_entries = (legacy.removeprefix("legacy-direct-root=present-unverified entries=")
+                      if isinstance(legacy, str) and legacy.startswith("legacy-direct-root=present-unverified entries=") else "")
+    legacy_present = bool(legacy_entries) and legacy_entries.isascii() and legacy_entries.isdigit() and len(legacy_entries) <= 10
+    return {
+        "http_status": status if type(status) is int and 100 <= status <= 599 else None,
+        "outcome_count": len(outcomes) if isinstance(outcomes, list) and len(outcomes) <= 64 else None,
+        "outcome_status": outcome_status if type(outcome_status) is int and 0 <= outcome_status <= 4 else None,
+        "reason": reason if isinstance(reason, str) and reason in PROJECTION_FAILURE_REASON_CODES else "absent" if reason is None else "unknown",
+        "legacy_checked": legacy is not None,
+        "legacy_lookup_succeeded": legacy in ("legacy-direct-root=absent", "legacy-direct-root=invalid") or legacy_present,
+        "legacy_root_absent": legacy == "legacy-direct-root=absent",
+        "legacy_root_present": legacy == "legacy-direct-root=invalid" or legacy_present,
+        "legacy_entries_object": legacy_present,
+        "legacy_entries_nonempty": legacy_present and int(legacy_entries) > 0,
+    }
+
+
 def project(events, aggregate, projection, fingerprint, scoped_tenant=tenant):
     delivery_events = verified_positioned_events(events, aggregate)
     dispatch_id = "live-dapr-dispatch-" + secrets.token_hex(8)
@@ -250,21 +304,49 @@ def project(events, aggregate, projection, fingerprint, scoped_tenant=tenant):
             timesheets + "/project/v2", "POST", body,
             sign("timesheets", "eventstore", "domain-service:project"),
         )
-        outcomes = json.loads(data).get("outcomes", []) if status == 200 else []
-        if (len(outcomes) == 1 and outcomes[0]["projectionType"] == projection
-                and outcomes[0]["status"] in (0, 1)):
+        try:
+            payload = json.loads(data) if status == 200 else {}
+            outcomes = payload.get("outcomes", []) if isinstance(payload, dict) else []
+        except (ValueError, UnicodeError):
+            payload = {}
+            outcomes = []
+        if not isinstance(outcomes, list):
+            outcomes = []
+        single_outcome = len(outcomes) == 1 and isinstance(outcomes[0], dict)
+        outcome_status = outcomes[0].get("status") if single_outcome else None
+        outcome_reason = outcomes[0].get("reasonCode") if single_outcome else None
+        valid_outcome = (status == 200 and isinstance(payload, dict)
+            and type(payload.get("version")) is int and payload["version"] == 2
+            and single_outcome and outcomes[0].get("projectionType") == projection
+            and type(outcome_status) is int and 0 <= outcome_status <= 4
+            and (outcome_reason is None or isinstance(outcome_reason, str)
+                 and len(outcome_reason) <= 128 and outcome_reason.isascii())
+            and (outcome_status in (0, 1) or outcomes[0].get("state") is None))
+        identity_conflict = outcome_reason == "delivery_identity_conflict"
+        if valid_outcome and not identity_conflict and outcome_status in (0, 1):
             return
+        # Consume the SDK's durable classification with this same immutable
+        # dispatch/body. Unproven work must reach explicit completion; a failed
+        # or conflicting identity never becomes a successful fixture outcome.
         retryable = (status in (429, 500, 503)
-                     or len(outcomes) == 1 and outcomes[0].get("reasonCode")
-                     == "delivery_state_unavailable")
+                     or valid_outcome and not identity_conflict and outcome_status in (2, 3))
         if retryable and attempt < len(ACTOR_RATE_LIMIT_RETRY_DELAYS):
+            print("Delivery outcome: " + json.dumps(projection_failure_diagnostic(status, outcomes)), flush=True)
             time.sleep(ACTOR_RATE_LIMIT_RETRY_DELAYS[attempt])
             continue
+        legacy = None
+        if projection == "magic-link-token-hash-capability-index":
+            try:
+                legacy = legacy_index_diagnostics(lambda key: read_model(key, allow_missing=True))
+            except Exception:
+                legacy = "legacy-direct-root=unavailable"
+        # A separate line without a resource name survives strict credential
+        # redaction. Never serialize the SDK response, state, or request here.
+        print("Delivery outcome: " + json.dumps(projection_failure_diagnostic(status, outcomes, legacy)), flush=True)
         require(status == 200, f"{projection} delivery returned {status}")
-        reason = ("delivery_state_unavailable" if len(outcomes) == 1
+        reason = ("delivery_state_unavailable" if single_outcome
                   and outcomes[0].get("reasonCode") == "delivery_state_unavailable" else "other")
-        detail = ("; " + legacy_index_diagnostics(lambda key: read_model(key, allow_missing=True))
-                  if projection == "magic-link-token-hash-capability-index" else "")
+        detail = "; " + legacy if legacy is not None else ""
         raise RuntimeError(f"{projection} delivery did not complete: reason={reason}{detail}")
 
 
@@ -488,7 +570,7 @@ def journey(action, race=False):
         "billableState": "Billable",
         "source": {"sourceSystem": "live-dapr-proof", "externalRequestId": "record-" + secrets.token_hex(8)},
     }
-    # A public 403 can hide an inner actor 429; retry across one rate-limit window.
+    # Retain the established bounded attempts and exact accepted status.
     await_success(lambda: management("/api/timesheets/external-contributions/", record), 202,
                   "Recording", retry_delays=ACTOR_RATE_LIMIT_RETRY_DELAYS)
     record_events = stream(entry)
@@ -509,7 +591,7 @@ def journey(action, race=False):
             and effective_evidence_values_match(evidence, record_events,
                                                 projection_comments_allowed=PROJECTION_COMMENTS_ALLOWED),
             "Delivered record evidence is not fresh, complete, or equal to stored values")
-    # The same public 403 can hide an actor 429 on the idempotent retry.
+    # Verify idempotent recording with the same bounded policy.
     await_success(lambda: management("/api/timesheets/external-contributions/", record), 202,
                   "Recording retry", retry_delays=ACTOR_RATE_LIMIT_RETRY_DELAYS)
     require(event_names(entry) == recorded, "Recording retry appended another event")
@@ -642,7 +724,7 @@ subprocess.run([
     "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj", "--non-interactive",
 ], check=True, stdout=subprocess.DEVNULL)
 subprocess.run([
-    "aspire", "wait", "eventstore", "--timeout", "60", "--apphost",
+    "aspire", "wait", "eventstore", "--timeout", "180", "--apphost",
     "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj", "--non-interactive",
 ], check=True, stdout=subprocess.DEVNULL)
 eventstore_port = application("eventstore", 8082)

@@ -104,6 +104,6 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 ## Known pitfalls
 
 - Do not stage `references/` submodule gitlinks unless the change owns that pointer.
-- The HTTP host registers the projection assembly and EventStore processing. Capability-index, Time Entry evidence, and tenant Activity Type catalog handlers have composed and historical isolated local persistence proof. Missing state still fails closed; deployed authority/shared-rebuild acceptance and current-graph AppHost runtime qualification remain unfinished (Story 3.6). Do not restore the obsolete unwired-index diagnosis or infer deployed acceptance from local proof.
+- The HTTP host registers the projection assembly and EventStore processing. Capability-index, Time Entry evidence, and tenant Activity Type catalog handlers have composed and historical isolated local persistence proof. Missing state still fails closed. Current Debug/source NuGet AppHost local qualification passed on 2026-10-26; see `_bmad-output/implementation-artifacts/tests/five-apphost-security-runtime-deferrals.md`. Deployed authority/shared-rebuild acceptance remains unfinished (Story 3.6). Do not restore the obsolete unwired-index diagnosis or infer deployed acceptance from local proof.
 
 <!-- /bmad:context -->

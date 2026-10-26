@@ -1,0 +1,23 @@
+{
+  "pid": 75749,
+  "start": "12939441",
+  "identity_matches": true,
+  "fixture_marker_matches": true,
+  "http_port_shape_matches": true,
+  "http_endpoint_loopback": true,
+  "http_endpoint_matches_port": true,
+  "sidecar_identity_matches": true,
+  "gateway_ready": "Degraded",
+  "gateway_http_status": 200,
+  "gateway_checks": {
+    "dapr-sidecar": "Healthy",
+    "dapr-actor-placement": "Healthy",
+    "dapr-statestore": "Healthy",
+    "dapr-app-channel-token": "Healthy"
+  },
+  "sidecar_metadata": "Available",
+  "actor_host_ready": "Ready",
+  "actor_placement": "Connected",
+  "actor_runtime": "Running",
+  "aggregate_actor_registered": true
+}

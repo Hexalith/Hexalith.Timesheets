@@ -1,0 +1,153 @@
+{
+  "working_directory": "{project-root}",
+  "path_normalization": "Commands are the exact invocations with the absolute repository-root prefix removed; run from the repository root.",
+  "projects": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "command": [
+        "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noColor",
+        "-xml",
+        "_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.ArchitectureTests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit": 0,
+      "total": 118,
+      "passed": 118,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "elapsed_seconds": 57.767,
+      "xml_receipt": "Hexalith.Timesheets.ArchitectureTests.xml.gz",
+      "log_receipt": "Hexalith.Timesheets.ArchitectureTests.log.gz",
+      "not_run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noColor",
+        "-xml",
+        "_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.Contracts.Tests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit": 0,
+      "total": 108,
+      "passed": 108,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "elapsed_seconds": 0.477,
+      "xml_receipt": "Hexalith.Timesheets.Contracts.Tests.xml.gz",
+      "log_receipt": "Hexalith.Timesheets.Contracts.Tests.log.gz",
+      "not_run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noColor",
+        "-xml",
+        "_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.Server.Tests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit": 0,
+      "total": 720,
+      "passed": 720,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "elapsed_seconds": 7.729,
+      "xml_receipt": "Hexalith.Timesheets.Server.Tests.xml.gz",
+      "log_receipt": "Hexalith.Timesheets.Server.Tests.log.gz",
+      "not_run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noColor",
+        "-xml",
+        "_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.Works.Tests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit": 0,
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "elapsed_seconds": 0.826,
+      "xml_receipt": "Hexalith.Timesheets.Works.Tests.xml.gz",
+      "log_receipt": "Hexalith.Timesheets.Works.Tests.log.gz",
+      "not_run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noColor",
+        "-longRunning",
+        "60",
+        "-result-xml",
+        "_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.Projections.Tests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit": 0,
+      "total": 737,
+      "passed": 737,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "elapsed_seconds": 1037.109,
+      "xml_receipt": "Hexalith.Timesheets.Projections.Tests.xml.gz",
+      "log_receipt": "Hexalith.Timesheets.Projections.Tests.log.gz",
+      "not_run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor",
+        "-longRunning",
+        "60",
+        "-result-xml",
+        "_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.IntegrationTests.xml"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit": 0,
+      "total": 939,
+      "passed": 934,
+      "failed": 0,
+      "skipped": 5,
+      "errors": 0,
+      "elapsed_seconds": 971.662,
+      "xml_receipt": "Hexalith.Timesheets.IntegrationTests.xml.gz",
+      "log_receipt": "Hexalith.Timesheets.IntegrationTests.log.gz",
+      "not_run": 0
+    }
+  ],
+  "totals": {
+    "total": 2698,
+    "passed": 2693,
+    "failed": 0,
+    "skipped": 5,
+    "errors": 0,
+    "not_run": 0
+  },
+  "live_acceptance": false,
+  "default_skips_do_not_prove_runtime_acceptance": true,
+  "incomplete_attempts": "incomplete-attempts.json"
+}

@@ -1,0 +1,8 @@
+{
+  "mutation": "delete only bootstrap source identity guard in memory",
+  "repository_files_modified": false,
+  "tests_run": 1,
+  "failures": 2,
+  "errors": 0,
+  "mutation_detected": true
+}

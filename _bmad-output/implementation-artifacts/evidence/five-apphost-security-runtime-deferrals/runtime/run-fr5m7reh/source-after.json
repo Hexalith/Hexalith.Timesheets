@@ -1,0 +1,24 @@
+{
+  "timesheets": {
+    "head": "39e1455250206d6a59476f88c685d03f64887f81",
+    "diff_sha256": "27ae857ce25b7984637787285c8ffbe5757f2e875ce4191165f11f3d2742a36a"
+  },
+  "eventstore": {
+    "head": "dcd3dce42b67a305b608f03c4dab2b812791abae",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "files": {
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj": "f40e33834c47ecc348e72a29dd498c2fa0af2c44e85c2f26852679124e8b7f08",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "4f819b9a00638027df12ff65cc95a29a35f6c67da89a7f803c7908fd69e82fc4",
+    "src/Hexalith.Timesheets.AppHost/SecurityConstructionProbe.cs": "08b248802c3967fad94206f01f240f508e546ae71094201152535b3699e85901",
+    "src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json": "05f8c1199c55a601f0cc0e68140108d1a7d816fa438eaba7e842f6f8bdcf5e2a",
+    "src/Hexalith.Timesheets.AppHost/obj/project.assets.json": "6b7cee10c59539dc1e7b21662553588f38808cde3ae6e345823fd6038d8cfd3e",
+    "src/Hexalith.Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll": "e4c907c1c650932f28a0db8e3670d3aeda5cc445b39a5580bd2ad832a66d72b4",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore": "8f9ec427f5d3c9e1c8e93812518b2650c50e08da292d31bebbb91e0046b1219b",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore.dll": "5571899618cf85d991b54c0eba2cfe3a61097a702faa6766c8880367d6614458",
+    "src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets": "805f4cd5ff9a756855b7f371eb32f1fc698d9bcdd9ca18f67151fda0f16921f0",
+    "src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets.dll": "a3a7aa7f105067cb7ee77e928cd858143711881679801efcd2201c42a815de7b",
+    "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests": "2cf4ddb70ee13f761d9a1ae50b32fe00053e5d15cf6aaea7787b1df9982feba9",
+    "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests.dll": "082c18cf7703912cc8ef53b49dcaca0452b803237e1b7a9aad3b08370d0ffef4"
+  }
+}

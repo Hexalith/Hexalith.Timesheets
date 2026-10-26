@@ -1,0 +1,25 @@
+{
+  "scope": "Initial independent Python runs overlapped the global local-runtime admission lock",
+  "source_defect": false,
+  "corrective_action": "Run both suites sequentially without relaxing admission",
+  "superseded_python": {
+    "tests": 199,
+    "failures": 64,
+    "errors": 11,
+    "receipt": "review-python-parallel-admission-attempt.log.gz"
+  },
+  "superseded_ci": {
+    "tests": 166,
+    "failures": 6,
+    "errors": 3,
+    "receipt": "review-ci-parallel-admission-attempt.log.gz"
+  },
+  "sequential_python": {
+    "passed": 199,
+    "failed": 0
+  },
+  "sequential_ci": {
+    "passed": 166,
+    "failed": 0
+  }
+}

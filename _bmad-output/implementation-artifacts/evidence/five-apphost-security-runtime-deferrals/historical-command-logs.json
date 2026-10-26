@@ -1,0 +1,42 @@
+{
+  "archive": "historical-command-logs.tar.gz",
+  "members": 1122,
+  "sha256": "b0dfb5277c454556ee0ef54a124a316164df90006e1a01e8cd0f73b93debce16",
+  "manifest": "MANIFEST.sha256 inside archive; SHA256 of each original gzip file",
+  "retention": "Lossless original gzip bytes; current and first complete live command logs and latest compiled probe logs remain expanded",
+  "archived_runtime_runs": [
+    "run-32lc7tjz",
+    "run-4ql8an7j",
+    "run-5eqfygiz",
+    "run-61vx8cev",
+    "run-624nvq02",
+    "run-6ogm519u",
+    "run-7smuv995",
+    "run-9k64u5kz",
+    "run-bhv6vfe3",
+    "run-c8zp9ovr",
+    "run-cx8y34r4",
+    "run-f1svhfo1",
+    "run-fdnsjij5",
+    "run-fprxrqbh",
+    "run-gdl3cygr",
+    "run-hobyr7o7",
+    "run-jnj3vsqf",
+    "run-kjd67qlo",
+    "run-km7k5zm8",
+    "run-kn6_4hak",
+    "run-kwre1l0l",
+    "run-l0cj2cld",
+    "run-lucaupok",
+    "run-mz42jbfi",
+    "run-uhhg9y9f",
+    "run-v9qxd608",
+    "run-vgnib6xx",
+    "run-vwrnlvd2",
+    "run-w768ikht"
+  ],
+  "archived_compiled_runs": [
+    "run-klvga4b7",
+    "run-knruzzx7"
+  ]
+}

@@ -11,6 +11,7 @@ import binascii
 import ctypes
 import errno
 import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -19,10 +20,13 @@ import secrets
 import shutil
 import signal
 import socket
+import ssl
 import subprocess
 import tempfile
 import time
 import urllib.request
+import urllib.parse
+import urllib.error
 
 from local_runtime_admission import LocalRuntimeAdmission, RuntimeAdmissionError
 
@@ -31,12 +35,16 @@ APPHOST = ROOT / "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.cs
 GATEWAY_PROJECT = ROOT / "references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj"
 GATEWAY_EXECUTABLE_SETTING = "TIMESHEETS_LIVE_DAPR_GATEWAY_EXECUTABLE"
 GATEWAY_DIRECTORY_SETTING = "TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY"
+SECURITY_SMOKE_SETTING = "TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE"
 SDK_LAUNCH_OVERRIDES = ("RunCommand", "RunArguments", "RunWorkingDirectory", "StartAction",
                         "StartProgram", "StartArguments", "StartWorkingDirectory")
 DEFAULT_COMPONENTS = APPHOST.parent / "DaprComponents"
 COMPONENT_FILES = (Path("statestore.yaml"), Path("Timesheets/timesheets-readmodels.yaml"), Path("pubsub.yaml"))
 REQUIRED_PORTS = (8080, 8081, 8082, 3501)
 SHARED_CONTROL_PORTS = (6050, 6060, 50005, 50006)
+PRIVATE_CONTROL_PORT_MIN = 20000
+PRIVATE_CONTROL_PORT_MAX = 29999
+CONTROL_PORT_ALLOCATION_ATTEMPTS = 20
 HOST_SETTING = re.compile(r'(?m)^    - name: redisHost\n      value: "([^"\n]+)"$')
 PUBSUB_TEMPLATE = '''apiVersion: dapr.io/v1alpha1
 kind: Component
@@ -151,12 +159,19 @@ def assert_ports_available(public_port=8080):
 
 
 def available_control_port(excluded=()):
-    for _ in range(20):
-        with socket.socket() as listener:
-            listener.bind(("127.0.0.1", 0))
-            port = listener.getsockname()[1]
-        if port not in SHARED_CONTROL_PORTS + REQUIRED_PORTS + tuple(excluded):
+    """Probe randomized lower-range candidates before Docker verifies publication."""
+    candidates = secrets.SystemRandom().sample(
+        range(PRIVATE_CONTROL_PORT_MIN, PRIVATE_CONTROL_PORT_MAX + 1), CONTROL_PORT_ALLOCATION_ATTEMPTS)
+    forbidden = SHARED_CONTROL_PORTS + REQUIRED_PORTS + tuple(excluded)
+    for port in candidates:
+        if not PRIVATE_CONTROL_PORT_MIN <= port <= PRIVATE_CONTROL_PORT_MAX or port in forbidden:
+            continue
+        try:
+            with socket.socket() as listener:
+                listener.bind(("127.0.0.1", port))
             return port
+        except OSError:
+            continue
     raise FixtureError("Could not allocate a private control-service endpoint")
 
 
@@ -399,7 +414,7 @@ def bound_resource_processes(directory, placement, scheduler):
                 continue
             arguments = (process / "cmdline").read_bytes().split(b"\0")
             executable = Path(os.fsdecode(arguments[0])).name if arguments else ""
-            if executable not in ("daprd", "dotnet", "aspire", "Hexalith.Timesheets", "Hexalith.EventStore", "Hexalith.Timesheets.AppHost") \
+            if executable not in ("daprd", "dotnet", "aspire", "Aspire.Dashboard", "Hexalith.Timesheets", "Hexalith.EventStore", "Hexalith.Timesheets.AppHost") \
                     and not executable.startswith("dcp"):
                 continue
             environment = (process / "environ").read_bytes().split(b"\0")
@@ -409,7 +424,10 @@ def bound_resource_processes(directory, placement, scheduler):
                 bound |= bool(placement and placement.encode() in arguments or scheduler and scheduler.encode() in arguments)
             if bound:
                 fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
-                found.append({"pid": int(process.name), "start": fields[19], "state": fields[0]})
+                identity = {"pid": int(process.name), "start": fields[19], "state": fields[0]}
+                if executable == "Aspire.Dashboard" or executable.startswith("dcp"):
+                    identity.update(executable=str((process / "exe").resolve(strict=True)), parent=int(fields[1]))
+                found.append(identity)
         except (FileNotFoundError, ProcessLookupError):
             continue
     return found
@@ -484,6 +502,455 @@ def recorded_process_exits(identities):
             gone = True
         exits.append(dict(identity, gone=gone))
     return {"all_gone": all(row["gone"] for row in exits), "processes": exits}
+
+
+def runtime_host_identity(identities, assets_path, directory=Path("/proc")):
+    """Require the actual fixture-bound DCP and dashboard from restored NuGet assets."""
+    message = "Current NuGet DCP/dashboard process ownership could not be verified"
+    try:
+        assets = json.loads(Path(assets_path).read_text())
+        expected = {}
+        for prefix, name in (("Aspire.Hosting.Orchestration.", "dcp"), ("Aspire.Dashboard.Sdk.", "dashboard")):
+            packages = [key for key in assets["libraries"] if key.startswith(prefix)]
+            require(len(packages) == 1, message)
+            package, version = packages[0].split("/")
+            relative = Path(assets["libraries"][packages[0]]["path"])
+            require(not relative.is_absolute() and ".." not in relative.parts
+                    and relative.parts == (package.lower(), version), message)
+            folders = assets["packageFolders"]
+            require(isinstance(folders, dict) and bool(folders) and all(Path(folder).is_absolute() for folder in folders), message)
+            roots = sorted({(Path(folder) / relative).resolve() for folder in folders}, key=str)
+            expected[name] = (package.lower(), version, roots)
+        def tree_root(nodes):
+            roots = [row for row in nodes.values() if row["parent"] not in nodes]
+            require(len(roots) == 1, message)
+            root = roots[0]
+            for row in nodes.values():
+                visited = set()
+                while row["pid"] != root["pid"]:
+                    require(row["pid"] not in visited and row["parent"] in nodes, message)
+                    visited.add(row["pid"])
+                    row = nodes[row["parent"]]
+            return root
+
+        def package_directory(executable, kind):
+            roots = expected[kind][2]
+            matching = [root for root in roots if executable.is_relative_to(root)]
+            require(len(matching) == 1, message)
+            return matching[0]
+
+        require(len({row["pid"] for row in identities}) == len(identities), message)
+        # Capture metadata identifies required roles before short-lived DCP
+        # workers can exit. Only those noncritical workers may disappear.
+        captured_dcp = {row["pid"]: row for row in identities if Path(row.get("executable", "")).name == "dcp"}
+        captured_dashboard = [row for row in identities if Path(row.get("executable", "")).name == "Aspire.Dashboard"]
+        critical = set()
+        if captured_dcp or captured_dashboard:
+            root = tree_root(captured_dcp)
+            require(len(captured_dashboard) == 1, message)
+            critical.add(captured_dashboard[0]["pid"])
+            parent = captured_dashboard[0]["parent"]
+            require(parent in captured_dcp, message)
+            while True:
+                critical.add(parent)
+                if parent == root["pid"]:
+                    break
+                parent = captured_dcp[parent]["parent"]
+
+        found = {name: [] for name in expected}
+        exited_workers = []
+        hashes = {}
+        def record_exited_worker(identity, fields):
+            require(identity["pid"] in captured_dcp and identity["pid"] not in critical, message)
+            package_directory(Path(identity["executable"]), "dcp")
+            if fields is not None:
+                require(fields[19] == identity["start"] and fields[0] == "Z", message)
+            exited_workers.append({"pid": identity["pid"], "start": identity["start"],
+                "state": None if fields is None else fields[0], "executable": identity["executable"], "parent": identity["parent"]})
+
+        for identity in identities:
+            process = Path(directory) / str(identity["pid"])
+            try:
+                fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+            except FileNotFoundError:
+                fields = None
+            if fields is None or fields[0] == "Z":
+                record_exited_worker(identity, fields)
+                continue
+            require(fields[19] == identity["start"] and fields[0] != "Z", message)
+            try:
+                executable = (process / "exe").resolve(strict=True)
+            except FileNotFoundError:
+                try:
+                    fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+                except FileNotFoundError:
+                    fields = None
+                record_exited_worker(identity, fields)
+                continue
+            name = "dcp" if executable.name == "dcp" else "dashboard" if executable.name == "Aspire.Dashboard" else None
+            if name:
+                package, version, _ = expected[name]
+                root = package_directory(executable, name)
+                if executable not in hashes:
+                    hashes[executable] = hashlib.sha256(executable.read_bytes()).hexdigest()
+                found[name].append({**identity, "state": fields[0], "executable": str(executable), "parent": int(fields[1]),
+                                    "package": package, "version": version,
+                                    "package_directory": str(root), "sha256": hashes[executable]})
+        require(len(found["dashboard"]) == 1, message)
+        dashboard = found["dashboard"][0]
+        dcp = {row["pid"]: row for row in found["dcp"]}
+        daemon = tree_root(dcp)
+        require(len({row["executable"] for row in dcp.values()}) == 1, message)
+        require(dashboard["parent"] in dcp, message)
+        controller = dcp[dashboard["parent"]]
+        # A missing/unbound daemon must not promote the resource controller
+        # into the accepted root of this SDK's observed two-role DCP graph.
+        require(controller["pid"] != daemon["pid"], message)
+        # The daemon can be reparented outside the fixture. Its bound PID/start
+        # and the single connected DCP tree establish scope, not its adopter.
+        required = {dashboard["pid"], daemon["pid"], controller["pid"]} | critical
+        observed = {row["pid"]: row for rows in found.values() for row in rows}
+        for pid in required:
+            require(pid in observed, message)
+            row = observed[pid]
+            process = Path(directory) / str(pid)
+            fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+            require(fields[19] == row["start"] and fields[0] != "Z"
+                    and str((process / "exe").resolve(strict=True)) == row["executable"]
+                    and (pid == daemon["pid"] or int(fields[1]) == row["parent"]), message)
+        return {"dcp": daemon, "dcp_controller": controller, "dashboard": dashboard,
+                "dcp_processes": sorted(dcp.values(), key=lambda row: row["pid"]), "exited_workers": exited_workers}
+    except (OSError, ValueError, IndexError, KeyError, TypeError):
+        raise FixtureError(message) from None
+
+
+def runtime_host_diagnostics(identities, assets_path, fixture_directory, directory=Path("/proc")):
+    """Allowlist failure observations without changing which processes are accepted."""
+    report = {"expected_package_directories": {}, "observed_processes": [], "candidate_processes": []}
+    try:
+        assets = json.loads(Path(assets_path).read_text())
+        for prefix, name in (("Aspire.Hosting.Orchestration.", "dcp"), ("Aspire.Dashboard.Sdk.", "dashboard")):
+            roots = set()
+            for package, library in assets["libraries"].items():
+                if package.startswith(prefix):
+                    relative = Path(library["path"])
+                    if not relative.is_absolute() and ".." not in relative.parts:
+                        roots.update(str((Path(folder) / relative).resolve()) for folder in assets["packageFolders"]
+                                     if Path(folder).is_absolute())
+            report["expected_package_directories"][name] = sorted(roots)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        pass
+
+    def read_identity(pid):
+        observed = {"pid": pid, "start": None, "state": None, "executable": None, "parent": None}
+        try:
+            process = Path(directory) / str(pid)
+            fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+            if re.fullmatch(r"[0-9]+", fields[19]) and re.fullmatch(r"[0-9]+", fields[1]) \
+                    and fields[0] in ("R", "S", "D", "Z", "T", "t", "X", "x", "K", "W", "P", "I"):
+                observed.update(start=fields[19], state=fields[0], parent=int(fields[1]))
+            observed["executable"] = str((process / "exe").resolve(strict=True))
+        except (OSError, ValueError, IndexError):
+            pass
+        return observed
+
+    captured = set()
+    for identity in identities:
+        pid = identity.get("pid")
+        if isinstance(pid, int) and not isinstance(pid, bool) and pid > 0:
+            observed = read_identity(pid)
+            if isinstance(identity.get("start"), str) and re.fullmatch(r"[0-9]+", identity["start"]):
+                captured.add((pid, identity["start"]))
+                observed["captured_start"] = identity["start"]
+            report["observed_processes"].append(observed)
+    try:
+        processes = list(Path(directory).iterdir())
+    except OSError:
+        processes = []
+    for process in processes:
+        if not process.name.isdigit():
+            continue
+        try:
+            if process.stat().st_uid != os.getuid():
+                continue
+            candidate = read_identity(int(process.name))
+            executable = Path(candidate["executable"] or "").name
+            if executable != "Aspire.Dashboard" and not executable.startswith("dcp"):
+                continue
+            candidate["captured"] = (candidate["pid"], candidate["start"]) in captured
+            # The value is compared in memory and discarded; no environment
+            # record or raw command line is copied into diagnostic evidence.
+            try:
+                entries = (process / "environ").read_bytes().split(b"\0")
+                candidate["marker_present"] = f"TIMESHEETS_LIVE_DAPR_COMPONENTS={fixture_directory}".encode() in entries
+            except OSError:
+                pass
+            ancestors = []
+            parent = candidate["parent"]
+            visited = {candidate["pid"]}
+            while parent and parent not in visited and len(ancestors) < 32:
+                visited.add(parent)
+                ancestor = read_identity(parent)
+                ancestors.append(ancestor)
+                parent = ancestor["parent"]
+            candidate["ancestors"] = ancestors
+            report["candidate_processes"].append(candidate)
+        except (OSError, ValueError, TypeError):
+            continue
+    return report
+
+
+def security_http_url_diagnostics(value, public_port):
+    """Describe URL guard predicates using fixed categories and bounded numbers."""
+    report = {"url_string": isinstance(value, str), "parse_succeeded": False,
+        "scheme": "unavailable", "http_scheme_matches": False, "scheme_allowed": False,
+        "hostname_category": "unavailable", "hostname_allowed": False,
+        "path_empty_or_slash": False, "no_query": False, "no_fragment": False, "no_userinfo": False,
+        "port_parse_valid": False, "port_present": None, "bounded_port": None, "port_in_allowed_range": False,
+        "reserved_port_match": False, "public_port_match": False}
+    if not isinstance(value, str):
+        return report
+    try:
+        parsed = urllib.parse.urlsplit(value)
+        report["parse_succeeded"] = True
+        report["scheme"] = parsed.scheme if parsed.scheme in ("http", "https") else "other" if parsed.scheme else "absent"
+        report["http_scheme_matches"] = parsed.scheme == "http"
+        report["scheme_allowed"] = parsed.scheme in ("http", "https")
+        host = parsed.hostname
+        categories = {"localhost": "localhost", "127.0.0.1": "ipv4-loopback", "::1": "ipv6-loopback",
+                      "0.0.0.0": "wildcard", "::": "wildcard"}
+        report["hostname_category"] = categories.get(host, "other" if host else "absent")
+        report["hostname_allowed"] = host in ("localhost", "127.0.0.1")
+        report.update(path_empty_or_slash=parsed.path in ("", "/"), no_query=not parsed.query,
+                      no_fragment=not parsed.fragment, no_userinfo=not parsed.username and not parsed.password)
+        port = parsed.port
+        report.update(port_parse_valid=True, port_present=port is not None)
+        if port is not None and 1 <= port <= 65535:
+            report.update(bounded_port=port, port_in_allowed_range=1024 <= port <= 65535,
+                          reserved_port_match=port in REQUIRED_PORTS, public_port_match=port == public_port)
+    except (ValueError, TypeError, AttributeError):
+        pass
+    return report
+
+
+def discover_security_http_endpoint(container, public_port, command=None, environment=None, diagnostics=None):
+    """Match Aspire's named HTTP URL to the exact owned container's private binding."""
+    message = "Aspire security HTTP endpoint could not be verified"
+    report = {} if diagnostics is None else diagnostics
+    report.update(discovery_command_succeeded=False, description_shape_matches=False,
+                  container_identity_matches=False, http_endpoint_unambiguous=False,
+                  port_binding_shape_matches=False, port_safe=False, port_bindings=[])
+    arguments = ["aspire", "describe", "security", "--apphost", str(APPHOST), "--non-interactive", "--format", "Json"]
+    try:
+        if command is None:
+            result = subprocess.run(arguments, cwd=ROOT, env=environment or os.environ, timeout=30,
+                text=True, encoding="utf-8", errors="replace", capture_output=True, check=False)
+        else:
+            result = command(arguments, cwd=ROOT, env=environment or os.environ, timeout=30)
+        require(result.returncode == 0, message)
+        report["discovery_command_succeeded"] = True
+        # Aspire CLI 13.6.1 ResourceJson: snapshot resources, urls, and
+        # KnownProperties.Container.Id (container.id). Never transcript this JSON:
+        # it also contains arbitrary environment/property values and dashboard URLs.
+        snapshot = json_output(result.stdout)
+        resources = snapshot["resources"]
+        require(isinstance(resources, list) and len(resources) == 1, message)
+        resource = resources[0]
+        require(isinstance(resource, dict) and resource.get("resourceType", "").casefold() == "container"
+                and (resource.get("name") == "security" or resource.get("displayName") == "security"), message)
+        report["description_shape_matches"] = True
+        identity = container["Id"]
+        report["container_identity_matches"] = (isinstance(identity, str) and re.fullmatch(r"[0-9a-f]{64}", identity) is not None
+            and resource["properties"]["container.id"] == identity)
+        require(report["container_identity_matches"], message)
+        urls = resource["urls"]
+        require(isinstance(urls, list), message)
+        http = [url for url in urls if isinstance(url, dict) and url.get("name") == "http"
+                and url.get("isInternal", False) is False]
+        report["http_endpoint_unambiguous"] = len(http) == 1
+        require(report["http_endpoint_unambiguous"], message)
+        report["url_checks"] = security_http_url_diagnostics(http[0].get("url"), public_port)
+        parsed = urllib.parse.urlsplit(http[0]["url"])
+        require(parsed.scheme in ("http", "https") and parsed.hostname in ("localhost", "127.0.0.1")
+                and parsed.path in ("", "/") and not parsed.query and not parsed.fragment
+                and not parsed.username and not parsed.password and parsed.port is not None, message)
+        port = private_endpoint("127.0.0.1:" + str(parsed.port), (public_port, *REQUIRED_PORTS))
+        endpoint = {"resource": "security", "name": "http", "scheme": parsed.scheme, "host": parsed.hostname,
+                    "published_port": port, "container_id": identity}
+        report["http_endpoint"] = dict(endpoint)
+        matches = []
+        for target, bindings in container["NetworkSettings"]["Ports"].items():
+            if bindings is None:
+                continue
+            target_match = re.fullmatch(r"([0-9]{1,5})/(tcp|udp)", target)
+            require(target_match is not None and 1 <= int(target_match[1]) <= 65535 and isinstance(bindings, list), message)
+            for binding in bindings:
+                host = binding["HostIp"]
+                published = binding["HostPort"]
+                require(isinstance(published, str) and re.fullmatch(r"[0-9]{1,5}", published) is not None, message)
+                published_port = int(published)
+                report["port_bindings"].append({"container_port": int(target_match[1]), "protocol": target_match[2],
+                    "host": host if host in ("127.0.0.1", "0.0.0.0", "::1", "::") else "other",
+                    "published_port": published_port})
+                require(host == "127.0.0.1" and 1024 <= published_port <= 65535, message)
+                if published_port == port and target_match[2] == "tcp":
+                    matches.append(int(target_match[1]))
+        report["port_binding_shape_matches"] = len(matches) == 1
+        require(report["port_binding_shape_matches"], message)
+        report["port_safe"] = True
+        endpoint.update(container_port=matches[0], binding_host="127.0.0.1")
+        report["http_endpoint"] = dict(endpoint)
+        return endpoint
+    except (FixtureError, OSError, ValueError, KeyError, TypeError, AttributeError, subprocess.TimeoutExpired):
+        raise FixtureError(message) from None
+
+
+def security_credential_handoff(container, public_port, diagnostics=None, describe_command=None, describe_environment=None):
+    """Authenticate in memory, retaining only fixed-label failure diagnostics."""
+    message = "Generated security credentials or realm scope claims could not be verified"
+    report = {} if diagnostics is None else diagnostics
+    report.clear()
+    report.update(stage="environment", environment_shape_matches=False, generated_credentials_shape_matches=False)
+    try:
+        environment = dict(value.split("=", 1) for value in container["Config"]["Env"] if "=" in value)
+        username = environment["HEXALITH_EVENTSTORE_CLIENT_USERNAME"]
+        password = environment["HEXALITH_EVENTSTORE_CLIENT_PASSWORD"]
+        report["environment_shape_matches"] = isinstance(username, str) and isinstance(password, str)
+        report["generated_credentials_shape_matches"] = (re.fullmatch(r"[a-z0-9]{24,}", username) is not None
+            and re.fullmatch(r"[a-zA-Z0-9]{32,}", password) is not None)
+        require(report["generated_credentials_shape_matches"], message)
+        report["stage"] = "port"
+        endpoint = discover_security_http_endpoint(container, public_port, describe_command, describe_environment, report)
+        origin = endpoint["scheme"] + "://" + endpoint["host"] + ":" + str(endpoint["published_port"]) + "/realms/hexalith"
+        body = urllib.parse.urlencode({"grant_type": "password", "client_id": "hexalith-eventstore",
+                                       "username": username, "password": password}).encode()
+        request = urllib.request.Request(origin + "/protocol/openid-connect/token", data=body,
+                                          headers={"Content-Type": "application/x-www-form-urlencoded"})
+        report["stage"] = "token_http"
+        # Authenticated HTTPS keeps normal certificate and hostname verification.
+        context = ssl.create_default_context() if endpoint["scheme"] == "https" else None
+        with owned_http_open(request, timeout=20, context=context) as response:
+            report["stage"] = "token_shape"
+            payload = json.load(response)
+        report["token_response_object"] = isinstance(payload, dict)
+        token = payload["access_token"]
+        report["access_token_string"] = isinstance(token, str)
+        require(report["access_token_string"], message)
+        parts = token.split(".")
+        report["jwt_three_parts"] = len(parts) == 3 and all(parts)
+        require(report["jwt_three_parts"], message)
+        claims = json.loads(base64.urlsafe_b64decode(parts[1] + "=="))
+        report["claims_object"] = isinstance(claims, dict)
+        require(report["claims_object"], message)
+        report["stage"] = "claims"
+        def string_list(value):
+            return isinstance(value, list) and all(isinstance(item, str) for item in value)
+        checks = {
+            "issuer_matches": lambda: claims["iss"] == origin,
+            "username_matches": lambda: claims["preferred_username"] == username,
+            "audience_matches": lambda: (isinstance(claims["aud"], str) or string_list(claims["aud"]))
+                and "hexalith-eventstore" in ([claims["aud"]] if isinstance(claims["aud"], str) else claims["aud"]),
+            "tenant_claims_match": lambda: string_list(claims["eventstore:tenant"])
+                and set(claims["eventstore:tenant"]) == {"tenant-a", "tenant-b", "system"},
+            "domain_claims_match": lambda: string_list(claims["eventstore:domain"]) and claims["eventstore:domain"] == ["timesheets"],
+            "permission_claims_match": lambda: string_list(claims["eventstore:permission"])
+                and set(claims["eventstore:permission"]) == {"command:submit", "command:replay", "command:query"},
+        }
+        report["claim_matches"] = {}
+        for label, comparison in checks.items():
+            try:
+                report["claim_matches"][label] = comparison()
+            except (ValueError, KeyError, TypeError):
+                report["claim_matches"][label] = False
+        require(all(report["claim_matches"].values()), message)
+        report["stage"] = "complete"
+        return {"generated_credentials_accepted": True, "realm": "hexalith", "audience": "hexalith-eventstore",
+                "tenant_claims_match": True, "domain_claims_match": True, "permission_claims_match": True}
+    except urllib.error.HTTPError as error:
+        # Parse only a bounded body in memory. Arbitrary response fields,
+        # descriptions, URLs, headers and exception strings never enter evidence.
+        statuses = {400, 401, 403, 404, 405, 408, 409, 415, 422, 429, 500, 502, 503, 504}
+        report.update(stage="token_http", http_status=error.code if type(error.code) is int and error.code in statuses else None,
+                      oauth_error_code=None, error_category="http_rejection")
+        try:
+            body = error.read(65537)
+            payload = json.loads(body) if len(body) <= 65536 else None
+            if isinstance(payload, dict):
+                code = payload.get("error")
+                allowed = {"invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "unsupported_grant_type",
+                           "invalid_scope", "access_denied", "temporarily_unavailable", "server_error", "invalid_token", "insufficient_scope"}
+                if isinstance(code, str) and code in allowed:
+                    report.update(oauth_error_code=code, error_category="oauth_rejection")
+                    description = payload.get("error_description")
+                    known = {"account is not fully set up": "profile_setup_required",
+                             "invalid user credentials": "invalid_user_credentials",
+                             "account disabled": "account_disabled", "account is disabled": "account_disabled"}
+                    if code == "invalid_grant" and isinstance(description, str) and description.strip().casefold() in known:
+                        report["error_category"] = known[description.strip().casefold()]
+                    elif code == "invalid_client":
+                        report["error_category"] = "client_authentication_failed"
+                    elif code == "unauthorized_client":
+                        report["error_category"] = "client_grant_not_allowed"
+                    elif code in ("server_error", "temporarily_unavailable"):
+                        report["error_category"] = "token_endpoint_unavailable"
+        except (OSError, ValueError, TypeError):
+            pass
+        finally:
+            # Closing also prevents HTTPError's finalizer from emitting a
+            # resource warning containing its untrusted reason or URL.
+            try:
+                error.close()
+            except OSError:
+                pass
+        raise FixtureError(message) from None
+    except ssl.SSLError as error:
+        report["error_category"] = "tls_verification_failed" if isinstance(error, ssl.SSLCertVerificationError) else "tls_handshake_failed"
+        raise FixtureError(message) from None
+    except urllib.error.URLError as error:
+        report["error_category"] = ("tls_verification_failed" if isinstance(error.reason, ssl.SSLCertVerificationError)
+            else "tls_handshake_failed" if isinstance(error.reason, ssl.SSLError) else "token_transport_failure")
+        raise FixtureError(message) from None
+    except (FixtureError, OSError, ValueError, IndexError, KeyError, TypeError, AttributeError):
+        report["error_category"] = {"environment": "environment_shape_invalid", "port": "port_shape_invalid",
+            "token_http": "token_transport_failure", "token_shape": "token_shape_invalid", "claims": "claim_mismatch"}.get(
+                report["stage"], "handoff_failure")
+        raise FixtureError(message) from None
+
+
+def verify_dashboard_ready(identity, directory=Path("/proc")):
+    """Check the owned dashboard listener once after Aspire resource readiness."""
+    message = "Owned dashboard HTTP readiness could not be verified"
+    try:
+        process = Path(directory) / str(identity["pid"])
+        fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+        require(fields[19] == identity["start"] and fields[0] != "Z", message)
+        environment = dict(value.split("=", 1) for value in (process / "environ").read_bytes().decode().split("\0") if "=" in value)
+        urls = environment["ASPNETCORE_URLS"].split(";")
+        require(bool(urls), message)
+        endpoint = urllib.parse.urlsplit(urls[0])
+        require(endpoint.scheme in ("http", "https") and endpoint.hostname in ("localhost", "127.0.0.1", "::1")
+                and endpoint.port and endpoint.path in ("", "/") and "?" not in urls[0] and "#" not in urls[0]
+                and endpoint.username is None and endpoint.password is None
+                and all(ord(character) > 32 and ord(character) != 127 for character in urls[0]), message)
+        # Aspire Dashboard 13.6.1 maps /health anonymously; the browser root may
+        # challenge with a login redirect and is not a direct health probe.
+        health_url = urllib.parse.urlunsplit((endpoint.scheme, endpoint.netloc, "/health", "", ""))
+        # The process identity already binds this loopback listener. Local Aspire
+        # developer certificates need not be installed in Python's CA bundle.
+        context = ssl.create_default_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        with owned_http_open(health_url, timeout=20, context=context) as response:
+            require(response.status == 200, message)
+        return {"ready": True, "scheme": endpoint.scheme, "loopback": True, "port": endpoint.port, "path": "/health"}
+    except urllib.error.HTTPError as error:
+        try:
+            error.close()
+        except OSError:
+            pass
+        raise FixtureError(message) from None
+    except (OSError, ValueError, IndexError, KeyError, TypeError):
+        raise FixtureError(message) from None
 
 
 class SharedSnapshot(dict):
@@ -668,8 +1135,10 @@ class IsolatedFixture:
     """Own private infrastructure and one exact Aspire AppHost lifecycle."""
 
     def __init__(self, command=None, port_check=None, log_directory=None,
-                 ownership_check=None, resource_check=bound_resource_processes, public_port=8080):
+                 ownership_check=None, resource_check=bound_resource_processes, public_port=8080, security_smoke=False):
         self.public_port = validate_public_port(public_port)
+        self.security_smoke = security_smoke
+        self.security_container = None
         self.command = command or self._command
         self.injected_command = command is not None
         self.port_check = port_check or (lambda: assert_ports_available(self.public_port))
@@ -689,7 +1158,7 @@ class IsolatedFixture:
         # MSBuild treats environment property names case-insensitively, while
         # the process environment on Linux can contain differently cased keys.
         controlled = {name.casefold() for name in ("Configuration", "UseHexalithProjectReferences", "UseNuGetDeps",
-                                                  GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
+                                                  GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING, SECURITY_SMOKE_SETTING,
                                                   "Timesheets:LocalPublicPort",
                                                   "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY",
                                                   "TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY",
@@ -716,6 +1185,102 @@ class IsolatedFixture:
         self.shared_before = None
         self.evidence_write_failed = False
         self.captured_processes = []
+        self.admission_established = False
+        self.fixture_backup = None
+        self.redis_image = None
+
+    def capture_source_identity(self):
+        """Bind runtime receipts to exact source diffs, restored packages and built assets."""
+        identities = {}
+        for name, root in (("timesheets", ROOT), ("eventstore", GATEWAY_PROJECT.parents[2])):
+            head = self.run_command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
+            # Retain a digest of local modifications, never raw patch contents.
+            patch = self.command(["git", "-C", str(root), "diff", "HEAD", "--no-ext-diff", "--binary"],
+                                 cwd=ROOT, env=self.environment, timeout=30)
+            require(patch.returncode == 0 and re.fullmatch(r"[0-9a-f]{40}", head), "Source identity is unavailable")
+            identities[name] = {"head": head, "diff_sha256": hashlib.sha256(patch.stdout.encode()).hexdigest()}
+            untracked = self.command(["git", "-C", str(root), "ls-files", "--others", "--exclude-standard", "-z"],
+                                     cwd=ROOT, env=self.environment, timeout=30)
+            require(untracked.returncode == 0, "Untracked build input identity is unavailable")
+            inputs = {}
+            for value in untracked.stdout.split("\0"):
+                if not value:
+                    continue
+                relative = Path(value)
+                require(not relative.is_absolute() and ".." not in relative.parts, "Untracked build input identity is unavailable")
+                in_tree = relative.parts[0] in ("src", "tests", "test", "scripts")
+                root_build = len(relative.parts) == 1 and (relative.suffix.casefold() in (
+                    ".props", ".targets", ".proj", ".csproj", ".fsproj", ".vbproj", ".slnx", ".rsp")
+                    or relative.name.casefold() in ("global.json", "nuget.config", "package.json", "package-lock.json",
+                        "pnpm-lock.yaml", "yarn.lock", "bun.lock", "bun.lockb", "makefile"))
+                if (in_tree or root_build) and not any(part.casefold() in (
+                        "bin", "obj", "testresults", "__pycache__", "evidence", "_bmad-output") for part in relative.parts):
+                    inputs[str(relative)] = hashlib.sha256((root / relative).read_bytes()).hexdigest()
+            identities[name]["untracked_build_inputs"] = dict(sorted(inputs.items()))
+        gateway = Path(self.environment[GATEWAY_EXECUTABLE_SETTING])
+        # The Linux apphost's dotted assembly name is its complete native file
+        # name, so append .dll instead of replacing the apparent final suffix.
+        gateway_assembly = gateway.with_name(gateway.name + ".dll")
+        module = ROOT / "src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets"
+        integration = ROOT / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+        paths = [APPHOST, APPHOST.parent / "Program.cs", APPHOST.parent / "SecurityConstructionProbe.cs",
+                 APPHOST.parent / "KeycloakRealms/hexalith-realm.json", APPHOST.parent / "obj/project.assets.json",
+                 APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll",
+                 gateway, gateway_assembly, module, module.with_name(module.name + ".dll"),
+                 integration, integration.with_name(integration.name + ".dll")]
+        identities["files"] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+        return identities
+
+    def verify_security_runtime(self):
+        """Verify owned current-graph services after Aspire readiness, without disclosing secrets."""
+        identities = self.resource_check(self.scratch, self.placement, self.scheduler)
+        assets_path = APPHOST.parent / "obj/project.assets.json"
+        try:
+            host = runtime_host_identity(identities, assets_path)
+        except FixtureError:
+            try:
+                diagnostic = runtime_host_diagnostics(identities, assets_path, self.scratch)
+            except Exception:
+                # Diagnostic collection must never replace the original refusal
+                # or retain arbitrary exception text from private process data.
+                diagnostic = {"expected_package_directories": {}, "observed_processes": [], "candidate_processes": []}
+            self.write_evidence("runtime-host-failure.json", json.dumps(diagnostic, indent=2) + "\n")
+            raise
+        host["dashboard_readiness"] = verify_dashboard_ready(host["dashboard"])
+        self.captured_processes = identities
+        require(self.write_evidence("runtime-host.json", json.dumps(host, indent=2) + "\n"), "Runtime host evidence is incomplete")
+        listing = self.run_command(["docker", "container", "ls", "--all", "--no-trunc", "--filter",
+            "label=hexalith.timesheets.components=" + self.scratch, "--format", "{{.ID}}"])
+        ids = listing.stdout.split()
+        require(len(ids) == 1 and re.fullmatch(r"[0-9a-f]{64}", ids[0]), "Security container ownership is unavailable")
+        self.security_container = ids[0]
+        # Docker inspect includes generated credentials. Keep this response only in
+        # memory, and never pass it through a command transcript or exception.
+        try:
+            inspected = self.command(["docker", "inspect", ids[0]], cwd=ROOT, env=self.environment, timeout=30)
+        except (OSError, subprocess.TimeoutExpired):
+            raise FixtureError("Security container inspection failed") from None
+        require(inspected.returncode == 0, "Security container inspection failed")
+        try:
+            container, = json.loads(inspected.stdout)
+            require(container["Id"] == ids[0]
+                    and container["Config"]["Labels"]["hexalith.timesheets.components"] == self.scratch
+                    and container["State"]["Running"] is True, "Security container ownership is unavailable")
+            for bindings in container["NetworkSettings"]["Ports"].values():
+                require(bindings is None or all(binding["HostIp"] == "127.0.0.1" for binding in bindings),
+                        "Security container publication is not private")
+            self.security_container = ids[0]
+            handoff_diagnostic = {}
+            try:
+                handoff = security_credential_handoff(container, self.public_port, diagnostics=handoff_diagnostic,
+                    describe_command=self.command, describe_environment=self.environment)
+            except FixtureError:
+                self.write_evidence("security-credential-failure.json", json.dumps(handoff_diagnostic, indent=2) + "\n")
+                raise
+        except (ValueError, KeyError, TypeError):
+            raise FixtureError("Security container inspection is unsafe") from None
+        require(self.write_evidence("security-runtime.json", json.dumps({"container": self.security_container,
+            "loopback_only": True, "http_endpoint": handoff_diagnostic.get("http_endpoint"), **handoff}, indent=2) + "\n"), "Security runtime evidence is incomplete")
 
     def write_evidence(self, name, contents):
         """A diagnostic write cannot replace the journey's original result."""
@@ -792,6 +1357,20 @@ class IsolatedFixture:
         return result
 
     def preflight(self):
+        self.admission_established = False
+        state = {"resources_started": bool(self.containers) or self.start_attempted,
+                 "infrastructure_started": bool(self.containers), "apphost_start_attempted": self.start_attempted}
+        try:
+            self._preflight()
+        except FixtureError as error:
+            self.write_evidence("admission.json", json.dumps({"admitted": False, **state,
+                "reason": str(error)}, indent=2) + "\n")
+            raise
+        require(self.write_evidence("admission.json", json.dumps({"admitted": True, **state}, indent=2) + "\n"),
+                "Admission evidence is incomplete; no AppHost started")
+        self.admission_established = True
+
+    def _preflight(self):
         try:
             dapr = json.loads(self.run_command(["dapr", "list", "--output", "json"]).stdout)
         except ValueError:
@@ -868,6 +1447,118 @@ class IsolatedFixture:
                 "Gateway process evidence is incomplete")
         return process
 
+    def fixture_cutover_source(self):
+        """Bind the empty-store cutover to this exact local source and native build."""
+        root = GATEWAY_PROJECT.parents[2]
+        commit = self.run_command(["git", "-C", str(root), "rev-parse", "HEAD"]).stdout.strip()
+        patch = self.command(["git", "-C", str(root), "diff", "HEAD", "--no-ext-diff", "--binary"],
+                             cwd=ROOT, env=self.environment, timeout=30)
+        require(re.fullmatch(r"[0-9a-f]{40}", commit) and patch.returncode == 0,
+                "Fixture cutover source identity is unavailable")
+        native = Path(self.environment[GATEWAY_EXECUTABLE_SETTING])
+        return {"head": commit, "diff_sha256": hashlib.sha256(patch.stdout.encode()).hexdigest(),
+                "native_sha256": hashlib.sha256(native.read_bytes()).hexdigest(),
+                "assembly_sha256": hashlib.sha256(native.with_name(native.name + ".dll").read_bytes()).hexdigest()}
+
+    def prepare_fixture_bootstrap(self):
+        """Durably preserve a reconstructible empty backup of only the fresh owned Redis."""
+        require(self.admission_established and not self.start_attempted and self.fixture_backup is None
+                and self.environment.get("TIMESHEETS_LIVE_DAPR_FIXTURE") == "1",
+                "Fixture bootstrap requires admitted fresh infrastructure before AppHost startup")
+        validate_components(self.scratch, self.environment.get("TIMESHEETS_LIVE_DAPR_REDIS_HOST", ""))
+        require(self.recover_container(self.container_name) == self.container_id and self.container_id is not None
+                and self.container_id in self.containers.values()
+                and isinstance(self.redis_image, str) and re.fullmatch(r"sha256:[0-9a-f]{64}", self.redis_image),
+                "Fixture bootstrap Redis ownership is unavailable")
+        databases = {}
+        for database in range(16):
+            count = self.run_command(["docker", "exec", self.container_id, "redis-cli", "--raw", "-n", str(database), "DBSIZE"]).stdout.strip()
+            require(count == "0", "Fixture bootstrap requires every private Redis database to be empty")
+            databases[str(database)] = 0
+        receipt = {"format": "empty-disposable-redis-backup-v1", "fixture_id": self.fixture_id,
+            "container_id": self.container_id, "image": self.redis_image, "databases": databases,
+            "components_sha256": {str(relative): hashlib.sha256((Path(self.scratch) / relative).read_bytes()).hexdigest()
+                                  for relative in COMPONENT_FILES}, "source": self.fixture_cutover_source(),
+            "admitted_without_old_writers_or_retry_workers": True, "downgrade_prohibited": True,
+            "scope": "fresh-private-local-fixture-only"}
+        body = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
+        name = "empty-fixture-backup.json"
+        require(self.write_evidence(name, body), "Empty fixture backup could not be retained")
+        path = self.log_directory / name
+        # This is the complete backup for an empty store, not a deployed/shared
+        # database backup. Persist it before allowing the platform activation API.
+        for target in (path, self.log_directory):
+            descriptor = os.open(target, os.O_RDONLY)
+            try:
+                os.fsync(descriptor)
+            finally:
+                os.close(descriptor)
+        self.fixture_backup = {"path": path, "sha256": hashlib.sha256(body.encode()).hexdigest(), "receipt": receipt}
+
+    def bootstrap_fixture_protocol(self):
+        """Activate the platform v2 marker through its authenticated operator API only."""
+        diagnostic = {"stage": "preconditions", "activated": False, "attempts": 0, "http_status": None,
+                      "category": "preconditions_failed", "scope": "fresh-private-local-fixture-only"}
+        failed = True
+        try:
+            backup = self.fixture_backup
+            require(self.admission_established and self.start_attempted and backup is not None
+                    and self.environment.get("TIMESHEETS_LIVE_DAPR_FIXTURE") == "1",
+                    "Fixture protocol bootstrap has no admitted empty backup")
+            require(hashlib.sha256(backup["path"].read_bytes()).hexdigest() == backup["sha256"]
+                    and json.loads(backup["path"].read_text()) == backup["receipt"], "Empty fixture backup identity changed")
+            receipt = backup["receipt"]
+            require(receipt["fixture_id"] == self.fixture_id and receipt["container_id"] == self.container_id
+                    and receipt["image"] == self.redis_image and receipt["databases"] == {str(index): 0 for index in range(16)}
+                    and self.recover_container(self.container_name) == self.container_id,
+                    "Fixture bootstrap identity changed after its empty backup")
+            validate_components(self.scratch, self.environment["TIMESHEETS_LIVE_DAPR_REDIS_HOST"])
+            wait_fixture_gateway_alive(diagnostic)
+            diagnostic.update(stage="preconditions", category="preconditions_failed")
+            require(receipt["source"] == self.fixture_cutover_source(), "Fixture bootstrap source changed after its empty backup")
+            require(receipt["components_sha256"] == {str(relative): hashlib.sha256((Path(self.scratch) / relative).read_bytes()).hexdigest()
+                                                     for relative in COMPONENT_FILES}, "Fixture bootstrap component identity changed")
+            sidecars = verify_runtime_components(self.environment["TIMESHEETS_LIVE_DAPR_REDIS_HOST"], self.scratch,
+                self.placement, self.scheduler, observation=lambda result: self.write_evidence(
+                    "runtime-dapr-identity-failure.json", json.dumps(result, indent=2) + "\n"))
+            require({row["pid"] for row in running_dapr_processes()} == {row["pid"] for row in sidecars.values()},
+                    "Fixture bootstrap found a sidecar outside the admitted private topology")
+            gateway = gateway_process_identity(self.environment[GATEWAY_EXECUTABLE_SETTING],
+                self.resource_check(self.scratch, self.placement, self.scheduler))
+            signing_key = fixture_gateway_signing_key(gateway, self.scratch)
+            request = {"cutoverCommit": receipt["source"]["head"],
+                "backupReference": str(backup["path"].resolve()) + "#sha256=" + backup["sha256"],
+                "writersQuiesced": True, "retryWorkersQuiesced": True, "downgradeProhibitedAcknowledged": True}
+            diagnostic.update(backup_sha256=backup["sha256"], cutover_commit=receipt["source"]["head"])
+            activate_fixture_writer_protocol(signing_key, request, diagnostic)
+            failed = False
+        finally:
+            written = self.write_evidence("projection-writer-bootstrap.json", json.dumps(diagnostic, indent=2) + "\n")
+            if not failed:
+                require(written, "Fixture protocol bootstrap evidence is incomplete")
+
+    def capture_runtime_readiness(self):
+        """Observe the admitted private graph immediately after Aspire readiness."""
+        sidecars, refusal = {}, None
+        try:
+            sidecars = verify_runtime_components(self.environment["TIMESHEETS_LIVE_DAPR_REDIS_HOST"], self.scratch,
+                self.placement, self.scheduler, observation=lambda result: self.write_evidence(
+                    "runtime-dapr-identity-failure.json", json.dumps(result, indent=2) + "\n"))
+        except FixtureError as error:
+            refusal = error
+        try:
+            gateway = gateway_process_identity(self.environment[GATEWAY_EXECUTABLE_SETTING],
+                self.resource_check(self.scratch, self.placement, self.scheduler))
+            readiness = gateway_readiness_observation(gateway, sidecars.get("eventstore", {"arguments": []}), self.scratch)
+        except FixtureError:
+            if refusal is None:
+                raise
+            readiness = {"gateway_ready": "Unavailable", "sidecar_metadata": "Unavailable"}
+        written = self.write_evidence("runtime-readiness.json", json.dumps(readiness, indent=2) + "\n")
+        if refusal is not None:
+            raise refusal
+        require(written, "Runtime readiness evidence is incomplete")
+
     def verify_gateway_replacement(self, before, after):
         """Require the unchanged journey to replace the native PID/start identity."""
         proof = {"before": before, "after": after,
@@ -937,6 +1628,19 @@ class IsolatedFixture:
                 self.write_evidence("recorded-process-exit.json", json.dumps(recorded, indent=2) + "\n")
                 require(not processes, "Fixture-bound resources remain; retaining infrastructure")
                 require(recorded["all_gone"], "Captured fixture processes remain; retaining infrastructure")
+                if self.security_smoke:
+                    # Readiness can fail before the first credential inspection.
+                    # The invocation label still identifies every security container
+                    # that could have been created by this fixture's AppHost.
+                    remaining = self.run_command(["docker", "container", "ls", "--all", "--no-trunc", "--filter",
+                        "label=hexalith.timesheets.components=" + self.scratch, "--format", "{{.ID}}"], check=False)
+                    require(remaining.returncode == 0 and not remaining.stdout.strip(),
+                            "Fixture-bound security container remains or absence is unknown; retaining infrastructure")
+                if self.security_container:
+                    remaining = self.run_command(["docker", "container", "ls", "--all", "--no-trunc", "--filter",
+                        "id=" + self.security_container, "--format", "{{.ID}}"], check=False)
+                    require(remaining.returncode == 0 and not remaining.stdout.strip(),
+                            "Owned security container remains; retaining fixture infrastructure")
             except (FixtureError, OSError, KeyboardInterrupt) as error:
                 failed = True
                 reasons.append(str(error) if isinstance(error, FixtureError) else "Resource shutdown inspection did not complete")
@@ -1012,6 +1716,7 @@ class IsolatedFixture:
 
     def start_infrastructure(self):
         images = {service: self.installed_image("dapr_" + service) for service in ("redis", "placement", "scheduler")}
+        self.redis_image = images["redis"]
         redis_port = available_control_port((self.public_port,))
         self.container_id = self.create_container("redis", images["redis"],
             ["--publish", f"127.0.0.1:{redis_port}:6379", "--tmpfs", "/data"],
@@ -1053,6 +1758,9 @@ class IsolatedFixture:
             with LocalRuntimeAdmission():
                 return self._execute_admitted()
         except RuntimeAdmissionError as error:
+            self.write_evidence("admission.json", json.dumps({"admitted": False, "resources_started": False,
+                "reason": str(error)}, indent=2) + "\n")
+            self.cleanup()
             print(str(error), flush=True)
             return 1
 
@@ -1067,17 +1775,38 @@ class IsolatedFixture:
                 self.capture_shared_baseline()
                 self.preflight()
             self.resolve_gateway_invocation()
+            if self.security_smoke:
+                # Rebuild only after idle admission. This binds the selected source
+                # graph to the executable that the subsequent no-build launch uses.
+                self.run_command(["dotnet", "build", str(ROOT / "Hexalith.Timesheets.slnx"), "--configuration", "Debug", "--no-restore",
+                    "-p:UseHexalithProjectReferences=true", "-warnaserror", "-m:1", "/nr:false"], timeout=180)
+                source_before = self.capture_source_identity()
+                require(self.write_evidence("source-before.json", json.dumps(source_before, indent=2) + "\n"),
+                        "Source identity evidence is incomplete; no resources started")
             self.start_infrastructure()
             self.preflight()
+            if not self.injected_command:
+                self.prepare_fixture_bootstrap()
+            if self.security_smoke:
+                self.environment[SECURITY_SMOKE_SETTING] = "1"
             self.start_attempted = True
             self.run_command(["aspire", "start", "--no-build", "--non-interactive", "--apphost", str(APPHOST), "--format", "Json"], timeout=180)
             require(self.ownership_check(), "The started AppHost is not owned by this fixture")
-            for resource in ("eventstore", "timesheets"):
+            if not self.injected_command:
+                for resource in ("eventstore", "timesheets"):
+                    self.run_command(["aspire", "wait", resource, "--status", "up", "--timeout", "60",
+                        "--apphost", str(APPHOST), "--non-interactive"], timeout=70)
+                self.bootstrap_fixture_protocol()
+            for resource in (("security", "eventstore", "timesheets") if self.security_smoke else ("eventstore", "timesheets")):
                 self.run_command(["aspire", "wait", resource, "--timeout", "60", "--apphost", str(APPHOST), "--non-interactive"], timeout=70)
             if not self.injected_command:
-                verify_runtime_components(self.environment["TIMESHEETS_LIVE_DAPR_REDIS_HOST"], self.scratch,
-                                          self.placement, self.scheduler)
-                self.captured_processes = self.resource_check(self.scratch, self.placement, self.scheduler)
+                self.capture_runtime_readiness()
+            if self.security_smoke:
+                self.verify_security_runtime()
+            if not self.injected_command:
+                current = self.resource_check(self.scratch, self.placement, self.scheduler)
+                self.captured_processes.extend(identity for identity in current if not any(
+                    (row["pid"], row["start"]) == (identity["pid"], identity["start"]) for row in self.captured_processes))
                 self.write_evidence("runtime-isolation.json", json.dumps({
                     "redis": self.environment["TIMESHEETS_LIVE_DAPR_REDIS_HOST"],
                     "placement": self.placement, "scheduler": self.scheduler,
@@ -1090,6 +1819,11 @@ class IsolatedFixture:
                 print(sanitized((result.stdout or "") + (result.stderr or "")), end="", flush=True)
                 if exit_code == 0:
                     require_one_passing_test(result)
+                if self.security_smoke:
+                    source_after = self.capture_source_identity()
+                    require(self.write_evidence("source-after.json", json.dumps(source_after, indent=2) + "\n"),
+                            "Source identity evidence is incomplete")
+                    require(source_after == source_before, "Source or built assets changed during runtime acceptance")
             finally:
                 if before is not None:
                     try:
@@ -1133,22 +1867,245 @@ class IsolatedFixture:
         return exit_code
 
 
-def verify_runtime_components(endpoint, directory, placement, scheduler):
+def fixture_gateway_signing_key(gateway, directory, process_directory=Path("/proc")):
+    """Read the existing ephemeral Development issuer only from the exact owned process."""
+    message = "Fixture bootstrap Development authentication identity is unavailable"
+    try:
+        process = Path(process_directory) / str(gateway["pid"])
+        fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+        environment = dict(item.split("=", 1) for item in (process / "environ").read_bytes().decode().split("\0") if "=" in item)
+        require(fields[19] == gateway["start"] and fields[0] != "Z"
+                and environment.get("TIMESHEETS_LIVE_DAPR_COMPONENTS") == str(directory)
+                and environment.get("ASPNETCORE_ENVIRONMENT") == "Development"
+                and environment.get("Authentication__JwtBearer__Authority") == ""
+                and environment.get("Authentication__JwtBearer__Issuer") == "hexalith-timesheets-dev"
+                and environment.get("Authentication__JwtBearer__Audience") == "hexalith-eventstore"
+                and environment.get("Authentication__JwtBearer__AllowedAlgorithms__0") == "HS256", message)
+        key = environment.get("Authentication__JwtBearer__SigningKey", "")
+        require(re.fullmatch(r"[0-9A-F]{64}", key), message)
+        return key.encode()
+    except (OSError, ValueError, IndexError, UnicodeError):
+        raise FixtureError(message) from None
+
+
+class FixtureNoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, request, file, code, message, headers, new_url):
+        return None
+
+
+def owned_http_open(request, *, timeout, context=None):
+    """Keep a validated owned request on its direct endpoint and TLS context."""
+    handlers = [FixtureNoRedirect(), urllib.request.ProxyHandler({})]
+    if context is not None:
+        handlers.append(urllib.request.HTTPSHandler(context=context))
+    return urllib.request.build_opener(*handlers).open(request, timeout=timeout)
+
+
+def wait_fixture_gateway_alive(diagnostic, timeout=180):
+    """Wait for HTTP liveness after process startup; never substitute it for readiness."""
+    deadline = time.monotonic() + timeout
+    result = {"attempts": 0, "http_status": None, "category": "transport_unavailable"}
+    diagnostic.update(stage="liveness", liveness=result)
+    while time.monotonic() < deadline:
+        result["attempts"] += 1
+        try:
+            try:
+                response = owned_http_open("http://127.0.0.1:8082/alive", timeout=min(5, max(0.1, deadline - time.monotonic())))
+            except urllib.error.HTTPError as error:
+                response = error
+            with response:
+                status = response.status
+            result["http_status"] = status if type(status) is int and 100 <= status <= 599 else None
+            result["category"] = "alive" if status == 200 else "http_unavailable"
+            if status == 200:
+                return
+        except (OSError, TimeoutError):
+            result.update(http_status=None, category="transport_unavailable")
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            time.sleep(min(1, remaining))
+    raise FixtureError("Fixture gateway HTTP liveness did not become available within its bound")
+
+
+def activate_fixture_writer_protocol(signing_key, body, diagnostic):
+    """Call the normal admin API with a short-lived local Bearer token; never log it."""
+    delays = (1, 2, 5, 10)
+    for attempt in range(len(delays) + 1):
+        diagnostic.update(stage="activation", attempts=attempt + 1, category="transport_unavailable")
+        now = int(time.time())
+        claims = {"iss": "hexalith-timesheets-dev", "aud": "hexalith-eventstore", "sub": "fixture-cutover-" + secrets.token_hex(12),
+                  "role": "GlobalAdministrator", "iat": now, "nbf": now, "exp": now + 60, "jti": secrets.token_hex(16)}
+        def b64(value):
+            return base64.urlsafe_b64encode(value).rstrip(b"=").decode()
+        unsigned = b64(b'{"alg":"HS256","typ":"JWT"}') + "." + b64(json.dumps(claims, separators=(",", ":")).encode())
+        token = unsigned + "." + b64(hmac.new(signing_key, unsigned.encode(), hashlib.sha256).digest())
+        request = urllib.request.Request("http://127.0.0.1:8082/api/v1/admin/projections/delivery-writer-protocol/activate",
+            method="POST", data=json.dumps(body, separators=(",", ":")).encode(),
+            headers={"Content-Type": "application/json", "Authorization": "Bearer " + token})
+        try:
+            try:
+                response = owned_http_open(request, timeout=5)
+            except urllib.error.HTTPError as error:
+                response = error
+            with response:
+                status = response.status
+                data = response.read(4097)
+            diagnostic["http_status"] = status if type(status) is int and 100 <= status <= 599 else None
+            diagnostic["category"] = {400: "preconditions_refused", 401: "authentication_refused", 403: "authorization_refused",
+                                      409: "conflict", 503: "storage_unavailable"}.get(status, "http_refused")
+            if status == 200:
+                diagnostic["category"] = "invalid_response"
+                try:
+                    activated = len(data) <= 4096 and json.loads(data) == {"status": "Activated"}
+                except (ValueError, UnicodeError):
+                    activated = False
+                require(activated, "Fixture protocol activation response was invalid")
+                diagnostic.update(activated=True, category="activated", stage="complete")
+                return
+            require(status == 503, "Fixture protocol activation was refused")
+        except (OSError, TimeoutError):
+            diagnostic.update(http_status=None, category="transport_unavailable")
+        if attempt < len(delays):
+            time.sleep(delays[attempt])
+    raise FixtureError("Fixture protocol activation remained unavailable after bounded attempts")
+
+
+def runtime_dapr_identity_observation(pids, directory, placement, scheduler, process_directory=Path("/proc")):
+    """Observe identity cardinality without retaining arguments or environment values."""
+    result = {"counts": {"eventstore": 0, "timesheets": 0, "other": 0}, "processes": [], "scan_complete": True}
+    for pid in pids:
+        try:
+            process = Path(process_directory) / str(int(pid))
+            fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+            if fields[0] == "Z":
+                continue
+            arguments = (process / "cmdline").read_bytes().decode().split("\0")
+            environment = (process / "environ").read_bytes().split(b"\0")
+            def option(name):
+                return arguments[arguments.index(name) + 1] if arguments.count(name) == 1 else None
+            app = option("--app-id")
+            category = app if app in ("eventstore", "timesheets") else "other"
+            result["counts"][category] += 1
+            result["processes"].append({"pid": int(pid), "start": fields[19] if fields[19].isdigit() else None,
+                "app": category, "fixture_marker_matches": f"TIMESHEETS_LIVE_DAPR_COMPONENTS={directory}".encode() in environment,
+                "app_loopback": option("--app-channel-address") in (None, "127.0.0.1", "localhost", "::1"),
+                "app_target_matches": option("--app-port") == {"eventstore": "8082", "timesheets": "8081"}.get(category),
+                "placement_target_matches": option("--placement-host-address") == placement,
+                "scheduler_target_matches": option("--scheduler-host-address") == scheduler})
+        except (OSError, ValueError, IndexError, UnicodeError):
+            result["scan_complete"] = False
+    return result
+
+
+def gateway_readiness_observation(gateway, sidecar, directory, process_directory=Path("/proc")):
+    """Retain fixed readiness categories and endpoint equality booleans only."""
+    result = {"pid": gateway["pid"], "start": gateway["start"], "identity_matches": False,
+        "fixture_marker_matches": False, "http_port_shape_matches": False, "http_endpoint_loopback": False,
+        "http_endpoint_matches_port": False, "sidecar_identity_matches": False,
+        "gateway_ready": "Unavailable", "gateway_http_status": None, "gateway_checks": {}, "sidecar_metadata": "Unavailable",
+        "actor_host_ready": "Unknown", "actor_placement": "Unknown", "actor_runtime": "Unknown",
+        "aggregate_actor_registered": False}
+    try:
+        process = Path(process_directory) / str(gateway["pid"])
+        fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+        result["identity_matches"] = fields[19] == gateway["start"] and fields[0] != "Z"
+        environment = dict(item.split("=", 1) for item in (process / "environ").read_bytes().decode().split("\0") if "=" in item)
+        result["fixture_marker_matches"] = environment.get("TIMESHEETS_LIVE_DAPR_COMPONENTS") == str(directory)
+        port = environment.get("DAPR_HTTP_PORT", "")
+        result["http_port_shape_matches"] = bool(re.fullmatch(r"[0-9]{1,5}", port)) and 1024 <= int(port) <= 65535
+        url = urllib.parse.urlsplit(environment.get("DAPR_HTTP_ENDPOINT", ""))
+        result["http_endpoint_loopback"] = (url.scheme == "http" and url.hostname in ("localhost", "127.0.0.1", "::1")
+            and url.path in ("", "/") and not url.query and not url.fragment and not url.username and not url.password)
+        result["http_endpoint_matches_port"] = (result["http_endpoint_loopback"] and result["http_port_shape_matches"]
+            and url.port == int(port))
+    except (OSError, ValueError, IndexError, UnicodeError):
+        return result
+    if not result["identity_matches"] or not result["fixture_marker_matches"]:
+        return result
+
+    def read_response(address):
+        try:
+            response = owned_http_open(address, timeout=5)
+        except urllib.error.HTTPError as error:
+            response = error
+        with response:
+            data = response.read(1048577)
+            status = getattr(response, "status", None)
+        require(len(data) <= 1048576, "Readiness response exceeds its observation bound")
+        return status, data
+
+    try:
+        status, body = read_response("http://127.0.0.1:8082/ready")
+        result["gateway_http_status"] = status if type(status) is int and 100 <= status <= 599 else None
+        statuses = ("Healthy", "Degraded", "Unhealthy")
+        # The platform default writer emits one exact plain-text enum. A host
+        # may opt into its JSON writer; retain only the same fixed status fields.
+        try:
+            ready = json.loads(body)
+        except (ValueError, UnicodeError):
+            ready = {"status": body.decode("ascii")} if body in (b"Healthy", b"Degraded", b"Unhealthy") else {}
+        if not isinstance(ready, dict):
+            ready = {}
+        result["gateway_ready"] = ready.get("status") if ready.get("status") in statuses else "Invalid"
+        checks = ready.get("results", {})
+        if isinstance(checks, dict):
+            for name in ("dapr-sidecar", "dapr-actor-placement", "dapr-statestore", "dapr-app-channel-token"):
+                status = checks.get(name, {}).get("status") if isinstance(checks.get(name), dict) else None
+                result["gateway_checks"][name] = status if status in statuses else "Unknown"
+    except (OSError, ValueError, TypeError, AttributeError, FixtureError):
+        pass
+    if not result["http_endpoint_matches_port"]:
+        return result
+    try:
+        _, body = read_response(f"http://127.0.0.1:{port}/v1.0/metadata")
+        metadata = json.loads(body)
+        result["sidecar_identity_matches"] = metadata.get("id") == "eventstore"
+        if not result["sidecar_identity_matches"]:
+            result["sidecar_metadata"] = "WrongApplication"
+            return result
+        runtime = metadata.get("actorRuntime", {})
+        result["sidecar_metadata"] = "Available" if isinstance(runtime, dict) else "Invalid"
+        if isinstance(runtime, dict):
+            result["actor_host_ready"] = "Ready" if runtime.get("hostReady") is True else "NotReady" if runtime.get("hostReady") is False else "Unknown"
+            result["actor_placement"] = {"placement: connected": "Connected", "placement: disconnected": "Disconnected"}.get(runtime.get("placement"), "Unknown")
+            result["actor_runtime"] = {"RUNNING": "Running", "DISABLED": "Disabled", "INITIALIZING": "Initializing"}.get(runtime.get("runtimeStatus"), "Unknown")
+        actors = metadata.get("actors", [])
+        result["aggregate_actor_registered"] = isinstance(actors, list) and any(
+            isinstance(actor, dict) and actor.get("type") == "AggregateActor" for actor in actors)
+    except (OSError, ValueError, TypeError, AttributeError, FixtureError):
+        pass
+    return result
+
+
+def verify_runtime_components(endpoint, directory, placement, scheduler, observation=None, process_directory=Path("/proc")):
     """Verify actual daprd components and control-plane targets before commands."""
     validate_components(directory, endpoint)
     validate_control_plane(placement, scheduler)
-    pids = subprocess.check_output(["pgrep", "-x", "daprd"], text=True).splitlines()
+    try:
+        pids = subprocess.check_output(["pgrep", "-x", "daprd"], text=True).splitlines()
+    except subprocess.CalledProcessError as error:
+        if error.returncode != 1:
+            raise FixtureError("Fixture Dapr runtime inventory is unavailable") from None
+        pids = []
+    sidecars = {}
     for app_id, relative in (("eventstore", COMPONENT_FILES[0]), ("timesheets", COMPONENT_FILES[1])):
         matching = []
         for pid in pids:
             try:
-                arguments = Path(f"/proc/{pid}/cmdline").read_bytes().decode().split("\0")
+                arguments = (Path(process_directory) / pid / "cmdline").read_bytes().decode().split("\0")
             except FileNotFoundError:
                 continue
             if "--app-id" in arguments and arguments[arguments.index("--app-id") + 1] == app_id:
-                matching.append(arguments)
+                matching.append({"pid": int(pid), "arguments": arguments})
+        if len(matching) != 1:
+            diagnostic = runtime_dapr_identity_observation(pids, directory, placement, scheduler, process_directory)
+            if observation is not None:
+                observation(diagnostic)
+            else:
+                print("Fixture Dapr identity observation: " + json.dumps(diagnostic), flush=True)
         require(len(matching) == 1, "Fixture Dapr runtime identity is not unique")
-        arguments = matching[0]
+        sidecars[app_id] = matching[0]
+        arguments = matching[0]["arguments"]
         for flag, address in (("--placement-host-address", placement), ("--scheduler-host-address", scheduler)):
             require(arguments.count(flag) == 1 and arguments[arguments.index(flag) + 1] == address,
                     "Dapr did not target the intended isolated control service")
@@ -1160,6 +2117,7 @@ def verify_runtime_components(endpoint, directory, placement, scheduler):
             expected.append((Path(directory) / "pubsub.yaml").read_text())
         require(len(contents) == len(expected) and sorted(contents) == sorted(expected),
                 "Dapr did not load exactly the intended isolated components")
+    return sidecars
 
 
 def dapr_manifests(directory):
@@ -1174,13 +2132,16 @@ def main():
     parser.add_argument("--log-directory", type=Path)
     parser.add_argument("--public-port", type=public_port_argument, default=8080,
                         help="Local public listener (default: 8080); internal and gateway ports stay fixed")
+    parser.add_argument("--security-smoke", action="store_true",
+                        help="Explicitly qualify generated Keycloak credentials and current NuGet runtime ownership")
     arguments = parser.parse_args()
 
     def interrupted(_signal, _frame):
         raise KeyboardInterrupt
 
     signal.signal(signal.SIGTERM, interrupted)
-    return IsolatedFixture(log_directory=arguments.log_directory, public_port=arguments.public_port).execute()
+    return IsolatedFixture(log_directory=arguments.log_directory, public_port=arguments.public_port,
+                           security_smoke=arguments.security_smoke).execute()
 
 
 if __name__ == "__main__":

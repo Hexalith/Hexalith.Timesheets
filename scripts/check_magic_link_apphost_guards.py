@@ -25,6 +25,24 @@ from run_isolated_magic_link_dapr import (
 )
 
 
+def expected_security_references(security=False):
+    """Allowlist reference metadata only; generated values must never be inspected."""
+    bindings = [{"resource": resource, "environment": "APP_API_TOKEN",
+                 "parameter": resource + "-app-api-token", "secret": True, "generated": False}
+                for resource in ("eventstore", "timesheets")]
+    if security:
+        bindings.extend({"resource": "security", "environment": "HEXALITH_EVENTSTORE_CLIENT_" + kind.upper(),
+                         "parameter": "security-eventstore-client-" + kind, "secret": True, "generated": True}
+                        for kind in ("username", "password"))
+    return bindings
+
+
+def expected_gateway_readiness(fixture=False):
+    return {"endpoint": "http", "path": "/ready" if fixture else None, "port": 8082, "healthCheckAttached": fixture,
+            "unavailableRejected": fixture, "readyAccepted": fixture,
+            "moduleWait": "WaitUntilStarted" if fixture else "WaitUntilHealthy", "gatewayReferenced": True}
+
+
 def run_guards(log_directory=None, configuration_only=False, configuration="Debug"):
     require(configuration == "Debug" or configuration_only,
             "Release guard checks require --configuration-only")
@@ -51,6 +69,7 @@ def _run_guards(log_directory, configuration_only, configuration):
     # missing-setting probes actually exercise missing settings.
     controlled = {key.casefold() for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
         "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY", "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY", "TIMESHEETS_LIVE_DAPR_REDIS_HOST",
+        "TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE",
         GATEWAY_EXECUTABLE_SETTING, GATEWAY_DIRECTORY_SETTING,
         "Timesheets:LocalPublicPort", "Dapr:PlacementHostAddress", "Dapr:SchedulerHostAddress", "AppHost:Operation", "Publishing:Publisher")}
     for key in tuple(fixture.environment):
@@ -267,6 +286,26 @@ def _run_guards(log_directory, configuration_only, configuration):
                     name + " endpoint names, ports, external flags, or explicit proxy modes changed")
             results.append({"case": name, "exit": result.returncode, "passed": True, "endpoints": model})
             print(name + ": compiled endpoint model check passed", flush=True)
+        # The security opt-in must pass the same actual component/control-plane
+        # admission as the journey. These probes still exit before any resource.
+        for name in ("security-valid", "security-ordinary", "security-publish"):
+            with tempfile.TemporaryDirectory(prefix="timesheets-security-guard-") as directory:
+                write_components(directory, baseline["TIMESHEETS_LIVE_DAPR_REDIS_HOST"])
+                fixture.environment = dict(baseline, TIMESHEETS_LIVE_DAPR_COMPONENTS=directory)
+                arguments = [str(executable), "--guard-probe=" + name,
+                    "--TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE=1", "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+                    "--AppHost:Operation=" + ("publish" if name == "security-publish" else "run")]
+                if name == "security-ordinary":
+                    for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS"):
+                        fixture.environment.pop(key, None)
+                result = fixture.run_command(arguments, check=False)
+                output = (result.stdout or "") + (result.stderr or "")
+                require(result.returncode == 0 and "Security selection: isolated smoke." in output
+                        if name == "security-valid" else result.returncode != 0 and (
+                            "Security smoke requires a validated isolated run-mode fixture." in output
+                            or "Isolated Dapr components require an explicit run-mode fixture opt-in." in output),
+                        name + " security fixture admission was not verified")
+                results.append({"case": name, "exit": result.returncode, "passed": True})
         fixture.environment = dict(baseline)
         for key in ("TIMESHEETS_LIVE_DAPR_FIXTURE", "TIMESHEETS_LIVE_DAPR_COMPONENTS",
                     "Dapr__PlacementHostAddress", "Dapr__SchedulerHostAddress"):
@@ -280,8 +319,36 @@ def _run_guards(log_directory, configuration_only, configuration):
         construction = json.loads(lines[0])
         require(construction == {"gatewayCredentials": 1, "timesheetsCredentials": 1},
                 "Full construction must retain exactly one gateway and one Timesheets credential")
-        results.append({"case": "full-construction", "exit": result.returncode, "passed": True, "credentials": construction})
+        readiness_marker = "Timesheets gateway readiness model: "
+        readiness = [json.loads(line[len(readiness_marker):]) for line in (result.stdout or "").splitlines()
+                     if line.startswith(readiness_marker)]
+        require(readiness == [expected_gateway_readiness()], "Gateway readiness registration was not verified")
+        results.append({"case": "full-construction", "exit": result.returncode, "passed": True,
+                        "credentials": construction, "readiness": readiness[0]})
+        references_marker = "Timesheets security references: "
+        references = [json.loads(line[len(references_marker):]) for line in (result.stdout or "").splitlines()
+                      if line.startswith(references_marker)]
+        require(references == [expected_security_references()], "Ordinary credential references were not verified")
         print("full-construction: compiled graph construction/disposal passed without Start/Run", flush=True)
+        with tempfile.TemporaryDirectory(prefix="timesheets-security-construction-") as directory:
+            write_components(directory, baseline["TIMESHEETS_LIVE_DAPR_REDIS_HOST"])
+            fixture.environment = dict(baseline, TIMESHEETS_LIVE_DAPR_COMPONENTS=directory)
+            result = fixture.run_command([str(executable), "--guard-probe=security-construction",
+                "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=0", "--TIMESHEETS_LIVE_DAPR_MODEL_ONLY=0",
+                "--TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY=1", "--TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE=1",
+                "--AppHost:Operation=run"], check=False)
+            references = [json.loads(line[len(references_marker):]) for line in (result.stdout or "").splitlines()
+                          if line.startswith(references_marker)]
+            construction_lines = [json.loads(line[len(marker):]) for line in (result.stdout or "").splitlines()
+                                  if line.startswith(marker)]
+            readiness_lines = [json.loads(line[len(readiness_marker):]) for line in (result.stdout or "").splitlines()
+                               if line.startswith(readiness_marker)]
+            require(result.returncode == 0 and references == [expected_security_references(True)]
+                    and construction_lines == [construction] and readiness_lines == [expected_gateway_readiness(True)],
+                    "Security construction references and readiness were not verified")
+            results.append({"case": "security-construction", "exit": result.returncode, "passed": True,
+                            "bindings": references[0], "readiness": readiness_lines[0]})
+            print("security-construction: actual generated secret references and disposal passed without Start/Run", flush=True)
         fixture.write_evidence("guards.json", json.dumps(results, indent=2) + "\n")
         fixture.environment = baseline
         status = 0

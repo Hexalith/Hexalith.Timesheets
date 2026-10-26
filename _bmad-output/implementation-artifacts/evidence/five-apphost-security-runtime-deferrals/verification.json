@@ -1,0 +1,225 @@
+{
+  "date": "2026-10-26",
+  "scope": "Current local Debug/source security and persisted runtime qualification; deployed acceptance remains open",
+  "timesheets_head": "39e1455250206d6a59476f88c685d03f64887f81",
+  "eventstore_head": "dcd3dce42b67a305b608f03c4dab2b812791abae",
+  "sdk": {
+    "version": "10.0.402",
+    "rollForward": "latestPatch"
+  },
+  "apphost_packages": [
+    "Aspire.Dashboard.Sdk.linux-x64/13.6.1",
+    "Aspire.Hosting.Keycloak/13.6.3-preview.1.26521.2",
+    "Aspire.Hosting.Orchestration.linux-x64/13.6.1",
+    "Aspire.Hosting/13.6.3"
+  ],
+  "source_sha256": {
+    "scripts/check_magic_link_apphost_guards.py": "f5514b8b8908b4a9dae48eca4a2f40fb2b80229267caccf0e85a59390b9001a0",
+    "scripts/local_aspire_magic_link_journey.py": "66cc48b998013fca3a0c4354786c843362bba3fd8f6599e621249492c85f562e",
+    "scripts/run_isolated_magic_link_dapr.py": "ea289ffc865b5eccef1a7a8203ec30a6256550208b58b9d70e397990193bc948",
+    "scripts/test_isolated_magic_link_dapr.py": "78416cac3f1a1abee3e16842add11bee67b70cb004c7bfde90676e0ab79ab7ad",
+    "src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json": "05f8c1199c55a601f0cc0e68140108d1a7d816fa438eaba7e842f6f8bdcf5e2a",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "4f819b9a00638027df12ff65cc95a29a35f6c67da89a7f803c7908fd69e82fc4",
+    "src/Hexalith.Timesheets.AppHost/SecurityConstructionProbe.cs": "08b248802c3967fad94206f01f240f508e546ae71094201152535b3699e85901",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/LaunchReadinessTests.cs": "aaddd928347417ad31e5b8848784569552d08abbf6ab553501af5016a7982f4b",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkCandidateDaprBatchTests.cs": "3e3cd6b78ba4b74a1908b71b877227baffb63cd6e0175f3756e3e1a4064298a6",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs": "4090f650c23b1fec31304b77e5cf9bbaa944d7f4cbd19193a25f271b271f9215",
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkGlobalIndexEpochTests.cs": "eed04ccaa30d9ff40e3046f0369e142f095cc49f0aeb40f87cda4c53be830354"
+  },
+  "restore": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "exit": 0
+  },
+  "build": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "exit": 0,
+    "warnings": 0,
+    "errors": 0,
+    "elapsed_seconds": 4.22,
+    "receipt": "review-final-build.log.gz",
+    "qualified_assets_unchanged": true
+  },
+  "compiled": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/check_magic_link_apphost_guards.py --configuration-only --log-directory _bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/compiled",
+    "exit": 0,
+    "passed": 67,
+    "receipt": "compiled/run-wpray717/guards.json"
+  },
+  "runtime": {
+    "command": "SSL_CERT_FILE=/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --security-smoke --log-directory _bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/runtime",
+    "exit": 0,
+    "admitted": true,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "elapsed_seconds": 61.718,
+    "receipt": "runtime/run-y2ktjsim/55-Hexalith.Timesheets.IntegrationTests--class.log.gz",
+    "source_before": "runtime/run-y2ktjsim/source-before.json",
+    "source_after": "runtime/run-y2ktjsim/source-after.json",
+    "source_and_build_unchanged": true,
+    "executed_asset_and_source_hashes": 12,
+    "runtime_host": "runtime/run-y2ktjsim/runtime-host.json",
+    "readiness": "runtime/run-y2ktjsim/runtime-readiness.json",
+    "security": "runtime/run-y2ktjsim/security-runtime.json",
+    "bootstrap": "runtime/run-y2ktjsim/projection-writer-bootstrap.json",
+    "gateway_replacement": "runtime/run-y2ktjsim/gateway-process-replacement.json",
+    "cleanup": "runtime/run-y2ktjsim/cleanup.json",
+    "shared_preservation": "runtime/run-y2ktjsim/shared-preservation.json",
+    "first_full_success": "runtime/run-ob02opgh",
+    "earlier_attempts": "runtime/",
+    "untracked_build_inputs_captured": true
+  },
+  "dispositions": {
+    "DW-12": "done: current local proof; deployed acceptance remains open",
+    "DW-14": "done: current local proof; deployed acceptance remains open",
+    "DW-67": "done: current local proof; deployed acceptance remains open",
+    "DW-106": "done: current local proof; deployed acceptance remains open",
+    "DW-166": "done: current local proof; deployed acceptance remains open"
+  },
+  "python": {
+    "command": "PYTHONPATH=scripts python3 -m unittest discover -s scripts -p 'test_*.py'",
+    "exit": 0,
+    "tests": 199,
+    "receipt": "review-final-python.log.gz",
+    "previous_receipt": "python-regressions-before-profile-completion.log.gz",
+    "elapsed_seconds": 23.353,
+    "suite_counts": {
+      "test_isolated_magic_link_dapr.py": 166,
+      "test_magic_link_index_selection.py": 30,
+      "test_magic_link_evidence_lineage.py": 3
+    },
+    "runner_only": {
+      "command": "python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py",
+      "tests": 166,
+      "exit": 0,
+      "elapsed_seconds": 23.359,
+      "scope": "Isolated checkout without dependency submodules",
+      "receipt": "review-no-submodule-ci.log.gz"
+    }
+  },
+  "launch_readiness_focused": {
+    "command": "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor -xml _bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/launch-readiness-focused.xml",
+    "exit": 0,
+    "passed": 16,
+    "elapsed_seconds": 0.661
+  },
+  "suites": {
+    "receipt": "suites/results.json",
+    "total": 2698,
+    "passed": 2693,
+    "failed": 0,
+    "skipped": 5,
+    "errors": 0,
+    "exit": 0,
+    "not_run": 0,
+    "scope": "Six full baseline suites before runtime compatibility corrections; subsequent focused/current runtime results are separate"
+  },
+  "runtime_tls": {
+    "certificate_file": "/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt",
+    "certificate_file_sha256": "c57e5aea1c34a68486089564335bd8efa280dd6b74ef9985a85d56f2fc7f3b8e",
+    "scope": "SSL_CERT_FILE in this invocation and its descendants only",
+    "chain_verification": "required",
+    "hostname_verification": true,
+    "global_trust_store_changed": false
+  },
+  "focused": {
+    "actual_dapr_store_concurrency": {
+      "passed": 3,
+      "receipt": "review-final-batch.xml.gz",
+      "elapsed_seconds": 0.471,
+      "forced_optimistic_conflict": true
+    },
+    "ordinary_generation": {
+      "passed": 1,
+      "receipt": "timesheets-projection-retry-ordinary.xml.gz"
+    },
+    "diagnostic_privacy": {
+      "passed": 12,
+      "receipt": "timesheets-projection-retry-privacy.xml.gz"
+    },
+    "architecture": {
+      "passed": 118,
+      "receipt": "readiness-architecture.xml.gz"
+    },
+    "documentation": {
+      "passed": 16,
+      "failed": 0,
+      "skipped": 0,
+      "receipt": "review-final-docs.xml.gz",
+      "log": "review-final-docs.log.gz",
+      "command": "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -class '*LaunchReadinessTests' -noColor -result-xml /tmp/timesheets-review-final-docs.xml",
+      "source_sha256": "aaddd928347417ad31e5b8848784569552d08abbf6ab553501af5016a7982f4b",
+      "initial_obsolete_assertion_failure": "final-documentation-initial.xml.gz",
+      "elapsed_seconds": 0.3
+    }
+  },
+  "publication": {
+    "independent_review": "completed; verified patches passed",
+    "commit": "Conventional Commit enclosing this evidence",
+    "push": "Authorized by user; final remote result reported in completion message"
+  },
+  "initial_build": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "exit": 0,
+    "warnings": 0,
+    "errors": 0,
+    "elapsed_seconds": 51.54
+  },
+  "published_api_check": "published-api-check.json",
+  "pre_review_runtime": {
+    "command": "SSL_CERT_FILE=/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --security-smoke --log-directory _bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/runtime",
+    "exit": 0,
+    "admitted": true,
+    "passed": 1,
+    "failed": 0,
+    "skipped": 0,
+    "errors": 0,
+    "elapsed_seconds": 64.649,
+    "receipt": "runtime/run-fr5m7reh/55-Hexalith.Timesheets.IntegrationTests--class.log.gz",
+    "source_before": "runtime/run-fr5m7reh/source-before.json",
+    "source_after": "runtime/run-fr5m7reh/source-after.json",
+    "source_and_build_unchanged": true,
+    "executed_asset_and_source_hashes": 12,
+    "runtime_host": "runtime/run-fr5m7reh/runtime-host.json",
+    "readiness": "runtime/run-fr5m7reh/runtime-readiness.json",
+    "security": "runtime/run-fr5m7reh/security-runtime.json",
+    "bootstrap": "runtime/run-fr5m7reh/projection-writer-bootstrap.json",
+    "gateway_replacement": "runtime/run-fr5m7reh/gateway-process-replacement.json",
+    "cleanup": "runtime/run-fr5m7reh/cleanup.json",
+    "shared_preservation": "runtime/run-fr5m7reh/shared-preservation.json",
+    "first_full_success": "runtime/run-ob02opgh",
+    "earlier_attempts": "runtime/"
+  },
+  "pre_review_python": {
+    "command": "PYTHONPATH=scripts python3 -m unittest discover -s scripts -p 'test_*.py'",
+    "exit": 0,
+    "tests": 199,
+    "receipt": "review-final-python.log.gz",
+    "previous_receipt": "python-regressions-before-profile-completion.log.gz",
+    "elapsed_seconds": 23.353,
+    "suite_counts": {
+      "test_isolated_magic_link_dapr.py": 166,
+      "test_magic_link_index_selection.py": 30,
+      "test_magic_link_evidence_lineage.py": 3
+    },
+    "runner_only": {
+      "command": "python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py",
+      "tests": 166,
+      "exit": 0,
+      "elapsed_seconds": 23.359,
+      "scope": "Isolated checkout without dependency submodules",
+      "receipt": "review-no-submodule-ci.log.gz"
+    }
+  },
+  "review": {
+    "layers": 3,
+    "findings_triaged": 12,
+    "patched_entries": 8,
+    "deferred_entries": 3,
+    "deferred_scope": "Two medium unverified provenance claims and one pre-existing journey HTTP opener",
+    "source_guard_mutation": "review-source-guard-mutation.json",
+    "no_submodule_ci": "review-no-submodule-ci.json",
+    "initial_independent_check_interference": "review-check-interference.json"
+  }
+}

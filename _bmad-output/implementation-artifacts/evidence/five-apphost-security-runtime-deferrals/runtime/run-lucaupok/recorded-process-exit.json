@@ -1,0 +1,165 @@
+{
+  "all_gone": true,
+  "processes": [
+    {
+      "pid": 75108,
+      "start": "12939240",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 75332,
+      "start": "12939320",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 75587,
+      "start": "12939379",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 343,
+      "gone": true
+    },
+    {
+      "pid": 75611,
+      "start": "12939386",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75587,
+      "gone": true
+    },
+    {
+      "pid": 75711,
+      "start": "12939431",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 75748,
+      "start": "12939441",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.1/tools/Aspire.Dashboard",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 75749,
+      "start": "12939441",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 75750,
+      "start": "12939441",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 75751,
+      "start": "12939441",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 75752,
+      "start": "12939441",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 75851,
+      "start": "12939447",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 75852,
+      "start": "12939447",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 75853,
+      "start": "12939447",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 75910,
+      "start": "12939450",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 75947,
+      "start": "12939455",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 76331,
+      "start": "12939497",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 76670,
+      "start": "12939582",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 76880,
+      "start": "12939632",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 77779,
+      "start": "12939714",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 77842,
+      "start": "12939734",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 78288,
+      "start": "12939823",
+      "state": "S",
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+      "parent": 75611,
+      "gone": true
+    },
+    {
+      "pid": 98680,
+      "start": "12946698",
+      "state": "S",
+      "gone": true
+    }
+  ]
+}

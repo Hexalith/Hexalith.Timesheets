@@ -1,0 +1,37 @@
+{
+  "before": {
+    "pid": 56372,
+    "start": "12426974",
+    "state": "S",
+    "parent": 56224,
+    "executable": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "command": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "argument_count": 0,
+    "parent_identity": {
+      "pid": 56224,
+      "start": "12426918",
+      "state": "S",
+      "parent": 56172,
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp"
+    }
+  },
+  "after": {
+    "pid": 56372,
+    "start": "12426974",
+    "state": "S",
+    "parent": 56224,
+    "executable": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "command": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+    "argument_count": 0,
+    "parent_identity": {
+      "pid": 56224,
+      "start": "12426918",
+      "state": "S",
+      "parent": 56172,
+      "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp"
+    }
+  },
+  "identity_replaced": false,
+  "same_dcp_parent": true,
+  "old_identity_exited": false
+}

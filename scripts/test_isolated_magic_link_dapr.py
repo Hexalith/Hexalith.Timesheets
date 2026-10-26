@@ -2,6 +2,7 @@
 
 import ast
 import contextlib
+import http.server
 import io
 import os
 import signal
@@ -60,6 +61,9 @@ class Commands:
             output = json.dumps({"Properties": self.run_properties})
         elif arguments[:2] in (["aspire", "ps"], ["dapr", "list"]):
             output = "[]"
+        elif arguments[:3] == ["aspire", "describe", "security"]:
+            output = json.dumps({"resources": [{"name": "security", "resourceType": "Container",
+                "properties": {"container.id": "f" * 64}, "urls": [{"name": "http", "url": "http://127.0.0.1:18180"}]}]})
         elif arguments[:2] == ["docker", "inspect"] and arguments[2].startswith("dapr_"):
             output = self.image
         elif arguments[:3] == ["docker", "image", "inspect"]:
@@ -92,6 +96,27 @@ class IsolatedFixtureTests(unittest.TestCase):
         inventory = patch.object(fixture, "running_dapr_processes", return_value=[])
         inventory.start()
         self.addCleanup(inventory.stop)
+
+    @contextlib.contextmanager
+    def owned_http_server(self, respond):
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                respond(self)
+
+            do_POST = do_GET
+
+            def log_message(self, *_arguments):
+                pass
+
+        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        worker = threading.Thread(target=lambda: server.serve_forever(poll_interval=0.01), daemon=True)
+        worker.start()
+        try:
+            yield "http://127.0.0.1:" + str(server.server_port)
+        finally:
+            server.shutdown()
+            server.server_close()
+            worker.join(timeout=2)
 
     def test_public_port_validation_and_explicit_runner_environment(self):
         for invalid in ("", " ", "abc", "18.080", "+18080", "-1", True, None, 1023, 65536,
@@ -189,22 +214,215 @@ class IsolatedFixtureTests(unittest.TestCase):
             with self.subTest(value=value), self.assertRaises(fixture.FixtureError):
                 self.public_initialization(source, {"Timesheets__LocalPublicPort": value})
 
+    @staticmethod
+    def projection_journey_namespace():
+        tree = ast.parse((fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text())
+        names = {"require", "verified_positioned_events", "projection_failure_diagnostic", "project"}
+        nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names
+                 or isinstance(node, ast.Assign) and any(isinstance(target, ast.Name)
+                    and target.id == "PROJECTION_FAILURE_REASON_CODES" for target in node.targets)]
+        from magic_link_index_selection import legacy_index_diagnostics
+        namespace = {"tenant": "fixture-tenant", "json": json, "secrets": fixture.secrets, "time": MagicMock(),
+                     "timesheets": "private-origin", "ACTOR_RATE_LIMIT_RETRY_DELAYS": (1, 5, 15, 45),
+                     "legacy_index_diagnostics": legacy_index_diagnostics, "read_model": lambda *_args, **_kwargs: None,
+                     "sign": lambda *_args, **_kwargs: "unused"}
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), "journey-delivery", "exec"), namespace)
+        return namespace
+
+    def test_delivery_diagnostic_matches_sdk_reason_constants_and_rejects_arbitrary_fields(self):
+        namespace = self.projection_journey_namespace()
+        expected = namespace["PROJECTION_FAILURE_REASON_CODES"]
+        contract = fixture.GATEWAY_PROJECT.parents[1] / "Hexalith.EventStore.Contracts/Projections/ProjectionDispatchReasonCodes.cs"
+        proof = fixture.GATEWAY_PROJECT.parents[1] / "Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.AppliedProof.cs"
+        if contract.is_file() and proof.is_file():
+            sdk_codes = set(fixture.re.findall(r'public const string \w+ = "([^"]+)";', contract.read_text()))
+            sdk_codes.update(fixture.re.findall(r'return new\(false, "([^"]+)"', proof.read_text()))
+            self.assertEqual(sdk_codes, expected)
+        private = fixture.secrets.token_hex(24)
+        describe = namespace["projection_failure_diagnostic"]
+        for reason in expected:
+            for status in range(5):
+                report = describe(200, [{"status": status, "reasonCode": reason, "state": {"token": private},
+                                         "projectionType": private, "arbitrary": private}], "legacy-direct-root=present-unverified entries=2")
+                self.assertEqual(reason, report["reason"])
+                self.assertEqual(status, report["outcome_status"])
+                self.assertTrue(report["legacy_root_present"])
+                self.assertTrue(report["legacy_entries_nonempty"])
+                self.assertNotIn(private, json.dumps(report))
+                self.assertEqual(json.dumps(report), fixture.sanitized(json.dumps(report)).strip())
+        for value in (None, True, -1, 5, private, [private], {"token": private}):
+            with self.subTest(value=value):
+                report = describe(value, [{"status": value, "reasonCode": value}], private)
+                self.assertIsNone(report["http_status"])
+                self.assertIsNone(report["outcome_status"])
+                self.assertIn(report["reason"], ("absent", "unknown"))
+                self.assertNotIn(private, json.dumps(report))
+        self.assertIsNone(describe(200, [None] * 65)["outcome_count"])
+
+    def test_delivery_diagnostic_privacy_checks_run_without_the_eventstore_source_checkout(self):
+        missing = Path(self.temporary.name) / "missing-sdk/src/Hexalith.EventStore/Hexalith.EventStore.csproj"
+        with patch.object(fixture, "GATEWAY_PROJECT", missing):
+            self.test_delivery_diagnostic_matches_sdk_reason_constants_and_rejects_arbitrary_fields()
+
+    def test_delivery_failure_prints_separate_safe_line_that_survives_resource_name_redaction(self):
+        namespace = self.projection_journey_namespace()
+        private = fixture.secrets.token_hex(24)
+        route = "magic-link-token-hash-capability-index"
+        namespace["call"] = MagicMock(return_value=(200, json.dumps({"version": 2, "outcomes": [{"projectionType": route,
+            "status": 4, "reasonCode": "delivery_identity_conflict", "state": {"token": private}, "arbitrary": private}]}).encode()))
+        namespace["read_model"] = lambda *_args, **_kwargs: {"entries": {private: {"tenant": private}}}
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output), self.assertRaises(RuntimeError) as failure:
+            namespace["project"]([{"sequenceNumber": 1, "globalPosition": 7, "payload": private}], private, route, private)
+        retained = fixture.sanitized(output.getvalue() + str(failure.exception))
+        lines = [line for line in retained.splitlines() if line.startswith("Delivery outcome: ")]
+        self.assertEqual(1, len(lines))
+        report = json.loads(lines[0].removeprefix("Delivery outcome: "))
+        self.assertEqual((200, 1, 4, "delivery_identity_conflict"), tuple(report[name] for name in (
+            "http_status", "outcome_count", "outcome_status", "reason")))
+        self.assertTrue(report["legacy_entries_nonempty"])
+        self.assertNotIn(private, retained)
+        self.assertNotIn(route, retained)
+        self.assertEqual(1, namespace["call"].call_count)
+        namespace["time"].sleep.assert_not_called()
+
+    def test_delivery_retries_valid_nonterminal_outcomes_with_the_exact_same_dispatch_and_body(self):
+        private = fixture.secrets.token_hex(24)
+        for status, reason in ((2, "projection_partial_retry"), (2, "delivery_in_progress"), (2, "delivery_gap"),
+                              (2, "head_changed"), (3, "projection_handler_failure"), (3, private), (2, None)):
+            namespace = self.projection_journey_namespace()
+            snapshots = []
+            def call(_url, _method, body, _assertion):
+                snapshots.append(json.dumps(body, sort_keys=True))
+                return 200, json.dumps({"version": 2, "outcomes": [{"projectionType": "fixture-route",
+                    "status": status if len(snapshots) == 1 else 1,
+                    "reasonCode": reason if len(snapshots) == 1 else None}]}).encode()
+            namespace["call"] = MagicMock(side_effect=call)
+            output = io.StringIO()
+            with self.subTest(status=status, reason=reason), contextlib.redirect_stdout(output):
+                namespace["project"]([{"sequenceNumber": 1, "globalPosition": 7}], "owner", "fixture-route", "catalog")
+            self.assertEqual(2, namespace["call"].call_count)
+            self.assertEqual(snapshots[0], snapshots[1])
+            self.assertTrue(json.loads(snapshots[0])["dispatchId"])
+            namespace["time"].sleep.assert_called_once_with(1)
+            self.assertNotIn(private, fixture.sanitized(output.getvalue()))
+
+    def test_delivery_exhaustion_requires_completion_and_keeps_the_existing_attempt_bound(self):
+        for status in (2, 3):
+            namespace = self.projection_journey_namespace()
+            namespace["call"] = MagicMock(return_value=(200, json.dumps({"version": 2, "outcomes": [
+                {"projectionType": "fixture-route", "status": status, "reasonCode": "projection_handler_failure"}]}).encode()))
+            with self.subTest(status=status), contextlib.redirect_stdout(io.StringIO()), self.assertRaises(RuntimeError):
+                namespace["project"]([{"sequenceNumber": 1, "globalPosition": 7}], "owner", "fixture-route", "catalog")
+            self.assertEqual(5, namespace["call"].call_count)
+            self.assertEqual([(1,), (5,), (15,), (45,)], [call.args for call in namespace["time"].sleep.call_args_list])
+        for http_status in (429, 500, 503):
+            namespace = self.projection_journey_namespace()
+            namespace["call"] = MagicMock(side_effect=[(http_status, b""), (200, json.dumps({"version": 2,
+                "outcomes": [{"projectionType": "fixture-route", "status": 0}]}).encode())])
+            with contextlib.redirect_stdout(io.StringIO()):
+                namespace["project"]([{"sequenceNumber": 1, "globalPosition": 7}], "owner", "fixture-route", "catalog")
+            self.assertEqual(2, namespace["call"].call_count)
+
+    def test_delivery_refuses_terminal_identity_conflict_and_malformed_results_without_retry(self):
+        private = fixture.secrets.token_hex(24)
+        valid = {"version": 2, "outcomes": [{"projectionType": "fixture-route", "status": 2, "reasonCode": "head_changed"}]}
+        rejected = [{**valid, "version": value} for value in (None, True, 3)]
+        rejected.extend({"version": 2, "outcomes": [{**valid["outcomes"][0], "status": value}]}
+                        for value in (None, True, False, -1, 5, 2.0, private))
+        rejected.extend({"version": 2, "outcomes": [{**valid["outcomes"][0], "status": value,
+                            "reasonCode": "delivery_identity_conflict"}]} for value in range(5))
+        rejected.append({"version": 2, "outcomes": [{"projectionType": "fixture-route", "status": 4,
+                                                     "reasonCode": "delivery_state_unavailable"}]})
+        rejected.append({"version": 2, "outcomes": [{**valid["outcomes"][0], "projectionType": private}]})
+        rejected.extend({"version": 2, "outcomes": value} for value in ([], [{}, {}], None, private, [private]))
+        rejected.extend({"version": 2, "outcomes": [{**valid["outcomes"][0], "reasonCode": value}]}
+                        for value in (True, [private], private * 6, "not-ascii-\u00e9"))
+        rejected.append({"version": 2, "outcomes": [{**valid["outcomes"][0], "state": {"token": private}}]})
+        rejected.extend(([private], private))
+        for payload in rejected:
+            namespace = self.projection_journey_namespace()
+            namespace["call"] = MagicMock(return_value=(200, json.dumps(payload).encode()))
+            output = io.StringIO()
+            with self.subTest(payload=payload), contextlib.redirect_stdout(output), self.assertRaises(RuntimeError):
+                namespace["project"]([{"sequenceNumber": 1, "globalPosition": 7}], "owner", "fixture-route", "catalog")
+            self.assertEqual(1, namespace["call"].call_count)
+            namespace["time"].sleep.assert_not_called()
+            self.assertNotIn(private, fixture.sanitized(output.getvalue()))
+
+    def test_delivery_completion_accepts_only_matching_integer_sdk_success_enums(self):
+        for status in (0, 1):
+            namespace = self.projection_journey_namespace()
+            namespace["call"] = MagicMock(return_value=(200, json.dumps({"version": 2, "outcomes": [
+                {"projectionType": "fixture-route", "status": status}]}).encode()))
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                namespace["project"]([{"sequenceNumber": 1, "globalPosition": 7}], "owner", "fixture-route", "catalog")
+            self.assertEqual("", output.getvalue())
+            self.assertEqual(1, namespace["call"].call_count)
+
     def test_private_allocations_exclude_selected_public_listener_and_each_other(self):
-        ports = iter((18080, 16379, 18080, 16379, 16050, 18080, 16379, 16050, 16060))
-        def allocated_socket():
-            listener = MagicMock()
-            listener.__enter__.return_value = listener
-            listener.getsockname.return_value = ("127.0.0.1", next(ports))
-            return listener
+        listener = MagicMock()
+        listener.__enter__.return_value = listener
+        selections = ([25000, 22001], [25000, 22001, 22002], [25000, 22001, 22002, 22003])
         commands = Commands()
-        instance = fixture.IsolatedFixture(command=commands, public_port=18080, log_directory=self.logs)
+        instance = fixture.IsolatedFixture(command=commands, public_port=25000, log_directory=self.logs)
         try:
-            with patch.object(fixture.socket, "socket", side_effect=allocated_socket), contextlib.redirect_stdout(io.StringIO()):
+            with patch.object(fixture.socket, "socket", return_value=listener), \
+                    patch.object(fixture.secrets.SystemRandom, "sample", side_effect=selections), contextlib.redirect_stdout(io.StringIO()):
                 instance.start_infrastructure()
             bindings = [args[args.index("--publish") + 1] for args, _ in commands.calls if args[:2] == ["docker", "run"]]
-            self.assertEqual(["127.0.0.1:16379:6379", "127.0.0.1:16050:50005", "127.0.0.1:16060:50006"], bindings)
+            self.assertEqual(["127.0.0.1:22001:6379", "127.0.0.1:22002:50005", "127.0.0.1:22003:50006"], bindings)
+            self.assertEqual([(("127.0.0.1", port),) for port in (22001, 22002, 22003)],
+                             [call.args for call in listener.bind.call_args_list])
         finally:
             instance.cleanup()
+
+    def test_private_port_candidates_enforce_lower_range_and_reserved_public_and_explicit_exclusions(self):
+        for selected in (20000, 29999):
+            with self.subTest(selected=selected):
+                listener = MagicMock()
+                listener.__enter__.return_value = listener
+                excluded = (25000, 22001)
+                candidates = [19999, 30000, 51393, *fixture.SHARED_CONTROL_PORTS, *fixture.REQUIRED_PORTS, *excluded, selected]
+                with patch.object(fixture.secrets.SystemRandom, "sample", return_value=candidates) as randomize, \
+                        patch.object(fixture.socket, "socket", return_value=listener):
+                    self.assertEqual(selected, fixture.available_control_port(excluded))
+                population, attempts = randomize.call_args.args
+                self.assertEqual((20000, 29999), (population.start, population.stop - 1))
+                self.assertEqual(20, attempts)
+                listener.bind.assert_called_once_with(("127.0.0.1", selected))
+
+    def test_private_port_allocator_skips_a_real_occupied_lower_range_listener(self):
+        occupied = fixture.available_control_port()
+        with socket.socket() as listener:
+            listener.bind(("127.0.0.1", occupied))
+            listener.listen()
+            available = fixture.available_control_port((occupied,))
+            with patch.object(fixture.secrets.SystemRandom, "sample", return_value=[occupied, available]):
+                selected = fixture.available_control_port()
+            self.assertEqual(available, selected)
+            self.assertNotEqual(occupied, selected)
+            self.assertTrue(20000 <= selected <= 29999)
+
+    def test_private_port_allocator_fails_closed_when_the_candidate_budget_is_exhausted(self):
+        candidates = list(range(22000, 22020))
+        for all_excluded in (False, True):
+            with self.subTest(all_excluded=all_excluded):
+                listener = MagicMock()
+                listener.__enter__.return_value = listener
+                listener.bind.side_effect = OSError("occupied candidate")
+                with patch.object(fixture.secrets.SystemRandom, "sample", return_value=candidates), \
+                        patch.object(fixture.socket, "socket", return_value=listener) as opened, \
+                        self.assertRaisesRegex(fixture.FixtureError, "Could not allocate a private control-service endpoint"):
+                    fixture.available_control_port(tuple(candidates) if all_excluded else ())
+                if all_excluded:
+                    opened.assert_not_called()
+                else:
+                    self.assertEqual(20, opened.call_count)
+                    self.assertEqual(20, listener.__exit__.call_count)
+                    self.assertEqual([(("127.0.0.1", port),) for port in candidates],
+                                     [call.args for call in listener.bind.call_args_list])
 
     def test_runtime_children_discard_probe_only_settings_and_provider_aliases(self):
         pollution = {prefix + name: "1" for prefix in ("", "ASPIRE_", "DOTNET_", "ASPNETCORE_")
@@ -402,9 +620,15 @@ class IsolatedFixtureTests(unittest.TestCase):
             name = names[0]
             if failed:
                 return subprocess.CompletedProcess(arguments, 42, "Guard failed", "")
-            if name == "full-construction":
+            if name in ("full-construction", "security-construction"):
                 return subprocess.CompletedProcess(arguments, 0,
-                    'Timesheets construction model: {"gatewayCredentials": 1, "timesheetsCredentials": 1}', "")
+                    'Timesheets construction model: {"gatewayCredentials": 1, "timesheetsCredentials": 1}\n'
+                    + 'Timesheets gateway readiness model: ' + json.dumps(guards.expected_gateway_readiness(name == "security-construction")) + '\n'
+                    + 'Timesheets security references: ' + json.dumps(guards.expected_security_references(name == "security-construction")), "")
+            if name.startswith("security-"):
+                return subprocess.CompletedProcess(arguments, 0 if name == "security-valid" else -6,
+                    "Security selection: isolated smoke." if name == "security-valid" else "",
+                    "Security smoke requires a validated isolated run-mode fixture.")
             if name.startswith("model-"):
                 port = 18080 if name == "model-alternate" else 8080
                 output = "Timesheets endpoint model: " + json.dumps([
@@ -470,6 +694,999 @@ class IsolatedFixtureTests(unittest.TestCase):
                     self.assertEqual(instance.scratch, environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"], arguments)
                 self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
 
+    def test_security_realm_contains_only_platform_generated_credentials_and_timesheets_claims(self):
+        realm = json.loads((fixture.APPHOST.parent / "KeycloakRealms/hexalith-realm.json").read_text())
+        user, = realm["users"]
+        self.assertEqual("${HEXALITH_EVENTSTORE_CLIENT_USERNAME}", user["username"])
+        self.assertEqual([{"type": "password", "value": "${HEXALITH_EVENTSTORE_CLIENT_PASSWORD}", "temporary": False}],
+                         user["credentials"])
+        self.assertEqual(["timesheets"], user["attributes"]["domains"])
+        self.assertEqual({"tenant-a", "tenant-b", "system"}, set(user["attributes"]["tenants"]))
+        self.assertEqual({"command:submit", "command:query", "command:replay"}, set(user["attributes"]["permissions"]))
+        client = next(client for client in realm["clients"] if client["clientId"] == "hexalith-eventstore")
+        self.assertTrue(client["directAccessGrantsEnabled"])
+        self.assertTrue({"eventstore:tenant", "eventstore:domain", "eventstore:permission"} <= {
+            mapper["config"].get("claim.name") for mapper in client["protocolMappers"]})
+
+    def test_generated_realm_technical_account_has_a_complete_synthetic_verified_profile(self):
+        realm = json.loads((fixture.APPHOST.parent / "KeycloakRealms/hexalith-realm.json").read_text())
+        user, = realm["users"]
+        for field in ("firstName", "lastName"):
+            self.assertIsInstance(user[field], str)
+            self.assertEqual(user[field].strip(), user[field])
+            self.assertTrue(user[field])
+            self.assertTrue(any(marker in user[field].casefold() for marker in ("synthetic", "fixture")))
+            self.assertNotIn("${", user[field])
+        self.assertRegex(user["email"], r"^[a-z0-9][a-z0-9._+-]*@[a-z0-9.-]+\.invalid$")
+        self.assertIn("fixture", user["email"].split("@", 1)[0])
+        self.assertIs(user["emailVerified"], True)
+        self.assertIs(user["enabled"], True)
+        self.assertEqual([], user["requiredActions"])
+        self.assertEqual("${HEXALITH_EVENTSTORE_CLIENT_USERNAME}", user["username"])
+        self.assertEqual("${HEXALITH_EVENTSTORE_CLIENT_PASSWORD}", user["credentials"][0]["value"])
+        self.assertIs(user["credentials"][0]["temporary"], False)
+
+    def test_security_reference_driver_refuses_missing_duplicate_non_secret_and_wrong_bindings(self):
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        for defect in ("missing", "duplicate", "non-secret", "wrong-resource", "wrong-parameter", "not-generated"):
+            with self.subTest(defect=defect):
+                commands = self.guard_commands()
+                original = commands.failure
+                def mutation(arguments):
+                    result = original(arguments)
+                    if "--guard-probe=security-construction" in arguments:
+                        bindings = guards.expected_security_references(True)
+                        if defect == "missing":
+                            bindings.pop()
+                        elif defect == "duplicate":
+                            bindings.append(dict(bindings[-1]))
+                        elif defect == "non-secret":
+                            bindings[-1]["secret"] = False
+                        elif defect == "not-generated":
+                            bindings[-1]["generated"] = False
+                        else:
+                            bindings[-1]["resource" if defect == "wrong-resource" else "parameter"] = "other"
+                        result.stdout = result.stdout.split("Timesheets security references: ")[0] + "Timesheets security references: " + json.dumps(bindings)
+                    return result
+                commands.failure = mutation
+                instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+                with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                        patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(1, guards.run_guards(configuration_only=True))
+                self.assertFalse(commands.started)
+                self.assertFalse(commands.containers)
+
+    def test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness(self):
+        for defect in (None, "foreign", "readiness", "credential-handoff", "source-changed"):
+            with self.subTest(defect=defect):
+                def failure(arguments):
+                    if defect == "foreign" and arguments[:2] == ["dapr", "list"]:
+                        return subprocess.CompletedProcess(arguments, 0, '[{"appId":"foreign"}]', "")
+                    if defect == "readiness" and arguments[:3] == ["aspire", "wait", "security"]:
+                        return subprocess.CompletedProcess(arguments, 18, "", "not ready")
+                commands = Commands(failure)
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                    security_smoke=True, ownership_check=lambda: commands.started and not commands.stopped)
+                sources = [{"head": "current"}, {"head": "changed" if defect == "source-changed" else "current"}]
+                with patch.object(instance, "capture_source_identity", side_effect=sources), \
+                        patch.object(instance, "verify_security_runtime", side_effect=fixture.FixtureError("handoff failed")
+                                     if defect == "credential-handoff" else None) as verification, \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(0 if defect is None else 1 if defect != "readiness" else 18, instance.execute())
+                if defect == "foreign":
+                    self.assertFalse(commands.started)
+                    self.assertFalse(commands.redis_attempted)
+                    self.assertFalse(any(args[:2] == ["dotnet", "build"] for args, _ in commands.calls))
+                    self.assertFalse(json.loads((instance.log_directory / "admission.json").read_text())["admitted"])
+                    verification.assert_not_called()
+                else:
+                    start = next(index for index, (args, _) in enumerate(commands.calls) if args[:2] == ["aspire", "start"])
+                    build = next(index for index, (args, _) in enumerate(commands.calls) if args[:2] == ["dotnet", "build"])
+                    self.assertLess(build, start)
+                    self.assertEqual(["dotnet", "build", str(fixture.ROOT / "Hexalith.Timesheets.slnx"), "--configuration", "Debug",
+                        "--no-restore", "-p:UseHexalithProjectReferences=true", "-warnaserror", "-m:1", "/nr:false"],
+                        commands.calls[build][0])
+                    self.assertEqual("1", commands.calls[start][1]["env"][fixture.SECURITY_SMOKE_SETTING])
+                    self.assertEqual("security", next(args[2] for args, _ in commands.calls if args[:2] == ["aspire", "wait"]))
+                    self.assertTrue(commands.stopped)
+                self.assertFalse(commands.containers)
+
+    def test_security_handoff_uses_generated_credentials_in_memory_and_refuses_unresolved_or_wrong_claims(self):
+        username, password = fixture.secrets.token_hex(12), fixture.secrets.token_hex(24)
+        container = {"Id": "f" * 64, "Config": {"Env": ["HEXALITH_EVENTSTORE_CLIENT_USERNAME=" + username,
+                                       "HEXALITH_EVENTSTORE_CLIENT_PASSWORD=" + password]},
+                     "NetworkSettings": {"Ports": {"8080/tcp": [{"HostIp": "127.0.0.1", "HostPort": "18180"}]}}}
+        claims = {"iss": "http://127.0.0.1:18180/realms/hexalith", "preferred_username": username,
+                  "aud": "hexalith-eventstore", "eventstore:tenant": ["tenant-a", "tenant-b", "system"],
+                  "eventstore:domain": ["timesheets"], "eventstore:permission": ["command:submit", "command:query", "command:replay"]}
+        for defect in (None, "placeholder", "claims", "public", "request-failure"):
+            with self.subTest(defect=defect):
+                selected = json.loads(json.dumps(container))
+                token_claims = dict(claims)
+                if defect == "placeholder":
+                    selected["Config"]["Env"][-1] = "HEXALITH_EVENTSTORE_CLIENT_PASSWORD=${UNRESOLVED}"
+                if defect == "claims":
+                    token_claims["eventstore:domain"] = ["another-domain"]
+                if defect == "public":
+                    selected["NetworkSettings"]["Ports"]["8080/tcp"][0]["HostIp"] = "0.0.0.0"
+                token = "header." + fixture.base64.urlsafe_b64encode(json.dumps(token_claims).encode()).decode().rstrip("=") + ".signature"
+                with patch.object(fixture, "owned_http_open", side_effect=OSError(password)
+                                  if defect == "request-failure" else None,
+                                  return_value=io.BytesIO(json.dumps({"access_token": token}).encode())) as request:
+                    if defect is None:
+                        result = fixture.security_credential_handoff(selected, 8080, describe_command=self.security_describe_command(selected))
+                        self.assertTrue(result["generated_credentials_accepted"])
+                        self.assertNotIn(password, json.dumps(result))
+                        self.assertIn(password.encode(), request.call_args.args[0].data)
+                    else:
+                        with self.assertRaises(fixture.FixtureError) as failure:
+                            fixture.security_credential_handoff(selected, 8080, describe_command=self.security_describe_command(selected))
+                        self.assertNotIn(password, str(failure.exception))
+                        if defect in ("placeholder", "public"):
+                            request.assert_not_called()
+
+    def credential_handoff_fixture(self):
+        username, password = fixture.secrets.token_hex(12), fixture.secrets.token_hex(24)
+        container = {"Id": "f" * 64, "Config": {"Env": ["HEXALITH_EVENTSTORE_CLIENT_USERNAME=" + username,
+            "HEXALITH_EVENTSTORE_CLIENT_PASSWORD=" + password], "Labels": {"hexalith.timesheets.components": "owned"}},
+            "State": {"Running": True}, "NetworkSettings": {"Ports": {
+                "8080/tcp": [{"HostIp": "127.0.0.1", "HostPort": "18180"}]}}}
+        claims = {"iss": "http://127.0.0.1:18180/realms/hexalith", "preferred_username": username,
+            "aud": "hexalith-eventstore", "eventstore:tenant": ["tenant-a", "tenant-b", "system"],
+            "eventstore:domain": ["timesheets"], "eventstore:permission": ["command:submit", "command:query", "command:replay"]}
+        return container, claims, username, password
+
+    def security_describe_command(self, container, published_port=18180, snapshot=None):
+        description = snapshot if snapshot is not None else {"resources": [{"name": "security-resource",
+            "displayName": "security", "resourceType": "Container", "properties": {"container.id": container["Id"]},
+            "urls": [{"name": "http", "url": "http://127.0.0.1:" + str(published_port)}]}]}
+        def command(arguments, **_options):
+            self.assertEqual(["aspire", "describe", "security", "--apphost", str(fixture.APPHOST),
+                              "--non-interactive", "--format", "Json"], arguments)
+            return subprocess.CompletedProcess(arguments, 0, json.dumps(description), "")
+        return command
+
+    def test_handoff_discovers_nondefault_container_and_published_http_ports_for_both_callers(self):
+        for scheme, target, published, host in (("http", 8180, 28180, "localhost"), ("http", 19080, 48180, "127.0.0.1"),
+                ("http", 8080, 18180, "127.0.0.1"), ("https", 8443, 28180, "localhost"), ("https", 19443, 48180, "127.0.0.1")):
+            with self.subTest(scheme=scheme, target=target, published=published, host=host):
+                container, claims, username, password = self.credential_handoff_fixture()
+                private_value = fixture.secrets.token_hex(24)
+                container["NetworkSettings"]["Ports"] = {str(target) + "/tcp": [{"HostIp": "127.0.0.1", "HostPort": str(published)}],
+                    "9000/tcp": [{"HostIp": "127.0.0.1", "HostPort": str(published + 1)}]}
+                origin = scheme + "://" + host + ":" + str(published)
+                claims["iss"] = origin + "/realms/hexalith"
+                description = {"resources": [{"name": "security-native", "displayName": "security", "resourceType": "Container",
+                    "properties": {"container.id": container["Id"], "arbitrary": private_value}, "environment": {"PRIVATE": private_value},
+                    "dashboardUrl": "http://localhost:18888/login?t=" + private_value,
+                    "urls": [{"name": "management", "url": "http://localhost:" + str(published + 1)},
+                             {"name": "http", "url": "http://security:" + str(target), "isInternal": True},
+                             {"name": "http", "url": origin}]}]}
+                token = "header." + fixture.base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip("=") + ".signature"
+                observed = []
+                for injected in (True, False):
+                    report = {}
+                    command = self.security_describe_command(container, snapshot=description)
+                    completed = command(["aspire", "describe", "security", "--apphost", str(fixture.APPHOST),
+                        "--non-interactive", "--format", "Json"])
+                    with patch.object(fixture.subprocess, "run", return_value=completed) as default_reader, \
+                            patch.object(fixture, "owned_http_open", return_value=io.BytesIO(json.dumps({"access_token": token}).encode())) as request:
+                        result = fixture.security_credential_handoff(container, 8080, report,
+                            describe_command=command if injected else None)
+                    self.assertTrue(result["generated_credentials_accepted"])
+                    self.assertEqual(origin + "/realms/hexalith/protocol/openid-connect/token", request.call_args.args[0].full_url)
+                    self.assertEqual(target, report["http_endpoint"]["container_port"])
+                    self.assertEqual(published, report["http_endpoint"]["published_port"])
+                    self.assertEqual(container["Id"], report["http_endpoint"]["container_id"])
+                    self.assertEqual(scheme, report["http_endpoint"]["scheme"])
+                    self.assertTrue(report["url_checks"]["scheme_allowed"])
+                    if scheme == "https":
+                        context = request.call_args.kwargs["context"]
+                        self.assertTrue(context.check_hostname)
+                        self.assertEqual(fixture.ssl.CERT_REQUIRED, context.verify_mode)
+                    if injected:
+                        default_reader.assert_not_called()
+                    else:
+                        self.assertEqual(completed.args, default_reader.call_args.args[0])
+                    observed.append(report["http_endpoint"])
+                    for sensitive in (private_value, username, password, token):
+                        self.assertNotIn(sensitive, json.dumps(report))
+                self.assertEqual(observed[0], observed[1])
+
+    def test_handoff_refuses_wrong_container_nonloopback_ambiguous_and_unmatched_discovered_endpoints(self):
+        for defect in ("wrong-container", "wrong-resource", "ambiguous-resource", "nonloopback-url", "nonloopback-binding",
+                       "ambiguous-http", "internal-only", "unmatched-port", "ambiguous-binding", "udp-binding", "query", "userinfo",
+                       "malformed-json", "describe-failed", "describe-timeout"):
+            with self.subTest(defect=defect):
+                container, _, username, password = self.credential_handoff_fixture()
+                private_value = fixture.secrets.token_hex(24)
+                description = {"resources": [{"name": "security", "resourceType": "Container",
+                    "properties": {"container.id": container["Id"], "private": private_value}, "environment": {"private": private_value},
+                    "urls": [{"name": "http", "url": "http://127.0.0.1:18180"}]}]}
+                resource = description["resources"][0]
+                if defect == "wrong-container":
+                    resource["properties"]["container.id"] = "e" * 64
+                elif defect == "wrong-resource":
+                    resource["name"] = "another-resource"
+                elif defect == "ambiguous-resource":
+                    description["resources"].append(dict(resource))
+                elif defect == "nonloopback-url":
+                    resource["urls"][0]["url"] = "http://example.invalid:18180"
+                elif defect == "nonloopback-binding":
+                    container["NetworkSettings"]["Ports"]["8080/tcp"][0]["HostIp"] = "0.0.0.0"
+                elif defect == "ambiguous-http":
+                    resource["urls"].append(dict(resource["urls"][0]))
+                elif defect == "internal-only":
+                    resource["urls"][0]["isInternal"] = True
+                elif defect == "unmatched-port":
+                    resource["urls"][0]["url"] = "http://127.0.0.1:28180"
+                elif defect == "ambiguous-binding":
+                    container["NetworkSettings"]["Ports"]["8180/tcp"] = list(container["NetworkSettings"]["Ports"]["8080/tcp"])
+                elif defect == "udp-binding":
+                    container["NetworkSettings"]["Ports"]["8080/udp"] = container["NetworkSettings"]["Ports"].pop("8080/tcp")
+                elif defect == "query":
+                    resource["urls"][0]["url"] += "?secret=" + private_value
+                elif defect == "userinfo":
+                    resource["urls"][0]["url"] = "http://user:" + private_value + "@127.0.0.1:18180"
+                def command(arguments, **_options):
+                    if defect == "describe-timeout":
+                        raise subprocess.TimeoutExpired(arguments, 30, output=private_value, stderr=private_value)
+                    return subprocess.CompletedProcess(arguments, 1 if defect == "describe-failed" else 0,
+                        private_value if defect == "malformed-json" else json.dumps(description), private_value)
+                report = {}
+                with patch.object(fixture, "owned_http_open") as request, self.assertRaises(fixture.FixtureError) as failure:
+                    fixture.security_credential_handoff(container, 8080, report, describe_command=command)
+                request.assert_not_called()
+                self.assertEqual("port", report["stage"])
+                self.assertEqual("port_shape_invalid", report["error_category"])
+                for sensitive in (private_value, username, password):
+                    self.assertNotIn(sensitive, json.dumps(report) + str(failure.exception))
+
+    def test_security_url_predicates_are_allowlisted_and_preserve_every_existing_url_guard(self):
+        container, _, username, password = self.credential_handoff_fixture()
+        private_value = fixture.secrets.token_hex(24)
+        cases = [
+            ("http://127.0.0.1:18180", True, {"scheme": "http", "hostname_category": "ipv4-loopback", "bounded_port": 18180}),
+            ("https://localhost:18180", True, {"scheme": "https", "http_scheme_matches": False, "scheme_allowed": True}),
+            ("unknown" + private_value + "://localhost:18180", False, {"scheme": "other", "scheme_allowed": False}),
+            ("ftp://localhost:18180", False, {"scheme": "other", "scheme_allowed": False}),
+            ("https://localhost:18180?q=" + private_value, False, {"no_query": False}),
+            ("https://user:" + private_value + "@localhost:18180", False, {"no_userinfo": False}),
+            ("https://" + private_value + ".invalid:18180", False, {"hostname_category": "other", "hostname_allowed": False}),
+            ("http://" + private_value + ".invalid:18180", False, {"hostname_category": "other", "hostname_allowed": False}),
+            ("http://[::1]:18180", False, {"hostname_category": "ipv6-loopback", "hostname_allowed": False}),
+            ("http://0.0.0.0:18180", False, {"hostname_category": "wildcard", "hostname_allowed": False}),
+            ("http://localhost:18180/" + private_value, False, {"path_empty_or_slash": False}),
+            ("http://localhost:18180?q=" + private_value, False, {"no_query": False}),
+            ("http://localhost:18180#" + private_value, False, {"no_fragment": False}),
+            ("http://user:" + private_value + "@localhost:18180", False, {"no_userinfo": False}),
+            ("http://localhost", False, {"port_parse_valid": True, "port_present": False, "bounded_port": None}),
+            ("http://localhost:70000", False, {"port_parse_valid": False, "bounded_port": None}),
+            ("http://localhost:" + private_value, False, {"port_parse_valid": False, "bounded_port": None}),
+            ("http://localhost:80", False, {"bounded_port": 80, "port_in_allowed_range": False}),
+            ("http://localhost:8080", False, {"reserved_port_match": True, "public_port_match": True}),
+            ("http://localhost:8081", False, {"reserved_port_match": True, "public_port_match": False}),
+            ("http://[" + private_value, False, {"parse_succeeded": False}),
+            ({"private": private_value}, False, {"url_string": False, "parse_succeeded": False}),
+        ]
+        for index, (url, accepted, expected) in enumerate(cases):
+            with self.subTest(case=index):
+                description = {"resources": [{"name": "security", "resourceType": "Container",
+                    "properties": {"container.id": container["Id"]}, "urls": [{"name": "http", "url": url}]}]}
+                report = {}
+                command = self.security_describe_command(container, snapshot=description)
+                if accepted:
+                    fixture.discover_security_http_endpoint(container, 8080, command=command, diagnostics=report)
+                else:
+                    with self.assertRaises(fixture.FixtureError):
+                        fixture.discover_security_http_endpoint(container, 8080, command=command, diagnostics=report)
+                checks = report["url_checks"]
+                for key, value in expected.items():
+                    self.assertEqual(value, checks[key], key)
+                self.assertIn(checks["scheme"], ("unavailable", "http", "https", "other", "absent"))
+                self.assertIn(checks["hostname_category"], ("unavailable", "localhost", "ipv4-loopback", "ipv6-loopback", "wildcard", "other", "absent"))
+                if checks["bounded_port"] is not None:
+                    self.assertTrue(1 <= checks["bounded_port"] <= 65535)
+                for sensitive in (private_value, username, password):
+                    self.assertNotIn(sensitive, json.dumps(report))
+
+        description["resources"][0]["urls"] = [{"name": "http"}]
+        report = {}
+        with self.assertRaises(fixture.FixtureError):
+            fixture.discover_security_http_endpoint(container, 8080,
+                command=self.security_describe_command(container, snapshot=description), diagnostics=report)
+        self.assertFalse(report["url_checks"]["url_string"])
+        selected_public = fixture.security_http_url_diagnostics("http://localhost:18080", 18080)
+        self.assertTrue(selected_public["public_port_match"])
+        self.assertFalse(selected_public["reserved_port_match"])
+
+    def test_https_credentials_fail_closed_on_tls_verification_without_downgrade_or_raw_error(self):
+        container, _, username, password = self.credential_handoff_fixture()
+        private_value = fixture.secrets.token_hex(24)
+        description = {"resources": [{"name": "security", "resourceType": "Container",
+            "properties": {"container.id": container["Id"]}, "urls": [{"name": "http", "url": "https://localhost:18180"}]}]}
+        for wrapped in (False, True):
+            for certificate_failure in (False, True):
+                with self.subTest(wrapped=wrapped, certificate_failure=certificate_failure):
+                    reason = fixture.ssl.SSLCertVerificationError(private_value) if certificate_failure else fixture.ssl.SSLError(private_value)
+                    error = fixture.urllib.error.URLError(reason) if wrapped else reason
+                    report = {}
+                    with patch.object(fixture.ssl, "_create_unverified_context", side_effect=AssertionError("Unverified TLS is forbidden")), \
+                            patch.object(fixture, "owned_http_open", side_effect=error) as request, \
+                            self.assertRaises(fixture.FixtureError) as failure:
+                        fixture.security_credential_handoff(container, 8080, report,
+                            describe_command=self.security_describe_command(container, snapshot=description))
+                    request.assert_called_once()
+                    self.assertEqual("https://localhost:18180/realms/hexalith/protocol/openid-connect/token", request.call_args.args[0].full_url)
+                    context = request.call_args.kwargs["context"]
+                    self.assertTrue(context.check_hostname)
+                    self.assertEqual(fixture.ssl.CERT_REQUIRED, context.verify_mode)
+                    self.assertEqual("tls_verification_failed" if certificate_failure else "tls_handshake_failed", report["error_category"])
+                    self.assertEqual("token_http", report["stage"])
+                    for sensitive in (private_value, username, password):
+                        self.assertNotIn(sensitive, json.dumps(report) + str(failure.exception))
+
+    def test_security_runtime_retains_only_allowlisted_endpoint_metadata_from_describe(self):
+        container, claims, username, password = self.credential_handoff_fixture()
+        private_value = fixture.secrets.token_hex(24)
+        container["NetworkSettings"]["Ports"] = {"8180/tcp": [{"HostIp": "127.0.0.1", "HostPort": "18180"}]}
+        claims["iss"] = "http://localhost:18180/realms/hexalith"
+        description = {"resources": [{"name": "security", "resourceType": "Container",
+            "properties": {"container.id": container["Id"], "arbitrary": private_value}, "environment": {"PRIVATE": private_value},
+            "dashboardUrl": "http://localhost/login?t=" + private_value, "urls": [{"name": "http", "url": "http://localhost:18180"}]}]}
+        token = "header." + fixture.base64.urlsafe_b64encode(json.dumps(claims).encode()).decode().rstrip("=") + ".signature"
+        def command(arguments):
+            if arguments[:3] == ["aspire", "describe", "security"]:
+                return self.security_describe_command(container, snapshot=description)(arguments)
+            if arguments[:3] == ["docker", "container", "ls"]:
+                return subprocess.CompletedProcess(arguments, 0, container["Id"], "")
+            if arguments == ["docker", "inspect", container["Id"]]:
+                return subprocess.CompletedProcess(arguments, 0, json.dumps([container]), "")
+        instance = fixture.IsolatedFixture(command=Commands(command), log_directory=self.logs, resource_check=lambda *_: [])
+        instance.scratch = "owned"
+        with patch.object(fixture, "runtime_host_identity", return_value={"dashboard": {}}), \
+                patch.object(fixture, "verify_dashboard_ready", return_value={"ready": True}), \
+                patch.object(fixture, "owned_http_open", return_value=io.BytesIO(json.dumps({"access_token": token}).encode())):
+            instance.verify_security_runtime()
+        receipt = json.loads((instance.log_directory / "security-runtime.json").read_text())
+        self.assertEqual(8180, receipt["http_endpoint"]["container_port"])
+        self.assertEqual("localhost", receipt["http_endpoint"]["host"])
+        self.assertFalse(any("describe" in path.name for path in instance.log_directory.iterdir()))
+        retained = "".join(path.read_text() for path in instance.log_directory.iterdir())
+        for sensitive in (private_value, username, password, token):
+            self.assertNotIn(sensitive, retained)
+
+    def test_handoff_http_diagnostics_allowlist_status_oauth_code_and_known_profile_category(self):
+        container, _, username, password = self.credential_handoff_fixture()
+        private_value = fixture.secrets.token_hex(24)
+        cases = [
+            (400, {"error": "invalid_grant", "error_description": "Account is not fully set up"}, "invalid_grant", "profile_setup_required"),
+            (401, {"error": "invalid_client", "error_description": private_value}, "invalid_client", "client_authentication_failed"),
+            (400, {"error": "invalid_grant", "error_description": private_value}, "invalid_grant", "oauth_rejection"),
+            (503, {"error": "temporarily_unavailable", "error_description": private_value}, "temporarily_unavailable", "token_endpoint_unavailable"),
+            (403, {"error": private_value, "error_description": private_value}, None, "http_rejection"),
+            (private_value, {"error": private_value}, None, "http_rejection"),
+            (400, private_value, None, "http_rejection"),
+            (400, {"error": "invalid_grant", "error_description": "Account is not fully set up" + private_value}, "invalid_grant", "oauth_rejection"),
+            (400, " " * 65537, None, "http_rejection"),
+        ]
+        for status, payload, code, category in cases:
+            with self.subTest(status_type=type(status).__name__, code=code, category=category):
+                data = payload.encode() if isinstance(payload, str) else json.dumps(payload).encode()
+                error = fixture.urllib.error.HTTPError("http://private/" + private_value, status, private_value,
+                    {"private-header": private_value}, io.BytesIO(data))
+                report = {}
+                with patch.object(fixture, "owned_http_open", side_effect=error), \
+                        self.assertRaises(fixture.FixtureError) as failure:
+                    fixture.security_credential_handoff(container, 8080, report, describe_command=self.security_describe_command(container))
+                self.assertEqual("token_http", report["stage"])
+                self.assertEqual(code, report["oauth_error_code"])
+                self.assertEqual(category, report["error_category"])
+                self.assertEqual(status if isinstance(status, int) else None, report["http_status"])
+                self.assertTrue(error.fp.closed)
+                retained = json.dumps(report) + str(failure.exception)
+                for sensitive in (private_value, username, password):
+                    self.assertNotIn(sensitive, retained)
+                self.assertNotIn("error_description", retained)
+
+    def test_handoff_diagnostics_distinguish_environment_ports_token_shapes_and_each_claim_without_values(self):
+        container, claims, username, password = self.credential_handoff_fixture()
+        private_value = fixture.secrets.token_hex(24)
+        claim_labels = {"iss": "issuer_matches", "preferred_username": "username_matches", "aud": "audience_matches",
+            "eventstore:tenant": "tenant_claims_match", "eventstore:domain": "domain_claims_match",
+            "eventstore:permission": "permission_claims_match"}
+        for defect in ("environment", "port", "transport", "invalid-json", "missing-token", "non-string-token",
+                       "invalid-token", "non-object-claims", *claim_labels):
+            with self.subTest(defect=defect):
+                selected, token_claims = json.loads(json.dumps(container)), dict(claims)
+                if defect == "environment":
+                    selected["Config"]["Env"] = []
+                if defect == "port":
+                    selected["NetworkSettings"]["Ports"]["8080/tcp"][0]["HostIp"] = "0.0.0.0"
+                if defect in claim_labels:
+                    token_claims[defect] = private_value
+                if defect == "non-object-claims":
+                    token_claims = [private_value]
+                token = "header." + fixture.base64.urlsafe_b64encode(json.dumps(token_claims).encode()).decode().rstrip("=") + ".signature"
+                response = {"access_token": token}
+                if defect == "missing-token":
+                    response = {"private": private_value}
+                if defect == "non-string-token":
+                    response = {"access_token": {"private": private_value}}
+                if defect == "invalid-token":
+                    response = {"access_token": private_value}
+                body = private_value.encode() if defect == "invalid-json" else json.dumps(response).encode()
+                report = {}
+                with patch.object(fixture, "owned_http_open", return_value=io.BytesIO(body),
+                                  side_effect=OSError(private_value) if defect == "transport" else None) as request, \
+                        self.assertRaises(fixture.FixtureError) as failure:
+                    fixture.security_credential_handoff(selected, 8080, report, describe_command=self.security_describe_command(selected))
+                expected_stage = ("environment" if defect == "environment" else "port" if defect == "port" else
+                                  "token_http" if defect == "transport" else "claims" if defect in claim_labels else "token_shape")
+                self.assertEqual(expected_stage, report["stage"])
+                if defect in claim_labels:
+                    self.assertFalse(report["claim_matches"][claim_labels[defect]])
+                    self.assertEqual(set(claim_labels.values()), set(report["claim_matches"]))
+                    self.assertTrue(all(isinstance(value, bool) for value in report["claim_matches"].values()))
+                    self.assertEqual(5, sum(report["claim_matches"].values()))
+                if defect in ("environment", "port"):
+                    request.assert_not_called()
+                retained = json.dumps(report) + str(failure.exception)
+                for sensitive in (private_value, username, password, token):
+                    self.assertNotIn(sensitive, retained)
+
+    def test_handoff_rejects_missing_token_segments_and_non_string_list_claim_shapes(self):
+        container, claims, username, password = self.credential_handoff_fixture()
+        private = fixture.secrets.token_hex(24)
+        encode = lambda value: fixture.base64.urlsafe_b64encode(json.dumps(value).encode()).decode().rstrip("=")
+        encoded = encode(claims)
+        invalid_tokens = ("header." + encoded, "header." + encoded + ".signature.extra", "." + encoded + ".signature",
+                          "header..signature", "header." + encoded + ".")
+        cases = [("token", token, None) for token in invalid_tokens]
+        labels = {"aud": "audience_matches", "eventstore:tenant": "tenant_claims_match",
+                  "eventstore:domain": "domain_claims_match", "eventstore:permission": "permission_claims_match"}
+        for name, label in labels.items():
+            values = claims[name] if isinstance(claims[name], list) else [claims[name]]
+            for invalid in ({value: private for value in values}, [*values, {"private": private}], [*values, True], None):
+                cases.append((label, "header." + encode({**claims, name: invalid}) + ".signature", label))
+        for label, token, claim_label in cases:
+            report = {}
+            with self.subTest(label=label), patch.object(fixture, "owned_http_open",
+                    return_value=io.BytesIO(json.dumps({"access_token": token}).encode())), self.assertRaises(fixture.FixtureError) as failure:
+                fixture.security_credential_handoff(container, 8080, report, describe_command=self.security_describe_command(container))
+            self.assertEqual("claims" if claim_label else "token_shape", report["stage"])
+            if claim_label:
+                self.assertFalse(report["claim_matches"][claim_label])
+            else:
+                self.assertFalse(report["jwt_three_parts"])
+            retained = json.dumps(report) + str(failure.exception)
+            for sensitive in (private, token, username, password):
+                self.assertFalse(sensitive in retained)
+        for audience in ("hexalith-eventstore", ["hexalith-eventstore", "another-audience"]):
+            token = "header." + encode({**claims, "aud": audience}) + ".signature"
+            with self.subTest(audience_type=type(audience).__name__), patch.object(fixture, "owned_http_open",
+                    return_value=io.BytesIO(json.dumps({"access_token": token}).encode())):
+                self.assertTrue(fixture.security_credential_handoff(container, 8080,
+                    describe_command=self.security_describe_command(container))["generated_credentials_accepted"])
+
+    def test_security_runtime_retains_safe_handoff_failure_and_preserves_error_when_diagnostic_write_fails(self):
+        container, _, username, password = self.credential_handoff_fixture()
+        private_value = fixture.secrets.token_hex(24)
+        def command(arguments):
+            if arguments[:3] == ["docker", "container", "ls"]:
+                return subprocess.CompletedProcess(arguments, 0, container["Id"], "")
+            if arguments == ["docker", "inspect", container["Id"]]:
+                return subprocess.CompletedProcess(arguments, 0, json.dumps([container]), "")
+        for write_fails in (False, True):
+            instance = fixture.IsolatedFixture(command=Commands(command), log_directory=self.logs, resource_check=lambda *_: [])
+            instance.scratch = "owned"
+            body = json.dumps({"error": "invalid_grant", "error_description": "Account is not fully set up", "private": private_value}).encode()
+            error = fixture.urllib.error.HTTPError("http://private/" + private_value, 400, private_value, {}, io.BytesIO(body))
+            write_text = Path.write_text
+            def write_receipt(path, *args, **kwargs):
+                if write_fails and path.name == "security-credential-failure.json":
+                    raise OSError(private_value)
+                return write_text(path, *args, **kwargs)
+            with self.subTest(write_fails=write_fails), \
+                    patch.object(fixture, "runtime_host_identity", return_value={"dashboard": {}}), \
+                    patch.object(fixture, "verify_dashboard_ready", return_value={"ready": True}), \
+                    patch.object(fixture, "owned_http_open", side_effect=error), \
+                    patch.object(Path, "write_text", write_receipt):
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(fixture.FixtureError,
+                        "Generated security credentials or realm scope claims could not be verified"):
+                    instance.verify_security_runtime()
+            if write_fails:
+                self.assertTrue(instance.evidence_write_failed)
+            else:
+                receipt = json.loads((instance.log_directory / "security-credential-failure.json").read_text())
+                self.assertEqual("profile_setup_required", receipt["error_category"])
+                self.assertEqual(400, receipt["http_status"])
+            for path in instance.log_directory.iterdir():
+                for sensitive in (private_value, username, password):
+                    self.assertNotIn(sensitive, path.read_text())
+
+    def test_dashboard_readiness_requires_an_owned_loopback_listener(self):
+        directory = Path(self.temporary.name) / "dashboard-proc"
+        process = directory / "1"
+        process.mkdir(parents=True)
+        identity = {"pid": 1, "start": "current"}
+        private = fixture.secrets.token_hex(24)
+        for defect in (None, "changed-start", "wildcard", "missing", "unavailable", "path", "query", "fragment",
+                       "empty-query", "empty-fragment", "userinfo", "empty-userinfo", "control"):
+            with self.subTest(defect=defect):
+                (process / "stat").write_text("1 (dashboard) " + " ".join([
+                    "S", "0", *(["0"] * 17), "changed" if defect == "changed-start" else "current"]))
+                endpoint = {"wildcard": "http://0.0.0.0:18888", "path": "https://127.0.0.1:18888/" + private,
+                    "query": "https://127.0.0.1:18888/?private=" + private, "fragment": "https://127.0.0.1:18888/#" + private,
+                    "empty-query": "https://127.0.0.1:18888?", "empty-fragment": "https://127.0.0.1:18888#",
+                    "userinfo": "https://" + private + "@127.0.0.1:18888", "empty-userinfo": "https://@127.0.0.1:18888",
+                    "control": "https://127.0.0.1:18888\n"}.get(defect, "https://127.0.0.1:18888")
+                (process / "environ").write_bytes(b"" if defect == "missing" else ("ASPNETCORE_URLS=" + endpoint).encode())
+                response = MagicMock()
+                response.__enter__.return_value.status = 200
+                with patch.object(fixture, "owned_http_open", return_value=response,
+                                  side_effect=OSError("unavailable") if defect == "unavailable" else None) as request:
+                    if defect is None:
+                        self.assertEqual({"ready": True, "scheme": "https", "loopback": True, "port": 18888, "path": "/health"},
+                                         fixture.verify_dashboard_ready(identity, directory))
+                        request.assert_called_once()
+                        self.assertEqual("https://127.0.0.1:18888/health", request.call_args.args[0])
+                    else:
+                        with self.assertRaises(fixture.FixtureError):
+                            fixture.verify_dashboard_ready(identity, directory)
+                        if defect != "unavailable":
+                            request.assert_not_called()
+
+    def test_dashboard_readiness_uses_supported_direct_health_route_even_when_browser_root_challenges(self):
+        paths = []
+        def dashboard(handler):
+            paths.append(handler.path)
+            handler.send_response(200 if handler.path == "/health" else 302)
+            if handler.path != "/health":
+                handler.send_header("Location", "/login")
+            handler.end_headers()
+            handler.wfile.write(b"Healthy")
+
+        process = Path(self.temporary.name) / "healthy-dashboard-proc" / "1"
+        process.mkdir(parents=True)
+        (process / "stat").write_text("1 (dashboard) " + " ".join(["S", "0", *(["0"] * 17), "current"]))
+        with self.owned_http_server(dashboard) as origin:
+            try:
+                fixture.owned_http_open(origin, timeout=2)
+                self.fail("Browser root should challenge")
+            except fixture.urllib.error.HTTPError as response:
+                with response:
+                    self.assertEqual(302, response.code)
+            self.assertEqual(["/"], paths)
+            paths.clear()
+            for suffix in ("", "/"):
+                with self.subTest(trailing_slash=bool(suffix)):
+                    (process / "environ").write_bytes(("ASPNETCORE_URLS=" + origin + suffix).encode())
+                    result = fixture.verify_dashboard_ready({"pid": 1, "start": "current"}, process.parent)
+                    self.assertEqual({"ready": True, "scheme": "http", "loopback": True,
+                        "port": fixture.urllib.parse.urlsplit(origin).port, "path": "/health"}, result)
+            self.assertEqual(["/health", "/health"], paths)
+
+    def test_owned_dashboard_and_credentials_refuse_actual_redirects_without_leaking_response_or_credentials(self):
+        private = fixture.secrets.token_hex(24)
+        sink_hits = []
+        def sink(handler):
+            sink_hits.append(handler.command)
+            handler.send_response(200)
+            handler.end_headers()
+            handler.wfile.write(b"{}")
+
+        process = Path(self.temporary.name) / "redirect-dashboard-proc" / "1"
+        process.mkdir(parents=True)
+        (process / "stat").write_text("1 (dashboard) " + " ".join(["S", "0", *(["0"] * 17), "current"]))
+        with self.owned_http_server(sink) as destination:
+            for status in (302, 307):
+                source_hits = []
+                def redirect(handler):
+                    source_hits.append((handler.command, handler.path))
+                    handler.send_response(status, private)
+                    handler.send_header("Location", destination + "/?private=" + private)
+                    handler.end_headers()
+                    handler.wfile.write(json.dumps({"error": "invalid_grant", "error_description": private}).encode())
+
+                with self.subTest(status=status), self.owned_http_server(redirect) as origin:
+                    (process / "environ").write_bytes(("ASPNETCORE_URLS=" + origin).encode())
+                    output = io.StringIO()
+                    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output), \
+                            self.assertRaises(fixture.FixtureError) as dashboard_failure:
+                        fixture.verify_dashboard_ready({"pid": 1, "start": "current"}, process.parent)
+                    container, _, username, password = self.credential_handoff_fixture()
+                    published = fixture.urllib.parse.urlsplit(origin).port
+                    container["NetworkSettings"]["Ports"]["8080/tcp"][0]["HostPort"] = str(published)
+                    diagnostic = {}
+                    with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output), \
+                            self.assertRaises(fixture.FixtureError) as credential_failure:
+                        fixture.security_credential_handoff(container, 8080, diagnostic,
+                            describe_command=self.security_describe_command(container, published_port=published))
+                    self.assertEqual([("GET", "/health"), ("POST", "/realms/hexalith/protocol/openid-connect/token")], source_hits)
+                    self.assertEqual([], sink_hits)
+                    self.assertEqual("token_http", diagnostic["stage"])
+                    self.assertEqual("invalid_grant", diagnostic["oauth_error_code"])
+                    evidence = json.dumps(diagnostic) + str(dashboard_failure.exception) + str(credential_failure.exception) + output.getvalue()
+                    for sensitive in (private, username, password, destination):
+                        self.assertFalse(sensitive in evidence)
+
+    def test_owned_http_opener_bypasses_poisoned_proxy_environment_without_consulting_it(self):
+        owned_hits, proxy_hits = [], []
+        def owned(handler):
+            owned_hits.append(handler.command)
+            handler.send_response(200)
+            handler.end_headers()
+            handler.wfile.write(b"owned")
+
+        def proxy(handler):
+            proxy_hits.append(handler.command)
+            handler.send_response(502)
+            handler.end_headers()
+
+        with self.owned_http_server(owned) as origin, self.owned_http_server(proxy) as proxy_origin:
+            poisoned = {name: proxy_origin for name in ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "ALL_PROXY", "all_proxy")}
+            for bypass in ({}, {"NO_PROXY": "", "no_proxy": ""}):
+                with self.subTest(bypass_present=bool(bypass)), patch.dict(os.environ, {**poisoned, **bypass}, clear=True), \
+                        patch.object(fixture.urllib.request, "getproxies", side_effect=AssertionError("Proxy environment must not be consulted")):
+                    with fixture.owned_http_open(origin, timeout=2) as response:
+                        self.assertEqual(200, response.status)
+                        self.assertEqual(b"owned", response.read())
+        self.assertEqual(["GET", "GET"], owned_hits)
+        self.assertEqual([], proxy_hits)
+
+    def test_owned_http_opener_preserves_the_exact_callers_tls_context(self):
+        contexts = (fixture.ssl.create_default_context(), fixture.ssl._create_unverified_context())
+        for context in contexts:
+            with self.subTest(verify_mode=context.verify_mode), patch.object(fixture.urllib.request, "build_opener") as built:
+                fixture.owned_http_open("https://127.0.0.1:18180", timeout=2, context=context)
+            handlers = built.call_args.args
+            self.assertTrue(any(isinstance(handler, fixture.FixtureNoRedirect) for handler in handlers))
+            proxy = next(handler for handler in handlers if isinstance(handler, fixture.urllib.request.ProxyHandler))
+            self.assertEqual({}, proxy.proxies)
+            https = next(handler for handler in handlers if isinstance(handler, fixture.urllib.request.HTTPSHandler))
+            self.assertIs(context, https._context)
+            built.return_value.open.assert_called_once_with("https://127.0.0.1:18180", timeout=2)
+
+    def test_security_cleanup_requires_aspire_to_remove_the_exact_owned_container(self):
+        for remains in (False, True):
+            with self.subTest(remains=remains):
+                container_id = "f" * 64
+                def failure(arguments):
+                    if arguments[:3] == ["docker", "container", "ls"] and "id=" + container_id in arguments:
+                        return subprocess.CompletedProcess(arguments, 0, container_id if remains else "", "")
+                commands = Commands(failure)
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                    ownership_check=lambda: commands.started and not commands.stopped)
+                instance.start_infrastructure()
+                scratch = instance.scratch
+                instance.start_attempted = commands.started = True
+                instance.security_container = container_id
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(not remains, instance.cleanup())
+                self.assertTrue(commands.stopped)
+                self.assertFalse(any(args[:2] == ["docker", "rm"] and args[-1] == container_id for args, _ in commands.calls))
+                self.assertEqual(remains, Path(scratch).exists())
+                self.assertEqual(remains, bool(commands.containers))
+                if Path(scratch).exists():
+                    shutil.rmtree(scratch)
+
+    def test_security_runtime_inspection_keeps_generated_credentials_out_of_receipts(self):
+        for fails in (False, True):
+            with self.subTest(fails=fails):
+                container_id = "f" * 64
+                private_value = fixture.secrets.token_hex(24)
+                def failure(arguments):
+                    if arguments[:3] == ["docker", "container", "ls"]:
+                        return subprocess.CompletedProcess(arguments, 0, container_id, "")
+                    if arguments == ["docker", "inspect", container_id]:
+                        if fails:
+                            raise OSError(private_value)
+                        return subprocess.CompletedProcess(arguments, 0, json.dumps([{"Id": container_id,
+                            "Config": {"Labels": {"hexalith.timesheets.components": "owned"},
+                                       "Env": ["HEXALITH_EVENTSTORE_CLIENT_PASSWORD=" + private_value]},
+                            "State": {"Running": True}, "NetworkSettings": {"Ports": {
+                                "8080/tcp": [{"HostIp": "127.0.0.1", "HostPort": "18180"}]}}}]), "")
+                instance = fixture.IsolatedFixture(command=Commands(failure), log_directory=self.logs,
+                    resource_check=lambda *_: [])
+                instance.scratch = "owned"
+                with patch.object(fixture, "runtime_host_identity", return_value={"dashboard": {}}), \
+                        patch.object(fixture, "verify_dashboard_ready", return_value={"ready": True}), \
+                        patch.object(fixture, "security_credential_handoff", return_value={"generated_credentials_accepted": True}):
+                    if fails:
+                        with self.assertRaises(fixture.FixtureError) as failure:
+                            instance.verify_security_runtime()
+                        self.assertNotIn(private_value, str(failure.exception))
+                    else:
+                        instance.verify_security_runtime()
+                self.assertEqual(container_id, instance.security_container)
+                self.assertNotIn(private_value, "".join(path.read_text() for path in instance.log_directory.iterdir()))
+
+    def test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup(self):
+        for inventory in ("", "f" * 64, None):
+            with self.subTest(inventory=inventory):
+                def failure(arguments):
+                    if arguments[:3] == ["aspire", "wait", "security"]:
+                        return subprocess.CompletedProcess(arguments, 18, "", "not ready")
+                    if arguments[:3] == ["docker", "container", "ls"] and any(
+                            value.startswith("label=hexalith.timesheets.components=") for value in arguments):
+                        return subprocess.CompletedProcess(arguments, 1 if inventory is None else 0, inventory or "", "")
+                commands = Commands(failure)
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                    security_smoke=True, ownership_check=lambda: commands.started and not commands.stopped)
+                with patch.object(instance, "capture_source_identity", return_value={"head": "current"}), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(18, instance.execute())
+                self.assertIsNone(instance.security_container)
+                self.assertTrue(commands.stopped)
+                complete = json.loads((instance.log_directory / "cleanup.json").read_text())["complete"]
+                self.assertEqual(inventory == "", complete)
+                self.assertEqual(inventory != "", Path(instance.scratch).exists())
+                self.assertEqual(inventory != "", bool(commands.containers))
+                if inventory != "":
+                    self.assertFalse(any(args[:2] == ["docker", "rm"] for args, _ in commands.calls))
+                if Path(instance.scratch).exists():
+                    shutil.rmtree(instance.scratch)
+
+    def test_late_preflight_refusal_records_started_infrastructure_and_no_apphost_attempt(self):
+        inspections = 0
+        def failure(arguments):
+            nonlocal inspections
+            if arguments[:2] == ["dapr", "list"]:
+                inspections += 1
+                if inspections == 2:
+                    return subprocess.CompletedProcess(arguments, 0, '[{"appId":"foreign"}]', "")
+        commands = Commands(failure)
+        instance, status = self.run_fixture(commands)
+        self.assertEqual(1, status)
+        self.assertFalse(commands.started)
+        self.assertTrue(commands.redis_attempted)
+        receipt = json.loads((instance.log_directory / "admission.json").read_text())
+        self.assertEqual({"admitted": False, "resources_started": True, "infrastructure_started": True,
+                          "apphost_start_attempted": False,
+                          "reason": "A Dapr application is already running or inventory is unsafe; no AppHost started"}, receipt)
+        self.assertFalse(commands.containers)
+        self.assertFalse(Path(instance.scratch).exists())
+        self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_current_runtime_requires_unique_bound_nuget_dcp_and_dashboard(self):
+        directory = Path(self.temporary.name) / "runtime-proc"
+        assets = Path(self.temporary.name) / "runtime-assets.json"
+        package_folder = Path(self.temporary.name) / "restored-packages"
+        packages = {name: {"path": name.lower()} for name in (
+            "Aspire.Hosting.Orchestration.linux-x64/13.6.1", "Aspire.Dashboard.Sdk.linux-x64/13.6.1")}
+        assets.write_text(json.dumps({"libraries": packages, "packageFolders": {str(package_folder): {}}}))
+        identities = [{"pid": pid, "start": str(pid)} for pid in (1, 2, 3, 4)]
+        def process(pid, name, package, parent=1, start=None, restored=True):
+            executable = (package_folder if restored else Path(self.temporary.name) / "lookalike-packages") / package / "13.6.1/tools" / name
+            executable.parent.mkdir(parents=True, exist_ok=True)
+            executable.touch()
+            path = directory / str(pid)
+            path.mkdir(parents=True, exist_ok=True)
+            (path / "stat").write_text(f"{pid} (process) " + " ".join(["S", str(parent), *(["0"] * 17), start or str(pid)]))
+            (path / "exe").unlink(missing_ok=True)
+            (path / "exe").symlink_to(executable)
+        process(1, "Hexalith.Timesheets.AppHost", "apphost", parent=0)
+        process(2, "dcp", "aspire.hosting.orchestration.linux-x64")
+        process(4, "dcp", "aspire.hosting.orchestration.linux-x64", parent=2)
+        process(3, "Aspire.Dashboard", "aspire.dashboard.sdk.linux-x64", parent=4)
+        result = fixture.runtime_host_identity(identities, assets, directory)
+        self.assertEqual({"dcp", "dcp_controller", "dashboard", "dcp_processes", "exited_workers"}, set(result))
+        for defect in ("missing", "stale", "foreign-package", "matching-name-outside-restored-root", "unbound-controller", "duplicate"):
+            with self.subTest(defect=defect):
+                process(2, "dcp", "aspire.hosting.orchestration.linux-x64")
+                process(4, "dcp", "aspire.hosting.orchestration.linux-x64", parent=2)
+                process(3, "Aspire.Dashboard", "aspire.dashboard.sdk.linux-x64", parent=4)
+                selected = list(identities)
+                if defect == "missing":
+                    selected.pop()
+                elif defect == "stale":
+                    process(3, "Aspire.Dashboard", "aspire.dashboard.sdk.linux-x64", parent=4, start="changed")
+                elif defect == "foreign-package":
+                    process(2, "dcp", "cli-bundle")
+                elif defect == "matching-name-outside-restored-root":
+                    process(2, "dcp", "aspire.hosting.orchestration.linux-x64", restored=False)
+                elif defect == "unbound-controller":
+                    selected.pop(3)
+                else:
+                    process(5, "dcp", "aspire.hosting.orchestration.linux-x64")
+                    selected.append({"pid": 5, "start": "5"})
+                with self.assertRaises(fixture.FixtureError):
+                    fixture.runtime_host_identity(selected, assets, directory)
+
+    def dcp_runtime_graph(self, name):
+        root = Path(self.temporary.name) / name
+        directory, packages = root / "proc", root / "packages"
+        assets = root / "project.assets.json"
+        executables = {"dcp": packages / "aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp",
+                       "dashboard": packages / "aspire.dashboard.sdk.linux-x64/13.6.1/tools/Aspire.Dashboard",
+                       "gateway": root / "gateway/Hexalith.EventStore"}
+        for executable in executables.values():
+            executable.parent.mkdir(parents=True, exist_ok=True)
+            executable.write_bytes(executable.name.encode())
+        assets.write_text(json.dumps({"packageFolders": {str(packages): {}}, "libraries": {
+            name: {"path": name.lower()} for name in ("Aspire.Hosting.Orchestration.linux-x64/13.6.1",
+                                                       "Aspire.Dashboard.Sdk.linux-x64/13.6.1")}}))
+        def process(pid, parent, kind="dcp", start=None, state="S", executable=None):
+            path = directory / str(pid)
+            path.mkdir(parents=True, exist_ok=True)
+            executable = executable or executables[kind]
+            start = str(pid * 10) if start is None else start
+            (path / "stat").write_text(f"{pid} (process) " + " ".join([state, str(parent), *(["0"] * 17), start]))
+            (path / "exe").unlink(missing_ok=True)
+            (path / "exe").symlink_to(executable)
+            (path / "cmdline").write_bytes(os.fsencode(executable) + b"\0")
+            return {"pid": pid, "start": start, "state": state, "parent": parent, "executable": str(executable)}
+        # Observed NuGet DCP graph: reparented daemon, controller and eleven
+        # workers share one native binary; dashboard and gateway use controller.
+        identities = [process(82484, 343), process(82571, 82484)]
+        identities.extend(process(pid, 82571) for pid in (
+            83098, 83181, 83182, 83192, 83304, 83313, 84529, 84992, 85866, 86494, 87236))
+        identities.extend((process(83189, 82571, "dashboard"), process(83179, 82571, "gateway")))
+        return directory, assets, identities, executables, process
+
+    def test_runtime_host_accepts_one_reparented_multiprocess_dcp_tree_and_preserves_direct_gateway_proof(self):
+        directory, assets, identities, executables, _ = self.dcp_runtime_graph("observed-dcp-tree")
+        result = fixture.runtime_host_identity(identities, assets, directory)
+        self.assertEqual(82484, result["dcp"]["pid"])
+        self.assertEqual(343, result["dcp"]["parent"])
+        self.assertEqual(82571, result["dcp_controller"]["pid"])
+        self.assertEqual(83189, result["dashboard"]["pid"])
+        self.assertEqual(13, len(result["dcp_processes"]))
+        gateway = fixture.gateway_process_identity(str(executables["gateway"]), identities, directory)
+        self.assertEqual(result["dcp_controller"]["pid"], gateway["parent_identity"]["pid"])
+        self.assertEqual(0, gateway["argument_count"])
+
+    def test_runtime_host_rejects_disconnected_wrong_package_stale_and_unbound_critical_roles(self):
+        for defect in ("second-daemon", "second-tree", "cycle", "wrong-dcp-package", "wrong-dashboard-package", "different-dcp-binary",
+                       "stale-daemon", "stale-controller", "stale-dashboard", "stale-worker",
+                       "zombie-daemon", "zombie-controller", "zombie-dashboard", "controller-changes-during-validation",
+                       "missing-daemon", "missing-controller", "missing-dashboard", "unbound-daemon", "unbound-controller", "unbound-dashboard"):
+            with self.subTest(defect=defect):
+                directory, assets, identities, executables, process = self.dcp_runtime_graph(defect)
+                if defect in ("second-daemon", "second-tree"):
+                    identities.append(process(90001, 343))
+                    if defect == "second-tree":
+                        identities.append(process(90002, 90001))
+                elif defect == "cycle":
+                    process(87236, 87236)
+                elif defect == "different-dcp-binary":
+                    executable = executables["dcp"].parent / "another/dcp"
+                    executable.parent.mkdir()
+                    executable.touch()
+                    process(87236, 82571, executable=executable)
+                elif defect.startswith("wrong-"):
+                    kind = "dcp" if defect == "wrong-dcp-package" else "dashboard"
+                    executable = directory.parent / "lookalike" / executables[kind].relative_to(directory.parent / "packages")
+                    executable.parent.mkdir(parents=True)
+                    executable.touch()
+                    process(82484 if kind == "dcp" else 83189, 343 if kind == "dcp" else 82571,
+                            kind, executable=executable)
+                elif defect.startswith(("stale-", "missing-", "unbound-", "zombie-")):
+                    role = defect.split("-", 1)[1]
+                    pid = {"daemon": 82484, "controller": 82571, "dashboard": 83189, "worker": 87236}[role]
+                    if defect.startswith("missing-"):
+                        shutil.rmtree(directory / str(pid))
+                    elif defect.startswith("unbound-"):
+                        identities = [row for row in identities if row["pid"] != pid]
+                    else:
+                        old = next(row for row in identities if row["pid"] == pid)
+                        process(pid, old["parent"], "dashboard" if role == "dashboard" else "dcp",
+                                start="changed" if defect.startswith("stale-") else old["start"],
+                                state="Z" if defect.startswith("zombie-") else "S")
+                read_text, reads = Path.read_text, 0
+                def read_snapshot(path, *args, **kwargs):
+                    nonlocal reads
+                    contents = read_text(path, *args, **kwargs)
+                    if defect == "controller-changes-during-validation" and path == directory / "82571/stat":
+                        reads += 1
+                        if reads > 1:
+                            return contents.rsplit(" ", 1)[0] + " changed"
+                    return contents
+                with patch.object(Path, "read_text", read_snapshot), self.assertRaises(fixture.FixtureError):
+                    fixture.runtime_host_identity(identities, assets, directory)
+
+    def test_runtime_host_allows_only_proven_exited_noncritical_dcp_workers(self):
+        for departure in ("gone", "zombie", "exit-during-inspection", "unknown-gone"):
+            with self.subTest(departure=departure):
+                directory, assets, identities, _, process = self.dcp_runtime_graph(departure)
+                worker = directory / "87236"
+                if departure in ("gone", "unknown-gone"):
+                    shutil.rmtree(worker)
+                    if departure == "unknown-gone":
+                        identities = [{key: row[key] for key in ("pid", "start", "state")} if row["pid"] == 87236
+                                      else row for row in identities]
+                elif departure == "zombie":
+                    process(87236, 82571, state="Z")
+                resolve = Path.resolve
+                def resolve_with_exit(path, *args, **kwargs):
+                    if departure == "exit-during-inspection" and path == worker / "exe":
+                        shutil.rmtree(worker)
+                    return resolve(path, *args, **kwargs)
+                with patch.object(Path, "resolve", resolve_with_exit):
+                    if departure == "unknown-gone":
+                        with self.assertRaises(fixture.FixtureError):
+                            fixture.runtime_host_identity(identities, assets, directory)
+                    else:
+                        result = fixture.runtime_host_identity(identities, assets, directory)
+                        self.assertEqual([87236], [row["pid"] for row in result["exited_workers"]])
+                        self.assertEqual(12, len(result["dcp_processes"]))
+
+    def test_runtime_host_failure_retains_allowlisted_bound_and_unbound_candidate_diagnostics(self):
+        directory = Path(self.temporary.name) / "diagnostic-proc"
+        package_folder = Path(self.temporary.name) / "diagnostic-packages"
+        assets = Path(self.temporary.name) / "diagnostic-assets.json"
+        packages = {name: {"path": name.lower()} for name in (
+            "Aspire.Hosting.Orchestration.linux-x64/13.6.1", "Aspire.Dashboard.Sdk.linux-x64/13.6.1")}
+        assets.write_text(json.dumps({"libraries": packages, "packageFolders": {str(package_folder): {}}}))
+        private_value, marker = fixture.secrets.token_hex(24), fixture.secrets.token_hex(24)
+        def process(pid, name, package, parent, marked):
+            executable = package_folder / package / "13.6.1/tools" / name
+            executable.parent.mkdir(parents=True, exist_ok=True)
+            executable.touch()
+            path = directory / str(pid)
+            path.mkdir(parents=True)
+            (path / "stat").write_text(f"{pid} (process) " + " ".join(["S", str(parent), *(["0"] * 17), str(pid * 10)]))
+            (path / "exe").symlink_to(executable)
+            (path / "cmdline").write_bytes(("--password=" + private_value).encode())
+            environment = "PASSWORD=" + private_value + "\0"
+            if marked:
+                environment += "TIMESHEETS_LIVE_DAPR_COMPONENTS=" + marker + "\0"
+            (path / "environ").write_bytes(environment.encode())
+        process(1, "Hexalith.Timesheets.AppHost", "apphost", 0, True)
+        process(2, "dcp", "aspire.hosting.orchestration.linux-x64", 1, False)
+        process(3, "Aspire.Dashboard", "aspire.dashboard.sdk.linux-x64", 2, True)
+        bound = [{"pid": 1, "start": "10", "password": private_value, "cmdline": private_value}]
+        # Diagnostics must not make the unbound candidates acceptable.
+        with self.assertRaises(fixture.FixtureError):
+            fixture.runtime_host_identity(bound, assets, directory)
+        read_bytes = Path.read_bytes
+        def checked_read(path):
+            self.assertNotEqual("cmdline", path.name)
+            return read_bytes(path)
+        with patch.object(Path, "read_bytes", checked_read):
+            report = fixture.runtime_host_diagnostics(bound, assets, marker, directory)
+        encoded = json.dumps(report)
+        self.assertNotIn(private_value, encoded)
+        self.assertNotIn(marker, encoded)
+        self.assertNotIn("password", encoded.lower())
+        self.assertNotIn("cmdline", encoded)
+        self.assertEqual({"dcp", "dashboard"}, set(report["expected_package_directories"]))
+        self.assertEqual([1], [row["pid"] for row in report["observed_processes"]])
+        candidates = {row["pid"]: row for row in report["candidate_processes"]}
+        self.assertEqual({2, 3}, set(candidates))
+        self.assertFalse(candidates[2]["captured"])
+        self.assertFalse(candidates[2]["marker_present"])
+        self.assertTrue(candidates[3]["marker_present"])
+        self.assertEqual([2, 1], [row["pid"] for row in candidates[3]["ancestors"]])
+        for row in report["observed_processes"] + report["candidate_processes"]:
+            self.assertTrue({"pid", "start", "state", "executable", "parent"} <= set(row))
+        instance = fixture.IsolatedFixture(command=Commands(), log_directory=self.logs, resource_check=lambda *_: bound)
+        instance.scratch = marker
+        diagnostic = fixture.runtime_host_diagnostics
+        for evidence_fails in (False, True):
+            with self.subTest(evidence_fails=evidence_fails), \
+                    patch.object(fixture, "runtime_host_identity", side_effect=fixture.FixtureError("ownership refused")), \
+                    patch.object(fixture, "runtime_host_diagnostics", side_effect=lambda identities, _assets, binding:
+                                 diagnostic(identities, assets, binding, directory)), \
+                    patch.object(Path, "write_text", side_effect=OSError(private_value)) if evidence_fails else contextlib.nullcontext():
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(fixture.FixtureError, "ownership refused"):
+                    instance.verify_security_runtime()
+            if not evidence_fails:
+                retained = json.loads((instance.log_directory / "runtime-host-failure.json").read_text())
+                self.assertEqual(report, retained)
+            else:
+                self.assertTrue(instance.evidence_write_failed)
+        self.assertNotIn(private_value, "".join(path.read_text() for path in instance.log_directory.iterdir()))
+
+        with patch.object(fixture, "runtime_host_identity", side_effect=fixture.FixtureError("ownership refused")), \
+                patch.object(fixture, "runtime_host_diagnostics", side_effect=OSError(private_value)), \
+                self.assertRaisesRegex(fixture.FixtureError, "ownership refused"):
+            instance.verify_security_runtime()
+        self.assertNotIn(private_value, (instance.log_directory / "runtime-host-failure.json").read_text())
+
     def test_gateway_resolution_uses_the_pinned_workspace_query_and_discards_inherited_aliases(self):
         inherited = {key: "inherited unsafe value" for key in (
             fixture.GATEWAY_EXECUTABLE_SETTING, fixture.GATEWAY_DIRECTORY_SETTING,
@@ -507,6 +1724,100 @@ class IsolatedFixtureTests(unittest.TestCase):
         self.assertEqual(str(executable), selected["executable"])
         self.assertEqual(str(directory), selected["working_directory"])
         self.assertEqual("", selected["arguments"])
+
+    def test_source_capture_hashes_the_dotted_native_gateway_and_its_exact_companion_assembly(self):
+        workspace = Path(self.temporary.name) / "source capture workspace"
+        apphost = workspace / "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj"
+        gateway_project = workspace / "references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj"
+        gateway = gateway_project.parent / "bin/Debug/net10.0/Hexalith.EventStore"
+        companion = gateway.parent / "Hexalith.EventStore.dll"
+        decoy = gateway.parent / "Hexalith.dll"
+        module = workspace / "src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets"
+        integration = workspace / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+        module_assembly = module.with_name(module.name + ".dll")
+        integration_assembly = integration.with_name(integration.name + ".dll")
+        files = {
+            apphost: b"project", apphost.parent / "Program.cs": b"program",
+            apphost.parent / "SecurityConstructionProbe.cs": b"construction probe",
+            apphost.parent / "KeycloakRealms/hexalith-realm.json": b"realm",
+            apphost.parent / "obj/project.assets.json": b"restored assets",
+            apphost.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll": b"apphost assembly",
+            gateway: b"native gateway", companion: b"gateway assembly", decoy: b"wrong assembly",
+            module: b"native module", module_assembly: b"module assembly",
+            integration: b"native test", integration_assembly: b"test assembly",
+            module.with_suffix(".dll"): b"wrong module assembly",
+            integration.with_suffix(".dll"): b"wrong test assembly",
+        }
+        for path, contents in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(contents)
+        heads = {str(workspace): "a" * 40, str(gateway_project.parents[2]): "b" * 40}
+        untracked = {root: [] for root in heads}
+        def git(arguments):
+            if arguments[:2] == ["git", "-C"]:
+                output = (heads[arguments[2]] if arguments[3:] == ["rev-parse", "HEAD"] else
+                    "\0".join(untracked[arguments[2]]) if arguments[3:] == ["ls-files", "--others", "--exclude-standard", "-z"]
+                    else "local source patch")
+                return subprocess.CompletedProcess(arguments, 0, output, "")
+        commands = Commands(git)
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+        instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = str(gateway)
+        with patch.object(fixture, "ROOT", workspace), patch.object(fixture, "APPHOST", apphost), \
+                patch.object(fixture, "GATEWAY_PROJECT", gateway_project):
+            captured = instance.capture_source_identity()
+            gateway_key, companion_key = str(gateway.relative_to(workspace)), str(companion.relative_to(workspace))
+            self.assertEqual(fixture.hashlib.sha256(files[gateway]).hexdigest(), captured["files"][gateway_key])
+            self.assertEqual(fixture.hashlib.sha256(files[companion]).hexdigest(), captured["files"][companion_key])
+            self.assertNotIn(str(decoy.relative_to(workspace)), captured["files"])
+            for asset in (module, module_assembly, integration, integration_assembly):
+                self.assertEqual(fixture.hashlib.sha256(files[asset]).hexdigest(),
+                                 captured["files"][str(asset.relative_to(workspace))])
+            for decoy_asset in (module.with_suffix(".dll"), integration.with_suffix(".dll")):
+                self.assertNotIn(str(decoy_asset.relative_to(workspace)), captured["files"])
+            self.assertEqual(heads[str(workspace)], captured["timesheets"]["head"])
+            self.assertEqual(heads[str(gateway_project.parents[2])], captured["eventstore"]["head"])
+            self.assertEqual(fixture.hashlib.sha256(b"local source patch").hexdigest(), captured["eventstore"]["diff_sha256"])
+            for asset in (companion, module, module_assembly, integration, integration_assembly):
+                with self.subTest(asset=asset):
+                    original = asset.read_bytes()
+                    asset.write_bytes(original + b"changed")
+                    changed = instance.capture_source_identity()
+                    key = str(asset.relative_to(workspace))
+                    self.assertNotEqual(captured["files"][key], changed["files"][key])
+                    self.assertEqual({name: value for name, value in captured["files"].items() if name != key},
+                                     {name: value for name, value in changed["files"].items() if name != key})
+                    asset.unlink()
+                    with self.assertRaises(FileNotFoundError):
+                        instance.capture_source_identity()
+                    asset.write_bytes(original)
+            private = fixture.secrets.token_hex(24).encode()
+            for name, root in (("timesheets", workspace), ("eventstore", gateway_project.parents[2])):
+                for relative in (Path("src/Untracked.cs"), Path("tests/Untracked.cs"), Path("scripts/untracked.py"), Path("Untracked.targets")):
+                    with self.subTest(repository=name, relative=relative):
+                        path = root / relative
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        path.write_bytes(private)
+                        untracked[str(root)].append(str(relative))
+                        before = instance.capture_source_identity()
+                        path.write_bytes(private + b"changed")
+                        after = instance.capture_source_identity()
+                        self.assertNotEqual(before[name]["untracked_build_inputs"][str(relative)],
+                                            after[name]["untracked_build_inputs"][str(relative)])
+                        self.assertEqual(before[name]["diff_sha256"], after[name]["diff_sha256"])
+                        self.assertEqual(before["files"], after["files"])
+                        self.assertNotIn(private.decode(), json.dumps(after))
+                for relative in (Path("tests/evidence/result.json"), Path("tests/TestResults/output.xml"),
+                                 Path("src/obj/generated.cs"), Path("_bmad-output/evidence/result.json")):
+                    path = root / relative
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(private)
+                    untracked[str(root)].append(str(relative))
+                    before = instance.capture_source_identity()
+                    path.write_bytes(private + b"changed")
+                    self.assertEqual(before, instance.capture_source_identity())
+        self.assertFalse(commands.started)
+        self.assertFalse(commands.redis_attempted)
+        self.assertFalse(instance.start_attempted)
 
     def test_unsupported_gateway_metadata_refuses_before_creating_infrastructure(self):
         non_executable = Path(self.temporary.name) / "non-executable"
@@ -647,7 +1958,8 @@ class IsolatedFixtureTests(unittest.TestCase):
                     with patch.object(instance, "_journey_command", commands), \
                             patch.object(instance, "capture_gateway_process", side_effect=identities) as capture, \
                             patch.object(fixture, "read_only_shared_snapshot", return_value=self.shared_snapshot()), \
-                            patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), \
+                            patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), patch.object(instance, "capture_runtime_readiness"), \
+                            patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "bootstrap_fixture_protocol"), \
                             contextlib.redirect_stdout(io.StringIO()):
                         self.assertEqual(status or int(proof_failure), instance.execute())
                     self.assertEqual([("before",), ("after",)], [call.args for call in capture.call_args_list])
@@ -704,7 +2016,8 @@ class IsolatedFixtureTests(unittest.TestCase):
                 with patch.object(instance, "_journey_command", commands), \
                         patch.object(instance, "capture_gateway_process", side_effect=identities), \
                         patch.object(fixture, "read_only_shared_snapshot", return_value=self.shared_snapshot()), \
-                        patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), \
+                        patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), patch.object(instance, "capture_runtime_readiness"), \
+                            patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "bootstrap_fixture_protocol"), \
                         contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(1 if before_failure else original_status or 130, instance.execute())
                 self.assertEqual(not before_failure, any("-class" in args for args, _ in commands.calls))
@@ -732,9 +2045,9 @@ class IsolatedFixtureTests(unittest.TestCase):
             self.assertEqual(0, guards.run_guards())
         probes = {arguments[1].split("=", 1)[1]: (arguments, kwargs["env"])
                   for arguments, kwargs in commands.calls if arguments[0] == str(executable)}
-        self.assertEqual(63, len(probes))
+        self.assertEqual(67, len(probes))
         for name, (arguments, environment) in probes.items():
-            model = name.startswith("model-") or name == "full-construction"
+            model = name.startswith("model-") or name in ("full-construction", "security-construction")
             self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"], name)
             self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
             if name.startswith("model-"):
@@ -778,13 +2091,13 @@ class IsolatedFixtureTests(unittest.TestCase):
                 patch.object(guards, "read_only_shared_snapshot", side_effect=AssertionError("Unexpected storage read")), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, guards.run_guards(configuration_only=True))
-        self.assertEqual(63, len(commands.calls))
+        self.assertEqual(67, len(commands.calls))
         for arguments, kwargs in commands.calls:
             self.assertEqual(str(executable), arguments[0])
             self.assertEqual("1", kwargs["env"]["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"])
             self.assertTrue(all(isinstance(value, str) for value in kwargs["env"].values()))
             probe = arguments[1].split("=", 1)[1]
-            model = probe.startswith("model-") or probe == "full-construction"
+            model = probe.startswith("model-") or probe in ("full-construction", "security-construction")
             self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
             self.assertFalse(set(polluted) & set(kwargs["env"]))
         self.assertIsNone(instance.scratch)
@@ -816,6 +2129,32 @@ class IsolatedFixtureTests(unittest.TestCase):
                 self.assertFalse(commands.started)
                 self.assertFalse(commands.containers)
 
+    def test_compiled_guard_requires_actual_gateway_readiness_result_in_both_construction_models(self):
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        original_is_file = Path.is_file
+        for probe in ("full-construction", "security-construction"):
+            for field, value in (("endpoint", "https"), ("path", "/alive"), ("port", 8080),
+                                 ("unavailableRejected", False), ("readyAccepted", False),
+                                 ("healthCheckAttached", False), ("moduleWait", "WaitForCompletion"), ("gatewayReferenced", False)):
+                with self.subTest(probe=probe, field=field):
+                    commands = self.guard_commands()
+                    original = commands.failure
+                    def mutation(arguments):
+                        result = original(arguments)
+                        if "--guard-probe=" + probe in arguments:
+                            expected = guards.expected_gateway_readiness(probe == "security-construction")
+                            replacement = not expected[field] if isinstance(expected[field], bool) else value
+                            result.stdout = result.stdout.replace(json.dumps(expected), json.dumps({**expected, field: replacement}))
+                        return result
+                    commands.failure = mutation
+                    instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
+                    with patch.object(guards, "IsolatedFixture", return_value=instance), \
+                            patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
+                            contextlib.redirect_stdout(io.StringIO()):
+                        self.assertEqual(1, guards.run_guards(configuration_only=True))
+                    self.assertFalse(commands.started)
+                    self.assertFalse(commands.containers)
+
     def test_release_configuration_guards_select_package_assets_and_require_adapter_refusal(self):
         commands = self.guard_commands(package=True)
         instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
@@ -829,11 +2168,11 @@ class IsolatedFixtureTests(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, guards.run_guards(configuration_only=True, configuration="Release"))
         self.assertEqual(caller, dict(os.environ))
-        self.assertEqual(63, len(commands.calls))
+        self.assertEqual(67, len(commands.calls))
         for arguments, kwargs in commands.calls:
             self.assertEqual(str(executable), arguments[0])
             probe = arguments[1].split("=", 1)[1]
-            model = probe.startswith("model-") or probe == "full-construction"
+            model = probe.startswith("model-") or probe in ("full-construction", "security-construction")
             self.assertIn("--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=" + ("0" if model else "1"), arguments)
             self.assertEqual("Release", kwargs["env"]["Configuration"])
             self.assertEqual("false", kwargs["env"]["UseHexalithProjectReferences"])
@@ -1060,6 +2399,408 @@ class IsolatedFixtureTests(unittest.TestCase):
                 patch.object(Path, "read_bytes", return_value=b"daprd\0--app-id\0eventstore\0--resources-path\0/missing\0"):
             with self.assertRaises(fixture.FixtureError):
                 fixture.verify_runtime_components("127.0.0.1:49152", directory, "127.0.0.1:49153", "127.0.0.1:49154")
+
+    def test_dapr_cardinality_failure_retains_only_safe_live_process_identity_and_target_predicates(self):
+        directory = Path(self.temporary.name) / "components"
+        fixture.write_components(directory, "127.0.0.1:49152")
+        processes = Path(self.temporary.name) / "proc"
+        marker = fixture.secrets.token_hex(24)
+        placement, scheduler = "127.0.0.1:49153", "127.0.0.1:49154"
+        for pid, app, state, marked in ((123, "eventstore", "S", True), (456, "eventstore", "S", False),
+                                        (789, marker, "S", False), (987, "eventstore", "Z", True)):
+            process = processes / str(pid)
+            process.mkdir(parents=True)
+            (process / "stat").write_text(f"{pid} (daprd) " + " ".join([state, "1", *(["0"] * 17), str(pid * 10)]))
+            arguments = ["daprd", "--app-id", app, "--app-port", "8082", "--app-channel-address", "127.0.0.1",
+                         "--placement-host-address", placement, "--scheduler-host-address", scheduler, "--token", marker]
+            (process / "cmdline").write_bytes("\0".join(arguments).encode())
+            (process / "environ").write_bytes(("PASSWORD=" + marker + "\0" + (
+                "TIMESHEETS_LIVE_DAPR_COMPONENTS=" + str(directory) + "\0" if marked else "")).encode())
+        observation = fixture.runtime_dapr_identity_observation(["123", "456", "789", "987"], directory,
+            placement, scheduler, processes)
+        self.assertEqual({"eventstore": 2, "timesheets": 0, "other": 1}, observation["counts"])
+        self.assertEqual([123, 456, 789], [row["pid"] for row in observation["processes"]])
+        self.assertTrue(observation["processes"][0]["fixture_marker_matches"])
+        self.assertFalse(observation["processes"][1]["fixture_marker_matches"])
+        for private in (marker, str(directory), placement, scheduler, "--token", "PASSWORD"):
+            self.assertNotIn(private, json.dumps(observation))
+        for pids in ("", "123\n456\n"):
+            with self.subTest(pids=pids), patch.object(fixture.subprocess, "check_output", return_value=pids):
+                retained = []
+                with self.assertRaisesRegex(fixture.FixtureError, "identity is not unique"):
+                    fixture.verify_runtime_components("127.0.0.1:49152", directory, placement, scheduler,
+                        observation=retained.append, process_directory=processes)
+                self.assertEqual(1, len(retained))
+                self.assertEqual(2 if pids else 0, retained[0]["counts"]["eventstore"])
+        with patch.object(fixture.subprocess, "check_output", side_effect=subprocess.CalledProcessError(1, "pgrep")):
+            retained = []
+            with self.assertRaisesRegex(fixture.FixtureError, "identity is not unique"):
+                fixture.verify_runtime_components("127.0.0.1:49152", directory, placement, scheduler, retained.append)
+            self.assertEqual([], retained[0]["processes"])
+
+    def test_gateway_readiness_observes_real_process_environment_and_only_fixed_health_and_actor_fields(self):
+        directory = Path(self.temporary.name) / "proc"
+        process = directory / "123"
+        process.mkdir(parents=True)
+        marker, secret = fixture.secrets.token_hex(24), fixture.secrets.token_hex(24)
+        (process / "stat").write_text("123 (gateway) " + " ".join(["S", "1", *(["0"] * 17), "77"]))
+        (process / "environ").write_bytes((f"TIMESHEETS_LIVE_DAPR_COMPONENTS={marker}\0DAPR_HTTP_PORT=3501\0"
+            f"DAPR_HTTP_ENDPOINT=http://localhost:3501\0PASSWORD={secret}\0").encode())
+        gateway = {"pid": 123, "start": "77"}
+        # Aspire's injected endpoint is a loopback proxy; daprd's target port
+        # deliberately differs. Numeric equality to that target is incorrect.
+        sidecar = {"arguments": ["daprd", "--dapr-http-port", "18389", "--token", secret]}
+        health = {"status": "Unhealthy", "description": secret, "results": {
+            "dapr-actor-placement": {"status": "Unhealthy", "description": secret}, secret: {"status": secret}}}
+        metadata = {"id": "eventstore", "actorRuntime": {"hostReady": False, "placement": "placement: disconnected", "runtimeStatus": "INITIALIZING"},
+                    "actors": [{"type": "AggregateActor", "count": 0}, {"type": secret}], "secret": secret}
+        calls = []
+        def response(url, **kwargs):
+            calls.append(url)
+            return io.BytesIO(json.dumps(health if url.endswith("/ready") else metadata).encode())
+        with patch.object(fixture, "owned_http_open", response), \
+                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Default opener is forbidden")):
+            result = fixture.gateway_readiness_observation(gateway, sidecar, marker, directory)
+        self.assertEqual(["http://127.0.0.1:8082/ready", "http://127.0.0.1:3501/v1.0/metadata"], calls)
+        self.assertTrue(result["http_endpoint_matches_port"])
+        self.assertTrue(result["sidecar_identity_matches"])
+        self.assertEqual("Unhealthy", result["gateway_ready"])
+        self.assertEqual("NotReady", result["actor_host_ready"])
+        self.assertEqual("Disconnected", result["actor_placement"])
+        self.assertEqual("Initializing", result["actor_runtime"])
+        self.assertTrue(result["aggregate_actor_registered"])
+        self.assertNotIn(secret, json.dumps(result))
+        metadata["id"] = "timesheets"
+        with patch.object(fixture, "owned_http_open", response):
+            wrong = fixture.gateway_readiness_observation(gateway, sidecar, marker, directory)
+        self.assertEqual("WrongApplication", wrong["sidecar_metadata"])
+        self.assertFalse(wrong["sidecar_identity_matches"])
+        self.assertFalse(wrong["aggregate_actor_registered"])
+        metadata["id"] = "eventstore"
+        self.assertNotIn(marker, json.dumps(result))
+        health["status"] = "Healthy"
+        metadata["actorRuntime"].update(hostReady=True, placement="placement: connected", runtimeStatus="RUNNING")
+        with patch.object(fixture, "owned_http_open", response):
+            result = fixture.gateway_readiness_observation(gateway, sidecar, marker, directory)
+        self.assertEqual(("Healthy", "Ready", "Connected", "Running"), tuple(result[name] for name in (
+            "gateway_ready", "actor_host_ready", "actor_placement", "actor_runtime")))
+        for field in ("placement", "runtimeStatus"):
+            metadata["actorRuntime"][field] = secret
+        with patch.object(fixture, "owned_http_open", response):
+            result = fixture.gateway_readiness_observation(gateway, sidecar, marker, directory)
+        self.assertEqual("Unknown", result["actor_placement"])
+        self.assertEqual("Unknown", result["actor_runtime"])
+        self.assertNotIn(secret, json.dumps(result))
+        for status, body, expected in ((200, b"Healthy", "Healthy"), (200, b"Degraded", "Degraded"),
+                                        (503, b"Unhealthy", "Unhealthy"), (200, b'"Healthy"', "Invalid"),
+                                        (200, ("Healthy " + secret).encode(), "Invalid"),
+                                        (200, json.dumps({"status": secret}).encode(), "Invalid")):
+            def raw_response(url, **_kwargs):
+                if url.endswith("/ready"):
+                    if status == 503:
+                        raise fixture.urllib.error.HTTPError(url, status, secret, {}, io.BytesIO(body))
+                    response = io.BytesIO(body)
+                    response.status = status
+                    return response
+                return io.BytesIO(json.dumps(metadata).encode())
+            with self.subTest(status=status, expected=expected), patch.object(fixture, "owned_http_open", raw_response):
+                result = fixture.gateway_readiness_observation(gateway, sidecar, marker, directory)
+            self.assertEqual(expected, result["gateway_ready"])
+            self.assertEqual(status, result["gateway_http_status"])
+            self.assertNotIn(secret, json.dumps(result))
+
+    def test_gateway_readiness_does_not_contact_unsafe_or_mismatched_sidecar_and_discards_raw_errors(self):
+        directory = Path(self.temporary.name) / "proc"
+        process = directory / "123"
+        process.mkdir(parents=True)
+        marker = fixture.secrets.token_hex(24)
+        (process / "stat").write_text("123 (gateway) " + " ".join(["S", "1", *(["0"] * 17), "77"]))
+        gateway = {"pid": 123, "start": "77"}
+        sidecar = {"arguments": ["daprd", "--dapr-http-port", "3501"]}
+        for endpoint, port in (("http://example.invalid:3501", "3501"), ("http://localhost:3502", "3501"),
+                               ("http://localhost:3501", "3502"), ("http://localhost:3501?token=" + marker, "3501")):
+            (process / "environ").write_bytes((f"TIMESHEETS_LIVE_DAPR_COMPONENTS={marker}\0DAPR_HTTP_PORT={port}\0"
+                f"DAPR_HTTP_ENDPOINT={endpoint}\0").encode())
+            with self.subTest(endpoint=endpoint), patch.object(fixture, "owned_http_open", side_effect=OSError(marker)) as opened:
+                result = fixture.gateway_readiness_observation(gateway, sidecar, marker, directory)
+                self.assertEqual(1, opened.call_count)
+                self.assertEqual("http://127.0.0.1:8082/ready", opened.call_args.args[0])
+            self.assertEqual("Unavailable", result["sidecar_metadata"])
+            self.assertNotIn(marker, json.dumps(result))
+        with patch.object(fixture, "owned_http_open") as opened:
+            result = fixture.gateway_readiness_observation({"pid": 123, "start": "stale"}, sidecar, marker, directory)
+            opened.assert_not_called()
+        self.assertFalse(result["identity_matches"])
+
+    def test_gateway_readiness_refuses_actual_redirects_and_proxy_environment_on_both_owned_origins(self):
+        directory = Path(self.temporary.name) / "direct-readiness-proc"
+        process = directory / "123"
+        process.mkdir(parents=True)
+        marker, private = fixture.secrets.token_hex(24), fixture.secrets.token_hex(24)
+        (process / "stat").write_text("123 (gateway) " + " ".join(["S", "1", *(["0"] * 17), "77"]))
+        (process / "environ").write_bytes((f"TIMESHEETS_LIVE_DAPR_COMPONENTS={marker}\0DAPR_HTTP_PORT=3501\0"
+            "DAPR_HTTP_ENDPOINT=http://localhost:3501\0").encode())
+        connection = fixture.urllib.request.http.client.HTTPConnection
+        for status in (302, 307):
+            hosts = []
+            def redirect(handler):
+                handler.send_response(status, private)
+                handler.send_header("Location", "http://example.invalid/" + private)
+                handler.end_headers()
+                handler.wfile.write(private.encode())
+
+            with self.subTest(status=status), self.owned_http_server(redirect) as origin:
+                class DirectConnection(connection):
+                    def __init__(self, host, *args, **kwargs):
+                        # Substitute only the socket target so the test binds no
+                        # fixture ports, while urllib handles real redirects.
+                        hosts.append(host)
+                        super().__init__(fixture.urllib.parse.urlsplit(origin).netloc, *args, **kwargs)
+                poisoned = {"HTTP_PROXY": "http://proxy.invalid:19999", "http_proxy": "http://proxy.invalid:19999"}
+                with patch.dict(os.environ, poisoned, clear=True), \
+                        patch.object(fixture.urllib.request.http.client, "HTTPConnection", DirectConnection), \
+                        patch.object(fixture.urllib.request, "getproxies", side_effect=AssertionError("Proxy lookup is forbidden")):
+                    result = fixture.gateway_readiness_observation({"pid": 123, "start": "77"}, {}, marker, directory)
+                self.assertEqual(["127.0.0.1:8082", "127.0.0.1:3501"], hosts)
+                self.assertEqual(status, result["gateway_http_status"])
+                self.assertEqual("Invalid", result["gateway_ready"])
+                self.assertEqual("Unavailable", result["sidecar_metadata"])
+                self.assertFalse(private in json.dumps(result))
+
+    def test_cardinality_refusal_retains_gateway_readiness_and_diagnostic_write_failure_keeps_original_refusal(self):
+        instance = fixture.IsolatedFixture(command=Commands(), log_directory=self.logs, resource_check=lambda *_: [])
+        instance.scratch = fixture.secrets.token_hex(24)
+        instance.environment.update({"TIMESHEETS_LIVE_DAPR_REDIS_HOST": "127.0.0.1:49152",
+                                     fixture.GATEWAY_EXECUTABLE_SETTING: "/unused/gateway"})
+        diagnostic = {"counts": {"eventstore": 0, "timesheets": 0, "other": 0}, "processes": [], "scan_complete": True}
+        readiness = {"pid": 123, "start": "77", "gateway_ready": "Unhealthy", "sidecar_metadata": "Unavailable"}
+        def refusal(*_args, observation, **_kwargs):
+            observation(diagnostic)
+            raise fixture.FixtureError("Fixture Dapr runtime identity is not unique")
+        for write_fails in (False, True):
+            with self.subTest(write_fails=write_fails), \
+                    patch.object(fixture, "verify_runtime_components", side_effect=refusal), \
+                    patch.object(fixture, "gateway_process_identity", return_value={"pid": 123, "start": "77"}), \
+                    patch.object(fixture, "gateway_readiness_observation", return_value=readiness) as observe, \
+                    patch.object(Path, "write_text", side_effect=OSError("private")) if write_fails else contextlib.nullcontext(), \
+                    contextlib.redirect_stdout(io.StringIO()), \
+                    self.assertRaisesRegex(fixture.FixtureError, "identity is not unique"):
+                instance.capture_runtime_readiness()
+            self.assertEqual({"arguments": []}, observe.call_args.args[1])
+            if not write_fails:
+                self.assertEqual(diagnostic, json.loads((instance.log_directory / "runtime-dapr-identity-failure.json").read_text()))
+                self.assertEqual(readiness, json.loads((instance.log_directory / "runtime-readiness.json").read_text()))
+            else:
+                self.assertTrue(instance.evidence_write_failed)
+
+    def bootstrap_instance(self):
+        commands = Commands(lambda args: subprocess.CompletedProcess(args, 0, "0\n", "")
+                            if args[:2] == ["docker", "exec"] and args[-1] == "DBSIZE" else None)
+        instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs, port_check=lambda: None)
+        with contextlib.redirect_stdout(io.StringIO()):
+            instance.start_infrastructure()
+            instance.preflight()
+        self.addCleanup(lambda: shutil.rmtree(instance.scratch) if Path(instance.scratch).exists() else None)
+        source = {"head": "a" * 40, "diff_sha256": "b" * 64, "native_sha256": "c" * 64, "assembly_sha256": "d" * 64}
+        patched = patch.object(instance, "fixture_cutover_source", return_value=source)
+        patched.start()
+        self.addCleanup(patched.stop)
+        return instance, commands, source
+
+    def test_fixture_backup_durably_certifies_all_empty_databases_and_exact_owned_identity_before_start(self):
+        instance, commands, source = self.bootstrap_instance()
+        with patch.object(fixture.os, "fsync", wraps=fixture.os.fsync) as flushed:
+            instance.prepare_fixture_bootstrap()
+        backup = instance.fixture_backup
+        receipt = json.loads(backup["path"].read_text())
+        self.assertEqual({str(index): 0 for index in range(16)}, receipt["databases"])
+        self.assertEqual(instance.container_id, receipt["container_id"])
+        self.assertEqual(commands.image, receipt["image"])
+        self.assertEqual(source, receipt["source"])
+        self.assertEqual("fresh-private-local-fixture-only", receipt["scope"])
+        self.assertTrue(receipt["downgrade_prohibited"])
+        self.assertEqual(2, flushed.call_count)
+        self.assertEqual(backup["sha256"], fixture.hashlib.sha256(backup["path"].read_bytes()).hexdigest())
+        self.assertFalse(commands.started)
+        self.assertEqual(16, sum(args[-1] == "DBSIZE" for args, _ in commands.calls))
+
+    def test_fixture_backup_refuses_nonempty_unadmitted_or_replaced_private_store(self):
+        for defect in ("nonempty", "unadmitted", "replaced", "after-start"):
+            instance, commands, _ = self.bootstrap_instance()
+            if defect == "nonempty":
+                commands.failure = lambda args: subprocess.CompletedProcess(args, 0, "1\n", "") if args[-1] == "DBSIZE" else None
+            elif defect == "unadmitted":
+                instance.admission_established = False
+            elif defect == "replaced":
+                instance.container_id = "e" * 64
+            else:
+                instance.start_attempted = True
+            with self.subTest(defect=defect), self.assertRaises(fixture.FixtureError):
+                instance.prepare_fixture_bootstrap()
+            self.assertIsNone(instance.fixture_backup)
+            self.assertFalse(commands.started)
+
+    def test_fixture_protocol_bootstrap_uses_only_operator_api_with_empty_backup_and_current_source(self):
+        for security in (False, True):
+            instance, commands, source = self.bootstrap_instance()
+            instance.security_smoke = security
+            instance.prepare_fixture_bootstrap()
+            instance.start_attempted = True
+            sides = {"eventstore": {"pid": 123}, "timesheets": {"pid": 456}}
+            with patch.object(fixture, "verify_runtime_components", return_value=sides), \
+                    patch.object(instance, "resource_check", return_value=[]), \
+                    patch.object(fixture, "wait_fixture_gateway_alive"), \
+                    patch.object(fixture, "running_dapr_processes", return_value=[{"pid": 123}, {"pid": 456}]), \
+                    patch.object(fixture, "gateway_process_identity", return_value={"pid": 789, "start": "77"}), \
+                    patch.object(fixture, "fixture_gateway_signing_key", return_value=b"generated-key"), \
+                    patch.object(fixture, "activate_fixture_writer_protocol") as activate:
+                instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = "/unused/gateway"
+                instance.bootstrap_fixture_protocol()
+            body = activate.call_args.args[1]
+            self.assertEqual(source["head"], body["cutoverCommit"])
+            self.assertIn(instance.fixture_backup["sha256"], body["backupReference"])
+            self.assertTrue(all(body[name] is True for name in (
+                "writersQuiesced", "retryWorkersQuiesced", "downgradeProhibitedAcknowledged")))
+            self.assertTrue((instance.log_directory / "projection-writer-bootstrap.json").is_file())
+            self.assertFalse(commands.started)
+
+    def test_fixture_protocol_bootstrap_refuses_changed_backup_source_components_container_or_extra_sidecar(self):
+        messages = {"backup": "Empty fixture backup identity changed", "source": "Fixture bootstrap source changed after its empty backup",
+            "components": "Isolated component names, scopes, databases, or endpoint are unsafe", "container": "Fixture bootstrap identity changed after its empty backup",
+            "extra-sidecar": "Fixture bootstrap found a sidecar outside the admitted private topology"}
+        for defect in messages:
+            instance, commands, source = self.bootstrap_instance()
+            instance.prepare_fixture_bootstrap()
+            instance.start_attempted = True
+            instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = "/unused/gateway"
+            if defect == "backup":
+                instance.fixture_backup["path"].write_text("{}")
+            elif defect == "source":
+                instance.fixture_cutover_source.return_value = {**source, "head": "e" * 40}
+            elif defect == "components":
+                (Path(instance.scratch) / "statestore.yaml").write_text("changed")
+            elif defect == "container":
+                instance.container_id = "e" * 64
+            sides = {"eventstore": {"pid": 123}, "timesheets": {"pid": 456}}
+            inventory = [{"pid": 123}, {"pid": 456}] + ([{"pid": 999}] if defect == "extra-sidecar" else [])
+            with self.subTest(defect=defect), patch.object(fixture, "verify_runtime_components", return_value=sides), \
+                    patch.object(instance, "resource_check", return_value=[]), \
+                    patch.object(fixture, "wait_fixture_gateway_alive"), \
+                    patch.object(fixture, "running_dapr_processes", return_value=inventory), \
+                    patch.object(fixture, "gateway_process_identity", return_value={"pid": 789, "start": "77"}), \
+                    patch.object(fixture, "fixture_gateway_signing_key", return_value=b"generated-key"), \
+                    patch.object(fixture, "activate_fixture_writer_protocol") as activate, \
+                    self.assertRaisesRegex(fixture.FixtureError, "^" + messages[defect] + "$"):
+                instance.bootstrap_fixture_protocol()
+            activate.assert_not_called()
+            self.assertFalse(json.loads((instance.log_directory / "projection-writer-bootstrap.json").read_text())["activated"])
+            self.assertFalse(any(args[-1] in ("SET", "HSET", "FLUSHALL") for args, _ in commands.calls))
+
+    def test_bootstrap_reads_only_current_fixture_bound_generated_development_signing_key(self):
+        directory = Path(self.temporary.name) / "auth-proc"
+        process = directory / "123"
+        process.mkdir(parents=True)
+        (process / "stat").write_text("123 (gateway) " + " ".join(["S", "1", *(["0"] * 17), "77"]))
+        marker, key = fixture.secrets.token_hex(12), fixture.secrets.token_hex(32).upper()
+        environment = {"TIMESHEETS_LIVE_DAPR_COMPONENTS": marker, "ASPNETCORE_ENVIRONMENT": "Development",
+                       "Authentication__JwtBearer__Authority": "", "Authentication__JwtBearer__Issuer": "hexalith-timesheets-dev",
+                       "Authentication__JwtBearer__Audience": "hexalith-eventstore", "Authentication__JwtBearer__AllowedAlgorithms__0": "HS256",
+                       "Authentication__JwtBearer__SigningKey": key}
+        def write(values):
+            (process / "environ").write_bytes("\0".join(name + "=" + value for name, value in values.items()).encode())
+        write(environment)
+        self.assertEqual(key.encode(), fixture.fixture_gateway_signing_key({"pid": 123, "start": "77"}, marker, directory))
+        for name in environment:
+            write({**environment, name: "unsafe"})
+            with self.subTest(name=name), self.assertRaises(fixture.FixtureError) as failed:
+                fixture.fixture_gateway_signing_key({"pid": 123, "start": "77"}, marker, directory)
+            self.assertNotIn(key, str(failed.exception))
+        write(environment)
+        with self.assertRaises(fixture.FixtureError):
+            fixture.fixture_gateway_signing_key({"pid": 123, "start": "stale"}, marker, directory)
+
+    def test_operator_activation_uses_short_lived_signed_bearer_and_never_retains_token_or_raw_response(self):
+        key = fixture.secrets.token_hex(32).encode()
+        body = {"cutoverCommit": "a" * 40, "backupReference": "empty-fixture-backup#sha256=" + "b" * 64,
+                "writersQuiesced": True, "retryWorkersQuiesced": True, "downgradeProhibitedAcknowledged": True}
+        diagnostic, tokens = {}, []
+        def opened(request, timeout):
+            self.assertEqual(5, timeout)
+            self.assertEqual("POST", request.method)
+            self.assertEqual("http://127.0.0.1:8082/api/v1/admin/projections/delivery-writer-protocol/activate", request.full_url)
+            self.assertEqual(body, json.loads(request.data))
+            self.assertFalse(any("assertion" in name.lower() for name in request.headers))
+            token = request.get_header("Authorization").removeprefix("Bearer ")
+            tokens.append(token)
+            header, payload, signature = token.split(".")
+            decoded = json.loads(fixture.base64.urlsafe_b64decode(payload + "=="))
+            self.assertEqual("GlobalAdministrator", decoded["role"])
+            self.assertEqual("hexalith-eventstore", decoded["aud"])
+            self.assertEqual("hexalith-timesheets-dev", decoded["iss"])
+            self.assertEqual(60, decoded["exp"] - decoded["iat"])
+            expected = fixture.hmac.new(key, (header + "." + payload).encode(), fixture.hashlib.sha256).digest()
+            self.assertEqual(expected, fixture.base64.urlsafe_b64decode(signature + "=="))
+            response = io.BytesIO(b'{"status":"Activated"}')
+            response.status = 200
+            return response
+        opener = MagicMock()
+        opener.open.side_effect = opened
+        with patch.object(fixture.urllib.request, "build_opener", return_value=opener) as built:
+            fixture.activate_fixture_writer_protocol(key, body, diagnostic)
+        self.assertTrue(diagnostic["activated"])
+        handler = built.call_args.args[0]
+        self.assertIsNone(handler.redirect_request(None, None, 302, "private", {}, "http://example.invalid"))
+        self.assertNotIn(tokens[0], json.dumps(diagnostic))
+        self.assertNotIn(key.decode(), json.dumps(diagnostic))
+
+    def test_bootstrap_waits_for_actual_http_liveness_with_a_bound_and_without_readiness_or_response_content(self):
+        private = fixture.secrets.token_hex(24)
+        ready = io.BytesIO(private.encode())
+        ready.status = 200
+        opener = MagicMock()
+        opener.open.side_effect = [OSError(private), fixture.urllib.error.HTTPError(
+            "http://127.0.0.1:8082/alive", 503, private, {}, io.BytesIO(private.encode())), ready]
+        diagnostic = {}
+        with patch.object(fixture.urllib.request, "build_opener", return_value=opener), patch.object(fixture.time, "sleep"):
+            fixture.wait_fixture_gateway_alive(diagnostic)
+        self.assertEqual("alive", diagnostic["liveness"]["category"])
+        self.assertEqual(3, diagnostic["liveness"]["attempts"])
+        self.assertEqual(200, diagnostic["liveness"]["http_status"])
+        self.assertNotIn(private, json.dumps(diagnostic))
+        self.assertTrue(all(call.args == ("http://127.0.0.1:8082/alive",) for call in opener.open.call_args_list))
+        opener.open.side_effect = OSError(private)
+        diagnostic = {}
+        ticks = iter(range(100))
+        with patch.object(fixture.urllib.request, "build_opener", return_value=opener), \
+                patch.object(fixture.time, "sleep"), patch.object(fixture.time, "monotonic", side_effect=lambda: next(ticks)), \
+                self.assertRaisesRegex(fixture.FixtureError, "liveness.*bound"):
+            fixture.wait_fixture_gateway_alive(diagnostic, timeout=3)
+        self.assertEqual("transport_unavailable", diagnostic["liveness"]["category"])
+        self.assertNotIn(private, json.dumps(diagnostic))
+
+    def test_operator_activation_fails_closed_on_auth_conflict_redirect_invalid_response_and_bounded_outage(self):
+        private = fixture.secrets.token_hex(24)
+        for code, expected in ((400, "preconditions_refused"), (401, "authentication_refused"), (403, "authorization_refused"),
+                               (409, "conflict"), (302, "http_refused"), (503, "storage_unavailable"), (200, "invalid_response")):
+            opener = MagicMock()
+            def opened(*_args, **_kwargs):
+                raise fixture.urllib.error.HTTPError("http://127.0.0.1:8082", code, private, {}, io.BytesIO(private.encode()))
+            opener.open.side_effect = opened
+            diagnostic = {}
+            with self.subTest(code=code), patch.object(fixture.urllib.request, "build_opener", return_value=opener), \
+                    patch.object(fixture.time, "sleep"), self.assertRaises(fixture.FixtureError) as failure:
+                fixture.activate_fixture_writer_protocol(b"generated-key", {}, diagnostic)
+            self.assertEqual(expected, diagnostic["category"])
+            self.assertEqual(5 if code == 503 else 1, opener.open.call_count)
+            self.assertNotIn(private, json.dumps(diagnostic) + str(failure.exception))
+        opener.open.side_effect = OSError(private)
+        diagnostic = {}
+        with patch.object(fixture.urllib.request, "build_opener", return_value=opener), \
+                patch.object(fixture.time, "sleep"), self.assertRaises(fixture.FixtureError):
+            fixture.activate_fixture_writer_protocol(b"generated-key", {}, diagnostic)
+        self.assertEqual("transport_unavailable", diagnostic["category"])
+        self.assertEqual(5, diagnostic["attempts"])
+        self.assertNotIn(private, json.dumps(diagnostic))
 
     def test_runtime_component_check_verifies_both_loaded_stores(self):
         directory = Path(self.temporary.name) / "components"
@@ -1694,7 +3435,8 @@ class IsolatedFixtureTests(unittest.TestCase):
                 with patch.object(instance, "_journey_command", commands), \
                         patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                         patch.object(fixture, "read_only_shared_snapshot", side_effect=(before, before, after)), \
-                        patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), \
+                        patch.object(fixture.time, "sleep"), patch.object(fixture, "verify_runtime_components"), patch.object(instance, "capture_runtime_readiness"), \
+                            patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "bootstrap_fixture_protocol"), \
                         contextlib.redirect_stdout(io.StringIO()) as output:
                     self.assertEqual(original_exit or 1, instance.execute())
                 self.assertIn("Scheduler contents changed", output.getvalue())
@@ -1877,7 +3619,8 @@ time.sleep(60)
                     with patch.object(instance, "_journey_command", commands), \
                             patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                             patch.object(fixture, "read_only_shared_snapshot", return_value=snapshot), \
-                            patch.object(fixture, "verify_runtime_components"), \
+                            patch.object(fixture, "verify_runtime_components"), patch.object(instance, "capture_runtime_readiness"), \
+                            patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "bootstrap_fixture_protocol"), \
                             patch.object(Path, "write_text", write), contextlib.redirect_stdout(io.StringIO()):
                         self.assertEqual(original_exit or 1, instance.execute())
                     self.assertTrue(instance.evidence_write_failed)
@@ -2055,7 +3798,8 @@ time.sleep(60)
                 with patch.object(instance, "_journey_command", commands), \
                         patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                         patch.object(fixture, "read_only_shared_snapshot", side_effect=(snapshot, snapshot, KeyboardInterrupt())), \
-                        patch.object(fixture, "verify_runtime_components"), contextlib.redirect_stdout(io.StringIO()):
+                        patch.object(fixture, "verify_runtime_components"), patch.object(instance, "capture_runtime_readiness"), \
+                            patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "bootstrap_fixture_protocol"), contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(original_exit or 130, instance.execute())
                 self.assertFalse(Path(instance.scratch).exists())
 
@@ -2129,7 +3873,8 @@ time.sleep(60)
                 patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()), \
                 patch.object(instance, "resource_check", side_effect=([identity], [])), \
                 patch.object(fixture, "read_only_shared_snapshot", return_value=snapshot), \
-                patch.object(fixture, "verify_runtime_components"), contextlib.redirect_stdout(io.StringIO()):
+                patch.object(fixture, "verify_runtime_components"), patch.object(instance, "capture_runtime_readiness"), \
+                            patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "bootstrap_fixture_protocol"), contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(0, instance.execute())
         self.assertEqual([identity], instance.captured_processes)
         evidence = json.loads((instance.log_directory / "recorded-process-exit.json").read_text())

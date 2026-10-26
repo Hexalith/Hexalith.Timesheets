@@ -81,9 +81,13 @@ archived: 2026-10-25
 origin: migrated from legacy ledger ("Deferred from: code review of spec-5-3-consume-umbrella-owned-hexalith-works-checkout (2026-09-12)"), 2026-10-25
 location: Program.cs
 reason: The `references/Hexalith.EventStore` pin bump changes the AppHost's composed security topology (`AddHexalithEventStoreSecurity` now creates generated secret parameters and injects `HEXALITH_EVENTSTORE_CLIENT_USERNAME`/`_PASSWORD` into Keycloak), guarded only by a text read of `Program.cs` in `ScaffoldGovernanceTests`. An Aspire hosting test belongs to a later infrastructure story, since the AppHost is deliberately a minimal scaffold.
-status: open
+status: done 2026-10-25
 
 evidence: The `references/Hexalith.EventStore` pin bump changes the AppHost's composed security topology (`AddHexalithEventStoreSecurity` now creates generated secret parameters and injects `HEXALITH_EVENTSTORE_CLIENT_USERNAME`/`_PASSWORD` into Keycloak), guarded only by a text read of `Program.cs` in `ScaffoldGovernanceTests`. An Aspire hosting test belongs to a later infrastructure story, since the AppHost is deliberately a minimal scaffold.
+
+Update 2026-10-25: The compiled security-construction probe now executes actual Keycloak environment callbacks, verifies unique generated secret parameter references for the username/password and application channels without resolving values, then builds/disposes without Start/Run. The 67/67 current compiled probes pass. This closes construction coverage only; runtime smoke remains DW-67/DW-106/DW-166. See [current verification](tests/five-apphost-security-runtime-deferrals.md) and [the approved spec](spec-five-apphost-security-runtime-deferrals.md).
+
+resolution 2026-10-26: Current local Debug/source qualification passes: 199 Python regressions, 67 actual compiled probes and the complete unskipped persisted security/journey/restart run `run-y2ktjsim`. Exact source/asset identity, native NuGet DCP ownership, generated credentials, owned cleanup and shared preservation are recorded in [verification](tests/five-apphost-security-runtime-deferrals.md). Deployed acceptance and launch FAIL remain open.
 
 ### DW-13: `docs/launch-readiness.md:21` misstates the imported Builds catalog: it claims Dapr `1.18.4`, Aspire Hosting `13.4.6`, `Microsoft.FluentUI.Components` `4.11.6`, while the catalog at both the old (`35c3d1e`) and new (`a32cb42`) pin has `Dapr.AspNetCore` `1.18.5`, `Aspire.Hosting` `13.5.3`, `Microsoft.FluentUI.AspNetCore.Components` `5.0.0-rc.5-26219.1`. Story 5.2 evidence, already wrong at baseline. (Resolved 2026-10-18 by Story 5.2: the launch-readiness package section no longer states those values; its current verdict rows, the prerelease waiver row, and `architecture.md` version notes now carry catalog versions that `LaunchReadinessTests` derives from the imported catalog.)
 
@@ -96,9 +100,13 @@ archived: 2026-10-25
 origin: migrated from legacy ledger ("Deferred from: code review of spec-5-3-consume-umbrella-owned-hexalith-works-checkout (2026-09-12)"), 2026-10-25
 location: src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json
 reason: `src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json` hardcodes `admin-pass`, `tenant-a-pass`, `tenant-b-pass`, `readonly-pass`, and `no-tenant-pass`, where the upstream file it was copied from uses `__HEXALITH_*_PASSWORD__` substitution placeholders. Pre-existing and outside the diff; the EventStore pin bump widens the drift.
-status: open
+status: done 2026-10-25
 
 evidence: `src/Hexalith.Timesheets.AppHost/KeycloakRealms/hexalith-realm.json` hardcodes `admin-pass`, `tenant-a-pass`, `tenant-b-pass`, `readonly-pass`, and `no-tenant-pass`, where the upstream file it was copied from uses `__HEXALITH_*_PASSWORD__` substitution placeholders. Pre-existing and outside the diff; the EventStore pin bump widens the drift.
+
+Update 2026-10-25: The five fixed-password accounts were replaced with one generated-client account using the platform helper's ${HEXALITH_EVENTSTORE_CLIENT_USERNAME}/${HEXALITH_EVENTSTORE_CLIENT_PASSWORD} contract. Tenant, Timesheets-domain and permission claim mappers remain; credential handoff refuses unresolved values. Realm and compiled-reference checks pass. Actual realm startup/authentication remains in DW-67. See [current verification](tests/five-apphost-security-runtime-deferrals.md) and [the approved spec](spec-five-apphost-security-runtime-deferrals.md).
+
+resolution 2026-10-26: Current local Debug/source qualification passes: 199 Python regressions, 67 actual compiled probes and the complete unskipped persisted security/journey/restart run `run-y2ktjsim`. Exact source/asset identity, native NuGet DCP ownership, generated credentials, owned cleanup and shared preservation are recorded in [verification](tests/five-apphost-security-runtime-deferrals.md). Deployed acceptance and launch FAIL remain open.
 
 ### DW-15: Reconcile the overall launch-readiness verdict while Stories 3.6 and 5.1 remain open (owner: Story 5.1).
 
@@ -512,10 +520,14 @@ origin: migrated from legacy ledger ("Deferred from: build review of Story 3.6 r
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-3.md`
 reason: Existing fitness tests inspect AppHost source and project text but do not start the topology, so an Aspire SDK/package incompatibility can compile while `security` or `timesheets` fails at runtime. An automated Aspire testing lane changes package and topology scope excluded by this increment and remains infrastructure-owned.
-status: open
+status: done 2026-10-26
 
 summary: Add automated AppHost runtime smoke evidence for the resolved Aspire and Keycloak package graph.
 evidence: Existing fitness tests inspect AppHost source and project text but do not start the topology, so an Aspire SDK/package incompatibility can compile while `security` or `timesheets` fails at runtime. An automated Aspire testing lane changes package and topology scope excluded by this increment and remains infrastructure-owned.
+
+Update 2026-10-25: The existing isolated runner now has explicit --security-smoke startup, security/eventstore/timesheets readiness, actual generated-credential authentication and scope checks, and owned cleanup/preservation. The 2026-10-25 attempt refused unchanged admission because the foreign Dapr application parties-five-erasure-20261025 was present. Nothing started; no runtime closure is claimed. See [current verification](tests/five-apphost-security-runtime-deferrals.md) and [the approved spec](spec-five-apphost-security-runtime-deferrals.md).
+
+resolution 2026-10-26: Current local Debug/source qualification passes: 199 Python regressions, 67 actual compiled probes and the complete unskipped persisted security/journey/restart run `run-y2ktjsim`. Exact source/asset identity, native NuGet DCP ownership, generated credentials, owned cleanup and shared preservation are recorded in [verification](tests/five-apphost-security-runtime-deferrals.md). Deployed acceptance and launch FAIL remain open.
 
 ### DW-68: Decide whether authoritative Time Entry folds must reject approved-correction events without a preceding approval transition.
 
@@ -819,10 +831,14 @@ origin: migrated from legacy ledger ("Deferred from: Story 3.6 spec-15 verificat
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-15.md`
 reason: On 2026-10-09, `aspire wait timesheets --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --timeout 30 --non-interactive` exited 18 because `APP_API_TOKEN` and JWT Authority/SigningKey were missing. Owner: AppHost runtime/security configuration.
-status: open
+status: done 2026-10-26
 
 summary: Configure required internal credentials for a live Timesheets AppHost runtime smoke.
 evidence: On 2026-10-09, `aspire wait timesheets --apphost src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --timeout 30 --non-interactive` exited 18 because `APP_API_TOKEN` and JWT Authority/SigningKey were missing. Owner: AppHost runtime/security configuration. This is distinct from the earlier package-graph smoke entry and must be closed with a credentialed live startup and persisted-topology evidence.
+
+Update 2026-10-25: Generated application-channel/signing checks and optional generated-realm authentication are now part of the existing opt-in persisted journey. The 2026-10-25 security attempt stopped at preflight before startup; the default live xUnit skip and compiled construction proof do not qualify stored record/issue/index/use/replay/restart outcomes on the current graph. See [current verification](tests/five-apphost-security-runtime-deferrals.md) and [the approved spec](spec-five-apphost-security-runtime-deferrals.md).
+
+resolution 2026-10-26: Current local Debug/source qualification passes: 199 Python regressions, 67 actual compiled probes and the complete unskipped persisted security/journey/restart run `run-y2ktjsim`. Exact source/asset identity, native NuGet DCP ownership, generated credentials, owned cleanup and shared preservation are recorded in [verification](tests/five-apphost-security-runtime-deferrals.md). Deployed acceptance and launch FAIL remain open.
 
 ### DW-107: Refresh Story 5.2 launch-readiness catalog observations after the prior Builds update.
 
@@ -1289,12 +1305,16 @@ origin: migrated from legacy ledger ("Deferred from: code review of spec-5-2-rec
 location: scripts/run_isolated_magic_link_dapr.py
 source_spec: `_bmad-output/implementation-artifacts/spec-5-2-reconcile-package-currency-and-platform-dependency-versions.md`
 reason: Story 5.2 moved the AppHost from the CLI-bundle DCP to NuGet `Aspire.Hosting.Orchestration.linux-x64`/`Aspire.Dashboard.Sdk.linux-x64` `13.6.1` (`AspireUseCliBundle=false`). No test starts the host, the 2026-10-18 `scripts/run_isolated_magic_link_dapr.py` journey refused at preflight because foreign Dapr apps were running, and the direct-process proof later published in Timesheets `9523d94983a346d866246a2c45c3515b1bc54580` ran on the CLI-bundle DCP.
-status: open
+status: done 2026-10-26
 
 <a id="deferred-from-code-review-of-spec-5-2-reconcile-package-currency-and-platform-dependency-versions-2026-10-18"></a>
 legacy_section: Deferred from: code review of spec-5-2-reconcile-package-currency-and-platform-dependency-versions (2026-10-18)
 summary: Prove that the `Aspire.AppHost.Sdk` `13.6.1` AppHost with NuGet-backed orchestration starts DCP, the dashboard, and its resources, including the DCP-owned compiled gateway.
 evidence: Story 5.2 moved the AppHost from the CLI-bundle DCP to NuGet `Aspire.Hosting.Orchestration.linux-x64`/`Aspire.Dashboard.Sdk.linux-x64` `13.6.1` (`AspireUseCliBundle=false`). No test starts the host, the 2026-10-18 `scripts/run_isolated_magic_link_dapr.py` journey refused at preflight because foreign Dapr apps were running, and the direct-process proof later published in Timesheets `9523d94983a346d866246a2c45c3515b1bc54580` ran on the CLI-bundle DCP. Its source worktree was based on Timesheets `72d9fdaa813daf9d39d296e268fd2e1086a8dd87` and EventStore `d55c6f7c11e9bce6f17d490a84c83f1561979d63`, both with uncommitted implementation changes; implementation was later published in EventStore `9b66153515687463fc1b1e929f8b0e73d8145e2c`. Publication revisions are not the tested source identities. The `_bmad-output/implementation-artifacts/evidence/3-6/20261018-direct-eventstore-local-proof/historical-live/direct-process-proof.json` receipt covers the earlier 128.350 s run; the final 131.536 s journey is retained in `_bmad-output/implementation-artifacts/evidence/3-6/20261018-direct-eventstore-local-proof/post-review/verification.json`. Rerun the isolated journey once the shared placement is free, with `HexalithEventStoreVersion=3.125.1` set for the Debug source-reference build and in the script's environment (as the proof published in Timesheets `9523d94983a346d866246a2c45c3515b1bc54580` did; `scripts/run_isolated_magic_link_dapr.py` forces the Debug source graph but takes that property only from the caller) until the Works forwarding entry closes, and confirm the compiled gateway's parent is still a fixture-bound `dcp`/`dcpctrl` process; the automated lane remains with the existing "automated AppHost runtime smoke evidence" entry. Update 2026-10-20 (Story 5.2 round-9 review): `3.125.1` is superseded. At `929ea22c977385590d77d95f73af86e8b051c4fc` the Works default and the catalog both selected EventStore `3.126.0`, so forcing `3.125.1` would pin an older EventStore than both. Set `HexalithEventStoreVersion` to the catalog's EventStore version, and only when the Works default differs from it. At this review a foreign Projects AppHost holding Dapr app ID `eventstore` and five other Dapr applications were running, so the isolated journey's preflight would still refuse.
+
+Update 2026-10-25: The --security-smoke runner now rebuilds the matching Debug/source AppHost after idle admission, captures source/build identities, requires actual fixture-bound NuGet DCP/dashboard processes and dashboard HTTP readiness, and retains the existing direct-DCP compiled-gateway replacement/exit proof. The 2026-10-25 foreign-Dapr refusal prevented this runtime lane; historical receipts remain historical. See [current verification](tests/five-apphost-security-runtime-deferrals.md) and [the approved spec](spec-five-apphost-security-runtime-deferrals.md).
+
+resolution 2026-10-26: Current local Debug/source qualification passes: 199 Python regressions, 67 actual compiled probes and the complete unskipped persisted security/journey/restart run `run-y2ktjsim`. Exact source/asset identity, native NuGet DCP ownership, generated credentials, owned cleanup and shared preservation are recorded in [verification](tests/five-apphost-security-runtime-deferrals.md). Deployed acceptance and launch FAIL remain open.
 
 ### DW-167: Qualify the release-gate `Build` and `Tests (full suite)` rows and the README/`docs/ci-cd.md` source-reference test instructions with the `HexalithEventStoreVersion` requirement.
 
@@ -1483,3 +1503,15 @@ source_spec: _bmad-output/implementation-artifacts/spec-five-read-model-boundary
 location: src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexProjectionHandler.cs
 reason: Unverified medium latency risk: refusing direct legacy layouts adds a direct single-root and 256 bounded shard reads before selected-layout inspection. Peak concurrency/cancellation are verified, but no current deployed combined-path latency acceptance is established.
 evidence: Blind review B10. Measure the combined direct and selected bootstrap path with controlled read delays and the actual delivery cancellation/deadline, then include it in current-graph runtime qualification. No timeout failure has been demonstrated and no runtime acceptance is claimed; deployment inventory and obsolete-writer fencing remain required.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md`
+  summary: Medium, unverified — independently establish that the qualified Aspire dashboard owns the socket answering its loopback health probe.
+  evidence: The current checker validates PID/start, restored executable ancestry, process URL and direct HTTP health, but does not map that socket inode to the process; a real DCP launch showing a different recipient, or positive socket-inode ownership evidence, would settle the review claim.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md`
+  summary: Medium, unverified — assess source provenance when qualification is invoked with alternate MSBuild dependency roots.
+  evidence: The runner resolves the exact default EventStore source project's native executable while the consuming graph supports explicit root overrides; qualify a real overridden graph and compare its evaluated project and assembly inputs with the receipt's recorded repository roots to establish whether any executed source is misidentified.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-apphost-security-runtime-deferrals.md`
+  summary: Medium — use an exact-origin HTTP opener for the pre-existing credential-bearing local journey call helper.
+  evidence: `scripts/local_aspire_magic_link_journey.py` retains the baseline `urllib.request.urlopen` call with workload-assertion/app-channel headers, so default redirect and environment-proxy handling remains; the newly introduced readiness observer and generated-credential handoff use the owned direct-origin opener in this change.

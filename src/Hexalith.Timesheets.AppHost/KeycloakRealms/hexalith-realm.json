@@ -107,8 +107,12 @@
       "standardFlowEnabled": true,
       "serviceAccountsEnabled": false,
       "fullScopeAllowed": true,
-      "redirectUris": ["http://localhost:*"],
-      "webOrigins": ["*"],
+      "redirectUris": [
+        "http://localhost:*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
       "protocolMappers": [
         {
           "name": "audience-mapper",
@@ -189,114 +193,37 @@
   ],
   "users": [
     {
-      "id": "admin-user",
-      "username": "admin-user",
-      "firstName": "Admin",
-      "lastName": "User",
-      "enabled": true,
-      "email": "admin@hexalith.io",
+      "username": "${HEXALITH_EVENTSTORE_CLIENT_USERNAME}",
+      "firstName": "Synthetic",
+      "lastName": "Timesheets Fixture",
+      "email": "timesheets-fixture@local.invalid",
       "emailVerified": true,
+      "enabled": true,
       "requiredActions": [],
       "credentials": [
         {
           "type": "password",
-          "value": "admin-pass",
+          "value": "${HEXALITH_EVENTSTORE_CLIENT_PASSWORD}",
           "temporary": false
         }
       ],
       "attributes": {
-        "tenants": ["tenant-a", "tenant-b", "system"],
-        "domains": ["orders", "inventory", "counter"],
-        "permissions": ["command:submit", "command:replay", "command:query"],
-        "global_admin": ["true"]
-      }
-    },
-    {
-      "id": "tenant-a-user",
-      "username": "tenant-a-user",
-      "firstName": "Tenant",
-      "lastName": "A",
-      "enabled": true,
-      "email": "tenant-a@hexalith.io",
-      "emailVerified": true,
-      "requiredActions": [],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "tenant-a-pass",
-          "temporary": false
-        }
-      ],
-      "attributes": {
-        "tenants": ["tenant-a"],
-        "domains": ["orders"],
-        "permissions": ["command:submit", "command:query"]
-      }
-    },
-    {
-      "id": "tenant-b-user",
-      "username": "tenant-b-user",
-      "firstName": "Tenant",
-      "lastName": "B",
-      "enabled": true,
-      "email": "tenant-b@hexalith.io",
-      "emailVerified": true,
-      "requiredActions": [],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "tenant-b-pass",
-          "temporary": false
-        }
-      ],
-      "attributes": {
-        "tenants": ["tenant-b"],
-        "domains": ["inventory"],
-        "permissions": ["command:submit"]
-      }
-    },
-    {
-      "id": "readonly-user",
-      "username": "readonly-user",
-      "firstName": "Read",
-      "lastName": "Only",
-      "enabled": true,
-      "email": "readonly@hexalith.io",
-      "emailVerified": true,
-      "requiredActions": [],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "readonly-pass",
-          "temporary": false
-        }
-      ],
-      "attributes": {
-        "tenants": ["tenant-a"],
-        "domains": ["orders"],
-        "permissions": ["command:query"]
-      }
-    },
-    {
-      "id": "no-tenant-user",
-      "username": "no-tenant-user",
-      "firstName": "No",
-      "lastName": "Tenant",
-      "enabled": true,
-      "email": "no-tenant@hexalith.io",
-      "emailVerified": true,
-      "requiredActions": [],
-      "credentials": [
-        {
-          "type": "password",
-          "value": "no-tenant-pass",
-          "temporary": false
-        }
-      ],
-      "attributes": {
-        "tenants": [],
-        "domains": ["orders"],
-        "permissions": ["command:submit"]
+        "tenants": [
+          "tenant-a",
+          "tenant-b",
+          "system"
+        ],
+        "domains": [
+          "timesheets"
+        ],
+        "permissions": [
+          "command:submit",
+          "command:replay",
+          "command:query"
+        ],
+        "global_admin": [
+          "true"
+        ]
       }
     }
   ]

@@ -1,0 +1,6 @@
+{
+  "command": "python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py",
+  "checkout": "tracked scripts, src and aspire.config.json; no references directory",
+  "exit": 0,
+  "dependency_submodules_present": false
+}

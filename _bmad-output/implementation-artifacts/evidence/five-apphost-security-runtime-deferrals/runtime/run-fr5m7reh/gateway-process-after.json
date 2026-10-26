@@ -1,0 +1,16 @@
+{
+  "pid": 71893,
+  "start": "12970512",
+  "state": "S",
+  "parent": 51090,
+  "executable": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+  "command": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore",
+  "argument_count": 0,
+  "parent_identity": {
+    "pid": 51090,
+    "start": "12963671",
+    "state": "S",
+    "parent": 50861,
+    "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.1/tools/dcp"
+  }
+}

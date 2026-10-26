@@ -1,0 +1,37 @@
+{
+  "initial_projections": {
+    "timeout_seconds": 300,
+    "result": "timeout before XML was produced"
+  },
+  "replaced_short_bound_attempts": [
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "pid": 87678,
+      "start": "9181382",
+      "argv": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.IntegrationTests.xml"
+      ],
+      "reason": "Replace short verification bound with known full-suite duration bound; task-owned test only",
+      "needed_kill": true
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "pid": 95278,
+      "start": "9182616",
+      "argv": [
+        "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noColor",
+        "-parallelMode",
+        "none",
+        "-longRunning",
+        "30",
+        "-result-xml",
+        "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-apphost-security-runtime-deferrals/suites/Hexalith.Timesheets.Projections.Tests.xml"
+      ],
+      "reason": "Replace short verification bound with known full-suite duration bound; task-owned test only"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "admitted": true,
+  "resources_started": false,
+  "infrastructure_started": false,
+  "apphost_start_attempted": false
+}

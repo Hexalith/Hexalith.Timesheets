@@ -15,6 +15,7 @@ int publicPort = ResolveLocalPublicPort(builder, DefaultPublicPort);
 string defaultComponentsDirectory = Path.Combine(builder.AppHostDirectory, "DaprComponents");
 string componentsDirectory = defaultComponentsDirectory;
 bool fixtureEnabled = builder.Configuration["TIMESHEETS_LIVE_DAPR_FIXTURE"] == "1";
+bool securitySmoke = builder.Configuration["TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE"] == "1";
 string? fixtureComponents = builder.Configuration["TIMESHEETS_LIVE_DAPR_COMPONENTS"];
 string? gatewayExecutable = builder.Configuration["TIMESHEETS_LIVE_DAPR_GATEWAY_EXECUTABLE"];
 string? gatewayWorkingDirectory = builder.Configuration["TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY"];
@@ -56,6 +57,10 @@ if (builder.ExecutionContext.IsRunMode
 {
     throw new InvalidOperationException("Local Timesheets Dapr components are missing.");
 }
+if (securitySmoke && (!builder.ExecutionContext.IsRunMode || !fixtureEnabled || string.IsNullOrWhiteSpace(fixtureComponents)))
+{
+    throw new InvalidOperationException("Security smoke requires a validated isolated run-mode fixture.");
+}
 
 // The checked-in guard suite uses this exit before constructing any resource.
 // Invalid broker/control-plane inputs therefore remain harmless even if a
@@ -64,6 +69,7 @@ if (builder.Configuration["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"] == "1")
 {
     Console.WriteLine(fixtureComponents is null ? "Dapr component selection: checked-in defaults." : "Dapr component selection: isolated fixture.");
     Console.WriteLine(gatewayExecutable is null ? "Gateway launch selection: project." : "Gateway launch selection: compiled executable.");
+    Console.WriteLine(securitySmoke ? "Security selection: isolated smoke." : "Security selection: ordinary defaults.");
     return;
 }
 
@@ -71,9 +77,20 @@ if (builder.Configuration["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"] == "1")
 // bind tenant, domain, and actor claims. Retain the shared security helper for publish mode.
 if (builder.ExecutionContext.IsRunMode)
 {
-    builder.Configuration["EnableKeycloak"] = "false";
+    builder.Configuration["EnableKeycloak"] = securitySmoke ? "true" : "false";
+    if (securitySmoke)
+    {
+        builder.Configuration["KeycloakPersistent"] = "false";
+    }
 }
-_ = builder.AddHexalithEventStoreSecurity();
+HexalithEventStoreSecurityResources? security = builder.AddHexalithEventStoreSecurity();
+if (securitySmoke)
+{
+    // The helper owns realm import and credential generation. The existing fixture
+    // binding lets the runner prove ownership without retaining credential values.
+    _ = security!.Keycloak.WithEnvironment("TIMESHEETS_LIVE_DAPR_COMPONENTS", componentsDirectory)
+        .WithContainerRuntimeArgs("--pull=never", "--label", "hexalith.timesheets.components=" + componentsDirectory);
+}
 
 // The Timesheets host declares two local HTTP surfaces that must not share a listener:
 //
@@ -146,6 +163,21 @@ if (builder.ExecutionContext.IsRunMode)
         daprSchedulerHostAddress: scheduler,
         appPort: InternalPort);
 
+    if (fixtureEnabled)
+    {
+        _ = eventStore.WithHttpHealthCheck("/ready", endpointName: "http");
+        // Gateway startup discovers this module's metadata. Its /ready check
+        // additionally requires fixture protocol activation after HTTP startup.
+        // Preserve the SDK reference, replacing only this dependency's wait.
+        foreach (WaitAnnotation wait in timesheets.Resource.Annotations.OfType<WaitAnnotation>()
+            .Where(wait => ReferenceEquals(wait.Resource, eventStore.Resource)).ToArray())
+        {
+            timesheets.Resource.Annotations.Remove(wait);
+        }
+
+        _ = timesheets.WaitForStart(eventStore);
+    }
+
     string signingKey = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
     IResourceBuilder<ParameterResource> signing = builder.AddParameter(
         "timesheets-local-signing-key",
@@ -189,7 +221,10 @@ if (builder.Configuration["TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY"] == "1")
 
     // Construct and dispose the complete graph, including credential generation.
     // Never start resources. Report counts only; parameter values remain secret.
+    SecurityConstructionProbe.ReadinessHandler readiness = SecurityConstructionProbe.ConfigureReadiness(builder);
     await using DistributedApplication application = builder.Build();
+    await SecurityConstructionProbe.VerifyReadinessAsync(builder, application.Services, readiness);
+    await SecurityConstructionProbe.VerifyAsync(builder, security);
     Console.WriteLine("Timesheets construction model: " + System.Text.Json.JsonSerializer.Serialize(new
     {
         gatewayCredentials = builder.Resources.OfType<ParameterResource>().Count(parameter => parameter.Name == "eventstore-app-api-token"),

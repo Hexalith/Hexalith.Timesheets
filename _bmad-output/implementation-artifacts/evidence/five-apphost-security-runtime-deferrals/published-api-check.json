@@ -1,0 +1,15 @@
+{
+  "package": "Hexalith.EventStore.Aspire",
+  "version": "3.127.0",
+  "method": "dotnet-inspect metadata only; no Release graph restore/build/runtime",
+  "exit": 0,
+  "verified_members": [
+    "HexalithEventStoreSecurityOptions.DefaultClientPasswordEnvironmentName",
+    "HexalithEventStoreSecurityOptions.DefaultClientUsernameEnvironmentName",
+    "HexalithEventStoreSecurityResources.Keycloak"
+  ],
+  "commands": [
+    "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dnx dotnet-inspect -y -- member HexalithEventStoreSecurityOptions --package Hexalith.EventStore.Aspire@3.127.0 -m 'DefaultClient*' -n 20 --table",
+    "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dnx dotnet-inspect -y -- member HexalithEventStoreSecurityResources --package Hexalith.EventStore.Aspire@3.127.0 -m Keycloak -n 10 --table"
+  ]
+}
