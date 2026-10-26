@@ -1,0 +1,7 @@
+{
+  "admitted": false,
+  "resources_started": false,
+  "infrastructure_started": false,
+  "apphost_start_attempted": false,
+  "reason": "A Dapr application is already running or inventory is unsafe; no AppHost started"
+}

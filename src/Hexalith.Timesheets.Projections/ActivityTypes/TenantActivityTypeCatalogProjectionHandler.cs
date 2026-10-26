@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Attributes;
@@ -11,6 +13,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Contracts.Models.ActivityTypes;
 using Hexalith.Timesheets.Contracts;
+using Hexalith.Timesheets.ReadModels.ActivityTypes;
 
 using Microsoft.Extensions.Logging;
 
@@ -26,7 +29,7 @@ namespace Hexalith.Timesheets.Projections.ActivityTypes;
 public sealed class TenantActivityTypeCatalogProjectionHandler(
     IReadModelStore readModelStore,
     ILogger<TenantActivityTypeCatalogProjectionHandler>? logger = null) :
-    IAsyncDomainSharedProjectionRebuildHandler,
+    IAsyncDomainSharedProjectionEpochHandler,
     IDeclaresProjectionReadModelSlots
 {
     private static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web);
@@ -50,6 +53,117 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
 
     /// <inheritdoc />
     public string RebuildStoreName => TenantActivityTypeCatalogReadModelAddress.StateStoreName;
+
+    /// <inheritdoc />
+    public bool EpochEnabled => true;
+
+    /// <inheritdoc />
+    public string OrdinaryWriterId => TenantActivityTypeCatalogEpoch.OrdinaryWriterId;
+
+    /// <inheritdoc />
+    public SharedProjectionScope CreateScope(string tenantId) => TenantActivityTypeCatalogEpoch.CreateScope(tenantId);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ReadModelBatchOperation>> FoldCatchUpAsync(
+        SharedProjectionDelivery delivery,
+        long generation,
+        SharedProjectionEpochCoordinator coordinator,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(delivery);
+        ArgumentNullException.ThrowIfNull(coordinator);
+        ProjectionRequest request;
+        try
+        {
+            request = JsonSerializer.Deserialize<ProjectionRequest>(delivery.CanonicalPayload, s_jsonOptions)
+                ?? throw new InvalidOperationException("Catalog delivery is empty.");
+            Validate(request, "epoch-catch-up");
+            if (delivery.SourceStream != request.AggregateId || request.Events.Length != 1
+                || request.Events[0].GlobalPosition != delivery.EnvelopePosition
+                || request.Events[0].SequenceNumber != delivery.OwnerSequenceNumber)
+            {
+                throw new InvalidOperationException("Catalog delivery does not match its source.");
+            }
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException or JsonException)
+        {
+            throw Park(delivery);
+        }
+
+        var tenant = new TenantReference(request.TenantId);
+        string key = TenantActivityTypeCatalogReadModelAddress.StateKey(tenant);
+        ReadModelEntry<ActivityTypeCatalogReadModel> selected = await coordinator
+            .ReadGenerationAsync<ActivityTypeCatalogReadModel>(CreateScope(request.TenantId), generation, key, cancellationToken)
+            .ConfigureAwait(false);
+        // A legacy direct writer must be reconciled by an authoritative tenant rebuild. A new
+        // generation must never silently hide its catalog or certify absent restriction evidence.
+        if (selected.Value is null && (await readModelStore.GetAsync<ActivityTypeCatalogReadModel>(
+                RebuildStoreName, key, cancellationToken).ConfigureAwait(false)).Value is not null)
+        {
+            throw new SharedProjectionReadUnavailableException(new InvalidOperationException(
+                "The direct catalog requires an authoritative fenced rebuild."));
+        }
+
+        try
+        {
+            ProjectionEventDto item = ProjectionEventReader.Normalize(request.Events, delivery.OwnerSequenceNumber)[0];
+            object? payload = DeserializeActivityTypeEvent(item);
+            if (payload is null) return [];
+            ActivityTypeCatalogReadModel? current = selected.Value;
+            if (current is { Items: null } || current is { ProjectionFreshness: null }
+                || current?.ProjectPolicy is { } policy && !policy.HasValidShapeForTenant(tenant))
+            {
+                throw new InvalidOperationException("The selected catalog is malformed.");
+            }
+
+            Dictionary<string, ActivityTypeCatalogItem> items = (current?.Items ?? [])
+                .ToDictionary(static row => row.ActivityTypeId.Value, StringComparer.Ordinal);
+            List<ProjectActivityTypeCatalogRestrictionSnapshot> restrictions = [.. current?.ProjectPolicy?.Restrictions ?? []];
+            if (payload is ProjectActivityTypeCatalogRestrictionConfigured configured)
+            {
+                ValidateRestriction(configured);
+                restrictions.RemoveAll(row => row.SourceAggregateId == request.AggregateId
+                    && row.Project == configured.Project);
+                restrictions.Add(new(request.AggregateId, configured.Project, configured.IsRestricted,
+                    configured.AllowedTenantActivityTypeIds, configured.AllowedProjectActivityTypeIds));
+            }
+            else
+            {
+                if (ActivityTypeIdFor(payload).Value != request.AggregateId)
+                    throw new InvalidOperationException("Activity Type delivery does not match its owner.");
+                TenantActivityTypeCatalogProjection.Apply(items, payload);
+                // Project-scoped types and their lifecycle never create tenant catalog evidence.
+                if (items.Count == 0 && current is null) return [];
+            }
+
+            ProjectionFreshnessState freshness = current?.ProjectionFreshness.State ?? ProjectionFreshnessState.Fresh;
+            var updated = new ActivityTypeCatalogReadModel(
+                items.Values.OrderBy(static row => row.Label, StringComparer.Ordinal)
+                    .ThenBy(static row => row.ActivityTypeId.Value, StringComparer.Ordinal).ToArray(),
+                new(freshness, Math.Max(ParseCursor(current?.ProjectionFreshness.Cursor), item.GlobalPosition)
+                    .ToString(CultureInfo.InvariantCulture), null, null))
+            {
+                ProjectPolicy = new(tenant, current?.ProjectPolicy?.IsComplete == true,
+                    restrictions.OrderBy(static row => row.SourceAggregateId, StringComparer.Ordinal)
+                        .ThenBy(static row => row.Project.ProjectId, StringComparer.Ordinal).ToArray())
+            };
+            return [ReadModelBatchOperation.Write(key, updated, ReadModelBatchConcurrency.LastWrite)];
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or ArgumentException or NullReferenceException)
+        {
+            throw Park(delivery);
+        }
+    }
+
+    private static SharedProjectionFoldFailureException Park(SharedProjectionDelivery delivery)
+    {
+        string suffix = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
+            delivery.SourceStream + "\0" + delivery.EnvelopePosition.ToString(CultureInfo.InvariantCulture))));
+        return new(delivery.SourceStream, delivery.EnvelopePosition, 2,
+            attempts => [ReadModelBatchOperation.Write("catalog:parked:" + suffix,
+                new Dictionary<string, long> { ["position"] = delivery.EnvelopePosition, ["attempts"] = attempts },
+                ReadModelBatchConcurrency.LastWrite)]);
+    }
 
     /// <inheritdoc />
     public async Task<DomainProjectionHandlerResult> ProjectAsync(
@@ -115,7 +229,10 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(ToCandidate(new ActivityTypeCatalogReadModel(
             [],
-            new ProjectionFreshnessMetadata(ProjectionFreshnessState.Rebuilding, "0", null, null))));
+            new ProjectionFreshnessMetadata(ProjectionFreshnessState.Rebuilding, "0", null, null))
+        {
+            ProjectPolicy = new(new TenantReference(identity.TenantId), true, [])
+        }));
     }
 
     /// <inheritdoc />
@@ -135,6 +252,8 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         }
 
         ActivityTypeCatalogReadModel current = FromCandidate(candidate);
+        if (current.ProjectPolicy!.Tenant != new TenantReference(identity.TenantId))
+            throw new ProjectionFoldException(new InvalidOperationException("The candidate belongs to another tenant."));
         ActivityTypeCatalogReadModel? aggregate = FoldAggregate(aggregateHistory);
         if (aggregate is null)
         {
@@ -171,12 +290,17 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         ActivityTypeCatalogReadModel fresh = Guarded(() =>
         {
             ActivityTypeCatalogReadModel candidateModel = FromCandidate(candidate);
+            if (candidateModel.ProjectPolicy!.Tenant != tenant)
+                throw new InvalidOperationException("The catalog policy tenant or evidence is invalid.");
             string cursor = Math.Max(
                     ParseCursor(current.Value?.ProjectionFreshness.Cursor),
                     ParseCursor(candidateModel.ProjectionFreshness.Cursor))
                 .ToString(CultureInfo.InvariantCulture);
             return candidateModel with
             {
+                ProjectPolicy = candidateModel.ProjectPolicy is { } policy
+                    ? policy with { IsComplete = true }
+                    : throw new InvalidOperationException("The candidate has no policy materialization."),
                 ProjectionFreshness = new ProjectionFreshnessMetadata(
                     ProjectionFreshnessState.Fresh,
                     cursor,
@@ -200,8 +324,13 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             object? payload = DeserializeActivityTypeEvent(projectionEvent);
             if (payload is not null)
             {
-                ActivityTypeId? activityTypeId = ActivityTypeIdFor(payload);
-                if (activityTypeId is null
+                ActivityTypeId? activityTypeId = payload is ProjectActivityTypeCatalogRestrictionConfigured configured
+                    ? null : ActivityTypeIdFor(payload);
+                if (payload is ProjectActivityTypeCatalogRestrictionConfigured restriction)
+                {
+                    ValidateRestriction(restriction);
+                }
+                else if (activityTypeId is null
                     || string.IsNullOrWhiteSpace(activityTypeId.Value)
                     || !string.Equals(activityTypeId.Value, request.AggregateId, StringComparison.Ordinal))
                 {
@@ -223,7 +352,7 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             return null;
         }
 
-        if (!creationObserved)
+        if (!creationObserved && events.Any(static item => item.Payload is not ProjectActivityTypeCatalogRestrictionConfigured))
         {
             throw new InvalidOperationException("The Activity Type history does not contain its creation event.");
         }
@@ -249,7 +378,15 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         // A project-scoped Activity Type folds to no tenant-catalog item. Writing that empty model
         // would publish — and, on a first delivery, mark Fresh — a catalog this aggregate never
         // belonged to, so it contributes nothing instead.
-        return model.Items.Count == 0 ? null : model;
+        return model.Items.Count == 0 && model.ProjectPolicy!.Restrictions.Count == 0 ? null : model with
+        {
+            ProjectPolicy = model.ProjectPolicy! with
+            {
+                IsComplete = false,
+                Restrictions = model.ProjectPolicy!.Restrictions
+                    .Select(row => row with { SourceAggregateId = request.AggregateId }).ToArray()
+            }
+        };
     }
 
     private static object? DeserializeActivityTypeEvent(ProjectionEventDto projectionEvent)
@@ -257,7 +394,8 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             ?? (object?)ProjectionEventReader.Deserialize<ActivityTypeRenamed>(projectionEvent)
             ?? (object?)ProjectionEventReader.Deserialize<ActivityTypeMetadataUpdated>(projectionEvent)
             ?? (object?)ProjectionEventReader.Deserialize<ActivityTypeDeactivated>(projectionEvent)
-            ?? ProjectionEventReader.Deserialize<ActivityTypeReactivated>(projectionEvent);
+            ?? (object?)ProjectionEventReader.Deserialize<ActivityTypeReactivated>(projectionEvent)
+            ?? ProjectionEventReader.Deserialize<ProjectActivityTypeCatalogRestrictionConfigured>(projectionEvent);
 
     private static ActivityTypeId ActivityTypeIdFor(object payload)
         => payload switch
@@ -276,7 +414,10 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
         string aggregateId,
         bool promoteCompleteLiveHistory)
     {
-        if (current is { Items: null } || aggregate.Items is null)
+        if (current is { Items: null } || aggregate.Items is null
+            || aggregate.ProjectPolicy is not { } aggregatePolicy
+            || !aggregatePolicy.HasValidShapeForTenant(aggregatePolicy.Tenant)
+            || current?.ProjectPolicy is { } persistedPolicy && !persistedPolicy.HasValidShapeForTenant(aggregatePolicy.Tenant))
         {
             throw new InvalidOperationException("The Activity Type catalog items are missing.");
         }
@@ -309,7 +450,30 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
                 .OrderBy(static item => item.Label, StringComparer.Ordinal)
                 .ThenBy(static item => item.ActivityTypeId.Value, StringComparer.Ordinal)
                 .ToArray(),
-            new ProjectionFreshnessMetadata(freshness, cursor, null, null));
+            new ProjectionFreshnessMetadata(freshness, cursor, null, null))
+        {
+            ProjectPolicy = new(
+                aggregate.ProjectPolicy!.Tenant,
+                current?.ProjectPolicy?.IsComplete == true,
+                (current?.ProjectPolicy?.Restrictions ?? [])
+                    .Where(row => row.SourceAggregateId != aggregateId)
+                    .Concat(aggregate.ProjectPolicy.Restrictions)
+                    .OrderBy(static row => row.SourceAggregateId, StringComparer.Ordinal)
+                    .ThenBy(static row => row.Project.ProjectId, StringComparer.Ordinal).ToArray())
+        };
+    }
+
+    private static void ValidateRestriction(ProjectActivityTypeCatalogRestrictionConfigured configured)
+    {
+        if (configured.Project is null || string.IsNullOrWhiteSpace(configured.Project.ProjectId)
+            || configured.AllowedTenantActivityTypeIds is null || configured.AllowedProjectActivityTypeIds is null
+            || configured.AllowedTenantActivityTypeIds.Concat(configured.AllowedProjectActivityTypeIds)
+                .Any(static id => id is null || string.IsNullOrWhiteSpace(id.Value))
+            || configured.AllowedTenantActivityTypeIds.Distinct().Count() != configured.AllowedTenantActivityTypeIds.Count
+            || configured.AllowedProjectActivityTypeIds.Distinct().Count() != configured.AllowedProjectActivityTypeIds.Count)
+        {
+            throw new InvalidOperationException("The Project restriction event is malformed.");
+        }
     }
 
     private static TResult Guarded<TResult>(Func<TResult> merge)
@@ -339,7 +503,8 @@ public sealed class TenantActivityTypeCatalogProjectionHandler(
             ActivityTypeCatalogReadModel model = JsonSerializer.Deserialize<ActivityTypeCatalogReadModel>(
                 candidate.State.Span, s_jsonOptions)
                 ?? throw new InvalidOperationException("The Activity Type catalog rebuild candidate is malformed.");
-            if (model.ProjectionFreshness is null || model.Items is null || model.Items.Any(static item => item is null
+            if (model.ProjectPolicy is not { IsComplete: true } policy || !policy.HasValidShapeForTenant(policy.Tenant)
+                || model.ProjectionFreshness is null || model.Items is null || model.Items.Any(static item => item is null
                 || item.ActivityTypeId is null || string.IsNullOrWhiteSpace(item.ActivityTypeId.Value)))
             {
                 throw new InvalidOperationException("The Activity Type catalog rebuild items are malformed.");

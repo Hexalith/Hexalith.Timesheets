@@ -94,11 +94,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant());
             string store = MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName;
             ReadModelEntry<ActivityTypeCatalogReadModel> current = await factory.Store
-                .GetAsync<ActivityTypeCatalogReadModel>(store, key, cancellationToken);
+                .InspectSelectedAsync<ActivityTypeCatalogReadModel>(store, key, cancellationToken);
             var replacement = new ActivityTypeCatalogReadModel(
                 [current.Value!.Items.Single() with { ActivityTypeId = new("other-active-type") }],
                 ProjectionFreshnessMetadata.Fresh);
-            (await factory.Store.TrySaveAsync(store, key, replacement, current.ETag!, cancellationToken)).ShouldBeTrue();
+            (await factory.Store.MutateSelectedAsync(store, key, replacement, current.ETag!, cancellationToken)).ShouldBeTrue();
             changedAfterPreflight = true;
         };
 

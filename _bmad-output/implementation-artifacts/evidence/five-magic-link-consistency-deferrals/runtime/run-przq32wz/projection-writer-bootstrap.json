@@ -1,0 +1,15 @@
+{
+  "stage": "complete",
+  "activated": true,
+  "attempts": 1,
+  "http_status": 200,
+  "category": "activated",
+  "scope": "fresh-private-local-fixture-only",
+  "liveness": {
+    "attempts": 10,
+    "http_status": 200,
+    "category": "alive"
+  },
+  "backup_sha256": "769c9bf3bf3eaed007c14c1494d029cb4a21523d158d916db39bebe1a4b29f74",
+  "cutover_commit": "dcd3dce42b67a305b608f03c4dab2b812791abae"
+}

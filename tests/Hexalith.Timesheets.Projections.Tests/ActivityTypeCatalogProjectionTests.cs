@@ -267,6 +267,28 @@ public sealed class ActivityTypeCatalogProjectionTests
             .CanServeReads.ShouldBeFalse();
     }
 
+    [Fact]
+    public void CanonicalTenantCatalogCarriesProjectRestrictionsWithoutProjectOwnedActivityTypes()
+    {
+        var otherProject = new ProjectReference("project-2");
+        ActivityTypeCatalogReadModel model = Projector().Project("tenant-1",
+        [
+            Event("tenant", 1, Created("tenant", "Tenant work")),
+            Event("project", 2, new ActivityTypeCreated(new("project-type"), ActivityTypeScope.Project,
+                Project(), "Project work", BillableState.Billable)),
+            Event("restricted", 3, new ProjectActivityTypeCatalogRestrictionConfigured(Project(), true,
+                [new("tenant")], [new("project-type")])),
+            Event("other", 4, new ProjectActivityTypeCatalogRestrictionConfigured(otherProject, true, [], [])),
+            Event("unrestricted", 5, new ProjectActivityTypeCatalogRestrictionConfigured(Project(), false, [], []))
+        ], FreshCheckpoint(5));
+        model.Items.ShouldHaveSingleItem().Scope.ShouldBe(ActivityTypeScope.Tenant);
+        model.ProjectPolicy.ShouldNotBeNull().Tenant.ShouldBe(new TenantReference("tenant-1"));
+        model.ProjectPolicy.IsComplete.ShouldBeFalse();
+        model.ProjectPolicy.Restrictions.Count.ShouldBe(2);
+        model.ProjectPolicy.Restrictions.Single(row => row.Project == Project()).IsRestricted.ShouldBeFalse();
+        model.ProjectPolicy.Restrictions.Single(row => row.Project == otherProject).IsRestricted.ShouldBeTrue();
+    }
+
     private static TenantActivityTypeCatalogProjection Projector() => new();
 
     private static TimesheetsProjectionCheckpoint FreshCheckpoint(long sequenceNumber)

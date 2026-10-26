@@ -1,6 +1,7 @@
 using System.Text.Json;
 
 using Hexalith.Timesheets.Contracts.Models.ActivityTypes;
+using Hexalith.Timesheets.ReadModels.ActivityTypes;
 
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
@@ -27,7 +28,7 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 /// <param name="tokenGenerator">The canonical token hash derivation service.</param>
 /// <param name="contextAccessor">The trusted ambient context used by administrator paths.</param>
 /// <param name="indexCoordinator">The selected global candidate-index epoch, when registered.</param>
-/// <param name="allowLegacyIndexRead">Explicit compatibility for isolated legacy loader fixtures.</param>
+/// <param name="allowLegacyIndexRead">Explicit compatibility for isolated legacy index and direct catalog fixtures.</param>
 /// <param name="loggerFactory">Optional internal outcome diagnostics.</param>
 /// <param name="stateLoadingOptions">Optional invocation deadline and history read allowances.</param>
 public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
@@ -626,18 +627,41 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
     {
         try
         {
-            ReadModelEntry<ActivityTypeCatalogReadModel> entry = await budget.ReadModelAsync(
-                token => _readModelStore.GetAsync<ActivityTypeCatalogReadModel>(
-                    TenantActivityTypeCatalogReadModelAddress.StateStoreName,
-                    TenantActivityTypeCatalogReadModelAddress.StateKey(tenant), token),
-                cancellationToken).ConfigureAwait(false);
+            ActivityTypeCatalogReadModel? catalog;
+            if (_indexCoordinator is { } coordinator)
+            {
+                SharedProjectionReadResult<ActivityTypeCatalogReadModel> selected = await budget.ReadModelAsync(
+                    token => coordinator.ReadAsync<ActivityTypeCatalogReadModel>(
+                        TenantActivityTypeCatalogEpoch.CreateScope(tenant.TenantId),
+                        TenantActivityTypeCatalogReadModelAddress.StateKey(tenant), token), cancellationToken)
+                    .ConfigureAwait(false);
+                if (!selected.IsAvailable || selected.IsStale || selected.IsDegraded)
+                {
+                    return UnavailableCatalog();
+                }
 
-            ActivityTypeCatalogReadModel? catalog = entry.Value;
+                catalog = selected.Value;
+            }
+            else if (allowLegacyIndexRead)
+            {
+                // Explicit standalone legacy fixtures have no epoch coordinator. The composed host always
+                // validates the tenant's selected generation, including pending-delivery state.
+                catalog = (await budget.ReadModelAsync(
+                    token => _readModelStore.GetAsync<ActivityTypeCatalogReadModel>(
+                        TenantActivityTypeCatalogReadModelAddress.StateStoreName,
+                        TenantActivityTypeCatalogReadModelAddress.StateKey(tenant), token),
+                    cancellationToken).ConfigureAwait(false)).Value;
+            }
+            else
+            {
+                return UnavailableCatalog();
+            }
+
             if (catalog?.ProjectionFreshness is null
                 || !Enum.IsDefined(catalog.ProjectionFreshness.State)
                 || catalog.Items is null
                 || catalog.Items.Any(static item =>
-                    item.Scope != ActivityTypeScope.Tenant
+                    item is null || item.ActivityTypeId is null || item.Scope != ActivityTypeScope.Tenant
                     || item.Project is not null
                     || string.IsNullOrWhiteSpace(item.ActivityTypeId.Value)
                     || string.IsNullOrWhiteSpace(item.Label))
@@ -646,6 +670,14 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                     .Any(static group => group.Count() != 1))
             {
                 return UnavailableCatalog();
+            }
+
+            // Invalid or incomplete Project policy never becomes unrestricted by default. Retain
+            // historical catalog evidence for confirmation; new Project selection validates policy.
+            if (catalog.ProjectPolicy is not null
+                && !MagicLinkConfirmationCapabilityCommandService.HasValidProjectPolicy(catalog.ProjectPolicy, tenant))
+            {
+                catalog = catalog with { ProjectPolicy = null };
             }
 
             budget.ThrowIfUnavailable(cancellationToken);

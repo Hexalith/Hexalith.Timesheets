@@ -22,6 +22,7 @@ public sealed class TenantActivityTypeCatalogProjection
         checkpoint.ValidateTenant(tenantId);
 
         Dictionary<string, ActivityTypeCatalogItem> items = new(StringComparer.Ordinal);
+        Dictionary<string, ProjectActivityTypeCatalogRestrictionSnapshot> restrictions = new(StringComparer.Ordinal);
         HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
 
         foreach (ActivityTypeProjectionEvent projectionEvent in events
@@ -33,7 +34,14 @@ public sealed class TenantActivityTypeCatalogProjection
                 continue;
             }
 
-            Apply(items, projectionEvent.Payload);
+            if (projectionEvent.Payload is ProjectActivityTypeCatalogRestrictionConfigured configured)
+            {
+                restrictions[configured.Project.ProjectId] = Restriction(configured);
+            }
+            else
+            {
+                Apply(items, projectionEvent.Payload);
+            }
         }
 
         return new(
@@ -41,7 +49,10 @@ public sealed class TenantActivityTypeCatalogProjection
                 .OrderBy(static item => item.Label, StringComparer.Ordinal)
                 .ThenBy(static item => item.ActivityTypeId.Value, StringComparer.Ordinal)
                 .ToArray(),
-            ToFreshnessMetadata(checkpoint));
+            ToFreshnessMetadata(checkpoint))
+        {
+            ProjectPolicy = new(new TenantReference(tenantId), false, restrictions.Values.ToArray())
+        };
     }
 
     public ActivityTypeCatalogReadModel ProjectForProject(
@@ -58,7 +69,7 @@ public sealed class TenantActivityTypeCatalogProjection
         checkpoint.ValidateTenant(tenantId);
 
         Dictionary<string, ActivityTypeCatalogItem> items = new(StringComparer.Ordinal);
-        Dictionary<string, ProjectActivityTypeRestrictionState> restrictions = new(StringComparer.Ordinal);
+        Dictionary<string, ProjectActivityTypeCatalogRestrictionSnapshot> restrictions = new(StringComparer.Ordinal);
         HashSet<string> appliedMessageIds = new(StringComparer.Ordinal);
 
         foreach (ActivityTypeProjectionEvent projectionEvent in events
@@ -73,11 +84,11 @@ public sealed class TenantActivityTypeCatalogProjection
             ApplyProjectSelection(items, restrictions, project, projectionEvent.Payload);
         }
 
-        ProjectActivityTypeRestrictionState restriction = restrictions.TryGetValue(
+        ProjectActivityTypeCatalogRestrictionSnapshot restriction = restrictions.TryGetValue(
             project.ProjectId,
-            out ProjectActivityTypeRestrictionState? current)
+            out ProjectActivityTypeCatalogRestrictionSnapshot? current)
             ? current
-            : ProjectActivityTypeRestrictionState.Unrestricted;
+            : new(null, project, false, [], []);
 
         return new(
             items.Values
@@ -88,7 +99,7 @@ public sealed class TenantActivityTypeCatalogProjection
             ToFreshnessMetadata(checkpoint));
     }
 
-    private static void Apply(Dictionary<string, ActivityTypeCatalogItem> items, object payload)
+    internal static void Apply(Dictionary<string, ActivityTypeCatalogItem> items, object payload)
     {
         if (payload is ActivityTypeCreated { Scope: ActivityTypeScope.Tenant, Project: null } created)
         {
@@ -101,7 +112,7 @@ public sealed class TenantActivityTypeCatalogProjection
 
     private static void ApplyProjectSelection(
         Dictionary<string, ActivityTypeCatalogItem> items,
-        Dictionary<string, ProjectActivityTypeRestrictionState> restrictions,
+        Dictionary<string, ProjectActivityTypeCatalogRestrictionSnapshot> restrictions,
         ProjectReference project,
         object payload)
     {
@@ -114,10 +125,7 @@ public sealed class TenantActivityTypeCatalogProjection
                 items[created.ActivityTypeId.Value] = CreateItem(created);
                 return;
             case ProjectActivityTypeCatalogRestrictionConfigured configured:
-                restrictions[configured.Project.ProjectId] = new(
-                    configured.IsRestricted,
-                    configured.AllowedTenantActivityTypeIds.Select(static id => id.Value).ToHashSet(StringComparer.Ordinal),
-                    configured.AllowedProjectActivityTypeIds.Select(static id => id.Value).ToHashSet(StringComparer.Ordinal));
+                restrictions[configured.Project.ProjectId] = Restriction(configured);
                 return;
             default:
                 ApplyLifecycleTransition(items, payload);
@@ -167,13 +175,13 @@ public sealed class TenantActivityTypeCatalogProjection
 
     private static ActivityTypeCatalogItem ApplyAvailability(
         ActivityTypeCatalogItem item,
-        ProjectActivityTypeRestrictionState restriction)
+        ProjectActivityTypeCatalogRestrictionSnapshot restriction)
     {
         bool allowedByRestriction = !restriction.IsRestricted
             || (item.Scope == ActivityTypeScope.Tenant
-                && restriction.AllowedTenantActivityTypeIds.Contains(item.ActivityTypeId.Value))
+                && restriction.AllowedTenantActivityTypeIds.Contains(item.ActivityTypeId))
             || (item.Scope == ActivityTypeScope.Project
-                && restriction.AllowedProjectActivityTypeIds.Contains(item.ActivityTypeId.Value));
+                && restriction.AllowedProjectActivityTypeIds.Contains(item.ActivityTypeId));
         bool available = item.IsActive && allowedByRestriction;
 
         return item with { IsAvailableForCapture = available };
@@ -194,14 +202,8 @@ public sealed class TenantActivityTypeCatalogProjection
             _ => new(ProjectionFreshnessState.Unknown, null, null, "Projection freshness is unknown.")
         };
 
-    private sealed record ProjectActivityTypeRestrictionState(
-        bool IsRestricted,
-        IReadOnlySet<string> AllowedTenantActivityTypeIds,
-        IReadOnlySet<string> AllowedProjectActivityTypeIds)
-    {
-        public static ProjectActivityTypeRestrictionState Unrestricted { get; } = new(
-            false,
-            new HashSet<string>(StringComparer.Ordinal),
-            new HashSet<string>(StringComparer.Ordinal));
-    }
+    private static ProjectActivityTypeCatalogRestrictionSnapshot Restriction(
+        ProjectActivityTypeCatalogRestrictionConfigured configured)
+        => new(null, configured.Project, configured.IsRestricted,
+            configured.AllowedTenantActivityTypeIds.ToArray(), configured.AllowedProjectActivityTypeIds.ToArray());
 }

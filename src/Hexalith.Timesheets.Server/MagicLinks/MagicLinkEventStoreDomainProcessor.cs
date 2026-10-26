@@ -129,6 +129,9 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             return Reject();
         }
 
+        // Decision policy: retain this validated processing snapshot across awaited authorization.
+        // Later catalog changes affect subsequent decisions. Fresh is neither latest-source
+        // visibility nor a transaction across the capability, owner and catalog aggregates.
         ActivityTypeCatalogReadModel catalog = await stateLoader.LoadCatalogForTenantAsync(
             intent.Tenant, cancellationToken).ConfigureAwait(false);
         if (!MagicLinkConfirmationCapabilityCommandService.HasRecordedActivityTypeEvidence(capability, catalog))
@@ -235,6 +238,9 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             return Reject();
         }
 
+        // Decision policy: retain this validated processing snapshot across awaited authorization.
+        // Later catalog changes affect subsequent decisions. Fresh is neither latest-source
+        // visibility nor a transaction across the capability, owner and catalog aggregates.
         ActivityTypeCatalogReadModel catalog = await stateLoader.LoadCatalogForTenantAsync(
             intent.Tenant, cancellationToken).ConfigureAwait(false);
         if (catalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
@@ -313,6 +319,9 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             return Reject();
         }
 
+        // Decision policy: retain this validated processing snapshot across awaited authorization.
+        // Later catalog changes affect subsequent decisions. Fresh is neither latest-source
+        // visibility nor a transaction across the capability, owner and catalog aggregates.
         ActivityTypeCatalogReadModel catalog = await stateLoader.LoadCatalogForTenantAsync(
             intent.Tenant, cancellationToken).ConfigureAwait(false);
         if (clock.GetUtcNow() >= intent.Command.ExpiresAtUtc)

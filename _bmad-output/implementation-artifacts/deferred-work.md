@@ -153,11 +153,13 @@ archived: 2026-10-25
 origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)"), 2026-10-25
 location: n/a
 reason: A lagging EventStore replica reporting `LatestSequence` equal to the last returned sequence would let `EventStoreMagicLinkConfirmationCapabilityStateLoader.ReadAllEventsAsync` treat a stale prefix as a complete history, folding a Revoked/Used capability as still Issued and leaving the link reusable. Unverified: settled by whether `ReadStreamAsync` guarantees read-your-writes/linearizable reads against the writing actor.
-status: open
+status: done 2026-10-26
 
 <a id="deferred-from-code-review-of-3-6-implement-eventstore-backed-magic-link-state-loading-2026-09-13"></a>
 legacy_section: Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading (2026-09-13)
 evidence: A lagging EventStore replica reporting `LatestSequence` equal to the last returned sequence would let `EventStoreMagicLinkConfirmationCapabilityStateLoader.ReadAllEventsAsync` treat a stale prefix as a complete history, folding a Revoked/Used capability as still Issued and leaving the link reusable. Unverified: settled by whether `ReadStreamAsync` guarantees read-your-writes/linearizable reads against the writing actor. Would be high severity if confirmed.
+
+resolution 2026-10-26: The specific lagging-replica premise is superseded by current SDK source routing to the owning AggregateActor and its state-cache metadata barrier. Twelve persisted-owner cases include issuance-only loader evidence against used/revoked/expired owners and corrected scope across recreation. This closes the stated local replay/use mechanism; deployed actor/authority qualification remains under Story 3.6. Exact commands, receipts and scope are in [consistency verification](tests/five-magic-link-consistency-deferrals.md). Launch remains FAIL.
 
 ### DW-22: The stream paging loop (`EventStoreMagicLinkConfirmationCapabilityStateLoader.cs:307`) has no page or event cap, so a gateway returning `IsTruncated` pages indefinitely causes unbounded memory growth and a hung external magic-link request. Not demonstrated reachable with a trusted gateway.
 
@@ -390,10 +392,12 @@ origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implemen
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
 reason: Capability, Time Entry, and catalog state are loaded separately, so a concurrent mutation can occur between snapshots. The default topology is not live and the downstream append/concurrency behavior is outside this chunk; the decisive evidence is whether dispatch can commit based on stale loader state without EventStore optimistic revalidation.
-status: open
+status: done 2026-10-26
 
 summary: Prove or close the stale-snapshot authorization risk across the loader's separate reads.
 evidence: Capability, Time Entry, and catalog state are loaded separately, so a concurrent mutation can occur between snapshots. The default topology is not live and the downstream append/concurrency behavior is outside this chunk; the decisive evidence is whether dispatch can commit based on stale loader state without EventStore optimistic revalidation.
+
+resolution 2026-10-26: Local processing revalidates current serialized owner facts and terminal history. Persisted actor recreation cases deny stale HTTP/loader evidence without another effect. The approved processing-snapshot policy bounds catalog races; it does not provide cross-aggregate atomicity or latest-source visibility. Story 3.6 deployed qualification remains open. Exact commands, receipts and scope are in [consistency verification](tests/five-magic-link-consistency-deferrals.md). Launch remains FAIL.
 
 ### DW-53: Wire and prove an EventStore resource in the default live AppHost topology.
 
@@ -427,9 +431,11 @@ archived: 2026-10-25
 origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implement-eventstore-backed-magic-link-state-loading rerun (2026-09-15)"), 2026-10-25
 location: n/a
 reason: Capability, Time Entry, and catalog are read as separate snapshots without a final capability revision check. Establish whether downstream EventStore dispatch can commit from this stale loaded state without optimistic revalidation; the default topology does not currently provide that live path.
-status: open
+status: done 2026-10-26
 
 evidence: Capability, Time Entry, and catalog are read as separate snapshots without a final capability revision check. Establish whether downstream EventStore dispatch can commit from this stale loaded state without optimistic revalidation; the default topology does not currently provide that live path.
+
+resolution 2026-10-26: Current owner revalidation and processing-snapshot semantics are proven locally: blocked authorization retains its validated catalog snapshot and a subsequent decision sees the update. Terminal/corrected owner persistence survives actor recreation. No cross-aggregate transactional or latest-source claim is made; deployed acceptance remains open. Exact commands, receipts and scope are in [consistency verification](tests/five-magic-link-consistency-deferrals.md). Launch remains FAIL.
 
 ### DW-58: Non-`Fresh` catalog states collapse to one `Unavailable` bundle instead of preserving the AC2 freshness vocabulary. This real Medium gap remains deferred because preserving individual states requires changing the approved no-disclosure bundle contract.
 
@@ -488,10 +494,12 @@ origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implemen
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-2.md`
 reason: The magic-link path consumes the tenant catalog, while project restriction availability is computed only by `TenantActivityTypeCatalogProjection.ProjectForProject`. A tenant-owned Activity Type that is restricted for a given Project can therefore still be selected for a Project target through issuance and adjustment.
-status: open
+status: done 2026-10-26
 
 summary: Decide whether the tenant Activity Type catalog must represent per-Project restriction rules for magic-link selection.
 evidence: The magic-link path consumes the tenant catalog, while project restriction availability is computed only by `TenantActivityTypeCatalogProjection.ProjectForProject`. A tenant-owned Activity Type that is restricted for a given Project can therefore still be selected for a Project target through issuance and adjustment. Carried as BH-02 / R2-BH-04 / R3-BH-02 across three review loops, each citing a prior ledger entry that did not exist; this is the first entry.
+
+resolution 2026-10-26: Approved policy is implemented: Project restrictions govern new issuance and adjustment selection, while historical confirmation is retained. The canonical tenant catalog carries source-preserving policy materialization; missing/legacy/incomplete/stale/foreign/malformed/ambiguous evidence denies Project selection. Work targets perform no inferred Project lookup. Existing deployments require a certified complete catalog rebuild. Exact commands, receipts and scope are in [consistency verification](tests/five-magic-link-consistency-deferrals.md). Launch remains FAIL.
 
 ### DW-64: Refresh the agent-context files that still describe the token-hash index as unwired.
 
@@ -759,10 +767,12 @@ origin: migrated from legacy ledger ("Deferred from: code review of 3-6-implemen
 location: MagicLinkTokenHashCapabilityIndexProjectionHandler.cs:152
 source_spec: `_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md`
 reason: Unverified; medium if confirmed. Index `FinalizeAsync` (`MagicLinkTokenHashCapabilityIndexProjectionHandler.cs:152`) calls `ReplaceTenant`, which replaces every entry of the tenant with the rebuild candidate.
-status: open
+status: done 2026-10-26
 
 summary: Confirm that unfenced shared rebuilds cannot drop live index or catalog writes made between aggregate enumeration and FinalizeAsync.
 evidence: Unverified; medium if confirmed. Index `FinalizeAsync` (`MagicLinkTokenHashCapabilityIndexProjectionHandler.cs:152`) calls `ReplaceTenant`, which replaces every entry of the tenant with the rebuild candidate. Catalog `FinalizeAsync` (`TenantActivityTypeCatalogProjectionHandler.cs:154`) writes only the candidate's items. A link issued, or an Activity Type changed, after enumeration but before Finalize's read would be dropped, or overwritten and marked `Fresh`. Settle it by checking whether EventStore pauses named ordinary deliveries for non-epoch `IAsyncDomainSharedProjectionRebuildHandler`s during a session. The SDK's fenced `IAsyncDomainSharedProjectionEpochHandler` (`references/Hexalith.EventStore/docs/guides/named-projection-authoring.md`, "Fenced shared projections") is the documented answer if it does not.
+
+resolution 2026-10-26: The catalog now uses the SDK tenant-scoped epoch/catch-up path, alongside the existing global candidate-index epoch. Building fences owner-sequenced deliveries with retryable backpressure; accepted pending work survives cancellation/reconstruction. Local tests cover add/rename/deactivate/restriction changes, retry and malformed persisted policy. Certified deployed inventory/continuity, obsolete-writer fencing and shared-rebuild acceptance remain open under Story 3.6. Exact commands, receipts and scope are in [consistency verification](tests/five-magic-link-consistency-deferrals.md). Launch remains FAIL.
 
 ### DW-97: Declare the Timesheets public magic-link listener external in the deployed app model, or correct the AppHost comment that says it is.
 

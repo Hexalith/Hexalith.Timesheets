@@ -1,0 +1,100 @@
+{
+  "source_identity_matches": true,
+  "source_file_fingerprints": 926,
+  "cleanup_complete": true,
+  "captured_processes_exited": true,
+  "shared_preservation_matches": true,
+  "live_test": {
+    "passed": 1,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "not_run": 0,
+    "seconds": 69.895
+  },
+  "runtime_run": "run-przq32wz",
+  "certificate_sha256": "c57e5aea1c34a68486089564335bd8efa280dd6b74ef9985a85d56f2fc7f3b8e",
+  "python_regressions_passed": 208,
+  "compiled_probes_passed": 67,
+  "post_review_suites": [
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "exit_code": 0,
+      "elapsed_seconds": 0.604,
+      "scope": "complete executable",
+      "total": 108,
+      "passed": 108,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "not-run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "exit_code": 0,
+      "elapsed_seconds": 33.182,
+      "scope": "complete executable",
+      "total": 118,
+      "passed": 118,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "not-run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "exit_code": 0,
+      "elapsed_seconds": 7.926,
+      "scope": "complete executable",
+      "total": 744,
+      "passed": 744,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "not-run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "exit_code": 0,
+      "elapsed_seconds": 0.759,
+      "scope": "affected catalog classes",
+      "total": 220,
+      "passed": 220,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "not-run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "exit_code": 0,
+      "elapsed_seconds": 0.515,
+      "scope": "complete executable",
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "not-run": 0
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "exit_code": 0,
+      "elapsed_seconds": 774.371,
+      "scope": "complete executable",
+      "total": 958,
+      "passed": 953,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 5,
+      "not-run": 0
+    }
+  ],
+  "projection_broad_gate": {
+    "passed": 755,
+    "failed": 0,
+    "scope": "Complete executable before review; all affected catalog classes rerun after fixes"
+  },
+  "frozen_spec_sha256": "da62bac5103b43d9c035ade0615161329de21936e77acc9f000ed6563a34cd3c",
+  "final_readiness_cases_passed": 16
+}

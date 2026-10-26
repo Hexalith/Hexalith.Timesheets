@@ -1,0 +1,74 @@
+[
+  {
+    "project": "Hexalith.Timesheets.Contracts.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 0.604,
+    "scope": "complete executable",
+    "total": 108,
+    "passed": 108,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "not-run": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.ArchitectureTests",
+    "exit_code": 0,
+    "elapsed_seconds": 33.182,
+    "scope": "complete executable",
+    "total": 118,
+    "passed": 118,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "not-run": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.Server.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 7.926,
+    "scope": "complete executable",
+    "total": 744,
+    "passed": 744,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "not-run": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.Projections.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 0.759,
+    "scope": "affected catalog classes",
+    "total": 220,
+    "passed": 220,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "not-run": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.Works.Tests",
+    "exit_code": 0,
+    "elapsed_seconds": 0.515,
+    "scope": "complete executable",
+    "total": 76,
+    "passed": 76,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "not-run": 0
+  },
+  {
+    "project": "Hexalith.Timesheets.IntegrationTests",
+    "exit_code": 0,
+    "elapsed_seconds": 774.371,
+    "scope": "complete executable",
+    "total": 958,
+    "passed": 953,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 5,
+    "not-run": 0
+  }
+]

@@ -7,7 +7,10 @@ using System.Text.Json;
 using Dapr.Actors;
 using Dapr.Actors.Runtime;
 
+using Hexalith.Commons.UniqueIds;
+
 using Hexalith.EventStore.Contracts.Commands;
+using Hexalith.EventStore.Contracts.Identity;
 using Hexalith.EventStore.Contracts.Results;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.EventStore.Server.Actors;
@@ -1281,6 +1284,134 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 intent with { Command = issue with { Source = null! } }, JsonOptions)
         };
         (await processor.ProcessAsync(malformed, null, TestContext.Current.CancellationToken)).IsRejection.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("used", false)]
+    [InlineData("revoked", false)]
+    [InlineData("expired", false)]
+    [InlineData("used", true)]
+    [InlineData("revoked", true)]
+    [InlineData("expired", true)]
+    public async Task IssuanceOnlyLoaderCannotOverridePersistedTerminalOwner(string terminal, bool adjust)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"stale-{terminal}-{adjust}");
+        var entryId = new TimeEntryId($"owner-{terminal}-{adjust}");
+        string token = adjust ? ValidAdjustToken() : ValidConfirmToken();
+        await factory.ProjectValidStateAsync(client, token,
+            adjust ? MagicLinkAllowedAction.Adjust : MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        using IServiceScope scope = factory.Services.CreateScope();
+        var loader = scope.ServiceProvider.GetRequiredService<EventStoreMagicLinkConfirmationCapabilityStateLoader>();
+        (await loader.LoadTokenStateAsync(token, TestContext.Current.CancellationToken)).CapabilityState
+            .ShouldNotBeNull().IsTerminal.ShouldBeFalse();
+        var recorded = JsonSerializer.Deserialize<TimeEntryRecorded>(factory.Gateway.StoredEvents(
+            Tenant().TenantId, entryId.Value).Single().Payload, JsonOptions).ShouldNotBeNull();
+        object terminalEvent = terminal switch
+        {
+            "used" => new StoredMagicLinkUsed(new(capabilityId, Tenant(), Contributor(), entryId,
+                ObservedAtUtc, new("magic-link", "prior-use"))),
+            "revoked" => new StoredMagicLinkRevoked(new(capabilityId, Tenant(), Operator(),
+                ObservedAtUtc, new("timesheets", "prior-revoke")) { TimeEntryId = entryId }),
+            _ => new StoredMagicLinkExpired(new(capabilityId, Tenant(), ObservedAtUtc,
+                new("timesheets", "prior-expiry")) { TimeEntryId = entryId })
+        };
+        var stateManager = new InMemoryStateManager();
+        await SeedOwnerHistoryAsync(stateManager, entryId, [recorded, terminalEvent]);
+        var statusStore = new InMemoryCommandStatusStore();
+        var processor = scope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>();
+        IDomainServiceInvoker invoker = Substitute.For<IDomainServiceInvoker>();
+        invoker.InvokeAsync(Arg.Any<CommandEnvelope>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
+            .Returns(call => processor.ProcessAsync(call.ArgAt<CommandEnvelope>(0), call.ArgAt<object?>(1), call.ArgAt<CancellationToken>(2)));
+        AggregateActor actor = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        var intent = new CommitMagicLinkUse(capabilityId, Tenant(), entryId, new(Hash(token)),
+            adjust ? MagicLinkUseAction.Adjust : MagicLinkUseAction.Confirm, adjust ? AdjustCommand() : null, ObservedAtUtc);
+        CommandEnvelope use = ActorCommand(typeof(CommitMagicLinkUse).FullName!, "stale-terminal-use", entryId,
+            JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions));
+        (await actor.ProcessCommandAsync(use, TestContext.Current.CancellationToken)).Accepted.ShouldBeFalse();
+        AggregateActor restarted = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        (await restarted.ProcessCommandAsync(use with { MessageId = "stale-terminal-retry" }, TestContext.Current.CancellationToken))
+            .Accepted.ShouldBeFalse();
+        var persisted = await restarted.GetEventsAsync(0);
+        persisted.Length.ShouldBe(4);
+        persisted.Count(row => row.EventTypeName == typeof(StoredMagicLinkUsed).FullName).ShouldBe(terminal == "used" ? 1 : 0);
+        persisted.ShouldNotContain(row => row.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName
+            || row.EventTypeName == typeof(StoredTimeEntryAdjusted).FullName);
+        persisted.Count(row => row.EventTypeName == typeof(MagicLinkCommitRejected).FullName).ShouldBe(2);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task StaleHttpIntentUsesCurrentPersistedCorrectedOwnerAfterActorRecreation(bool adjust)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        var capabilityId = new MagicLinkCapabilityId($"before-correction-{adjust}");
+        var entryId = new TimeEntryId($"corrected-owner-{adjust}");
+        string token = adjust ? ValidAdjustToken() : ValidConfirmToken();
+        await factory.ProjectValidStateAsync(client, token,
+            adjust ? MagicLinkAllowedAction.Adjust : MagicLinkAllowedAction.Confirm, capabilityId, entryId);
+        var recorded = JsonSerializer.Deserialize<TimeEntryRecorded>(factory.Gateway.StoredEvents(
+            Tenant().TenantId, entryId.Value).Single().Payload, JsonOptions).ShouldNotBeNull();
+        var previous = new TimeEntryCorrectionValues(recorded.Target, recorded.Contributor, recorded.ActivityTypeId,
+            recorded.ServiceDate, recorded.DurationMinutes, recorded.BillableState, recorded.ContributorCategory, recorded.AiMetrics)
+            { ActivityTypeScope = ActivityTypeScope.Tenant };
+        var reason = new TimeEntryRejectionReason("Correct target");
+        var decision = new TimeEntryApprovalDecisionId("correction-decision");
+        var corrected = new TimeEntryCorrected(entryId, new("correction-1"), Tenant(), Operator(), ObservedAtUtc,
+            previous, previous with { Target = TimeEntryTargetReference.ForProject(new("corrected-project")) },
+            reason, decision, TimeEntryApprovalState.Draft, TimeEntryCorrectionState.Corrected);
+        var stateManager = new InMemoryStateManager();
+        await SeedOwnerHistoryAsync(stateManager, entryId,
+        [
+            recorded,
+            new TimeEntrySubmitted(entryId, Contributor(), Tenant(), ObservedAtUtc, new("submission-1"),
+                TimeEntrySubmissionScope.SelectedEntries, TimeEntryApprovalState.Submitted),
+            new TimeEntryRejected(entryId, Operator(), Tenant(), ObservedAtUtc, decision, TimeEntryApprovalState.Rejected,
+                new(ApprovalAuthorityAction.EntryRejection, ApprovalAuthoritySource.ProjectApprover,
+                    ApprovalAuthorityDecisionState.Allowed, "timesheets.approval-authority.v1", "v1", ProjectionFreshnessMetadata.Fresh),
+                TimeEntryApprovalScope.IndividualEntry, reason),
+            corrected
+        ]);
+        using IServiceScope scope = factory.Services.CreateScope();
+        var processor = scope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>();
+        IDomainServiceInvoker invoker = Substitute.For<IDomainServiceInvoker>();
+        invoker.InvokeAsync(Arg.Any<CommandEnvelope>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
+            .Returns(call => processor.ProcessAsync(call.ArgAt<CommandEnvelope>(0), call.ArgAt<object?>(1), call.ArgAt<CancellationToken>(2)));
+        var statusStore = new InMemoryCommandStatusStore();
+        AggregateActor actor = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        (await actor.GetEventsAsync(0)).Length.ShouldBe(4);
+        actor = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        var intent = new CommitMagicLinkUse(capabilityId, Tenant(), entryId, new(Hash(token)),
+            adjust ? MagicLinkUseAction.Adjust : MagicLinkUseAction.Confirm, adjust ? AdjustCommand() : null, ObservedAtUtc);
+        (await actor.ProcessCommandAsync(ActorCommand(typeof(CommitMagicLinkUse).FullName!, "pre-correction-intent", entryId,
+            JsonSerializer.SerializeToUtf8Bytes(intent, JsonOptions)), TestContext.Current.CancellationToken)).Accepted.ShouldBeFalse();
+        AggregateActor restarted = CreateMagicLinkActor(entryId, stateManager, statusStore, invoker);
+        var persisted = await restarted.GetEventsAsync(0);
+        persisted.Length.ShouldBe(5);
+        JsonSerializer.Deserialize<TimeEntryCorrected>(persisted[3].Payload, JsonOptions)
+            .ShouldNotBeNull().CorrectedValues.Target.ShouldBe(corrected.CorrectedValues.Target);
+        persisted[^1].EventTypeName.ShouldBe(typeof(MagicLinkCommitRejected).FullName);
+        persisted.ShouldNotContain(row => row.EventTypeName == typeof(StoredMagicLinkUsed).FullName
+            || row.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName || row.EventTypeName == typeof(StoredTimeEntryAdjusted).FullName);
+    }
+
+    private static async Task SeedOwnerHistoryAsync(InMemoryStateManager stateManager, TimeEntryId entryId, object[] history)
+    {
+        var identity = new AggregateIdentity(Tenant().TenantId, "timesheets", entryId.Value);
+        for (int index = 0; index < history.Length; index++)
+        {
+            object payload = history[index];
+            var envelope = new EventEnvelope(UniqueIdHelper.GenerateSortableUniqueStringId(), entryId.Value, "timesheets", Tenant().TenantId,
+                "timesheets", index + 1, index + 1, ObservedAtUtc, UniqueIdHelper.GenerateSortableUniqueStringId(), UniqueIdHelper.GenerateSortableUniqueStringId(), Operator().PartyId,
+                "1.0.0", payload.GetType().FullName!, 1, "json",
+                JsonSerializer.SerializeToUtf8Bytes(payload, payload.GetType(), JsonOptions), null);
+            await stateManager.SetStateAsync(identity.EventStreamKeyPrefix + (index + 1), envelope);
+        }
+        await stateManager.SetStateAsync(identity.MetadataKey, new AggregateMetadata(history.Length, ObservedAtUtc, null));
+        await stateManager.SaveStateAsync();
     }
 
     private static CommandEnvelope ActorCommand(string type, string messageId, TimeEntryId entryId, byte[] payload)

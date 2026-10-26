@@ -568,7 +568,10 @@ public sealed class MagicLinkConfirmationCapabilityWorkflowE2ETests
                     true,
                     BillableState.Billable)
             ],
-            ProjectionFreshnessMetadata.Fresh);
+            ProjectionFreshnessMetadata.Fresh)
+        {
+            ProjectPolicy = new(new TenantReference("tenant-1"), true, [])
+        };
 
     private static MagicLinkConfirmationCapabilityCommandService CreateService(
         ITimesheetsAccessGuard accessGuard,

@@ -28,6 +28,7 @@ using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections.ActivityTypes;
+using Hexalith.Timesheets.ReadModels.ActivityTypes;
 using Hexalith.Timesheets.Projections.MagicLinks;
 using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.Timesheets.Runtime;
@@ -506,9 +507,103 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.Store.DirectIndexSeedCount.ShouldBe(0);
         factory.Store.DirectCatalogSeedCount.ShouldBe(0);
         factory.Store.GetSelectedIndex().Entries.Count.ShouldBe(2);
-        factory.Store.Get<ActivityTypeCatalogReadModel>(
-                MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+        factory.Store.GetSelectedCatalog(Tenant())
             .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task NamedProjectRestrictionDeliveryControlsPublicSelectionAndPreservesHistoricalConfirmation(bool allowsType)
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, useMismatchedClaims: false);
+        using HttpClient client = factory.CreateClient();
+        var confirmationOwner = new TimeEntryId("entry-restriction-confirm");
+        var adjustmentOwner = new TimeEntryId("entry-restriction-adjust");
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new("capability-restriction-confirm"), confirmationOwner);
+        await factory.ProjectValidStateAsync(client, ValidAdjustToken(), MagicLinkAllowedAction.Adjust,
+            new("capability-restriction-adjust"), adjustmentOwner);
+        string beforeForeignDelivery = JsonSerializer.Serialize(factory.Store.GetSelectedCatalog(Tenant()), JsonOptions);
+        await factory.DeliverProjectRestrictionAsync(client, OtherTenant(), []);
+        JsonSerializer.Serialize(factory.Store.GetSelectedCatalog(Tenant()), JsonOptions).ShouldBe(beforeForeignDelivery);
+        using HttpResponseMessage allowedAfterForeign = await factory.PostProtectedManagementAsync(client,
+            "/api/timesheets/magic-links/confirmation-capabilities", Issue("after-foreign-policy"));
+        allowedAfterForeign.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+
+        await factory.DeliverProjectRestrictionAsync(client, Tenant(), allowsType ? [ActivityId()] : []);
+        ActivityTypeCatalogReadModel catalog = factory.Store.GetSelectedCatalog(Tenant());
+        catalog.Items.ShouldHaveSingleItem().IsActive.ShouldBeTrue();
+        catalog.ProjectPolicy.ShouldNotBeNull().Tenant.ShouldBe(Tenant());
+        catalog.ProjectPolicy.IsComplete.ShouldBeTrue();
+        ProjectActivityTypeCatalogRestrictionSnapshot restriction = catalog.ProjectPolicy.Restrictions.ShouldHaveSingleItem();
+        restriction.IsRestricted.ShouldBeTrue();
+        restriction.Project.ShouldBe(Project());
+        restriction.AllowedTenantActivityTypeIds.ShouldBe(allowsType ? [ActivityId()] : []);
+        using HttpResponseMessage issued = await factory.PostProtectedManagementAsync(client,
+            "/api/timesheets/magic-links/confirmation-capabilities", Issue("after-own-policy"));
+        issued.StatusCode.ShouldBe(allowsType ? HttpStatusCode.Accepted : HttpStatusCode.Forbidden);
+        factory.Gateway.StoredEvents(Tenant().TenantId, "after-own-policy")
+            .Count(row => row.EventTypeName == typeof(StoredMagicLinkIssued).FullName).ShouldBe(allowsType ? 1 : 0);
+        using HttpResponseMessage adjusted = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}", AdjustCommand(), TestContext.Current.CancellationToken);
+        adjusted.StatusCode.ShouldBe(allowsType ? HttpStatusCode.Accepted : HttpStatusCode.Forbidden);
+        if (!allowsType)
+            _ = await CaptureFailureAsync(adjusted, "restricted-selection", ValidAdjustToken());
+        StreamReadEvent[] adjustedEvents = factory.Gateway.StoredEvents(Tenant().TenantId, adjustmentOwner.Value);
+        adjustedEvents.Count(row => row.EventTypeName == typeof(StoredMagicLinkUsed).FullName).ShouldBe(allowsType ? 1 : 0);
+        adjustedEvents.Count(row => row.EventTypeName == typeof(StoredTimeEntryAdjusted).FullName).ShouldBe(allowsType ? 1 : 0);
+        using HttpResponseMessage confirmed = await client.PostAsJsonAsync(
+            $"/api/timesheets/magic-links/confirm/submit?t={ValidConfirmToken()}", new ConfirmTimeThroughMagicLink(),
+            TestContext.Current.CancellationToken);
+        confirmed.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+        factory.Gateway.StoredEvents(Tenant().TenantId, confirmationOwner.Value)
+            .Count(row => row.EventTypeName == typeof(StoredTimeEntryConfirmed).FullName).ShouldBe(1);
+
+        static IssueMagicLinkConfirmationCapability Issue(string id) => new(new(id),
+            new(Contributor(), TimeEntryTargetReference.ForProject(Project()), ActivityId(), new("entry-" + id),
+                MagicLinkTargetKind.ProposedTimeEntry), MagicLinkAllowedAction.Confirm, ObservedAtUtc.AddDays(1),
+            new("timesheets", id));
+    }
+
+    [Fact]
+    public async Task FencedCatalogMigrationPreservesDirectBytesWithUntranslatedStoreSemantics()
+    {
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true);
+        using HttpClient client = factory.CreateClient();
+        string key = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant());
+        string store = MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName;
+        var legacy = new ActivityTypeCatalogReadModel([], ProjectionFreshnessMetadata.Fresh)
+        {
+            ProjectPolicy = new(Tenant(), true, null!)
+        };
+        (await factory.Store.TrySaveAsync(store, key, legacy, string.Empty, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        ReadModelEntry<ActivityTypeCatalogReadModel> directBefore = await factory.Store.GetAsync<ActivityTypeCatalogReadModel>(
+            store, key, TestContext.Current.CancellationToken);
+        byte[] originalBytes = factory.Store.InspectRawBytes(store, key).ShouldNotBeNull();
+        var handler = new TenantActivityTypeCatalogProjectionHandler(factory.Store);
+        var coordinator = new SharedProjectionEpochCoordinator(factory.Store, factory.Store);
+        SharedProjectionScope catalogScope = handler.CreateScope(Tenant().TenantId);
+        await coordinator.RegisterWriterAsync(catalogScope, handler.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        var identity = new DomainSharedProjectionRebuildIdentity(Tenant().TenantId, "timesheets", handler.ProjectionType,
+            "legacy-migration", "catalog");
+        await coordinator.BeginAsync(catalogScope, identity.OperationId, "certified-empty-inventory",
+            new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+        DomainSharedProjectionRebuildCandidate candidate = await handler.CreateEmptyCandidateAsync(identity, TestContext.Current.CancellationToken);
+        DomainProjectionRebuildPlan plan = await handler.FinalizeAsync(identity, candidate, TestContext.Current.CancellationToken);
+        await coordinator.StageAsync(catalogScope, identity.OperationId, plan.Operations, TestContext.Current.CancellationToken);
+        await coordinator.CommitAsync(catalogScope, identity.OperationId, TestContext.Current.CancellationToken);
+        ReadModelEntry<ActivityTypeCatalogReadModel> directAfter = await factory.Store.GetAsync<ActivityTypeCatalogReadModel>(
+            store, key, TestContext.Current.CancellationToken);
+        JsonSerializer.Serialize(directAfter.Value, JsonOptions).ShouldBe(JsonSerializer.Serialize(directBefore.Value, JsonOptions));
+        directAfter.ETag.ShouldBe(directBefore.ETag);
+        factory.Store.InspectRawBytes(store, key).ShouldNotBeNull().ShouldBe(originalBytes);
+        SharedProjectionReadResult<ActivityTypeCatalogReadModel> selected = await coordinator.ReadAsync<ActivityTypeCatalogReadModel>(
+            catalogScope, key, TestContext.Current.CancellationToken);
+        selected.IsStale.ShouldBeFalse();
+        selected.IsDegraded.ShouldBeFalse();
+        selected.Value.ShouldNotBeNull().ProjectPolicy.ShouldNotBeNull().Restrictions.ShouldBeEmpty();
+        selected.Value.ProjectPolicy.ShouldNotBeNull().IsComplete.ShouldBeTrue();
     }
 
     /// <summary>Exercises the deactivation decision through projection delivery and all four HTTP routes.</summary>
@@ -524,7 +619,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             new MagicLinkCapabilityId("capability-adjust-inactive"), new TimeEntryId("time-entry-adjust-inactive"),
             replacementActivityTypeId: new("active-replacement"));
         ActivityTypeCatalogItem item = factory.Store
-            .Get<ActivityTypeCatalogReadModel>(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+            .GetSelectedCatalog(Tenant())
             .Items.Single(item => item.ActivityTypeId == ActivityId());
         item.IsActive.ShouldBeFalse();
         item.IsAvailableForCapture.ShouldBeFalse();
@@ -591,7 +686,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             .Entries[Hash(ValidConfirmToken())];
         candidate.CapabilityId.ShouldBe(capabilityId);
         candidate.Tenant.ShouldBe(Tenant());
-        factory.Store.Get<ActivityTypeCatalogReadModel>(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+        factory.Store.GetSelectedCatalog(Tenant())
             .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
         factory.LocalPort = 8080;
         foreach (ExternalRoute route in ExternalRoutes())
@@ -637,16 +732,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
         };
         string indexBefore = JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions);
-        string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
-            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
+        string catalogBefore = JsonSerializer.Serialize(factory.Store.GetSelectedCatalog(Tenant()), JsonOptions);
         string assertion = await factory.IssueAssertionAsync(EventStoreWorkloadOperations.DomainServiceProject);
         factory.LocalPort = 8080;
         using HttpResponseMessage response = await factory.PostProjectionAsync(client, projectionPath, dispatch, assertion);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
         JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions).ShouldBe(indexBefore);
-        JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
-            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
+        JsonSerializer.Serialize(factory.Store.GetSelectedCatalog(Tenant()), JsonOptions).ShouldBe(catalogBefore);
 
         factory.LocalPort = 8081;
         using HttpResponseMessage admittedResponse = await factory.PostProjectionAsync(client, projectionPath, dispatch, assertion);
@@ -1161,7 +1254,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         authorizedContext.Actor.ShouldBe(expectedActor);
         authorizedContext.CorrelationId.ShouldNotBeNullOrWhiteSpace();
         string catalogKey = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(expectedTenant);
-        factory.Store.ReadKeys.ShouldBe(useMismatchedClaims ? [catalogKey] : [catalogKey, catalogKey]);
+        SharedProjectionScope catalogScope = TenantActivityTypeCatalogEpoch.CreateScope(expectedTenant.TenantId);
+        string epochKey = "shared-epoch:" + catalogScope.ComputeHash();
+        string physicalPrefix = "shared-generation:" + catalogScope.ComputeHash() + ":";
+        factory.Store.ReadKeys.ShouldNotContain(catalogKey);
+        factory.Store.ReadKeys.ShouldContain(epochKey);
+        factory.Store.ReadKeys.Count(key => key.StartsWith(physicalPrefix, StringComparison.Ordinal))
+            .ShouldBe(useMismatchedClaims ? 0 : 2);
+        factory.Store.ReadKeys.ShouldAllBe(key => key == epochKey || key.StartsWith(physicalPrefix, StringComparison.Ordinal));
         StreamReadRequest request = factory.Gateway.Requests[0];
         request.Tenant.ShouldBe(expectedTenant.TenantId);
         request.AggregateId.ShouldBe(capabilityId.Value);
@@ -1216,8 +1316,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         int authorizationBefore = factory.AccessGuard.AuthorizationCount;
         int trustedWorkBefore = factory.AccessGuard.TrustedWorkExecutionCount;
         string indexBefore = JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions);
-        string catalogBefore = JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
-            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions);
+        string catalogBefore = JsonSerializer.Serialize(factory.Store.GetSelectedCatalog(Tenant()), JsonOptions);
         JsonObject body = JsonSerializer.SerializeToNode(command, JsonOptions).ShouldNotBeNull().AsObject();
         if (omitIdentifier)
         {
@@ -1240,8 +1339,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.AccessGuard.TrustedWorkExecutionCount.ShouldBe(trustedWorkBefore);
         generator.GenerationCount.ShouldBe(1);
         JsonSerializer.Serialize(factory.Store.GetSelectedIndex(), JsonOptions).ShouldBe(indexBefore);
-        JsonSerializer.Serialize(factory.Store.Get<ActivityTypeCatalogReadModel>(
-            MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())), JsonOptions).ShouldBe(catalogBefore);
+        JsonSerializer.Serialize(factory.Store.GetSelectedCatalog(Tenant()), JsonOptions).ShouldBe(catalogBefore);
     }
 
     [Fact]
@@ -1312,7 +1410,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         _ = await CaptureFailureAsync(response, scenario, token);
         factory.AccessGuard.AuthorizationCount.ShouldBe(authorizationCount);
-        factory.Store.Contains(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())).ShouldBeFalse();
+        // An earlier valid event may already be selected, but unresolved journal evidence prevents use.
+        factory.Store.ContainsSelectedCatalog(Tenant())
+            .ShouldBe(scenario == "unreadable");
     }
 
     [Fact]
@@ -1884,7 +1984,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     true,
                     BillableState.Billable)
             ],
-            ProjectionFreshnessMetadata.Fresh);
+            ProjectionFreshnessMetadata.Fresh)
+        {
+            ProjectPolicy = new(new TenantReference("tenant-1"), true, [])
+        };
 
     private static ActivityTypeCreated ActivityCreated(ActivityTypeId? activityTypeId = null)
         => new(
@@ -2034,7 +2137,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 $"dispatch-{capabilityId.Value}",
                 fingerprint);
 
-            if (!Store.Contains(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant())))
+            if (!Store.ContainsSelectedCatalog(Tenant()))
             {
                 await DispatchProjectionAsync(
                     client,
@@ -2048,9 +2151,30 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     TenantActivityTypeCatalogProjection.ProjectionName,
                     "dispatch-catalog-live",
                     fingerprint);
-                Store.Get<ActivityTypeCatalogReadModel>(
-                        MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()))
+                Store.GetSelectedCatalog(Tenant())
                     .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+                var catalogHandler = new TenantActivityTypeCatalogProjectionHandler(Store);
+                var catalogCoordinator = new SharedProjectionEpochCoordinator(Store, Store);
+                SharedProjectionScope catalogScope = catalogHandler.CreateScope(Tenant().TenantId);
+                var rebuildIdentity = new DomainSharedProjectionRebuildIdentity(Tenant().TenantId, "timesheets",
+                    catalogHandler.ProjectionType, "fixture-catalog-rebuild", fingerprint);
+                ProjectionRequest completeCatalogHistory = new(Tenant().TenantId, "timesheets", ActivityId().Value,
+                    deactivateActivityType
+                        ? [ProjectionEvent(1, ActivityCreated()), ProjectionEvent(2, new ActivityTypeDeactivated(ActivityId()))]
+                        : [ProjectionEvent(1, ActivityCreated())]);
+                await catalogCoordinator.BeginAsync(catalogScope, rebuildIdentity.OperationId, "fixture-inventory",
+                    new Dictionary<string, long> { [ActivityId().Value] = completeCatalogHistory.Events[^1].GlobalPosition });
+                DomainSharedProjectionRebuildCandidate catalogCandidate = await catalogHandler.CreateEmptyCandidateAsync(
+                    rebuildIdentity, TestContext.Current.CancellationToken);
+                catalogCandidate = await catalogHandler.AccumulateAsync(rebuildIdentity, catalogCandidate,
+                    completeCatalogHistory, TestContext.Current.CancellationToken);
+                DomainProjectionRebuildPlan catalogPlan = await catalogHandler.FinalizeAsync(rebuildIdentity,
+                    catalogCandidate, TestContext.Current.CancellationToken);
+                await catalogCoordinator.StageAsync(catalogScope, rebuildIdentity.OperationId, catalogPlan.Operations);
+                await catalogCoordinator.CommitAsync(catalogScope, rebuildIdentity.OperationId);
+                await catalogCoordinator.CatchUpAsync(catalogScope,
+                    (delivery, generation, cancellation) => catalogHandler.FoldCatchUpAsync(
+                        delivery, generation, catalogCoordinator, cancellation));
             }
 
             Gateway.WithStream(Tenant().TenantId, capabilityId.Value, StreamEvent(1, issued));
@@ -2063,6 +2187,13 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     TenantActivityTypeCatalogProjection.ProjectionName, "dispatch-active-replacement", fingerprint);
             }
         }
+
+        public Task<ProjectionDispatchOutcome> DeliverProjectRestrictionAsync(
+            HttpClient client, TenantReference tenant, ActivityTypeId[] allowed)
+            => DispatchProjectionAsync(client, new ProjectionRequest(tenant.TenantId, "timesheets", "project-policy-source",
+                [ProjectionEvent(1, new ProjectActivityTypeCatalogRestrictionConfigured(Project(), true, allowed, []))]),
+                TenantActivityTypeCatalogProjection.ProjectionName, "restriction-" + tenant.TenantId,
+                LastIndexDispatch!.CatalogFingerprint);
 
         public async Task ProjectCrossTenantCandidateAsync(
             HttpClient client,
@@ -2174,8 +2305,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 TenantActivityTypeCatalogProjection.ProjectionName,
                 $"dispatch-catalog-{scenario}",
                 fingerprint,
-                ProjectionDispatchStatus.Failed,
-                ProjectionDispatchReasonCodes.DeliveryIdentityConflict);
+                scenario == "missing-sequence" ? ProjectionDispatchStatus.Failed : ProjectionDispatchStatus.Retryable,
+                scenario == "missing-sequence" ? ProjectionDispatchReasonCodes.MalformedOutcome
+                    : ProjectionDispatchReasonCodes.PartialRetry);
 
             Gateway.WithStream(Tenant().TenantId, capabilityId.Value, StreamEvent(1, issued));
             Gateway.WithStream(Tenant().TenantId, timeEntryId.Value, StreamEvent(1, recorded));
@@ -2666,6 +2798,41 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             where T : class
             => _inner.GetAsync<T>(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName, key)
                 .GetAwaiter().GetResult().Value ?? throw new KeyNotFoundException(key);
+
+        public byte[]? InspectRawBytes(string storeName, string key) => _inner.SnapshotRaw(storeName, key);
+
+        public bool ContainsSelectedCatalog(TenantReference tenant)
+            => InspectSelectedAsync<ActivityTypeCatalogReadModel>(MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName,
+                MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant)).GetAwaiter().GetResult().Value is not null;
+
+        public ActivityTypeCatalogReadModel GetSelectedCatalog(TenantReference tenant)
+            => InspectSelectedAsync<ActivityTypeCatalogReadModel>(MagicLinkActivityTypeCatalogReadModelAddress.StateStoreName,
+                MagicLinkActivityTypeCatalogReadModelAddress.StateKey(tenant)).GetAwaiter().GetResult().Value
+                ?? throw new KeyNotFoundException("The selected catalog is missing.");
+
+        public Task<ReadModelEntry<TValue>> InspectSelectedAsync<TValue>(string storeName, string logicalKey,
+            CancellationToken cancellationToken = default) where TValue : class
+            => _inner.GetAsync<TValue>(storeName, SelectedKey(logicalKey), cancellationToken);
+
+        public Task<bool> MutateSelectedAsync<TValue>(string storeName, string logicalKey, TValue value, string etag,
+            CancellationToken cancellationToken = default) where TValue : class
+            => _inner.TrySaveAsync(storeName, SelectedKey(logicalKey), value, etag, cancellationToken);
+
+        // Test inspection/mutation helpers accept the canonical logical address and resolve the
+        // same selected generation as production. Epoch infrastructure reads already use physical keys.
+        private string SelectedKey(string key)
+        {
+            const string prefix = "timesheets:magic-links:activity-type-catalog:";
+            if (!key.StartsWith(prefix, StringComparison.Ordinal) || !key.EndsWith(":v1", StringComparison.Ordinal))
+                return key;
+            string tenantId = key[prefix.Length..^3];
+            SharedProjectionScope scope = TenantActivityTypeCatalogEpoch.CreateScope(tenantId);
+            string hash = scope.ComputeHash();
+            JsonObject? state = _inner.GetAsync<JsonObject>(scope.StoreName,
+                "shared-epoch:" + hash).GetAwaiter().GetResult().Value;
+            return state is null ? key : $"shared-generation:{hash}:{state["activeGeneration"]!.GetValue<long>()}:"
+                + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+        }
 
         public MagicLinkTokenHashCapabilityIndexReadModel GetSelectedIndex()
         {

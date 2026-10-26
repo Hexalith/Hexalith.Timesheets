@@ -15,6 +15,7 @@ using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.ReadModels.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovalAuthority;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
@@ -298,6 +299,20 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             await builder.AddContributionAsync(new(Hash().Value, new(Tenant(), CapabilityId())), TestContext.Current.CancellationToken);
             _ = await coordinator.StageAsync(scope, "deadline-tree", [.. builder.Operations()], TestContext.Current.CancellationToken);
             await coordinator.CommitAsync(scope, "deadline-tree", TestContext.Current.CancellationToken);
+        }
+        if (coordinator is not null)
+        {
+            SharedProjectionScope catalogScope = TenantActivityTypeCatalogEpoch.CreateScope(Tenant().TenantId);
+            await coordinator.RegisterWriterAsync(catalogScope, TenantActivityTypeCatalogEpoch.OrdinaryWriterId,
+                TestContext.Current.CancellationToken);
+            await coordinator.BeginAsync(catalogScope, "deadline-catalog", "catalog-inventory", new Dictionary<string, long>(),
+                TestContext.Current.CancellationToken);
+            ActivityTypeCatalogReadModel catalog = (await inner.GetAsync<ActivityTypeCatalogReadModel>(catalogScope.StoreName,
+                MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()), TestContext.Current.CancellationToken)).Value!;
+            await coordinator.StageAsync(catalogScope, "deadline-catalog",
+                [ReadModelBatchOperation.Write(MagicLinkActivityTypeCatalogReadModelAddress.StateKey(Tenant()), catalog,
+                    ReadModelBatchConcurrency.LastWrite)], TestContext.Current.CancellationToken);
+            await coordinator.CommitAsync(catalogScope, "deadline-catalog", TestContext.Current.CancellationToken);
         }
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -2233,6 +2248,49 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
                 Event(4, "correction", correction));
         ShouldBeOpaqueFailClosed(await CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())))
             .LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData("legacy", false)]
+    [InlineData("incomplete", false)]
+    [InlineData("foreign-tenant", false)]
+    [InlineData("missing-source", false)]
+    [InlineData("duplicate-source", false)]
+    [InlineData("verified", true)]
+    public async Task CatalogLoaderDoesNotCertifyMissingMalformedOrForeignProjectPolicy(string scenario, bool keepsPolicy)
+    {
+        ProjectActivityTypeCatalogRestrictionSnapshot restriction = new("policy-1", Project(), true, [ActivityId()], []);
+        var catalog = new ActivityTypeCatalogReadModel([new(ActivityId(), ActivityTypeScope.Tenant, null,
+            "Delivery", true, BillableState.Billable)], ProjectionFreshnessMetadata.Fresh)
+        {
+            ProjectPolicy = scenario == "legacy" ? null : new(
+                scenario == "foreign-tenant" ? new("tenant-2") : Tenant(), scenario != "incomplete",
+                scenario switch
+                {
+                    "missing-source" => [restriction with { SourceAggregateId = null }],
+                    "duplicate-source" => [restriction, restriction],
+                    _ => [restriction]
+                })
+        };
+        var loader = CreateLoader(new ScriptedGatewayClient(), new InMemoryReadModelStore(IndexWith(Hash()), catalog: catalog));
+        ActivityTypeCatalogReadModel loaded = await loader.LoadActivityTypeCatalogAsync(TestContext.Current.CancellationToken);
+        loaded.Items.ShouldHaveSingleItem().ActivityTypeId.ShouldBe(ActivityId());
+        loaded.ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
+        (loaded.ProjectPolicy is not null).ShouldBe(keepsPolicy);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DirectCatalogReadRequiresExplicitLegacyCompatibilityWhenCoordinatorIsAbsent(bool allowLegacy)
+    {
+        var readModels = new InMemoryReadModelStore(IndexWith(Hash()));
+        var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(new ScriptedGatewayClient(), readModels,
+            new DeterministicTokenGenerator(), new FixedTrustedContextAccessor(Tenant(), Operator(), "correlation-1"),
+            allowLegacyIndexRead: allowLegacy);
+        ActivityTypeCatalogReadModel catalog = await loader.LoadActivityTypeCatalogAsync(TestContext.Current.CancellationToken);
+        catalog.ProjectionFreshness.State.ShouldBe(allowLegacy ? ProjectionFreshnessState.Fresh : ProjectionFreshnessState.Unavailable);
+        readModels.CatalogReadCount.ShouldBe(allowLegacy ? 1 : 0);
     }
 
     private static void ShouldBeOpaqueFailClosed(MagicLinkEndpointTokenState state)

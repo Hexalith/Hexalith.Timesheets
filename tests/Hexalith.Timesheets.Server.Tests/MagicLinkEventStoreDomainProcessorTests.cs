@@ -214,7 +214,8 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
     private static (EventStoreMagicLinkConfirmationCapabilityStateLoader Loader,
         MagicLinkConfirmationCapabilityCommandService Service, ExternalContributionCommandService External,
         ITimesheetsAccessGuard Guard) ExpiryDependencies(bool partyAllowed,
-            MagicLinkConfirmationCapabilityIssued? issuance = null, ActivityTypeCatalogReadModel? catalog = null)
+            MagicLinkConfirmationCapabilityIssued? issuance = null, ActivityTypeCatalogReadModel? catalog = null,
+            Func<ActivityTypeCatalogReadModel?>? readCatalog = null)
     {
         IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
         var issued = issuance ?? Issued() with { TargetKind = MagicLinkTargetKind.ProposedTimeEntry };
@@ -227,9 +228,9 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
         var tokens = new CryptographicMagicLinkTokenGenerator();
         IReadModelStore readModels = Substitute.For<IReadModelStore>();
         readModels.GetAsync<ActivityTypeCatalogReadModel>(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new ReadModelEntry<ActivityTypeCatalogReadModel>(catalog, "etag-1"));
+            .Returns(_ => new ReadModelEntry<ActivityTypeCatalogReadModel>(readCatalog is null ? catalog : readCatalog(), "etag-1"));
         var loader = new EventStoreMagicLinkConfirmationCapabilityStateLoader(gateway,
-            readModels, tokens, Substitute.For<ITimesheetsTrustedContextAccessor>());
+            readModels, tokens, Substitute.For<ITimesheetsTrustedContextAccessor>(), allowLegacyIndexRead: true);
         ITimesheetsAccessGuard guard = Substitute.For<ITimesheetsAccessGuard>();
         guard.AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>())
             .Returns(partyAllowed ? TimesheetsAuthorizationDecision.Allowed()
@@ -394,6 +395,70 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
             AggregateId = commandName == nameof(CommitMagicLinkIssue) ? "capability-1" : "entry-1",
             Payload = JsonSerializer.SerializeToUtf8Bytes(intent, new JsonSerializerOptions(JsonSerializerDefaults.Web))
         };
+    }
+
+    [Theory]
+    [InlineData("issue", false)]
+    [InlineData("adjust", false)]
+    [InlineData("confirm", false)]
+    [InlineData("issue", true)]
+    [InlineData("adjust", true)]
+    [InlineData("confirm", true)]
+    public async Task AwaitedAuthorizationUsesProcessingCatalogSnapshotAndNextDecisionObservesUpdate(string action, bool policyOnly)
+    {
+        var catalog = new ActivityTypeCatalogReadModel([new(new("activity-1"), ActivityTypeScope.Tenant,
+            null, "Delivery", true, BillableState.Billable)], ProjectionFreshnessMetadata.Fresh)
+        {
+            ProjectPolicy = new(new("tenant-1"), true, [])
+        };
+        var (loader, service, external, guard) = ExpiryDependencies(true, issuance: Issued() with
+        {
+            TargetKind = MagicLinkTargetKind.ProposedTimeEntry,
+            AllowedAction = action == "adjust" ? MagicLinkAllowedAction.Adjust : MagicLinkAllowedAction.Confirm
+        }, readCatalog: () => catalog);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var resume = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        guard.AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<TimesheetsAuthorizationDecision>(AuthorizeAsync()));
+        async Task<TimesheetsAuthorizationDecision> AuthorizeAsync()
+        {
+            entered.TrySetResult();
+            await resume.Task.WaitAsync(TestContext.Current.CancellationToken);
+            return TimesheetsAuthorizationDecision.Allowed();
+        }
+        TimeProvider clock = Substitute.For<TimeProvider>();
+        clock.GetUtcNow().Returns(DateTimeOffset.UnixEpoch.AddDays(1));
+        var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, clock);
+        object intent = action == "issue"
+            ? new CommitMagicLinkIssue(new IssueMagicLinkConfirmationCapability(new("capability-1"),
+                new MagicLinkConfirmationScope(new("actor-1"), Recorded().Target, new("activity-1"), new("entry-1"),
+                    MagicLinkTargetKind.ProposedTimeEntry), MagicLinkAllowedAction.Confirm, Issued().ExpiresAtUtc,
+                new("timesheets", "snapshot-issue")), new("tenant-1"), new("actor-1"), new("hash-1"),
+                DateTimeOffset.UnixEpoch.AddDays(1))
+            : new CommitMagicLinkUse(new("capability-1"), new("tenant-1"), new("entry-1"), new("hash-1"),
+                action == "adjust" ? MagicLinkUseAction.Adjust : MagicLinkUseAction.Confirm,
+                action == "adjust" ? new(new(2026, 6, 19), 90, new("activity-1"), BillableState.Billable) : null,
+                DateTimeOffset.UnixEpoch.AddDays(1));
+        CommandEnvelope command = Envelope(intent.GetType().FullName!) with
+        {
+            AggregateId = action == "issue" ? "capability-1" : "entry-1",
+            Payload = JsonSerializer.SerializeToUtf8Bytes(intent, intent.GetType(), new JsonSerializerOptions(JsonSerializerDefaults.Web))
+        };
+        object? owner = action == "issue" ? null : new object[] { Recorded() };
+        Task<DomainResult> first = processor.ProcessAsync(command, owner, TestContext.Current.CancellationToken);
+        await entered.Task.WaitAsync(TestContext.Current.CancellationToken);
+        catalog = catalog with
+        {
+            Items = policyOnly ? catalog.Items : [catalog.Items[0] with { IsActive = false, IsAvailableForCapture = false }],
+            ProjectPolicy = new(new("tenant-1"), true, [new("policy-1", new("project-1"), true, [], [])])
+        };
+        if (policyOnly)
+            catalog.Items.ShouldHaveSingleItem().IsAvailableForCapture.ShouldBeTrue();
+        resume.SetResult();
+        (await first).IsRejection.ShouldBeFalse();
+        DomainResult later = await processor.ProcessAsync(command with { MessageId = "later-decision" }, owner,
+            TestContext.Current.CancellationToken);
+        later.IsRejection.ShouldBe(action != "confirm");
     }
 
     private static TimeEntryRecorded Recorded() => new(new("entry-1"),

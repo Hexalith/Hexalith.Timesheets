@@ -53,7 +53,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
         };
         var catalog = new ActivityTypeCatalogReadModel(items, evidence == "stale"
             ? ProjectionFreshnessMetadata.Fresh with { State = ProjectionFreshnessState.Stale }
-            : ProjectionFreshnessMetadata.Fresh);
+            : ProjectionFreshnessMetadata.Fresh) { ProjectPolicy = FreshCatalog().ProjectPolicy };
         MagicLinkConfirmationCapabilityCommandService service = AuthorizedProjectFixture().CreateService();
         CapabilityStateData capability = IssuedState(allowedAction: MagicLinkAllowedAction.Adjust);
         TimeEntryState entry = RecordedExternalState();
@@ -638,7 +638,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
             Context(),
             IssueWorkCommand(),
             null,
-            FreshCatalog(),
+            FreshCatalog() with { ProjectPolicy = null },
             IssuedAtUtc(),
             TestContext.Current.CancellationToken);
         MagicLinkConfirmationCapabilityIssued issued = issuance.DomainResult.ShouldNotBeNull()
@@ -648,7 +648,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
             "opaque-once",
             IssuedState(target: workTarget),
             workEntry,
-            FreshCatalog(),
+            FreshCatalog() with { ProjectPolicy = null },
             ConfirmedAtUtc(),
             TestContext.Current.CancellationToken);
         MagicLinkConfirmationUseResult confirmation = await service.ConfirmAsync(
@@ -664,7 +664,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
             "opaque-once",
             IssuedState(target: workTarget, allowedAction: MagicLinkAllowedAction.Adjust),
             workEntry,
-            FreshCatalog(),
+            FreshCatalog() with { ProjectPolicy = null },
             ConfirmedAtUtc(),
             TestContext.Current.CancellationToken);
         MagicLinkConfirmationUseResult adjustment = await service.AdjustAsync(
@@ -673,7 +673,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
             AdjustCommand(),
             IssuedState(target: workTarget, allowedAction: MagicLinkAllowedAction.Adjust),
             workEntry,
-            FreshCatalog(),
+            FreshCatalog() with { ProjectPolicy = null },
             ConfirmedAtUtc(),
             TestContext.Current.CancellationToken);
 
@@ -1530,6 +1530,50 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
         return state;
     }
 
+    [Theory]
+    [InlineData("allowed", true)]
+    [InlineData("excluded", false)]
+    [InlineData("unrestricted", true)]
+    [InlineData("empty-verified", true)]
+    [InlineData("legacy", false)]
+    [InlineData("incomplete", false)]
+    [InlineData("foreign-tenant", false)]
+    [InlineData("ambiguous", false)]
+    [InlineData("missing-source", false)]
+    [InlineData("stale", false)]
+    public async Task ProjectSelectionRequiresVerifiedUnambiguousRestrictionSnapshot(string scenario, bool allowed)
+    {
+        ProjectActivityTypeCatalogRestrictionSnapshot restriction = new("policy-source", Project(),
+            scenario != "unrestricted", scenario == "allowed" ? [ActivityId()] : [], []);
+        ActivityTypeCatalogReadModel catalog = FreshCatalog() with
+        {
+            ProjectPolicy = scenario == "legacy" ? null : new(
+                new TenantReference(scenario == "foreign-tenant" ? "tenant-2" : "tenant-1"),
+                scenario != "incomplete",
+                scenario switch
+                {
+                    "empty-verified" => [],
+                    "ambiguous" => [restriction, restriction with { SourceAggregateId = "other-policy-source" }],
+                    "missing-source" => [restriction with { SourceAggregateId = null }],
+                    _ => [restriction]
+                }),
+            ProjectionFreshness = scenario == "stale" ? ProjectionFreshnessMetadata.Stale() : ProjectionFreshnessMetadata.Fresh
+        };
+        MagicLinkConfirmationCapabilityCommandService service = AuthorizedProjectFixture().CreateService();
+        MagicLinkCapabilityCommandResult issue = await service.IssueAsync(Context(), IssueCommand(), null,
+            catalog, IssuedAtUtc(), TestContext.Current.CancellationToken);
+        MagicLinkConfirmationUseResult adjustment = await service.AdjustAsync(Context(), "opaque-once", AdjustCommand(),
+            IssuedState(allowedAction: MagicLinkAllowedAction.Adjust), RecordedExternalState(), catalog,
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        issue.DomainResult.ShouldNotBeNull().IsSuccess.ShouldBe(allowed);
+        adjustment.WasDispatched.ShouldBe(allowed);
+        // Historical confirmation intentionally ignores subsequent Project exclusions and policy coverage.
+        MagicLinkConfirmationUseResult confirmation = await service.ConfirmAsync(Context(), "opaque-once",
+            new ConfirmTimeThroughMagicLink(), IssuedState(), RecordedExternalState(),
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        confirmation.WasDispatched.ShouldBeTrue();
+    }
+
     private static ActivityTypeCatalogReadModel FreshCatalog()
         => new(
             [
@@ -1541,7 +1585,10 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
                     true,
                     BillableState.Billable)
             ],
-            ProjectionFreshnessMetadata.Fresh);
+            ProjectionFreshnessMetadata.Fresh)
+        {
+            ProjectPolicy = new(new TenantReference("tenant-1"), true, [])
+        };
 
     private static TimesheetsRequestContext Context()
         => new(new TenantReference("tenant-1"), new PartyReference("operator-1"), "correlation-1");

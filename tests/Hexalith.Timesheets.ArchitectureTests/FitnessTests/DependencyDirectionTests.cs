@@ -314,7 +314,7 @@ public sealed class DependencyDirectionTests
         program.ShouldContain("TimesheetsProjectionsMarker");
         program.ShouldContain("UseEventStoreDomainService");
         indexHandler.ShouldContain("IAsyncDomainSharedProjectionStreamedOwnerHandler");
-        catalogHandler.ShouldContain("IAsyncDomainSharedProjectionRebuildHandler");
+        catalogHandler.ShouldContain("IAsyncDomainSharedProjectionEpochHandler");
         indexHandler.ShouldContain("ReadModelWritePolicy.UpdateAsync");
         catalogHandler.ShouldContain("ReadModelWritePolicy.UpdateAsync");
     }

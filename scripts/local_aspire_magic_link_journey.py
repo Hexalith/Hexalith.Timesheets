@@ -12,6 +12,7 @@ import hmac
 import json
 import os
 import secrets
+import struct
 import subprocess
 import time
 import urllib.error
@@ -391,6 +392,79 @@ def read_model(key_name, allow_missing=False):
     return json.loads(data)
 
 
+def selected_catalog(scoped_tenant=tenant):
+    family = "tenant-activity-type-catalog"
+    components = ["timesheets-readmodels", scoped_tenant, "timesheets", family, family, "shared-epoch"]
+    scope_hash = b64(hashlib.sha256("".join(f"{len(value)}:{value}" for value in components).encode()).digest())
+    epoch = read_model("shared-epoch:" + scope_hash)
+    logical_key = f"timesheets:magic-links:activity-type-catalog:{scoped_tenant}:v1"
+    physical_key = (f"shared-generation:{scope_hash}:{epoch['activeGeneration']}:"
+                    + hashlib.sha256(logical_key.encode()).hexdigest().upper())
+    return read_model(physical_key)
+
+
+def rebuild_fixture_catalog(events, aggregate, fingerprint, scoped_tenant=tenant):
+    # Test transport for the SDK's frozen history/inventory fingerprint contract. The isolated
+    # fixture supplies its one complete catalog owner, before any capabilities are issued.
+    def integer(value):
+        return struct.pack(">q", value)
+
+    def data(value):
+        return struct.pack(">i", len(value)) + value
+
+    def string(value):
+        return data(value.encode())
+
+    def optional(value, encode):
+        return integer(0) if value is None else integer(1) + encode(value)
+
+    history = b"hexalith-shared-projection-history-v2" + string(aggregate) + integer(0) + integer(len(events))
+    for item in events:
+        timestamp = datetime.fromisoformat(item["timestamp"].replace("Z", "+00:00"))
+        utc = timestamp.astimezone(timezone.utc)
+        delta = utc - datetime(1, 1, 1, tzinfo=timezone.utc)
+        ticks = (delta.days * 86400 + delta.seconds) * 10_000_000 + delta.microseconds * 10
+        history += (string(item["eventTypeName"]) + data(base64.b64decode(item["payload"]))
+                    + string(item["serializationFormat"]) + integer(item["sequenceNumber"])
+                    + integer(ticks) + integer(int(timestamp.utcoffset().total_seconds() / 60))
+                    + string(item["correlationId"]) + optional(item.get("messageId"), string)
+                    + optional(item.get("userId"), string) + integer(item["globalPosition"]))
+        for field, encode in (("metadataVersion", integer), ("storedEventContractType", string),
+                              ("storedPayloadVersion", integer), ("storedSerializationFormat", string),
+                              ("effectiveEventContractType", string), ("effectivePayloadVersion", integer),
+                              ("effectiveSerializationFormat", string),
+                              ("effectivePayload", lambda value: data(base64.b64decode(value))),
+                              ("storedEventTypeName", string),
+                              ("storedDigest", lambda value: data(base64.b64decode(value))),
+                              ("registryFingerprint", string), ("isAdapted", integer)):
+            history += optional(item.get(field), encode)
+    history_fingerprint = "v2:" + b64(hashlib.sha256(history).digest())
+    empty = "v1:" + b64(hashlib.sha256(b"hexalith-shared-projection-rebuild-inventory-v1").digest())
+    inventory = "v1:" + b64(hashlib.sha256(string(empty) + integer(0) + string(history_fingerprint)).digest())
+    identity = {"tenantId": scoped_tenant, "domain": "timesheets", "projectionType": "tenant-activity-type-catalog",
+                "operationId": "fixture-catalog-" + secrets.token_hex(8), "catalogFingerprint": fingerprint}
+
+    def transition(action, **details):
+        status, body = call(timesheets + "/project/rebuild/shared/v1", "POST",
+                            {"version": 1, "action": action, "identity": identity, **details},
+                            sign("timesheets", "eventstore", "domain-service:project"))
+        require(status == 200, f"Catalog shared rebuild transition returned {status}")
+        result = json.loads(body)
+        require(result["status"] in (0, 1), "Catalog shared rebuild did not complete: " + str(result.get("reasonCode")))
+        return result
+
+    transition(0, captureInventoryFingerprint=inventory,
+               sourceHighWatermarks={aggregate: events[-1]["globalPosition"]})
+    transition(1, aggregateOrdinal=0, aggregateId=aggregate, events=events)
+    transition(2, expectedAggregateCount=1, expectedInventoryFingerprint=inventory)
+    transition(3)
+    transition(4)
+    policy = selected_catalog(scoped_tenant).get("projectPolicy")
+    require(policy is not None and policy["isComplete"] and policy["tenant"]["tenantId"] == scoped_tenant,
+            "Fenced catalog rebuild did not establish tenant-bound policy coverage")
+    print("fixture tenant catalog rebuild committed and persisted")
+
+
 def selected_capability(capability):
     family = "magic-link-confirmation-capabilities"
     components = ["timesheets-readmodels", tenant, "timesheets", family, family, "shared-epoch"]
@@ -524,18 +598,20 @@ catalog_event = {
     "userId": actor, "globalPosition": 1,
 }
 project([catalog_event], activity, "tenant-activity-type-catalog", fingerprint)
-catalog = read_model(f"timesheets:magic-links:activity-type-catalog:{tenant}:v1")
+catalog = selected_catalog()
 require(catalog["projectionFreshness"]["state"] == "Fresh"
         and any(item["activityTypeId"]["value"] == activity for item in catalog["items"]),
         "Delivered catalog is not Fresh with the isolated activity")
 print("catalog delivered and persisted")
+rebuild_fixture_catalog([catalog_event], activity, fingerprint)
 
 other_tenant = "outside-fixture-" + secrets.token_hex(8)
 other_capability = "live-capability-" + secrets.token_hex(8)
 other_catalog_event = catalog_event | {"messageId": "live-dapr-catalog-" + secrets.token_hex(8)}
 project([other_catalog_event], activity, "tenant-activity-type-catalog", fingerprint, other_tenant)
-other_catalog = read_model(f"timesheets:magic-links:activity-type-catalog:{other_tenant}:v1")
+other_catalog = selected_catalog(other_tenant)
 require(other_catalog["projectionFreshness"]["state"] == "Fresh", "Non-fixture catalog is not Fresh")
+rebuild_fixture_catalog([other_catalog_event], activity, fingerprint, other_tenant)
 other_issue = {
     "capabilityId": {"value": other_capability},
     "scope": {
@@ -738,7 +814,7 @@ application("timesheets", 8081)
 timesheets = f"http://127.0.0.1:{eventstore_port}/v1.0/invoke/timesheets/method"
 with owned_http_open(timesheets_sidecar + "/v1.0/metadata", timeout=20) as response:
     require(json.load(response).get("id") == "timesheets", "Timesheets points to another Dapr app after restart")
-catalog_after = read_model(f"timesheets:magic-links:activity-type-catalog:{tenant}:v1")
+catalog_after = selected_catalog()
 require(catalog_after["projectionFreshness"]["state"] == "Fresh"
         and any(item["activityTypeId"]["value"] == activity for item in catalog_after["items"]),
         "Catalog was unavailable after restart")

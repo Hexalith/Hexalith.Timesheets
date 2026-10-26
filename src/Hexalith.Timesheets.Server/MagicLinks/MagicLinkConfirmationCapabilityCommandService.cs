@@ -54,7 +54,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return new(authorization, null);
         }
 
-        if (!TryResolveActivityTypeScope(command, activityTypeCatalog, out TimesheetsDomainResult? rejection))
+        if (!TryResolveActivityTypeScope(context.Tenant, command, activityTypeCatalog, out TimesheetsDomainResult? rejection))
         {
             return new(authorization, rejection);
         }
@@ -130,7 +130,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return new(authorization, null);
         }
 
-        if (!TryResolveActivityTypeScope(command, activityTypeCatalog, out TimesheetsDomainResult? rejection))
+        if (!TryResolveActivityTypeScope(context.Tenant, command, activityTypeCatalog, out TimesheetsDomainResult? rejection))
         {
             return new(authorization, rejection);
         }
@@ -366,7 +366,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return new(InvalidLinkRejection(), null);
         }
 
-        if (!TryResolveActivityTypeScope(command, capabilityState!, activityTypeCatalog, out ActivityTypeScope activityTypeScope, out TimesheetsDomainResult? rejection))
+        if (!TryResolveActivityTypeScope(context.Tenant, command, capabilityState!, activityTypeCatalog, out ActivityTypeScope activityTypeScope, out TimesheetsDomainResult? rejection))
         {
             return new(rejection, null);
         }
@@ -662,6 +662,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
     }
 
     private static bool TryResolveActivityTypeScope(
+        TenantReference? tenant,
         IssueMagicLinkConfirmationCapability command,
         ActivityTypeCatalogReadModel catalog,
         out TimesheetsDomainResult? rejection)
@@ -744,10 +745,11 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return false;
         }
 
-        return true;
+        return IsAllowedByProjectPolicy(tenant, command.Scope.Target, selected.ActivityTypeId, catalog, out rejection);
     }
 
     private static bool TryResolveActivityTypeScope(
+        TenantReference? tenant,
         AdjustTimeThroughMagicLink command,
         MagicLinkCapabilityState capabilityState,
         ActivityTypeCatalogReadModel catalog,
@@ -811,9 +813,61 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return false;
         }
 
+        if (!IsAllowedByProjectPolicy(tenant, capabilityState.Target, selected.ActivityTypeId, catalog, out rejection))
+        {
+            return false;
+        }
+
         activityTypeScope = ActivityTypeScope.Tenant;
         return true;
     }
+
+    private static bool IsAllowedByProjectPolicy(
+        TenantReference? tenant,
+        TimeEntryTargetReference target,
+        ActivityTypeId activityTypeId,
+        ActivityTypeCatalogReadModel catalog,
+        out TimesheetsDomainResult? rejection)
+    {
+        rejection = null;
+        // A Work identifier provides no Project authority. Apply no inferred Project lookup.
+        if (target.TargetKind == TimeEntryTargetKind.Work)
+        {
+            return true;
+        }
+
+        TenantActivityTypeCatalogPolicySnapshot? policy = catalog.ProjectPolicy;
+        if (target.TargetKind != TimeEntryTargetKind.Project
+            || !HasValidProjectPolicy(policy, tenant))
+        {
+            rejection = Reject(TimesheetsRejectionCode.ProjectionUnavailable,
+                "Project Activity Type policy is unavailable.", "activityTypeCatalog", "policy-unavailable");
+            return false;
+        }
+
+        ProjectActivityTypeCatalogRestrictionSnapshot[] matches = policy!.Restrictions
+            .Where(item => StringComparer.Ordinal.Equals(item.Project.ProjectId, target.TargetId)).Take(2).ToArray();
+        if (matches.Length > 1)
+        {
+            rejection = Reject(TimesheetsRejectionCode.AuthorityCannotBeResolved,
+                "Project Activity Type policy has ambiguous source ownership.", "activityTypeCatalog", "policy-ambiguous");
+            return false;
+        }
+
+        if (matches is [{ IsRestricted: true } restriction]
+            && !restriction.AllowedTenantActivityTypeIds.Contains(activityTypeId))
+        {
+            rejection = Reject(TimesheetsRejectionCode.ActivityTypeScopeMismatch,
+                "Activity Type is excluded by Project policy.", "activityTypeId", "project-restricted");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Validates complete, tenant-bound materialization without inventing a restriction stream.</summary>
+    internal static bool HasValidProjectPolicy(TenantActivityTypeCatalogPolicySnapshot? policy, TenantReference? tenant)
+        => policy is { IsComplete: true } && policy.HasValidShapeForTenant(tenant);
 
     private static TimesheetsDomainResult Reject(
         TimesheetsRejectionCode code,
