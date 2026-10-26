@@ -1,0 +1,12 @@
+{
+  "commit": "c613e55aefd0650c1e64ed0580c8495657585a89",
+  "remote": "https://github.com/Hexalith/Hexalith.EventStore.git",
+  "branch": "main",
+  "push_succeeded": true,
+  "remote_head_verified": "c613e55aefd0650c1e64ed0580c8495657585a89",
+  "previous_local_baseline": "458f0cf38e43452655e6c307fa80debdf595a8db",
+  "integrated_remote_baseline": "7af8a2a74dff103f286abad144e4959e3e30b902",
+  "baseline_tree_ids_equal": "e39da0925ff3106d19124238924bf51863544609",
+  "package_release_dispatched": false,
+  "package_release_pending": true
+}

@@ -1,0 +1,252 @@
+{
+  "Hexalith.Timesheets.IntegrationTests.log": {
+    "archive": "Hexalith.Timesheets.IntegrationTests.log.gz",
+    "uncompressed_sha256": "443d3aaf5b371107928ab49b4a71b133b79e63797357eeb8f9c44b5efd92ebbe",
+    "archive_sha256": "c39995971b6faf506d1bab26abb3976a803fbfde45fef0dad47339440784f0b8"
+  },
+  "Hexalith.Timesheets.Projections.Tests.xml": {
+    "archive": "Hexalith.Timesheets.Projections.Tests.xml.gz",
+    "uncompressed_sha256": "dcb0860be8c6d2a270eafd20713450781e8dd7ab7ac08e41224ca8b2cd14caa9",
+    "archive_sha256": "b1caebaab4776f1e546a33abd651ff66b3cad36411ef9104bc2d947d82d425e5"
+  },
+  "baseline/run-o6cat3h1/01-aspire---version.log": {
+    "archive": "baseline/run-o6cat3h1/01-aspire---version.log.gz",
+    "uncompressed_sha256": "470e7c82980e16cc131b4c76717ef8fb22ebe23947d988203503cbd1de1dab03",
+    "archive_sha256": "f03096e38bb9f604414e001a81ddbc7829b282819da3f5338281136d155085ad"
+  },
+  "baseline/run-o6cat3h1/02-dapr---version.log": {
+    "archive": "baseline/run-o6cat3h1/02-dapr---version.log.gz",
+    "uncompressed_sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+    "archive_sha256": "4675dd0497e5ed7349e0519f5a907d778fdda69692b8cc8b97d1633695f1122c"
+  },
+  "baseline/run-o6cat3h1/03-docker-version.log": {
+    "archive": "baseline/run-o6cat3h1/03-docker-version.log.gz",
+    "uncompressed_sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+    "archive_sha256": "94f3ea466efa064f83cebdd88f6393598af8ffaf77fd792f2e4af5c61b916dcd"
+  },
+  "baseline/run-o6cat3h1/04-dapr-list.log": {
+    "archive": "baseline/run-o6cat3h1/04-dapr-list.log.gz",
+    "uncompressed_sha256": "3d18006aef905520069d3e3fc6063e5b746a354c0949fff293cb2c370884f2fd",
+    "archive_sha256": "a837fb0a10a9b32f8c9483102b3f2b1977b172fc14a67e9a4bf9e1581307c3fc"
+  },
+  "parent-final/Hexalith.Timesheets.ArchitectureTests.log": {
+    "archive": "parent-final/Hexalith.Timesheets.ArchitectureTests.log.gz",
+    "uncompressed_sha256": "ffae74841bf04b7434269803f9fc8bb093613afe2db55cb337375a549589beeb",
+    "archive_sha256": "4ad5999959d90d09c2e8080e55fc76308fcc6d80fe1736bbc1983445773921a1"
+  },
+  "parent-final/Hexalith.Timesheets.ArchitectureTests.xml": {
+    "archive": "parent-final/Hexalith.Timesheets.ArchitectureTests.xml.gz",
+    "uncompressed_sha256": "4b44558058b1fdcc15d841bf283fb44f77eea1112e0e756d44e26749d8bb1c70",
+    "archive_sha256": "6fdae072f1b671848b4887c1d2d93824b5c66babf02dd333f01abdb2003b75bd"
+  },
+  "parent-final/Hexalith.Timesheets.Contracts.Tests.log": {
+    "archive": "parent-final/Hexalith.Timesheets.Contracts.Tests.log.gz",
+    "uncompressed_sha256": "950dfe89f1b7c25f7570e5bb36f64af76d745cd3d41b6e485117da7653451641",
+    "archive_sha256": "0e5f0f890e61087311124c9768697b4234867def17a3d324a3e9b71b4c30e854"
+  },
+  "parent-final/Hexalith.Timesheets.Contracts.Tests.xml": {
+    "archive": "parent-final/Hexalith.Timesheets.Contracts.Tests.xml.gz",
+    "uncompressed_sha256": "f4e0976ce4c4dd2f0b9778f50b0cfee925cb8a1d28a02f27a2b92bec6f33c3d4",
+    "archive_sha256": "9e25517155561ba47e2147fc20edaca751de1535c9a9c14c9298c0cc437e0a61"
+  },
+  "parent-final/Hexalith.Timesheets.IntegrationTests.log": {
+    "archive": "parent-final/Hexalith.Timesheets.IntegrationTests.log.gz",
+    "uncompressed_sha256": "ede7d3f93e013798b96dd69f86146cac7c66a50300b8267f481d44aa79fcf5a9",
+    "archive_sha256": "d07af5c125167dbe494c8abe686b0e7873634e884401d76942e34e64dcf14406"
+  },
+  "parent-final/Hexalith.Timesheets.IntegrationTests.xml": {
+    "archive": "parent-final/Hexalith.Timesheets.IntegrationTests.xml.gz",
+    "uncompressed_sha256": "9b582f5803057f4d478b0674713b41b3688550fee909d219aa43b5cea34c9111",
+    "archive_sha256": "a5ff3c55d70b12dce1c9305955749f08c31f99374885677a289cf4e6099de977"
+  },
+  "parent-final/Hexalith.Timesheets.Projections.Tests.log": {
+    "archive": "parent-final/Hexalith.Timesheets.Projections.Tests.log.gz",
+    "uncompressed_sha256": "87ae5f09748517d5fe9f6645e92b2ecb2b433617113b3d032ae80bc5ff73920a",
+    "archive_sha256": "20bc60b9d4d9c615726a1d7e0010d788c4c9ed051270f28e633403252f0540ca"
+  },
+  "parent-final/Hexalith.Timesheets.Projections.Tests.xml": {
+    "archive": "parent-final/Hexalith.Timesheets.Projections.Tests.xml.gz",
+    "uncompressed_sha256": "7e2fc05ef79c92d025b321f3573ac7696edf5e497abe788d06d3bfcbab556735",
+    "archive_sha256": "4cf11ace510a050827c62714c9515087257eca56c19f3cb264c2ddb3c4282d8d"
+  },
+  "parent-final/Hexalith.Timesheets.Server.Tests.log": {
+    "archive": "parent-final/Hexalith.Timesheets.Server.Tests.log.gz",
+    "uncompressed_sha256": "e4b7936975ceed8d00720e17f1cd5d288f5a71c9924ff3697f79fc36c1b3e479",
+    "archive_sha256": "6697e5727cc7c403085d10242bf1b6f77cd90b4477e74f1022e2dd26671d4bc1"
+  },
+  "parent-final/Hexalith.Timesheets.Server.Tests.xml": {
+    "archive": "parent-final/Hexalith.Timesheets.Server.Tests.xml.gz",
+    "uncompressed_sha256": "7b77fd26e3a49bd9f7e7486dd10f5a7b1cbbdfd15dfa986291b024be2a321233",
+    "archive_sha256": "7eb1389fe468d1daef76ad3099d0918823f4553a92dc076308b6847ab6579d09"
+  },
+  "parent-final/Hexalith.Timesheets.Works.Tests.log": {
+    "archive": "parent-final/Hexalith.Timesheets.Works.Tests.log.gz",
+    "uncompressed_sha256": "1534242e44f693db97e2acec39f5e65b488a94dee906c8ffb78a4c48c41031eb",
+    "archive_sha256": "da41eb5e0726d83c51f3fcb8e2d699a9b2f83f1eb92fe46a54834c9d7ee0492f"
+  },
+  "parent-final/Hexalith.Timesheets.Works.Tests.xml": {
+    "archive": "parent-final/Hexalith.Timesheets.Works.Tests.xml.gz",
+    "uncompressed_sha256": "babcfed47687c318d23a9a59fd9a13cc99a9139c7db4474a16486cc969772dc6",
+    "archive_sha256": "b653e8ad12f2930d3675566baaf388ae737faa88aa66efa24b4e93b891b6e44e"
+  },
+  "parent-final/build.log": {
+    "archive": "parent-final/build.log.gz",
+    "uncompressed_sha256": "a0e8f392d3e1d5e61bacd3fe72339a017db6ed1bec6e73ba589f9bf163949df1",
+    "archive_sha256": "d98a45bfbb7879232460763b9cda0ec598de30a58691a0043bfe2fad51c37daa"
+  },
+  "parent-final/npm-audit.log": {
+    "archive": "parent-final/npm-audit.log.gz",
+    "uncompressed_sha256": "f8a4c86936c24d169570a635bfa01d6b4dcf5deb78f41d5b31e017c5eae31718",
+    "archive_sha256": "9230e3d0e9811ec0083b05a1ec688c14845c5f7352bb47fbb5477c865bcc6969"
+  },
+  "parent-final/npm-ci-ignored.log": {
+    "archive": "parent-final/npm-ci-ignored.log.gz",
+    "uncompressed_sha256": "cf9940e6b7a313052d0c381a5b9b451529a19e1a0a771b16d1c1601d09e79b54",
+    "archive_sha256": "37353802a9184dfd07f3df44435c1de8ef04db7d78bff95fa82b7c1e0c34f7b4"
+  },
+  "parent-final/npm-ci.log": {
+    "archive": "parent-final/npm-ci.log.gz",
+    "uncompressed_sha256": "acfbfafc0a8b7e8a4b8dd27cd8e5568fb21e196904431499fef1c4aea8eba0c0",
+    "archive_sha256": "8b700714405e21bfd527721816446c86b699869c3a8c449302ca12698014f504"
+  },
+  "parent-final/npm-repair.log": {
+    "archive": "parent-final/npm-repair.log.gz",
+    "uncompressed_sha256": "415113f7ec0fdfe7918d8844bc3b10c7f46d0b48bea622cd7b6ea885cb8f306d",
+    "archive_sha256": "a048c59425265bb9ababeaaa17a6d422fdc05c37c73e444a968ad44878d97366"
+  },
+  "parent-final/npm-signatures.log": {
+    "archive": "parent-final/npm-signatures.log.gz",
+    "uncompressed_sha256": "55854e56fbc8bbc66b28071161ee15c90c8adc1a013d8f504e97d3f9149585b1",
+    "archive_sha256": "c20653a97dbab461e51551cb2d2ee4edb29a7e25b8968fdd25e1a48553b2dea9"
+  },
+  "parent-final/npm-tree.log": {
+    "archive": "parent-final/npm-tree.log.gz",
+    "uncompressed_sha256": "9bcc1b84745de49611513a76ade80188988593cc746d49e84e24f2953cc414af",
+    "archive_sha256": "55fb8fe6485edac837e2acecf6154c678e602ea2f3466c4bf5b6094ab438b5b1"
+  },
+  "parent-final/postpin-Hexalith.Timesheets.ArchitectureTests.log": {
+    "archive": "parent-final/postpin-Hexalith.Timesheets.ArchitectureTests.log.gz",
+    "uncompressed_sha256": "5832f964133e80870b6fba9024166bd94d06c1deff57b66e1df241d4e2a4457f",
+    "archive_sha256": "f1703dc29d7bda495822972d68d5049281632f518ba0befa31a5f6944daffac8"
+  },
+  "parent-final/postpin-Hexalith.Timesheets.Contracts.Tests.log": {
+    "archive": "parent-final/postpin-Hexalith.Timesheets.Contracts.Tests.log.gz",
+    "uncompressed_sha256": "084ef83fa339a7c5f631127f6d7ed5cef35abafff9fe859f6fe9cc01090afd93",
+    "archive_sha256": "50e756244965edfd6701df5bce097803ba19f212fd7922390484aa81efd16172"
+  },
+  "parent-final/postpin-Hexalith.Timesheets.Server.Tests.log": {
+    "archive": "parent-final/postpin-Hexalith.Timesheets.Server.Tests.log.gz",
+    "uncompressed_sha256": "cf298c4bf75f1e6a821dc80a80fe54f922d8ecf40eaf399ed582eb4496657eb5",
+    "archive_sha256": "11d4c0a5a3fae239ec25347a9f3de3e106bae9ef98b5fdd19f0907be97b9fc59"
+  },
+  "parent-final/postpin-Hexalith.Timesheets.Works.Tests.log": {
+    "archive": "parent-final/postpin-Hexalith.Timesheets.Works.Tests.log.gz",
+    "uncompressed_sha256": "b2339b2f095edf2f130500f21e8cbaf463bb01b5750a8bcbc71883a20cea76b4",
+    "archive_sha256": "4a0803f983371c5cda53d6d06e0e3f446aabdb2d221d59a9cd00e59aaf892cd1"
+  },
+  "parent-final/postpin-build.log": {
+    "archive": "parent-final/postpin-build.log.gz",
+    "uncompressed_sha256": "8a0bf576485b9b504615abcfced7d6868144a8f574562eba063e87035b897ce1",
+    "archive_sha256": "f897f0d69eeee74cc8c1109d1e49a1e59c35574115d27c42a559389711b750ad"
+  },
+  "parent-final/postpin-http.log": {
+    "archive": "parent-final/postpin-http.log.gz",
+    "uncompressed_sha256": "f07e2e756289926869e9e558eefd37d8cfbaaceba74538f796b44bca42c22650",
+    "archive_sha256": "0bfe25f3dab85180e63e556a280a35d42772cf1fd6a4bc208d0088d799d6f8c6"
+  },
+  "parent-final/postpin-migration.log": {
+    "archive": "parent-final/postpin-migration.log.gz",
+    "uncompressed_sha256": "4f67b1828572e76dd780d88fbc5f445de6ac299975af8f282c2a5d409fdea71d",
+    "archive_sha256": "5ce0709c83fc320b523af12e6aa646ab065a1ecd14c076d9361765b33afbab12"
+  },
+  "parent-final/postpin-restore.log": {
+    "archive": "parent-final/postpin-restore.log.gz",
+    "uncompressed_sha256": "641ba948cffb2b3816af9b9631a241c131447ec72e5c5669a4510b9185346737",
+    "archive_sha256": "ed356c1dbc4308952e29e9242cb9f45266d8a3b43a35927f7485b1b13f0fd9f5"
+  },
+  "parent-final/publishable/postpin-Hexalith.Timesheets.ArchitectureTests.log": {
+    "archive": "parent-final/publishable/postpin-Hexalith.Timesheets.ArchitectureTests.log.gz",
+    "uncompressed_sha256": "56aeeb6de312c10489a3f243f65966fbdb297ba447537fea0370a1c9f96774a3",
+    "archive_sha256": "b30bb1f25c872601727636eff20836752f7baf16d018d0be0bcca3db693a3c08"
+  },
+  "parent-final/publishable/postpin-Hexalith.Timesheets.Contracts.Tests.log": {
+    "archive": "parent-final/publishable/postpin-Hexalith.Timesheets.Contracts.Tests.log.gz",
+    "uncompressed_sha256": "95fa5633bfd5785c853ce1a76b37d1356f416d865968beed5dd73967488c1582",
+    "archive_sha256": "b35e0579c8e2e5799d9d25bd002ea5eb2d3ace7faa631169791bf9592804fac7"
+  },
+  "parent-final/publishable/postpin-Hexalith.Timesheets.Server.Tests.log": {
+    "archive": "parent-final/publishable/postpin-Hexalith.Timesheets.Server.Tests.log.gz",
+    "uncompressed_sha256": "7ae599db94699ba77ce268f05a47369ccfd66eb3a038368b94ca4ba48c9c2462",
+    "archive_sha256": "fe8340c59be58ac8f3323b1b762a04f6b10cf262aa093934f8473525b04c1ac0"
+  },
+  "parent-final/publishable/postpin-Hexalith.Timesheets.Works.Tests.log": {
+    "archive": "parent-final/publishable/postpin-Hexalith.Timesheets.Works.Tests.log.gz",
+    "uncompressed_sha256": "88e2ec1edbb49234bd2a9e739e9d6824d5736ae4a2f3f3c3b35605145ac26cef",
+    "archive_sha256": "5c5f6ad4d0766d9ffed376f56edb2170d58dc0fb79c7f1d3250d2cb1328b7da1"
+  },
+  "parent-final/publishable/postpin-build.log": {
+    "archive": "parent-final/publishable/postpin-build.log.gz",
+    "uncompressed_sha256": "80603f5a84127694ba4521bf1f5ac8a4054d671b04f2602efc7360569cf62ff9",
+    "archive_sha256": "afceb5fc08fe75f8c4220c87c21aae00a4d97883d1993ba02b570fc629b4f0f5"
+  },
+  "parent-final/publishable/postpin-http.log": {
+    "archive": "parent-final/publishable/postpin-http.log.gz",
+    "uncompressed_sha256": "2b9916778f3b5c8f16f47f9fe51727e3249b25dde5208c43d6e658d58ff3fd4c",
+    "archive_sha256": "ede7ff733756e00a2035a02eb377ea7e5c50633df65c8db48009dc7c34f48c54"
+  },
+  "parent-final/publishable/postpin-migration.log": {
+    "archive": "parent-final/publishable/postpin-migration.log.gz",
+    "uncompressed_sha256": "f305a18e85733bda97f218886a195cd3b9d94cca15d26fb688823984de4f1bd8",
+    "archive_sha256": "c3ff0f4019c96d63490ad50af0780c37f537f9759a0859c71857e53d348d84f3"
+  },
+  "parent-final/publishable/postpin-restore.log": {
+    "archive": "parent-final/publishable/postpin-restore.log.gz",
+    "uncompressed_sha256": "c6b7325e4173e62e2202ace2207a8a12101270af2b8aad87bd98c7313405a235",
+    "archive_sha256": "465002b28f335556ca7abc250576c5a519cb88c5267b7d371b7ab3b0920c069b"
+  },
+  "parent-final/published-sdk-api-0.log": {
+    "archive": "parent-final/published-sdk-api-0.log.gz",
+    "uncompressed_sha256": "3a272de7d34dbf9b0c722029fa6c243603a45c231e1b23c72d997ee4624fdecb",
+    "archive_sha256": "40e173baf99368278fa80ff8c2a89c9836ad86a3116068bb7a430467267a934c"
+  },
+  "parent-final/published-sdk-api-1.log": {
+    "archive": "parent-final/published-sdk-api-1.log.gz",
+    "uncompressed_sha256": "0a701493b740668cab52485d8911d0332072ad4a38f4cceaf8884ad9ab79cd28",
+    "archive_sha256": "109da594f3e43da6bb96b7068d5b2d4e0a0ccbef019e8a562e2dbd5baa743c54"
+  },
+  "parent-final/release-tooling.log": {
+    "archive": "parent-final/release-tooling.log.gz",
+    "uncompressed_sha256": "5419785eaeff99ee3323dff72ac27f289ef2e2af285573dfa84e0e7338cafafb",
+    "archive_sha256": "6a3f4c09aac3a602c9a286b5894eb6479044c6efe6c1cc241ecc05d4cd8dac83"
+  },
+  "parent-final/restore.log": {
+    "archive": "parent-final/restore.log.gz",
+    "uncompressed_sha256": "64ddf6c27a419695eaee4a9f446212c97905e41d8c1869398cb19b1962604b72",
+    "archive_sha256": "3609cab372d3fd08218db7c162aebc1f04c7b869cd10c49485947105385a0a5a"
+  },
+  "parent-final/sdk-projections.log": {
+    "archive": "parent-final/sdk-projections.log.gz",
+    "uncompressed_sha256": "6d399293f7dd728b822918f205e6c6c68b856275e32729b714a888a8b5d14105",
+    "archive_sha256": "d771f35f79bc9f96790cb91657e9f250907cda0018fb76b49b9a0fabfaefacec"
+  },
+  "parent-final/sdk-projections.xml": {
+    "archive": "parent-final/sdk-projections.xml.gz",
+    "uncompressed_sha256": "28072e8619bbb08fce728b38d2c7ab7a3a7f86cc73d666ced2c40c22511843dd",
+    "archive_sha256": "d31fa286e3fa7d427b376f2c83a4fd3c118ce5e37057e8180eaaa5edeecaf78a"
+  },
+  "parent-final/secret-guard/unchanged-secret-guard-build.log": {
+    "archive": "parent-final/secret-guard/unchanged-secret-guard-build.log.gz",
+    "uncompressed_sha256": "bf7e37b9f061cb2a158148a9b76b286d1e91ee240560dcc78563e3d96ee656ee",
+    "archive_sha256": "9ef8f28dba2a8de9d27be916417aaf0b1de30473e4567caa3ee43bc606857001"
+  },
+  "parent-final/secret-guard/unchanged-secret-guard-test.log": {
+    "archive": "parent-final/secret-guard/unchanged-secret-guard-test.log.gz",
+    "uncompressed_sha256": "2c66ca6c784d55e80f2f9a93d469f6d5d39744f117354c8af47a4c4bfcdce548",
+    "archive_sha256": "12dcc031f1ac9d3239c907cd4c9cbe75d7fcee694d087aef87f231d1b5950990"
+  },
+  "parent-final/tracked-secret-guard.log": {
+    "archive": "parent-final/tracked-secret-guard.log.gz",
+    "uncompressed_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "archive_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  }
+}

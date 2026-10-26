@@ -6,6 +6,7 @@ using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Policies;
@@ -193,6 +194,23 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
 
         return Reject(TimesheetsRejectionCode.AuthorityCannotBeResolved,
             "Magic-link expiry requires asynchronous management authorization.", "capability", "authorization-required");
+    }
+
+    /// <summary>Authorizes receipt reconciliation without authorizing another capability use.</summary>
+    public async ValueTask<bool> AuthorizeRetryAsync(TimesheetsRequestContext context,
+        string token, MagicLinkCapabilityState? capability, MagicLinkUseAction action,
+        CancellationToken cancellationToken)
+    {
+        if (!(await _accessGuard.AuthorizeAsync(CreateDisclosureAuthorizationRequest(context, capability),
+            cancellationToken).ConfigureAwait(false)).IsAuthorized
+            || capability is not { Exists: true, TokenHash: { } hash }
+            || capability.State is not (Contracts.ValueObjects.MagicLinkCapabilityState.Issued
+                or Contracts.ValueObjects.MagicLinkCapabilityState.Used)
+            || capability.Tenant != context.Tenant
+            || action == MagicLinkUseAction.Confirm && capability.AllowedAction is not (MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.ConfirmOrAdjust)
+            || action == MagicLinkUseAction.Adjust && capability.AllowedAction is not (MagicLinkAllowedAction.Adjust or MagicLinkAllowedAction.ConfirmOrAdjust)) return false;
+        try { return _tokenGenerator.DeriveHash(token) == hash; }
+        catch (ArgumentException) { return false; }
     }
 
     /// <summary>Evaluates preliminary confirmation eligibility without authoritative catalog validation or persistence.</summary>

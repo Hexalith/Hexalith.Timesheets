@@ -1,0 +1,189 @@
+{
+  "sdk-build": {
+    "path": "sdk-build.log.gz",
+    "uncompressed_sha256": "a1e603c14c4d76ea811ae9a20c0ceee053cccf29d5f374f64236a9ae7560bf88"
+  },
+  "sdk-tests": {
+    "path": "sdk-tests.log.gz",
+    "uncompressed_sha256": "decc31ad52fbe7d5ce3b37aedbc5017d3905b63231a8d61ec5781317604f7bb9",
+    "counts": {
+      "total": "59",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "0.459"
+    }
+  },
+  "migration-build": {
+    "path": "migration-build.log.gz",
+    "uncompressed_sha256": "1c5119f0cdaf6f98260c33b29924ef94ca7dd3e1a53924345c5e33b0c9f7fa3c"
+  },
+  "migration-tests": {
+    "path": "migration-tests.log.gz",
+    "uncompressed_sha256": "dd02a3cda98943a923b2931722d067086198219a96c4081ba08fc88f9aec9203",
+    "counts": {
+      "total": "81",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "10.674"
+    }
+  },
+  "http-build": {
+    "path": "http-build.log.gz",
+    "uncompressed_sha256": "a60e2ff929d54dfbac9c946c92d0f77bec8dee8fa2991b44781207905c5bc94f"
+  },
+  "http-tests": {
+    "path": "http-tests.log.gz",
+    "uncompressed_sha256": "6107ce397b657b4612c8f5eb7c7e62b59f2140f302530cf12b56a2f13b0556bf",
+    "counts": {
+      "total": "11",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "53.063"
+    }
+  },
+  "server-build": {
+    "path": "server-build.log.gz",
+    "uncompressed_sha256": "5224fa5f642de527886424f709f47fc5659272602632dcbc39775a0dbc2f8cc3"
+  },
+  "server-tests": {
+    "path": "server-tests.log.gz",
+    "uncompressed_sha256": "98c844d691cb27307f8ecc7a803ae4018ab7ed7bf15610805f8d371664da7dcf",
+    "counts": {
+      "total": "195",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "7.465"
+    }
+  },
+  "npm-tests": {
+    "path": "npm-tests.log.gz",
+    "uncompressed_sha256": "08dc25723774df242583505fe8f7a31aa379f0b81af2e86efd12d03c2ffe904c"
+  },
+  "source_sha256": {
+    "timesheets": {
+      "package-lock.json": "ead93c4c44b78908e3f2d47085a0a4fb8fa2dd54572df07e475778bab2cf1896",
+      "package.json": "a411da0094900eed20e08b1d9403de2c36eebc84fbdb74572a8c02cfda6759f2",
+      "scripts/release-tooling-bundle-repair/package-lock.json": "2aa8e17748f796a46205327fc3c54dfa7f61290f3e3a6339ae088db25b80b6fc",
+      "scripts/release-tooling-bundle-repair/package.json": "06da53b607c79d301d7caed9ad5884a463effd859b486489700b67a4c68d3bcb",
+      "scripts/repair-release-tooling-bundles.mjs": "1312532564490f12b213ffc37e205f90bb7a829885010ea9a7f7ee78aa8b682e",
+      "scripts/tests/test_bundle_repair.py": "b2d8ffa71dffe7c2dde18a70ba642704887a280edfb0bb601823bf0fd43eb4fd",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/DenyAllMagicLinkV6AbortRepairCertification.cs": "7ace4ab43ba754b418e06350777f56ba7bfe37f7463673b03a3958e420c6dac4",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/IMagicLinkV6AbortRepairCertification.cs": "374078b1191f444dd274169cadd8e80533af08923a94e59106a7d87674b7e62c",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV6Migration.cs": "5cdc24d04e1aafabd9778cd6c9ca2dc64d4572a3d0c412442294420cf186e5b4",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV6AbortRepairCertificate.cs": "4dec265e45195406b56a3e84a3b5dba6ddb26f9858c472a31dab178621260e41",
+      "src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs": "0b36eca9296ed91add4fb27f5ad74e494241983a85621f15a00e62646bac508c",
+      "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapabilityCommandService.cs": "5f09927a118b7eed7d2c853620e717b09cfbc4bfcf1763ce4423fc7f78a1572e",
+      "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs": "18aa706f1c896560b24d17186e61f332789a39b0c121b7be49331e9793d5411e",
+      "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs": "018045578fe46056cdbe83eab801a3e0c93dc3154049a848043fa04866c53506",
+      "tests/Hexalith.Timesheets.IntegrationTests/DeadlineBootstrapStore.cs": "fef53e18f6972f16326ef4b336e1eaa8b330f07b87806ee084fcddc77a66e1f5",
+      "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.Deadline.cs": "56a565e3db00fdf83feaa3dfed183a9fcdb9c8f8da48155eb47cd7fd6599edde",
+      "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.Retry.cs": "afde4e685f9db48ece0f4143d179c6c2aebbe1200162767c8a5be863735d448e",
+      "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs": "70cf225159a9dacef98ca00a4798d54b35f4e7cc560bc1d2fae21edaca1b0986",
+      "tests/Hexalith.Timesheets.Projections.Tests/CertifiedAbortLayout.cs": "64791ebe74ce449f21ee4cf5d67f1196f9d8b7ae81ea145c1e17298c20d1a0f7",
+      "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": "9da730d2da504722ced8ee91f277c4d28bea0093dd25bb87df463d1362e49c3e",
+      "tests/Hexalith.Timesheets.Projections.Tests/V6AbortDrainFaultStore.cs": "aa51406208e2444222a7e02fb3aef098300b685150365969bcfd956b295728c7",
+      "tests/Hexalith.Timesheets.Server.Tests/MagicLinkDurableSubmissionServiceTests.cs": "5225fc6e7b58a34a2602de0a6287c24c6da4692dc756f22060a882cb31ef12ba",
+      "tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs": "f4d8afbf82cf2172c7ba8059819649d6911b4305f52aa6138c3830713ab56192"
+    },
+    "eventstore": {
+      "src/Hexalith.EventStore.Client/Projections/ReadModelEntry.cs": "c145ed437ea9679739deab5d7b7401c72db2979a944a26071c8b6e07e19d40b2",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairGuard.cs": "b3c46b114ce461b46d6c123602e0c3e9e0bd29cda96f6092155927a8c30eec60",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairReceipt.cs": "2eda1142dc7feb9393c0eefc43100e4bb00447fcbaa83fd06ff1cadc6ec2b509",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairRequest.cs": "28e4bf7133f195126c5f640aee62792de50c4e5d2cf700c96676becc13dd334e",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairValue.cs": "1caf59a84033303faf91aee658a8f1ea353711e5af08624831ad7532e2d07d77",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.AbortRepair.cs": "fc10eb3f915debb4d4180a8d3ac394fb0a83014624caab4e00a2e6e8f74e2fa6",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.cs": "10869af6df2c06a6badaa78f2ab42a2f1d2a2505191aab7641d2d8b520170a16",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochState.cs": "d356a457b2dfb0563dd92b6f2c7b2760328e3060ff7fbd4d1b2e378b5ecc9e51",
+      "tests/Hexalith.EventStore.Client.Tests/Projections/AbortRepairBatchFaultStore.cs": "a2019e2bb7da0ba85faef81bdfb6801492e36d2df077f3b0367c22e052f91bfd",
+      "tests/Hexalith.EventStore.Client.Tests/Projections/AbortRepairFaultStore.cs": "60dde488d6925873e869bcb55441dfeec8f2c65db7c380891abbf2785ed8eb47",
+      "tests/Hexalith.EventStore.Client.Tests/Projections/SharedProjectionAbortRepairTests.cs": "e60cc31e26b19a7544b6423a069ba42c2dc015a252de397ed3b3e4c84cf9213a",
+      "tests/Hexalith.EventStore.Client.Tests/Projections/SharedProjectionEpochCoordinatorTests.cs": "05ead434904ee2666f0e895f6db406bd755c077ee9c1b7d21d864da78ab37ec9"
+    }
+  },
+  "output_path": "/tmp/timesheets-five-review-fixes/Debug/net10.0/",
+  "commands": {
+    "sdk": "Hexalith.EventStore.Client.Tests -class *SharedProjectionAbortRepairTests -class *SharedProjectionEpochCoordinatorTests -class *SharedProjectionCopyOnWriteTests -noColor",
+    "migration": "Hexalith.Timesheets.Projections.Tests -class *MagicLinkV6MigrationTests -noColor",
+    "http": "Hexalith.Timesheets.IntegrationTests -method *Keyed* -method *ClientKeyNeverCreates* -method *GatewayDefaultHttpDeadline* -noColor",
+    "server": "Hexalith.Timesheets.Server.Tests -class *MagicLinkDurableSubmissionServiceTests -class *EventStoreMagicLinkConfirmationCapabilityStateLoaderTests -noColor",
+    "npm": "python3 -m unittest discover -s scripts/tests -p test_bundle_repair.py -v"
+  },
+  "build_environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "build_commands": {
+    "sdk": {
+      "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "args": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.EventStore.Client.Tests/Hexalith.EventStore.Client.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:BaseOutputPath=/tmp/timesheets-five-review-fixes/",
+        "-p:HexalithEventStoreVersion=3.127.0",
+        "-m:1",
+        "/nr:false"
+      ]
+    },
+    "migration": {
+      "cwd": "/home/administrator/projects/hexalith/timesheets",
+      "args": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:BaseOutputPath=/tmp/timesheets-five-review-fixes/",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ]
+    },
+    "http": {
+      "cwd": "/home/administrator/projects/hexalith/timesheets",
+      "args": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:BaseOutputPath=/tmp/timesheets-five-review-fixes/",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ]
+    },
+    "server": {
+      "cwd": "/home/administrator/projects/hexalith/timesheets",
+      "args": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:BaseOutputPath=/tmp/timesheets-five-review-fixes/",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ]
+    }
+  },
+  "final_documentation_only_edits": "Added constructor/test parameter documentation after passing focused runs; behavior unchanged."
+}

@@ -369,6 +369,8 @@ public sealed class RuntimeRegistrationTests
         IEventStoreGatewayWorkloadAssertionSource assertions = Substitute.For<IEventStoreGatewayWorkloadAssertionSource>();
         assertions.IssueAsync(Arg.Any<string>(), "tenant-1", Arg.Any<CancellationToken>())
             .Returns(new ValueTask<string?>("signed-assertion"));
+        assertions.IssueAsync(Arg.Any<string>(), "tenant-1", "timesheets", Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<string?>("domain-bound-assertion"));
         IServiceCollection services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(assertions);
@@ -392,13 +394,13 @@ public sealed class RuntimeRegistrationTests
             "/api/v1/commands/status/workload/tenant-1/message",
             "/api/v1/commands/workload"
         ]);
-        recorder.Assertions.ShouldBe(["signed-assertion", "signed-assertion", "signed-assertion"]);
+        recorder.Assertions.ShouldBe(["domain-bound-assertion", "signed-assertion", "domain-bound-assertion"]);
         await assertions.Received(1).IssueAsync(EventStoreGatewayWorkloadOperations.StreamRead,
-            "tenant-1", Arg.Any<CancellationToken>());
+            "tenant-1", "timesheets", Arg.Any<CancellationToken>());
         await assertions.Received(1).IssueAsync(EventStoreGatewayWorkloadOperations.CommandStatus,
             "tenant-1", Arg.Any<CancellationToken>());
         await assertions.Received(1).IssueAsync(EventStoreGatewayWorkloadOperations.CommandSubmit,
-            "tenant-1", Arg.Any<CancellationToken>());
+            "tenant-1", "timesheets", Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -1,0 +1,127 @@
+{
+  "final-sdk-build": {
+    "path": "final-sdk-build.log.gz",
+    "uncompressed_sha256": "01affede3982220b5cfd9bc8a9a047dc5c5e525751f0860655d4de9bf8557586",
+    "bytes": 2529
+  },
+  "final-sdk-coordinator": {
+    "path": "final-sdk-coordinator.log.gz",
+    "uncompressed_sha256": "098f594a0b20234bd3bdd8337d456d2be1d699ce67b74c10ed1cf54309edac58",
+    "bytes": 475,
+    "xunit_counts": {
+      "total": "38",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "1.022"
+    }
+  },
+  "final-server-build": {
+    "path": "final-server-build.log.gz",
+    "uncompressed_sha256": "f842e39650ec1f692a028f96b44c0782ac6d6fb67f131a36950505c920319302",
+    "bytes": 2172
+  },
+  "final-server-suite": {
+    "path": "final-server-suite.log.gz",
+    "uncompressed_sha256": "64f6a4efd1fb58696139c6bc24aac991e0fb83dc812439e0ab2ee446e0cc979b",
+    "bytes": 587,
+    "xunit_counts": {
+      "total": "746",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "8.259"
+    }
+  },
+  "final-http-build": {
+    "path": "final-http-build.log.gz",
+    "uncompressed_sha256": "2ed6eeba11119dc3cfdc06f61f18b4b06c2d7482fafa813256e3755188ecdd5e",
+    "bytes": 2073
+  },
+  "final-http-focused": {
+    "path": "final-http-focused.log.gz",
+    "uncompressed_sha256": "a76f79baf0e66f7048054c4786a161e7dfb5ddb3d1155787f1fc79c2c9d4b163",
+    "bytes": 90202,
+    "xunit_counts": {
+      "total": "8",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "43.006"
+    }
+  },
+  "final-migration-build": {
+    "path": "final-migration-build.log.gz",
+    "uncompressed_sha256": "0a490453a668fcf61f5079be94b49eaab2a40c7c85409ea5df7f66f4295d1865",
+    "bytes": 1590
+  },
+  "final-migration-focused": {
+    "path": "final-migration-focused.log.gz",
+    "uncompressed_sha256": "16227e4fbdadb3cdf8c117bbc33a498750f0a13092c3360fbf4cf67e315033c9",
+    "bytes": 500,
+    "xunit_counts": {
+      "total": "70",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "6.009"
+    }
+  },
+  "actor-recreation": {
+    "path": "actor-recreation.log.gz",
+    "uncompressed_sha256": "f808120d22f9232d0ce6863101b085344817350e4d852d3869678659aef21f97",
+    "bytes": 494,
+    "xunit_counts": {
+      "total": "4",
+      "errors": "0",
+      "failed": "0",
+      "skipped": "0",
+      "not_run": "0",
+      "seconds": "2.176"
+    }
+  },
+  "npm-ci": {
+    "path": "npm-ci.log.gz",
+    "uncompressed_sha256": "47a47ab98a1a1157bcbde5e6af6f969b3f5794b3d4fc5ce103cf0dd247e9095a",
+    "bytes": 483
+  },
+  "npm-ci-ignore-scripts": {
+    "path": "npm-ci-ignore-scripts.log.gz",
+    "uncompressed_sha256": "cf9940e6b7a313052d0c381a5b9b451529a19e1a0a771b16d1c1601d09e79b54",
+    "bytes": 234
+  },
+  "npm-explicit-repair": {
+    "path": "npm-explicit-repair.log.gz",
+    "uncompressed_sha256": "472de0339e1f4736bae504e2291b340cab6e9ef4caccb51788c4b7d125b509db",
+    "bytes": 259
+  },
+  "npm-signatures": {
+    "path": "npm-signatures.log.gz",
+    "uncompressed_sha256": "0a03cdb0c578e30b7a6b63101c9ccded4f4d68953d0814b7985d18d68bf0e7d3",
+    "bytes": 181
+  },
+  "npm-tree": {
+    "path": "npm-tree.log.gz",
+    "uncompressed_sha256": "9bcc1b84745de49611513a76ade80188988593cc746d49e84e24f2953cc414af",
+    "bytes": 150543
+  },
+  "release-tooling": {
+    "path": "release-tooling.log.gz",
+    "uncompressed_sha256": "d14e66ffff7bee65563fed6eb17b321657d678e877c6d49982b93cf2393e70fa",
+    "bytes": 16576
+  },
+  "initial-npm-audit": {
+    "path": "initial-npm-audit.log.gz",
+    "uncompressed_sha256": "11b0090261395bd162275f94c758f332c4d7ff2cca7d717df48d99076272ca73",
+    "bytes": 6927
+  },
+  "failed-npm-direct-prefix-repair": {
+    "path": "failed-npm-direct-prefix-repair.log.gz",
+    "uncompressed_sha256": "d89c39d1109de72ee17f5c3f46c95ed11264815b801030fafe7f7dc2cc69e59d",
+    "bytes": 482
+  }
+}

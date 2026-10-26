@@ -1,0 +1,23 @@
+{
+  "commit": "c613e55aefd0650c1e64ed0580c8495657585a89",
+  "run": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40383931554",
+  "conclusion": "failure",
+  "failed_jobs": [
+    {
+      "job": "ci / build-and-test",
+      "url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40383931554/job/121787079274",
+      "failures": [
+        "Process completed with exit code 1.",
+        "Tier 1 Microsoft.Testing.Platform did not report a failure count.",
+        "Process completed with exit code 1.",
+        "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Server' (are you missing an assembly reference?)",
+        "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)",
+        "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)",
+        "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Server' (are you missing an assembly reference?)",
+        "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)",
+        "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)"
+      ]
+    }
+  ],
+  "release_dispatched": false
+}

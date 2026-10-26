@@ -27,6 +27,24 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed class MagicLinkDurableSubmissionServiceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ClientRetryUsesOriginalCommittedTimeAndPriorValuesWithoutResubmitting(bool adjust)
+    {
+        CommitMagicLinkUse intent = adjust ? AdjustmentIntent() : Intent();
+        IEventStoreGatewayClient gateway = ReceiptGateway(intent);
+        var service = Service(gateway, 500, 10);
+        ServerMagicLinkCapabilityState capability = ResolvedCapability(intent);
+        (await service.SubmitKeyedResolvedUseAsync(capability, intent.Action, intent.Adjustment,
+            intent.UsedAtUtc, "client-key", true, TestContext.Current.CancellationToken, PriorValues())).ShouldBeTrue();
+        var coldService = Service(gateway, 500, 10);
+        (await coldService.SubmitKeyedResolvedUseAsync(capability, intent.Action, intent.Adjustment,
+            intent.UsedAtUtc.AddDays(1), "client-key", false, TestContext.Current.CancellationToken,
+            PriorValues() with { DurationMinutes = 999 })).ShouldBeTrue();
+        await gateway.Received(1).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public void PollingOptionsAreBoundedAndDefaultToFiveSeconds()
     {

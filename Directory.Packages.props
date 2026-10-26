@@ -2,8 +2,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-    <!-- Per-send gateway options require the published routing factory overload. -->
-    <HexalithEventStoreVersion>3.127.0</HexalithEventStoreVersion>
+    <!-- Domain-bound workload assertions require the published gateway overload. -->
+    <HexalithEventStoreVersion>3.128.2</HexalithEventStoreVersion>
     <Hexalith1BuildPackageProps>$(MSBuildThisFileDirectory)references/Hexalith.Builds/Props/Directory.Packages.props</Hexalith1BuildPackageProps>
     <Hexalith2BuildPackageProps>$(MSBuildThisFileDirectory)../Hexalith.Builds/Props/Directory.Packages.props</Hexalith2BuildPackageProps>
     <Hexalith3BuildPackageProps>$(MSBuildThisFileDirectory)../../references/Hexalith.Builds/Props/Directory.Packages.props</Hexalith3BuildPackageProps>
@@ -11,7 +11,7 @@
   <Import Project="$(Hexalith1BuildPackageProps)" Condition="Exists('$(Hexalith1BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith2BuildPackageProps)" Condition="Exists('$(Hexalith2BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
-  <!-- Published EventStore 3.127.0 dependency floors exceed the pinned shared catalog. -->
+  <!-- Published EventStore dependency floors exceed the pinned shared catalog. -->
   <ItemGroup>
     <PackageVersion Update="Aspire.Hosting" Version="13.6.3" />
     <PackageVersion Update="Aspire.Hosting.Keycloak" Version="13.6.3-preview.1.26521.2" />

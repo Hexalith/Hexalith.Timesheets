@@ -1,0 +1,9 @@
+{
+  "name": "timesheets-release-tooling-bundle-repair",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "ip-address": "10.7.5",
+    "undici": "6.29.1"
+  }
+}

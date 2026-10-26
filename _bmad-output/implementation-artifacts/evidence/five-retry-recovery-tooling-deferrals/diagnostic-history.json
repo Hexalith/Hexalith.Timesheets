@@ -1,0 +1,40 @@
+[
+  {
+    "check": "SDK standalone test restore",
+    "result": "NU5037: missing nuspec files for Microsoft.Testing.Extensions.CodeCoverage 18.12.0 and Microsoft.DiaSymReader 2.2.10 in temporary CLI cache",
+    "resolution": "Restored missing nuspec files from the existing valid user cache; later builds pass."
+  },
+  {
+    "check": "First composed HTTP fixture run",
+    "result": "Scoped projection handlers resolved from root provider",
+    "resolution": "Resolve handlers in an explicit service scope."
+  },
+  {
+    "check": "Cold HTTP recovery diagnostic iterations",
+    "result": "Cold route may report AlreadyCompleted after admission; checkpoint lookup initially used aggregate ID rather than global ActorId; accepted journal checkpoint exists before selected projection publication",
+    "resolution": "Assert accepted checkpoint separately from absent selected tree, then unchanged checkpoint and drained journal after cold mapped retry. Final focused runs pass."
+  },
+  {
+    "check": "Mixed standalone/consuming source outputs",
+    "result": "FileNotFoundException for EventStore.Testing 3.127.0 after differently versioned SDK outputs overlapped",
+    "receipt": "historical-mixed-output-http.log.gz",
+    "resolution": "Serialize SDK verification using the consuming EventStore version, restore/build root matching graph, and isolate final moved-helper outputs."
+  },
+  {
+    "check": "Lock-only bundled npm update",
+    "result": "Clean audit/signature metadata did not replace vulnerable actual bundled files",
+    "resolution": "Discarded as verification; final procedure installs pinned packages and checks actual versions and unchanged npm contents."
+  },
+  {
+    "check": "Direct npm package prefix repair",
+    "result": "E404 for unpublished @npmcli/docs while npm resolved its own workspace manifest",
+    "receipt": "failed-npm-direct-prefix-repair.log.gz",
+    "resolution": "Dedicated two-dependency manifest/lock in an isolated prefix avoids npm workspace resolution."
+  },
+  {
+    "check": "Full SDK Server.Tests build",
+    "result": "CS0234 missing sibling Tenant routing namespaces in upstream CatalogConstruction",
+    "receipt": "Hexalith.EventStore.Server.Tests-build.log",
+    "resolution": "Broad blocker retained. Unchanged tracked-content scanner passed in disposable focused compilation."
+  }
+]

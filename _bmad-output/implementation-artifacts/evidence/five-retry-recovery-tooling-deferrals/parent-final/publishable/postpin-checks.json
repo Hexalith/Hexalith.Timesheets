@@ -1,0 +1,109 @@
+[
+  {
+    "name": "postpin-restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "Hexalith.Timesheets.slnx",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "exit_code": 0,
+    "seconds": 2.044,
+    "log": "postpin-restore.log"
+  },
+  {
+    "name": "postpin-build",
+    "command": [
+      "dotnet",
+      "build",
+      "Hexalith.Timesheets.slnx",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "exit_code": 0,
+    "seconds": 11.955,
+    "log": "postpin-build.log"
+  },
+  {
+    "name": "postpin-Hexalith.Timesheets.Contracts.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.638,
+    "log": "postpin-Hexalith.Timesheets.Contracts.Tests.log"
+  },
+  {
+    "name": "postpin-Hexalith.Timesheets.Server.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 7.878,
+    "log": "postpin-Hexalith.Timesheets.Server.Tests.log"
+  },
+  {
+    "name": "postpin-Hexalith.Timesheets.Works.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 0.409,
+    "log": "postpin-Hexalith.Timesheets.Works.Tests.log"
+  },
+  {
+    "name": "postpin-Hexalith.Timesheets.ArchitectureTests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 30.693,
+    "log": "postpin-Hexalith.Timesheets.ArchitectureTests.log"
+  },
+  {
+    "name": "postpin-migration",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-class",
+      "*MagicLinkV6MigrationTests",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 4.301,
+    "log": "postpin-migration.log"
+  },
+  {
+    "name": "postpin-http",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-method",
+      "*KeyedHttpRetry*",
+      "-method",
+      "*ConcurrentIdenticalKeyed*",
+      "-method",
+      "*ClientKeyNeverCreates*",
+      "-method",
+      "*GatewayDefaultHttpDeadline*",
+      "-method",
+      "*OriginalComment*",
+      "-method",
+      "*ReplacementActivity*",
+      "-noColor"
+    ],
+    "exit_code": 0,
+    "seconds": 53.186,
+    "log": "postpin-http.log"
+  }
+]

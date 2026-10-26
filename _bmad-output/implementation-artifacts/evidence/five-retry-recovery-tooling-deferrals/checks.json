@@ -1,0 +1,226 @@
+[
+  {
+    "name": "Hexalith.EventStore.Admin.UI.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.Admin.UI.Tests/Hexalith.EventStore.Admin.UI.Tests.csproj",
+      "-c",
+      "Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-p:HexalithEventStoreVersion=3.127.0",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "seconds": 20.117,
+    "log": "Hexalith.EventStore.Admin.UI.Tests-build.log"
+  },
+  {
+    "name": "Hexalith.EventStore.Admin.UI.Tests-focused",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/tests/Hexalith.EventStore.Admin.UI.Tests/bin/Debug/net10.0/Hexalith.EventStore.Admin.UI.Tests",
+      "-class",
+      "*AdminUiDaprTargetTests",
+      "-noColor"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "seconds": 0.601,
+    "log": "Hexalith.EventStore.Admin.UI.Tests-focused.log"
+  },
+  {
+    "name": "Hexalith.EventStore.Sample.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.Sample.Tests/Hexalith.EventStore.Sample.Tests.csproj",
+      "-c",
+      "Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-p:HexalithEventStoreVersion=3.127.0",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "seconds": 15.651,
+    "log": "Hexalith.EventStore.Sample.Tests-build.log"
+  },
+  {
+    "name": "Hexalith.EventStore.Sample.Tests-focused",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/tests/Hexalith.EventStore.Sample.Tests/bin/Debug/net10.0/Hexalith.EventStore.Sample.Tests",
+      "-class",
+      "*SampleUiDaprTargetTests",
+      "-noColor"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "seconds": 0.495,
+    "log": "Hexalith.EventStore.Sample.Tests-focused.log"
+  },
+  {
+    "name": "Hexalith.EventStore.PayloadProtection.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.PayloadProtection.Tests/Hexalith.EventStore.PayloadProtection.Tests.csproj",
+      "-c",
+      "Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-p:HexalithEventStoreVersion=3.127.0",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "seconds": 9.788,
+    "log": "Hexalith.EventStore.PayloadProtection.Tests-build.log"
+  },
+  {
+    "name": "Hexalith.EventStore.PayloadProtection.Tests-focused",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/tests/Hexalith.EventStore.PayloadProtection.Tests/bin/Debug/net10.0/Hexalith.EventStore.PayloadProtection.Tests",
+      "-class",
+      "*PolicyLifecycleTests",
+      "-noColor"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "seconds": 1.194,
+    "log": "Hexalith.EventStore.PayloadProtection.Tests-focused.log"
+  },
+  {
+    "name": "Hexalith.EventStore.Server.Tests-build",
+    "command": [
+      "dotnet",
+      "build",
+      "tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj",
+      "-c",
+      "Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-p:HexalithEventStoreVersion=3.127.0",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 1,
+    "seconds": 65.373,
+    "log": "Hexalith.EventStore.Server.Tests-build.log"
+  },
+  {
+    "name": "restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "Hexalith.Timesheets.slnx",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "seconds": 2.55,
+    "log": "restore.log"
+  },
+  {
+    "name": "build",
+    "command": [
+      "dotnet",
+      "build",
+      "Hexalith.Timesheets.slnx",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "seconds": 65.387,
+    "log": "build.log"
+  },
+  {
+    "name": "http-deadline-focused",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-method",
+      "*GatewayDefaultHttpDeadline*",
+      "-noColor"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 1,
+    "seconds": 31.042,
+    "log": "http-deadline-focused.log"
+  },
+  {
+    "name": "Hexalith.Timesheets.ArchitectureTests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/Hexalith.Timesheets.ArchitectureTests.xml"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "seconds": 38.467,
+    "log": "Hexalith.Timesheets.ArchitectureTests.log"
+  },
+  {
+    "name": "Hexalith.Timesheets.Contracts.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/Hexalith.Timesheets.Contracts.Tests.xml"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "seconds": 0.685,
+    "log": "Hexalith.Timesheets.Contracts.Tests.log"
+  },
+  {
+    "name": "Hexalith.Timesheets.Server.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/Hexalith.Timesheets.Server.Tests.xml"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 1,
+    "seconds": 7.903,
+    "log": "Hexalith.Timesheets.Server.Tests.log"
+  },
+  {
+    "name": "Hexalith.Timesheets.Works.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/Hexalith.Timesheets.Works.Tests.xml"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "seconds": 0.659,
+    "log": "Hexalith.Timesheets.Works.Tests.log"
+  },
+  {
+    "name": "Hexalith.Timesheets.Projections.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/Hexalith.Timesheets.Projections.Tests.xml"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "seconds": 866.028,
+    "log": "Hexalith.Timesheets.Projections.Tests.log"
+  }
+]

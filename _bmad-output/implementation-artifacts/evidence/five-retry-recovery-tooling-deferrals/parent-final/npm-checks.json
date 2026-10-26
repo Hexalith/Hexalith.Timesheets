@@ -1,0 +1,91 @@
+[
+  {
+    "name": "npm-ci",
+    "command": [
+      "npm",
+      "ci"
+    ],
+    "exit_code": 0,
+    "seconds": 6.804,
+    "log": "npm-ci.log",
+    "installed_versions": {
+      "ip-address": "10.7.5",
+      "undici": "6.29.1"
+    }
+  },
+  {
+    "name": "npm-ci-ignored",
+    "command": [
+      "npm",
+      "ci",
+      "--ignore-scripts"
+    ],
+    "exit_code": 0,
+    "seconds": 5.964,
+    "log": "npm-ci-ignored.log",
+    "installed_versions": {
+      "ip-address": "10.7.2",
+      "undici": "6.29.0"
+    }
+  },
+  {
+    "name": "npm-repair",
+    "command": [
+      "npm",
+      "run",
+      "repair:release-tooling"
+    ],
+    "exit_code": 0,
+    "seconds": 1.18,
+    "log": "npm-repair.log",
+    "installed_versions": {
+      "ip-address": "10.7.5",
+      "undici": "6.29.1"
+    }
+  },
+  {
+    "name": "npm-audit",
+    "command": [
+      "npm",
+      "audit",
+      "--json"
+    ],
+    "exit_code": 0,
+    "seconds": 0.763,
+    "log": "npm-audit.log"
+  },
+  {
+    "name": "npm-signatures",
+    "command": [
+      "npm",
+      "audit",
+      "signatures"
+    ],
+    "exit_code": 0,
+    "seconds": 5.794,
+    "log": "npm-signatures.log"
+  },
+  {
+    "name": "npm-tree",
+    "command": [
+      "npm",
+      "ls",
+      "--all",
+      "--json"
+    ],
+    "exit_code": 0,
+    "seconds": 0.554,
+    "log": "npm-tree.log"
+  },
+  {
+    "name": "release-tooling",
+    "command": [
+      "npm",
+      "run",
+      "test:release-tooling"
+    ],
+    "exit_code": 0,
+    "seconds": 1.78,
+    "log": "release-tooling.log"
+  }
+]

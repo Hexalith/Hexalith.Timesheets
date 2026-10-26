@@ -1,0 +1,8 @@
+{
+  "unchanged_registry_files": 1816,
+  "unexpected_changes": [],
+  "patched_children": {
+    "ip-address": "10.7.5",
+    "undici": "6.29.1"
+  }
+}

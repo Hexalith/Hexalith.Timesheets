@@ -188,6 +188,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             || !timeEntry.IsRecorded
             || capability.ActivityTypeId is null
             || timeEntry.ActivityTypeId != capability.ActivityTypeId
+                && capability.State != Contracts.ValueObjects.MagicLinkCapabilityState.Used
             || timeEntry.ActivityTypeScope != ActivityTypeScope.Tenant)
         {
             return UnavailableTokenState();

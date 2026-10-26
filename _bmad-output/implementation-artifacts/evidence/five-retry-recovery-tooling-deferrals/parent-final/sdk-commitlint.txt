@@ -1,0 +1,2 @@
+Pinned @commitlint/cli 21.1.0; node node_modules/@commitlint/cli/cli.js --edit /tmp/timesheets-five-sdk-commit-message.txt; exit 0
+Candidate: fix(projections): support certified abort metadata recovery

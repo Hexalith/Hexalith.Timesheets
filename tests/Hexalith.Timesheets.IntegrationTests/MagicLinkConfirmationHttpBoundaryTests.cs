@@ -2051,7 +2051,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         InMemoryReadModelStore? batchStore = null,
         IMagicLinkConfirmationCapabilityStateLoader? stateLoader = null,
         bool useLiveFixtureAdmission = false,
-        IMagicLinkSystemExpiryAuthorizer? systemExpiryAuthorizer = null) : WebApplicationFactory<Program>
+        IMagicLinkSystemExpiryAuthorizer? systemExpiryAuthorizer = null,
+        IReadModelStore? readModelStore = null) : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
@@ -2398,9 +2399,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
                 services.RemoveAll<IReadModelStore>();
                 services.RemoveAll<DaprReadModelStore>();
-                IReadModelStore projectionStore = batchStore is not null
+                IReadModelStore projectionStore = readModelStore ?? (batchStore is not null
                     ? batchStore
-                    : useConcreteLoader ? Store : new UnavailableReadModelStore();
+                    : useConcreteLoader ? Store : new UnavailableReadModelStore());
                 services.AddSingleton(projectionStore);
                 services.RemoveAll<IReadModelBatchStore>();
                 services.AddSingleton<IReadModelBatchStore>(batchStore is not null

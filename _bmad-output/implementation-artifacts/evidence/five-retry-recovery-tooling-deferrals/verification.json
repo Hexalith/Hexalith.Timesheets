@@ -1,0 +1,128 @@
+{
+  "captured_at_utc": "2026-10-26T18:09:46.569669+00:00",
+  "timesheets_baseline": "61db140db055dca2c9e4e2064f57ede8960f9003",
+  "sdk_integrated_baseline": "458f0cf38e43452655e6c307fa80debdf595a8db",
+  "source_sha256": {
+    "timesheets": {
+      ".github/workflows/ci.yml": "af0c113effab21b8aa34b60a4771159a59d84e7ed7ea933dedc4d7289582dfd6",
+      ".github/workflows/release.yml": "0c421067a2d893b54d73fa656964108bb098eac6778f682fca35b9ba661ee99a",
+      "package-lock.json": "ead93c4c44b78908e3f2d47085a0a4fb8fa2dd54572df07e475778bab2cf1896",
+      "package.json": "a411da0094900eed20e08b1d9403de2c36eebc84fbdb74572a8c02cfda6759f2",
+      "scripts/release-tooling-bundle-repair/package-lock.json": "2aa8e17748f796a46205327fc3c54dfa7f61290f3e3a6339ae088db25b80b6fc",
+      "scripts/release-tooling-bundle-repair/package.json": "06da53b607c79d301d7caed9ad5884a463effd859b486489700b67a4c68d3bcb",
+      "scripts/repair-release-tooling-bundles.mjs": "f6e80a81b13a102a8ad0560bb645604f9530888b2695153d6a8492975927c61b",
+      "scripts/tests/test_bundle_repair.py": "422b78ffa3dc2dec1f8e4b07c1d625162ffea7a371d448925dbd355f1daf0f10",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/DenyAllMagicLinkV6AbortRepairCertification.cs": "7ace4ab43ba754b418e06350777f56ba7bfe37f7463673b03a3958e420c6dac4",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/IMagicLinkV6AbortRepairCertification.cs": "374078b1191f444dd274169cadd8e80533af08923a94e59106a7d87674b7e62c",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV6Migration.cs": "9da447b50c8df1f38b0051acf8e4aeb6f53f395b05ac50c4e7a4b2a7c5b9e57d",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV6AbortRepairCertificate.cs": "6514bca5e95cb8e493120f4ecd0bd2076914741c94ba604ac40519702c476a88",
+      "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkConfirmationCapabilityCommandService.cs": "5f09927a118b7eed7d2c853620e717b09cfbc4bfcf1763ce4423fc7f78a1572e",
+      "src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs": "8799cc35cdae587c67245e882f542eec6b573b62d869b644ea3fd800e61fe277",
+      "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkConfirmationCapabilityEndpoints.cs": "018045578fe46056cdbe83eab801a3e0c93dc3154049a848043fa04866c53506",
+      "tests/Hexalith.Timesheets.IntegrationTests/DeadlineBootstrapStore.cs": "6e95d6814b02bc4c1f28846f4fb9934ed4ce9e5f8abba8209a0e7faf1ce07831",
+      "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.Deadline.cs": "56a565e3db00fdf83feaa3dfed183a9fcdb9c8f8da48155eb47cd7fd6599edde",
+      "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.Retry.cs": "274c8c88f410563c65d94c2de88a4984d978dcc73393ef93d3bb6812b470917d",
+      "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs": "70cf225159a9dacef98ca00a4798d54b35f4e7cc560bc1d2fae21edaca1b0986",
+      "tests/Hexalith.Timesheets.Projections.Tests/CertifiedAbortLayout.cs": "090ad3c89c881521137a36dc660e0c492fd08f6b63dd8be5a0e7c33e85831650",
+      "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": "105ea8a91bdacb24d5c018133139dfc2e2f4d151c2c389805789b9f9c2ffe55e",
+      "tests/Hexalith.Timesheets.Server.Tests/MagicLinkDurableSubmissionServiceTests.cs": "5225fc6e7b58a34a2602de0a6287c24c6da4692dc756f22060a882cb31ef12ba",
+      "tests/Hexalith.Timesheets.Server.Tests/RuntimeRegistrationTests.cs": "f4d8afbf82cf2172c7ba8059819649d6911b4305f52aa6138c3830713ab56192"
+    },
+    "eventstore": {
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairGuard.cs": "8a8270fdc37ebdbe1857c8e56ed5fa8e0aa474ab78075881a95373d3cd846a5a",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairReceipt.cs": "2eda1142dc7feb9393c0eefc43100e4bb00447fcbaa83fd06ff1cadc6ec2b509",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairRequest.cs": "28e4bf7133f195126c5f640aee62792de50c4e5d2cf700c96676becc13dd334e",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionAbortRepairValue.cs": "fea6f0bdc9cafbb8b82fbe157fe3b219624ecae45916aaf222e0c6d00876ad19",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.AbortRepair.cs": "7ce5164a0edc006a5f22e59cb5c21914b986e9195d6468814d642323c731b7d6",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.cs": "bea0fc68d3a2a3ae959a85552585532055143afa1aa7f38d8b97052ecbb33fa4",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochState.cs": "d356a457b2dfb0563dd92b6f2c7b2760328e3060ff7fbd4d1b2e378b5ecc9e51",
+      "tests/Hexalith.EventStore.Client.Tests/Projections/AbortRepairBatchFaultStore.cs": "9c6500cd1f9daac76acc9ba3eb2284bf044fb968fd7acac48be2129f5a87167c",
+      "tests/Hexalith.EventStore.Client.Tests/Projections/AbortRepairFaultStore.cs": "9dd9d5d00f786a7ee4ad7da5624b1e6edde38d9ea15d42ee6d76619f9f643f14",
+      "tests/Hexalith.EventStore.Client.Tests/Projections/SharedProjectionEpochCoordinatorTests.cs": "f7d8b9ce90ee451423b4432d344ebd37f0ee85a26a0755f6e1e21a3161de354c"
+    }
+  },
+  "executables": {
+    "sdk": {
+      "path": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/tests/Hexalith.EventStore.Client.Tests/bin/Debug/net10.0/Hexalith.EventStore.Client.Tests.dll",
+      "sha256": "82bf199a526f89198cbd98367ade257037b555573c75ef1daccea3bee1c5fe25"
+    },
+    "server": {
+      "path": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests.dll",
+      "sha256": "428b19da13225fb920264a6d107feb97d51ff3fad0c73970e09551a5475fd04b"
+    },
+    "isolated-http": {
+      "path": "/tmp/timesheets-five-final-helpers.NYGW04/Debug/net10.0/Hexalith.Timesheets.IntegrationTests.dll",
+      "sha256": "cc2179c4285624ccad34b5c90eaa9c48f9c717551a4fbb27ac2fb5e483688eeb"
+    },
+    "isolated-projections": {
+      "path": "/tmp/timesheets-five-final-helpers.NYGW04/Debug/net10.0/Hexalith.Timesheets.Projections.Tests.dll",
+      "sha256": "11449ebc3bfcc32d04353e9fbd5099de6662aeae408921f59d320de20cf809aa"
+    }
+  },
+  "commands": {
+    "final-sdk-coordinator": [
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.EventStore.Client.Tests/Hexalith.EventStore.Client.Tests.csproj -c Debug --no-restore -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.127.0 -m:1 /nr:false",
+      "tests/Hexalith.EventStore.Client.Tests/bin/Debug/net10.0/Hexalith.EventStore.Client.Tests -class *SharedProjectionEpochCoordinatorTests -noColor"
+    ],
+    "final-server-suite": [
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+      "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -noColor -xml /home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/server-final.xml"
+    ],
+    "isolated-helper-builds": [
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:BaseOutputPath=/tmp/timesheets-five-final-helpers.NYGW04/ -warnaserror -m:1 /nr:false",
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -p:BaseOutputPath=/tmp/timesheets-five-final-helpers.NYGW04/ -warnaserror -m:1 /nr:false"
+    ],
+    "isolated-http": [
+      "/tmp/timesheets-five-final-helpers.NYGW04/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-method",
+      "*KeyedHttpRetry*",
+      "-method",
+      "*ConcurrentIdenticalKeyed*",
+      "-method",
+      "*ClientKeyNeverCreates*",
+      "-method",
+      "*GatewayDefaultHttpDeadline*",
+      "-noColor"
+    ],
+    "isolated-migration": [
+      "/tmp/timesheets-five-final-helpers.NYGW04/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-class",
+      "*MagicLinkV6MigrationTests",
+      "-noColor"
+    ],
+    "actor-recreation": [
+      "/tmp/timesheets-five-final-helpers.NYGW04/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-method",
+      "*EventStoreActorStateStoreCommitsPairAndReloadsItAfterActorRecreation*",
+      "-noColor"
+    ],
+    "npm": [
+      "npm ci",
+      "npm ci --ignore-scripts",
+      "npm run repair:release-tooling",
+      "npm audit --json",
+      "npm audit signatures",
+      "npm ls --all --json",
+      "npm run test:release-tooling",
+      "node --check scripts/repair-release-tooling-bundles.mjs"
+    ]
+  },
+  "focused_receipts": "focused-receipts.json",
+  "serial_receipts": "checks.json",
+  "diagnostics": "diagnostic-history.json",
+  "publication": {
+    "sdk_source": "c613e55aefd0650c1e64ed0580c8495657585a89",
+    "sdk_source_pushed": true,
+    "sdk_package": "blocked by pre-existing exact-source Tenants Routing CI failures",
+    "parent": "four compatible items being finalized; DW-184 patch retained"
+  },
+  "pending_broad_lanes": [],
+  "active_session": null,
+  "active_runner": "/tmp/run-five-deferral-checks.py",
+  "completed_receipt_compression": "completed-pipeline-compression.json",
+  "active_session_ownership": "Earlier handoff Integration attempt incomplete; superseded by completed parent-owned run.",
+  "final_compression": "final-compression.json",
+  "final_full_suite": "parent-final/checks.json",
+  "postpin_checks": "parent-final/postpin-checks.json",
+  "publishable_subset_checks": "parent-final/publishable/postpin-checks.json"
+}

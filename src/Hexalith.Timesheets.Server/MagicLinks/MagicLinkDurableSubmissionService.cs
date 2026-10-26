@@ -65,6 +65,24 @@ public sealed class MagicLinkDurableSubmissionService(
                 requestId, cancellationToken, capability, trustedPreviousValues)
             : Task.FromResult(false);
 
+    /// <summary>Uses a client retry identity only after exact authoritative receipt verification.</summary>
+    public Task<bool> SubmitKeyedResolvedUseAsync(
+        MagicLinkCapabilityState capability, MagicLinkUseAction action,
+        AdjustTimeThroughMagicLink? adjustment, DateTimeOffset usedAtUtc, string idempotencyKey,
+        bool submitIfMissing, CancellationToken cancellationToken,
+        TimeEntryCorrectionValues? trustedPreviousValues = null)
+    {
+        if (string.IsNullOrWhiteSpace(idempotencyKey) || idempotencyKey.Length > 256
+            || idempotencyKey.Any(char.IsControl)
+            || capability is not { CapabilityId: { } id, Tenant: { } tenant,
+                TimeEntryId: { } entry, TokenHash: { } hash }) return Task.FromResult(false);
+        var intent = new CommitMagicLinkUse(id, tenant, entry, hash, action, adjustment, usedAtUtc);
+        // Hash the whole intent binding. Neither a caller key nor a raw token is persisted.
+        string retryIdentity = "client-retry-v1:" + CreateMessageId(idempotencyKey + "\n" + hash.Value);
+        return SubmitUseAsync(intent, retryIdentity, cancellationToken, capability,
+            trustedPreviousValues, true, submitIfMissing);
+    }
+
     /// <summary>Returns true only after an issued capability event is committed in its own stream.</summary>
     public async Task<bool> SubmitIssueAsync(CommitMagicLinkIssue intent, string requestId, CancellationToken cancellationToken)
     {
@@ -219,13 +237,14 @@ public sealed class MagicLinkDurableSubmissionService(
         string requestId,
         CancellationToken cancellationToken,
         MagicLinkCapabilityState? capability,
-        TimeEntryCorrectionValues? trustedPreviousValues)
+        TimeEntryCorrectionValues? trustedPreviousValues,
+        bool originalEvidence = false, bool submitIfMissing = true)
     {
         ArgumentNullException.ThrowIfNull(intent);
         ArgumentException.ThrowIfNullOrWhiteSpace(requestId);
         cancellationToken.ThrowIfCancellationRequested();
         if (intent.Action == MagicLinkUseAction.Adjust
-            && (trustedPreviousValues is null
+            && (!originalEvidence && trustedPreviousValues is null
                 || intent.Adjustment?.Comment is not null && capability is null))
         {
             return false;
@@ -234,7 +253,7 @@ public sealed class MagicLinkDurableSubmissionService(
         string messageId = CreateMessageId(intent, requestId);
         try
         {
-            TimeEntryComment? expectedComment = intent.Action == MagicLinkUseAction.Adjust
+            TimeEntryComment? expectedComment = !originalEvidence && intent.Action == MagicLinkUseAction.Adjust
                 && capability is not null
                 ? _commentIssuer.Issue(
                     MagicLinkExternalRequestContext.FromResolvedCapability(capability, messageId),
@@ -246,7 +265,7 @@ public sealed class MagicLinkDurableSubmissionService(
             {
                 CommandStatusQueryResponse? status = await SubmitAndObserveStatusAsync(
                     messageId, intent.Tenant.TenantId, intent.TimeEntryId.Value, intent,
-                    typeof(CommitMagicLinkUse), cancellationToken, deadline.Token).ConfigureAwait(false);
+                    typeof(CommitMagicLinkUse), cancellationToken, deadline.Token, submitIfMissing).ConfigureAwait(false);
                 if (status is null)
                 {
                     return false;
@@ -257,7 +276,7 @@ public sealed class MagicLinkDurableSubmissionService(
                     try
                     {
                         bool? verified = await VerifyCommittedBatchAsync(intent, messageId, status, capability,
-                            trustedPreviousValues, expectedComment, deadline.Token).ConfigureAwait(false);
+                            trustedPreviousValues, expectedComment, deadline.Token, originalEvidence).ConfigureAwait(false);
                         if (verified is not null)
                         {
                             return verified.Value;
@@ -293,7 +312,7 @@ public sealed class MagicLinkDurableSubmissionService(
         object intent,
         Type commandType,
         CancellationToken callerCancellationToken,
-        CancellationToken deadlineToken)
+        CancellationToken deadlineToken, bool submitIfMissing = true)
     {
         CommandStatusQueryResponse? status = null;
         try
@@ -305,6 +324,8 @@ public sealed class MagicLinkDurableSubmissionService(
             // A transient status outage cannot prevent the first submission. Keep the
             // same message identity and require a terminal status plus exact readback.
         }
+
+        if (status is null && !submitIfMissing) return null;
 
         Task<SubmitCommandResponse>? submission = null;
         if (status is null)
@@ -404,7 +425,7 @@ public sealed class MagicLinkDurableSubmissionService(
         MagicLinkCapabilityState? capability,
         TimeEntryCorrectionValues? trustedPreviousValues,
         TimeEntryComment? expectedComment,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken, bool originalEvidence = false)
     {
         if (!StringComparer.Ordinal.Equals(status.MessageId, messageId)
             || status.Status != nameof(CommandStatus.Completed)
@@ -449,6 +470,15 @@ public sealed class MagicLinkDurableSubmissionService(
         }
 
         MagicLinkConfirmationCapabilityUsed? used = Deserialize<MagicLinkConfirmationCapabilityUsed>(page.Events[0]);
+        if (originalEvidence && used is not null)
+        {
+            // These are the original immutable command effects, never the retry's clock or
+            // the now-adjusted aggregate snapshot. The full pair still passes every check below.
+            intent = intent with { UsedAtUtc = used.UsedAtUtc };
+            trustedPreviousValues = intent.Action == MagicLinkUseAction.Adjust
+                ? Deserialize<TimeEntryAdjustedThroughMagicLink>(page.Events[1])?.PreviousValues
+                : null;
+        }
         if (used?.CapabilityId != intent.CapabilityId
             || used.Tenant != intent.Tenant
             || used.TimeEntryId != intent.TimeEntryId
@@ -496,8 +526,28 @@ public sealed class MagicLinkDurableSubmissionService(
                 && adjusted.AdjustedValues.ActivityTypeId == intent.Adjustment.ActivityTypeId
                 && adjusted.AdjustedValues.BillableState == intent.Adjustment.BillableState
                 && (intent.Adjustment.Comment is null || capability is not null)
-                && CommentsMatchExpected(adjusted.AdjustedValues.Comment,
-                    expectedComment);
+                && (originalEvidence
+                    ? CommentsMatchOriginalIntent(adjusted.AdjustedValues.Comment, intent.Adjustment.Comment)
+                    : CommentsMatchExpected(adjusted.AdjustedValues.Comment, expectedComment));
+    }
+
+    private static bool CommentsMatchOriginalIntent(TimeEntryComment? stored, TimeEntryComment? caller)
+    {
+        if (stored is null || caller is null) return stored is null && caller is null;
+        if (stored.Policy is not { } issued || caller.Policy is not { } requested
+            || issued.RedactionRequirement != (issued.ServerExternalConfirmationDisplay == TimesheetsCommentPolicyDecision.Allowed
+                ? TimesheetsCommentRedactionRequirement.NotRequired
+                : TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure)) return false;
+        // Only server-issued publication/disclosure decisions may differ from the original caller intent.
+        return CommentsMatchExpected(stored, new TimeEntryComment(caller.Text, requested with
+        {
+            ProjectionInclusion = issued.ProjectionInclusion,
+            ExternalConfirmationDisplay = issued.ExternalConfirmationDisplay,
+            RedactionRequirement = issued.RedactionRequirement,
+            ServerPublicationVersion = issued.ServerPublicationVersion,
+            ServerProjectionInclusion = issued.ServerProjectionInclusion,
+            ServerExternalConfirmationDisplay = issued.ServerExternalConfirmationDisplay
+        }));
     }
 
     internal static bool CommentsMatchExpected(TimeEntryComment? stored, TimeEntryComment? expected)

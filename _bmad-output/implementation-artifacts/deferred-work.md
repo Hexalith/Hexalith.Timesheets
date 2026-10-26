@@ -1036,10 +1036,12 @@ origin: migrated from legacy ledger ("Deferred from: Story 3.6 review of polling
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-19.md`
 reason: Public endpoints pass a new `HttpContext.TraceIdentifier` on each request. The durable service keeps a message ID stable only within one request, so a later retry after an opaque committed outcome can use a new ID and receive a replay denial.
-status: open
+status: done 2026-10-26
 
 summary: Reconcile an uncertain committed magic-link use across separate HTTP retries.
 evidence: Public endpoints pass a new `HttpContext.TraceIdentifier` on each request. The durable service keeps a message ID stable only within one request, so a later retry after an opaque committed outcome can use a new ID and receive a replay denial. Define an idempotency or status-reconciliation policy without exposing capability state.
+
+resolution 2026-10-26: Optional Idempotency-Key binds the complete resolved intent and token hash. Authorized retained-key retries verify the original stored command status and exact use/effect pair, including original audit time and adjustment prior values; mismatched keys, token, payload and terminal/no-receipt attempts remain opaque. Persisted HTTP race/recovery and recreated-service regressions pass. See [verification](tests/five-retry-recovery-tooling-deferrals.md).
 
 ### DW-131: Commit and pin the EventStore-owned AppPort and metadata changes in a later authorized repository update.
 
@@ -1460,6 +1462,10 @@ legacy_section: Deferred from: review of five magic-link safety deferrals (2026-
 summary: Establish safe v6 migration abort recovery when pending deliveries encounter corrupt selected metadata.
 evidence: Review B1 traced the unchanged normal FoldCatchUpAsync through SDK AbortAsync/CatchUpAsync: journaled issuance rereads corrupt selected format/root/single metadata and refuses it, retaining the journal in Aborting. The same baseline abort path is reachable when selected metadata becomes invalid after Begin. The new empty-journal retry tests prove release only when abort can drain safely; they do not authorize deleting corrupt metadata, discarding journaled events or bypassing integrity checks. Define and verify the certified source-repair/catch-up procedure before claiming pending-journal recovery or deployed readiness.
 
+resolution 2026-10-26: Default-denied original-layout certification and complete unchanged v6 source guards permit only an exact SDK-reserved metadata repair. Immutable original corrupt evidence and ETags survive interruption; conflicting repair, catch-up and abort closeout refuse while reserved. Normal journal drain releases the existing abort fence without promoting v7 or inventing owner checkpoints. Format/root/single and malformed-shape recovery, partial delete, restart, changed-source refusal and second-epoch cases pass. Production certification and deployed acceptance remain unavailable. See [verification](tests/five-retry-recovery-tooling-deferrals.md).
+
+publication update 2026-10-26: SDK implementation c613e55aefd0650c1e64ed0580c8495657585a89 is pushed. The complete Timesheets wiring and regression patch is implemented, independently reviewed and tested, but held in evidence/five-retry-recovery-tooling-deferrals/certified-repair-pending.patch.gz because no published SDK package contains the API. Exact-source SDK CI still fails on pre-existing missing Tenants Routing declarations. This item stays open until that release gate clears, the consuming package pin advances and the module patch is applied/pushed. Bounded large-inventory qualification and production certification remain separate gates.
+
 ### DW-185: Resume an interrupted v6 migration abort through an operation-and-inventory-authorized recovery path.
 
 status: done 2026-10-23
@@ -1487,12 +1493,14 @@ origin: migrated from legacy ledger ("Deferred from: five build and hosting defe
 location: evidence/five-build-and-hosting-deferrals/20261024/npm-audit.json
 source_spec: `_bmad-output/implementation-artifacts/spec-five-build-and-hosting-deferrals.md`
 reason: Fresh root `npm audit --json` on 2026-10-24 exits 1 with three vulnerable packages (fast-uri and ip-address moderate; undici high), while the original braces GHSA-vfj7-8cjw-p6xm was withdrawn on 2026-10-23 and is absent. Exact advisory URLs, dependency paths and suggested fixes are retained in `evidence/five-build-and-hosting-deferrals/20261024/npm-audit.json`.
-status: open
+status: done 2026-10-26
 
 <a id="deferred-from-five-build-and-hosting-deferrals-advisory-refresh-2026-10-24"></a>
 legacy_section: Deferred from: five build and hosting deferrals advisory refresh (2026-10-24)
 summary: Assess the unrelated fast-uri, ip-address, and undici npm release-tooling advisories in a separate dependency increment.
 evidence: Fresh root `npm audit --json` on 2026-10-24 exits 1 with three vulnerable packages (fast-uri and ip-address moderate; undici high), while the original braces GHSA-vfj7-8cjw-p6xm was withdrawn on 2026-10-23 and is absent. Exact advisory URLs, dependency paths and suggested fixes are retained in `evidence/five-build-and-hosting-deferrals/20261024/npm-audit.json`. Owner: CI/CD release tooling. Review compatible updates and rerun lockfile audit/signatures through that owner; this advisory correction changes no dependency, lockfile, publish gate, or launch verdict.
+
+resolution 2026-10-26: Affected nonbundled dependencies were updated within their existing ranges. Because current npm tarballs retain vulnerable bundled children, a dedicated integrity-pinned two-package install repairs only ip-address 10.7.5 and undici 6.29.1; root postinstall and explicit CI/release steps cover normal and ignored-script installs. Actual installed versions match both locks; final audit is zero, dependency tree is valid, and registry signatures pass. Direct tooling pins and scanners are unchanged. See [verification](tests/five-retry-recovery-tooling-deferrals.md).
 
 ### DW-189: Reconcile the 15 incoming EventStore fixture findings in the tracked reusable-content secret guard without weakening its checks.
 
@@ -1500,12 +1508,14 @@ origin: migrated from legacy ledger ("Deferred from: integrated upstream validat
 location: tests/five-build-and-hosting-deferrals.md
 source_spec: `_bmad-output/implementation-artifacts/spec-five-build-and-hosting-deferrals.md`
 reason: Integrated baseline `6e927633d920eafcefa2635a124810b541264489` contains all 15 reported lines unchanged in Admin UI, PayloadProtection and Sample test fixtures. The full Server executable completed 5,757 tests with one failed guard; the owned privacy-test literal was then replaced by a generated per-test marker, and focused scanning retains only the 15 incoming lines.
-status: open
+status: done 2026-10-26
 
 <a id="deferred-from-integrated-upstream-validation-of-five-build-and-hosting-deferrals-2026-10-24"></a>
 legacy_section: Deferred from: integrated upstream validation of five build and hosting deferrals (2026-10-24)
 summary: Reconcile the 15 incoming EventStore fixture findings in the tracked reusable-content secret guard without weakening its checks.
 evidence: Integrated baseline `6e927633d920eafcefa2635a124810b541264489` contains all 15 reported lines unchanged in Admin UI, PayloadProtection and Sample test fixtures. The full Server executable completed 5,757 tests with one failed guard; the owned privacy-test literal was then replaced by a generated per-test marker, and focused scanning retains only the 15 incoming lines. Exact paths, baseline fingerprints and final broad/focused results are retained by `tests/five-build-and-hosting-deferrals.md` and its dated receipts. Owner: Hexalith.EventStore test/security maintainers. This is a pre-existing integrated-baseline verification blocker, not a passing broad gate; do not add scanner exclusions merely to suppress it.
+
+resolution 2026-10-26: Integrated upstream 80993d367f8bcafb3e6eda97568ebf0825dd1821 already replaces all 15 selected credential-shaped literals with generated fixture values. Admin/Sample target lanes pass 7 each and policy lifecycle passes 22; the unchanged full tracked-content guard passes 1/1 in a disposable focused compilation against the normal EventStore root, including newly staged SDK sources. Full Server.Tests compilation remains blocked separately by upstream CatalogConstruction CS0234 for missing sibling Tenant routing types; no exclusions or scanner weakening were applied. See [verification](tests/five-retry-recovery-tooling-deferrals.md).
 
 ### DW-190: Qualify the combined fresh-v7 bootstrap read cost against its delivery deadline.
 
@@ -1564,3 +1574,8 @@ evidence: [Local measurements](tests/five-local-runtime-evidence-deferrals.md#bo
 - source_spec: `_bmad-output/implementation-artifacts/spec-five-local-runtime-evidence-deferrals.md`
   summary: Medium — independently verify effective composed gateway HTTP timeout options and cancellation propagation into a blocked projection read.
   evidence: Review B10 confirms that current tests use the installed ten-second default with direct coordinator cancellation, while the manual journey uses its separate socket timeout. They do not constitute a composed HTTP attempt-timeout test. Reuse the actual gateway defaults and mapped projection endpoint to resolve configured options and observe cancellation reaching a blocked read; retain deployed acceptance and DW-194 separately.
+ Resolution 2026-10-26: Done locally. The actual EventStore ServiceDefaults unnamed HTTP client resolves ten-second attempt/thirty-second total budgets; real sender timeouts cancel blocked mapped-route bootstrap reads while preserving pending journal and accepted owner checkpoint. Cold mapped-route retry drains the original delivery and selects the persisted index. [Verification](tests/five-retry-recovery-tooling-deferrals.md) retains exact commands and initial diagnostic corrections. Deployed DW-194 remains open.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-five-retry-recovery-tooling-deferrals.md`
+  summary: Qualify or extend certified abort repair beyond its bounded source-guard manifest capacity.
+  evidence: Independent review B6 verifies a maximum of 4096 guards and 256 KiB serialized request data, while the existing v6 migration streams a global multi-tenant inventory with only a per-tenant 10000-owner bound. Larger inventories had no certified abort recovery before this increment and remain unsupported by the bounded repair path. Before deployment, measure the certified full shard/page inventory against those limits; a scalable chunked immutable guard manifest and restart/catch-up proof are needed to extend support. Default certification remains denied and launch remains FAIL.

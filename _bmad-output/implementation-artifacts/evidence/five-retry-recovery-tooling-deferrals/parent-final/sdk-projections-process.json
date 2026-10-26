@@ -1,0 +1,15 @@
+{
+  "pid": 96399,
+  "command": [
+    "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/tests/Hexalith.EventStore.Client.Tests/bin/Debug/net10.0/Hexalith.EventStore.Client.Tests",
+    "-class",
+    "Hexalith.EventStore.Client.Tests.Projections.*",
+    "-longRunning",
+    "60",
+    "-noColor",
+    "-xml",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/parent-final/sdk-projections.xml"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+  "started_at_unix": 1793041032.145656
+}

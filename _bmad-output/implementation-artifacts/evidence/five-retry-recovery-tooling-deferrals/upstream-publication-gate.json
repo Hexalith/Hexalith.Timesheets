@@ -1,0 +1,20 @@
+{
+  "run_id": 40369292629,
+  "run_url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40369292629",
+  "job_url": "https://github.com/Hexalith/Hexalith.EventStore/actions/runs/40369292629/job/121735368755",
+  "conclusion": "failure",
+  "annotation_failures": [
+    "Process completed with exit code 1.",
+    "Tier 1 Microsoft.Testing.Platform did not report a failure count.",
+    "Process completed with exit code 1.",
+    "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Server' (are you missing an assembly reference?)",
+    "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)",
+    "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)",
+    "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Server' (are you missing an assembly reference?)",
+    "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)",
+    "The type or namespace name 'Routing' does not exist in the namespace 'Hexalith.Tenants.Contracts' (are you missing an assembly reference?)"
+  ],
+  "publication_enabled": "true",
+  "release_is_explicit_workflow_dispatch": true,
+  "release_dispatched": false
+}

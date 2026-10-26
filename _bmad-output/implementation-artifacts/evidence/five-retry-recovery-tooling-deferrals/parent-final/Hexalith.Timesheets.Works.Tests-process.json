@@ -1,0 +1,13 @@
+{
+  "pid": 24705,
+  "command": [
+    "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+    "-longRunning",
+    "60",
+    "-noColor",
+    "-xml",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/parent-final/Hexalith.Timesheets.Works.Tests.xml"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "started_at_unix": 1793041105.3080344
+}

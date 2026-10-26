@@ -298,6 +298,19 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                             MagicLinkInvalidLinkOutcomeCategory.Unknown);
                     }
 
+                    string? retryKey = httpContext.Request.Headers["Idempotency-Key"].Count == 1
+                        ? httpContext.Request.Headers["Idempotency-Key"][0] : null;
+                    if (httpContext.Request.Headers.ContainsKey("Idempotency-Key")
+                        && (string.IsNullOrWhiteSpace(retryKey) || retryKey.Length > 256 || retryKey.Any(char.IsControl)))
+                        return Denied();
+                    if (retryKey is not null && state.CapabilityState is { } retryCapability
+                        && await service.AuthorizeRetryAsync(
+                            MagicLinkExternalRequestContext.FromResolvedCapability(retryCapability, httpContext.TraceIdentifier),
+                            t, retryCapability, MagicLinkUseAction.Confirm, cancellationToken).ConfigureAwait(false)
+                        && await submission.SubmitKeyedResolvedUseAsync(retryCapability, MagicLinkUseAction.Confirm,
+                            null, timeProvider.GetUtcNow(), retryKey, false, cancellationToken).ConfigureAwait(false))
+                        return Results.Accepted();
+
                     DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
                     MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
                         MagicLinkExternalRequestContext.FromResolvedCapability(
@@ -312,10 +325,13 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
 
                     if (result.WasDispatched
                         && state.CapabilityState is { } resolvedCapability
-                        && await submission.SubmitResolvedUseAsync(
-                            resolvedCapability, MagicLinkUseAction.Confirm, null, usedAtUtc,
-                            httpContext.TraceIdentifier,
-                            cancellationToken).ConfigureAwait(false))
+                        && (retryKey is null
+                            ? await submission.SubmitResolvedUseAsync(
+                                resolvedCapability, MagicLinkUseAction.Confirm, null, usedAtUtc,
+                                httpContext.TraceIdentifier, cancellationToken).ConfigureAwait(false)
+                            : await submission.SubmitKeyedResolvedUseAsync(
+                                resolvedCapability, MagicLinkUseAction.Confirm, null, usedAtUtc,
+                                retryKey, true, cancellationToken).ConfigureAwait(false)))
                     {
                         return Results.Accepted();
                     }
@@ -397,6 +413,19 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                     MagicLinkEndpointTokenState state = await stateLoader
                         .LoadTokenStateAsync(t, cancellationToken)
                         .ConfigureAwait(false);
+                    string? retryKey = httpContext.Request.Headers["Idempotency-Key"].Count == 1
+                        ? httpContext.Request.Headers["Idempotency-Key"][0] : null;
+                    if (httpContext.Request.Headers.ContainsKey("Idempotency-Key")
+                        && (string.IsNullOrWhiteSpace(retryKey) || retryKey.Length > 256 || retryKey.Any(char.IsControl)))
+                        return Denied();
+                    if (retryKey is not null && state.CapabilityState is { } retryCapability
+                        && await service.AuthorizeRetryAsync(
+                            MagicLinkExternalRequestContext.FromResolvedCapability(retryCapability, httpContext.TraceIdentifier),
+                            t, retryCapability, MagicLinkUseAction.Adjust, cancellationToken).ConfigureAwait(false)
+                        && await submission.SubmitKeyedResolvedUseAsync(retryCapability, MagicLinkUseAction.Adjust,
+                            command, timeProvider.GetUtcNow(), retryKey, false, cancellationToken).ConfigureAwait(false))
+                        return Results.Accepted();
+
                     DateTimeOffset usedAtUtc = timeProvider.GetUtcNow();
                     TimeEntryCorrectionValues? trustedPreviousValues = state.TimeEntryState is { IsRecorded: true } prior
                         ? new(prior.Target!, prior.Contributor!, prior.ActivityTypeId!, prior.ServiceDate,
@@ -417,10 +446,13 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
 
                     if (result.WasDispatched
                         && state.CapabilityState is { } resolvedCapability
-                        && await submission.SubmitResolvedUseAsync(
-                            resolvedCapability, MagicLinkUseAction.Adjust, command, usedAtUtc,
-                            httpContext.TraceIdentifier,
-                            cancellationToken, trustedPreviousValues).ConfigureAwait(false))
+                        && (retryKey is null
+                            ? await submission.SubmitResolvedUseAsync(
+                                resolvedCapability, MagicLinkUseAction.Adjust, command, usedAtUtc,
+                                httpContext.TraceIdentifier, cancellationToken, trustedPreviousValues).ConfigureAwait(false)
+                            : await submission.SubmitKeyedResolvedUseAsync(
+                                resolvedCapability, MagicLinkUseAction.Adjust, command, usedAtUtc,
+                                retryKey, true, cancellationToken, trustedPreviousValues).ConfigureAwait(false)))
                     {
                         return Results.Accepted();
                     }
