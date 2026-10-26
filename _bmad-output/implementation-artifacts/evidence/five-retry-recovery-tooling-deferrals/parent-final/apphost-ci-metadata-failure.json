@@ -1,0 +1,6 @@
+{
+  "run": "https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40387931796",
+  "reason": "The no-resource AppHost model resolves EventStore ProjectPath, but the job initialized only Builds.",
+  "correction": "Initialize only the root-declared Builds and EventStore submodules; keep Release package mode unchanged.",
+  "raw_log_sha256": "5140269f6ff524d75fe2ab09d8ae7f0aa05a537a077f0ee96784165a87bf53aa"
+}
