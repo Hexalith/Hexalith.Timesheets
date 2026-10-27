@@ -1323,9 +1323,11 @@ class IsolatedFixtureTests(unittest.TestCase):
                     self.dashboard_socket_fixture(process, fixture.urllib.parse.urlsplit(origin).port)
                     (process / "environ").write_bytes(("ASPNETCORE_URLS=" + origin).encode())
                     output = io.StringIO()
+                    dashboard_diagnostic = {}
                     with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output), \
                             self.assertRaises(fixture.FixtureError) as dashboard_failure:
-                        fixture.verify_dashboard_ready({"pid": 1, "start": "current"}, process.parent)
+                        fixture.verify_dashboard_ready({"pid": 1, "start": "current"}, process.parent,
+                                                       diagnostic=dashboard_diagnostic)
                     container, _, username, password = self.credential_handoff_fixture()
                     published = fixture.urllib.parse.urlsplit(origin).port
                     container["NetworkSettings"]["Ports"]["8080/tcp"][0]["HostPort"] = str(published)
@@ -1338,7 +1340,9 @@ class IsolatedFixtureTests(unittest.TestCase):
                     self.assertEqual([], sink_hits)
                     self.assertEqual("token_http", diagnostic["stage"])
                     self.assertEqual("invalid_grant", diagnostic["oauth_error_code"])
-                    evidence = json.dumps(diagnostic) + str(dashboard_failure.exception) + str(credential_failure.exception) + output.getvalue()
+                    self.assertEqual("health_request", dashboard_diagnostic["stage"])
+                    evidence = (json.dumps(diagnostic) + json.dumps(dashboard_diagnostic)
+                        + str(dashboard_failure.exception) + str(credential_failure.exception) + output.getvalue())
                     for sensitive in (private, username, password, destination):
                         self.assertFalse(sensitive in evidence)
 
@@ -1399,9 +1403,17 @@ class IsolatedFixtureTests(unittest.TestCase):
                     if defect == "changed-start": (process / "stat").write_text(stat.replace("current", "changed"))
                     if defect == "changed-socket": self.dashboard_socket_fixture(process, 18888, inode="456")
                     return response
+                diagnostic = {}
                 with patch.object(fixture, "owned_http_open", side_effect=request) as opened, self.assertRaises(fixture.FixtureError):
-                    fixture.verify_dashboard_ready(identity, process.parent)
+                    fixture.verify_dashboard_ready(identity, process.parent, diagnostic=diagnostic)
                 self.assertEqual(1 if defect.startswith("changed-") else 0, opened.call_count)
+                self.assertFalse(diagnostic["ready"])
+                self.assertEqual("after_health" if defect == "changed-start" else
+                    "identity_comparison" if defect == "changed-socket" else "before_health", diagnostic["stage"])
+                if defect == "changed-socket":
+                    observations = diagnostic["ownership_observations"]
+                    self.assertEqual(["123"], observations["before_health"]["socket_inodes"])
+                    self.assertEqual(["456"], observations["after_health"]["socket_inodes"])
 
     def test_dashboard_observations_retain_inaccessible_holders_as_unknown(self):
         process = Path(self.temporary.name) / "inaccessible-dashboard-proc" / "1"
@@ -1672,6 +1684,250 @@ sys.stdin.read()
                     after = fixture.verify_dashboard_ready(identities[1])
                     self.assertEqual(before["ownership"]["socket_inodes"], after["ownership"]["socket_inodes"])
                     self.assertNotEqual(before["ownership"]["pid"], after["ownership"]["pid"])
+
+    def test_dashboard_failure_receipts_retain_real_sharing_and_transfer_before_or_after_health(self):
+        """Controlled Python SCM_RIGHTS lifecycles are not native Dashboard observations."""
+        private = fixture.secrets.token_hex(24)
+        for mode in ("share", "transfer"):
+            for phase in ("before_health", "after_health"):
+                with self.subTest(mode=mode, phase=phase), patch.dict(os.environ, {"PRIVATE_TEST_VALUE": private}), \
+                        self.real_listener_handoff_processes() as (owner, recipient, identities, _):
+                    before = fixture.verify_dashboard_ready(identities[0])
+                    instance = fixture.IsolatedFixture(command=Commands(), log_directory=self.logs)
+                    def handoff():
+                        owner.stdin.write(mode + "\n")
+                        owner.stdin.flush()
+                        self.dashboard_process_handshake(owner, "sent\n")
+                        self.dashboard_process_handshake(recipient, "received\n")
+                    opened = fixture.owned_http_open
+                    def request(*args, **kwargs):
+                        response = opened(*args, **kwargs)
+                        handoff()
+                        return response
+                    if phase == "before_health":
+                        handoff()
+                    output = io.StringIO()
+                    with patch.object(fixture, "owned_http_open", side_effect=request) as health, \
+                            contextlib.redirect_stdout(output), self.assertRaises(fixture.FixtureError) as refused:
+                        instance.observe_dashboard_readiness(identities[0], "initial")
+                    self.assertEqual("Owned dashboard HTTP readiness could not be verified", str(refused.exception))
+                    self.assertEqual(int(phase == "after_health"), health.call_count)
+                    receipt = (instance.log_directory / "dashboard-listener-initial-failure.json").read_text()
+                    proof = json.loads(receipt)
+                    diagnostic = proof["diagnostic"]
+                    self.assertFalse(proof["verified"])
+                    self.assertFalse(proof["fixture_qualification_complete"])
+                    self.assertEqual(identities[0], diagnostic["expected_identity"])
+                    self.assertEqual(phase, diagnostic["stage"])
+                    failed = diagnostic["ownership_observations"][phase]
+                    self.assertEqual("owner_match", failed["stage"])
+                    self.assertFalse(failed["verified"])
+                    self.assertEqual(before["ownership"]["socket_inodes"], failed["socket_inodes"])
+                    expected_pids = sorted(row["pid"] for row in identities) if mode == "share" else [recipient.pid]
+                    self.assertTrue(all(pids == expected_pids for pids in failed["socket_owners"].values()))
+                    self.assertEqual([dict(row, identity_visibility="observed") for row in sorted(
+                        identities if mode == "share" else identities[1:], key=lambda row: row["pid"])], failed["owner_identities"])
+                    self.assertTrue(failed["visibility"]["descriptor_scan_completed"])
+                    self.assertFalse(failed["visibility"]["exclusivity_established"])
+                    self.assertFalse(failed["visibility"]["unobserved_transfer_excluded"])
+                    if phase == "after_health":
+                        self.assertTrue(diagnostic["ownership_observations"]["before_health"]["verified"])
+                    self.assertNotIn(private, receipt + str(refused.exception) + output.getvalue())
+                    self.assertLessEqual(diagnostic["observation_started_unix_ns"], diagnostic["observation_completed_unix_ns"])
+                self.assertTrue(all(child.poll() is not None for child in (owner, recipient)))
+
+    def test_dashboard_failure_evidence_retains_incomplete_and_partial_visibility(self):
+        private = fixture.secrets.token_hex(24)
+        process = Path(self.temporary.name) / "failure-visibility-proc" / "1"
+        process.mkdir(parents=True)
+        (process / "stat").write_text("1 (dashboard) " + " ".join(["S", "0", *(["0"] * 17), "12345"]))
+        (process / "environ").write_bytes(("ASPNETCORE_URLS=http://127.0.0.1:18888\0PRIVATE=" + private).encode())
+        self.dashboard_socket_fixture(process, 18888)
+        self.dashboard_socket_fixture(process, 18888, owner="2")
+        (process.parent / "2/stat").write_text("2 (holder) " + " ".join(["S", "0", *(["0"] * 17), "23456"]))
+        real_iterdir, real_readlink, real_read_text = Path.iterdir, os.readlink, Path.read_text
+        for defect in ("inaccessible_process", "inaccessible_descriptor", "disappeared_process", "disappeared_descriptor",
+                       "partial_inventory", "partial_tables", "denied_then_visible", "inaccessible_owner_identity"):
+            with self.subTest(defect=defect):
+                diagnostic = {}
+                def iterdir(path):
+                    if path == process.parent:
+                        def candidates():
+                            yield process.parent / "2"
+                            if defect == "partial_inventory":
+                                raise OSError(private)
+                            yield process
+                        return candidates()
+                    if path == process.parent / "2/fd":
+                        if defect == "inaccessible_process": raise PermissionError(private)
+                        if defect == "disappeared_process": raise FileNotFoundError(private)
+                        if defect == "denied_then_visible": return iter((path / "4", path / "3"))
+                    return real_iterdir(path)
+                def readlink(path):
+                    if Path(path) == process.parent / "2/fd/3":
+                        if defect == "inaccessible_descriptor": raise PermissionError(private)
+                        if defect == "disappeared_descriptor": raise FileNotFoundError(private)
+                    if Path(path) == process.parent / "2/fd/4": raise PermissionError(private)
+                    if Path(path) == process / "fd/3": raise PermissionError(private)
+                    return real_readlink(path)
+                def read_text(path, *args, **kwargs):
+                    if defect == "partial_tables" and path == process.parent / "net/tcp6": raise OSError(private)
+                    if defect == "inaccessible_owner_identity" and path == process.parent / "2/stat": raise PermissionError(private)
+                    return real_read_text(path, *args, **kwargs)
+                with patch.object(Path, "iterdir", iterdir), patch.object(fixture.os, "readlink", readlink), \
+                        patch.object(Path, "read_text", read_text), patch.object(fixture, "owned_http_open") as opened, \
+                        self.assertRaises(fixture.FixtureError) as refused:
+                    fixture.verify_dashboard_ready({"pid": 1, "start": "12345"}, process.parent, diagnostic=diagnostic)
+                opened.assert_not_called()
+                failed = diagnostic["ownership_observations"]["before_health"]
+                self.assertEqual(["123"], failed["socket_inodes"])
+                self.assertEqual({"pid": 1, "start": "12345"}, diagnostic["expected_identity"])
+                self.assertEqual("socket_tables" if defect == "partial_tables" else
+                    "descriptor_inventory" if defect == "partial_inventory" else "owner_match", failed["stage"])
+                visibility = failed["visibility"]
+                self.assertEqual(defect != "partial_tables", visibility["socket_tables_complete"])
+                self.assertEqual(defect not in ("partial_inventory", "partial_tables"), visibility["descriptor_scan_completed"])
+                if defect not in ("partial_inventory", "partial_tables"):
+                    self.assertGreater(visibility["inaccessible_descriptors"], 0)
+                counter = {"inaccessible_process": "inaccessible_processes", "disappeared_process": "disappeared_processes",
+                           "disappeared_descriptor": "disappeared_descriptors"}.get(defect)
+                if counter: self.assertEqual(1, visibility[counter])
+                if defect in ("partial_inventory", "denied_then_visible"):
+                    self.assertEqual({"123": [2]}, failed["socket_owners"])
+                    self.assertEqual([{"pid": 2, "start": "23456", "identity_visibility": "observed"}], failed["owner_identities"])
+                if defect == "inaccessible_owner_identity":
+                    self.assertEqual([{"pid": 2, "start": None, "identity_visibility": "inaccessible"}], failed["owner_identities"])
+                self.assertFalse(visibility["exclusivity_established"])
+                self.assertFalse(visibility["unobserved_transfer_excluded"])
+                self.assertNotIn(private, json.dumps(diagnostic) + str(refused.exception))
+
+    def test_dashboard_failure_stages_do_not_copy_private_environment_or_exception_details(self):
+        private = fixture.secrets.token_hex(24)
+        with self.real_dashboard_process() as (_, identity, _):
+            for stage in ("expected_process", "environment", "endpoint_validation", "health_request"):
+                diagnostic = {}
+                read_bytes = Path.read_bytes
+                def environment(path):
+                    if path == Path(f"/proc/{identity['pid']}/environ"):
+                        if stage == "environment": raise PermissionError(private)
+                        if stage == "endpoint_validation": return ("ASPNETCORE_URLS=http://user:" + private + "@127.0.0.1:18888").encode()
+                    return read_bytes(path)
+                expected = dict(identity, start="0") if stage == "expected_process" else identity
+                with self.subTest(stage=stage), patch.object(Path, "read_bytes", environment), \
+                        patch.object(fixture, "owned_http_open", side_effect=OSError(private)), \
+                        self.assertRaises(fixture.FixtureError) as refused:
+                    fixture.verify_dashboard_ready(expected, diagnostic=diagnostic)
+                self.assertEqual(stage, diagnostic["stage"])
+                self.assertNotIn(private, json.dumps(diagnostic) + str(refused.exception))
+                self.assertEqual("Owned dashboard HTTP readiness could not be verified", str(refused.exception))
+
+    def test_dashboard_listener_failure_retains_expected_identity_recheck(self):
+        process = Path(self.temporary.name) / "recheck-failure-proc" / "1"
+        process.mkdir(parents=True)
+        stat = "1 (dashboard) " + " ".join(["S", "0", *(["0"] * 17), "12345"])
+        (process / "stat").write_text(stat)
+        self.dashboard_socket_fixture(process, 18888)
+        reads, read_text = [], Path.read_text
+        def observe(path, *args, **kwargs):
+            if path == process / "stat":
+                reads.append(path)
+                if len(reads) == 3: return stat.replace("12345", "67890")
+            return read_text(path, *args, **kwargs)
+        diagnostic = {}
+        with patch.object(Path, "read_text", observe), self.assertRaises(fixture.FixtureError) as refused:
+            fixture.dashboard_listener_identity({"pid": 1, "start": "12345"},
+                fixture.urllib.parse.urlsplit("http://127.0.0.1:18888"), process.parent, diagnostic=diagnostic)
+        self.assertEqual("Owned dashboard socket ownership could not be verified", str(refused.exception))
+        self.assertEqual("expected_process_recheck", diagnostic["stage"])
+        self.assertEqual({"before_inventory": {"pid": 1, "start": "12345", "state": "S"},
+                          "after_inventory": {"pid": 1, "start": "67890", "state": "S"}}, diagnostic["expected_process_observations"])
+        self.assertEqual({"123": [1]}, diagnostic["socket_owners"])
+        self.assertFalse(diagnostic["verified"])
+
+    def test_dashboard_protocol_refusals_retain_opaque_failure_receipts(self):
+        private = fixture.secrets.token_hex(24)
+        process = Path(self.temporary.name) / "protocol-failure-proc" / "1"
+        process.mkdir(parents=True)
+        (process / "stat").write_text("1 (dashboard) " + " ".join(["S", "0", *(["0"] * 17), "12345"]))
+        verify = fixture.verify_dashboard_ready
+        for response in (private.encode() + b"\r\n\r\n", b"HTTP/42.0 200 " + private.encode() + b"\r\n\r\n"):
+            def malformed(handler):
+                handler.wfile.write(response)
+            with self.subTest(protocol=response[:4]), self.owned_http_server(malformed) as origin:
+                self.dashboard_socket_fixture(process, fixture.urllib.parse.urlsplit(origin).port)
+                (process / "environ").write_bytes(("ASPNETCORE_URLS=" + origin).encode())
+                instance = fixture.IsolatedFixture(command=Commands(), log_directory=self.logs)
+                output = io.StringIO()
+                with patch.object(fixture, "verify_dashboard_ready", side_effect=lambda identity, diagnostic:
+                        verify(identity, process.parent, diagnostic=diagnostic)), contextlib.redirect_stdout(output), \
+                        contextlib.redirect_stderr(output), self.assertRaises(fixture.FixtureError) as refused:
+                    instance.observe_dashboard_readiness({"pid": 1, "start": "12345"}, "initial")
+                receipt = (instance.log_directory / "dashboard-listener-initial-failure.json").read_text()
+                diagnostic = json.loads(receipt)["diagnostic"]
+                self.assertEqual("health_request", diagnostic["stage"])
+                self.assertTrue(diagnostic["ownership_observations"]["after_failed_health"]["verified"])
+                self.assertFalse(diagnostic["ready"])
+                self.assertEqual("Owned dashboard HTTP readiness could not be verified", str(refused.exception))
+                self.assertNotIn(private, receipt + str(refused.exception) + output.getvalue())
+
+    def test_dashboard_failed_health_retains_real_conflicting_holders_without_acceptance(self):
+        private = fixture.secrets.token_hex(24)
+        for mode in ("share", "transfer"):
+            for error_kind in ("transport", "http"):
+                with self.subTest(mode=mode, error_kind=error_kind), \
+                        self.real_listener_handoff_processes() as (owner, recipient, identities, _):
+                    def fail(*_args, **_kwargs):
+                        owner.stdin.write(mode + "\n")
+                        owner.stdin.flush()
+                        self.dashboard_process_handshake(owner, "sent\n")
+                        self.dashboard_process_handshake(recipient, "received\n")
+                        if error_kind == "http":
+                            raise fixture.urllib.error.HTTPError(private, 503, private, {}, io.BytesIO(private.encode()))
+                        raise fixture.urllib.error.URLError(private)
+                    diagnostic = {}
+                    with patch.object(fixture, "owned_http_open", side_effect=fail), self.assertRaises(fixture.FixtureError) as refused:
+                        fixture.verify_dashboard_ready(identities[0], diagnostic=diagnostic)
+                    observations = diagnostic["ownership_observations"]
+                    self.assertTrue(observations["before_health"]["verified"])
+                    failed = observations["after_failed_health"]
+                    self.assertFalse(failed["verified"])
+                    self.assertEqual("owner_match", failed["stage"])
+                    self.assertEqual(observations["before_health"]["socket_inodes"], failed["socket_inodes"])
+                    expected_pids = sorted(identity["pid"] for identity in identities) if mode == "share" else [recipient.pid]
+                    self.assertTrue(all(pids == expected_pids for pids in failed["socket_owners"].values()))
+                    self.assertEqual("health_request", diagnostic["stage"])
+                    self.assertNotIn(private, json.dumps(diagnostic) + str(refused.exception))
+
+    def test_post_journey_discovery_refusals_retain_prior_expected_dashboard_identity(self):
+        private = fixture.secrets.token_hex(24)
+        with self.real_dashboard_process() as (_, identity, _):
+            for stage in ("resource_discovery", "runtime_host_identity"):
+                instance = fixture.IsolatedFixture(command=Commands(), log_directory=self.logs, resource_check=lambda *_: [])
+                instance.dashboard_readiness = fixture.verify_dashboard_ready(identity)
+                with self.subTest(stage=stage), contextlib.ExitStack() as stack:
+                    if stage == "resource_discovery":
+                        stack.enter_context(patch.object(instance, "resource_check", side_effect=OSError(private)))
+                    else:
+                        stack.enter_context(patch.object(fixture, "runtime_host_identity", side_effect=fixture.FixtureError("opaque refusal")))
+                    with self.assertRaises((OSError, fixture.FixtureError)):
+                        instance.capture_dashboard_after_journey({})
+                receipt = (instance.log_directory / "dashboard-listener-post-journey-failure.json").read_text()
+                diagnostic = json.loads(receipt)["diagnostic"]
+                self.assertEqual(stage, diagnostic["stage"])
+                self.assertEqual(identity, diagnostic["expected_identity"])
+                self.assertEqual({}, diagnostic["ownership_observations"])
+                self.assertFalse(diagnostic["visibility"]["exclusivity_established"])
+                self.assertNotIn(private, receipt)
+
+    def test_dashboard_zombie_refusal_retains_the_allowlisted_process_state(self):
+        process = Path(self.temporary.name) / "zombie-failure-proc" / "1"
+        process.mkdir(parents=True)
+        (process / "stat").write_text("1 (dashboard) " + " ".join(["Z", "0", *(["0"] * 17), "12345"]))
+        diagnostic = {}
+        with self.assertRaises(fixture.FixtureError):
+            fixture.verify_dashboard_ready({"pid": 1, "start": "12345"}, process.parent, diagnostic=diagnostic)
+        self.assertEqual("expected_process", diagnostic["stage"])
+        self.assertEqual({"pid": 1, "start": "12345", "state": "Z"}, diagnostic["observed_expected_identity"])
 
     def test_post_journey_dashboard_receipt_retains_real_listener_observations_and_limits(self):
         with self.real_dashboard_process() as (_, identity, _):
@@ -2701,6 +2957,76 @@ sys.stdin.read()
                         self.assertTrue(commands.stopped)
                         self.assertFalse(commands.containers)
                         self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes(self):
+        """Real synthetic sockets, injected infrastructure; no native Dashboard transfer claim."""
+        private = fixture.secrets.token_hex(24)
+        for mode in ("share", "transfer"):
+            for phase in ("initial", "post-journey"):
+                for status in ((0,) if phase == "initial" else (0, 42)):
+                    with self.subTest(mode=mode, phase=phase, status=status), \
+                            patch.dict(os.environ, {"PRIVATE_TEST_VALUE": private}), \
+                            self.real_listener_handoff_processes() as (owner, recipient, identities, _):
+                        initial = fixture.verify_dashboard_ready(identities[0])
+                        before_cleanup = []
+                        def handoff():
+                            owner.stdin.write(mode + "\n")
+                            owner.stdin.flush()
+                            self.dashboard_process_handshake(owner, "sent\n")
+                            self.dashboard_process_handshake(recipient, "received\n")
+                        def command(arguments):
+                            if arguments[:2] == ["aspire", "stop"]:
+                                before_cleanup.append((instance.log_directory / ("dashboard-listener-" + phase + "-failure.json")).read_bytes())
+                                self.cleanup_dashboard_processes([owner, recipient])
+                            if "-class" in arguments:
+                                handoff()
+                                return subprocess.CompletedProcess(arguments, status,
+                                    "Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0", "")
+                        commands = Commands(command)
+                        instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                            security_smoke=True, ownership_check=lambda: commands.started and not commands.stopped,
+                            resource_check=lambda *_: [] if commands.stopped else identities)
+                        instance.injected_command = False
+                        def security_runtime():
+                            instance.captured_processes = list(identities)
+                            instance.dashboard_readiness = initial
+                        if phase == "initial": handoff()
+                        output = io.StringIO()
+                        with contextlib.ExitStack() as stack:
+                            if phase == "post-journey":
+                                stack.enter_context(patch.object(instance, "verify_security_runtime", side_effect=security_runtime))
+                            for name in ("capture_runtime_readiness", "prepare_fixture_bootstrap", "bootstrap_fixture_protocol"):
+                                stack.enter_context(patch.object(instance, name))
+                            stack.enter_context(patch.object(instance, "_journey_command", commands))
+                            stack.enter_context(patch.object(instance, "capture_gateway_process", side_effect=self.gateway_identities()))
+                            stack.enter_context(patch.object(instance, "capture_source_identity", return_value={"source": "unchanged"}))
+                            stack.enter_context(patch.object(fixture, "runtime_host_identity", return_value={"dashboard": identities[0]}))
+                            stack.enter_context(patch.object(fixture, "read_only_shared_snapshot", return_value=self.shared_snapshot()))
+                            stack.enter_context(patch.object(fixture.time, "sleep"))
+                            stack.enter_context(patch.object(fixture, "verify_runtime_components"))
+                            stack.enter_context(contextlib.redirect_stdout(output))
+                            self.assertEqual(status or 1, instance.execute())
+                        receipt_path = instance.log_directory / ("dashboard-listener-" + phase + "-failure.json")
+                        receipt_bytes = receipt_path.read_bytes()
+                        proof = json.loads(receipt_bytes)
+                        diagnostic = proof["diagnostic"]
+                        self.assertEqual(identities[0], diagnostic["expected_identity"])
+                        self.assertEqual("before_health", diagnostic["stage"])
+                        failed = diagnostic["ownership_observations"]["before_health"]
+                        self.assertEqual("owner_match", failed["stage"])
+                        self.assertEqual(initial["ownership"]["socket_inodes"], failed["socket_inodes"])
+                        self.assertTrue(commands.stopped)
+                        self.assertFalse(commands.containers)
+                        self.assertTrue(all(child.poll() is not None for child in (owner, recipient)))
+                        self.assertFalse(Path(instance.scratch).exists())
+                        self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+                        self.assertTrue(json.loads((instance.log_directory / "recorded-process-exit.json").read_text())["all_gone"])
+                        self.assertNotIn(private, receipt_bytes.decode() + output.getvalue())
+                        if phase == "post-journey":
+                            lifecycle = json.loads((instance.log_directory / "dashboard-listener-lifecycle-failure.json").read_text())
+                            self.assertEqual(diagnostic, lifecycle["ownership_failure"])
+                            self.assertEqual(status, lifecycle["journey_outcome"]["command_exit_code"])
+                        self.assertEqual([receipt_bytes], before_cleanup)
 
     def test_gateway_replacement_requires_new_identity_same_dcp_and_exited_old_identity(self):
         instance = fixture.IsolatedFixture(log_directory=self.logs)

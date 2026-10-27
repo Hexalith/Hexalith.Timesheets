@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_isolated_magic_link_dapr.py",
+    "-v"
+  ],
+  "started_utc": "2026-10-27T18:45:05.708225+00:00",
+  "elapsed_seconds": 45.187,
+  "exit_code": 1,
+  "source_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "e0a8be73b4e70d0963a0bf6e242649d9f262ff3a396f6f3f80f2b90a8735a746",
+    "scripts/test_isolated_magic_link_dapr.py": "ca6fa20da84e61b75770f13b5e1c648368af7828586ae51e732284af1e3acae9"
+  },
+  "evidence_scope": "controlled synthetic Python processes and injected infrastructure; no native Dashboard transfer observation"
+}

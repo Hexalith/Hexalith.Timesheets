@@ -1,0 +1,26 @@
+{
+  "source_revision": "d2f4ab0eef254dfa6c9784836aa0a97c378b7193",
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --public-port 18080 --log-directory /tmp/timesheets-dashboard-diagnostic-baseline",
+  "exit_code": 1,
+  "native_observation_established": false,
+  "existing_apphost_preserved": true,
+  "gitlinks_before": [
+    "160000 3f194e17174994d308ec84af9ee2b5aa68674d0d 0\treferences/Hexalith.AI.Tools",
+    "160000 cad925260713718895282c69bcbdb8bc72e7b6a2 0\treferences/Hexalith.Builds",
+    "160000 1663028fb6d9f46a0bf17919edeb21bb99be1587 0\treferences/Hexalith.Commons",
+    "160000 536bf80d5fd5c2a64c2f64815edc67074fd5a6ea 0\treferences/Hexalith.Conversations",
+    "160000 4dc256c4db7a0ba88efdbbe0f6bcbcf047c09d34 0\treferences/Hexalith.EventStore",
+    "160000 8d2b47bd206ffd5c5e77a5ac0461b9cfe52ea4fd 0\treferences/Hexalith.FrontComposer",
+    "160000 8bfd1e0592bfee258b381f41b098fe3b35170fdd 0\treferences/Hexalith.McpCli",
+    "160000 ea2bf5a4dc34c967504638d9763a481b660a6f0e 0\treferences/Hexalith.Parties",
+    "160000 73903003acd33ba341e12aa3c495992bab8b0eda 0\treferences/Hexalith.Platform",
+    "160000 221ac4592ba908ae7661ba1fa9e2d1fcc23baee0 0\treferences/Hexalith.PolymorphicSerializations",
+    "160000 83c6bef90bbac3bb74f41cdb77fe7e84d53c82e0 0\treferences/Hexalith.Projects",
+    "160000 2cf3a9660f71f6877923772cd145aa6856907945 0\treferences/Hexalith.Tenants",
+    "160000 986b56f1f36db1252e4f4d863ab4cab0e53b06ba 0\treferences/Hexalith.Works"
+  ],
+  "preserved_paths_sha256": {
+    "docs/launch-readiness.md": "19ea38ebc7222ebd20d824a1d4a68d1c6ab1474dd989d368c0f344e1466f7eaf",
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": "8002bfba2a94ec9442834e53350f6c695ef672cc5faea5d23e6abc3be80a62f8"
+  }
+}

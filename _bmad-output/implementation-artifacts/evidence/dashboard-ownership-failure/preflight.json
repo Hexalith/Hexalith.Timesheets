@@ -1,0 +1,16 @@
+{
+  "source_hashes_match_final_passing_suite": true,
+  "six_synthetic_samples_retained": true,
+  "all_synthetic_owned_cleanup_complete": true,
+  "gitlinks_unchanged": true,
+  "launch_and_sprint_status_unchanged": true,
+  "diff_check_exit": 0,
+  "conventional_commit_validation_exit": 0,
+  "unresolved": [
+    "actual failed native ownership trace",
+    "inaccessible holders",
+    "unobserved native transfers",
+    "system-wide exclusivity",
+    "all existing deployed acceptance gates"
+  ]
+}

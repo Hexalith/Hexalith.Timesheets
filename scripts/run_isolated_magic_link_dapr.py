@@ -12,6 +12,7 @@ import ctypes
 import errno
 import hashlib
 import hmac
+import http.client
 import json
 import os
 from pathlib import Path
@@ -920,13 +921,63 @@ def security_credential_handoff(container, public_port, diagnostics=None, descri
         raise FixtureError(message) from None
 
 
-def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
+def dashboard_diagnostic_identity(identity):
+    """Allow only kernel numeric identity fields into failure diagnostics."""
+    pid, start = identity.get("pid"), identity.get("start")
+    return {"pid": pid if type(pid) is int and pid > 0 else None,
+            "start": start if isinstance(start, str) and re.fullmatch(r"[0-9]+", start) else None}
+
+
+def dashboard_process_observation(pid, fields):
+    """Retain numeric identity and the allowlisted kernel process state only."""
+    return {**dashboard_diagnostic_identity({"pid": pid, "start": fields[19]}),
+            "state": fields[0] if fields[0] in ("R", "S", "D", "Z", "T", "t", "X", "x", "K", "W", "P", "I") else None}
+
+
+def dashboard_owner_identity(pid, directory):
+    """Sample an observed holder without allowing unavailable metadata to mask refusal."""
+    owner = {"pid": pid, "start": None, "identity_visibility": "unavailable"}
+    try:
+        observed = (directory / str(pid) / "stat").read_text().rsplit(")", 1)[1].split()
+        owner.update(dashboard_diagnostic_identity({"pid": pid, "start": observed[19]}))
+        owner["identity_visibility"] = "observed" if owner["start"] is not None else "unavailable"
+    except FileNotFoundError:
+        owner["identity_visibility"] = "disappeared"
+    except PermissionError:
+        owner["identity_visibility"] = "inaccessible"
+    except (OSError, ValueError, IndexError):
+        pass
+    return owner
+
+
+def dashboard_listener_identity(identity, endpoint, directory=Path("/proc"), diagnostic=None):
     """Verify explicit listeners within observable descriptors, retaining visibility limits."""
-    observation_started = time.time_ns()
+    message = "Owned dashboard socket ownership could not be verified"
+    report = diagnostic if diagnostic is not None else {}
+    report.clear()
+    report.update(verified=False, stage="expected_process", expected_identity=dashboard_diagnostic_identity(identity),
+                  socket_inodes=[], socket_owners={}, owner_identities=[], expected_process_observations={},
+                  observation_started_unix_ns=time.time_ns(), visibility={
+                      "scope": "observable_process_descriptors", "inspected_processes": 0,
+                      "inaccessible_processes": 0, "inaccessible_descriptors": 0,
+                      "disappeared_processes": 0, "disappeared_descriptors": 0,
+                      "socket_tables_complete": False, "descriptor_scan_completed": False,
+                      "exclusivity_established": False, "unobserved_transfer_excluded": False})
+    try:
+        return _dashboard_listener_identity(identity, endpoint, directory, report)
+    except (OSError, ValueError, IndexError, KeyError, TypeError, FixtureError):
+        raise FixtureError(message) from None
+    finally:
+        report["observation_completed_unix_ns"] = time.time_ns()
+
+
+def _dashboard_listener_identity(identity, endpoint, directory, report):
+    """Collect partial allowlisted observations before each opaque refusal."""
     message = "Owned dashboard socket ownership could not be verified"
     directory = Path(directory)
     process = directory / str(identity["pid"])
     fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+    report["expected_process_observations"]["before_inventory"] = dashboard_process_observation(identity["pid"], fields)
     require(fields[19] == identity["start"] and fields[0] != "Z", message)
     # Linux can expose an IPv4 loopback listener through an IPv6 mapped bind.
     # It can answer the same IPv4 origin and must not escape the owner check.
@@ -935,6 +986,7 @@ def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
                  "localhost": ipv4_loopback | {"00000000000000000000000001000000"}}[endpoint.hostname]
     sockets = set()
     loopback_hosts = set()
+    report["stage"] = "socket_tables"
     for table in ("tcp", "tcp6"):
         for line in (directory / "net" / table).read_text().splitlines()[1:]:
             row = line.split()
@@ -946,13 +998,14 @@ def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
                 if address in addresses:
                     require(row[9].isdigit() and int(row[9]) > 0, message)
                     sockets.add(row[9])
+                    report["socket_inodes"] = sorted(sockets)
                     loopback_hosts.add("::1" if address == "00000000000000000000000001000000" else "127.0.0.1")
+    report["visibility"]["socket_tables_complete"] = True
     require(bool(sockets), message)
     owners = {inode: set() for inode in sockets}
-    visibility = {"scope": "observable_process_descriptors", "inspected_processes": 0,
-                  "inaccessible_processes": 0, "inaccessible_descriptors": 0,
-                  "disappeared_processes": 0, "disappeared_descriptors": 0,
-                  "exclusivity_established": False, "unobserved_transfer_excluded": False}
+    report["socket_owners"] = {inode: [] for inode in sorted(sockets)}
+    visibility = report["visibility"]
+    report["stage"] = "descriptor_inventory"
     for candidate in directory.iterdir():
         if not candidate.name.isdigit():
             continue
@@ -968,7 +1021,12 @@ def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
                     continue
                 match = re.fullmatch(r"socket:\[([0-9]+)\]", target)
                 if match and match[1] in owners:
-                    owners[match[1]].add(int(candidate.name))
+                    pid = int(candidate.name)
+                    owners[match[1]].add(pid)
+                    report["socket_owners"][match[1]] = sorted(owners[match[1]])
+                    if not any(owner["pid"] == pid for owner in report["owner_identities"]):
+                        report["owner_identities"].append(dashboard_owner_identity(pid, directory))
+                        report["owner_identities"].sort(key=lambda owner: owner["pid"])
             visibility["inspected_processes"] += 1
         except FileNotFoundError:
             visibility["disappeared_processes"] += 1
@@ -977,15 +1035,18 @@ def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
             # the expected process. Never infer system-wide exclusivity.
             visibility["inaccessible_processes"] += 1
             continue
+    visibility["descriptor_scan_completed"] = True
+    report["stage"] = "owner_match"
     require(all(pids == {identity["pid"]} for pids in owners.values()), message)
     # Recheck after inventory: a PID may have exited or been reused while its
     # descriptors were being inspected.
+    report["stage"] = "expected_process_recheck"
     current = (process / "stat").read_text().rsplit(")", 1)[1].split()
+    report["expected_process_observations"]["after_inventory"] = dashboard_process_observation(identity["pid"], current)
     require(current[19] == identity["start"] and current[0] != "Z", message)
-    return {"pid": identity["pid"], "start": identity["start"], "socket_inodes": sorted(sockets),
-            "loopback_hosts": sorted(loopback_hosts), "visibility": visibility,
-            "observation_started_unix_ns": observation_started,
-            "observation_completed_unix_ns": time.time_ns()}
+    report.update(verified=True, stage="complete", pid=identity["pid"], start=identity["start"],
+                  loopback_hosts=sorted(loopback_hosts))
+    return report
 
 
 def dashboard_listener_fingerprint(observation):
@@ -993,15 +1054,36 @@ def dashboard_listener_fingerprint(observation):
     return {key: observation[key] for key in ("pid", "start", "socket_inodes", "loopback_hosts")}
 
 
-def verify_dashboard_ready(identity, directory=Path("/proc")):
+def verify_dashboard_ready(identity, directory=Path("/proc"), diagnostic=None):
     """Check the owned dashboard listener once after Aspire resource readiness."""
     message = "Owned dashboard HTTP readiness could not be verified"
+    report = diagnostic if diagnostic is not None else {}
+    report.clear()
+    report.update(ready=False, stage="expected_process", expected_identity=dashboard_diagnostic_identity(identity),
+                  ownership_observations={}, observation_started_unix_ns=time.time_ns(),
+                  visibility={"scope": "observable_process_descriptors", "exclusivity_established": False,
+                              "unobserved_transfer_excluded": False})
+
+    def observe_failed_health():
+        # A health transport failure may follow a socket transfer. This extra
+        # inventory is diagnostic only and can never turn refusal into success.
+        if report["stage"] == "health_request":
+            observation = report["ownership_observations"]["after_failed_health"] = {}
+            try:
+                dashboard_listener_identity(identity, endpoint, directory, diagnostic=observation)
+            except Exception:
+                # Keep partial allowlisted data and the original opaque refusal.
+                pass
+
     try:
         process = Path(directory) / str(identity["pid"])
         fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+        report["observed_expected_identity"] = dashboard_process_observation(identity["pid"], fields)
         require(fields[19] == identity["start"] and fields[0] != "Z", message)
+        report["stage"] = "environment"
         environment = dict(value.split("=", 1) for value in (process / "environ").read_bytes().decode().split("\0") if "=" in value)
         urls = environment["ASPNETCORE_URLS"].split(";")
+        report["stage"] = "endpoint_validation"
         require(bool(urls), message)
         endpoint = urllib.parse.urlsplit(urls[0])
         require(endpoint.scheme in ("http", "https") and endpoint.hostname in ("localhost", "127.0.0.1", "::1")
@@ -1010,7 +1092,9 @@ def verify_dashboard_ready(identity, directory=Path("/proc")):
                 and all(ord(character) > 32 and ord(character) != 127 for character in urls[0]), message)
         # Aspire Dashboard 13.6.1 maps /health anonymously; the browser root may
         # challenge with a login redirect and is not a direct health probe.
-        before = dashboard_listener_identity(identity, endpoint, directory)
+        report["stage"] = "before_health"
+        before = report["ownership_observations"]["before_health"] = {}
+        dashboard_listener_identity(identity, endpoint, directory, diagnostic=before)
         connect_host = (endpoint.hostname if endpoint.hostname != "localhost" else
                         "127.0.0.1" if "127.0.0.1" in before["loopback_hosts"] else "::1")
         authority = f"[{connect_host}]:{endpoint.port}" if ":" in connect_host else f"{connect_host}:{endpoint.port}"
@@ -1023,28 +1107,38 @@ def verify_dashboard_ready(identity, directory=Path("/proc")):
         context = ssl.create_default_context()
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
+        report["stage"] = "health_request"
         with owned_http_open(request, timeout=20, context=context) as response:
             require(response.status == 200, message)
-        after = dashboard_listener_identity(identity, endpoint, directory)
+        report["stage"] = "after_health"
+        after = report["ownership_observations"]["after_health"] = {}
+        dashboard_listener_identity(identity, endpoint, directory, diagnostic=after)
+        report["stage"] = "identity_comparison"
         require(dashboard_listener_fingerprint(before) == dashboard_listener_fingerprint(after), message)
         visibility = {"scope": "observable_process_descriptors", "exclusivity_established": False,
                       "unobserved_transfer_excluded": False}
         for key in ("inspected_processes", "inaccessible_processes", "inaccessible_descriptors",
                     "disappeared_processes", "disappeared_descriptors"):
             visibility[key + "_observations"] = before["visibility"][key] + after["visibility"][key]
-        return {"ready": True, "scheme": endpoint.scheme, "loopback": True, "port": endpoint.port,
+        result = {"ready": True, "scheme": endpoint.scheme, "loopback": True, "port": endpoint.port,
                 "path": "/health", "connect_host": connect_host,
                 "ownership": dashboard_listener_fingerprint(after),
                 "ownership_observations": {"before_health": before, "after_health": after},
                 "visibility": visibility}
+        report.update(result, stage="complete")
+        return result
     except urllib.error.HTTPError as error:
         try:
             error.close()
         except OSError:
             pass
+        observe_failed_health()
         raise FixtureError(message) from None
-    except (OSError, ValueError, IndexError, KeyError, TypeError, FixtureError):
+    except (OSError, ValueError, IndexError, KeyError, TypeError, FixtureError, http.client.HTTPException):
+        observe_failed_health()
         raise FixtureError(message) from None
+    finally:
+        report["observation_completed_unix_ns"] = time.time_ns()
 
 
 class SharedSnapshot(dict):
@@ -1284,6 +1378,7 @@ class IsolatedFixture:
         self.redis_image = None
         self.dependency_graph = None
         self.dashboard_readiness = None
+        self.dashboard_failure = None
 
     def capture_source_identity(self):
         """Bind runtime receipts to exact source diffs, restored packages and built assets."""
@@ -1469,9 +1564,9 @@ class IsolatedFixture:
                 diagnostic = {"expected_package_directories": {}, "observed_processes": [], "candidate_processes": []}
             self.write_evidence("runtime-host-failure.json", json.dumps(diagnostic, indent=2) + "\n")
             raise
-        host["dashboard_readiness"] = verify_dashboard_ready(host["dashboard"])
-        self.dashboard_readiness = host["dashboard_readiness"]
         self.captured_processes = identities
+        host["dashboard_readiness"] = self.observe_dashboard_readiness(host["dashboard"], "initial")
+        self.dashboard_readiness = host["dashboard_readiness"]
         require(self.write_evidence("runtime-host.json", json.dumps(host, indent=2) + "\n"), "Runtime host evidence is incomplete")
         listing = self.run_command(["docker", "container", "ls", "--all", "--no-trunc", "--filter",
             "label=hexalith.timesheets.components=" + self.scratch, "--format", "{{.ID}}"])
@@ -1795,12 +1890,41 @@ class IsolatedFixture:
         require(all(proof[key] for key in ("identity_replaced", "same_dcp_parent", "old_identity_exited")),
                 "Gateway native PID/start replacement could not be verified")
 
+    def observe_dashboard_readiness(self, identity, phase):
+        """Persist partial allowlisted diagnostics before the original refusal escapes."""
+        diagnostic = {}
+        self.dashboard_failure = None
+        try:
+            return verify_dashboard_ready(identity, diagnostic=diagnostic)
+        except (FixtureError, OSError, KeyboardInterrupt):
+            self.retain_dashboard_failure(diagnostic, phase)
+            raise
+
+    def retain_dashboard_failure(self, diagnostic, phase):
+        """Write an allowlisted observation without replacing the original refusal."""
+        self.dashboard_failure = diagnostic
+        self.write_evidence("dashboard-listener-" + phase + "-failure.json", json.dumps({
+            "verified": False, "observation_stage": phase, "fixture_qualification_complete": False,
+            "diagnostic": diagnostic, "recorded_at_unix_ns": time.time_ns()}, indent=2) + "\n")
+
     def capture_dashboard_after_journey(self, journey_outcome):
         """Retain another actual native listener observation after the gateway restart journey."""
         require(self.dashboard_readiness is not None, "Initial dashboard observation is unavailable")
-        host = runtime_host_identity(self.resource_check(self.scratch, self.placement, self.scheduler),
-                                     APPHOST.parent / "obj/project.assets.json")
-        after = verify_dashboard_ready(host["dashboard"])
+        diagnostic = {"ready": False, "stage": "resource_discovery", "ownership_observations": {},
+                      "expected_identity": dashboard_diagnostic_identity(self.dashboard_readiness.get("ownership", {})),
+                      "observation_started_unix_ns": time.time_ns(),
+                      "visibility": {"scope": "observable_process_descriptors", "exclusivity_established": False,
+                                     "unobserved_transfer_excluded": False}}
+        self.dashboard_failure = diagnostic
+        try:
+            identities = self.resource_check(self.scratch, self.placement, self.scheduler)
+            diagnostic["stage"] = "runtime_host_identity"
+            host = runtime_host_identity(identities, APPHOST.parent / "obj/project.assets.json")
+        except (FixtureError, OSError, KeyboardInterrupt):
+            diagnostic["observation_completed_unix_ns"] = time.time_ns()
+            self.retain_dashboard_failure(diagnostic, "post-journey")
+            raise
+        after = self.observe_dashboard_readiness(host["dashboard"], "post-journey")
         proof = {"before_journey": self.dashboard_readiness, "after_journey": after,
                  "journey_outcome": journey_outcome, "recorded_at_unix_ns": time.time_ns(),
                  "observation_stage": "after_journey_and_gateway_proof_before_cleanup",
@@ -2089,6 +2213,7 @@ class IsolatedFixture:
                     except (FixtureError, OSError, KeyboardInterrupt) as error:
                         self.write_evidence("dashboard-listener-lifecycle-failure.json", json.dumps({
                             "verified": False, "message": "Post-journey dashboard listener could not be observed",
+                            "ownership_failure": self.dashboard_failure,
                             "journey_outcome": journey_outcome, "recorded_at_unix_ns": time.time_ns(),
                             "observation_stage": "after_journey_and_gateway_proof_before_cleanup",
                             "fixture_qualification_complete": False,
