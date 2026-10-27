@@ -1,0 +1,9 @@
+{
+  "scanned_files": 149,
+  "patterns": [
+    "jwt",
+    "private_key"
+  ],
+  "findings": [],
+  "limit": "Bounded JWT/private-key pattern scan; not an exhaustive secret detector."
+}

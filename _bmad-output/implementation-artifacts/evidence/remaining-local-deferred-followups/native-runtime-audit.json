@@ -1,0 +1,149 @@
+{
+  "verified": true,
+  "run": "runtime/run-pjnjhza6",
+  "live_test": {
+    "passed": 1,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "time_seconds": 78.349
+  },
+  "source_before_equals_after": true,
+  "final_source_diff_sha256": "5d3c311acf9ea291d954ee1ae0e91eac328724d3042275f00bdc720b0c9a2525",
+  "native_dashboard": {
+    "pid": 2127783,
+    "start": "1255581",
+    "version": "13.6.1",
+    "sha256": "72e006b4f19c87c369315a908797926b4f633107d585aec4a5878ed0acd1201d"
+  },
+  "listener_identity": {
+    "pid": 2127783,
+    "start": "1255581",
+    "socket_inodes": [
+      "5165275",
+      "5165276"
+    ],
+    "loopback_hosts": [
+      "127.0.0.1",
+      "::1"
+    ]
+  },
+  "observations": [
+    {
+      "phase": "before_journey",
+      "sample": "before_health",
+      "pid": 2127783,
+      "start": "1255581",
+      "socket_inodes": [
+        "5165275",
+        "5165276"
+      ],
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 302,
+        "inaccessible_processes": 32,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 0,
+        "disappeared_descriptors": 1,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "observation_started_unix_ns": 1793124232237909162,
+      "observation_completed_unix_ns": 1793124232271857676
+    },
+    {
+      "phase": "before_journey",
+      "sample": "after_health",
+      "pid": 2127783,
+      "start": "1255581",
+      "socket_inodes": [
+        "5165275",
+        "5165276"
+      ],
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 302,
+        "inaccessible_processes": 32,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 0,
+        "disappeared_descriptors": 1,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "observation_started_unix_ns": 1793124232279350824,
+      "observation_completed_unix_ns": 1793124232304582941
+    },
+    {
+      "phase": "after_journey",
+      "sample": "before_health",
+      "pid": 2127783,
+      "start": "1255581",
+      "socket_inodes": [
+        "5165275",
+        "5165276"
+      ],
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 308,
+        "inaccessible_processes": 32,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 0,
+        "disappeared_descriptors": 1,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "observation_started_unix_ns": 1793124329829098156,
+      "observation_completed_unix_ns": 1793124329863478654
+    },
+    {
+      "phase": "after_journey",
+      "sample": "after_health",
+      "pid": 2127783,
+      "start": "1255581",
+      "socket_inodes": [
+        "5165275",
+        "5165276"
+      ],
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 308,
+        "inaccessible_processes": 32,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 0,
+        "disappeared_descriptors": 1,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "observation_started_unix_ns": 1793124329866902880,
+      "observation_completed_unix_ns": 1793124329895508238
+    }
+  ],
+  "gateway_replacement_verified": true,
+  "owned_cleanup_complete": true,
+  "recorded_processes_gone": true,
+  "shared_preservation_matches": true,
+  "native_handoff_demonstrated": false,
+  "system_wide_exclusivity_established": false,
+  "unobserved_transfer_excluded": false,
+  "limits": [
+    "Only the four retained observation intervals were inspected; no continuous syscall trace.",
+    "Inaccessible descriptors/holders remain unknown.",
+    "Failure-time conflicting ownership traces remain generic."
+  ]
+}

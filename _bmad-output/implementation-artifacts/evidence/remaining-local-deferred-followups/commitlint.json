@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "commitlint",
+    "--",
+    "--edit",
+    "/tmp/timesheets-remaining-commit-message.txt"
+  ],
+  "exit": 0,
+  "message": "fix: authorize migration callers and retain dashboard listener evidence\n\nBind both migration routes to caller and operation evidence through a default-deny server gate.\nRetain native listener observations and visibility limits with reviewed authorization and runner regressions.\n"
+}

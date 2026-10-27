@@ -1,3 +1,5 @@
+using System.Security.Claims;
+
 using Hexalith.Timesheets.Projections.MagicLinks;
 
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -11,6 +13,8 @@ public static class MagicLinkIndexMigrationEndpoints
     public static IServiceCollection AddTimesheetsIndexMigration(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        services.TryAddSingleton<IMagicLinkIndexMigrationCallerAuthorizer,
+            DenyAllMagicLinkIndexMigrationCallerAuthorizer>();
         services.TryAddSingleton<IMagicLinkIndexMigrationAuthority,
             DenyAllMagicLinkIndexMigrationAuthority>();
         services.AddSingleton<MagicLinkTokenHashCapabilityIndexV6Migration>();
@@ -27,11 +31,17 @@ public static class MagicLinkIndexMigrationEndpoints
         ArgumentNullException.ThrowIfNull(endpoints);
         endpoints.MapPost("/admin/timesheets/magic-link-index/migrate-v6",
             async (MagicLinkV6MigrationRequest request,
+                ClaimsPrincipal caller,
+                IMagicLinkIndexMigrationCallerAuthorizer callerAuthorizer,
                 MagicLinkTokenHashCapabilityIndexV6Migration migration,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
+                    if (!await callerAuthorizer.AuthorizeV6MigrationAsync(caller,
+                        request.OperationId, request.CertifiedInventoryFingerprint,
+                        cancellationToken).ConfigureAwait(false))
+                        return Results.NotFound();
                     await migration.MigrateAsync(request.OperationId,
                         request.CertifiedInventoryFingerprint, cancellationToken)
                         .ConfigureAwait(false);
@@ -41,14 +51,27 @@ public static class MagicLinkIndexMigrationEndpoints
                 {
                     return Results.NotFound();
                 }
+                catch (Exception error) when (error is InvalidOperationException or IOException or HttpRequestException
+                    or TimeoutException or OperationCanceledException
+                    or Hexalith.EventStore.Client.Projections.SharedProjectionReadUnavailableException
+                    or Hexalith.EventStore.Client.Projections.SharedProjectionWriteUnavailableException)
+                {
+                    return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+                }
             }).RequireAuthorization();
         endpoints.MapPost("/admin/timesheets/magic-link-index/migrate-v1",
             async (MagicLinkV1MigrationRequest request,
+                ClaimsPrincipal caller,
+                IMagicLinkIndexMigrationCallerAuthorizer callerAuthorizer,
                 MagicLinkTokenHashCapabilityIndexV1Migration migration,
                 CancellationToken cancellationToken) =>
             {
                 try
                 {
+                    if (!await callerAuthorizer.AuthorizeV1MigrationAsync(caller,
+                        request.OperationId, request.ReceiptId,
+                        cancellationToken).ConfigureAwait(false))
+                        return Results.NotFound();
                     await migration.MigrateAsync(request.OperationId, request.ReceiptId,
                         cancellationToken).ConfigureAwait(false);
                     return Results.NoContent();
@@ -68,7 +91,3 @@ public static class MagicLinkIndexMigrationEndpoints
         return endpoints;
     }
 }
-
-/// <summary>Operator request; authority and inventory verification remain server-side.</summary>
-public sealed record MagicLinkV6MigrationRequest(string OperationId,
-    string CertifiedInventoryFingerprint);

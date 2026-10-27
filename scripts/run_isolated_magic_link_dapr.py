@@ -921,7 +921,8 @@ def security_credential_handoff(container, public_port, diagnostics=None, descri
 
 
 def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
-    """Verify explicit listeners and their observable owners against one PID/start."""
+    """Verify explicit listeners within observable descriptors, retaining visibility limits."""
+    observation_started = time.time_ns()
     message = "Owned dashboard socket ownership could not be verified"
     directory = Path(directory)
     process = directory / str(identity["pid"])
@@ -948,6 +949,10 @@ def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
                     loopback_hosts.add("::1" if address == "00000000000000000000000001000000" else "127.0.0.1")
     require(bool(sockets), message)
     owners = {inode: set() for inode in sockets}
+    visibility = {"scope": "observable_process_descriptors", "inspected_processes": 0,
+                  "inaccessible_processes": 0, "inaccessible_descriptors": 0,
+                  "disappeared_processes": 0, "disappeared_descriptors": 0,
+                  "exclusivity_established": False, "unobserved_transfer_excluded": False}
     for candidate in directory.iterdir():
         if not candidate.name.isdigit():
             continue
@@ -956,13 +961,21 @@ def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
                 try:
                     target = os.readlink(descriptor)
                 except FileNotFoundError:
+                    visibility["disappeared_descriptors"] += 1
+                    continue
+                except PermissionError:
+                    visibility["inaccessible_descriptors"] += 1
                     continue
                 match = re.fullmatch(r"socket:\[([0-9]+)\]", target)
                 if match and match[1] in owners:
                     owners[match[1]].add(int(candidate.name))
-        except (FileNotFoundError, PermissionError):
-            # Unrelated users' descriptors can be private. The required owner
-            # must still expose every listener inode in the inventory.
+            visibility["inspected_processes"] += 1
+        except FileNotFoundError:
+            visibility["disappeared_processes"] += 1
+        except PermissionError:
+            # These holders remain unknown, even when every visible owner is
+            # the expected process. Never infer system-wide exclusivity.
+            visibility["inaccessible_processes"] += 1
             continue
     require(all(pids == {identity["pid"]} for pids in owners.values()), message)
     # Recheck after inventory: a PID may have exited or been reused while its
@@ -970,7 +983,14 @@ def dashboard_listener_identity(identity, endpoint, directory=Path("/proc")):
     current = (process / "stat").read_text().rsplit(")", 1)[1].split()
     require(current[19] == identity["start"] and current[0] != "Z", message)
     return {"pid": identity["pid"], "start": identity["start"], "socket_inodes": sorted(sockets),
-            "loopback_hosts": sorted(loopback_hosts)}
+            "loopback_hosts": sorted(loopback_hosts), "visibility": visibility,
+            "observation_started_unix_ns": observation_started,
+            "observation_completed_unix_ns": time.time_ns()}
+
+
+def dashboard_listener_fingerprint(observation):
+    """Compare listener identity independently of unrelated process/descriptor churn."""
+    return {key: observation[key] for key in ("pid", "start", "socket_inodes", "loopback_hosts")}
 
 
 def verify_dashboard_ready(identity, directory=Path("/proc")):
@@ -1006,9 +1026,17 @@ def verify_dashboard_ready(identity, directory=Path("/proc")):
         with owned_http_open(request, timeout=20, context=context) as response:
             require(response.status == 200, message)
         after = dashboard_listener_identity(identity, endpoint, directory)
-        require(before == after, message)
+        require(dashboard_listener_fingerprint(before) == dashboard_listener_fingerprint(after), message)
+        visibility = {"scope": "observable_process_descriptors", "exclusivity_established": False,
+                      "unobserved_transfer_excluded": False}
+        for key in ("inspected_processes", "inaccessible_processes", "inaccessible_descriptors",
+                    "disappeared_processes", "disappeared_descriptors"):
+            visibility[key + "_observations"] = before["visibility"][key] + after["visibility"][key]
         return {"ready": True, "scheme": endpoint.scheme, "loopback": True, "port": endpoint.port,
-                "path": "/health", "connect_host": connect_host, "ownership": after}
+                "path": "/health", "connect_host": connect_host,
+                "ownership": dashboard_listener_fingerprint(after),
+                "ownership_observations": {"before_health": before, "after_health": after},
+                "visibility": visibility}
     except urllib.error.HTTPError as error:
         try:
             error.close()
@@ -1255,6 +1283,7 @@ class IsolatedFixture:
         self.fixture_backup = None
         self.redis_image = None
         self.dependency_graph = None
+        self.dashboard_readiness = None
 
     def capture_source_identity(self):
         """Bind runtime receipts to exact source diffs, restored packages and built assets."""
@@ -1441,6 +1470,7 @@ class IsolatedFixture:
             self.write_evidence("runtime-host-failure.json", json.dumps(diagnostic, indent=2) + "\n")
             raise
         host["dashboard_readiness"] = verify_dashboard_ready(host["dashboard"])
+        self.dashboard_readiness = host["dashboard_readiness"]
         self.captured_processes = identities
         require(self.write_evidence("runtime-host.json", json.dumps(host, indent=2) + "\n"), "Runtime host evidence is incomplete")
         listing = self.run_command(["docker", "container", "ls", "--all", "--no-trunc", "--filter",
@@ -1765,6 +1795,22 @@ class IsolatedFixture:
         require(all(proof[key] for key in ("identity_replaced", "same_dcp_parent", "old_identity_exited")),
                 "Gateway native PID/start replacement could not be verified")
 
+    def capture_dashboard_after_journey(self, journey_outcome):
+        """Retain another actual native listener observation after the gateway restart journey."""
+        require(self.dashboard_readiness is not None, "Initial dashboard observation is unavailable")
+        host = runtime_host_identity(self.resource_check(self.scratch, self.placement, self.scheduler),
+                                     APPHOST.parent / "obj/project.assets.json")
+        after = verify_dashboard_ready(host["dashboard"])
+        proof = {"before_journey": self.dashboard_readiness, "after_journey": after,
+                 "journey_outcome": journey_outcome, "recorded_at_unix_ns": time.time_ns(),
+                 "observation_stage": "after_journey_and_gateway_proof_before_cleanup",
+                 "fixture_qualification_complete": False,
+                 "same_observed_listener_identity": self.dashboard_readiness["ownership"] == after["ownership"],
+                 "scope": "observable_process_descriptors", "exclusivity_established": False,
+                 "unobserved_transfer_excluded": False}
+        require(self.write_evidence("dashboard-listener-lifecycle.json", json.dumps(proof, indent=2) + "\n"),
+                "Dashboard listener lifecycle evidence is incomplete")
+
     def _owned_apphost(self):
         rows = target_apphosts(json_output(self.run_command(
             ["aspire", "ps", "--non-interactive", "--format", "Json"]).stdout))
@@ -2008,9 +2054,14 @@ class IsolatedFixture:
                     "components": str(self.scratch), "bound_processes": self.captured_processes}, indent=2) + "\n")
             before = self.capture_gateway_process("before") if not self.injected_command else None
             executable = ROOT / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+            journey_outcome = {"command_completed": False, "command_exit_code": None,
+                               "validation_completed": False, "journey_succeeded": False,
+                               "command_started_unix_ns": time.time_ns()}
             try:
                 result = self.run_command([str(executable), "-class", "*MagicLinkLiveDaprTests", "-noColor"], timeout=510, check=False, journey=True)
                 exit_code = result.returncode
+                journey_outcome.update(command_completed=True, command_exit_code=exit_code,
+                                       command_completed_unix_ns=time.time_ns())
                 print(sanitized((result.stdout or "") + (result.stderr or "")), end="", flush=True)
                 if exit_code == 0:
                     require_one_passing_test(result)
@@ -2019,6 +2070,8 @@ class IsolatedFixture:
                     require(self.write_evidence("source-after.json", json.dumps(source_after, indent=2) + "\n"),
                             "Source identity evidence is incomplete")
                     require(source_after == source_before, "Source or built assets changed during runtime acceptance")
+                journey_outcome["validation_completed"] = True
+                journey_outcome["journey_succeeded"] = exit_code == 0
             finally:
                 if before is not None:
                     try:
@@ -2027,6 +2080,20 @@ class IsolatedFixture:
                         self.write_evidence("gateway-process-proof-failure.json", json.dumps({
                             "verified": False, "message": "Gateway native PID/start replacement could not be verified"}) + "\n")
                         print("Gateway native PID/start replacement could not be verified", flush=True)
+                        if exit_code == 0:
+                            exit_code = 130 if isinstance(error, KeyboardInterrupt) else 1
+                if self.security_smoke and self.dashboard_readiness is not None:
+                    journey_outcome["exit_code_before_listener_observation"] = exit_code
+                    try:
+                        self.capture_dashboard_after_journey(journey_outcome)
+                    except (FixtureError, OSError, KeyboardInterrupt) as error:
+                        self.write_evidence("dashboard-listener-lifecycle-failure.json", json.dumps({
+                            "verified": False, "message": "Post-journey dashboard listener could not be observed",
+                            "journey_outcome": journey_outcome, "recorded_at_unix_ns": time.time_ns(),
+                            "observation_stage": "after_journey_and_gateway_proof_before_cleanup",
+                            "fixture_qualification_complete": False,
+                            "exclusivity_established": False, "unobserved_transfer_excluded": False}) + "\n")
+                        print("Post-journey dashboard listener could not be observed", flush=True)
                         if exit_code == 0:
                             exit_code = 130 if isinstance(error, KeyboardInterrupt) else 1
         except KeyboardInterrupt:

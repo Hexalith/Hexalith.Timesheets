@@ -1,0 +1,54 @@
+# Remaining local deferred follow-ups — 2026-10-27
+
+The user approved two local follow-ups in the [spec](../spec-remaining-deferred-work-scope.md): caller-bound migration authorization and investigation of the actual native dashboard listener. These changes do not close five deferrals or grant deployment acceptance. Launch remains **FAIL**.
+
+## Migration endpoint authorization
+
+Both internal migration routes now pass the authenticated principal and exact operation/evidence pair to `IMagicLinkIndexMigrationCallerAuthorizer` before invoking migration: v1 binds the server-resolved receipt identifier; v6 binds the certified inventory fingerprint. The separately named default provider denies both routes. A deployment must explicitly install a server-side permission provider; JWT claims and submitted identifiers alone grant no permission. The existing certification authority, inventory verification, internal-port guard, authentication and public request signatures remain intact.
+
+Mapped HTTP tests cover missing providers, another caller, changed operation/evidence, certification refusal after caller permission, both successful migrations and another caller replaying those completed operations. Request-scoped counters establish zero inventory, certification and storage calls on caller refusal. Raw stored bytes, histories, pending journals and selected/legacy data remain unchanged. Startup IO is excluded by resetting counters after host creation. Existing malformed-input, inventory and retry cases explicitly install caller permission so their original paths remain covered. All **49 focused cases pass without skips**: [output](../evidence/remaining-local-deferred-followups/focused-endpoints.log.gz).
+
+This completes the local endpoint seam. **DW-143 remains open** for the eventual production provider, intended-operator policy, ingress review and deployed acceptance.
+
+## Native dashboard investigation
+
+The pre-change isolated run reached the restored native Aspire Dashboard **13.6.1**, PID `632782`, start `999386`, and explicit IPv4/IPv6 listener inodes `1605370`/`1605371`. [Native identity and health receipt](../evidence/remaining-local-deferred-followups/baseline-runtime/runtime-host.json) establishes observable ownership. Credential handoff later refused with [tls_verification_failed](../evidence/remaining-local-deferred-followups/baseline-runtime/security-credential-failure.json), because this Python invocation lacked scoped development-certificate trust. [Owned cleanup](../evidence/remaining-local-deferred-followups/baseline-runtime/cleanup.json), [process exit](../evidence/remaining-local-deferred-followups/baseline-runtime/recorded-process-exit.json) and [shared preservation](../evidence/remaining-local-deferred-followups/baseline-runtime/shared-preservation.json) passed. This failed invocation supplies no successful journey acceptance.
+
+The package's pinned [native entrypoint](https://raw.githubusercontent.com/microsoft/aspire/3751e615ad660621f2a7aa4c390ef48e08a0eed8/src/Aspire.Dashboard/Program.cs) runs `DashboardWebApplication`; its [frontend Kestrel configuration](https://raw.githubusercontent.com/microsoft/aspire/3751e615ad660621f2a7aa4c390ef48e08a0eed8/src/Aspire.Dashboard/DashboardWebApplication.cs) configures listeners in that application. These inspected paths provide no affirmative handoff evidence. That is a limited source inference, not exhaustive syscall tracing.
+
+The demonstrated diagnostic gap was that the probe compared pre/post-health identities but retained only the final observation and discarded descriptor visibility failures. It now retains both observations, aggregate inaccessible/disappeared descriptor counts and explicit observable scope. Identity comparison excludes unrelated process churn. Individual inaccessible descriptors no longer prevent scanning the remaining accessible descriptors in that process. The runner also retains another actual native observation after the journey/gateway restart.
+
+The initial **180 runner tests pass**: [output](../evidence/remaining-local-deferred-followups/focused-runner.log.gz). They include real inherited TCP listeners and SCM_RIGHTS sharing/transfer between synthetic Python processes: visible sharing refuses, and transfer preserves the inode while changing the verified owner. Simulated inaccessible inventories/readlinks demonstrate incomplete visibility reporting. These regressions are not proof of a native dashboard transfer. No native listener handoff defect has been demonstrated; inaccessible additional holders, transfers between observations and system-wide exclusivity remain unresolved.
+
+## Verification and publication
+
+Matching Debug/source restore and full solution build pass with zero warnings/errors. Exact commands, timing, exit codes and individual suite logs are retained in [verification.json](../evidence/remaining-local-deferred-followups/verification.json). The six initial compiled suites pass **2,777 tests, with five existing skips and zero failures/errors**: [suite totals](../evidence/remaining-local-deferred-followups/suite-summary.json). [Source phase](../evidence/remaining-local-deferred-followups/full-suite-source.json) identifies that pre-review build. After review corrections, **55 focused endpoint cases** and **184 runner tests** pass: [endpoint output](../evidence/remaining-local-deferred-followups/review-endpoints.log.gz), [runner output](../evidence/remaining-local-deferred-followups/review-runner.log.gz). The corrections touch endpoint outage behavior, its tests, and local runner diagnostics/tests; the full suites are distinguished from these final focused checks. Default test skips supply no runtime or deployed acceptance.
+
+Three independent review layers ran; the [triage log](../spec-remaining-deferred-work-scope.md#review-triage-log) records all twelve findings individually. Corrections add version-specific permissions and outage responses, actual execute/finally capture and cleanup coverage, mixed inaccessible/visible descriptor scanning, bounded subprocess handshakes/cleanup, and timestamped journey context. An independent [gap recheck](../evidence/remaining-local-deferred-followups/review-confirmation.json) confirms version-specific tests distinguish dispatch and the capture-invocation deletion mutation now fails all four execute scenarios (one assertion failure, three missing receipts in the intentionally broken mutant). The pre-existing lack of sanitized conflicting owner/inode observations on an ownership failure remains unresolved; successful snapshots do not replace failure-time tracing.
+
+## Final native qualification
+
+[The unchanged retry command](../evidence/remaining-local-deferred-followups/runtime-attempt-02.json) exits zero in **273.482 seconds** with scoped development-certificate trust. The [independent receipt audit](../evidence/remaining-local-deferred-followups/native-runtime-audit.json) verifies one live persisted journey passed in **78.349 seconds**, without errors, failures or skips. The [final solution build](../evidence/remaining-local-deferred-followups/final-build.json) has zero warnings/errors and binds the final source diff to these checks.
+
+The actual restored native dashboard is PID `2127783`, start `1255581`, with listener inodes `5165275`/`5165276`. All four retained before/after-health observations, taken before and after the gateway restart journey, have the same identity. [Lifecycle evidence](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/dashboard-listener-lifecycle.json) includes timestamped observations, visibility limits and the successful journey outcome, explicitly marked as a pre-cleanup observation rather than complete fixture qualification. No native transfer is observed during those intervals; inaccessible holders and transfers between samples remain unknown.
+
+[Source before](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/source-before.json.gz) equals [source after](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/source-after.json.gz). [Gateway replacement](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/gateway-process-replacement.json), [owned cleanup](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/cleanup.json), [all captured process exits](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/recorded-process-exit.json) and [shared-service preservation](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/shared-preservation.json) pass. The [live command output](../evidence/remaining-local-deferred-followups/runtime/run-pjnjhza6/58-Hexalith.Timesheets.IntegrationTests--class.log.gz) and remaining sanitized command receipts are retained in that run directory.
+
+The preceding [attempt](../evidence/remaining-local-deferred-followups/runtime-attempt-01.json) exited one in 20.709 seconds during initial shared-preservation capture, before infrastructure or AppHost startup. Its fixed diagnostic does not preserve the exception cause; a timeout is not established. [Cleanup](../evidence/remaining-local-deferred-followups/runtime/run-ivymgzz_/cleanup.json) was complete with no resources created. A separate [read-only diagnostic](../evidence/remaining-local-deferred-followups/shared-snapshot-diagnostic.json) then passed in 14.506 seconds with the same timeout and admission settings. No guard or timeout was relaxed for the successful retry.
+
+## Unresolved obligations
+
+All ten numbered open entries remain open in the [ledger](../deferred-work.md):
+
+- **DW-86:** deployed Activity Type ownership inventory/remediation.
+- **DW-113:** production trusted tenant/actor identity.
+- **DW-119:** deployed projection readiness and newly issued-link resolvability.
+- **DW-132:** deployed component/data inventory and rebuild/migration.
+- **DW-137:** independently certified legacy continuity and pending-journal recovery.
+- **DW-143:** production caller-binding provider/operator/ingress acceptance.
+- **DW-145:** subscriber-driven delivery independent of manual dispatch.
+- **DW-194:** deployed bootstrap latency, actual delivery budgets and cancellation.
+- **DW-184:** SDK publication and packaged qualification of certified abort repair.
+- **DW-19:** historical mixed-purpose commit message; correction requires rewriting published history and was excluded.
+
+The unnumbered dashboard visibility/handoff obligation remains open, including richer failure-time conflicting ownership traces. Certified abort repair beyond its bounded manifest capacity also remains unsupported and requires SDK work/publication and certified inventory qualification. No deployment was operated, production provider enabled, dependency updated, submodule pointer changed or published history rewritten.

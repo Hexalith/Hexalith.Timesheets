@@ -1,0 +1,26 @@
+{
+  "reviewers": [
+    "blind-hunter",
+    "edge-case-hunter",
+    "verification-gap"
+  ],
+  "all_layers_completed": true,
+  "edge_case_findings": 0,
+  "triaged_findings": 12,
+  "verification_gap_recheck": {
+    "V1": "Closed: version-specific refusals preserve bytes; successful migration fixtures deny permission for the other version.",
+    "V2": "Closed: execute-path test checks receipt, capture failure exit, preserved journey failure and owned cleanup.",
+    "targeted_capture_invocation_deletion_mutation": {
+      "regression_detected": true,
+      "expected_mutant_outcome": {
+        "assertion_failures": 1,
+        "missing_receipt_errors": 3
+      },
+      "scenarios": 4,
+      "mode": "In-memory mutation; no repository source modified."
+    }
+  },
+  "deferred": [
+    "B4: pre-existing generic failure-time ownership trace; no native handoff demonstrated."
+  ]
+}

@@ -1,0 +1,139 @@
+[
+  {
+    "label": "restore",
+    "command": [
+      "dotnet",
+      "restore",
+      "Hexalith.Timesheets.slnx",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-m:1",
+      "/nr:false"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:29:46.005691+00:00",
+    "elapsed_seconds": 3.201,
+    "exit": 0,
+    "log": "restore.log.gz"
+  },
+  {
+    "label": "build",
+    "command": [
+      "dotnet",
+      "build",
+      "Hexalith.Timesheets.slnx",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:29:49.207399+00:00",
+    "elapsed_seconds": 30.425,
+    "exit": 0,
+    "log": "build.log.gz"
+  },
+  {
+    "label": "ArchitectureTests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/remaining-local-deferred-followups/ArchitectureTests.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:30:19.632155+00:00",
+    "elapsed_seconds": 37.954,
+    "exit": 0,
+    "log": "ArchitectureTests.log.gz"
+  },
+  {
+    "label": "Contracts.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/remaining-local-deferred-followups/Contracts.Tests.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:30:57.585485+00:00",
+    "elapsed_seconds": 1.241,
+    "exit": 0,
+    "log": "Contracts.Tests.log.gz"
+  },
+  {
+    "label": "Server.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/remaining-local-deferred-followups/Server.Tests.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:30:58.830921+00:00",
+    "elapsed_seconds": 8.176,
+    "exit": 0,
+    "log": "Server.Tests.log.gz"
+  },
+  {
+    "label": "Projections.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/remaining-local-deferred-followups/Projections.Tests.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:31:07.007454+00:00",
+    "elapsed_seconds": 813.981,
+    "exit": 0,
+    "log": "Projections.Tests.log.gz"
+  },
+  {
+    "label": "IntegrationTests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/remaining-local-deferred-followups/IntegrationTests.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:44:40.950011+00:00",
+    "elapsed_seconds": 731.829,
+    "exit": 0,
+    "log": "IntegrationTests.log.gz"
+  },
+  {
+    "label": "Works.Tests",
+    "command": [
+      "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+      "-noColor",
+      "-xml",
+      "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/remaining-local-deferred-followups/Works.Tests.xml"
+    ],
+    "environment": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "started_utc": "2026-10-27T17:56:52.745063+00:00",
+    "elapsed_seconds": 0.433,
+    "exit": 0,
+    "log": "Works.Tests.log.gz"
+  }
+]

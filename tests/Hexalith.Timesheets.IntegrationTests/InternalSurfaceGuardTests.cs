@@ -4,6 +4,7 @@ using System.Security.Claims;
 using Shouldly;
 
 using Hexalith.Timesheets.Runtime;
+using Hexalith.Timesheets.Endpoints.MagicLinks;
 using Hexalith.Timesheets.Projections.MagicLinks;
 using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.EventStore.DomainService;
@@ -93,7 +94,8 @@ public sealed class InternalSurfaceGuardTests
     [InlineData("migrate-v1")]
     public async Task InternalMigrationRouteIsDefaultDeniedWithoutACertifiedOperatorAuthority(string route)
     {
-        using GuardedFactory factory = new(allowOnAnyPort: true, authenticatedOperator: true);
+        using GuardedFactory factory = new(allowOnAnyPort: true, authenticatedOperator: true,
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer("migration", "caller-only"));
         using HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.PostAsync(
             "/admin/timesheets/magic-link-index/" + route,
@@ -109,7 +111,8 @@ public sealed class InternalSurfaceGuardTests
     public async Task V6MigrationRouteOpaquelyRefusesBlankIdentifiers(string operationId, string fingerprint)
     {
         using GuardedFactory factory = new(allowOnAnyPort: true,
-            migrationAuthority: new CountingMigration(), authenticatedOperator: true);
+            migrationAuthority: new CountingMigration(), authenticatedOperator: true,
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer(operationId, fingerprint));
         using HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.PostAsync(
             "/admin/timesheets/magic-link-index/migrate-v6",
@@ -126,8 +129,9 @@ public sealed class InternalSurfaceGuardTests
     {
         var authority = new CountingMigration();
         var inventory = new InternalMagicLinkV1Inventory([]);
+        var callerAuthorizer = new InternalMagicLinkMigrationCallerAuthorizer("migration", "server-receipt");
         using GuardedFactory factory = new(allowOnAnyPort: true,
-            migrationAuthority: authority, inventory: inventory);
+            migrationAuthority: authority, inventory: inventory, callerAuthorizer: callerAuthorizer);
         using HttpClient client = factory.CreateClient();
         using HttpResponseMessage response = await client.PostAsync(
             "/admin/timesheets/magic-link-index/" + route,
@@ -137,6 +141,155 @@ public sealed class InternalSurfaceGuardTests
         response.StatusCode.ShouldNotBe(HttpStatusCode.NoContent);
         authority.Calls.ShouldBe(0);
         inventory.Calls.ShouldBe(0);
+        callerAuthorizer.Calls.ShouldBe(0);
+    }
+
+    /// <summary>Unbound callers include missing server bindings and replay of either operation or evidence.</summary>
+    public static TheoryData<string, bool, string, string, string> UnboundMigrationCallers()
+    {
+        TheoryData<string, bool, string, string, string> data = [];
+        foreach (string route in new[] { "migrate-v1", "migrate-v6" })
+        {
+            data.Add(route, false, "certified-operator", "migration", "server-receipt");
+            data.Add(route, true, "another-operator", "migration", "server-receipt");
+            data.Add(route, true, "certified-operator", "another-operation", "server-receipt");
+            data.Add(route, true, "certified-operator", "migration", "another-receipt");
+        }
+        return data;
+    }
+
+    [Theory]
+    [MemberData(nameof(UnboundMigrationCallers))]
+    public async Task UnboundMigrationCallerIsOpaquelyRefusedBeforeAnyMigrationIo(
+        string route, bool installAuthorizer, string callerId, string operationId, string evidenceId)
+    {
+        var raw = new InMemoryReadModelStore();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        await SeedMigrationHistoryAndPendingJournalAsync(raw, scope);
+        var store = new InternalMagicLinkMigrationCountingStore(raw);
+        var authority = new CountingMigration();
+        var inventory = new InternalMagicLinkV1Inventory([]);
+        var callerAuthorizer = new InternalMagicLinkMigrationCallerAuthorizer("migration", "server-receipt");
+        using GuardedFactory factory = new(true, store, authority, authenticatedOperator: true,
+            inventory: inventory, callerAuthorizer: installAuthorizer ? callerAuthorizer : null,
+            operatorId: callerId);
+        using HttpClient client = factory.CreateClient();
+        store.ResetCalls();
+        IReadOnlyDictionary<string, byte[]> before = raw.SnapshotRawEntries(scope.StoreName);
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/" + route,
+            new StringContent(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                operationId,
+                receiptId = evidenceId,
+                certifiedInventoryFingerprint = evidenceId
+            }), System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        callerAuthorizer.Calls.ShouldBe(installAuthorizer ? 1 : 0);
+        authority.Calls.ShouldBe(0);
+        inventory.Calls.ShouldBe(0);
+        store.Calls.ShouldBe(0);
+        AssertRawStateUnchanged(before, raw.SnapshotRawEntries(scope.StoreName));
+    }
+
+    [Theory]
+    [InlineData("migrate-v1")]
+    [InlineData("migrate-v6")]
+    public async Task BoundMigrationCallerStillRequiresIndependentCertification(string route)
+    {
+        var raw = new InMemoryReadModelStore();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        await SeedMigrationHistoryAndPendingJournalAsync(raw, scope);
+        var store = new InternalMagicLinkMigrationCountingStore(raw);
+        var inventory = new InternalMagicLinkV1Inventory([]);
+        var authority = new CountingMigration { Allowed = false };
+        var callerAuthorizer = new InternalMagicLinkMigrationCallerAuthorizer("migration", "server-receipt");
+        using GuardedFactory factory = new(true, store, authority, authenticatedOperator: true,
+            inventory: inventory, callerAuthorizer: callerAuthorizer);
+        using HttpClient client = factory.CreateClient();
+        IReadOnlyDictionary<string, byte[]> before = raw.SnapshotRawEntries(scope.StoreName);
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/" + route,
+            new StringContent("{\"operationId\":\"migration\",\"receiptId\":\"server-receipt\",\"certifiedInventoryFingerprint\":\"server-receipt\"}",
+                System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        callerAuthorizer.Calls.ShouldBe(1);
+        authority.Calls.ShouldBe(1);
+        inventory.Calls.ShouldBe(route == "migrate-v1" ? 1 : 0);
+        AssertRawStateUnchanged(before, raw.SnapshotRawEntries(scope.StoreName));
+    }
+
+    [Theory]
+    [InlineData("migrate-v1", true)]
+    [InlineData("migrate-v1", false)]
+    [InlineData("migrate-v6", true)]
+    [InlineData("migrate-v6", false)]
+    public async Task CallerAuthorityOutageIsOpaqueBeforeAnyMigrationIo(string route, bool timeout)
+    {
+        var raw = new InMemoryReadModelStore();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        await SeedMigrationHistoryAndPendingJournalAsync(raw, scope);
+        var store = new InternalMagicLinkMigrationCountingStore(raw);
+        var authority = new CountingMigration();
+        var inventory = new InternalMagicLinkV1Inventory([]);
+        var callerAuthorizer = new InternalMagicLinkMigrationCallerAuthorizer("migration", "server-receipt")
+        {
+            Failure = timeout ? new TimeoutException("private-authority-detail")
+                : new HttpRequestException("private-authority-detail")
+        };
+        using GuardedFactory factory = new(true, store, authority, authenticatedOperator: true,
+            inventory: inventory, callerAuthorizer: callerAuthorizer);
+        using HttpClient client = factory.CreateClient();
+        store.ResetCalls();
+        IReadOnlyDictionary<string, byte[]> before = raw.SnapshotRawEntries(scope.StoreName);
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/" + route,
+            new StringContent("{\"operationId\":\"migration\",\"receiptId\":\"server-receipt\",\"certifiedInventoryFingerprint\":\"server-receipt\"}",
+                System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.ServiceUnavailable);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        callerAuthorizer.Calls.ShouldBe(1);
+        authority.Calls.ShouldBe(0);
+        inventory.Calls.ShouldBe(0);
+        store.Calls.ShouldBe(0);
+        AssertRawStateUnchanged(before, raw.SnapshotRawEntries(scope.StoreName));
+    }
+
+    [Theory]
+    [InlineData("migrate-v1")]
+    [InlineData("migrate-v6")]
+    public async Task PermissionForOnlyTheOtherMigrationVersionIsRefusedBeforeAnyMigrationIo(string route)
+    {
+        var raw = new InMemoryReadModelStore();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        await SeedMigrationHistoryAndPendingJournalAsync(raw, scope);
+        var store = new InternalMagicLinkMigrationCountingStore(raw);
+        var authority = new CountingMigration();
+        var inventory = new InternalMagicLinkV1Inventory([]);
+        var callerAuthorizer = new InternalMagicLinkMigrationCallerAuthorizer("migration", "server-receipt",
+            allowV1: route != "migrate-v1", allowV6: route != "migrate-v6");
+        using GuardedFactory factory = new(true, store, authority, authenticatedOperator: true,
+            inventory: inventory, callerAuthorizer: callerAuthorizer);
+        using HttpClient client = factory.CreateClient();
+        store.ResetCalls();
+        IReadOnlyDictionary<string, byte[]> before = raw.SnapshotRawEntries(scope.StoreName);
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/" + route,
+            new StringContent("{\"operationId\":\"migration\",\"receiptId\":\"server-receipt\",\"certifiedInventoryFingerprint\":\"server-receipt\"}",
+                System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        callerAuthorizer.Calls.ShouldBe(1);
+        authority.Calls.ShouldBe(0);
+        inventory.Calls.ShouldBe(0);
+        store.Calls.ShouldBe(0);
+        AssertRawStateUnchanged(before, raw.SnapshotRawEntries(scope.StoreName));
     }
 
     [Fact]
@@ -144,7 +297,8 @@ public sealed class InternalSurfaceGuardTests
     {
         var store = new InMemoryReadModelStore();
         var authority = new CountingMigration();
-        using GuardedFactory factory = new(allowOnAnyPort: true, store, authority, authenticatedOperator: true);
+        using GuardedFactory factory = new(allowOnAnyPort: true, store, authority, authenticatedOperator: true,
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer("migration", "caller-only"));
         SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
@@ -161,7 +315,8 @@ public sealed class InternalSurfaceGuardTests
     {
         var store = new InMemoryReadModelStore();
         var inventory = new InternalMagicLinkV1Inventory([]);
-        using GuardedFactory factory = new(allowOnAnyPort: true, store, authenticatedOperator: true, inventory: inventory);
+        using GuardedFactory factory = new(allowOnAnyPort: true, store, authenticatedOperator: true, inventory: inventory,
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer("migration", "server-receipt"));
         SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
@@ -181,7 +336,8 @@ public sealed class InternalSurfaceGuardTests
             new("shared", new(new TenantReference("tenant-b"), new MagicLinkCapabilityId("owner-b")))];
         var inventory = new InternalMagicLinkV1Inventory(rows);
         using GuardedFactory factory = new(allowOnAnyPort: true, store, new CountingMigration(),
-            authenticatedOperator: true, inventory: inventory);
+            authenticatedOperator: true, inventory: inventory,
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer("route-v1", "server-receipt", allowV6: false));
         SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
@@ -200,6 +356,7 @@ public sealed class InternalSurfaceGuardTests
                 TestContext.Current.CancellationToken)).ShouldBe(row);
         (await store.GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope.StoreName,
             MagicLinkTokenHashCapabilityIndexProjection.StateKey, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        await AssertOtherCallerCannotReplayAsync(store, "migrate-v1", "route-v1", "server-receipt");
     }
 
     [Fact]
@@ -207,7 +364,8 @@ public sealed class InternalSurfaceGuardTests
     {
         var store = new InMemoryReadModelStore();
         using GuardedFactory factory = new(allowOnAnyPort: true, store,
-            new PermittedMigration(), authenticatedOperator: true);
+            new PermittedMigration(), authenticatedOperator: true,
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer("route-migrate", "certified", allowV1: false));
         SharedProjectionEpochCoordinator coordinator = factory.Services
             .GetRequiredService<SharedProjectionEpochCoordinator>();
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
@@ -239,6 +397,7 @@ public sealed class InternalSurfaceGuardTests
         (await new MagicLinkTokenHashCapabilityIndexTreeReader(coordinator, scope)
             .FindCandidatesAsync(root.Value.ShouldNotBeNull().TokenRoot, hash,
                 TestContext.Current.CancellationToken)).Count.ShouldBe(2);
+        await AssertOtherCallerCannotReplayAsync(store, "migrate-v6", "route-migrate", "certified");
 
         async IAsyncEnumerable<ReadModelBatchOperation> Seed()
         {
@@ -260,8 +419,11 @@ public sealed class InternalSurfaceGuardTests
     public async Task MalformedV1IdentifiersAreOpaquelyRefusedWithoutReservation(string body)
     {
         var store = new InMemoryReadModelStore();
+        MagicLinkV1MigrationRequest? request = System.Text.Json.JsonSerializer.Deserialize<MagicLinkV1MigrationRequest>(body,
+            new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
         using GuardedFactory factory = new(true, store, new CountingMigration(), authenticatedOperator: true,
-            inventory: new InternalMagicLinkV1Inventory([]));
+            inventory: new InternalMagicLinkV1Inventory([]),
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer(request?.OperationId, request?.ReceiptId));
         SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
@@ -278,7 +440,8 @@ public sealed class InternalSurfaceGuardTests
     {
         var store = new InMemoryReadModelStore();
         var inventory = new InternalMagicLinkV1Inventory([]) { InvalidDigest = true };
-        using GuardedFactory factory = new(true, store, new CountingMigration(), authenticatedOperator: true, inventory: inventory);
+        using GuardedFactory factory = new(true, store, new CountingMigration(), authenticatedOperator: true, inventory: inventory,
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer("route-v1", "server-receipt"));
         SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
@@ -303,7 +466,8 @@ public sealed class InternalSurfaceGuardTests
         var interrupted = new InternalMagicLinkV1FaultStore(store, sdkFailure);
         MagicLinkTokenHashCapabilityIndexDirectoryEntry[] rows = [new("unique", new(new TenantReference("tenant"), new MagicLinkCapabilityId("owner")))];
         using GuardedFactory factory = new(true, interrupted, new CountingMigration(), authenticatedOperator: true,
-            inventory: new InternalMagicLinkV1Inventory(rows));
+            inventory: new InternalMagicLinkV1Inventory(rows),
+            callerAuthorizer: new InternalMagicLinkMigrationCallerAuthorizer("route-v1", "server-receipt"));
         SharedProjectionEpochCoordinator coordinator = factory.Services.GetRequiredService<SharedProjectionEpochCoordinator>();
         SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
         _ = await coordinator.RegisterWriterAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
@@ -397,7 +561,9 @@ public sealed class InternalSurfaceGuardTests
         IReadModelStore? store = null,
         IMagicLinkIndexMigrationAuthority? migrationAuthority = null,
         bool authenticatedOperator = false,
-        IMagicLinkV1VerifiedInventoryProvider? inventory = null) : WebApplicationFactory<Program>
+        IMagicLinkV1VerifiedInventoryProvider? inventory = null,
+        IMagicLinkIndexMigrationCallerAuthorizer? callerAuthorizer = null,
+        string operatorId = "certified-operator") : WebApplicationFactory<Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -419,7 +585,12 @@ public sealed class InternalSurfaceGuardTests
                     services.AddSingleton(migrationAuthority);
                 }
                 if (authenticatedOperator)
-                    services.AddSingleton<IStartupFilter, OperatorPrincipalFilter>();
+                    services.AddSingleton<IStartupFilter>(new OperatorPrincipalFilter(operatorId));
+                if (callerAuthorizer is not null)
+                {
+                    services.RemoveAll<IMagicLinkIndexMigrationCallerAuthorizer>();
+                    services.AddSingleton(callerAuthorizer);
+                }
                 if (inventory is not null)
                 {
                     services.RemoveAll<IMagicLinkV1VerifiedInventoryProvider>();
@@ -429,7 +600,7 @@ public sealed class InternalSurfaceGuardTests
         }
     }
 
-    private sealed class OperatorPrincipalFilter : IStartupFilter
+    private sealed class OperatorPrincipalFilter(string operatorId) : IStartupFilter
     {
         public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(
             Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
@@ -438,7 +609,7 @@ public sealed class InternalSurfaceGuardTests
                 app.Use(async (context, following) =>
                 {
                     context.User = new ClaimsPrincipal(new ClaimsIdentity(
-                        [new Claim(ClaimTypes.NameIdentifier, "certified-operator")], "TestAuth"));
+                        [new Claim(ClaimTypes.NameIdentifier, operatorId)], "TestAuth"));
                     await following(context).ConfigureAwait(false);
                 });
                 next(app);
@@ -456,12 +627,71 @@ public sealed class InternalSurfaceGuardTests
     private sealed class CountingMigration : IMagicLinkIndexMigrationAuthority
     {
         public int Calls { get; private set; }
+        public bool Allowed { get; init; } = true;
 
         public Task<bool> AuthorizeCertifiedMigrationAsync(string operationId,
             string certifiedInventoryFingerprint, CancellationToken cancellationToken)
         {
             Calls++;
-            return Task.FromResult(true);
+            return Task.FromResult(Allowed);
         }
+    }
+
+    private static async Task SeedMigrationHistoryAndPendingJournalAsync(InMemoryReadModelStore store,
+        SharedProjectionScope scope)
+    {
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        SharedProjectionLease lease = await coordinator.RegisterWriterAsync(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        (await coordinator.JournalAsync(scope, lease, new("retained-owner", 1, [1], [], OwnerSequenceNumber: 1),
+            TestContext.Current.CancellationToken)).ShouldBe(SharedProjectionJournalResult.Journaled);
+        (await coordinator.CatchUpAsync(scope, (_, _, _) => Task.FromResult<IReadOnlyList<ReadModelBatchOperation>>(
+            [ReadModelBatchOperation.Write("retained-history", new MagicLinkTokenHashCapabilityIndexTreeFormat(0),
+                ReadModelBatchConcurrency.LastWrite)]), TestContext.Current.CancellationToken)).ShouldBe(1);
+        (await coordinator.JournalAsync(scope, lease, new("retained-owner", 2, [2], [], OwnerSequenceNumber: 2),
+            TestContext.Current.CancellationToken)).ShouldBe(SharedProjectionJournalResult.Journaled);
+        await store.SaveAsync(scope.StoreName, MagicLinkTokenHashCapabilityIndexProjection.StateKey,
+            new MagicLinkTokenHashCapabilityIndexReadModel(new Dictionary<string, MagicLinkTokenHashCapabilityIndexEntry>()),
+            TestContext.Current.CancellationToken);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).PendingDeliveryCount.ShouldBe(1);
+    }
+
+    private static async Task AssertOtherCallerCannotReplayAsync(InMemoryReadModelStore raw,
+        string route, string operationId, string evidenceId)
+    {
+        var store = new InternalMagicLinkMigrationCountingStore(raw);
+        var authority = new CountingMigration();
+        var inventory = new InternalMagicLinkV1Inventory([]);
+        var callerAuthorizer = new InternalMagicLinkMigrationCallerAuthorizer(operationId, evidenceId);
+        using GuardedFactory factory = new(true, store, authority, authenticatedOperator: true,
+            inventory: inventory, callerAuthorizer: callerAuthorizer, operatorId: "another-operator");
+        using HttpClient client = factory.CreateClient();
+        store.ResetCalls();
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        IReadOnlyDictionary<string, byte[]> before = raw.SnapshotRawEntries(scope.StoreName);
+        using HttpResponseMessage response = await client.PostAsync(
+            "/admin/timesheets/magic-link-index/" + route,
+            new StringContent(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                operationId,
+                receiptId = evidenceId,
+                certifiedInventoryFingerprint = evidenceId
+            }), System.Text.Encoding.UTF8, "application/json"), TestContext.Current.CancellationToken);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+        callerAuthorizer.Calls.ShouldBe(1);
+        authority.Calls.ShouldBe(0);
+        inventory.Calls.ShouldBe(0);
+        store.Calls.ShouldBe(0);
+        AssertRawStateUnchanged(before, raw.SnapshotRawEntries(scope.StoreName));
+    }
+
+    private static void AssertRawStateUnchanged(IReadOnlyDictionary<string, byte[]> before,
+        IReadOnlyDictionary<string, byte[]> after)
+    {
+        before.Count.ShouldBeGreaterThan(0);
+        after.Keys.Order(StringComparer.Ordinal).ShouldBe(before.Keys.Order(StringComparer.Ordinal));
+        foreach ((string key, byte[] value) in before)
+            after[key].ShouldBe(value);
     }
 }

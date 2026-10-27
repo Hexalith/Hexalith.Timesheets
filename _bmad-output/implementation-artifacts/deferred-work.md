@@ -1155,6 +1155,8 @@ status: open
 summary: Bind deployed migration authorization to the intended operator as well as its certified operation.
 evidence: The endpoint requires authentication, while the authority port receives operation and receipt identifiers without ClaimsPrincipal. No permitted production authority is installed; review the eventual provider and ingress operator policy before enabling the route.
 
+Update 2026-10-27: Both internal migration endpoints now require a separately registered, default-deny principal/operation/evidence binding before migration IO. Local mapped-route tests prove cross-caller replay refusal, independent certification and preserved stored contents. No production provider is installed; intended-operator/ingress policy and deployed acceptance remain open. This is non-closing local evidence for DW-143. See [local follow-ups](tests/remaining-local-deferred-followups.md).
+
 ### DW-144: Retire obsolete same-generation capability projection fragments after repeated large-view updates.
 
 status: done 2026-10-23
@@ -1571,6 +1573,8 @@ evidence: [Local measurements](tests/five-local-runtime-evidence-deferrals.md#bo
   summary: Medium, unverified — establish whether the restored native dashboard can share its listener with a process whose descriptors cannot be inspected.
   evidence: Review B6 shows that additional inaccessible holders cannot be ruled out by the observable FD inventory. The qualified dashboard's own socket ownership is positively verified; no supported native lifecycle transferring that listener to an inaccessible holder is demonstrated. An actual restored-process handoff and socket-inode trace would settle whether the probe recipient can differ. Do not infer system-wide exclusivity from visible owners alone.
 
+Update 2026-10-27 to the dashboard visibility/handoff follow-up: local diagnostics retain pre/post-health and post-journey native observations plus aggregate visibility limits. Real inherited/SCM_RIGHTS process regressions are synthetic lifecycle evidence only. No native transfer defect is demonstrated; inaccessible holders, unobserved transfer and exclusivity remain unresolved. See [investigation and limits](tests/remaining-local-deferred-followups.md#native-dashboard-investigation). This update does not close the obligation or any deployed gate. Final local run `run-pjnjhza6` retains four identical native PID/start/inode observations through the gateway restart journey, with source equality, completed cleanup and shared preservation. No transfer is demonstrated; the obligation remains open.
+
 - source_spec: `_bmad-output/implementation-artifacts/spec-five-local-runtime-evidence-deferrals.md`
   summary: Medium — independently verify effective composed gateway HTTP timeout options and cancellation propagation into a blocked projection read.
   evidence: Review B10 confirms that current tests use the installed ten-second default with direct coordinator cancellation, while the manual journey uses its separate socket timeout. They do not constitute a composed HTTP attempt-timeout test. Reuse the actual gateway defaults and mapped projection endpoint to resolve configured options and observe cancellation reaching a blocked read; retain deployed acceptance and DW-194 separately.
@@ -1579,3 +1583,7 @@ evidence: [Local measurements](tests/five-local-runtime-evidence-deferrals.md#bo
 - source_spec: `_bmad-output/implementation-artifacts/spec-five-retry-recovery-tooling-deferrals.md`
   summary: Qualify or extend certified abort repair beyond its bounded source-guard manifest capacity.
   evidence: Independent review B6 verifies a maximum of 4096 guards and 256 KiB serialized request data, while the existing v6 migration streams a global multi-tenant inventory with only a per-tenant 10000-owner bound. Larger inventories had no certified abort recovery before this increment and remain unsupported by the bounded repair path. Before deployment, measure the certified full shard/page inventory against those limits; a scalable chunked immutable guard manifest and restart/catch-up proof are needed to extend support. Default certification remains denied and launch remains FAIL.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-remaining-deferred-work-scope.md`
+  summary: Medium — retain privacy-safe failure-time dashboard ownership observations if richer handoff diagnosis is required.
+  evidence: Independent review B4 confirms the existing ownership checker raises a fixed error before retaining conflicting owner/inode observations. The new positive lifecycle snapshots do not repair that pre-existing failure-time trace limitation. No native transfer is demonstrated. An actual failed native ownership observation with sanitized expected/observed PID-start/inode tracing would settle the handoff diagnosis; inaccessible holders and transfers between observations remain unresolved.

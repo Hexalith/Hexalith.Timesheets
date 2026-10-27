@@ -1,0 +1,38 @@
+{
+  "admitted_without_old_writers_or_retry_workers": true,
+  "components_sha256": {
+    "Timesheets/timesheets-readmodels.yaml": "ad5dd9243597f9a4c06990ebfefd99e9a00887834caf87c283aa3ecd6806967a",
+    "pubsub.yaml": "3396d4b7e3777edc5bba4d75bc0cf420a40ecb1c0e2707f181b467cd2a10a998",
+    "statestore.yaml": "247fc3675791a9f4ebde3281b36780e70527964d8775a61152b01c0631feeeb6"
+  },
+  "container_id": "76941aae28fa506ac58f167d71ca14a9747ba8cd6f405ea4d368ac7dbc6c5ed5",
+  "databases": {
+    "0": 0,
+    "1": 0,
+    "10": 0,
+    "11": 0,
+    "12": 0,
+    "13": 0,
+    "14": 0,
+    "15": 0,
+    "2": 0,
+    "3": 0,
+    "4": 0,
+    "5": 0,
+    "6": 0,
+    "7": 0,
+    "8": 0,
+    "9": 0
+  },
+  "downgrade_prohibited": true,
+  "fixture_id": "e05a98d94dd1bada9c605c1ed852846c",
+  "format": "empty-disposable-redis-backup-v1",
+  "image": "sha256:c35b83ce044bb6d148c484d36e059ad28e02d5714ba6731fb55b6421e2ed0ccf",
+  "scope": "fresh-private-local-fixture-only",
+  "source": {
+    "assembly_sha256": "c9d876b576ca27db328b557de8399124cb7d74198de91be8581b82de8b7ef202",
+    "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "head": "c613e55aefd0650c1e64ed0580c8495657585a89",
+    "native_sha256": "8f9ec427f5d3c9e1c8e93812518b2650c50e08da292d31bebbb91e0046b1219b"
+  }
+}
