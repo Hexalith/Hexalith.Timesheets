@@ -36,6 +36,10 @@ The actual restored native dashboard is PID `2127783`, start `1255581`, with lis
 
 The preceding [attempt](../evidence/remaining-local-deferred-followups/runtime-attempt-01.json) exited one in 20.709 seconds during initial shared-preservation capture, before infrastructure or AppHost startup. Its fixed diagnostic does not preserve the exception cause; a timeout is not established. [Cleanup](../evidence/remaining-local-deferred-followups/runtime/run-ivymgzz_/cleanup.json) was complete with no resources created. A separate [read-only diagnostic](../evidence/remaining-local-deferred-followups/shared-snapshot-diagnostic.json) then passed in 14.506 seconds with the same timeout and admission settings. No guard or timeout was relaxed for the successful retry.
 
+## Publication
+
+Implementation commit `1ae8b8b05ff327a0e92e4a9bf5010cd4c8fe3e43` is published to `main`, without force, after Conventional Commit validation and a zero-divergence fetch. The [publication receipt](../evidence/remaining-local-deferred-followups/publication.json) records the independently verified remote revision, clean post-push tree, unchanged gitlinks and retained launch FAIL.
+
 ## Unresolved obligations
 
 All ten numbered open entries remain open in the [ledger](../deferred-work.md):

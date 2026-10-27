@@ -1,0 +1,32 @@
+{
+  "implementation_commit": "1ae8b8b05ff327a0e92e4a9bf5010cd4c8fe3e43",
+  "published_branch": "main",
+  "remote_main_verified": "1ae8b8b05ff327a0e92e4a9bf5010cd4c8fe3e43",
+  "push_command": [
+    "git",
+    "push",
+    "origin",
+    "main"
+  ],
+  "push_exit": 0,
+  "force_used": false,
+  "verified_utc": "2026-10-27T18:13:01.449715+00:00",
+  "post_implementation_push_working_tree_clean": true,
+  "submodule_pointers_changed": false,
+  "launch_readiness_file_changed": false,
+  "launch_verdict": "FAIL",
+  "conventional_commit_validation": {
+    "implementation": "Passed before commit; see commitlint.json",
+    "publication_documentation": {
+      "command": [
+        "npm",
+        "run",
+        "commitlint",
+        "--",
+        "--edit",
+        "/tmp/timesheets-remaining-publication-message.txt"
+      ],
+      "exit": 0
+    }
+  }
+}

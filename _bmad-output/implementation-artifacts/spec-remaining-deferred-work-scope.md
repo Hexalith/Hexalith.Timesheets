@@ -89,7 +89,7 @@ descriptor into proof about the actual native dashboard lifecycle.
 - [x] Record results and unresolved limits in a new
   `tests/remaining-local-deferred-followups.md` under implementation artifacts;
   update `deferred-work.md` with non-closing local evidence. Retain deployed DW-143.
-- [ ] Independently review, validate a Conventional Commit, fetch and inspect
+- [x] Independently review, validate a Conventional Commit, fetch and inspect
   main divergence, commit only owned changes and push without force.
 
 **Acceptance Criteria:**
@@ -102,6 +102,12 @@ descriptor into proof about the actual native dashboard lifecycle.
   commit without five-closure claims or unrelated gitlink changes.
 
 ## Implementation Notes
+
+- Publication confirmed: implementation commit
+  `1ae8b8b05ff327a0e92e4a9bf5010cd4c8fe3e43` pushed to main without force after
+  Conventional Commit validation and zero-divergence fetch. Remote main matched
+  the exact revision and the working tree was clean. The following documentation
+  commit records that observed result; code and submodule pointers are unchanged.
 
 - Pre-change isolated baseline reached actual NuGet DCP/dashboard and ready
   Timesheets/EventStore resources; dashboard PID/start and two listener inodes
