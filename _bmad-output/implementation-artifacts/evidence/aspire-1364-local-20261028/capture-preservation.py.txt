@@ -1,0 +1,47 @@
+import hashlib
+import json
+import subprocess
+import time
+from pathlib import Path
+
+EVIDENCE = Path(__file__).resolve().parent
+before = json.loads((EVIDENCE / 'workspace-before.json').read_text())
+root = Path(before['root'])
+
+def git(path, *arguments):
+    return subprocess.check_output(['git', '-C', str(path), *arguments], text=True).strip()
+
+links = [{'path': row.split('\t')[1], 'commit': row.split()[2]}
+         for row in git(root, 'ls-tree', '-r', 'HEAD').splitlines() if row.startswith('160000')]
+after = {'root': str(root), 'revision': git(root, 'rev-parse', 'HEAD'),
+         'branch': git(root, 'branch', '--show-current'),
+         'status': git(root, 'status', '--porcelain=v1'), 'remotes': git(root, 'remote', '-v'),
+         'gitlinks': links,
+         'dependencies': {row['path']: {'revision': git(root / row['path'], 'rev-parse', 'HEAD'),
+                                      'status': git(root / row['path'], 'status', '--porcelain=v1'),
+                                      'remotes': git(root / row['path'], 'remote', '-v')} for row in links},
+         'launch_sha256': hashlib.sha256((root / 'docs/launch-readiness.md').read_bytes()).hexdigest()}
+receipt = {'observed_unix_ns': time.time_ns(), 'matches': before == after, 'after': after,
+           'scope': 'Two sampled original-workspace root/dependency identities and statuses; no continuous-preservation assertion.'}
+(EVIDENCE / 'workspace-preservation.json').write_text(json.dumps(receipt, indent=2) + '\n')
+assert receipt['matches'], 'Original workspace sample differs; preserve and report the actual drift'
+
+rows = []
+for path in Path('/proc').iterdir():
+    if not path.name.isdigit():
+        continue
+    try:
+        fields = (path / 'stat').read_text().rsplit(')', 1)[1].split()
+        rows.append({'pid': int(path.name), 'start': fields[19], 'name': (path / 'comm').read_text().strip()})
+    except (OSError, IndexError):
+        pass
+initial = json.loads((EVIDENCE / 'visible-processes-before.json').read_text())
+identities = {(row['pid'], row['start']) for row in rows}
+absent = [row for row in initial['processes'] if (row['pid'], row['start']) not in identities]
+process_receipt = {'observed_unix_ns': time.time_ns(), 'initial_observed_count': len(initial['processes']),
+                   'later_observed_count': len(rows), 'initial_identities_absent_count': len(absent),
+                   'initial_identities_absent': absent, 'later_processes': sorted(rows, key=lambda row: row['pid']),
+                   'scope': 'Visible PID/start/comm samples only; every disappearance remains unclassified. No causal, ownership, global absence, or continuous-preservation assertion.'}
+(EVIDENCE / 'visible-processes-later.json').write_text(json.dumps(process_receipt, indent=2) + '\n')
+print(json.dumps({'workspace_sample_matches': receipt['matches'], 'initial_process_count': len(initial['processes']),
+                  'later_process_count': len(rows), 'unclassified_absent_count': len(absent)}))

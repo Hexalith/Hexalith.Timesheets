@@ -1,0 +1,65 @@
+{
+  "observed_unix_ns": 1793188847785543406,
+  "original_source_sample_matches": true,
+  "sample": {
+    "revision": "670546c496192dfdd79be695de24200fe445488c",
+    "status": "",
+    "dependencies": {
+      "references/Hexalith.AI.Tools": {
+        "revision": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+        "status": ""
+      },
+      "references/Hexalith.Builds": {
+        "revision": "81ab049208678bd6616828824729c0ddac02f7d1",
+        "status": ""
+      },
+      "references/Hexalith.Commons": {
+        "revision": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+        "status": ""
+      },
+      "references/Hexalith.Conversations": {
+        "revision": "861f13a2e728c3847a191b0688070762b1bfa29e",
+        "status": ""
+      },
+      "references/Hexalith.EventStore": {
+        "revision": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+        "status": ""
+      },
+      "references/Hexalith.FrontComposer": {
+        "revision": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+        "status": ""
+      },
+      "references/Hexalith.McpCli": {
+        "revision": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+        "status": ""
+      },
+      "references/Hexalith.Parties": {
+        "revision": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+        "status": ""
+      },
+      "references/Hexalith.Platform": {
+        "revision": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+        "status": ""
+      },
+      "references/Hexalith.PolymorphicSerializations": {
+        "revision": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+        "status": ""
+      },
+      "references/Hexalith.Projects": {
+        "revision": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+        "status": ""
+      },
+      "references/Hexalith.Tenants": {
+        "revision": "7ddb864cda5e942925b056391617eae4895c1253",
+        "status": ""
+      },
+      "references/Hexalith.Works": {
+        "revision": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+        "status": ""
+      }
+    }
+  },
+  "remote_main": "670546c496192dfdd79be695de24200fe445488c",
+  "precommit_divergence": "0/0",
+  "scope": "Final sampled original root/dependency revision and dirty-state comparison only; no new runtime/process observation or continuous-preservation assertion."
+}

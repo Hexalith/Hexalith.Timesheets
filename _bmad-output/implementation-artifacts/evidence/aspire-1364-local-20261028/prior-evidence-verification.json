@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "_bmad-output/implementation-artifacts/evidence/release-package-aspire-20261028/verify-retained-evidence.py.txt",
+    "_bmad-output/implementation-artifacts/evidence/release-package-aspire-20261028"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "exit_code": 0,
+  "stdout": "{\n  \"source_commit\": \"94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8\",\n  \"run\": 40670628561,\n  \"six_suites_serial\": true,\n  \"totals\": {\n    \"aborted\": 0,\n    \"completed\": 0,\n    \"disconnected\": 0,\n    \"error\": 0,\n    \"executed\": 2785,\n    \"failed\": 0,\n    \"inProgress\": 0,\n    \"inconclusive\": 0,\n    \"notExecuted\": 5,\n    \"notRunnable\": 0,\n    \"passed\": 2785,\n    \"passedButRunAborted\": 0,\n    \"pending\": 0,\n    \"timeout\": 0,\n    \"total\": 2790,\n    \"warning\": 0\n  },\n  \"nine_exact_unique_claims_cases_passed\": true,\n  \"root_gitlinks_match\": 13,\n  \"artifact_and_receipt_hashes_valid\": true\n}\n",
+  "stderr": ""
+}

@@ -1,0 +1,9 @@
+{
+  "initial": {
+    "script": "verify-records-initial.py.txt",
+    "script_sha256": "cfa4510cb635e37d6b35399dbbed4c410fb10a18031a6ad885d7d153c4a18050",
+    "result": "verify-records.json",
+    "manifest": "initial-check-manifest.json",
+    "scope": "Initial 30-file check before review; review demonstrated semantic checker omissions, corrected in final verifier. This initial script is retained, not endorsed for final use."
+  }
+}

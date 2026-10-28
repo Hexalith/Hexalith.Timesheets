@@ -1,0 +1,38 @@
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+
+ROOT = Path('/tmp/timesheets-aspire-1364-local-20261028')
+EVIDENCE = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / 'scripts'))
+from run_isolated_magic_link_dapr import sanitized
+
+name = sys.argv[1]
+arguments = sys.argv[2:]
+environment = os.environ.copy()
+environment['DOTNET_CLI_HOME'] = '/tmp/dotnet-cli-home'
+overrides = {'DOTNET_CLI_HOME': environment['DOTNET_CLI_HOME']}
+if name == 'native-run':
+    certificate = Path('/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt')
+    environment['SSL_CERT_FILE'] = str(certificate)
+    overrides['SSL_CERT_FILE'] = str(certificate)
+    overrides['certificate_sha256'] = hashlib.sha256(certificate.read_bytes()).hexdigest()
+start = time.time_ns()
+tick = time.monotonic()
+result = subprocess.run(arguments, cwd=ROOT, env=environment, capture_output=True, text=True)
+receipt = {'command': arguments, 'cwd': str(ROOT), 'environment_overrides': overrides,
+           'started_unix_ns': start, 'completed_unix_ns': time.time_ns(),
+           'elapsed_seconds': time.monotonic() - tick, 'exit_code': result.returncode,
+           'log': name + '.log',
+           'source_revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()}
+output = sanitized('Stdout:\n' + result.stdout + '\nStderr:\n' + result.stderr)
+(EVIDENCE / (name + '.log')).write_text(output)
+(EVIDENCE / (name + '.json')).write_text(json.dumps(receipt, indent=2) + '\n')
+print(json.dumps(receipt))
+print(output[-3500:])
+sys.exit(result.returncode)

@@ -1,0 +1,30 @@
+{
+  "reviewer": "/root/blind_review",
+  "initial_findings": 11,
+  "followup_findings": 2,
+  "disposition": "All thirteen findings patched or clarified in evidence/checker records; no runtime implementation changes; final independent packaging recheck has no remaining finding.",
+  "semantic_recheck": {
+    "method": "Independent reviewer used in-memory contradictory receipt substitutions with recomputed manifest hashes; no actual receipts changed. Reported reviewer executions, not native process or ownership observations.",
+    "cases": {
+      "Release/package build arguments": "rejected",
+      "Different runtime command/source": "rejected",
+      "Changed dependency gitlink": "rejected",
+      "Wrong built source/empty outputs": "rejected",
+      "Invented absent PID/start set": "rejected",
+      "Hosting 13.6.3": "rejected",
+      "Escaped project path": "rejected",
+      "Components removed without creation": "rejected"
+    },
+    "optimization": "refused"
+  },
+  "final_independent_packaging_recheck": {
+    "manifest_entries": 119,
+    "indexed_files": 120,
+    "static_output_hashes_checked": 934,
+    "staged_whitespace_exit_code": 0,
+    "nuspec_original_hashes_verified": 7,
+    "remaining_findings": []
+  },
+  "recorded_unix_ns": 1793188846362927876,
+  "limits": "Recheck counts describe that reviewed phase. Later metadata additions are checked again by the final index-export command. No native ownership-refusal, transfer, failure-time diagnostics, continuous runtime preservation or deployed acceptance is qualified."
+}

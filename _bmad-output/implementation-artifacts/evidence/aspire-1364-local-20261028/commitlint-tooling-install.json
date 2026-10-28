@@ -1,0 +1,18 @@
+{
+  "command": [
+    "npm",
+    "ci",
+    "--no-audit",
+    "--no-fund"
+  ],
+  "cwd": "/tmp/timesheets-aspire-1364-local-20261028",
+  "environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_unix_ns": 1793187968856210916,
+  "completed_unix_ns": 1793187975498482148,
+  "elapsed_seconds": 6.642272133991355,
+  "exit_code": 0,
+  "log": "commitlint-tooling-install.log",
+  "source_revision": "670546c496192dfdd79be695de24200fe445488c"
+}

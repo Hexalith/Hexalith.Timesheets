@@ -1,0 +1,24 @@
+{
+  "command": [
+    "dotnet",
+    "build",
+    "Hexalith.Timesheets.slnx",
+    "--configuration",
+    "Debug",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=true",
+    "-warnaserror",
+    "-m:1",
+    "/nr:false"
+  ],
+  "cwd": "/tmp/timesheets-aspire-1364-local-20261028",
+  "environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_unix_ns": 1793187509245953271,
+  "completed_unix_ns": 1793187545602114085,
+  "elapsed_seconds": 36.35944325500168,
+  "exit_code": 0,
+  "log": "build.log",
+  "source_revision": "670546c496192dfdd79be695de24200fe445488c"
+}

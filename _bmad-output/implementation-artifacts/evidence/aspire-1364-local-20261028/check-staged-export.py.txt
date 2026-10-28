@@ -1,0 +1,31 @@
+import argparse
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--project-root', type=Path, required=True)
+args = parser.parse_args()
+root = args.project_root.resolve()
+relative = Path('_bmad-output/implementation-artifacts/evidence/aspire-1364-local-20261028')
+bundle = root / relative
+manifest = json.loads((bundle / 'manifest.json').read_text())
+expected = {str(relative / row['file']) for row in manifest['files']} | {str(relative / 'manifest.json')}
+staged = set(subprocess.check_output(['git', '-C', str(root), 'ls-files', '--', str(relative)], text=True).splitlines())
+if staged != expected:
+    raise SystemExit('Bundle/index file-set mismatch: ' + repr((sorted(expected - staged), sorted(staged - expected))))
+export = Path(tempfile.mkdtemp(prefix='timesheets-1364-index-export-'))
+for name in sorted(staged):
+    raw = subprocess.check_output(['git', '-C', str(root), 'show', ':' + name])
+    if raw != (root / name).read_bytes():
+        raise SystemExit('Working-tree/index bytes differ: ' + name)
+    path = export / Path(name).relative_to(relative)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(raw)
+command = ['python3', str(export / 'verify-records.py.txt'), str(export), '--project-root', str(root), '--check-local-artifacts']
+result = subprocess.run(command, text=True, capture_output=True)
+print(json.dumps({'staged_bundle_files': len(staged), 'export': str(export), 'command': command,
+                  'exit_code': result.returncode, 'stdout': result.stdout, 'stderr': result.stderr,
+                  'scope': 'Export only indexed evidence bytes; no runtime lifecycle and no source-worktree changes.'}))
+raise SystemExit(result.returncode)

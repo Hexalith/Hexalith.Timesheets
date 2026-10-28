@@ -1,0 +1,30 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+source = Path(__file__).resolve().parent
+destination = Path(sys.argv[1]).resolve()
+destination.mkdir(parents=True, exist_ok=True)
+rows = []
+log_names = sorted(str(path.relative_to(source)) for path in source.rglob('*.log') if path.is_file())
+(source / 'retention-map.json').write_text(json.dumps({'scope': 'Receipt log fields name original artifacts. Every log is retained losslessly as gzip; these names resolve the original receipt references.', 'logs': {name: name + '.gz' for name in log_names}, 'compressed_metadata': {str(path.relative_to(source)): str(path.relative_to(source)) + '.gz' for path in source.rglob('*.nuspec') if path.is_file()}}, indent=2) + '\n')
+for path in sorted(source.rglob('*')):
+    if not path.is_file() or path.name in ('inspected-native-procedure.txt', 'review.diff'):
+        continue
+    relative = path.relative_to(source)
+    if relative == Path('run-capture.py'):
+        relative = Path('run-capture.py.txt')
+    raw = path.read_bytes()
+    compressed = path.suffix in ('.log', '.nuspec') or len(raw) > 32768 and path.suffix == '.json'
+    stored = Path(str(relative) + '.gz') if compressed else relative
+    encoded = gzip.compress(raw, mtime=0) if compressed else raw
+    output = destination / stored
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(encoded)
+    rows.append({'file': str(stored), 'sha256': hashlib.sha256(encoded).hexdigest(),
+                 'original_sha256': hashlib.sha256(raw).hexdigest(),
+                 'original_bytes': len(raw), 'encoding': 'gzip' if compressed else 'identity'})
+(destination / 'manifest.json').write_text(json.dumps({'scope': 'Lossless sanitized retained receipts and command helpers; consistency hashes are not independent runtime attestation.', 'files': rows}, indent=2) + '\n')
+print('Packed', len(rows), 'evidence files')

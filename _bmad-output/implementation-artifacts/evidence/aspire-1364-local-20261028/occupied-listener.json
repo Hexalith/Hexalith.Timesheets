@@ -1,0 +1,12 @@
+{
+  "observed_unix_ns": 1793187594970429476,
+  "port": 3501,
+  "listeners": [],
+  "visibility_errors": {
+    "socket_tables": 0,
+    "fd_directories": 34,
+    "fd_links": 46,
+    "process_identity": 0
+  },
+  "scope": "Read-only sampled kernel TCP/TCP6 listener and accessible FD/PID/start identity; no ownership, session classification, exclusivity, or continuous-preservation assertion. No process arguments, environment, or credentials read."
+}

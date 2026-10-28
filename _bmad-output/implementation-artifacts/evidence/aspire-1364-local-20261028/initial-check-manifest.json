@@ -1,0 +1,215 @@
+{
+  "scope": "Lossless sanitized retained receipts and command helpers; consistency hashes are not independent runtime attestation.",
+  "files": [
+    {
+      "file": "build.json",
+      "sha256": "fb97766cf48e008a137d7e6996afff206759779e0b164c96116fc9c8248b17d7",
+      "original_sha256": "fb97766cf48e008a137d7e6996afff206759779e0b164c96116fc9c8248b17d7",
+      "original_bytes": 596,
+      "encoding": "identity"
+    },
+    {
+      "file": "build.log.gz",
+      "sha256": "33f66a3adfe0d5f61b536a4514bba3d7717642506452229a55871a0a7e7ac557",
+      "original_sha256": "fde062c698ab82aee659054f30f788c0467539eb70cd2da4528180ac22ac0968",
+      "original_bytes": 8326,
+      "encoding": "gzip"
+    },
+    {
+      "file": "built-source-identity.json.gz",
+      "sha256": "8546bf831bce148521a95a9fc804d9e5373d1c8457100bfe46963ab06386c2b0",
+      "original_sha256": "736975fb45ee1ccc6dea2721b71b76ff8a0c1cc8651d8486600ad272e3aa6f87",
+      "original_bytes": 165478,
+      "encoding": "gzip"
+    },
+    {
+      "file": "capture-preservation.py.txt",
+      "sha256": "322cfcbbc52e8992b5b9ee5e344ecc62f92bac97c5ab707aacd307d3eb49ebce",
+      "original_sha256": "322cfcbbc52e8992b5b9ee5e344ecc62f92bac97c5ab707aacd307d3eb49ebce",
+      "original_bytes": 2984,
+      "encoding": "identity"
+    },
+    {
+      "file": "checkout-commands.json.gz",
+      "sha256": "d8b01ceee42632250dd3b13888efec054700e4a4f30bf0adffc3ba70296a2edc",
+      "original_sha256": "0bce0e804942fef7578e8d21d112c12751b3b6be6d2bf02f5cb3a4e997f5dd16",
+      "original_bytes": 17161606,
+      "encoding": "gzip"
+    },
+    {
+      "file": "checkout-identity.json",
+      "sha256": "7f35d3b3178e3ba7d54d388d74cf4bb0e4d89c3995b98d8c7daa62a32baf2573",
+      "original_sha256": "7f35d3b3178e3ba7d54d388d74cf4bb0e4d89c3995b98d8c7daa62a32baf2573",
+      "original_bytes": 6257,
+      "encoding": "identity"
+    },
+    {
+      "file": "commitlint-tooling-install.json",
+      "sha256": "c8ef70619a3c8710791572c225c5588664ec4875b5cd1c7d1b9f87b9e6e72f43",
+      "original_sha256": "c8ef70619a3c8710791572c225c5588664ec4875b5cd1c7d1b9f87b9e6e72f43",
+      "original_bytes": 465,
+      "encoding": "identity"
+    },
+    {
+      "file": "commitlint-tooling-install.log.gz",
+      "sha256": "c9e89ec50d06b1db5aa3261065cd7ca15889b199ca74591ca52f2590039eb338",
+      "original_sha256": "505beeecc6386e7357afe897bd4c0b1fc9f329d89fc45cc5b25217ce73688786",
+      "original_bytes": 291,
+      "encoding": "gzip"
+    },
+    {
+      "file": "native-run.json",
+      "sha256": "19e5ccd8a961f6a2a5d5b866a09c92e84a564eb39ffb95644252e3644bb033b8",
+      "original_sha256": "19e5ccd8a961f6a2a5d5b866a09c92e84a564eb39ffb95644252e3644bb033b8",
+      "original_bytes": 835,
+      "encoding": "identity"
+    },
+    {
+      "file": "native-run.log.gz",
+      "sha256": "e4e40c239cc497192436e4ec31eb8daae91887fc4782ee7fc49149b5d2d7519f",
+      "original_sha256": "76ea09ad8692ae6827be4e3fc69bb0cac6a3ef85255ae8aa5d1227e474c580be",
+      "original_bytes": 169,
+      "encoding": "gzip"
+    },
+    {
+      "file": "occupied-listener.json",
+      "sha256": "dcb609135f97d8ecc8bc007942d29f8627de2ebe0251b5e38d507e3eeaa85ef4",
+      "original_sha256": "dcb609135f97d8ecc8bc007942d29f8627de2ebe0251b5e38d507e3eeaa85ef4",
+      "original_bytes": 447,
+      "encoding": "identity"
+    },
+    {
+      "file": "occupied-port-all-states.json",
+      "sha256": "28b4aac60db71b524f8ddca13f4528626b5932668f47a85b64d315b692194b6f",
+      "original_sha256": "28b4aac60db71b524f8ddca13f4528626b5932668f47a85b64d315b692194b6f",
+      "original_bytes": 184,
+      "encoding": "identity"
+    },
+    {
+      "file": "pack-evidence.py.txt",
+      "sha256": "1821bb109b90717a83d1048ade8f8f2257708d22a222436d619f5f652c92556b",
+      "original_sha256": "1821bb109b90717a83d1048ade8f8f2257708d22a222436d619f5f652c92556b",
+      "original_bytes": 1375,
+      "encoding": "identity"
+    },
+    {
+      "file": "prior-evidence-verification.json",
+      "sha256": "8037ff31a7341d3dbd16fb0d325c1d38f682615718e1beaf9c7beb171cd2de35",
+      "original_sha256": "8037ff31a7341d3dbd16fb0d325c1d38f682615718e1beaf9c7beb171cd2de35",
+      "original_bytes": 1011,
+      "encoding": "identity"
+    },
+    {
+      "file": "restore.json",
+      "sha256": "8a5f4396a40e5dc27ab3a4ea38ae176ae840de27720ca308e4d948f28fa65a88",
+      "original_sha256": "8a5f4396a40e5dc27ab3a4ea38ae176ae840de27720ca308e4d948f28fa65a88",
+      "original_bytes": 554,
+      "encoding": "identity"
+    },
+    {
+      "file": "restore.log.gz",
+      "sha256": "e1e3b5c8991120146cdb40f298db2965b66dcf1c51d976faa15127673afcdc2d",
+      "original_sha256": "f4cb1a6a12e1a2e446d7bc6ea2bd6e5448df05d61d2b04b83cf8bc9130d548fc",
+      "original_bytes": 4735,
+      "encoding": "gzip"
+    },
+    {
+      "file": "restored-identities.json.gz",
+      "sha256": "2b12254c1d192d56266d420ba7d6828cf1695da4260cf318bdc1e23cf030dc7e",
+      "original_sha256": "6388446d70b089a1bd50250686de1467a4e9b1f6faa4253fae6ecf9111a6da40",
+      "original_bytes": 44904,
+      "encoding": "gzip"
+    },
+    {
+      "file": "run-capture.py.txt",
+      "sha256": "3dacaad177dcc5241f36c1a95b37bcf52f52464f2e42d8b73a915f883db955ed",
+      "original_sha256": "3dacaad177dcc5241f36c1a95b37bcf52f52464f2e42d8b73a915f883db955ed",
+      "original_bytes": 1694,
+      "encoding": "identity"
+    },
+    {
+      "file": "runtime/run-y7do08u7/01-aspire---version.log.gz",
+      "sha256": "a8da931526ca694f67bbc4c265d3e4fc72a4f02d476e9bb4ecdb9de8020d22c1",
+      "original_sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36",
+      "original_bytes": 99,
+      "encoding": "gzip"
+    },
+    {
+      "file": "runtime/run-y7do08u7/02-dapr---version.log.gz",
+      "sha256": "4675dd0497e5ed7349e0519f5a907d778fdda69692b8cc8b97d1633695f1122c",
+      "original_sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+      "original_bytes": 94,
+      "encoding": "gzip"
+    },
+    {
+      "file": "runtime/run-y7do08u7/03-docker-version.log.gz",
+      "sha256": "94f3ea466efa064f83cebdd88f6393598af8ffaf77fd792f2e4af5c61b916dcd",
+      "original_sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+      "original_bytes": 85,
+      "encoding": "gzip"
+    },
+    {
+      "file": "runtime/run-y7do08u7/04-dapr-list.log.gz",
+      "sha256": "96b9eae99587061f1410d36dc82b51882fb9e8bc81a0f42b740282083ead5c79",
+      "original_sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "original_bytes": 61,
+      "encoding": "gzip"
+    },
+    {
+      "file": "runtime/run-y7do08u7/05-aspire-ps.log.gz",
+      "sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346",
+      "original_sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "original_bytes": 79,
+      "encoding": "gzip"
+    },
+    {
+      "file": "runtime/run-y7do08u7/admission.json",
+      "sha256": "961bf154cec5dca2d9fae9bef88b6dab1aa3237179d4441f668867c2beb5e512",
+      "original_sha256": "961bf154cec5dca2d9fae9bef88b6dab1aa3237179d4441f668867c2beb5e512",
+      "original_bytes": 191,
+      "encoding": "identity"
+    },
+    {
+      "file": "runtime/run-y7do08u7/cleanup.json",
+      "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+      "original_sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+      "original_bytes": 173,
+      "encoding": "identity"
+    },
+    {
+      "file": "verify-records.py.txt",
+      "sha256": "cfa4510cb635e37d6b35399dbbed4c410fb10a18031a6ad885d7d153c4a18050",
+      "original_sha256": "cfa4510cb635e37d6b35399dbbed4c410fb10a18031a6ad885d7d153c4a18050",
+      "original_bytes": 4260,
+      "encoding": "identity"
+    },
+    {
+      "file": "visible-processes-before.json.gz",
+      "sha256": "6e9a4c181c15659ce11fc80ce10474fd870804ba0c3343f7635182a6e701a529",
+      "original_sha256": "685cf7704b6dea0754f86466f68d022a0929d5c0bd98a9f8dce3b6631ea1f4a4",
+      "original_bytes": 47461,
+      "encoding": "gzip"
+    },
+    {
+      "file": "visible-processes-later.json.gz",
+      "sha256": "beb82082fc9049baa67756851794a86d6fccb3c02a2bf4ae1cabd063a88db20b",
+      "original_sha256": "32f35cea5e477545c4c69f8805038ae439866bdd923cbd6415f656525d7c8b64",
+      "original_bytes": 47999,
+      "encoding": "gzip"
+    },
+    {
+      "file": "workspace-before.json",
+      "sha256": "cf235a64fd4e827759a13641303d631af227d2b9bbdbd4e0a9d7812b9248e50d",
+      "original_sha256": "cf235a64fd4e827759a13641303d631af227d2b9bbdbd4e0a9d7812b9248e50d",
+      "original_bytes": 5666,
+      "encoding": "identity"
+    },
+    {
+      "file": "workspace-preservation.json",
+      "sha256": "51dd74bd896a84fbcf90f19557b323f4d4b4b176d3469d6be60959cd0eac7bcd",
+      "original_sha256": "51dd74bd896a84fbcf90f19557b323f4d4b4b176d3469d6be60959cd0eac7bcd",
+      "original_bytes": 6123,
+      "encoding": "identity"
+    }
+  ]
+}

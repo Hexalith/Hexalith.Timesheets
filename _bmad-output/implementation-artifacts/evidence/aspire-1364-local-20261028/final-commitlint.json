@@ -1,0 +1,20 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "commitlint",
+    "--",
+    "--edit",
+    "/tmp/timesheets-aspire-1364-local-evidence-20261028/commit-message-final.txt"
+  ],
+  "cwd": "/tmp/timesheets-aspire-1364-local-20261028",
+  "environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_unix_ns": 1793188711899830256,
+  "completed_unix_ns": 1793188712195236890,
+  "elapsed_seconds": 0.2954063130018767,
+  "exit_code": 0,
+  "log": "final-commitlint.log",
+  "source_revision": "670546c496192dfdd79be695de24200fe445488c"
+}

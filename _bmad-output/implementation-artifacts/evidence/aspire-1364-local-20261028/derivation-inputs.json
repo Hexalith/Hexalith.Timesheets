@@ -1,0 +1,444 @@
+{
+  "copied_unix_ns": 1793188321339706671,
+  "scope": "Later byte-checked copies of previously hashed assets and raw package metadata; not new runtime observations. Each asset matches its earlier retained SHA256. Raw /proc tables and descriptors were not captured retrospectively.",
+  "assets": [
+    {
+      "original_relative_path": "references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/00.json",
+      "sha256": "b095dce230ba325af925420d83b3064f6b3af74e76481cdd2b807dd538be9cdd",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/01.json",
+      "sha256": "23fb5f9f5d2fb321d1ebe191afce459485f46e8ff4a491155fa179039d812f65",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/02.json",
+      "sha256": "48cd852054056eda2a19396da779681ca839fdab2021128f21c1365f2a36155a",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Client/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/03.json",
+      "sha256": "734f6bff345b394c7839ffaca8ff6376039713c7aa86624065658bb04b229afc",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/04.json",
+      "sha256": "c976cbf14a9409489ded9e74a621a5841bd6ad43f60d1b247ab7522ac73bc5ec",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/05.json",
+      "sha256": "dab648637ce14dcfd9778bf977135993a0c9cf3219b0ca6f378ebf54fa4d04bf",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Gateway/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/06.json",
+      "sha256": "574f6d3dec4cede0bd186399edc830682a7db54a4b84fc861b49a60767f53216",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Server/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/07.json",
+      "sha256": "6429c823bfb15a408aed885455f7fd369a5eae27ae7e3f7fb0e238046efad46c",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/08.json",
+      "sha256": "7c8358e2e55ec77ed981117957d11edeb8a45347234c7a23d0c99a774f406f0f",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Testing/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/09.json",
+      "sha256": "f6ad852d6241a29fc553f1f8432bb54cff4e0e73cf86a8c79b3de50f357f4439",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/10.json",
+      "sha256": "a959420e433e2d76487196d66a193f99f8cbfc68fbaf16933d3196395ad23029",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations.CodeGenerators/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/11.json",
+      "sha256": "fbd80ce386e2b59d47210ebd3f00da89dfa87f905ebcb7fbf1de83d497794dc2",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/12.json",
+      "sha256": "5b305aabaf108aa29dd1de9a806bd7a33e37bb71da67e3f097b9309ac4e96d4b",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.Works/src/Hexalith.Works.Contracts/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/13.json",
+      "sha256": "2da7ddf0b76b286de3dbdd04650a52f6990050256c4f86efe3e9ee72ae804e84",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.AppHost/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/14.json",
+      "sha256": "fe49176cbbc209ac282191687ebcb35e3cb6bed1743e2baca199637413427c2d",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.Client/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/15.json",
+      "sha256": "b33b91c9d75b67a95e73c2396bbfb40ad8bf4b85ae83658eae7b8db2a599e976",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.Contracts/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/16.json",
+      "sha256": "70916914f92838c3f0e67c60aa089a51159a278c93c7f18ba2fe4228072b71b2",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.Projections/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/17.json",
+      "sha256": "2051d12059bfbc64004d0b93431f8ecd89f158b86695ca3e6436fa81bc68567e",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.ReadModels/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/18.json",
+      "sha256": "4d551c673e10dce97481f454e59cb1ceacfbaa4927d59bb1f2abf6cb3afc10c9",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.Server/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/19.json",
+      "sha256": "cc486f2dfdaf3a6c9a846e1e23aa685bdeeb0460af7ac0b473aacd258ffd1bdc",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.ServiceDefaults/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/20.json",
+      "sha256": "144d1643a1f7b42473582e6611766d607c9884d66d704eaae1ae37c7668ebefe",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.Testing/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/21.json",
+      "sha256": "500ae36de1605bddb5bf596ab085e2a5af3f7487aae471f3e68aa9d4330299f0",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets.Works/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/22.json",
+      "sha256": "c07804ae7c764d76dba6507146a462b21a1d1dc5e5ae87ff2d9a4374255831c8",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "src/Hexalith.Timesheets/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/23.json",
+      "sha256": "8cebe94256c48551c6926e77c577ca246a39db0f20c2d80bdb00a57a57188348",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "tests/Hexalith.Timesheets.ArchitectureTests/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/24.json",
+      "sha256": "54f2002a45b7b4a3b689924f2712f2f925e5628dd79c2b7983ecedc7c8b41e20",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "tests/Hexalith.Timesheets.Contracts.Tests/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/25.json",
+      "sha256": "43349da5319aa525f3de3994b2879e6fc23428cb4ff727e9811daca588f1e516",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "tests/Hexalith.Timesheets.IntegrationTests/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/26.json",
+      "sha256": "51907c1030768f61a4d1012907fb64944423d03dd783ebf0864d56e278022b79",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "tests/Hexalith.Timesheets.Projections.Tests/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/27.json",
+      "sha256": "7fe8f73ab4665645abd3356e8e889ecbe3e0c7e8bd74d462b3418a79a49e6059",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "tests/Hexalith.Timesheets.Server.Tests/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/28.json",
+      "sha256": "d089dc7538d989f0a578399552c329b988da020ac4c815c45fa6fb527033edca",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "tests/Hexalith.Timesheets.Works.Tests/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/29.json",
+      "sha256": "c59cc1d12bcfbcb4b90c0370c7a2448fa4b259d1fdaaa7f419e7e7b1214b777c",
+      "new_restore": true
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-13/reviewer-proofs/collection-blob/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/30.json",
+      "sha256": "7a388c53605a8d8eb06665e53bc9e58910a4392116f6ed411414f281e11f0ede",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-13/reviewer-proofs/constructor-default/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/31.json",
+      "sha256": "7f53a28ca167e1e016b48f1a9d32a6db0b8078c786a4b284fc94038bd00e91cb",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-13/reviewer-proofs/interface-method-mapping/baseline/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/32.json",
+      "sha256": "29d4068957d624bc044bf070bb74fdba604614914be6324aca22f5d80611c53e",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-13/reviewer-proofs/interface-method-mapping/candidate/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/33.json",
+      "sha256": "bfcea61efeaa4f999eb82a7906b50c39ad8f5f9dcf0589a38d78d52588022c9f",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-13/reviewer-proofs/private-struct-layout/baseline/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/34.json",
+      "sha256": "6f796c04e60183bda30b7ca47bfbb08e3e7236540ffc73481f6e7cd79c4a447f",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-13/reviewer-proofs/private-struct-layout/candidate/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/35.json",
+      "sha256": "8d6ab8c5837e483cfdd50179e3064fdc1a368ea121fb5330d7189ddccfa5b890",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-13/reviewer-proofs/return-kind/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/36.json",
+      "sha256": "bf7c55667dbc1bfcd4695a1c76b5e75bf1c7f5db5a58ab06da8b3916c426d771",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-14/implementation/parent-input-recheck/fixed-helper/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/37.json",
+      "sha256": "21a8864ddc62b8dc666e9639f9d261e578549b5fe08d520d24f885d91cfda388",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-14/parent-native-final/fixed-helper/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/38.json",
+      "sha256": "c1128ab259492c57195e1fc737279f4fc4577c582f1162065736432b25d63815",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-14/parent-native/fixed-helper/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/39.json",
+      "sha256": "8d1100a43180950d70c9ef2f6f9e664686aa233cd10e1d848312e5e6af7132cc",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.Conversations/module/validation/epic-16-prerequisite-implementation/review-iteration-5/implementation/party-goldens/obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/40.json",
+      "sha256": "0fbf9bc0a47a880e97ebe54794f26a08bc30f8a1418cfb88086e32371edba8ae",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/.artifacts/ui-test-obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/41.json",
+      "sha256": "6b1d92ec4197f235196e209815e0d4420adf28edf7e8357a1f97c028cd5ac6ca",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.UI/.artifacts/ui-test-obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/42.json",
+      "sha256": "7148b9ce22d544b8b8ab4dabfd4967a9aaa878f27fec8d55491895731eb146a4",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/.artifacts/ui-test-obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/43.json",
+      "sha256": "3f62770d5bdd7b917a8baa0da9baa4d6db723517c434c5adabb3ddceb4bd2672",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/.artifacts/ui-test-obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/44.json",
+      "sha256": "34965dd6fd0a6ee1ab9cdbf88ef6c3d60224ce73a7b770a54b897b76683e5f93",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/src/Hexalith.EventStore.SignalR/.artifacts/ui-test-obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/45.json",
+      "sha256": "8c403e4fb3e931ad5b0e713295c2f671cb754bf0ade4846579f4f3128974c426",
+      "new_restore": false
+    },
+    {
+      "original_relative_path": "references/Hexalith.EventStore/tests/Hexalith.EventStore.Admin.UI.Tests/.artifacts/ui-test-obj/project.assets.json",
+      "retained_original_name": "derivation-inputs/assets/46.json",
+      "sha256": "bf3d8e966f7e20a48fc33ed24fe5f566cb87ffbe60cd669c4e8d2c36da862514",
+      "new_restore": false
+    }
+  ],
+  "packages": [
+    {
+      "package": "Aspire.Dashboard.Sdk.linux-x64/13.6.4",
+      "cache_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.4",
+      "metadata": [
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.4/aspire.dashboard.sdk.linux-x64.nuspec",
+          "retained_original_name": "derivation-inputs/packages/aspire.dashboard.sdk.linux-x64/13.6.4/aspire.dashboard.sdk.linux-x64.nuspec",
+          "sha256": "b7c55c336b93bcc12701a29319eb4de0775db9b13270952f5190815f3a4c601b"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.4/.nupkg.metadata",
+          "retained_original_name": "derivation-inputs/packages/aspire.dashboard.sdk.linux-x64/13.6.4/.nupkg.metadata",
+          "sha256": "dfee494cc11a8c29813bcd9bed0f31380ad6bd348daae88121f9270bd990d7a2"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.4/aspire.dashboard.sdk.linux-x64.13.6.4.nupkg.sha512",
+          "retained_original_name": "derivation-inputs/packages/aspire.dashboard.sdk.linux-x64/13.6.4/aspire.dashboard.sdk.linux-x64.13.6.4.nupkg.sha512",
+          "sha256": "b47b042880d828e266bf8696885a0b87ad4db12324d27e9c4faf10a4eedab6ea"
+        }
+      ],
+      "binary_and_archive_scope": "Executable and physical archive bytes are not embedded. Their retained hashes can be checked against the original package cache; raw nuspec/sidecar/metadata copies are retained."
+    },
+    {
+      "package": "Aspire.Hosting/13.6.4",
+      "cache_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting/13.6.4",
+      "metadata": [
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting/13.6.4/aspire.hosting.nuspec",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting/13.6.4/aspire.hosting.nuspec",
+          "sha256": "3c68a1434f44481b0642f4c571216a950a5b84445e12000acb3afe14815916d2"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting/13.6.4/.nupkg.metadata",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting/13.6.4/.nupkg.metadata",
+          "sha256": "bd548380bf6c5d214c893a70eae52b0733fce897658196ebb4fa1555a5ae2751"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting/13.6.4/aspire.hosting.13.6.4.nupkg.sha512",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting/13.6.4/aspire.hosting.13.6.4.nupkg.sha512",
+          "sha256": "039cf13905895d9fefe312765dc7fde18c4eaf017977d3f98e6012f6ce7d3bed"
+        }
+      ],
+      "binary_and_archive_scope": "Executable and physical archive bytes are not embedded. Their retained hashes can be checked against the original package cache; raw nuspec/sidecar/metadata copies are retained."
+    },
+    {
+      "package": "Aspire.Hosting.AppHost/13.6.4",
+      "cache_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.apphost/13.6.4",
+      "metadata": [
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.apphost/13.6.4/aspire.hosting.apphost.nuspec",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.apphost/13.6.4/aspire.hosting.apphost.nuspec",
+          "sha256": "0c9b5eaa7ab050d14429e8cd4f4dcc62255fee65c6d68cc525212ba795b86438"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.apphost/13.6.4/.nupkg.metadata",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.apphost/13.6.4/.nupkg.metadata",
+          "sha256": "eeafd8779707ba8138a5c4265d8bec1e33ae617c362980de323ab8995eb5af64"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.apphost/13.6.4/aspire.hosting.apphost.13.6.4.nupkg.sha512",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.apphost/13.6.4/aspire.hosting.apphost.13.6.4.nupkg.sha512",
+          "sha256": "1d5f70949befa9ae974711d3aee2ea8d7a81fe797be528b8523dd78ef9a2bcce"
+        }
+      ],
+      "binary_and_archive_scope": "Executable and physical archive bytes are not embedded. Their retained hashes can be checked against the original package cache; raw nuspec/sidecar/metadata copies are retained."
+    },
+    {
+      "package": "Aspire.Hosting.Keycloak/13.6.4-preview.1.26523.11",
+      "cache_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11",
+      "metadata": [
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/aspire.hosting.keycloak.nuspec",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/aspire.hosting.keycloak.nuspec",
+          "sha256": "32a114796c20a3cef98467cf9cf8677949c4090ff8f01a50d0a78b44e7a2530a"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/.nupkg.metadata",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/.nupkg.metadata",
+          "sha256": "b85dde7b11893f84276ed7b2de8e1a183251d9c6beec9e7aa06f2a5d9d9b5d52"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/aspire.hosting.keycloak.13.6.4-preview.1.26523.11.nupkg.sha512",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/aspire.hosting.keycloak.13.6.4-preview.1.26523.11.nupkg.sha512",
+          "sha256": "9e0981f921dccf758e214249cf906f74059f56e3ebb824cc42cbdac47e247a98"
+        }
+      ],
+      "binary_and_archive_scope": "Executable and physical archive bytes are not embedded. Their retained hashes can be checked against the original package cache; raw nuspec/sidecar/metadata copies are retained."
+    },
+    {
+      "package": "Aspire.Hosting.Orchestration.linux-x64/13.6.4",
+      "cache_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.4",
+      "metadata": [
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.4/aspire.hosting.orchestration.linux-x64.nuspec",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.orchestration.linux-x64/13.6.4/aspire.hosting.orchestration.linux-x64.nuspec",
+          "sha256": "bdc5c042994b9a565e0455fc55b2e920d37e7d25db5493dfd277df205ec4d59d"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.4/.nupkg.metadata",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.orchestration.linux-x64/13.6.4/.nupkg.metadata",
+          "sha256": "c0bfe4dca82d431d4ae287bc8d91679ecc29763ea100dc67df072f24f2dea0bb"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.4/aspire.hosting.orchestration.linux-x64.13.6.4.nupkg.sha512",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.orchestration.linux-x64/13.6.4/aspire.hosting.orchestration.linux-x64.13.6.4.nupkg.sha512",
+          "sha256": "9c68df5c4ac3074389e0aa6c785a82298d5496278816e44c2453c2418540f478"
+        }
+      ],
+      "binary_and_archive_scope": "Executable and physical archive bytes are not embedded. Their retained hashes can be checked against the original package cache; raw nuspec/sidecar/metadata copies are retained."
+    },
+    {
+      "package": "Aspire.Hosting.Redis/13.6.4",
+      "cache_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.redis/13.6.4",
+      "metadata": [
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.redis/13.6.4/aspire.hosting.redis.nuspec",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.redis/13.6.4/aspire.hosting.redis.nuspec",
+          "sha256": "6be293a07bb561a9c247fc70f432de6b78b495075abb830b26205f10ba2c6751"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.redis/13.6.4/.nupkg.metadata",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.redis/13.6.4/.nupkg.metadata",
+          "sha256": "cdf2323bdae55afbec87ed5d8bd146879da645878f91f0fed3083813d88aac2f"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.redis/13.6.4/aspire.hosting.redis.13.6.4.nupkg.sha512",
+          "retained_original_name": "derivation-inputs/packages/aspire.hosting.redis/13.6.4/aspire.hosting.redis.13.6.4.nupkg.sha512",
+          "sha256": "930209d97268443df3a2d4e389c2648b5e3a2daf9802bba430a16cee9de64693"
+        }
+      ],
+      "binary_and_archive_scope": "Executable and physical archive bytes are not embedded. Their retained hashes can be checked against the original package cache; raw nuspec/sidecar/metadata copies are retained."
+    },
+    {
+      "package": "CommunityToolkit.Aspire.Hosting.Dapr/13.6.2-beta.959",
+      "cache_directory": "/tmp/dotnet-cli-home/.nuget/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959",
+      "metadata": [
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/communitytoolkit.aspire.hosting.dapr.nuspec",
+          "retained_original_name": "derivation-inputs/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/communitytoolkit.aspire.hosting.dapr.nuspec",
+          "sha256": "62548c6e3bca78e553a50b5b05a65c70d991b018c9910d110ab5615cbb13da16"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/.nupkg.metadata",
+          "retained_original_name": "derivation-inputs/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/.nupkg.metadata",
+          "sha256": "c2c9be802148fbe9289d3c648ab55b4e8360a1de7b7ebcffbf99f7dfcbd77c90"
+        },
+        {
+          "original_path": "/tmp/dotnet-cli-home/.nuget/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/communitytoolkit.aspire.hosting.dapr.13.6.2-beta.959.nupkg.sha512",
+          "retained_original_name": "derivation-inputs/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/communitytoolkit.aspire.hosting.dapr.13.6.2-beta.959.nupkg.sha512",
+          "sha256": "105034bc895ddcda7d240de0e1264cce243c3a3756ae1cb3cb7ba2300d2da0b7"
+        }
+      ],
+      "binary_and_archive_scope": "Executable and physical archive bytes are not embedded. Their retained hashes can be checked against the original package cache; raw nuspec/sidecar/metadata copies are retained."
+    }
+  ]
+}

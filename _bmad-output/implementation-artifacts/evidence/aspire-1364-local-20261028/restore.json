@@ -1,0 +1,21 @@
+{
+  "command": [
+    "dotnet",
+    "restore",
+    "Hexalith.Timesheets.slnx",
+    "-p:Configuration=Debug",
+    "-p:UseHexalithProjectReferences=true",
+    "-m:1",
+    "/nr:false"
+  ],
+  "cwd": "/tmp/timesheets-aspire-1364-local-20261028",
+  "environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_unix_ns": 1793187488168895235,
+  "completed_unix_ns": 1793187491352571433,
+  "elapsed_seconds": 3.183675806998508,
+  "exit_code": 0,
+  "log": "restore.log",
+  "source_revision": "670546c496192dfdd79be695de24200fe445488c"
+}

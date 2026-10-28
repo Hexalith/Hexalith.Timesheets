@@ -1,0 +1,7 @@
+{
+  "admitted": false,
+  "resources_started": false,
+  "infrastructure_started": false,
+  "apphost_start_attempted": false,
+  "reason": "Required port 3501 is occupied; no AppHost started"
+}

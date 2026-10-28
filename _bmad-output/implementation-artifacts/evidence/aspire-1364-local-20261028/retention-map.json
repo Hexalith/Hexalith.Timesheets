@@ -1,0 +1,29 @@
+{
+  "scope": "Receipt log fields name original artifacts. Every log is retained losslessly as gzip; these names resolve the original receipt references.",
+  "logs": {
+    "build.log": "build.log.gz",
+    "commitlint-tooling-install.log": "commitlint-tooling-install.log.gz",
+    "commitlint.log": "commitlint.log.gz",
+    "final-commitlint.log": "final-commitlint.log.gz",
+    "final-fetch.log": "final-fetch.log.gz",
+    "final-records-check.log": "final-records-check.log.gz",
+    "native-run.log": "native-run.log.gz",
+    "prepublish-fetch.log": "prepublish-fetch.log.gz",
+    "restore.log": "restore.log.gz",
+    "runtime/run-y7do08u7/01-aspire---version.log": "runtime/run-y7do08u7/01-aspire---version.log.gz",
+    "runtime/run-y7do08u7/02-dapr---version.log": "runtime/run-y7do08u7/02-dapr---version.log.gz",
+    "runtime/run-y7do08u7/03-docker-version.log": "runtime/run-y7do08u7/03-docker-version.log.gz",
+    "runtime/run-y7do08u7/04-dapr-list.log": "runtime/run-y7do08u7/04-dapr-list.log.gz",
+    "runtime/run-y7do08u7/05-aspire-ps.log": "runtime/run-y7do08u7/05-aspire-ps.log.gz",
+    "verify-records.log": "verify-records.log.gz"
+  },
+  "compressed_metadata": {
+    "derivation-inputs/packages/aspire.hosting.orchestration.linux-x64/13.6.4/aspire.hosting.orchestration.linux-x64.nuspec": "derivation-inputs/packages/aspire.hosting.orchestration.linux-x64/13.6.4/aspire.hosting.orchestration.linux-x64.nuspec.gz",
+    "derivation-inputs/packages/aspire.dashboard.sdk.linux-x64/13.6.4/aspire.dashboard.sdk.linux-x64.nuspec": "derivation-inputs/packages/aspire.dashboard.sdk.linux-x64/13.6.4/aspire.dashboard.sdk.linux-x64.nuspec.gz",
+    "derivation-inputs/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/aspire.hosting.keycloak.nuspec": "derivation-inputs/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/aspire.hosting.keycloak.nuspec.gz",
+    "derivation-inputs/packages/aspire.hosting.redis/13.6.4/aspire.hosting.redis.nuspec": "derivation-inputs/packages/aspire.hosting.redis/13.6.4/aspire.hosting.redis.nuspec.gz",
+    "derivation-inputs/packages/aspire.hosting/13.6.4/aspire.hosting.nuspec": "derivation-inputs/packages/aspire.hosting/13.6.4/aspire.hosting.nuspec.gz",
+    "derivation-inputs/packages/aspire.hosting.apphost/13.6.4/aspire.hosting.apphost.nuspec": "derivation-inputs/packages/aspire.hosting.apphost/13.6.4/aspire.hosting.apphost.nuspec.gz",
+    "derivation-inputs/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/communitytoolkit.aspire.hosting.dapr.nuspec": "derivation-inputs/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/communitytoolkit.aspire.hosting.dapr.nuspec.gz"
+  }
+}

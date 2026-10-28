@@ -1,0 +1,18 @@
+{
+  "command": [
+    "git",
+    "fetch",
+    "origin",
+    "main"
+  ],
+  "cwd": "/tmp/timesheets-aspire-1364-local-20261028",
+  "environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_unix_ns": 1793188062800247010,
+  "completed_unix_ns": 1793188063188287054,
+  "elapsed_seconds": 0.3880404450028436,
+  "exit_code": 0,
+  "log": "prepublish-fetch.log",
+  "source_revision": "670546c496192dfdd79be695de24200fe445488c"
+}

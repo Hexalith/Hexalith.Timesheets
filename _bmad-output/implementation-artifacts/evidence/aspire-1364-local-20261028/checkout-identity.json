@@ -1,0 +1,143 @@
+{
+  "observed_unix_ns": 1793187776396812447,
+  "checkout": "/tmp/timesheets-aspire-1364-local-20261028",
+  "head": "670546c496192dfdd79be695de24200fe445488c",
+  "branch": "main",
+  "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Timesheets.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Timesheets.git (push)",
+  "root_git_directory": "/tmp/timesheets-aspire-1364-local-20261028/.git",
+  "root_alternates_file_exists": false,
+  "root_gitlinks": [
+    {
+      "path": "references/Hexalith.AI.Tools",
+      "commit": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "actual_revision": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.AI.Tools/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 0,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Builds",
+      "commit": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "actual_revision": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Builds/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 1,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Commons",
+      "commit": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "actual_revision": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Commons/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 3,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Conversations",
+      "commit": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "actual_revision": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Conversations/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 12,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.EventStore",
+      "commit": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "actual_revision": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.EventStore/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 9,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.FrontComposer",
+      "commit": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "actual_revision": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.FrontComposer/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 8,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.McpCli",
+      "commit": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "actual_revision": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.McpCli/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 17,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Parties",
+      "commit": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "actual_revision": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Parties/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 10,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Platform",
+      "commit": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "actual_revision": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Platform/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 17,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.PolymorphicSerializations",
+      "commit": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "actual_revision": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.PolymorphicSerializations/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 2,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Projects",
+      "commit": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "actual_revision": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Projects/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 12,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Tenants",
+      "commit": "7ddb864cda5e942925b056391617eae4895c1253",
+      "actual_revision": "7ddb864cda5e942925b056391617eae4895c1253",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Tenants/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 9,
+      "initialized_nested_paths": []
+    },
+    {
+      "path": "references/Hexalith.Works",
+      "commit": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "actual_revision": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "status": "",
+      "git_directory": "/tmp/timesheets-aspire-1364-local-20261028/references/Hexalith.Works/.git",
+      "alternates_file_exists": false,
+      "nested_gitlink_count": 13,
+      "initialized_nested_paths": []
+    }
+  ],
+  "runtime_build_policy_launch_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "scope": "Exact root gitlinks, separate clone Git directories, no alternates/nested initialization, and unchanged source/build/policy/launch inputs at this sample."
+}

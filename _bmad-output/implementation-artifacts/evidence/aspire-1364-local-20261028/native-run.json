@@ -1,0 +1,23 @@
+{
+  "command": [
+    "python3",
+    "scripts/run_isolated_magic_link_dapr.py",
+    "--security-smoke",
+    "--public-port",
+    "18080",
+    "--log-directory",
+    "/tmp/timesheets-aspire-1364-local-evidence-20261028/runtime"
+  ],
+  "cwd": "/tmp/timesheets-aspire-1364-local-20261028",
+  "environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home",
+    "SSL_CERT_FILE": "/home/administrator/.aspire/dev-certs/https/B574B914F76DCDEA2E5B39D008818B6436BDD657F3619ECEB1BF89052DCFD148.crt",
+    "certificate_sha256": "c57e5aea1c34a68486089564335bd8efa280dd6b74ef9985a85d56f2fc7f3b8e"
+  },
+  "started_unix_ns": 1793187558041838985,
+  "completed_unix_ns": 1793187558706166623,
+  "elapsed_seconds": 0.6643275780079421,
+  "exit_code": 1,
+  "log": "native-run.log",
+  "source_revision": "670546c496192dfdd79be695de24200fe445488c"
+}

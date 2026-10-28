@@ -1,0 +1,35 @@
+{
+  "observed_unix_ns": 1793188108160746314,
+  "source_input_diff_command": [
+    "git",
+    "diff",
+    "--binary",
+    "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+    "670546c496192dfdd79be695de24200fe445488c",
+    "--",
+    "src",
+    "tests",
+    "scripts",
+    "Directory.Build.props",
+    "Directory.Build.targets",
+    "Directory.Packages.props",
+    "global.json",
+    ".gitmodules",
+    "references"
+  ],
+  "exit_code": 0,
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_inputs_equal": true,
+  "reused_test_source": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "qualified_attempt_source": "670546c496192dfdd79be695de24200fe445488c",
+  "divergence_command": [
+    "git",
+    "rev-list",
+    "--left-right",
+    "--count",
+    "HEAD...origin/main"
+  ],
+  "divergence_stdout": "0\t0",
+  "remote_main": "670546c496192dfdd79be695de24200fe445488c",
+  "scope": "Identical production source/build/root-gitlink inputs justify reusing historical tests within their original scopes; no runtime reuse or qualification."
+}

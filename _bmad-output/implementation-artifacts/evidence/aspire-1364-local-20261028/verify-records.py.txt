@@ -1,0 +1,178 @@
+import argparse
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+import sys
+import xml.etree.ElementTree as ET
+
+if sys.flags.optimize:
+    raise SystemExit('Run without Python optimization; this consistency check uses assertions')
+parser = argparse.ArgumentParser()
+parser.add_argument('bundle', type=Path)
+parser.add_argument('--project-root', type=Path, required=True, help='Repository containing the published baseline objects and updated report')
+parser.add_argument('--check-local-artifacts', action='store_true', help='Also compare the original isolated build outputs and package cache bytes')
+options = parser.parse_args()
+bundle = options.bundle.resolve()
+root = options.project_root.resolve()
+head = '670546c496192dfdd79be695de24200fe445488c'
+empty_sha = hashlib.sha256(b'').hexdigest()
+
+def read(name):
+    path = bundle / name
+    if not path.exists():
+        path = bundle / (name + '.gz')
+    raw = path.read_bytes()
+    return gzip.decompress(raw) if path.suffix == '.gz' else raw
+
+def data(name):
+    return json.loads(read(name))
+
+def safe_path(value, base, relative=False):
+    path = Path(value)
+    assert '..' not in path.parts, value
+    assert not relative or not path.is_absolute(), value
+    resolved = (base / path).resolve() if relative else path.resolve()
+    assert resolved.is_relative_to(base.resolve()), value
+    return resolved
+
+def git(*arguments):
+    return subprocess.check_output(['git', '-C', str(root), *arguments], text=True).strip()
+
+manifest = data('manifest.json')['files']
+assert len({row['file'] for row in manifest}) == len(manifest)
+actual = {str(path.relative_to(bundle)) for path in bundle.rglob('*') if path.is_file()}
+assert actual == {row['file'] for row in manifest} | {'manifest.json'}
+for row in manifest:
+    encoded = safe_path(row['file'], bundle, relative=True).read_bytes()
+    assert hashlib.sha256(encoded).hexdigest() == row['sha256'], row['file']
+    assert row['encoding'] in ('gzip', 'identity')
+    raw = gzip.decompress(encoded) if row['encoding'] == 'gzip' else encoded
+    assert hashlib.sha256(raw).hexdigest() == row['original_sha256'], row['file']
+    assert len(raw) == row['original_bytes'], row['file']
+retention = data('retention-map.json')['logs']
+assert {row['file'] for row in manifest if row['file'].endswith('.log.gz')} == set(retention.values())
+assert all(stored == original + '.gz' and read(original) for original, stored in retention.items())
+expected_links = {line.split('\t')[1]: line.split()[2] for line in git('ls-tree', '-r', head).splitlines() if line.startswith('160000')}
+assert len(expected_links) == 13
+checkout = data('checkout-identity.json')
+assert checkout['head'] == head and checkout['branch'] == 'main'
+assert {row['path']: row['commit'] for row in checkout['root_gitlinks']} == expected_links
+assert len(checkout['root_gitlinks']) == 13 and not checkout['root_alternates_file_exists']
+isolated = Path(checkout['checkout']).resolve()
+clone_commands = data('checkout-commands.json')
+assert all(row['exit_code'] == 0 for row in clone_commands)
+for row in checkout['root_gitlinks']:
+    assert row['actual_revision'] == expected_links[row['path']]
+    assert not row['status'] and not row['alternates_file_exists'] and not row['initialized_nested_paths']
+    assert any(c['command'] == ['git', 'checkout', '--detach', row['commit']] and Path(c['cwd']).resolve() == isolated / row['path'] for c in clone_commands)
+    assert any(c['command'][:4] == ['git', 'clone', '--no-hardlinks', '--no-checkout'] and c['command'][-1] == str(isolated / row['path']) for c in clone_commands)
+expected_commands = {
+    'restore': ['dotnet', 'restore', 'Hexalith.Timesheets.slnx', '-p:Configuration=Debug', '-p:UseHexalithProjectReferences=true', '-m:1', '/nr:false'],
+    'build': ['dotnet', 'build', 'Hexalith.Timesheets.slnx', '--configuration', 'Debug', '--no-restore', '-p:UseHexalithProjectReferences=true', '-warnaserror', '-m:1', '/nr:false'],
+    'native-run': ['python3', 'scripts/run_isolated_magic_link_dapr.py', '--security-smoke', '--public-port', '18080', '--log-directory', '/tmp/timesheets-aspire-1364-local-evidence-20261028/runtime']}
+previous_end = 0
+for name, command in expected_commands.items():
+    receipt = data(name + '.json')
+    assert receipt['command'] == command and receipt['source_revision'] == head
+    assert Path(receipt['cwd']).resolve() == isolated
+    assert previous_end <= receipt['started_unix_ns'] < receipt['completed_unix_ns']
+    previous_end = receipt['completed_unix_ns']
+    assert receipt['exit_code'] == (1 if name == 'native-run' else 0)
+    assert receipt['environment_overrides']['DOTNET_CLI_HOME'] == '/tmp/dotnet-cli-home'
+    assert read(receipt['log'])
+assert '0 Warning(s)' in read('build.log').decode() and '0 Error(s)' in read('build.log').decode()
+admission = data('runtime/run-y7do08u7/admission.json')
+assert admission['reason'] == 'Required port 3501 is occupied; no AppHost started'
+assert all(admission[key] is False for key in ('admitted', 'resources_started', 'infrastructure_started', 'apphost_start_attempted'))
+cleanup = data('runtime/run-y7do08u7/cleanup.json')
+assert cleanup['complete'] and cleanup['journey_descendants_gone'] and not cleanup['failure_reasons']
+assert cleanup['containers_removed'] == 0 and cleanup['components_created'] is False and cleanup['components_removed'] is False
+runtime_files = [row['file'] for row in manifest if row['file'].startswith('runtime/')]
+assert len(runtime_files) == 7
+for name in ('04-dapr-list.log', '05-aspire-ps.log'):
+    assert 'Exit: 0\nStdout:\n[]\n' in read('runtime/run-y7do08u7/' + name).decode()
+built = data('built-source-identity.json')
+expected_repositories = {'.': head, **expected_links}
+assert set(built['repositories']) == set(expected_repositories)
+for name, identity in built['repositories'].items():
+    assert identity['revision'] == expected_repositories[name]
+    assert identity['tracked_diff_sha256'] == empty_sha and not identity['untracked_build_inputs']
+    if name != '.':
+        assert identity['status'] == ''
+files = built['static_built_files_sha256']
+assert len(files) == 934
+for name, digest in files.items():
+    path = safe_path(name, isolated, relative=True)
+    assert '/bin/Debug/net10.0/' in '/' + name and re.fullmatch('[0-9a-f]{64}', digest)
+    if options.check_local_artifacts:
+        assert hashlib.sha256(path.read_bytes()).hexdigest() == digest, name
+for executable in ('src/Hexalith.Timesheets.AppHost', 'src/Hexalith.Timesheets', 'tests/Hexalith.Timesheets.IntegrationTests', 'references/Hexalith.EventStore/src/Hexalith.EventStore'):
+    name = executable.split('/')[-1]
+    assert executable + '/bin/Debug/net10.0/' + name in files
+    assert executable + '/bin/Debug/net10.0/' + name + '.dll' in files
+assets = data('restored-identities.json')
+assert assets['sdk'] == '10.0.402' and len(assets['projects']) == 30
+assert len(assets['checkout_retained_historical_assets']) == 17 and not assets['release_output_directories']
+inputs = data('derivation-inputs.json')
+input_assets = {row['original_relative_path']: row for row in inputs['assets']}
+for row in assets['projects'] + assets['checkout_retained_historical_assets']:
+    item = input_assets[row['assets']]
+    raw = read(item['retained_original_name'])
+    assert hashlib.sha256(raw).hexdigest() == row['sha256'] == item['sha256']
+    actual_asset = json.loads(raw)
+    assert actual_asset['project']['restore']['projectPath'] == row['project_path']
+    expected_references = {tfm: list(value.get('projectReferences', {})) for tfm, value in actual_asset['project']['restore']['frameworks'].items()}
+    assert expected_references == row['project_references']
+    safe_path(row['assets'], isolated, relative=True)
+    if item['new_restore']:
+        safe_path(row['project_path'], isolated)
+        for references in row['project_references'].values():
+            for reference in references:
+                safe_path(reference, isolated)
+apphost_row = input_assets['src/Hexalith.Timesheets.AppHost/obj/project.assets.json']
+apphost_raw = read(apphost_row['retained_original_name'])
+assert hashlib.sha256(apphost_raw).hexdigest() == assets['apphost_assets_sha256']
+apphost_assets = json.loads(apphost_raw)
+expected_packages = {'Aspire.Dashboard.Sdk.linux-x64/13.6.4', 'Aspire.Hosting/13.6.4', 'Aspire.Hosting.AppHost/13.6.4', 'Aspire.Hosting.Keycloak/13.6.4-preview.1.26523.11', 'Aspire.Hosting.Orchestration.linux-x64/13.6.4', 'Aspire.Hosting.Redis/13.6.4', 'CommunityToolkit.Aspire.Hosting.Dapr/13.6.2-beta.959'}
+assert {row['package'] for row in assets['packages']} == expected_packages
+assert {key for key in apphost_assets['libraries'] if key.startswith(('Aspire.', 'CommunityToolkit.Aspire.'))} == expected_packages
+for row in assets['packages']:
+    assert row['assets_content_hash_sha512'] == apphost_assets['libraries'][row['package']]['sha512']
+    package_input = next(item for item in inputs['packages'] if item['package'] == row['package'])
+    for item in package_input['metadata']:
+        raw = read(item['retained_original_name'])
+        assert hashlib.sha256(raw).hexdigest() == item['sha256']
+        if item['original_path'].endswith('.nuspec'):
+            repository = next((e.attrib for e in ET.fromstring(raw).iter() if e.tag.split('}')[-1] == 'repository'), {})
+            assert repository == row['repository']
+            assert hashlib.sha256(raw).hexdigest() == row['files_sha256'][Path(item['original_path']).name]
+        elif item['original_path'].endswith('.sha512'):
+            assert raw.decode().strip() == row['local_archive_sidecar_sha512']
+        else:
+            assert json.loads(raw)['contentHash'] == row['metadata_content_hash_sha512']
+    if options.check_local_artifacts:
+        cache = Path(package_input['cache_directory'])
+        for filename, digest in row['files_sha256'].items():
+            assert hashlib.sha256((cache / filename).read_bytes()).hexdigest() == digest
+preserved = data('workspace-preservation.json')
+assert preserved['matches'] and preserved['after'] == data('workspace-before.json')
+initial = data('visible-processes-before.json')
+processes = data('visible-processes-later.json')
+assert initial['observed_unix_ns'] < processes['observed_unix_ns']
+identity = lambda row: (row['pid'], row['start'])
+assert len({identity(row) for row in initial['processes']}) == len(initial['processes']) == 547
+later_ids = {identity(row) for row in processes['later_processes']}
+assert len(later_ids) == len(processes['later_processes']) == processes['later_observed_count']
+missing = [row for row in initial['processes'] if identity(row) not in later_ids]
+assert sorted(missing, key=identity) == sorted(processes['initial_identities_absent'], key=identity)
+assert processes['initial_observed_count'] == 547 and processes['initial_identities_absent_count'] == len(missing) == 22
+report = root / '_bmad-output/implementation-artifacts/tests/remaining-local-deferred-followups.md'
+added = report.read_text().split('## Aspire 13.6.4 local qualification attempt', 1)[1]
+for target in re.findall(r'\]\(([^)]+)\)', added):
+    assert (report.parent / target.split('#')[0]).exists(), target
+print(json.dumps({'verified_manifest_files': len(manifest), 'runtime_admitted': False, 'runtime_started': False,
+                  'fresh_assets': 30, 'repository_links_checked': True, 'local_static_output_hashes_checked': len(files) if options.check_local_artifacts else 0,
+                  'scope': 'Consistency of retained records against explicit repository baseline objects and supplied raw metadata. Optional local checks compare current file content only. No independent runtime observation or tamper-proof attestation.'}))

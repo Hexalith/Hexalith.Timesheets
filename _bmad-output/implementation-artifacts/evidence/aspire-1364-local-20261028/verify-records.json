@@ -1,0 +1,17 @@
+{
+  "command": [
+    "python3",
+    "_bmad-output/implementation-artifacts/evidence/aspire-1364-local-20261028/verify-records.py.txt",
+    "_bmad-output/implementation-artifacts/evidence/aspire-1364-local-20261028"
+  ],
+  "cwd": "/tmp/timesheets-aspire-1364-local-20261028",
+  "environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_unix_ns": 1793188008077848908,
+  "completed_unix_ns": 1793188008147476835,
+  "elapsed_seconds": 0.06962848700641189,
+  "exit_code": 0,
+  "log": "verify-records.log",
+  "source_revision": "670546c496192dfdd79be695de24200fe445488c"
+}

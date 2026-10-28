@@ -1,0 +1,129 @@
+{
+  "root": "/home/administrator/projects/hexalith/timesheets",
+  "revision": "670546c496192dfdd79be695de24200fe445488c",
+  "branch": "main",
+  "status": "",
+  "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Timesheets.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Timesheets.git (push)",
+  "gitlinks": [
+    {
+      "path": "references/Hexalith.AI.Tools",
+      "commit": "3f194e17174994d308ec84af9ee2b5aa68674d0d"
+    },
+    {
+      "path": "references/Hexalith.Builds",
+      "commit": "81ab049208678bd6616828824729c0ddac02f7d1"
+    },
+    {
+      "path": "references/Hexalith.Commons",
+      "commit": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a"
+    },
+    {
+      "path": "references/Hexalith.Conversations",
+      "commit": "861f13a2e728c3847a191b0688070762b1bfa29e"
+    },
+    {
+      "path": "references/Hexalith.EventStore",
+      "commit": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16"
+    },
+    {
+      "path": "references/Hexalith.FrontComposer",
+      "commit": "5f665c4d38afb2255a7dde4620330e09824a40a1"
+    },
+    {
+      "path": "references/Hexalith.McpCli",
+      "commit": "2d7311cbbcc592c0ea0348463037389251d1cb4b"
+    },
+    {
+      "path": "references/Hexalith.Parties",
+      "commit": "9239c531f3b0cbb4a998c419e537463b597ff14b"
+    },
+    {
+      "path": "references/Hexalith.Platform",
+      "commit": "8de90958bc41b7fd01b7ed22b8ab364447a800e4"
+    },
+    {
+      "path": "references/Hexalith.PolymorphicSerializations",
+      "commit": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0"
+    },
+    {
+      "path": "references/Hexalith.Projects",
+      "commit": "0e45105476902fcfce1f8dbd8416d7234bb16b41"
+    },
+    {
+      "path": "references/Hexalith.Tenants",
+      "commit": "7ddb864cda5e942925b056391617eae4895c1253"
+    },
+    {
+      "path": "references/Hexalith.Works",
+      "commit": "fc4638d176082a679ebc23b92a3a3ae02f23b56e"
+    }
+  ],
+  "dependencies": {
+    "references/Hexalith.AI.Tools": {
+      "revision": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.AI.Tools.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.AI.Tools.git (push)"
+    },
+    "references/Hexalith.Builds": {
+      "revision": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Builds.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Builds.git (push)"
+    },
+    "references/Hexalith.Commons": {
+      "revision": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Commons.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Commons.git (push)"
+    },
+    "references/Hexalith.Conversations": {
+      "revision": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Conversations.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Conversations.git (push)"
+    },
+    "references/Hexalith.EventStore": {
+      "revision": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.EventStore.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.EventStore.git (push)"
+    },
+    "references/Hexalith.FrontComposer": {
+      "revision": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.FrontComposer.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.FrontComposer.git (push)"
+    },
+    "references/Hexalith.McpCli": {
+      "revision": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.McpCli.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.McpCli.git (push)"
+    },
+    "references/Hexalith.Parties": {
+      "revision": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Parties.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Parties.git (push)"
+    },
+    "references/Hexalith.Platform": {
+      "revision": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Platform.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Platform.git (push)"
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "revision": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.PolymorphicSerializations.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.PolymorphicSerializations.git (push)"
+    },
+    "references/Hexalith.Projects": {
+      "revision": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Projects.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Projects.git (push)"
+    },
+    "references/Hexalith.Tenants": {
+      "revision": "7ddb864cda5e942925b056391617eae4895c1253",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Tenants.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Tenants.git (push)"
+    },
+    "references/Hexalith.Works": {
+      "revision": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "status": "",
+      "remotes": "origin\thttps://github.com/Hexalith/Hexalith.Works.git (fetch)\norigin\thttps://github.com/Hexalith/Hexalith.Works.git (push)"
+    }
+  },
+  "launch_sha256": "e6500f3f0f28f51e4a690a8787f013c11939ec983f37c3e1a2abcec4de14f84c"
+}

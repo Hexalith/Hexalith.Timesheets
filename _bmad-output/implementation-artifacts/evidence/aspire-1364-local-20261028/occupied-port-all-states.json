@@ -1,0 +1,5 @@
+{
+  "observed_unix_ns": 1793187620409274426,
+  "rows": [],
+  "scope": "Read-only later socket-table sample; absence or TIME_WAIT does not establish original refusal cause or owner."
+}
