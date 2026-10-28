@@ -1,0 +1,305 @@
+{
+  "zip_sha256": "e1cb51690acd1b3a496b1f544c0b8f072edade0d866530ee644078c953b79865",
+  "artifact": {
+    "id": 12808965638,
+    "node_id": "MDg6QXJ0aWZhY3QxMjgwODk2NTYzOA==",
+    "name": "apphost-configuration",
+    "size_in_bytes": 41498,
+    "url": "https://api.github.com/repos/Hexalith/Hexalith.Timesheets/actions/artifacts/12808965638",
+    "archive_download_url": "https://api.github.com/repos/Hexalith/Hexalith.Timesheets/actions/artifacts/12808965638/zip",
+    "expired": false,
+    "digest": "sha256:e1cb51690acd1b3a496b1f544c0b8f072edade0d866530ee644078c953b79865",
+    "created_at": "2026-10-28T10:22:10Z",
+    "updated_at": "2026-10-28T10:22:10Z",
+    "expires_at": "2026-11-27T10:15:11Z",
+    "workflow_run": {
+      "id": 40670628561,
+      "repository_id": 1272275109,
+      "head_repository_id": 1272275109,
+      "head_branch": "main",
+      "head_sha": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8"
+    }
+  },
+  "files": {
+    "apphost-configuration/run-qlefynpe/57-Hexalith.Timesheets.AppHost---guard-probevalid-component-without-diagnostic.log": {
+      "sha256": "b7cb3eba9e9d5dcbe3a569433ee2a0be9277829afbb0cfc02b728a6c0dadb621",
+      "bytes": 402
+    },
+    "apphost-configuration/run-qlefynpe/27-Hexalith.Timesheets.AppHost---guard-probecompiled-empty-directory.log": {
+      "sha256": "45965266cfd2653ccab7a7dd8ec0ac048266ae2a48db91b73e8d0c7ceae213c3",
+      "bytes": 822
+    },
+    "apphost-configuration/run-qlefynpe/04-Hexalith.Timesheets.AppHost---guard-probemissing-components.log": {
+      "sha256": "4143732044ad826fcf4c5d71addcf8e28e5f95a0ab41ac1bdfec6fdbf405d579",
+      "bytes": 573
+    },
+    "apphost-configuration/run-qlefynpe/11-Hexalith.Timesheets.AppHost---guard-probemissing-component.log": {
+      "sha256": "5b5210a1f3e4cec20feecb04148ba5c91d8ad7650550d890e077bc7d1b3b873e",
+      "bytes": 758
+    },
+    "apphost-configuration/run-qlefynpe/52-Hexalith.Timesheets.AppHost---guard-probedefault-control-collision.log": {
+      "sha256": "d947205b469f8761d857f6a60c67e5f9052a56c4d06100e0fa2fe352b9c4fad7",
+      "bytes": 824
+    },
+    "apphost-configuration/run-qlefynpe/29-Hexalith.Timesheets.AppHost---guard-probecompiled-blank-directory.log": {
+      "sha256": "85c179c40fafb4771cc3df52a5fcbb2ad658e292ab2396c8c74123c068b333fa",
+      "bytes": 822
+    },
+    "apphost-configuration/run-qlefynpe/cleanup.json": {
+      "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+      "bytes": 173
+    },
+    "apphost-configuration/run-qlefynpe/06-Hexalith.Timesheets.AppHost---guard-probewhitespace-components.log": {
+      "sha256": "39c92924866f144fad5a9d7465513194afd75a1d04a4dac25418d05d30b2c2ab",
+      "bytes": 576
+    },
+    "apphost-configuration/run-qlefynpe/43-Hexalith.Timesheets.AppHost---guard-probehigh-local-port.log": {
+      "sha256": "236129d979ed6f164249d69d81ddbc682c35a83162da651be82d4c23cca8b9cb",
+      "bytes": 806
+    },
+    "apphost-configuration/run-qlefynpe/49-Hexalith.Timesheets.AppHost---guard-proberedis-local-port.log": {
+      "sha256": "4ab64b2b8e679b18e9ee4e5203b72bcba959f05f6bb5e364ee8faa05571aa352",
+      "bytes": 582
+    },
+    "apphost-configuration/run-qlefynpe/34-Hexalith.Timesheets.AppHost---guard-probeunsafe-components-compiled.log": {
+      "sha256": "acccfc375650fa3be2a1070b9282fb194a11639311a5b0bb60cf3eac41186424",
+      "bytes": 824
+    },
+    "apphost-configuration/run-qlefynpe/14-Hexalith.Timesheets.AppHost---guard-probemissing-placement.log": {
+      "sha256": "87eb2b464ef3f513974c4051c9e545248e39fd95d3dd479c2a2c8a9e34769b51",
+      "bytes": 786
+    },
+    "apphost-configuration/run-qlefynpe/21-Hexalith.Timesheets.AppHost---guard-probemismatched-readmodel-redis.log": {
+      "sha256": "d7635b96956f608bcc4ef19cfee3aa8fe0c19151de2d458e967e28f1dff65e14",
+      "bytes": 767
+    },
+    "apphost-configuration/run-qlefynpe/03-Hexalith.Timesheets.AppHost---guard-probebare-fixture-flag.log": {
+      "sha256": "d41a260f909f59790d63db5ab1ef25f1c46719633dd48361c5d3b66d8695ced2",
+      "bytes": 572
+    },
+    "apphost-configuration/run-qlefynpe/31-Hexalith.Timesheets.AppHost---guard-probeordinary-compiled-executable-only.log": {
+      "sha256": "a9be3c3e1f63eaf7dea6ad44dcad124e2338ad6326b47957bcce98839e38cd08",
+      "bytes": 831
+    },
+    "apphost-configuration/run-qlefynpe/24-Hexalith.Timesheets.AppHost---guard-probecompiled-executable-only.log": {
+      "sha256": "07638d45108c57373f1a15b1d3721dd7240651550e9acfa6a808eb7c73c3b84a",
+      "bytes": 822
+    },
+    "apphost-configuration/run-qlefynpe/66-Hexalith.Timesheets.AppHost---guard-probefull-construction.log": {
+      "sha256": "48ad16ccc2a1a3dba583941f8c341c134fc2c22067ba5aad2c3f26f6899fd4c5",
+      "bytes": 670
+    },
+    "apphost-configuration/run-qlefynpe/01-Hexalith.Timesheets.AppHost---guard-probevalid-isolated.log": {
+      "sha256": "71fff5016372d9c93a1d0472a33248b62e0c253e5070d1fb49465760ea853cdc",
+      "bytes": 382
+    },
+    "apphost-configuration/run-qlefynpe/32-Hexalith.Timesheets.AppHost---guard-probeordinary-compiled-directory-only.log": {
+      "sha256": "fb627da92fe7e5b155e92cbb6376f9d7ad1e2761a2a6dbc7d13b5480d9c16666",
+      "bytes": 830
+    },
+    "apphost-configuration/run-qlefynpe/62-Hexalith.Timesheets.AppHost---guard-probemodel-publish.log": {
+      "sha256": "f2fdff1a540a9c320feb0a9893f66a2a32570a1bda348bb391b00fafc35103da",
+      "bytes": 488
+    },
+    "apphost-configuration/run-qlefynpe/13-Hexalith.Timesheets.AppHost---guard-probeunsafe-pubsub.log": {
+      "sha256": "defde5bc909eb1988994b86d76efc1781fb90c158f90d1c0c253df7f5a135a06",
+      "bytes": 754
+    },
+    "apphost-configuration/run-qlefynpe/33-Hexalith.Timesheets.AppHost---guard-probepublish-compiled.log": {
+      "sha256": "0a6d031a02433b3c88e962307794b36dae5eef13e858b50f0b8b315ec2df37be",
+      "bytes": 916
+    },
+    "apphost-configuration/run-qlefynpe/07-Hexalith.Timesheets.AppHost---guard-probepublish-fixture.log": {
+      "sha256": "eb092b3cde263adf5271423a1174335221668d0e20f4a5bcc0ed1a0a982b8fd1",
+      "bytes": 678
+    },
+    "apphost-configuration/run-qlefynpe/53-Hexalith.Timesheets.AppHost---guard-probedefault-trimmed-control-collision.log": {
+      "sha256": "a8add401a0e78a07baf44690174381b4b24dcecdd3b66892f7265fa343bafb3d",
+      "bytes": 835
+    },
+    "apphost-configuration/run-qlefynpe/40-Hexalith.Timesheets.AppHost---guard-probemalformed-local-port.log": {
+      "sha256": "7a9e368c43b2bf9400bcef5747048a1d3e7eaa7fbe3d6ea4325b79662e07ad82",
+      "bytes": 816
+    },
+    "apphost-configuration/run-qlefynpe/36-Hexalith.Timesheets.AppHost---guard-probevalid-local-port.log": {
+      "sha256": "daeb24f76a890cc0cd9c7955be62ab026aa478f67d425731e22df91208f759fe",
+      "bytes": 419
+    },
+    "apphost-configuration/run-qlefynpe/23-Hexalith.Timesheets.AppHost---guard-probevalid-compiled-isolated.log": {
+      "sha256": "b4db9419076e37672a358c16b8e3040c23db49dde1fbd17f645bfa76796c1c7d",
+      "bytes": 821
+    },
+    "apphost-configuration/run-qlefynpe/59-Hexalith.Timesheets.AppHost---guard-probevalid-trimmed-control.log": {
+      "sha256": "6d191781fd8eaea0666a5a653a42d61fb2ae0571d65f21aa15a6c5cda59e6b34",
+      "bytes": 436
+    },
+    "apphost-configuration/run-qlefynpe/09-Hexalith.Timesheets.AppHost---guard-probemissing-opt-in.log": {
+      "sha256": "f40dce740923303f89644f503f639dc50e047b227654dc7cd88b15e6e08d4025",
+      "bytes": 575
+    },
+    "apphost-configuration/run-qlefynpe/45-Hexalith.Timesheets.AppHost---guard-probegateway-local-port.log": {
+      "sha256": "2220bd62f4028f2e0cd078462e106dc2fd44dfe159e7bf184da5f4a45226bb8e",
+      "bytes": 808
+    },
+    "apphost-configuration/run-qlefynpe/30-Hexalith.Timesheets.AppHost---guard-probeordinary-compiled.log": {
+      "sha256": "e9969422647dd6224f699ae3ce19a65b4482c7c94d9889a9417b8acccecb32c0",
+      "bytes": 815
+    },
+    "apphost-configuration/run-qlefynpe/22-Hexalith.Timesheets.AppHost---guard-probemismatched-pubsub-redis.log": {
+      "sha256": "6d4a0e43396bcd4d719c1dd7c851f95f017711ff7dd38fd386593b862f62ab4d",
+      "bytes": 764
+    },
+    "apphost-configuration/run-qlefynpe/65-Hexalith.Timesheets.AppHost---guard-probesecurity-publish.log": {
+      "sha256": "c6038b29ba2582d19d290b4c8de98f60584465399cb0a088f214a6d11481f27a",
+      "bytes": 621
+    },
+    "apphost-configuration/run-qlefynpe/02-Hexalith.Timesheets.AppHost---guard-probeordinary-defaults.log": {
+      "sha256": "753a93cfb1f98e2d13bcc39a4473423790eb1e66972bef82ff34a085bbb2612d",
+      "bytes": 388
+    },
+    "apphost-configuration/run-qlefynpe/10-Hexalith.Timesheets.AppHost---guard-probewrong-scope.log": {
+      "sha256": "5166dc6b8f6b7ef0c1932a1b07b1d9edc80d8fce344cf772d5ac96a1c435c0d9",
+      "bytes": 752
+    },
+    "apphost-configuration/run-qlefynpe/61-Hexalith.Timesheets.AppHost---guard-probemodel-alternate.log": {
+      "sha256": "974d9c5eabc6c75a160f4851492721af3f2bf44cebc1abe972c505ea3f64838f",
+      "bytes": 522
+    },
+    "apphost-configuration/run-qlefynpe/12-Hexalith.Timesheets.AppHost---guard-probemissing-pubsub.log": {
+      "sha256": "f50e60ac09e84b1e9b6d9326c62f2645204736f8281f4834cde7cbd03d2b4995",
+      "bytes": 755
+    },
+    "apphost-configuration/run-qlefynpe/35-Hexalith.Timesheets.AppHost---guard-probemissing-placement-compiled.log": {
+      "sha256": "6d0d9819ade47d2c195c383ad6fd2c9487eee3b8fdb94d531b7dd16cbc516624",
+      "bytes": 824
+    },
+    "apphost-configuration/run-qlefynpe/17-Hexalith.Timesheets.AppHost---guard-probeshared-scheduler.log": {
+      "sha256": "80e2ae7f85522a8c8e8fcb5ee1991a9aa4bd7e62eb304d0c89afd8b12a7063dd",
+      "bytes": 785
+    },
+    "apphost-configuration/run-qlefynpe/51-Hexalith.Timesheets.AppHost---guard-probetrimmed-local-port.log": {
+      "sha256": "2c089066919e43b3935c9dfb3c4fb1f1154961cf03cc02e8c2ed308a714ce9a6",
+      "bytes": 856
+    },
+    "apphost-configuration/run-qlefynpe/42-Hexalith.Timesheets.AppHost---guard-probelow-local-port.log": {
+      "sha256": "ee8481e1e1b04ac90f0381c30ff4e59e8c5db43243b5d3c5720eec2735944fea",
+      "bytes": 804
+    },
+    "apphost-configuration/run-qlefynpe/67-Hexalith.Timesheets.AppHost---guard-probesecurity-construction.log": {
+      "sha256": "51bbdfddaeee734c567c6ab2eb486f083bdb3cd6261a92bd3b64ae2a160f6c02",
+      "bytes": 715
+    },
+    "apphost-configuration/run-qlefynpe/63-Hexalith.Timesheets.AppHost---guard-probesecurity-valid.log": {
+      "sha256": "f0b55369d2cbc1d1057f3db7deb1cc0cd8973fbceece4e5d6637fd18ad96d321",
+      "bytes": 419
+    },
+    "apphost-configuration/run-qlefynpe/20-Hexalith.Timesheets.AppHost---guard-probemismatched-actor-redis.log": {
+      "sha256": "395789dab095b043b3dab5a6adbb305d23be5c8fd76a16056fc2c30da37b277e",
+      "bytes": 763
+    },
+    "apphost-configuration/run-qlefynpe/47-Hexalith.Timesheets.AppHost---guard-probeplacement-local-port.log": {
+      "sha256": "9ad19754212eeda13fda07e1b79b3296649b4786417ce3f2b8b5c300639d9c5e",
+      "bytes": 811
+    },
+    "apphost-configuration/run-qlefynpe/28-Hexalith.Timesheets.AppHost---guard-probecompiled-blank-executable.log": {
+      "sha256": "d4095c66b19d61764942ddc3cbe63d976a11179b573e9942888babde9fe752ac",
+      "bytes": 823
+    },
+    "apphost-configuration/run-qlefynpe/41-Hexalith.Timesheets.AppHost---guard-probenegative-local-port.log": {
+      "sha256": "b713cc07ad06c444858e0e46f1ecd84bfea8c0abddef7ef93e567199ac02da69",
+      "bytes": 807
+    },
+    "apphost-configuration/run-qlefynpe/26-Hexalith.Timesheets.AppHost---guard-probecompiled-empty-executable.log": {
+      "sha256": "0687b36d3c18d205f877dffb9e92870f06f57268710c7c2261ca15834f72ec70",
+      "bytes": 823
+    },
+    "apphost-configuration/run-qlefynpe/16-Hexalith.Timesheets.AppHost---guard-probemissing-scheduler.log": {
+      "sha256": "997b7e076ce92ad974985052c8f587df4d666013063ac8ecdd9c8732bc354ce4",
+      "bytes": 786
+    },
+    "apphost-configuration/run-qlefynpe/39-Hexalith.Timesheets.AppHost---guard-probeblank-local-port.log": {
+      "sha256": "9bbf06a9a1569c92dff7a0fbb1bcb334f5bce2c0ec86d7ad3debfc61788f68d3",
+      "bytes": 805
+    },
+    "apphost-configuration/run-qlefynpe/50-Hexalith.Timesheets.AppHost---guard-probepadded-local-port.log": {
+      "sha256": "6d4c52f28d35ce80fa5a67a6da991ae9cf4d01cd285bdf9e3b07ff6aa5aaad3d",
+      "bytes": 851
+    },
+    "apphost-configuration/run-qlefynpe/64-Hexalith.Timesheets.AppHost---guard-probesecurity-ordinary.log": {
+      "sha256": "0c55beb2ca8f06bb76a084da3d640813b164551e0ff1008a458189dd9ce75588",
+      "bytes": 611
+    },
+    "apphost-configuration/run-qlefynpe/05-Hexalith.Timesheets.AppHost---guard-probeempty-components.log": {
+      "sha256": "0dc914920aa1f773ee25639f0cd4546584baeef1597b303a2c262dd5ba2e97cf",
+      "bytes": 571
+    },
+    "apphost-configuration/run-qlefynpe/18-Hexalith.Timesheets.AppHost---guard-probeduplicate-control-endpoint.log": {
+      "sha256": "bd6324d7adcd029ec6d13275c8b9e2f7f61550f63e741d2378bdc4efc4abde8d",
+      "bytes": 795
+    },
+    "apphost-configuration/run-qlefynpe/guards.json": {
+      "sha256": "9f60756c0324e0d75e613d43d789e7acea8bfe479909b9d1642b7cb00948bd0d",
+      "bytes": 7707
+    },
+    "apphost-configuration/run-qlefynpe/60-Hexalith.Timesheets.AppHost---guard-probemodel-default.log": {
+      "sha256": "625ba5fc1d14e028ed73f823fd1735e15ad20de3959294de06942c014e28f30d",
+      "bytes": 484
+    },
+    "apphost-configuration/run-qlefynpe/38-Hexalith.Timesheets.AppHost---guard-probeempty-local-port.log": {
+      "sha256": "391f7ed8a49d4e00f1544b10549b0d022ebc4013577f17aed811982c605383d5",
+      "bytes": 802
+    },
+    "apphost-configuration/run-qlefynpe/46-Hexalith.Timesheets.AppHost---guard-probesidecar-local-port.log": {
+      "sha256": "1a5bcfdda97aadb56cc696d07a94f410b4774184f02c3c412f673272b25c6281",
+      "bytes": 808
+    },
+    "apphost-configuration/run-qlefynpe/55-Hexalith.Timesheets.AppHost---guard-probedefault-component-redis-collision.log": {
+      "sha256": "ed567a4a9778553156592f37a7d71d36d24d1b1b8658f2bfef5fbc86f7b8715e",
+      "bytes": 564
+    },
+    "apphost-configuration/run-qlefynpe/54-Hexalith.Timesheets.AppHost---guard-probecomponent-redis-collision.log": {
+      "sha256": "843879994ed45e6267e324539de51cae948ce7a799fabc51551a49f059530a12",
+      "bytes": 591
+    },
+    "apphost-configuration/run-qlefynpe/48-Hexalith.Timesheets.AppHost---guard-probescheduler-local-port.log": {
+      "sha256": "a2fff669f0f651de11cc2ee39954b731f3f25e01e5e1826d43bbb0b8fe17eca4",
+      "bytes": 811
+    },
+    "apphost-configuration/run-qlefynpe/guards-mode.json": {
+      "sha256": "86ae0dcdc76d544efbf6a51f338eb513d5476d88f7ea2de16d8bf6870fc95af3",
+      "bytes": 93
+    },
+    "apphost-configuration/run-qlefynpe/25-Hexalith.Timesheets.AppHost---guard-probecompiled-directory-only.log": {
+      "sha256": "d05e8005cdd5d9b2d229921dbf9e7e7d5407833b25cad7bcb637c30838a4ac5c",
+      "bytes": 821
+    },
+    "apphost-configuration/run-qlefynpe/37-Hexalith.Timesheets.AppHost---guard-probepublish-local-port.log": {
+      "sha256": "a2e37b4c92ca0e82bf15752c89476016108b64b4fbb9c4efe5573c58aa86b8ce",
+      "bytes": 819
+    },
+    "apphost-configuration/run-qlefynpe/15-Hexalith.Timesheets.AppHost---guard-probeshared-placement.log": {
+      "sha256": "4812f4ee46e02719012a520b22bfc30cb70e1b4a8268a751c26fe00acf3e7e4d",
+      "bytes": 785
+    },
+    "apphost-configuration/run-qlefynpe/19-Hexalith.Timesheets.AppHost---guard-probeshared-redis.log": {
+      "sha256": "ac6b16af5f4940acd4e6b152ade43134f01abbdf402426fd2a11d0dd3d818b4b",
+      "bytes": 753
+    },
+    "apphost-configuration/run-qlefynpe/44-Hexalith.Timesheets.AppHost---guard-probeinternal-local-port.log": {
+      "sha256": "6ae9a9a6b5d8aa2c35050e5fc18c72c00d7b372619abd5714afd20fce7fc6129",
+      "bytes": 809
+    },
+    "apphost-configuration/run-qlefynpe/08-Hexalith.Timesheets.AppHost---guard-probepublish-bare-fixture.log": {
+      "sha256": "519f96a4e5f263e0a197bf1091bb02b7b4585d08e5c0693b1e243726beefd281",
+      "bytes": 683
+    },
+    "apphost-configuration/run-qlefynpe/56-Hexalith.Timesheets.AppHost---guard-probemisleading-component-redis-collision.log": {
+      "sha256": "42996c38c28a97cec8696edcf9bb8d55eddc2ef56d5c61c9801f3e772fc9be05",
+      "bytes": 602
+    },
+    "apphost-configuration/run-qlefynpe/58-Hexalith.Timesheets.AppHost---guard-probevalid-component-with-misleading-diagnostic.log": {
+      "sha256": "674a1df69582767ef2ba2ee5b0eb59a3f3d6479bc52809652ca54e483f52a8be",
+      "bytes": 410
+    }
+  }
+}

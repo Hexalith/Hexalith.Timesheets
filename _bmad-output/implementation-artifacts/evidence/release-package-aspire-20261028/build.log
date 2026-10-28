@@ -1,0 +1,22 @@
+  Hexalith.Timesheets.Contracts -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Contracts/bin/Release/net10.0/Hexalith.Timesheets.Contracts.dll
+  Hexalith.Timesheets.ReadModels -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.ReadModels/bin/Release/net10.0/Hexalith.Timesheets.ReadModels.dll
+  Hexalith.Timesheets.Projections -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Projections/bin/Release/net10.0/Hexalith.Timesheets.Projections.dll
+  Hexalith.Timesheets.Server -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Server/bin/Release/net10.0/Hexalith.Timesheets.Server.dll
+  Hexalith.Timesheets.ServiceDefaults -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.ServiceDefaults/bin/Release/net10.0/Hexalith.Timesheets.ServiceDefaults.dll
+  Hexalith.Timesheets -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets/bin/Release/net10.0/Hexalith.Timesheets.dll
+  Hexalith.Timesheets.AppHost -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.AppHost/bin/Release/net10.0/Hexalith.Timesheets.AppHost.dll
+  Hexalith.Timesheets.Client -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Client/bin/Release/net10.0/Hexalith.Timesheets.Client.dll
+  Hexalith.Timesheets.Testing -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Testing/bin/Release/net10.0/Hexalith.Timesheets.Testing.dll
+  Hexalith.Timesheets.Works -> /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Works/bin/Release/net10.0/Hexalith.Timesheets.Works.dll
+  Hexalith.Timesheets.ArchitectureTests -> /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.ArchitectureTests/bin/Release/net10.0/Hexalith.Timesheets.ArchitectureTests.dll
+  Hexalith.Timesheets.Contracts.Tests -> /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Contracts.Tests/bin/Release/net10.0/Hexalith.Timesheets.Contracts.Tests.dll
+  Hexalith.Timesheets.IntegrationTests -> /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.IntegrationTests/bin/Release/net10.0/Hexalith.Timesheets.IntegrationTests.dll
+  Hexalith.Timesheets.Projections.Tests -> /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Projections.Tests/bin/Release/net10.0/Hexalith.Timesheets.Projections.Tests.dll
+  Hexalith.Timesheets.Server.Tests -> /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Server.Tests/bin/Release/net10.0/Hexalith.Timesheets.Server.Tests.dll
+  Hexalith.Timesheets.Works.Tests -> /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Works.Tests/bin/Release/net10.0/Hexalith.Timesheets.Works.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.46

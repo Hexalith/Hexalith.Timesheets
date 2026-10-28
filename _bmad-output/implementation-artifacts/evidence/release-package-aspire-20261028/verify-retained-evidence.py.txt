@@ -1,0 +1,103 @@
+"""Read-only verification of the retained evidence; no build/runtime prerequisites."""
+import collections
+import datetime
+import hashlib
+import json
+import pathlib
+import sys
+import xml.etree.ElementTree as ET
+import zipfile
+
+bundle = (pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else pathlib.Path(__file__).resolve().parent).resolve()
+read = lambda p: json.loads((bundle / p).read_text())
+sha = lambda data: hashlib.sha256(data).hexdigest()
+manifest = read('artifact-manifest.json')
+for name, digest in manifest.items():
+    assert sha((bundle / name).read_bytes()) == digest, name
+run = read('ci/audit-run-final.json')
+assert run['status'] == 'completed' and run['conclusion'] == 'success'
+source, run_id = run['head_sha'], run['id']
+checkout = read('checkout-source.json')
+assert source == checkout['head']
+metadata = {a['name']: a for a in read('ci/audit-artifacts-final.json')['artifacts']}
+for name in ['apphost-configuration', 'blocking-test-results']:
+    archive = bundle / ('ci/audit-' + name + '.zip')
+    a = metadata[name]
+    assert a['workflow_run']['head_sha'] == source and a['workflow_run']['id'] == run_id
+    assert 'sha256:' + sha(archive.read_bytes()) == a['digest']
+    assert archive.stat().st_size == a['size_in_bytes']
+
+short = ['ArchitectureTests', 'Contracts.Tests', 'Server.Tests', 'Projections.Tests', 'Works.Tests', 'IntegrationTests']
+expected = ['Hexalith.Timesheets.' + s for s in short]
+prefix = 'Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.'
+accessor = 'AdminStateLoadsUseTheHostsHttpClaimsAccessor'
+cleanup = 'AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup'
+issuance = 'IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork'
+expected_claims = {prefix + accessor + '(useMismatchedClaims: ' + flag + ', claimVariant: "' + variant + '")'
+                   for flag, variant in [('False', 'standard'), ('True', 'standard'), ('False', 'actor-fallback'), ('False', 'conflicting'), ('False', 'tenant-fallback')]}
+expected_claims |= {prefix + cleanup + '(injectForeignRequestRead: ' + b + ')' for b in ['False', 'True']}
+expected_claims |= {prefix + issuance + '(omitIdentifier: ' + b + ')' for b in ['False', 'True']}
+local = lambda n: n.tag.rsplit('}', 1)[-1]
+results, claims = [], []
+with zipfile.ZipFile(bundle / 'ci/audit-blocking-test-results.zip') as archive:
+    assert len([n for n in archive.namelist() if n.endswith('.trx')]) == 6
+    for name in expected:
+        files = [n for n in archive.namelist() if n.rsplit('/', 1)[-1] == name + '.trx']
+        assert len(files) == 1, name
+        raw = archive.read(files[0]); root = ET.fromstring(raw)
+        c = next(n for n in root.iter() if local(n) == 'Counters')
+        counts = {k: int(v) for k, v in c.attrib.items()}
+        rows = [n for n in root.iter() if local(n) == 'UnitTestResult']
+        assert len(rows) == counts['total'] > 0
+        assert len({n.get('executionId') for n in rows}) == len(rows)
+        assert sum(n.get('outcome') == 'Passed' for n in rows) == counts['passed'] > 0
+        assert counts['executed'] == counts['passed']
+        assert all(n.get('outcome') in ['Passed', 'NotExecuted'] for n in rows)
+        assert sum(n.get('outcome') == 'NotExecuted' for n in rows) == counts['notExecuted']
+        assert all(counts.get(k, 0) == 0 for k in ['failed', 'error', 'timeout', 'aborted', 'inconclusive', 'notRunnable', 'disconnected', 'passedButRunAborted', 'inProgress', 'pending'])
+        times = next(n for n in root.iter() if local(n) == 'Times').attrib
+        methods = [n for n in root.iter() if local(n) == 'TestMethod']
+        assert methods and all('/bin/Release/net10.0/' in n.get('codeBase', '') and n.get('codeBase', '').endswith(name + '.dll') for n in methods)
+        claims.extend(n for n in rows if any(n.get('testName', '').startswith(prefix + m + '(') for m in [accessor, cleanup, issuance]))
+        results.append({'suite': name, 'sha256': sha(raw), 'counters': counts, 'times': dict(times)})
+assert len(claims) == len(expected_claims) == len({n.get('testName') for n in claims}) == 9
+assert {n.get('testName') for n in claims} == expected_claims
+assert all(n.get('outcome') == 'Passed' for n in claims)
+for a, b in zip(results, results[1:]):
+    assert datetime.datetime.fromisoformat(a['times']['finish']) <= datetime.datetime.fromisoformat(b['times']['start'])
+derived = read('ci/audit-final-suite-audit.json')
+assert derived['source_commit'] == source and derived['source_run'] == run_id
+assert derived['claims_count'] == 9 and derived['claims_all_passed'] and derived['no_overlap']
+assert derived['chronological_suite_order'] == expected
+for actual, summary in zip(results, derived['suites']):
+    assert all(actual[k] == summary[k] for k in ['suite', 'sha256', 'counters', 'times'])
+totals = {k: sum(r['counters'].get(k, 0) for r in results) for k in derived['totals']}
+assert totals == derived['totals']
+assert (totals['total'], totals['passed'], totals['notExecuted']) == (2790, 2785, 5)
+
+links = {line.split('\t')[1]: line.split()[2] for line in checkout['root_gitlinks'].splitlines()}
+provenance = read('ci/audit-release-suite-provenance.json')
+assert len(links) == 13 and links == provenance['published_root_gitlinks'] == provenance['ci_checked_out_root_gitlinks']
+log = (bundle / 'ci/audit-build-job-final.log').read_text()
+assert source in log and 'RUN_COVERAGE_GATE: false' in log
+for name, revision in links.items():
+    assert "Submodule path '" + name + "': checked out '" + revision + "'" in log
+jobs = read('ci/audit-jobs-final.json')['jobs']
+final = read('ci/audit-final-summary.json')
+assert final['source_commit'] == source and final['run'] == run_id and final['conclusion'] == run['conclusion']
+assert final['updated_at'] == run['updated_at']
+assert {(j['id'], j['conclusion']) for j in final['jobs']} == {(j['id'], j['conclusion']) for j in jobs}
+for j in jobs:
+    if j['name'] in ['ci / build-and-test', 'verify-test-evidence', 'Verify compiled AppHost configuration without resources', 'release-tooling']:
+        assert j['conclusion'] == 'success'
+for receipt in bundle.glob('*.json'):
+    value = json.loads(receipt.read_text())
+    if isinstance(value, dict) and 'argv' in value and 'log_sha256' in value:
+        assert sha((bundle / value['log']).read_bytes()) == value['log_sha256'], receipt.name
+        assert sha((bundle / value['source_manifest']).read_bytes()) == value['source_manifest_sha256'], receipt.name
+        assert value['head'] == source and value['exit_code'] == 0 and value['source_unchanged']
+repo = next((p for p in bundle.parents if (p / 'Hexalith.Timesheets.slnx').is_file()), None)
+if repo is not None:
+    for name, data in read('preservation.json')['historical_content'].items():
+        assert sha((repo / name).read_bytes()) == data['current_sha256'], name
+print(json.dumps({'source_commit': source, 'run': run_id, 'six_suites_serial': True, 'totals': totals, 'nine_exact_unique_claims_cases_passed': True, 'root_gitlinks_match': len(links), 'artifact_and_receipt_hashes_valid': True}, indent=2))

@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "npm",
+    "run",
+    "commitlint",
+    "--",
+    "--edit",
+    "/tmp/timesheets-release-evidence-20261028/commit-message.txt"
+  ],
+  "cwd": "/tmp/timesheets-release-qualification-20261028",
+  "env_pins": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_manifest": "commitlint-source.json",
+  "source_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "started_utc": "2026-10-28T10:31:42.668061+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 0.349,
+  "ended_utc": "2026-10-28T10:31:43.017516+00:00",
+  "log": "commitlint.log",
+  "log_sha256": "d7a708825c3f29e09a4c193bed7937be05494a3aeb84a51eb5c11f3b057c5fd2",
+  "source_unchanged": true
+}

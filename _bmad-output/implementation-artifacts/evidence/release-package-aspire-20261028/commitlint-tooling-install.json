@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "npm",
+    "ci"
+  ],
+  "cwd": "/tmp/timesheets-release-qualification-20261028",
+  "env_pins": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_manifest": "commitlint-tooling-install-source.json",
+  "source_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "started_utc": "2026-10-28T10:31:34.556345+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 8.02,
+  "ended_utc": "2026-10-28T10:31:42.576855+00:00",
+  "log": "commitlint-tooling-install.log",
+  "log_sha256": "6926b9b9bcdc69d41f3d5d37a5be59a15aeb4960e38a6da3e1efa8ab45dd637e",
+  "source_unchanged": true
+}

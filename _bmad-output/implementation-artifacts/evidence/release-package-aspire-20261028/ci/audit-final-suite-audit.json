@@ -1,0 +1,482 @@
+{
+  "source_commit": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_run": 40670628561,
+  "suites": [
+    {
+      "suite": "Hexalith.Timesheets.ArchitectureTests",
+      "file": "audit-blocking-test-results/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.trx",
+      "sha256": "ae953a4e02679cc30bc6627e17241e1c2df21ec9602b8356328bdc3512e24493",
+      "summary": {
+        "outcome": "Completed"
+      },
+      "counters": {
+        "total": 118,
+        "executed": 118,
+        "passed": 118,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T10:22:31.0205515+00:00",
+        "queuing": "2026-10-28T10:22:31.0205515+00:00",
+        "start": "2026-10-28T10:22:31.0205515+00:00",
+        "finish": "2026-10-28T10:23:00.1878530+00:00"
+      },
+      "result_rows": 118,
+      "outcome_counts": {
+        "Passed": 118
+      },
+      "claims_rows": [],
+      "skipped_rows": [],
+      "other_rows": []
+    },
+    {
+      "suite": "Hexalith.Timesheets.Contracts.Tests",
+      "file": "audit-blocking-test-results/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.trx",
+      "sha256": "e446483031f1110fe0bf8a8ec8775fdb42d87983b99f117605ef84bbd7ace667",
+      "summary": {
+        "outcome": "Completed"
+      },
+      "counters": {
+        "total": 108,
+        "executed": 108,
+        "passed": 108,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T10:23:01.4897883+00:00",
+        "queuing": "2026-10-28T10:23:01.4897883+00:00",
+        "start": "2026-10-28T10:23:01.4897883+00:00",
+        "finish": "2026-10-28T10:23:02.2153262+00:00"
+      },
+      "result_rows": 108,
+      "outcome_counts": {
+        "Passed": 108
+      },
+      "claims_rows": [],
+      "skipped_rows": [],
+      "other_rows": []
+    },
+    {
+      "suite": "Hexalith.Timesheets.Server.Tests",
+      "file": "audit-blocking-test-results/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.trx",
+      "sha256": "9d3afaec18e0a716f6d2416adb9fc06e3eb286249aedeb65f923b4fc19cfbc71",
+      "summary": {
+        "outcome": "Completed"
+      },
+      "counters": {
+        "total": 746,
+        "executed": 746,
+        "passed": 746,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T10:23:03.6013742+00:00",
+        "queuing": "2026-10-28T10:23:03.6013742+00:00",
+        "start": "2026-10-28T10:23:03.6013742+00:00",
+        "finish": "2026-10-28T10:23:11.8640253+00:00"
+      },
+      "result_rows": 746,
+      "outcome_counts": {
+        "Passed": 746
+      },
+      "claims_rows": [],
+      "skipped_rows": [],
+      "other_rows": []
+    },
+    {
+      "suite": "Hexalith.Timesheets.Projections.Tests",
+      "file": "audit-blocking-test-results/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.trx",
+      "sha256": "91077567fa3df125e9682f420400f7abd0e0d0ccd10eea7c41cea7d57d9edc97",
+      "summary": {
+        "outcome": "Completed"
+      },
+      "counters": {
+        "total": 756,
+        "executed": 756,
+        "passed": 756,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T10:23:13.2655860+00:00",
+        "queuing": "2026-10-28T10:23:13.2655860+00:00",
+        "start": "2026-10-28T10:23:13.2655860+00:00",
+        "finish": "2026-10-28T10:39:33.2358276+00:00"
+      },
+      "result_rows": 756,
+      "outcome_counts": {
+        "Passed": 756
+      },
+      "claims_rows": [],
+      "skipped_rows": [],
+      "other_rows": []
+    },
+    {
+      "suite": "Hexalith.Timesheets.Works.Tests",
+      "file": "audit-blocking-test-results/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.trx",
+      "sha256": "0e6371088c6f8a2a96ff838481cf49ac0a3dad999dcbee7196ba94ebb2aa2c9b",
+      "summary": {
+        "outcome": "Completed"
+      },
+      "counters": {
+        "total": 76,
+        "executed": 76,
+        "passed": 76,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 0,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T10:39:34.4797535+00:00",
+        "queuing": "2026-10-28T10:39:34.4797535+00:00",
+        "start": "2026-10-28T10:39:34.4797535+00:00",
+        "finish": "2026-10-28T10:39:34.8898131+00:00"
+      },
+      "result_rows": 76,
+      "outcome_counts": {
+        "Passed": 76
+      },
+      "claims_rows": [],
+      "skipped_rows": [],
+      "other_rows": []
+    },
+    {
+      "suite": "Hexalith.Timesheets.IntegrationTests",
+      "file": "audit-blocking-test-results/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.trx",
+      "sha256": "3b173a07560e29c1a50ca800a351623a57683726ffd5afa5b6fd79260b285c7d",
+      "summary": {
+        "outcome": "Completed"
+      },
+      "counters": {
+        "total": 986,
+        "executed": 981,
+        "passed": 981,
+        "failed": 0,
+        "error": 0,
+        "timeout": 0,
+        "aborted": 0,
+        "inconclusive": 0,
+        "passedButRunAborted": 0,
+        "notRunnable": 0,
+        "notExecuted": 5,
+        "disconnected": 0,
+        "warning": 0,
+        "completed": 0,
+        "inProgress": 0,
+        "pending": 0
+      },
+      "times": {
+        "creation": "2026-10-28T10:39:36.2879262+00:00",
+        "queuing": "2026-10-28T10:39:36.2879262+00:00",
+        "start": "2026-10-28T10:39:36.2879262+00:00",
+        "finish": "2026-10-28T10:55:14.2622113+00:00"
+      },
+      "result_rows": 986,
+      "outcome_counts": {
+        "NotExecuted": 5,
+        "Passed": 981
+      },
+      "claims_rows": [
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \"standard\")",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "3c241b17-f8e9-42d2-91c6-8bd801512b33",
+          "executionId": "3c241b17-f8e9-42d2-91c6-8bd801512b33",
+          "computerName": "unknown",
+          "duration": "00:00:00.3390000",
+          "startTime": "2026-10-28T10:39:59.0390930+00:00",
+          "endTime": "2026-10-28T10:39:59.3786425+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: True, claimVariant: \"standard\")",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "862cdf3b-ab46-4d59-ae36-f64f5c24802b",
+          "executionId": "862cdf3b-ab46-4d59-ae36-f64f5c24802b",
+          "computerName": "unknown",
+          "duration": "00:00:00.3320000",
+          "startTime": "2026-10-28T10:39:59.3788323+00:00",
+          "endTime": "2026-10-28T10:39:59.7117794+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \"actor-fallback\")",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "9951111c-ea83-4f98-a06b-a8690cc1e104",
+          "executionId": "9951111c-ea83-4f98-a06b-a8690cc1e104",
+          "computerName": "unknown",
+          "duration": "00:00:00.3270000",
+          "startTime": "2026-10-28T10:39:59.7119850+00:00",
+          "endTime": "2026-10-28T10:40:00.0393984+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \"conflicting\")",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "31eb387c-0371-4139-b261-c1e28ed94866",
+          "executionId": "31eb387c-0371-4139-b261-c1e28ed94866",
+          "computerName": "unknown",
+          "duration": "00:00:00.3170000",
+          "startTime": "2026-10-28T10:40:00.0396904+00:00",
+          "endTime": "2026-10-28T10:40:00.3576101+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \"tenant-fallback\")",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "27721258-1394-480b-9123-19895a6e8cf4",
+          "executionId": "27721258-1394-480b-9123-19895a6e8cf4",
+          "computerName": "unknown",
+          "duration": "00:00:00.3180000",
+          "startTime": "2026-10-28T10:40:00.3578382+00:00",
+          "endTime": "2026-10-28T10:40:00.6760777+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork(omitIdentifier: False)",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "ba7fbe80-317f-433d-9b79-87ce46d517bc",
+          "executionId": "ba7fbe80-317f-433d-9b79-87ce46d517bc",
+          "computerName": "unknown",
+          "duration": "00:00:00.2590000",
+          "startTime": "2026-10-28T10:40:38.1518450+00:00",
+          "endTime": "2026-10-28T10:40:38.4116937+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork(omitIdentifier: True)",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "2c821624-65b8-43cb-bcaf-f13c43292a43",
+          "executionId": "2c821624-65b8-43cb-bcaf-f13c43292a43",
+          "computerName": "unknown",
+          "duration": "00:00:00.2550000",
+          "startTime": "2026-10-28T10:40:38.4117952+00:00",
+          "endTime": "2026-10-28T10:40:38.6678163+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup(injectForeignRequestRead: False)",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "384007bc-129b-4c96-9de5-e2de65c5f4e6",
+          "executionId": "384007bc-129b-4c96-9de5-e2de65c5f4e6",
+          "computerName": "unknown",
+          "duration": "00:00:00.2540000",
+          "startTime": "2026-10-28T10:55:12.2500063+00:00",
+          "endTime": "2026-10-28T10:55:12.5149502+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup(injectForeignRequestRead: True)",
+          "outcome": "Passed",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "99d79609-cc3f-40da-8481-b52da669cee4",
+          "executionId": "99d79609-cc3f-40da-8481-b52da669cee4",
+          "computerName": "unknown",
+          "duration": "00:00:00.2510000",
+          "startTime": "2026-10-28T10:55:12.5150345+00:00",
+          "endTime": "2026-10-28T10:55:12.7666950+00:00"
+        }
+      ],
+      "skipped_rows": [
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests.CaptureAndGovernanceCommandAcknowledgementsRecordNfr10P95Evidence",
+          "outcome": "NotExecuted",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "4a5d9228-6edd-400d-8107-76b6a0c90efd",
+          "executionId": "4a5d9228-6edd-400d-8107-76b6a0c90efd",
+          "computerName": "unknown",
+          "duration": "00:00:00.0000000",
+          "startTime": "2026-10-28T10:39:36.9995246+00:00",
+          "endTime": "2026-10-28T10:39:37.0038010+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.PerformanceEvidenceLaneTests.PerformanceLaneIsReservedForLaunchLatencyEvidence",
+          "outcome": "NotExecuted",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "be625de8-cd80-41e0-808d-f91f0949146f",
+          "executionId": "be625de8-cd80-41e0-808d-f91f0949146f",
+          "computerName": "unknown",
+          "duration": "00:00:00.0000000",
+          "startTime": "2026-10-28T10:39:37.0963665+00:00",
+          "endTime": "2026-10-28T10:39:37.0963933+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests.ReportExportAndDashboardQueryLatencyRecordsNfr11P95Evidence",
+          "outcome": "NotExecuted",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "af60eb1e-bd4c-4040-8456-9612f1ce773c",
+          "executionId": "af60eb1e-bd4c-4040-8456-9612f1ce773c",
+          "computerName": "unknown",
+          "duration": "00:00:00.0000000",
+          "startTime": "2026-10-28T10:39:37.7062110+00:00",
+          "endTime": "2026-10-28T10:39:37.7085605+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.InfrastructureLaneTests.RuntimeIntegrationLaneIsReservedForEventstoreStateStoreEvidence",
+          "outcome": "NotExecuted",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "5a89d375-e52e-44a2-a088-326e729d8e41",
+          "executionId": "5a89d375-e52e-44a2-a088-326e729d8e41",
+          "computerName": "unknown",
+          "duration": "00:00:00.0000000",
+          "startTime": "2026-10-28T10:39:37.7215218+00:00",
+          "endTime": "2026-10-28T10:39:37.7215394+00:00"
+        },
+        {
+          "testName": "Hexalith.Timesheets.IntegrationTests.MagicLinkLiveDaprTests.RecordedMagicLinksCommitOneUseAndSurviveActorRestart",
+          "outcome": "NotExecuted",
+          "testType": "13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b",
+          "testListId": "8c84fa94-04c1-424b-9868-57a2d4851a1d",
+          "testId": "cb006db3-d468-44a3-8531-df3c7e5ec72d",
+          "executionId": "cb006db3-d468-44a3-8531-df3c7e5ec72d",
+          "computerName": "unknown",
+          "duration": "00:00:00.0000000",
+          "startTime": "2026-10-28T10:39:38.7593139+00:00",
+          "endTime": "2026-10-28T10:39:38.7606412+00:00"
+        }
+      ],
+      "other_rows": []
+    }
+  ],
+  "totals": {
+    "aborted": 0,
+    "completed": 0,
+    "disconnected": 0,
+    "error": 0,
+    "executed": 2785,
+    "failed": 0,
+    "inProgress": 0,
+    "inconclusive": 0,
+    "notExecuted": 5,
+    "notRunnable": 0,
+    "passed": 2785,
+    "passedButRunAborted": 0,
+    "pending": 0,
+    "timeout": 0,
+    "total": 2790,
+    "warning": 0
+  },
+  "chronological_suite_order": [
+    "Hexalith.Timesheets.ArchitectureTests",
+    "Hexalith.Timesheets.Contracts.Tests",
+    "Hexalith.Timesheets.Server.Tests",
+    "Hexalith.Timesheets.Projections.Tests",
+    "Hexalith.Timesheets.Works.Tests",
+    "Hexalith.Timesheets.IntegrationTests"
+  ],
+  "serial_intervals": [
+    {
+      "earlier": "Hexalith.Timesheets.ArchitectureTests",
+      "finish": "2026-10-28T10:23:00.1878530+00:00",
+      "later": "Hexalith.Timesheets.Contracts.Tests",
+      "start": "2026-10-28T10:23:01.4897883+00:00",
+      "non_overlapping": true
+    },
+    {
+      "earlier": "Hexalith.Timesheets.Contracts.Tests",
+      "finish": "2026-10-28T10:23:02.2153262+00:00",
+      "later": "Hexalith.Timesheets.Server.Tests",
+      "start": "2026-10-28T10:23:03.6013742+00:00",
+      "non_overlapping": true
+    },
+    {
+      "earlier": "Hexalith.Timesheets.Server.Tests",
+      "finish": "2026-10-28T10:23:11.8640253+00:00",
+      "later": "Hexalith.Timesheets.Projections.Tests",
+      "start": "2026-10-28T10:23:13.2655860+00:00",
+      "non_overlapping": true
+    },
+    {
+      "earlier": "Hexalith.Timesheets.Projections.Tests",
+      "finish": "2026-10-28T10:39:33.2358276+00:00",
+      "later": "Hexalith.Timesheets.Works.Tests",
+      "start": "2026-10-28T10:39:34.4797535+00:00",
+      "non_overlapping": true
+    },
+    {
+      "earlier": "Hexalith.Timesheets.Works.Tests",
+      "finish": "2026-10-28T10:39:34.8898131+00:00",
+      "later": "Hexalith.Timesheets.IntegrationTests",
+      "start": "2026-10-28T10:39:36.2879262+00:00",
+      "non_overlapping": true
+    }
+  ],
+  "no_overlap": true,
+  "claims_count": 9,
+  "claims_method_counts": {
+    "AdminStateLoadsUseTheHostsHttpClaimsAccessor": 5,
+    "AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup": 2,
+    "IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork": 2
+  },
+  "claims_all_passed": true
+}

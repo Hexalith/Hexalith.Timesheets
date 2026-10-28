@@ -1,0 +1,114 @@
+[
+  {
+    "identity": "Aspire.Dashboard.Sdk.linux-x64/13.6.4",
+    "sha256": "8cd1481b6f9cf3a174fb62e10ee66da2126f9a0ac06b458930ddcfc4487c8266",
+    "computed_archive_sha512": "iAyilhkesZ7mQE5k6sa/qlMV+TbVV9Vx9tbxQL1AP83NsOgwsne/wvsVwl9MEqS4RRj6exL3xpPE5zpuq7BI/g==",
+    "asset_content_sha512": "BjJNFnK20CVhdI6DBOsrdeCzW9TkzwS1gkohWRDdzZVuSrIjA9vV556n9q0n/W0NlWZnwv2ncTLqL+DOYUqYHA==",
+    "cached_archive_sha512": "iAyilhkesZ7mQE5k6sa/qlMV+TbVV9Vx9tbxQL1AP83NsOgwsne/wvsVwl9MEqS4RRj6exL3xpPE5zpuq7BI/g==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "BjJNFnK20CVhdI6DBOsrdeCzW9TkzwS1gkohWRDdzZVuSrIjA9vV556n9q0n/W0NlWZnwv2ncTLqL+DOYUqYHA==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.4/aspire.dashboard.sdk.linux-x64.13.6.4.nupkg"
+  },
+  {
+    "identity": "Aspire.Hosting/13.6.4",
+    "sha256": "000d035c809cac1e9b50706d81f4c0e4d6714bf5f01899f05c2051a5ea64f95e",
+    "computed_archive_sha512": "IXhu67zUbR9JFdVnHW7Myu4MgCSFdnWDEhiecd1lignZGxrR3sG38QNEALAbG2tDdlkyQdatdIjg97hbeRcFUA==",
+    "asset_content_sha512": "B9H7ttsmjUB+6dbkPTZ6yck25+RRj7gAGWRlqPbeWnn1FtoENET3QFgx8NZ8McFzTzSyPcmgy7OmsaYepEJ3GQ==",
+    "cached_archive_sha512": "IXhu67zUbR9JFdVnHW7Myu4MgCSFdnWDEhiecd1lignZGxrR3sG38QNEALAbG2tDdlkyQdatdIjg97hbeRcFUA==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "B9H7ttsmjUB+6dbkPTZ6yck25+RRj7gAGWRlqPbeWnn1FtoENET3QFgx8NZ8McFzTzSyPcmgy7OmsaYepEJ3GQ==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting/13.6.4/aspire.hosting.13.6.4.nupkg"
+  },
+  {
+    "identity": "Aspire.Hosting.AppHost/13.6.4",
+    "sha256": "2c58d4e0946e586c30003ec1a5e194b20d490dd274c3ee5c8d752cd59811697b",
+    "computed_archive_sha512": "G0p54tO4FUCxRTLQGYRZK2IQB30Yg8dPhK8+B+ZAi+MPSTsAwZvVMwvyU/akBAha7M1XxlL+km5Z85+KgB/6Jg==",
+    "asset_content_sha512": "bHDwJmvFRVsOTFhgaIUDIQO8Qqq22ZcnUfDflTiaq95rDBBiNjattsAATkwpHDp6/JuKHF0dBB/nF22V0/rUtA==",
+    "cached_archive_sha512": "G0p54tO4FUCxRTLQGYRZK2IQB30Yg8dPhK8+B+ZAi+MPSTsAwZvVMwvyU/akBAha7M1XxlL+km5Z85+KgB/6Jg==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "bHDwJmvFRVsOTFhgaIUDIQO8Qqq22ZcnUfDflTiaq95rDBBiNjattsAATkwpHDp6/JuKHF0dBB/nF22V0/rUtA==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.apphost/13.6.4/aspire.hosting.apphost.13.6.4.nupkg"
+  },
+  {
+    "identity": "Aspire.Hosting.Keycloak/13.6.4-preview.1.26523.11",
+    "sha256": "693ebfc420fbd6e37f9464e67b4c4c38380fee6bdf60a17dc4a61fbed1969d13",
+    "computed_archive_sha512": "BKbupN5Ckz4EA9JdKrNKj5O0KAoPLQOiePR/4aJFAL34UYyqwF+4FCk4GtF3z7XHaC7CIG1YIBuxgKey7+poeQ==",
+    "asset_content_sha512": "eu6jZbbuhV00D18QCOa5fj4bhMAtci5gwvJOG6fBoQh1/SPDM3/V1pNHdd3YmKW9OA2hhejms+EeA2whzYzTtw==",
+    "cached_archive_sha512": "BKbupN5Ckz4EA9JdKrNKj5O0KAoPLQOiePR/4aJFAL34UYyqwF+4FCk4GtF3z7XHaC7CIG1YIBuxgKey7+poeQ==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "eu6jZbbuhV00D18QCOa5fj4bhMAtci5gwvJOG6fBoQh1/SPDM3/V1pNHdd3YmKW9OA2hhejms+EeA2whzYzTtw==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.keycloak/13.6.4-preview.1.26523.11/aspire.hosting.keycloak.13.6.4-preview.1.26523.11.nupkg"
+  },
+  {
+    "identity": "Aspire.Hosting.Orchestration.linux-x64/13.6.4",
+    "sha256": "c37ff5f272b1ac17429d11e82aea07ec96efc29f809069b530d42cd78c3945f4",
+    "computed_archive_sha512": "7B6TL1SXatlC5WNt9y5KdhJ44gSUG9UlHilb6PUwPr2Ik1mHW+NZslTVrJfrn+P2JMC/c2mUYuIBIu4as4Z9ZQ==",
+    "asset_content_sha512": "tAdGnGqpJ/rZUlPW6977cYOXhgfGhElOsZ6bIRNc1MAHsgOJoaZHZj/AwpgDuHNCmsrK17UjgL+GtmD8Lj5lCQ==",
+    "cached_archive_sha512": "7B6TL1SXatlC5WNt9y5KdhJ44gSUG9UlHilb6PUwPr2Ik1mHW+NZslTVrJfrn+P2JMC/c2mUYuIBIu4as4Z9ZQ==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "tAdGnGqpJ/rZUlPW6977cYOXhgfGhElOsZ6bIRNc1MAHsgOJoaZHZj/AwpgDuHNCmsrK17UjgL+GtmD8Lj5lCQ==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.orchestration.linux-x64/13.6.4/aspire.hosting.orchestration.linux-x64.13.6.4.nupkg"
+  },
+  {
+    "identity": "Aspire.Hosting.Redis/13.6.4",
+    "sha256": "812b2ed3fb4f887983b5735246be4c79278798c55c080eedaac2043402563097",
+    "computed_archive_sha512": "nsVCnkDOmb1e2zKVNcuAAp0df68kZhAEYst3oGRSiZ25m3j8oroLMBP9LxvUiYZ+5UfRboeYQMoBSU3yDMTPwQ==",
+    "asset_content_sha512": "KQ+8JaTulWTdIuUmEju3VQVTUeYb6Q5LzfC5NLGKuqvSh4orRX/vCH9kRGV66Y+YUwrui+Gf67KD1Ad0iYSaiw==",
+    "cached_archive_sha512": "nsVCnkDOmb1e2zKVNcuAAp0df68kZhAEYst3oGRSiZ25m3j8oroLMBP9LxvUiYZ+5UfRboeYQMoBSU3yDMTPwQ==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "KQ+8JaTulWTdIuUmEju3VQVTUeYb6Q5LzfC5NLGKuqvSh4orRX/vCH9kRGV66Y+YUwrui+Gf67KD1Ad0iYSaiw==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/aspire.hosting.redis/13.6.4/aspire.hosting.redis.13.6.4.nupkg"
+  },
+  {
+    "identity": "CommunityToolkit.Aspire.Hosting.Dapr/13.6.2-beta.959",
+    "sha256": "c1f9ac6d807158619979ca60d621e9952a03673129d1f007ffd6fbf055b49d33",
+    "computed_archive_sha512": "qoWnPHsa1XT5rGfmFJUfoZgdjbQZHOJnH7zp5dvdoII9/T2PQvCx6xxSDMCrD2BySwdw6Oq7DXx5SeCQ6IDsiA==",
+    "asset_content_sha512": "Ezu7PIwdDOwJdPv0NUHFmbuR8wet9uYkt4Swd2tA52GF/1grZtdNYei9CMT9aolzxNuc189V5VRCS2XToEG6Qw==",
+    "cached_archive_sha512": "qoWnPHsa1XT5rGfmFJUfoZgdjbQZHOJnH7zp5dvdoII9/T2PQvCx6xxSDMCrD2BySwdw6Oq7DXx5SeCQ6IDsiA==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "Ezu7PIwdDOwJdPv0NUHFmbuR8wet9uYkt4Swd2tA52GF/1grZtdNYei9CMT9aolzxNuc189V5VRCS2XToEG6Qw==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/communitytoolkit.aspire.hosting.dapr/13.6.2-beta.959/communitytoolkit.aspire.hosting.dapr.13.6.2-beta.959.nupkg"
+  },
+  {
+    "identity": "Hexalith.EventStore.Aspire/3.128.2",
+    "sha256": "04883b02e696e349badac14f78a712dbb8a6341951c3fab090cd3ebdd5fafe74",
+    "computed_archive_sha512": "S0squGhySJx8oIE4GtsBdt70Bq5yMZ83nwwWk/MIi0u2MFUQ7x8QrkK68Av2l/oDAQeXMsCztvP+VxrdCKkrcQ==",
+    "asset_content_sha512": "Sn5tgB9SxFfb1fk3nEDCUIQAaXADkl7qymRY4zBIH2EC1fsarLhdInqMIUMSombBNDnYzn8CytFyel/4uIv+oA==",
+    "cached_archive_sha512": "S0squGhySJx8oIE4GtsBdt70Bq5yMZ83nwwWk/MIi0u2MFUQ7x8QrkK68Av2l/oDAQeXMsCztvP+VxrdCKkrcQ==",
+    "metadata": {
+      "version": 2,
+      "contentHash": "Sn5tgB9SxFfb1fk3nEDCUIQAaXADkl7qymRY4zBIH2EC1fsarLhdInqMIUMSombBNDnYzn8CytFyel/4uIv+oA==",
+      "source": "https://api.nuget.org/v3/index.json"
+    },
+    "signed_archive": true,
+    "archive_path": "/tmp/dotnet-cli-home/.nuget/packages/hexalith.eventstore.aspire/3.128.2/hexalith.eventstore.aspire.3.128.2.nupkg"
+  }
+]

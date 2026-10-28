@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "dotnet",
+    "msbuild",
+    "Hexalith.Timesheets.slnx",
+    "-t:GenerateRestoreGraphFile",
+    "-p:Configuration=Release",
+    "-p:UseHexalithProjectReferences=false",
+    "-p:RestoreGraphOutputPath=/tmp/timesheets-release-evidence-20261028/release-graph.json",
+    "-m:1",
+    "/nr:false"
+  ],
+  "cwd": "/tmp/timesheets-release-qualification-20261028",
+  "env_pins": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_manifest": "package-graph-source.json",
+  "source_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "started_utc": "2026-10-28T10:26:37.584412+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 2.135,
+  "ended_utc": "2026-10-28T10:26:39.719452+00:00",
+  "log": "package-graph.log",
+  "log_sha256": "f02a97632e60409233974c5017c0ae91e870a659f80d2773cd66ccf7d2edc6eb",
+  "source_unchanged": true
+}

@@ -1,0 +1,7 @@
+{
+  "root": "/tmp/timesheets-release-qualification-20261028",
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "root_gitlinks": "160000 commit 3f194e17174994d308ec84af9ee2b5aa68674d0d\treferences/Hexalith.AI.Tools\n160000 commit 81ab049208678bd6616828824729c0ddac02f7d1\treferences/Hexalith.Builds\n160000 commit 3edfbdafc7d4fa915286dce8a37dc4cc7c06085a\treferences/Hexalith.Commons\n160000 commit 861f13a2e728c3847a191b0688070762b1bfa29e\treferences/Hexalith.Conversations\n160000 commit 41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16\treferences/Hexalith.EventStore\n160000 commit 5f665c4d38afb2255a7dde4620330e09824a40a1\treferences/Hexalith.FrontComposer\n160000 commit 2d7311cbbcc592c0ea0348463037389251d1cb4b\treferences/Hexalith.McpCli\n160000 commit 9239c531f3b0cbb4a998c419e537463b597ff14b\treferences/Hexalith.Parties\n160000 commit 8de90958bc41b7fd01b7ed22b8ab364447a800e4\treferences/Hexalith.Platform\n160000 commit 221ac4592ba908ae7661ba1fa9e2d1fcc23baee0\treferences/Hexalith.PolymorphicSerializations\n160000 commit 0e45105476902fcfce1f8dbd8416d7234bb16b41\treferences/Hexalith.Projects\n160000 commit 7ddb864cda5e942925b056391617eae4895c1253\treferences/Hexalith.Tenants\n160000 commit fc4638d176082a679ebc23b92a3a3ae02f23b56e\treferences/Hexalith.Works",
+  "status": "",
+  "nested_gitfiles": []
+}

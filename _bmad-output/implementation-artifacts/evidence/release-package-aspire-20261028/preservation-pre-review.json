@@ -1,0 +1,261 @@
+{
+  "utc": "2026-10-28T10:55:49.000805+00:00",
+  "code_and_configuration_match_build_manifest": true,
+  "build_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "release_artifacts_count": 2021,
+  "release_artifacts_unchanged": true,
+  "historical_content": {
+    "_bmad-output/implementation-artifacts/tests/remaining-local-deferred-followups.md": {
+      "historical_prefix_unchanged": true,
+      "base_sha256": "80a50e30357270d94ffe8a793b656eb216e8704b9778ec08b2f119b96d47a4b4",
+      "current_sha256": "8ecabb173d19c979dece511af3e464c1a43719d5033fb9c619de692af161bd75"
+    },
+    "_bmad-output/implementation-artifacts/deferred-work.md": {
+      "historical_prefix_unchanged": true,
+      "base_sha256": "cb6f258149803fd9ecb0348d73920622af40ee7dc3296f29f606e4610fb149f2",
+      "current_sha256": "cb6f258149803fd9ecb0348d73920622af40ee7dc3296f29f606e4610fb149f2"
+    }
+  },
+  "original_workspace_and_thirteen_dependencies_match": true,
+  "original_after": {
+    ".": {
+      "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Builds": {
+      "head": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Commons": {
+      "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Conversations": {
+      "head": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.EventStore": {
+      "head": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.McpCli": {
+      "head": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Parties": {
+      "head": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Platform": {
+      "head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Projects": {
+      "head": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Tenants": {
+      "head": "7ddb864cda5e942925b056391617eae4895c1253",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Works": {
+      "head": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "root_gitlinks": "160000 commit 3f194e17174994d308ec84af9ee2b5aa68674d0d\treferences/Hexalith.AI.Tools\n160000 commit 81ab049208678bd6616828824729c0ddac02f7d1\treferences/Hexalith.Builds\n160000 commit 3edfbdafc7d4fa915286dce8a37dc4cc7c06085a\treferences/Hexalith.Commons\n160000 commit 861f13a2e728c3847a191b0688070762b1bfa29e\treferences/Hexalith.Conversations\n160000 commit 41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16\treferences/Hexalith.EventStore\n160000 commit 5f665c4d38afb2255a7dde4620330e09824a40a1\treferences/Hexalith.FrontComposer\n160000 commit 2d7311cbbcc592c0ea0348463037389251d1cb4b\treferences/Hexalith.McpCli\n160000 commit 9239c531f3b0cbb4a998c419e537463b597ff14b\treferences/Hexalith.Parties\n160000 commit 8de90958bc41b7fd01b7ed22b8ab364447a800e4\treferences/Hexalith.Platform\n160000 commit 221ac4592ba908ae7661ba1fa9e2d1fcc23baee0\treferences/Hexalith.PolymorphicSerializations\n160000 commit 0e45105476902fcfce1f8dbd8416d7234bb16b41\treferences/Hexalith.Projects\n160000 commit 7ddb864cda5e942925b056391617eae4895c1253\treferences/Hexalith.Tenants\n160000 commit fc4638d176082a679ebc23b92a3a3ae02f23b56e\treferences/Hexalith.Works\n",
+  "runtime_baseline_utc": "2026-10-28T10:24:43.576402+00:00",
+  "runtime_baseline_count": 22,
+  "matching_sampled_runtime_identities": 4,
+  "absent_baseline_identities": [
+    {
+      "pid": 312712,
+      "start": 6784183,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 312713,
+      "start": 6784183,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 312766,
+      "start": 6784189,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 312842,
+      "start": 6784196,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 312843,
+      "start": 6784196,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 2165355,
+      "start": 7095597,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 2165356,
+      "start": 7095597,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 2566284,
+      "start": 7147009,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 2568883,
+      "start": 7147335,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 2570044,
+      "start": 7147429,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 2571888,
+      "start": 7147588,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 2572722,
+      "start": 7147638,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 4107558,
+      "start": 6693825,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 4107587,
+      "start": 6693833,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 4107588,
+      "start": 6693833,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 4107589,
+      "start": 6693833,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 4107863,
+      "start": 6693853,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 4108331,
+      "start": 6694136,
+      "comm": "dotnet"
+    }
+  ],
+  "new_observed_identities": [
+    {
+      "pid": 3903986,
+      "start": 7325986,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904706,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904707,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904708,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904709,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904710,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904713,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904716,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904724,
+      "start": 7326178,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904802,
+      "start": 7326184,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904803,
+      "start": 7326184,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904805,
+      "start": 7326184,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904966,
+      "start": 7326193,
+      "comm": "dotnet"
+    },
+    {
+      "pid": 3904967,
+      "start": 7326193,
+      "comm": "dotnet"
+    }
+  ],
+  "runtime_limits": "Numeric PID/start/name samples only. No continuous runtime preservation, service health, ownership or system-wide visibility claim. Disappearance cause/timing remain unclassified; earlier 51/66 discrepancy preserved. No task-issued lifecycle or state command."
+}

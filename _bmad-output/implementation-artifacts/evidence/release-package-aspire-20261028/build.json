@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "dotnet",
+    "build",
+    "Hexalith.Timesheets.slnx",
+    "--configuration",
+    "Release",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=false",
+    "-warnaserror",
+    "-m:1",
+    "/nr:false"
+  ],
+  "cwd": "/tmp/timesheets-release-qualification-20261028",
+  "env_pins": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_manifest": "build-source.json",
+  "source_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "started_utc": "2026-10-28T10:27:15.812199+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 6.701,
+  "ended_utc": "2026-10-28T10:27:22.513009+00:00",
+  "log": "build.log",
+  "log_sha256": "e8f62f72d4722ded184627f3e4baa063c3a6301e1b4fb04ab19a84c07b870fb9",
+  "source_unchanged": true
+}

@@ -1,0 +1,218 @@
+[
+  {
+    "root_dependency": "Hexalith.AI.Tools",
+    "head": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+    "status": "",
+    "nested_declared_paths": [],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Builds",
+    "head": "81ab049208678bd6616828824729c0ddac02f7d1",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.AI.Tools"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Commons",
+    "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.Builds",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.AI.Tools"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Conversations",
+    "head": "861f13a2e728c3847a191b0688070762b1bfa29e",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.EventStore",
+      "references/Hexalith.Projects",
+      "references/Hexalith.Folders",
+      "references/Hexalith.Tenants",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.Parties",
+      "references/Hexalith.Memories",
+      "references/Hexalith.Commons",
+      "references/Hexalith.Builds",
+      "references/Hexalith.Platform",
+      "references/Hexalith.McpCli"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.EventStore",
+    "head": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.Tenants",
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.Commons",
+      "references/Hexalith.Builds",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.Memories",
+      "references/Hexalith.Platform",
+      "references/Hexalith.McpCli"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.FrontComposer",
+    "head": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.EventStore",
+      "references/Hexalith.Tenants",
+      "references/Hexalith.Commons",
+      "references/Hexalith.Builds",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.Memories",
+      "references/Hexalith.Parties"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.McpCli",
+    "head": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.Commons",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.Conversations",
+      "references/Hexalith.EventStore",
+      "references/Hexalith.Memories",
+      "references/Hexalith.Tenants",
+      "references/Hexalith.Builds",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.Parties",
+      "references/Hexalith.Agents",
+      "references/Hexalith.Projects",
+      "references/Hexalith.Folders",
+      "references/Hexalith.ChatBot",
+      "references/Hexalith.Works",
+      "references/Hexalith.Timesheets",
+      "references/Hexalith.Platform"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Parties",
+    "head": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.EventStore",
+      "references/Hexalith.Memories",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.Tenants",
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.Commons",
+      "references/Hexalith.Builds",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.McpCli",
+      "references/Hexalith.Platform"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Platform",
+    "head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.Agents",
+      "references/Hexalith.Builds",
+      "references/Hexalith.ChatBot",
+      "references/Hexalith.Commons",
+      "references/Hexalith.Conversations",
+      "references/Hexalith.EventStore",
+      "references/Hexalith.Folders",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.McpCli",
+      "references/Hexalith.Memories",
+      "references/Hexalith.Parties",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.Projects",
+      "references/Hexalith.Tenants",
+      "references/Hexalith.Timesheets",
+      "references/Hexalith.Works"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.PolymorphicSerializations",
+    "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.Builds",
+      "references/Hexalith.AI.Tools"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Projects",
+    "head": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.EventStore",
+      "references/Hexalith.Tenants",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.Conversations",
+      "references/Hexalith.Folders",
+      "references/Hexalith.Parties",
+      "references/Hexalith.Commons",
+      "references/Hexalith.Builds",
+      "references/Hexalith.Memories",
+      "references/Hexalith.Platform",
+      "references/Hexalith.McpCli"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Tenants",
+    "head": "7ddb864cda5e942925b056391617eae4895c1253",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.EventStore",
+      "references/Hexalith.Commons",
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.Builds",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.Memories",
+      "references/Hexalith.McpCli",
+      "references/Hexalith.Platform"
+    ],
+    "nested_initialized": []
+  },
+  {
+    "root_dependency": "Hexalith.Works",
+    "head": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+    "status": "",
+    "nested_declared_paths": [
+      "references/Hexalith.Builds",
+      "references/Hexalith.Commons",
+      "references/Hexalith.PolymorphicSerializations",
+      "references/Hexalith.EventStore",
+      "references/Hexalith.FrontComposer",
+      "references/Hexalith.Tenants",
+      "references/Hexalith.Parties",
+      "references/Hexalith.Chatbot",
+      "references/Hexalith.Projects",
+      "references/Hexalith.Conversations",
+      "references/Hexalith.AI.Tools",
+      "references/Hexalith.Platform",
+      "references/Hexalith.McpCli"
+    ],
+    "nested_initialized": []
+  }
+]

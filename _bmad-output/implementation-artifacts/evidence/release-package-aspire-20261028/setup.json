@@ -1,0 +1,352 @@
+[
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "/home/administrator/projects/hexalith/timesheets",
+      "/tmp/timesheets-release-qualification-20261028"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "remote",
+      "set-url",
+      "origin",
+      "https://github.com/Hexalith/Hexalith.Timesheets.git"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.AI.Tools",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.AI.Tools"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.AI.Tools'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "3f194e17174994d308ec84af9ee2b5aa68674d0d"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.AI.Tools",
+    "exit_code": 0,
+    "output": "HEAD is now at 3f194e1 docs: add section on Hexalith MCP and CLI ownership guidelines\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Builds",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Builds"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Builds'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "81ab049208678bd6616828824729c0ddac02f7d1"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Builds",
+    "exit_code": 0,
+    "output": "HEAD is now at 81ab049 build(deps): refresh the Radzen package audit\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Commons",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Commons"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Commons'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Commons",
+    "exit_code": 0,
+    "output": "HEAD is now at 3edfbda docs: require validated dependency integration commits\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Conversations",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Conversations"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Conversations'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "861f13a2e728c3847a191b0688070762b1bfa29e"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Conversations",
+    "exit_code": 0,
+    "output": "HEAD is now at 861f13a2 build: sync local changes via /pushall\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.EventStore"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.EventStore'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "output": "HEAD is now at 41456b6ec fix(projections): require complete legacy replay settlement proof\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.FrontComposer",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.FrontComposer"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.FrontComposer'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "5f665c4d38afb2255a7dde4620330e09824a40a1"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.FrontComposer",
+    "exit_code": 0,
+    "output": "HEAD is now at 5f665c4d build: sync local changes via /pushall\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.McpCli",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.McpCli"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.McpCli'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "2d7311cbbcc592c0ea0348463037389251d1cb4b"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.McpCli",
+    "exit_code": 0,
+    "output": "HEAD is now at 2d7311c build: sync local changes via /pushall\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Parties",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Parties"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Parties'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "9239c531f3b0cbb4a998c419e537463b597ff14b"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Parties",
+    "exit_code": 0,
+    "output": "HEAD is now at 9239c531 build: sync local changes via /pushall\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Platform"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Platform'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "8de90958bc41b7fd01b7ed22b8ab364447a800e4"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Platform",
+    "exit_code": 0,
+    "output": "HEAD is now at 8de9095 build: sync local changes via /pushall\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.PolymorphicSerializations",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.PolymorphicSerializations"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.PolymorphicSerializations'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.PolymorphicSerializations",
+    "exit_code": 0,
+    "output": "HEAD is now at 221ac45 chore(release): 1.19.5 [skip ci]\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Projects",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Projects"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Projects'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "0e45105476902fcfce1f8dbd8416d7234bb16b41"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Projects",
+    "exit_code": 0,
+    "output": "HEAD is now at 0e45105 fix(ci): retain the G-6 support selector inventory\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Tenants",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Tenants"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Tenants'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "7ddb864cda5e942925b056391617eae4895c1253"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Tenants",
+    "exit_code": 0,
+    "output": "HEAD is now at 7ddb864c build: sync local changes via /pushall\n"
+  },
+  {
+    "argv": [
+      "git",
+      "clone",
+      "--no-hardlinks",
+      "--no-recurse-submodules",
+      "--no-checkout",
+      "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works",
+      "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Works"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028",
+    "exit_code": 0,
+    "output": "Cloning into '/tmp/timesheets-release-qualification-20261028/references/Hexalith.Works'...\ndone.\n"
+  },
+  {
+    "argv": [
+      "git",
+      "checkout",
+      "--detach",
+      "fc4638d176082a679ebc23b92a3a3ae02f23b56e"
+    ],
+    "cwd": "/tmp/timesheets-release-qualification-20261028/references/Hexalith.Works",
+    "exit_code": 0,
+    "output": "HEAD is now at fc4638d fix: submodules\n"
+  }
+]

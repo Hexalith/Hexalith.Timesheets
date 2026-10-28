@@ -1,0 +1,109 @@
+{
+  "source_commit": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "head_in_checkout_log": 2,
+  "published_root_gitlinks": {
+    "references/Hexalith.AI.Tools": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+    "references/Hexalith.Builds": "81ab049208678bd6616828824729c0ddac02f7d1",
+    "references/Hexalith.Commons": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+    "references/Hexalith.Conversations": "861f13a2e728c3847a191b0688070762b1bfa29e",
+    "references/Hexalith.EventStore": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+    "references/Hexalith.FrontComposer": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+    "references/Hexalith.McpCli": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+    "references/Hexalith.Parties": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+    "references/Hexalith.Platform": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+    "references/Hexalith.PolymorphicSerializations": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+    "references/Hexalith.Projects": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+    "references/Hexalith.Tenants": "7ddb864cda5e942925b056391617eae4895c1253",
+    "references/Hexalith.Works": "fc4638d176082a679ebc23b92a3a3ae02f23b56e"
+  },
+  "ci_checked_out_root_gitlinks": {
+    "references/Hexalith.AI.Tools": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+    "references/Hexalith.Builds": "81ab049208678bd6616828824729c0ddac02f7d1",
+    "references/Hexalith.Commons": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+    "references/Hexalith.Conversations": "861f13a2e728c3847a191b0688070762b1bfa29e",
+    "references/Hexalith.EventStore": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+    "references/Hexalith.FrontComposer": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+    "references/Hexalith.McpCli": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+    "references/Hexalith.Parties": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+    "references/Hexalith.Platform": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+    "references/Hexalith.PolymorphicSerializations": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+    "references/Hexalith.Projects": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+    "references/Hexalith.Tenants": "7ddb864cda5e942925b056391617eae4895c1253",
+    "references/Hexalith.Works": "fc4638d176082a679ebc23b92a3a3ae02f23b56e"
+  },
+  "all_root_gitlinks_match": true,
+  "coverage_gate_actual_log_line": "2026-10-28T10:22:29.8336278Z   RUN_COVERAGE_GATE: false",
+  "suites": [
+    {
+      "suite": "Hexalith.Timesheets.ArchitectureTests",
+      "start": "2026-10-28T10:22:31.0205515+00:00",
+      "finish": "2026-10-28T10:23:00.1878530+00:00",
+      "trx_elapsed_seconds": 29.167302,
+      "codebases": [
+        "/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Release/net10.0/Hexalith.Timesheets.ArchitectureTests.dll"
+      ],
+      "all_codebases_release": true,
+      "source_bound_test_command": "dotnet test tests/Hexalith.Timesheets.ArchitectureTests --no-build --configuration Release --results-directory TestResults/Hexalith.Timesheets.ArchitectureTests --report-xunit-trx --report-xunit-trx-filename Hexalith.Timesheets.ArchitectureTests.trx"
+    },
+    {
+      "suite": "Hexalith.Timesheets.Contracts.Tests",
+      "start": "2026-10-28T10:23:01.4897883+00:00",
+      "finish": "2026-10-28T10:23:02.2153262+00:00",
+      "trx_elapsed_seconds": 0.725538,
+      "codebases": [
+        "/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/tests/Hexalith.Timesheets.Contracts.Tests/bin/Release/net10.0/Hexalith.Timesheets.Contracts.Tests.dll"
+      ],
+      "all_codebases_release": true,
+      "source_bound_test_command": "dotnet test tests/Hexalith.Timesheets.Contracts.Tests --no-build --configuration Release --results-directory TestResults/Hexalith.Timesheets.Contracts.Tests --report-xunit-trx --report-xunit-trx-filename Hexalith.Timesheets.Contracts.Tests.trx"
+    },
+    {
+      "suite": "Hexalith.Timesheets.Server.Tests",
+      "start": "2026-10-28T10:23:03.6013742+00:00",
+      "finish": "2026-10-28T10:23:11.8640253+00:00",
+      "trx_elapsed_seconds": 8.262651,
+      "codebases": [
+        "/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/tests/Hexalith.Timesheets.Server.Tests/bin/Release/net10.0/Hexalith.Timesheets.Server.Tests.dll"
+      ],
+      "all_codebases_release": true,
+      "source_bound_test_command": "dotnet test tests/Hexalith.Timesheets.Server.Tests --no-build --configuration Release --results-directory TestResults/Hexalith.Timesheets.Server.Tests --report-xunit-trx --report-xunit-trx-filename Hexalith.Timesheets.Server.Tests.trx"
+    },
+    {
+      "suite": "Hexalith.Timesheets.Projections.Tests",
+      "start": "2026-10-28T10:23:13.2655860+00:00",
+      "finish": "2026-10-28T10:39:33.2358276+00:00",
+      "trx_elapsed_seconds": 979.970241,
+      "codebases": [
+        "/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Release/net10.0/Hexalith.Timesheets.Projections.Tests.dll"
+      ],
+      "all_codebases_release": true,
+      "source_bound_test_command": "dotnet test tests/Hexalith.Timesheets.Projections.Tests --no-build --configuration Release --results-directory TestResults/Hexalith.Timesheets.Projections.Tests --report-xunit-trx --report-xunit-trx-filename Hexalith.Timesheets.Projections.Tests.trx"
+    },
+    {
+      "suite": "Hexalith.Timesheets.Works.Tests",
+      "start": "2026-10-28T10:39:34.4797535+00:00",
+      "finish": "2026-10-28T10:39:34.8898131+00:00",
+      "trx_elapsed_seconds": 0.41006,
+      "codebases": [
+        "/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/tests/Hexalith.Timesheets.Works.Tests/bin/Release/net10.0/Hexalith.Timesheets.Works.Tests.dll"
+      ],
+      "all_codebases_release": true,
+      "source_bound_test_command": "dotnet test tests/Hexalith.Timesheets.Works.Tests --no-build --configuration Release --results-directory TestResults/Hexalith.Timesheets.Works.Tests --report-xunit-trx --report-xunit-trx-filename Hexalith.Timesheets.Works.Tests.trx"
+    },
+    {
+      "suite": "Hexalith.Timesheets.IntegrationTests",
+      "start": "2026-10-28T10:39:36.2879262+00:00",
+      "finish": "2026-10-28T10:55:14.2622113+00:00",
+      "trx_elapsed_seconds": 937.974285,
+      "codebases": [
+        "/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Release/net10.0/Hexalith.Timesheets.IntegrationTests.dll"
+      ],
+      "all_codebases_release": true,
+      "source_bound_test_command": "dotnet test tests/Hexalith.Timesheets.IntegrationTests --no-build --configuration Release --results-directory TestResults/Hexalith.Timesheets.IntegrationTests --report-xunit-trx --report-xunit-trx-filename Hexalith.Timesheets.IntegrationTests.trx"
+    }
+  ],
+  "limits": [
+    "CI source binding uses GitHub workflow run head, pinned workflow, checkout log and root-gitlink log. Test TRX records Release assembly paths, but no compiled-assembly hashes are published in the artifact.",
+    "Test suite intervals establish serial suite execution; they make no assertion about parallelism of individual test cases.",
+    "Five explicit skips do not qualify performance, live Dapr or deployed gates."
+  ]
+}

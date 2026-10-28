@@ -259,3 +259,92 @@ Independent source/configuration/documentation review and evidence review are re
 [Preservation receipts](../evidence/debug-source-restore-20261028/preservation.json.gz) confirm unchanged original-workspace and all thirteen dependency heads, statuses and diff hashes. No root gitlink changed. No Aspire/Dapr/Docker/Redis/scheduler lifecycle or state command was issued by this task, and the no-resource guard cleanup never enters its `start_attempted` stop path. However, runtime continuity is **not established**: of 66 baseline numeric PID/start/name identities, 15 still match and 51 processes are absent from `/proc` at the final sample. Their disappearance cause and timing are unclassified. The [interim observation](../evidence/debug-source-restore-20261028/preservation-interim.json.gz) already shows this discrepancy. No stop, repair, ownership claim or continuous foreign-session preservation is inferred. Samples omit arguments/environment, do not establish service health, and supply no system-wide or continuous visibility.
 
 The original broad HTTP claims-read failure remains historical **FAIL** evidence; its unrecorded natural scheduler timing and timeout causation are not reconstructed. This build fix neither supersedes the scoped red/green investigation above nor changes its meaningful positive/negative assertions. Default skips supply no performance, live-Dapr or deployed acceptance. Release/package CI, current 13.6.4 running-topology/native-dashboard qualification, production providers, deployed inventories/continuity/shared rebuild and all other unfinished gates remain outside this local result. No native listener-ownership or transfer experiment was performed; this work supplies no new native observation. Inaccessible holders, native transfers between observations, system-wide exclusivity, failed-native diagnostic survival and the earlier unclassified convenience-inventory assertion remain unresolved.
+
+
+## Release/published-package Aspire qualification — 2026-10-28
+
+Qualification targets published Timesheets `94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8`. The independent checkout `/tmp/timesheets-release-qualification-20261028` contains all thirteen exact published root gitlinks, including Builds `81ab049208678bd6616828824729c0ddac02f7d1`, EventStore `41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16` and Works `fc4638d176082a679ebc23b92a3a3ae02f23b56e`. [Setup and checkout identity](../evidence/release-package-aspire-20261028/checkout-source.json) and [dependency audit](../evidence/release-package-aspire-20261028/root-dependency-audit.json) bind every root revision and verify no declared nested submodule is initialized. Existing dependency checkouts are read-only; no gitlink changes.
+
+### CI inspected first
+
+[CI run 40670628561](https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40670628561) is bound to that full Timesheets SHA. Initial inspection found successful restore/build/consumer-validation steps and an unfinished six-suite lane; missing in-progress job logs returned HTTP 404 and supplied no failing test evidence. [Initial audit](../evidence/release-package-aspire-20261028/ci/audit-findings-initial.json) preserves that observation. [Commitlint](https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40670628605) and [CodeQL](https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40670628474) passed.
+
+The completed AppHost job `122756179985` is reused: **67/67 Release configuration-only cases pass**, with `configuration_only=true`, `resources_enabled=false` and empty owned cleanup. Its [retained artifact ZIP](../evidence/release-package-aspire-20261028/ci/audit-apphost-configuration.zip) has GitHub-published SHA-256 `e1cb51690acd1b3a496b1f544c0b8f072edade0d866530ee644078c953b79865`. The retained job log binds the checkout, published Builds/EventStore gitlinks, matching package restore/build and this exact command:
+
+```bash
+python3 scripts/check_magic_link_apphost_guards.py --configuration-only --configuration Release --log-directory artifacts/apphost-configuration
+```
+
+These probes validate configuration, model annotations and construction/disposal without Start/Run. They grant no running-resource or native-dashboard acceptance. They were not repeated locally.
+
+### Evaluated graph and isolated local build
+
+The [evaluation receipt](../evidence/release-package-aspire-20261028/apphost-evaluation.json), full restore graph and [graph summary](../evidence/release-package-aspire-20261028/graph-summary.json) establish **16 Timesheets project nodes**, all inside the isolated checkout, and no sibling dependency source-project nodes. Restored library entries reference sibling Hexalith dependencies as packages. `Configuration=Release`, `UseHexalithProjectReferences=false`, central package management/transitive pinning enabled and `AspireUseCliBundle=false` are evaluated facts. SDK `10.0.402` is selected. The actual imported catalog is `references/Hexalith.Builds/Props/Directory.Packages.props`, SHA-256 `f9c97805fe540f17277f0d96f16a92b5f595f24c0f059c7a2c864abe8a6c1fb5`.
+
+Hosting/Redis and implicit AppHost/Dashboard/DCP packages resolve to **13.6.4**; the central `Aspire.Hosting.Testing` version evaluates to **13.6.4**, but no library of that name is restored by these sixteen projects; Keycloak resolves to **13.6.4-preview.1.26523.11**, CommunityToolkit Dapr to **13.6.2-beta.959**, and EventStore.Aspire to published **3.128.2**. The AppHost SDK and imported catalog SDK property both select **13.6.4**. [Package identities](../evidence/release-package-aspire-20261028/apphost-package-identities.json) separately record content and signed archive hashes; [an exploratory hash-comparison correction](../evidence/release-package-aspire-20261028/hash-audit-correction.txt) is retained and caused no package change. The local archive/metadata receipts are content observations, not a fresh-download, independent signature or reproducible-build attestation. No build/package alignment defect is demonstrated, so package pins, AppHost configuration, topology and warning/assertion gates remain unchanged.
+
+The exact requested commands ran while complete CI logs/test evidence were still unavailable, and independently qualify the locally evaluated package graph:
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Release -p:UseHexalithProjectReferences=false -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Release --no-restore -p:UseHexalithProjectReferences=false -warnaserror -m:1 /nr:false
+```
+
+[Restore](../evidence/release-package-aspire-20261028/restore.json) passes in **4.016 seconds**; [build](../evidence/release-package-aspire-20261028/build.json) passes in **6.701 seconds**, with **zero warnings/errors**. Receipts bind arguments, working directory, environment pin, full source revision, source manifests and lossless log hashes. Timesheets `src/` and `tests/` contain no Debug bin/obj directories; no Debug/source assets are used by this Release/package checkout. Committed historical validation outputs in unrelated dependency documentation are not build inputs.
+
+### Test evidence and final limits
+
+The completed source-bound CI job passes all six Release suites individually and serially. [The final TRX audit](../evidence/release-package-aspire-20261028/ci/audit-final-suite-audit.json) independently counts all result rows, verifies chronological non-overlap and retains the nine HTTP claims rows. [The original artifact ZIP](../evidence/release-package-aspire-20261028/ci/audit-blocking-test-results.zip), artifact ID `12809709991`, matches its GitHub-published SHA-256 `456f5cd0b490892a94600c89c65574838a562b25a6c377f7ee96ce0f48e49056`. [Artifact metadata and per-file hashes](../evidence/release-package-aspire-20261028/ci/audit-suite-results.json) bind it to the target source and CI run. The [job log](../evidence/release-package-aspire-20261028/ci/audit-build-job-final.log) binds all thirteen published gitlinks and the actual Release commands.
+
+| Suite | Passed | Skipped | TRX interval seconds |
+| --- | ---: | ---: | ---: |
+| ArchitectureTests | 118 | 0 | 29.167 |
+| Contracts.Tests | 108 | 0 | 0.726 |
+| Server.Tests | 746 | 0 | 8.263 |
+| Projections.Tests | 756 | 0 | 979.970 |
+| Works.Tests | 76 | 0 | 0.410 |
+| IntegrationTests | 981 | 5 | 937.974 |
+
+Total: **2,790 discovered / 2,785 passed / five existing skips (`NotExecuted`: three opt-in facts and two unconditional placeholder facts) / zero failed, errors, timeouts or aborted**. Each suite's command exits zero. Coverage is disabled: `RUN_COVERAGE_GATE=false` is explicit in the final log. The initial coverage-enabled inference is preserved with [its correction](../evidence/release-package-aspire-20261028/ci/audit-coverage-correction.json); no coverage verdict is claimed.
+
+The following reproduces the six actual CI command invocations and returns failure if any suite fails from the pinned reusable workflow `544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9` and its log:
+
+```bash
+failures=0
+while IFS= read -r proj; do
+  name=$(basename "$proj")
+  if dotnet test "$proj" --no-build --configuration Release \
+    --results-directory "TestResults/${name}" \
+    --report-xunit-trx --report-xunit-trx-filename "${name}.trx"; then
+    :
+  else
+    failures=$((failures + 1))
+  fi
+done <<'PROJECTS'
+tests/Hexalith.Timesheets.ArchitectureTests
+tests/Hexalith.Timesheets.Contracts.Tests
+tests/Hexalith.Timesheets.Server.Tests
+tests/Hexalith.Timesheets.Projections.Tests
+tests/Hexalith.Timesheets.Works.Tests
+tests/Hexalith.Timesheets.IntegrationTests
+PROJECTS
+test "$failures" -eq 0
+```
+
+CI's successful full solution restore/build, six-package consumer validation, six test suites and 67 AppHost checks are source-bound verification reused here. The local required restore/build adds an independently evaluated graph; no successful suite or AppHost probe is repeated locally. The main job completes at `2026-10-28T10:55:17Z`; its check-run also completes at `10:55:17Z` (observed at `10:55:18.766795Z`). [The full CI run](../evidence/release-package-aspire-20261028/ci/audit-final-summary.json) completes successfully, updated `2026-10-28T10:57:30Z`, including evidence-verifier job `122774108074`. Its log accepts all six TRX files. [Expanded commands and source provenance](../evidence/release-package-aspire-20261028/ci/audit-release-suite-provenance.json) establish Release assembly paths and exact published gitlinks. CI supplies no compiled-assembly hash manifest; this is workflow/checkout/artifact source binding, not an independent binary identity attestation. Suite intervals establish serial suite execution without asserting internal test-case scheduling.
+
+All **nine claims-read cases pass**: five host accessor variants, both real SDK cleanup replays (including the deliberate foreign request-read rejection), and two malformed issuance cases. Source hashes match the published target. Request-scoped attribution, full-address read-set/count assertions and tenant/actor/stream/status checks remain unchanged. No historical timeout-to-claims causation is inferred.
+
+
+
+The [preservation audit](../evidence/release-package-aspire-20261028/preservation.json) compares the original workspace and all thirteen dependency heads/statuses/diff hashes and the isolated build inputs/outputs. Runtime observations record numeric PID/start/name samples only: the [initial follow-up sample](../evidence/release-package-aspire-20261028/preservation-interim.json) matches 17 of 22 baseline identities, with five `dotnet` identities absent. The [2026-10-28T10:55:49Z sample](../evidence/release-package-aspire-20261028/preservation-pre-review.json) matches **4/22**, with **18 absent**. Their ownership, cause and disappearance timing remain unclassified. The earlier Debug/source investigation's **51 absent out of 66** remains unchanged historical evidence. No Aspire/Dapr/Docker/Redis/scheduler lifecycle or state command was issued here. Neither these samples nor CI establish continuous foreign-session preservation, system-wide visibility or service health.
+
+Both HTTP claims regression source files remain byte-identical to the published target (hashes in the graph summary). The original broad claims-read **FAIL**, original unrecorded natural timing and timeout-causation limits are retained. Default performance/live-Dapr skips supply no opt-in acceptance. Launch remains **FAIL**; DW-19, DW-86, DW-113, DW-119, DW-132, DW-137, DW-143, DW-145, DW-184 and DW-194 remain open. Production authorization/inventory/continuity/shared-rebuild acceptance, Story 3.6 deployed qualification and current 13.6.4 running-topology/native-dashboard qualification are unfinished. Native inaccessible-holder visibility, unobserved transfers, system-wide exclusivity, failed-native ownership diagnostic survival and the earlier unclassified convenience-inventory assertion remain unresolved. No native tracing, listener ownership or deployed experiment occurred.
+
+[Conventional Commit validation](../evidence/release-package-aspire-20261028/commitlint.json) passes with `npm run commitlint -- --edit /tmp/timesheets-release-evidence-20261028/commit-message.txt`. Locked tooling is installed only in the independent checkout using `npm ci`; tracked manifests/lock files remain unchanged. Its output reports two tooling advisories, retained without a dependency update or new audit/currency verdict.
+
+The existing repository result validator also passes locally against the downloaded CI artifact, without running tests: `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/validate-test-results.py /tmp/timesheets-release-evidence-20261028/ci/audit-blocking-test-results` ([receipt](../evidence/release-package-aspire-20261028/validate-ci-test-evidence.json)).
+
+Independent review corrections distinguish the configured Testing pin from restored packages, check completion from observation time, and three opt-in facts from two unconditional skipped placeholders. The reproduction loop retains an aggregate failure gate. [Bundle instructions and reconstruction map](../evidence/release-package-aspire-20261028/README.md) preserve historical helper limitations and provide a portable read-only verifier of raw artifact/source binding, exact unique claims variants, derived core fields and final document hashes. Actual local binaries remain in the isolated checkout; their hash manifest is retained. Raw `.log` evidence is explicitly staged despite the repository's general ignore pattern. Review triage and final recheck are recorded in [review.json](../evidence/release-package-aspire-20261028/review.json).
+
+Both independent final rechecks are clean. All eleven findings are addressed; none is deferred. The portable verifier also passes after export outside the repository; final metadata and document hashes are refreshed after these corrections.

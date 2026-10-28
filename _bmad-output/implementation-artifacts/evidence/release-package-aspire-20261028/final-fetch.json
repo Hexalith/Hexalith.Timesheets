@@ -1,0 +1,22 @@
+{
+  "argv": [
+    "git",
+    "fetch",
+    "origin",
+    "main"
+  ],
+  "cwd": "/tmp/timesheets-release-qualification-20261028",
+  "env_pins": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_manifest": "final-fetch-source.json",
+  "source_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "started_utc": "2026-10-28T11:12:15.916547+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 0.478,
+  "ended_utc": "2026-10-28T11:12:16.394583+00:00",
+  "log": "final-fetch.log",
+  "log_sha256": "99d3accf8edb3f1be71bb2a94051b016fe2c24fb1d92b6b6c0c427f39c803367",
+  "source_unchanged": true
+}

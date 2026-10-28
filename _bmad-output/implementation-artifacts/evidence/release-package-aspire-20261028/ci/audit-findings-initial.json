@@ -1,0 +1,87 @@
+{
+  "observed_at_utc": "2026-10-28T10:25:33.857711+00:00",
+  "source_commit": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "ci_run": 40670628561,
+  "ci_url": "https://github.com/Hexalith/Hexalith.Timesheets/actions/runs/40670628561",
+  "reusable_workflow_commit": "544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9",
+  "builds_root_gitlink": "81ab049208678bd6616828824729c0ddac02f7d1",
+  "eventstore_root_gitlink": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+  "apphost": {
+    "job": 122756179985,
+    "status": "success",
+    "artifact_id": 12808965638,
+    "artifact_sha256": "e1cb51690acd1b3a496b1f544c0b8f072edade0d866530ee644078c953b79865",
+    "zip_sha256_verified": true,
+    "cases": 67,
+    "passed": 67,
+    "mode": {
+      "configuration": "Release",
+      "configuration_only": true,
+      "resources_enabled": false
+    },
+    "cleanup": {
+      "complete": true,
+      "journey_descendants_gone": true,
+      "failure_reasons": [],
+      "components_created": false,
+      "components_removed": false,
+      "containers_removed": 0
+    },
+    "commands": [
+      "dotnet restore src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj -p:Configuration=Release -p:UseHexalithProjectReferences=false -m:1 /nr:false",
+      "dotnet build src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --configuration Release --no-restore -p:UseHexalithProjectReferences=false -warnaserror -m:1 /nr:false",
+      "python3 scripts/check_magic_link_apphost_guards.py --configuration-only --configuration Release --log-directory artifacts/apphost-configuration"
+    ]
+  },
+  "main_build": {
+    "job": 122756180150,
+    "status": "in_progress",
+    "successful_api_steps": [
+      "Restore",
+      "Build",
+      "Validate package consumer references"
+    ],
+    "pending_verification": "Unit tests (Tier 1, Microsoft.Testing.Platform) in_progress; no blocking-test-results artifact available at this observation.",
+    "logs_download_attempt": "gh api repos/Hexalith/Hexalith.Timesheets/actions/jobs/122756180150/logs returned HTTP 404 while running. This is a missing available log, not a failing build/test result.",
+    "configured_commands": [
+      "dotnet restore \"$SOLUTION\"",
+      "dotnet build \"$SOLUTION\" --no-restore --configuration Release -warnaserror",
+      "dotnet test \"$proj\" --no-build --configuration Release --results-directory \"TestResults/${name}\" --report-xunit-trx --report-xunit-trx-filename \"${name}.trx\" --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml"
+    ],
+    "configured_suites_serial_order": [
+      "Hexalith.Timesheets.ArchitectureTests",
+      "Hexalith.Timesheets.Contracts.Tests",
+      "Hexalith.Timesheets.Server.Tests",
+      "Hexalith.Timesheets.Projections.Tests",
+      "Hexalith.Timesheets.Works.Tests",
+      "Hexalith.Timesheets.IntegrationTests"
+    ]
+  },
+  "other_runs": {
+    "commitlint": {
+      "run": 40670628605,
+      "conclusion": "success"
+    },
+    "codeql": {
+      "run": 40670628474,
+      "conclusion": "success"
+    }
+  },
+  "limits": [
+    "No source changes were made by this audit.",
+    "No builds/tests/runtime or lifecycle commands were run locally.",
+    "An in-progress suite lane is not successful evidence.",
+    "CI AppHost artifact proves configuration-only checks with resources disabled; no running-topology, native dashboard, deployed, performance or live-Dapr acceptance is granted.",
+    "Reusable workflow initializes root-declared submodules; checkout cleanup uses recursive config inspection, which does not initialize nested submodules."
+  ],
+  "commands_used": [
+    "gh api repos/Hexalith/Hexalith.Timesheets/actions/runs/40670628561",
+    "gh api repos/Hexalith/Hexalith.Timesheets/actions/runs/40670628561/jobs",
+    "gh api repos/Hexalith/Hexalith.Timesheets/actions/runs/40670628561/artifacts",
+    "gh api repos/Hexalith/Hexalith.Builds/contents/.github/workflows/domain-ci.yml?ref=544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9 --jq .content | base64 -d",
+    "gh api repos/Hexalith/Hexalith.Timesheets/actions/jobs/122756180150/logs",
+    "gh api repos/Hexalith/Hexalith.Timesheets/actions/artifacts/12808965638/zip",
+    "gh api repos/Hexalith/Hexalith.Timesheets/actions/runs/40670628474",
+    "gh api repos/Hexalith/Hexalith.Timesheets/actions/runs/40670628605"
+  ]
+}

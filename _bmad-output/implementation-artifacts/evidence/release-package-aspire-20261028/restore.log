@@ -1,0 +1,17 @@
+  Determining projects to restore...
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Client/Hexalith.Timesheets.Client.csproj (in 465 ms).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj (in 466 ms).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Testing/Hexalith.Timesheets.Testing.csproj (in 465 ms).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj (in 512 ms).
+  Restored /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj (in 685 ms).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj (in 1.42 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj (in 990 ms).
+  Restored /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj (in 1.48 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.csproj (in 1.48 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj (in 1.48 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj (in 1.48 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets/Hexalith.Timesheets.csproj (in 1.51 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj (in 1.06 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj (in 1.54 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj (in 1.54 sec).
+  Restored /tmp/timesheets-release-qualification-20261028/tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj (in 1.72 sec).

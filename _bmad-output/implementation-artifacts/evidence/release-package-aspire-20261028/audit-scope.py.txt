@@ -1,0 +1,19 @@
+import pathlib,subprocess,json,hashlib,sys,datetime
+root=pathlib.Path('/tmp/timesheets-release-qualification-20261028'); out=pathlib.Path('/tmp/timesheets-release-evidence-20261028')
+sys.path.insert(0,str(out)); from setup import workspace,processes
+
+def git(*a): return subprocess.check_output(['git',*a],cwd=root)
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+base=json.loads((out/'build-source.json').read_text()); unchanged=all((root/p).is_file() and sha(root/p)==v for p,v in base.items())
+assert unchanged
+checks={}
+for name in ['_bmad-output/implementation-artifacts/tests/remaining-local-deferred-followups.md','_bmad-output/implementation-artifacts/deferred-work.md']:
+ old=git('show','94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8:'+name); new=(root/name).read_bytes()
+ checks[name]={'historical_prefix_unchanged':new.startswith(old),'base_sha256':hashlib.sha256(old).hexdigest(),'current_sha256':sha(root/name)}
+ assert checks[name]['historical_prefix_unchanged']
+original_before=json.loads((out/'workspace-before.json').read_text()); original_now=workspace(); assert original_before==original_now
+before=json.loads((out/'runtime-before.json').read_text()); current=processes(); keys=lambda a:{(x['pid'],x['start'],x['comm']) for x in a}; b=keys(before['processes']); n=keys(current)
+build_before=json.loads((out/'release-build-artifacts.json').read_text()); artifacts_match=all((root/p).is_file() and sha(root/p)==v for p,v in build_before.items()); assert artifacts_match
+r={'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'code_and_configuration_match_build_manifest':unchanged,'build_manifest_sha256':sha(out/'build-source.json'),'release_artifacts_count':len(build_before),'release_artifacts_unchanged':artifacts_match,'historical_content':checks,'original_workspace_and_thirteen_dependencies_match':True,'original_after':original_now,'root_gitlinks':git('ls-tree','HEAD','references/').decode(),'runtime_baseline_utc':before['utc'],'runtime_baseline_count':len(b),'matching_sampled_runtime_identities':len(b&n),'absent_baseline_identities':[{'pid':p,'start':s,'comm':c} for p,s,c in sorted(b-n)],'new_observed_identities':[{'pid':p,'start':s,'comm':c} for p,s,c in sorted(n-b)],'runtime_limits':'Numeric PID/start/name samples only. No continuous runtime preservation, service health, ownership or system-wide visibility claim. Disappearance cause/timing remain unclassified; earlier 51/66 discrepancy preserved. No task-issued lifecycle or state command.'}
+(out/'preservation.json').write_text(json.dumps(r,indent=2)+'\n')
+print(json.dumps({k:v for k,v in r.items() if k not in ('original_after','root_gitlinks','historical_content','new_observed_identities')},indent=2))

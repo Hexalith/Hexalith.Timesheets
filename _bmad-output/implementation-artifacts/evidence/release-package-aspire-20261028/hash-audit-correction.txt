@@ -1,0 +1,5 @@
+The initial exploratory inline package identity check asserted project.assets.json libraries[identity].sha512 == <package>.nupkg.sha512 and exited 1 (AssertionError). This comparison incorrectly equated content and signed archive hashes. No restore or build failed. The corrected retained audit-package-identities.py independently compares computed archive SHA-512 with .nupkg.sha512, and assets' content SHA-512 with .nupkg.metadata contentHash; all eight identities pass. All eight archives contain .signature.p7s. This is a recorder-assumption correction, not a demonstrated package/build defect or independent signature verification.
+Primary sources inspected:
+https://github.com/NuGet/Home/wiki/Nupkg-Metadata-File
+https://github.com/NuGet/NuGet.Client/blob/dev/src/NuGet.Core/NuGet.Packaging/PackageExtractor.cs
+NuGet documents separate original content and signed archive hashes. No cache data was changed.

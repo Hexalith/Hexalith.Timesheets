@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "python3",
+    "/tmp/timesheets-release-qualification-20261028/_bmad-output/implementation-artifacts/evidence/release-package-aspire-20261028/verify-retained-evidence.py.txt"
+  ],
+  "cwd": "/tmp/timesheets-release-qualification-20261028",
+  "env_pins": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_manifest": "bundle-verification-source.json",
+  "source_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "started_utc": "2026-10-28T11:08:24.159764+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 0.147,
+  "ended_utc": "2026-10-28T11:08:24.307297+00:00",
+  "log": "bundle-verification.log",
+  "log_sha256": "da6ab1586a56a053d6f9593e507e8a446d9b9751ed8eb2ec98a472c719d5c1a2",
+  "source_unchanged": true
+}

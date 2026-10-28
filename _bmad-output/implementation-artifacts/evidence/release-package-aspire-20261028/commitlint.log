@@ -1,0 +1,4 @@
+
+> hexalith-timesheets@0.0.0 commitlint
+> commitlint --edit /tmp/timesheets-release-evidence-20261028/commit-message.txt
+

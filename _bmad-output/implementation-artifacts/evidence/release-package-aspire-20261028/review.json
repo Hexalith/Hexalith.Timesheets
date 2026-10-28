@@ -1,0 +1,104 @@
+{
+  "base_commit": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "layers": [
+    "independent context-free blind hunter",
+    "independent raw evidence audit"
+  ],
+  "blind_finding_floor": "min(floor(sqrt(3309.381) + 1), 10) = 10",
+  "findings": [
+    {
+      "id": "BH-1",
+      "verdict": "medium",
+      "finding": "Twelve manifest-listed log files are ignored by Git and ordinary staging omits them.",
+      "route": "patch",
+      "resolution": "Explicitly force-stage only the evidence bundle and compare every manifest entry to Git index bytes before commit; no ignore-rule change."
+    },
+    {
+      "id": "BH-2",
+      "verdict": "low",
+      "finding": "Check-run completion 10:55:18 is observation time; raw completion is 10:55:17.",
+      "route": "patch",
+      "resolution": "Correct report and append explicit spec clarification with raw check completion and observation timestamps."
+    },
+    {
+      "id": "BH-3",
+      "verdict": "medium",
+      "finding": "Five skips were all described as opt-in, but two are unconditional placeholders.",
+      "route": "patch",
+      "resolution": "Report/ledger classify three opt-in facts and two unconditional placeholder facts; spec appends correction. No skip assertion or runtime gate changes."
+    },
+    {
+      "id": "BH-4",
+      "verdict": "medium",
+      "finding": "Preservation receipt hashes predate the completed report and ledger.",
+      "route": "patch",
+      "resolution": "Refresh preservation after final report/ledger content; preserve interim/pre-review observations separately and verify document hashes in final bundle check."
+    },
+    {
+      "id": "BH-5",
+      "verdict": "low",
+      "finding": "Spec calls 2,021 Release outputs retained, while only their hash manifest is in the evidence bundle.",
+      "route": "patch",
+      "resolution": "Append explicit correction to agent-owned implementation notes, preserving chronology; report and bundle README say binaries remain in isolated checkout and hashes are retained."
+    },
+    {
+      "id": "BH-6",
+      "verdict": "low",
+      "finding": "Reproduction loop can hide an earlier failed suite when the final suite passes.",
+      "route": "patch",
+      "resolution": "Aggregate failures and return nonzero after all six invocations; actual source CI already has a blocking gate and remains unchanged."
+    },
+    {
+      "id": "BH-7",
+      "verdict": "low",
+      "finding": "Recorded parser requires a hardcoded temporary extraction directory absent from exported bundle.",
+      "route": "patch",
+      "resolution": "Document exact original prerequisite and historical-helper scope; add portable read-only verifier consuming retained ZIP directly with an evidence-directory argument."
+    },
+    {
+      "id": "BH-8",
+      "verdict": "low",
+      "finding": "Historical parser assigns source/run constants without checking archive metadata/digest.",
+      "route": "patch",
+      "resolution": "Retain historical transcript, document that it alone is not source attestation; portable verifier obtains source/run from raw API and checks checkout/artifact metadata plus original ZIP digest before parsing."
+    },
+    {
+      "id": "BH-9",
+      "verdict": "low",
+      "finding": "Historical parser accepts nine matching claims rows without exact unique expected variants.",
+      "route": "patch",
+      "resolution": "Portable verifier requires the exact five accessor/two cleanup/two issuance names, unique test/execution identities and Passed outcomes. Raw artifact already contains all expected variants."
+    },
+    {
+      "id": "BH-10",
+      "verdict": "low",
+      "finding": "Construction of derived provenance/final summaries is not retained as a reproducible helper.",
+      "route": "patch",
+      "resolution": "Add input-to-field reconstruction map and portable independent comparison/rederivation of core fields from raw metadata/log/TRX inputs; authored explanatory fields remain explicitly interpretation."
+    },
+    {
+      "id": "EV-1",
+      "verdict": "low",
+      "finding": "Report describes Aspire.Hosting.Testing as restored; only its central PackageVersion evaluates to 13.6.4.",
+      "route": "patch",
+      "resolution": "Distinguish central Testing pin from actual restored packages; no dependency change or retest warranted."
+    }
+  ],
+  "deferred_findings": [],
+  "initial_evidence_audit": {
+    "manifest_hashes": 86,
+    "raw_artifact_digests_verified": true,
+    "all_six_trx_checked": true,
+    "nine_exact_claims_cases": true,
+    "all_13_gitlinks_match": true,
+    "source_inputs_match_base": 659,
+    "local_release_output_hashes_match": 2021,
+    "original_workspace_dependencies_match": true,
+    "native_deployed_and_sampling_limits_preserved": true
+  },
+  "final_recheck": {
+    "blind_hunter": "All ten findings addressed; portable verifier passes; all 95 then-current manifest entries match staged bytes; no gitlinks; historical prefixes intact.",
+    "evidence_auditor": "Clean final recheck: all 96 current manifest entries match working files and staged bytes; finalized report/ledger hashes and historical prefixes match; 659 source inputs and 2021 output hashes unchanged; portable and exported verifiers pass; six serial Release suites and nine exact claims rows confirmed.",
+    "remaining_findings": []
+  }
+}

@@ -1,0 +1,189 @@
+﻿2026-10-28T10:57:22.4746949Z Current runner version: '2.338.0'
+2026-10-28T10:57:22.4767190Z ##[group]Runner Image Provisioner
+2026-10-28T10:57:22.4768021Z Hosted Compute Agent
+2026-10-28T10:57:22.4768513Z Version: 20261021.618
+2026-10-28T10:57:22.4769370Z Commit: 21505ad2541d5be6135ed84fc33697146cf75b8e
+2026-10-28T10:57:22.4769999Z Build Date: 2026-10-21T00:45:21Z
+2026-10-28T10:57:22.4770590Z Worker ID: {01f9279f-7258-44e4-a9fc-328798a9dbb3}
+2026-10-28T10:57:22.4771201Z Region: centralus
+2026-10-28T10:57:22.4771678Z Cloud: Azure
+2026-10-28T10:57:22.4772189Z ##[endgroup]
+2026-10-28T10:57:22.4773328Z ##[group]Operating System
+2026-10-28T10:57:22.4773903Z Ubuntu
+2026-10-28T10:57:22.4774354Z 26.04.1
+2026-10-28T10:57:22.4774794Z LTS
+2026-10-28T10:57:22.4775265Z ##[endgroup]
+2026-10-28T10:57:22.4775728Z ##[group]Runner Image
+2026-10-28T10:57:22.4776217Z Image: ubuntu-26.04
+2026-10-28T10:57:22.4776740Z Version: 20261025.179.1
+2026-10-28T10:57:22.4777814Z Included Software: https://github.com/actions/runner-images/blob/ubuntu26/20261025.179/images/ubuntu/Ubuntu2604-Readme.md
+2026-10-28T10:57:22.4779308Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu26%2F20261025.179
+2026-10-28T10:57:22.4780452Z ##[endgroup]
+2026-10-28T10:57:22.4781457Z ##[group]GITHUB_TOKEN Permissions
+2026-10-28T10:57:22.4783341Z Contents: read
+2026-10-28T10:57:22.4783902Z Metadata: read
+2026-10-28T10:57:22.4784383Z ##[endgroup]
+2026-10-28T10:57:22.4786170Z Secret source: Actions
+2026-10-28T10:57:22.4786928Z Cache mode: write
+2026-10-28T10:57:22.4787539Z Prepare workflow directory
+2026-10-28T10:57:22.5049562Z Prepare all required actions
+2026-10-28T10:57:22.5090828Z Getting action download info
+2026-10-28T10:57:22.7569616Z Download action repository 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' (SHA:3d3c42e5aac5ba805825da76410c181273ba90b1)
+2026-10-28T10:57:22.8751680Z Download action repository 'actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333' (SHA:9000827ccba6bdab643e8b6fd33ac0654aef8333)
+2026-10-28T10:57:23.3831751Z Complete job name: verify-test-evidence
+2026-10-28T10:57:23.4499513Z ##[group]Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+2026-10-28T10:57:23.4500636Z with:
+2026-10-28T10:57:23.4501217Z   persist-credentials: false
+2026-10-28T10:57:23.4501835Z   repository: Hexalith/Hexalith.Timesheets
+2026-10-28T10:57:23.4505952Z   token: ***
+2026-10-28T10:57:23.4506633Z   ssh-strict: true
+2026-10-28T10:57:23.4507167Z   ssh-user: git
+2026-10-28T10:57:23.4507581Z   clean: true
+2026-10-28T10:57:23.4508106Z   sparse-checkout-cone-mode: true
+2026-10-28T10:57:23.4508638Z   fetch-depth: 1
+2026-10-28T10:57:23.4509383Z   fetch-tags: false
+2026-10-28T10:57:23.4509832Z   show-progress: true
+2026-10-28T10:57:23.4510334Z   lfs: false
+2026-10-28T10:57:23.4510756Z   submodules: false
+2026-10-28T10:57:23.4511247Z   set-safe-directory: true
+2026-10-28T10:57:23.4511738Z   allow-unsafe-pr-checkout: false
+2026-10-28T10:57:23.4512891Z ##[endgroup]
+2026-10-28T10:57:23.6824410Z Syncing repository: Hexalith/Hexalith.Timesheets
+2026-10-28T10:57:23.6827609Z ##[group]Getting Git version info
+2026-10-28T10:57:23.6828407Z Working directory is '/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets'
+2026-10-28T10:57:23.6830115Z [command]/usr/bin/git version
+2026-10-28T10:57:23.6836841Z git version 2.56.0
+2026-10-28T10:57:23.6853162Z ##[endgroup]
+2026-10-28T10:57:23.6865553Z Temporarily overriding HOME='/home/runner/work/_temp/873abcad-84ae-4da3-a83d-07464e42138f' before making global git config changes
+2026-10-28T10:57:23.6867460Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-28T10:57:23.6871272Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets
+2026-10-28T10:57:23.6930895Z Deleting the contents of '/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets'
+2026-10-28T10:57:23.6933830Z ##[group]Determining repository object format
+2026-10-28T10:57:23.6935129Z ##[endgroup]
+2026-10-28T10:57:23.6936172Z ##[group]Initializing the repository
+2026-10-28T10:57:23.6939564Z [command]/usr/bin/git init /home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets
+2026-10-28T10:57:23.7025566Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-10-28T10:57:23.7026724Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-10-28T10:57:23.7028567Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-10-28T10:57:23.7029854Z hint: call:
+2026-10-28T10:57:23.7030705Z hint:
+2026-10-28T10:57:23.7031573Z hint: 	git config --global init.defaultBranch <name>
+2026-10-28T10:57:23.7032450Z hint:
+2026-10-28T10:57:23.7033033Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-10-28T10:57:23.7033871Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-10-28T10:57:23.7034535Z hint:
+2026-10-28T10:57:23.7034960Z hint: 	git branch -m <name>
+2026-10-28T10:57:23.7035450Z hint:
+2026-10-28T10:57:23.7038608Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-10-28T10:57:23.7040494Z Initialized empty Git repository in /home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git/
+2026-10-28T10:57:23.7049320Z [command]/usr/bin/git remote add origin https://github.com/Hexalith/Hexalith.Timesheets
+2026-10-28T10:57:23.7088542Z ##[endgroup]
+2026-10-28T10:57:23.7090063Z ##[group]Disabling automatic garbage collection
+2026-10-28T10:57:23.7091299Z [command]/usr/bin/git config --local gc.auto 0
+2026-10-28T10:57:23.7118264Z ##[endgroup]
+2026-10-28T10:57:23.7119564Z ##[group]Setting up auth
+2026-10-28T10:57:23.7120660Z Removing SSH command configuration
+2026-10-28T10:57:23.7122024Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-28T10:57:23.7149066Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-28T10:57:23.7515834Z Removing HTTP extra header
+2026-10-28T10:57:23.7520355Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-28T10:57:23.7545318Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-28T10:57:23.7737064Z Removing includeIf entries pointing to credentials config files
+2026-10-28T10:57:23.7741096Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-28T10:57:23.7770383Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-28T10:57:23.7962562Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-10-28T10:57:23.8021591Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git.path /home/runner/work/_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:23.8045555Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:23.8071596Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:23.8096813Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:23.8120599Z ##[endgroup]
+2026-10-28T10:57:23.8121683Z ##[group]Fetching the repository
+2026-10-28T10:57:23.8126980Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8:refs/remotes/origin/main
+2026-10-28T10:57:26.1137375Z From https://github.com/Hexalith/Hexalith.Timesheets
+2026-10-28T10:57:26.1138762Z  * [new ref]         94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8 -> origin/main
+2026-10-28T10:57:26.1161252Z [command]/usr/bin/git branch --list --remote origin/main
+2026-10-28T10:57:26.1169738Z   origin/main
+2026-10-28T10:57:26.1176263Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+2026-10-28T10:57:26.1205611Z 94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8
+2026-10-28T10:57:26.1208261Z ##[endgroup]
+2026-10-28T10:57:26.1209570Z ##[group]Determining the checkout info
+2026-10-28T10:57:26.1210748Z ##[endgroup]
+2026-10-28T10:57:26.1213252Z [command]/usr/bin/git sparse-checkout disable
+2026-10-28T10:57:26.1303497Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+2026-10-28T10:57:26.1331378Z ##[group]Checking out the ref
+2026-10-28T10:57:26.1333582Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+2026-10-28T10:57:26.5197499Z Switched to a new branch 'main'
+2026-10-28T10:57:26.5206523Z branch 'main' set up to track 'origin/main'.
+2026-10-28T10:57:26.5221694Z ##[endgroup]
+2026-10-28T10:57:26.5262503Z [command]/usr/bin/git log -1 --format=%H
+2026-10-28T10:57:26.5285142Z 94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8
+2026-10-28T10:57:26.5292756Z ##[group]Removing auth
+2026-10-28T10:57:26.5293631Z Removing SSH command configuration
+2026-10-28T10:57:26.5295806Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-28T10:57:26.5322552Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-28T10:57:26.5545029Z Removing HTTP extra header
+2026-10-28T10:57:26.5546827Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-28T10:57:26.5570019Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-28T10:57:26.5774079Z Removing includeIf entries pointing to credentials config files
+2026-10-28T10:57:26.5775796Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-28T10:57:26.5796351Z includeif.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git.path
+2026-10-28T10:57:26.5798573Z includeif.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git/worktrees/*.path
+2026-10-28T10:57:26.5800152Z includeif.gitdir:/github/workspace/.git.path
+2026-10-28T10:57:26.5801937Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-28T10:57:26.5805294Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git.path
+2026-10-28T10:57:26.5821670Z /home/runner/work/_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:26.5831496Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git.path \/home\/runner\/work\/_temp\/git\-credentials\-cff6df82\-b198\-4766\-9749\-25cb4b20be6b\.config
+2026-10-28T10:57:26.5858747Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git/worktrees/*.path
+2026-10-28T10:57:26.5880593Z /home/runner/work/_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:26.5887902Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/.git/worktrees/*.path \/home\/runner\/work\/_temp\/git\-credentials\-cff6df82\-b198\-4766\-9749\-25cb4b20be6b\.config
+2026-10-28T10:57:26.5916077Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+2026-10-28T10:57:26.5934573Z /github/runner_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:26.5939459Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path \/github\/runner_temp\/git\-credentials\-cff6df82\-b198\-4766\-9749\-25cb4b20be6b\.config
+2026-10-28T10:57:26.5963226Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+2026-10-28T10:57:26.5979560Z /github/runner_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config
+2026-10-28T10:57:26.5986475Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path \/github\/runner_temp\/git\-credentials\-cff6df82\-b198\-4766\-9749\-25cb4b20be6b\.config
+2026-10-28T10:57:26.6010820Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-28T10:57:26.6204865Z Removing credentials config '/home/runner/work/_temp/git-credentials-cff6df82-b198-4766-9749-25cb4b20be6b.config'
+2026-10-28T10:57:26.6213057Z ##[endgroup]
+2026-10-28T10:57:26.6446035Z ##[group]Run actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+2026-10-28T10:57:26.6447050Z with:
+2026-10-28T10:57:26.6447875Z   name: blocking-test-results
+2026-10-28T10:57:26.6448702Z   path: TestResults
+2026-10-28T10:57:26.6449704Z   merge-multiple: false
+2026-10-28T10:57:26.6450569Z   repository: Hexalith/Hexalith.Timesheets
+2026-10-28T10:57:26.6451447Z   run-id: 40670628561
+2026-10-28T10:57:26.6452239Z   skip-decompress: false
+2026-10-28T10:57:26.6453031Z   digest-mismatch: error
+2026-10-28T10:57:26.6453846Z ##[endgroup]
+2026-10-28T10:57:26.7631874Z Downloading single artifact
+2026-10-28T10:57:26.9516147Z Preparing to download the following artifacts:
+2026-10-28T10:57:26.9517423Z - blocking-test-results (ID: 12809709991, Size: 415134, Expected Digest: sha256:456f5cd0b490892a94600c89c65574838a562b25a6c377f7ee96ce0f48e49056)
+2026-10-28T10:57:27.3012334Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/873bfd96-9468-83de-b596-4fdeb751f2c4/workflow-job-run-99cb9b7e-03d2-54ba-b263-80605136f505/artifacts/7e53b188fcb0754a094e01d29231aba74d7b9860c6b7785cc90634f682e9a564.zip
+2026-10-28T10:57:27.3014278Z Starting download of artifact to: /home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets/TestResults
+2026-10-28T10:57:27.4655672Z (node:2256) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+2026-10-28T10:57:27.4656582Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-28T10:57:27.6191450Z SHA256 digest of downloaded artifact is 456f5cd0b490892a94600c89c65574838a562b25a6c377f7ee96ce0f48e49056
+2026-10-28T10:57:27.6192494Z Artifact download completed successfully.
+2026-10-28T10:57:27.6192991Z Total of 1 artifact(s) downloaded
+2026-10-28T10:57:27.6194537Z Download artifact has finished successfully
+2026-10-28T10:57:27.6327244Z ##[group]Run python3 scripts/validate-test-results.py TestResults
+2026-10-28T10:57:27.6327948Z [36;1mpython3 scripts/validate-test-results.py TestResults[0m
+2026-10-28T10:57:27.6353521Z shell: /usr/bin/bash -e {0}
+2026-10-28T10:57:27.6353908Z ##[endgroup]
+2026-10-28T10:57:27.7293755Z Validated successful TRX evidence for all six projects, including Works.Tests
+2026-10-28T10:57:27.7503027Z Post job cleanup.
+2026-10-28T10:57:27.8219439Z [command]/usr/bin/git version
+2026-10-28T10:57:27.8262727Z git version 2.56.0
+2026-10-28T10:57:27.8301548Z Temporarily overriding HOME='/home/runner/work/_temp/1dcc6ca4-a7ce-432e-9476-ad92733d68f4' before making global git config changes
+2026-10-28T10:57:27.8310597Z Adding repository directory to the temporary git global config as a safe directory
+2026-10-28T10:57:27.8312342Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Hexalith.Timesheets/Hexalith.Timesheets
+2026-10-28T10:57:27.8341961Z Removing SSH command configuration
+2026-10-28T10:57:27.8342919Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-10-28T10:57:27.8373878Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-10-28T10:57:27.8604033Z Removing HTTP extra header
+2026-10-28T10:57:27.8607126Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-10-28T10:57:27.8633179Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-10-28T10:57:27.8845761Z Removing includeIf entries pointing to credentials config files
+2026-10-28T10:57:27.8850062Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-10-28T10:57:27.8911113Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-10-28T10:57:27.9230941Z Cleaning up orphan processes

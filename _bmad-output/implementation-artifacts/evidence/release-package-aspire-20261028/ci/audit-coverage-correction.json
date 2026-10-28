@@ -1,0 +1,12 @@
+{
+  "observed_at_utc": "2026-10-28T10:40:22.039163+00:00",
+  "corrects": "audit-findings-initial.json main_build.configured_commands test command and initial agent coverage inference",
+  "finding": "run-coverage-gate defaults false in pinned reusable workflow, and caller does not supply a value. Therefore this run is configured without coverage. Final job logs must confirm actual input and commands. The historical >30-minute-with-coverage caller comment does not establish coverage for this run.",
+  "evidence": [
+    "audit-domain-ci.yml input run-coverage-gate default false; lines 78-82",
+    "source .github/workflows/ci.yml at 94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8 has no run-coverage-gate input",
+    "audit-domain-ci.yml lines 431-433 only adds coverage_args if RUN_COVERAGE_GATE=true"
+  ],
+  "configured_test_command": "dotnet test \"$proj\" --no-build --configuration Release --results-directory \"TestResults/${name}\" --report-xunit-trx --report-xunit-trx-filename \"${name}.trx\"",
+  "initial_findings_retained": true
+}

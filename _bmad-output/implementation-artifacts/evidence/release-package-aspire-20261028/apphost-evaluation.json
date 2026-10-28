@@ -1,0 +1,25 @@
+{
+  "argv": [
+    "dotnet",
+    "msbuild",
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj",
+    "-p:Configuration=Release",
+    "-p:UseHexalithProjectReferences=false",
+    "-getProperty:Configuration,UseHexalithProjectReferences,MSBuildAllProjects,HexalithAspireAppHostSdkVersion,HexalithEventStoreVersion,ManagePackageVersionsCentrally,CentralPackageTransitivePinningEnabled,AspireUseCliBundle",
+    "-getItem:PackageReference,PackageVersion,ProjectReference"
+  ],
+  "cwd": "/tmp/timesheets-release-qualification-20261028",
+  "env_pins": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "head": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "source_manifest": "apphost-evaluation-source.json",
+  "source_manifest_sha256": "32c3f6730d69713d04f8702f3e39e10b3ee44e0eb0673a12ccee74b52b942a70",
+  "started_utc": "2026-10-28T10:26:25.037478+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 0.778,
+  "ended_utc": "2026-10-28T10:26:25.816069+00:00",
+  "log": "apphost-evaluation.log",
+  "log_sha256": "6af4ee87e21180e5595b8ceb3cfde66ebcdd7909e44c1461e3fbdb57111154bc",
+  "source_unchanged": true
+}

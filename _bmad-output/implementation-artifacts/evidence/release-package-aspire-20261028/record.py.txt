@@ -1,0 +1,26 @@
+import pathlib, subprocess, os, sys, json, hashlib, datetime, time
+ROOT=pathlib.Path('/tmp/timesheets-release-qualification-20261028')
+OUT=pathlib.Path('/tmp/timesheets-release-evidence-20261028')
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def source():
+    tracked=subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0')
+    extra=subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z'],cwd=ROOT).decode().split('\0')
+    result={}
+    for name in sorted(set(tracked+extra)):
+        if not name or name.startswith(('references/','_bmad','docs/','.agents/','.claude/','.github/agents/')): continue
+        p=ROOT/name
+        if p.is_file(): result[name]=sha(p)
+    return result
+if __name__=='__main__':
+    name=sys.argv[1]; argv=sys.argv[2:]
+    before=source(); manifest=OUT/(name+'-source.json'); manifest.write_text(json.dumps(before,sort_keys=True,indent=2)+'\n')
+    receipt={'argv':argv,'cwd':str(ROOT),'env_pins':{'DOTNET_CLI_HOME':'/tmp/dotnet-cli-home'},'head':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip(),'source_manifest':manifest.name,'source_manifest_sha256':sha(manifest),'started_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+    env=dict(os.environ,DOTNET_CLI_HOME='/tmp/dotnet-cli-home')
+    t=time.monotonic()
+    with (OUT/(name+'.log')).open('wb') as log:
+        r=subprocess.run(argv,cwd=ROOT,env=env,stdout=log,stderr=subprocess.STDOUT)
+    receipt.update(exit_code=r.returncode,elapsed_seconds=round(time.monotonic()-t,3),ended_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),log=name+'.log',log_sha256=sha(OUT/(name+'.log')),source_unchanged=before==source())
+    (OUT/(name+'.json')).write_text(json.dumps(receipt,indent=2)+'\n')
+    print(json.dumps(receipt,indent=2),flush=True)
+    print((OUT/(name+'.log')).read_text()[-4500:],flush=True)
+    sys.exit(r.returncode)

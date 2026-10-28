@@ -1,0 +1,26 @@
+{
+  "source_commit": "94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8",
+  "run": 40670628561,
+  "six_suites_serial": true,
+  "totals": {
+    "aborted": 0,
+    "completed": 0,
+    "disconnected": 0,
+    "error": 0,
+    "executed": 2785,
+    "failed": 0,
+    "inProgress": 0,
+    "inconclusive": 0,
+    "notExecuted": 5,
+    "notRunnable": 0,
+    "passed": 2785,
+    "passedButRunAborted": 0,
+    "pending": 0,
+    "timeout": 0,
+    "total": 2790,
+    "warning": 0
+  },
+  "nine_exact_unique_claims_cases_passed": true,
+  "root_gitlinks_match": 13,
+  "artifact_and_receipt_hashes_valid": true
+}

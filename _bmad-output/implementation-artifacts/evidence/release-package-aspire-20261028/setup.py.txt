@@ -1,0 +1,37 @@
+import subprocess, pathlib, json, hashlib, datetime
+original=pathlib.Path('/home/administrator/projects/hexalith/timesheets')
+root=pathlib.Path('/tmp/timesheets-release-qualification-20261028')
+out=pathlib.Path('/tmp/timesheets-release-evidence-20261028')
+def git(p,*a): return subprocess.check_output(['git','-C',str(p),*a]).decode().strip()
+def workspace():
+    paths=['.']+[line.split('\t')[1] for line in git(original,'ls-tree','HEAD','references/').splitlines()]
+    return {p:{'head':git(original/p,'rev-parse','HEAD'),'status':git(original/p,'status','--porcelain=v1'),'diff_sha256':hashlib.sha256(subprocess.check_output(['git','-C',str(original/p),'diff','HEAD','--binary'])).hexdigest()} for p in paths}
+def processes():
+    found=[]
+    for p in pathlib.Path('/proc').iterdir():
+        if not p.name.isdigit(): continue
+        try:
+            comm=(p/'comm').read_text().strip(); stat=(p/'stat').read_text().rsplit(')',1)[1].split()
+            if any(s in comm.lower() for s in ['dotnet','dcp','dapr','redis','docker','containerd','apphost','timesheets','eventstore','dashboard']): found.append({'pid':int(p.name),'start':int(stat[19]),'comm':comm})
+        except (OSError,ValueError): pass
+    return sorted(found,key=lambda p:p['pid'])
+if __name__=='__main__':
+    (out/'workspace-before.json').write_text(json.dumps(workspace(),indent=2)+'\n')
+    (out/'runtime-before.json').write_text(json.dumps({'utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'processes':processes()},indent=2)+'\n')
+    commands=[]
+    def run(args,cwd=original):
+        r=subprocess.run(args,cwd=cwd,text=True,capture_output=True)
+        commands.append({'argv':args,'cwd':str(cwd),'exit_code':r.returncode,'output':r.stdout+r.stderr})
+        (out/'setup.json').write_text(json.dumps(commands,indent=2)+'\n')
+        if r.returncode: raise SystemExit(r.stdout+r.stderr)
+    run(['git','clone','--no-hardlinks','--no-recurse-submodules',str(original),str(root)])
+    run(['git','remote','set-url','origin','https://github.com/Hexalith/Hexalith.Timesheets.git'],root)
+    assert git(root,'rev-parse','HEAD')=='94d0a6cd1182b6c9f3ee3392e016cab4004eb3b8'
+    for line in git(root,'ls-tree','HEAD','references/').splitlines():
+        meta,p=line.split('\t'); sha=meta.split()[2]
+        run(['git','clone','--no-hardlinks','--no-recurse-submodules','--no-checkout',str(original/p),str(root/p)],root)
+        run(['git','checkout','--detach',sha],root/p)
+        assert git(root/p,'rev-parse','HEAD')==sha
+        assert not git(root/p,'status','--porcelain=v1')
+    (out/'checkout-source.json').write_text(json.dumps({'root':str(root),'head':git(root,'rev-parse','HEAD'),'root_gitlinks':git(root,'ls-tree','HEAD','references/'),'status':git(root,'status','--porcelain=v1'),'nested_gitfiles':[str(p.relative_to(root)) for p in (root/'references').glob('*/references/*/.git')]},indent=2)+'\n')
+    print('Independent clone and thirteen published root gitlinks verified; nested gitfiles absent.')

@@ -1,0 +1,14 @@
+import pathlib,json,hashlib,xml.etree.ElementTree as ET
+root=pathlib.Path('/tmp/timesheets-release-qualification-20261028'); out=pathlib.Path('/tmp/timesheets-release-evidence-20261028')
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+e=json.loads((out/'apphost-evaluation.log').read_text()); graph=json.loads((out/'release-graph.json').read_text())
+assets={}
+for path in sorted(root.glob('*/Hexalith.Timesheets*/obj/project.assets.json')):
+ j=json.loads(path.read_text()); projects={k:v for k,v in j['libraries'].items() if v['type']=='project'}
+ assert all(k.split('/')[0].startswith('Hexalith.Timesheets') for k in projects)
+ assets[str(path.relative_to(root))]={'sha256':sha(path),'projects':sorted(projects),'packages':{k:v.get('sha512') for k,v in j['libraries'].items() if v['type']=='package'},'restore_project_references':j['project']['restore']['frameworks']}
+assert len(assets)==16
+files=['Directory.Packages.props','Directory.Build.props','Directory.Build.targets','global.json','src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj','references/Hexalith.Builds/Props/Directory.Packages.props','tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs','tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.ClaimsReadIsolation.cs']
+summary={'properties':e['Properties'],'graph_node_count':len(graph['projects']),'project_paths':list(graph['projects']),'all_project_nodes_in_timesheets':all(p.startswith(str(root)) and '/references/' not in p for p in graph['projects']),'effective_aspire_versions':{i['Identity']:i['Version'] for i in e['Items']['PackageVersion'] if i['Identity'].startswith(('Aspire.','CommunityToolkit.Aspire.','Hexalith.EventStore.'))},'input_sha256':{p:sha(root/p) for p in files},'assets':assets,'debug_bin_or_obj_paths':[str(p.relative_to(root)) for p in list(root.glob('src/*/*/Debug')) + list(root.glob('tests/*/*/Debug')) if p.parent.name in ('bin','obj')],'sdk_files':{str(p):sha(p) for p in pathlib.Path('/tmp/dotnet-cli-home/.nuget/packages/aspire.apphost.sdk/13.6.4/Sdk').glob('Sdk.*')}}
+(out/'graph-summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print(json.dumps({k:v for k,v in summary.items() if k in ('graph_node_count','all_project_nodes_in_timesheets','debug_bin_or_obj_paths','sdk_files')},indent=2))

@@ -1,0 +1,12 @@
+import pathlib,json,hashlib,base64,zipfile
+root=pathlib.Path('/tmp/timesheets-release-qualification-20261028'); out=pathlib.Path('/tmp/timesheets-release-evidence-20261028')
+assets=json.loads((root/'src/Hexalith.Timesheets.AppHost/obj/project.assets.json').read_text()); rows=[]
+for identity,lib in assets['libraries'].items():
+ if lib['type']!='package' or not identity.startswith(('Aspire.','Hexalith.EventStore.','CommunityToolkit.Aspire.')): continue
+ name,version=identity.split('/'); p=pathlib.Path('/tmp/dotnet-cli-home/.nuget/packages')/lib['path']/(name.lower()+'.'+version+'.nupkg'); m=json.loads((p.parent/'.nupkg.metadata').read_text()); raw=p.read_bytes()
+ row={'identity':identity,'sha256':hashlib.sha256(raw).hexdigest(),'computed_archive_sha512':base64.b64encode(hashlib.sha512(raw).digest()).decode(),'asset_content_sha512':lib.get('sha512'),'cached_archive_sha512':p.with_suffix('.nupkg.sha512').read_text().strip(),'metadata':m,'signed_archive':'.signature.p7s' in zipfile.ZipFile(p).namelist(),'archive_path':str(p)}
+ assert row['computed_archive_sha512']==row['cached_archive_sha512']
+ assert row['asset_content_sha512']==m['contentHash']
+ rows.append(row)
+(out/'apphost-package-identities.json').write_text(json.dumps(rows,indent=2)+'\n')
+print('Recorded',len(rows),'package identities; archive and content hashes independently match their respective metadata.')
