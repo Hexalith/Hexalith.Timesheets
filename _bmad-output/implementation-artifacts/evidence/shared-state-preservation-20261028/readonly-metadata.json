@@ -1,0 +1,81 @@
+{
+  "purpose": "Metadata-only observation with fixture stopped, after terminal runtime admission refusal",
+  "runtime_retry": false,
+  "resources_created": 0,
+  "services_stopped": 0,
+  "raw_keys_values_or_client_details_retained": false,
+  "redis_commands": [
+    [
+      "INFO",
+      "server"
+    ],
+    [
+      "INFO",
+      "keyspace"
+    ],
+    [
+      "INFO",
+      "commandstats"
+    ]
+  ],
+  "lock_acquired": true,
+  "samples": [
+    {
+      "started_unix_ns": 1793206527540110314,
+      "native_dapr_count": 8,
+      "server_identity_sha256": "e6c54b0ab4fb83fe625ae868e32cafb69685d6b4fcce5d94aaf36878dad6029d",
+      "uptime_seconds": 94856,
+      "databases": {
+        "0": {
+          "keys": 829861,
+          "expires": 363
+        },
+        "13": {
+          "keys": 0,
+          "expires": 0
+        },
+        "14": {
+          "keys": 0,
+          "expires": 0
+        }
+      },
+      "selected_command_calls": {
+        "del": 2232,
+        "eval": 14664,
+        "expire": 726,
+        "hset": 15010,
+        "xadd": 149
+      },
+      "completed_unix_ns": 1793206527559768876
+    },
+    {
+      "started_unix_ns": 1793206537558785098,
+      "native_dapr_count": 8,
+      "server_identity_sha256": "e6c54b0ab4fb83fe625ae868e32cafb69685d6b4fcce5d94aaf36878dad6029d",
+      "uptime_seconds": 94866,
+      "databases": {
+        "0": {
+          "keys": 829861,
+          "expires": 363
+        },
+        "13": {
+          "keys": 0,
+          "expires": 0
+        },
+        "14": {
+          "keys": 0,
+          "expires": 0
+        }
+      },
+      "selected_command_calls": {
+        "del": 2232,
+        "eval": 14690,
+        "expire": 726,
+        "hset": 15046,
+        "xadd": 149
+      },
+      "completed_unix_ns": 1793206537574531214
+    }
+  ],
+  "completed": true
+}

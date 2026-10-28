@@ -1,0 +1,36 @@
+{
+  "recorded_unix_ns": 1793207194701476098,
+  "provenance": "Filesystem modification times observed after execution, plus contemporaneous metadata sample times; no exact command start/end capture exists for the failed full audit or refused runtime attempt",
+  "limitation": "File write times support the recorded sequence but are mutable filesystem metadata, not independent proof of execution start or exclusive activity",
+  "filesystem_write_observations": [
+    {
+      "label": "failed_full_audit_receipt",
+      "mtime_unix_ns": 1793206475461424301,
+      "sha256": "68bbf2e67fc7f20f0e20d54b1d452f66a22bdbcd7b391d1a6f83994b30704e4f"
+    },
+    {
+      "label": "runtime_first_command_receipt",
+      "mtime_unix_ns": 1793206497295802069,
+      "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36"
+    },
+    {
+      "label": "runtime_admission_refusal",
+      "mtime_unix_ns": 1793206497539995380,
+      "sha256": "42ebf6ed3f976f871f5b7e19f93c6ae1760c26d8b9d924e5210d812ae2d7479c"
+    },
+    {
+      "label": "runtime_cleanup_receipt",
+      "mtime_unix_ns": 1793206497539995380,
+      "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5"
+    },
+    {
+      "label": "metadata_audit_receipt",
+      "mtime_unix_ns": 1793206537569756011,
+      "sha256": "bd033ca3dbac3849fb16cbce0e73a3a720f61f17945ee2b76c4d6fe0b6823317"
+    }
+  ],
+  "metadata_sample_window_unix_ns": [
+    1793206527540110314,
+    1793206537574531214
+  ]
+}

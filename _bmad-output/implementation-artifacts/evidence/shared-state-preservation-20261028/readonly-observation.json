@@ -1,0 +1,36 @@
+{
+  "purpose": "Read-only observation with this fixture stopped; no historical writer attribution",
+  "resources_created": 0,
+  "services_stopped": 0,
+  "raw_keys_or_values_retained": false,
+  "source_revision": "3a4525a62050b464664efbd895414f822c7a4d9c",
+  "lock_acquired": true,
+  "inventory_before": {
+    "dapr": {
+      "command": [
+        "dapr",
+        "list",
+        "--output",
+        "json"
+      ],
+      "exit_code": 0,
+      "inventory_valid": true,
+      "count": 8
+    },
+    "aspire": {
+      "command": [
+        "aspire",
+        "ps",
+        "--non-interactive",
+        "--format",
+        "Json"
+      ],
+      "exit_code": 0,
+      "inventory_valid": true,
+      "count": 1
+    },
+    "native_dapr_count": 8
+  },
+  "completed": false,
+  "safe_failure_type": "TimeoutError"
+}

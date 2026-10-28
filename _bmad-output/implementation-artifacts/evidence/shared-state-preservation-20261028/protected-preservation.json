@@ -1,0 +1,137 @@
+{
+  "source_revision": "3a4525a62050b464664efbd895414f822c7a4d9c",
+  "gitlinks_match": true,
+  "protected_files": {
+    "global.json": {
+      "before_sha256": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652",
+      "after_sha256": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652",
+      "matches": true
+    },
+    "Directory.Packages.props": {
+      "before_sha256": "bf2a81b8016269a5d2e9cab7c2c4498aae9387e8cb1fd77cb53ef04c24578c78",
+      "after_sha256": "bf2a81b8016269a5d2e9cab7c2c4498aae9387e8cb1fd77cb53ef04c24578c78",
+      "matches": true
+    },
+    ".gitmodules": {
+      "before_sha256": "36afaa28da32811ec492b2663ec1d50b48a101a6c34bb30efbad0c9100f0c495",
+      "after_sha256": "36afaa28da32811ec492b2663ec1d50b48a101a6c34bb30efbad0c9100f0c495",
+      "matches": true
+    },
+    "AGENTS.md": {
+      "before_sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426",
+      "after_sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426",
+      "matches": true
+    },
+    "CLAUDE.md": {
+      "before_sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426",
+      "after_sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426",
+      "matches": true
+    },
+    ".github/copilot-instructions.md": {
+      "before_sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426",
+      "after_sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426",
+      "matches": true
+    },
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "before_sha256": "f09601d3f7a44a93bc44421c2fc01c8037138e44f10c277a74759fda898624f8",
+      "after_sha256": "f09601d3f7a44a93bc44421c2fc01c8037138e44f10c277a74759fda898624f8",
+      "matches": true
+    },
+    "scripts/test_isolated_magic_link_dapr.py": {
+      "before_sha256": "705b87dd30286274c388c6361cf688d27be2dc86182fbae15cc089ba9578bc32",
+      "after_sha256": "705b87dd30286274c388c6361cf688d27be2dc86182fbae15cc089ba9578bc32",
+      "matches": true
+    },
+    "scripts/local_runtime_admission.py": {
+      "before_sha256": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006",
+      "after_sha256": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006",
+      "matches": true
+    },
+    "scripts/check_magic_link_apphost_guards.py": {
+      "before_sha256": "f5514b8b8908b4a9dae48eca4a2f40fb2b80229267caccf0e85a59390b9001a0",
+      "after_sha256": "f5514b8b8908b4a9dae48eca4a2f40fb2b80229267caccf0e85a59390b9001a0",
+      "matches": true
+    }
+  },
+  "dependencies": {
+    "references/Hexalith.Commons": {
+      "head_before": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "head_after": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.AI.Tools": {
+      "head_before": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "head_after": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Builds": {
+      "head_before": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "head_after": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Tenants": {
+      "head_before": "7ddb864cda5e942925b056391617eae4895c1253",
+      "head_after": "7ddb864cda5e942925b056391617eae4895c1253",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.EventStore": {
+      "head_before": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "head_after": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.FrontComposer": {
+      "head_before": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "head_after": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head_before": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "head_after": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Projects": {
+      "head_before": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "head_after": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Conversations": {
+      "head_before": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "head_after": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Works": {
+      "head_before": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "head_after": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Parties": {
+      "head_before": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "head_after": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.McpCli": {
+      "head_before": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "head_after": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "head_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Platform": {
+      "head_before": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "head_after": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "head_matches": true,
+      "status_matches": true
+    }
+  },
+  "all_match": true
+}

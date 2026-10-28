@@ -1,0 +1,68 @@
+{
+  "command": [
+    "python3",
+    "scripts/run_isolated_magic_link_dapr.py",
+    "--security-smoke",
+    "--log-directory",
+    "/tmp/timesheets-shared-state-trace-20261028/runtime-attempt"
+  ],
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "exit_code": 1,
+  "admission": {
+    "admitted": false,
+    "resources_started": false,
+    "infrastructure_started": false,
+    "apphost_start_attempted": false,
+    "reason": "A Dapr application is already running or inventory is unsafe; no AppHost started"
+  },
+  "cleanup": {
+    "complete": true,
+    "journey_descendants_gone": true,
+    "failure_reasons": [],
+    "components_created": false,
+    "components_removed": false,
+    "containers_removed": 0
+  },
+  "command_argv_only": [
+    [
+      "aspire",
+      "--version"
+    ],
+    [
+      "dapr",
+      "--version"
+    ],
+    [
+      "docker",
+      "version",
+      "--format",
+      "{{.Server.Version}}"
+    ],
+    [
+      "dapr",
+      "list",
+      "--output",
+      "json"
+    ]
+  ],
+  "dapr_inventory_count": 8,
+  "attempt_ended_on_refusal": true,
+  "further_runtime_attempts": 0,
+  "foreign_inventory_rows_retained": false,
+  "fixture_log_directory": "/tmp/timesheets-shared-state-trace-20261028/runtime-attempt/run-2iat3e2x",
+  "original_file_sha256": {
+    "01-aspire---version.log": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36",
+    "02-dapr---version.log": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+    "03-docker-version.log": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+    "04-dapr-list.log": "e454e674a6eb0a60fe1a3b23fcc301489486363d4e452b74618e097e2aa45cf5",
+    "admission.json": "42ebf6ed3f976f871f5b7e19f93c6ae1760c26d8b9d924e5210d812ae2d7479c",
+    "cleanup.json": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5"
+  },
+  "retained_safe_originals": {
+    "admission": "runtime-admission.json",
+    "cleanup": "runtime-cleanup.json"
+  },
+  "foreign_inventory_limitation": "Original inventory rows intentionally omitted; count/argv summary independently verified against temporary original; raw-file hash retained"
+}

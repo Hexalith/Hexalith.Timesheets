@@ -1,0 +1,227 @@
+{
+  "source_revision": "3a4525a62050b464664efbd895414f822c7a4d9c",
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "/tmp/timesheets-shared-state-trace-20261028/analyze_history.py"
+      ],
+      "exit_code": 0,
+      "result": "106 archives verified; historical-analysis.json emitted",
+      "retained_source": "analyze_history-original.py.gz",
+      "executed_source_sha256": "397c45cbfc08ebdbc83682c032c52e4c691785b1354378d1c1eae13af7c2a032",
+      "retained_source_matches_executed_bytes": true,
+      "source_encoding": "lossless gzip; hash applies to decompressed bytes"
+    },
+    {
+      "argv": [
+        "python3",
+        "/tmp/timesheets-shared-state-trace-20261028/readonly_audit.py"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "result": "FAILED COLLECTION: completed false, TimeoutError; no complete preservation pair",
+      "retained_source": "readonly_audit.py",
+      "result_file": "readonly-observation.json",
+      "executed_source_sha256": "f23b9dc490b42e6ddd40929d0f12dfeea3a3cccaaca7a899e1f2ed524cb3dbcf",
+      "retained_source_matches_executed_bytes": true
+    },
+    {
+      "argv": [
+        "python3",
+        "scripts/run_isolated_magic_link_dapr.py",
+        "--security-smoke",
+        "--log-directory",
+        "/tmp/timesheets-shared-state-trace-20261028/runtime-attempt"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "result": "Admission refusal; no resources started; terminal attempt",
+      "result_file": "runtime-refusal.json"
+    },
+    {
+      "argv": [
+        "python3",
+        "/tmp/timesheets-shared-state-trace-20261028/metadata_audit.py"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "result": "Metadata observation complete; no full preservation claim",
+      "retained_source": "metadata_audit.py",
+      "result_file": "readonly-metadata.json",
+      "executed_source_sha256": "27690e080d4548b62fa59f5713ca5535e4438cec2dc799673864f983733f545f",
+      "retained_source_matches_executed_bytes": true
+    },
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_isolated_magic_link_dapr.py"
+      ],
+      "exit_code": 0,
+      "tests": 193,
+      "elapsed_seconds": 48.827,
+      "result": "OK; all 193 pass; no real infrastructure",
+      "result_file": "fixture-tests.log.gz",
+      "result_encoding": "lossless gzip",
+      "result_original_sha256": "4141941214b08a11112dd38011d5791b65c9d3ea400b6ba2351edea42bdbf623",
+      "result_archive_sha256": "7863fc98d2e59da55af3d2c13b841055e0cc38c8a0c81288d5de1161150c9e3f"
+    },
+    {
+      "argv": [
+        "python3",
+        "_bmad-output/implementation-artifacts/evidence/shared-state-preservation-20261028/analyze_history.py"
+      ],
+      "exit_code": 0,
+      "retained_source": "analyze_history.py",
+      "executed_source_sha256": "465f77f4353e0a6b03f7ff02df65f276a15adb6cf455151a1d705d820509a944",
+      "retained_source_matches_executed_bytes": true,
+      "result": "Final offline verification; no live audit rerun",
+      "result_detail": "Byte-identical historical reproduction at normal, -O and -OO modes"
+    },
+    {
+      "argv": [
+        "python3",
+        "_bmad-output/implementation-artifacts/evidence/shared-state-preservation-20261028/verify_evidence.py"
+      ],
+      "exit_code": 0,
+      "retained_source": "verify_evidence.py",
+      "executed_source_sha256": "6ccdfe9c5c62c36b2c8bacf135acb9f98848dbbcfab83ecc3251f39445d01e5a",
+      "retained_source_matches_executed_bytes": true,
+      "result": "Final offline verification; no live audit rerun",
+      "result_detail": "Three positive reproductions, twelve negative integrity/source cases refused, and packet checks pass"
+    }
+  ],
+  "scope": "Documentation and aggregate evidence only; no new C# build, six-suite or runtime pass claimed",
+  "original_current_runner_logs": "Temporary only; foreign inventory rows excluded from published evidence",
+  "additional_checks": [
+    {
+      "check": "Offline historical analysis reproduction",
+      "exit_code": 0,
+      "result": "Byte-for-byte match with historical-analysis.json"
+    },
+    {
+      "check": "git diff --check",
+      "exit_code": 0
+    },
+    {
+      "check": "Protected preservation",
+      "exit_code": 0,
+      "result": "13 dependency heads/statuses, 10 protected file hashes and root gitlinks match",
+      "result_file": "protected-preservation.json"
+    },
+    {
+      "check": "Initial in-memory syntax/JSON/link verifier",
+      "exit_code": 1,
+      "result": "All ten link targets existed; final verifier-only assertion incorrectly expected eleven links. No artifact defect."
+    },
+    {
+      "check": "Corrected in-memory syntax/JSON/link verifier",
+      "exit_code": 0,
+      "result": "Six JSON files parse, three sources compile, all ten report links resolve"
+    }
+  ],
+  "independent_verification": {
+    "completed": true,
+    "concrete_findings": 0,
+    "historical_hash_length_checks": 318,
+    "historical_analysis_reproduced": true,
+    "temporary_original_audit_sources_and_observations_match": true,
+    "runtime_original_hashes_matched": 6,
+    "runtime_logged_commands_matched": 4,
+    "runtime_dapr_count": 8,
+    "unit_test_log_confirmed": {
+      "tests": 193,
+      "elapsed_seconds": 48.827,
+      "result": "OK"
+    },
+    "protected_files_matched": 10,
+    "dependency_heads_and_statuses_matched": 13,
+    "gitlinks_match": true,
+    "report_links_resolve": 10,
+    "live_services_queried_by_reviewer": false,
+    "runtime_rerun_by_reviewer": false
+  },
+  "final_offline_verification_result": {
+    "historical_reproductions": 3,
+    "negative_integrity_or_source_cases_refused": 12,
+    "optimization_levels": [
+      0,
+      1,
+      2
+    ],
+    "json_files_parsed": 9,
+    "python_sources_compiled": 4,
+    "execution_source_hashes_match": true,
+    "compressed_test_receipt_matches": true,
+    "safe_original_receipts_match": true,
+    "report_links_resolve": 11,
+    "live_services_queried": false
+  },
+  "review_fix_receipts": {
+    "fixture_test_receipt": "fixture-tests.log.gz",
+    "safe_originals": [
+      "runtime-admission.json",
+      "runtime-cleanup.json"
+    ],
+    "timing_supplement": "timeline.json",
+    "initial_history_source": "analyze_history-original.py.gz",
+    "no_exact_start_end_timestamps_invented": true,
+    "all_live_audit_sources_unchanged": true,
+    "runtime_retries_after_refusal": 0
+  },
+  "independent_review_recheck": {
+    "completed": true,
+    "findings_resolved": 7,
+    "remaining_concrete_findings": 0,
+    "new_deferrals": 0,
+    "offline_reproductions": 3,
+    "negative_checks_refused": 12,
+    "retained_sources_receipts_and_protected_hashes_rechecked": true,
+    "live_services_queried": false,
+    "runtime_rerun": false,
+    "supplemental_original_verifier_recheck": "Unavailable due model capacity; independent review agent completed the final verification recheck"
+  },
+  "prepublication_checks": [
+    {
+      "argv": [
+        "node_modules/.bin/commitlint",
+        "--edit",
+        "/tmp/timesheets-shared-state-trace-20261028/commit-message.txt"
+      ],
+      "message": "docs(runtime): investigate shared-state preservation failure",
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "git",
+        "fetch",
+        "origin",
+        "main"
+      ],
+      "exit_code": 0
+    },
+    {
+      "argv": [
+        "git",
+        "rev-list",
+        "--left-right",
+        "--count",
+        "HEAD...origin/main"
+      ],
+      "exit_code": 0,
+      "stdout": "0\t0"
+    }
+  ]
+}
