@@ -1,0 +1,38 @@
+{
+  "environment": {
+    "PYTHONPATH": "scripts"
+  },
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "-v",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_counts_offsetting_persistent_differences_and_same_count_update",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_reports_ttl_transitions_without_allowing_expiry_or_double_counting",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_distinguishes_server_replacement_even_when_contents_match",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_refuses_missing_identity_private_coverage_and_comparison_scope",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_reader_refuses_unavailable_malformed_or_duplicate_server_identity",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_reader_refuses_invalid_or_duplicate_digest_rows",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_private_fingerprints_are_run_scoped_domain_separated_and_never_serialized",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_populated_snapshot_reader_selects_db0_13_14_and_detects_changed_broker_value",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_allows_only_confirmed_natural_expiry",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_preservation_requires_same_cluster_and_range_contents",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_stable_baseline_selects_latest_observation_and_requires_evidence",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_admission_is_held_through_failure_cleanup_and_preservation",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_admission_is_held_through_failure_cleanup_and_preservation",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unstable_baseline_refuses_live_and_guard_resources_before_creation",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_requires_explicit_scope_before_any_service_read",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_preserves_aggregate_observation_times_for_natural_expiry",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_failed_observations_retain_safe_phase_and_category_without_retry"
+  ],
+  "started_unix_ns": 1793217323085905037,
+  "completed_unix_ns": 1793217324334668748,
+  "source_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+    "scripts/check_magic_link_apphost_guards.py": "484e9ce362b2f6acfddee7d3a40b1d068cdef53b189deb9349069cb20756a1b6",
+    "scripts/test_isolated_magic_link_dapr.py": "860c7b51a717a29bf1e7520fbe24d842e8faf80c2b6dceec5af217e09e3813b5"
+  },
+  "exit_code": 0,
+  "log": "/tmp/timesheets-preservation-independent-focused-tests.txt",
+  "log_sha256": "35defe54de1a839e050159a3de1a7494af7b9e7bd25577111935947b93fa7983"
+}

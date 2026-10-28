@@ -1,0 +1,96 @@
+{
+  "argv": [
+    "python3",
+    "scripts/run_isolated_magic_link_dapr.py",
+    "--security-smoke",
+    "--log-directory",
+    "/tmp/timesheets-preservation-diagnostics-runtime-20261028-ujsv2zzl"
+  ],
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-28T19:57:43.373139+00:00",
+  "completed_utc": "2026-10-28T19:58:04.006099+00:00",
+  "elapsed_seconds": 20.634317662988906,
+  "exit_code": 1,
+  "source_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+    "scripts/check_magic_link_apphost_guards.py": "484e9ce362b2f6acfddee7d3a40b1d068cdef53b189deb9349069cb20756a1b6",
+    "scripts/local_runtime_admission.py": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006"
+  },
+  "evidence_directory": "/tmp/timesheets-preservation-diagnostics-runtime-20261028-ujsv2zzl/run-ivck7_6e",
+  "stdout_sha256": "9aebe95d25c121e5bd8f896fda73c4f71f348465ba687d4d997b37c07f86152c",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 190,
+  "stderr_bytes": 0,
+  "admission.json": {
+    "admitted": true,
+    "resources_started": false,
+    "infrastructure_started": false,
+    "apphost_start_attempted": false
+  },
+  "cleanup.json": {
+    "complete": true,
+    "journey_descendants_gone": true,
+    "failure_reasons": [],
+    "components_created": false,
+    "components_removed": false,
+    "containers_removed": 0
+  },
+  "shared-observation-failure.json": {
+    "started_unix_ns": 1793217463973046604,
+    "completed": false,
+    "phase": "redis_database",
+    "database": 0,
+    "exception_category": "TimeoutError",
+    "completed_unix_ns": 1793217483992458421
+  },
+  "shared_observation_started": true,
+  "apphost_start_commands": 0,
+  "commands": [
+    {
+      "path": "01-aspire---version.log",
+      "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36",
+      "bytes": 99
+    },
+    {
+      "path": "02-dapr---version.log",
+      "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+      "bytes": 94
+    },
+    {
+      "path": "03-docker-version.log",
+      "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+      "bytes": 85
+    },
+    {
+      "path": "04-dapr-list.log",
+      "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "bytes": 61
+    },
+    {
+      "path": "05-aspire-ps.log",
+      "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "bytes": 79
+    }
+  ],
+  "disposition": "Inventory/port admission passed; first shared baseline observation failed with DB0 TimeoutError. Attempt ended before any resource or AppHost start; no complete snapshot pair or preservation result; no retry.",
+  "retained_originals": {
+    "admission.json": {
+      "path": "runtime-admission.json",
+      "sha256": "95811cdeec23ebead710f45ea0dc6e213bdcf29d21a2dc1a65d8e1514dd3137b",
+      "bytes": 124
+    },
+    "cleanup.json": {
+      "path": "runtime-cleanup.json",
+      "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+      "bytes": 173
+    },
+    "shared-observation-failure.json": {
+      "path": "runtime-observation-failure.json",
+      "sha256": "630845dc2c99a662f1740f0b33a005db0a24d0116939815fefec82cc4af782db",
+      "bytes": 197
+    }
+  },
+  "privacy": "Raw command logs remain in the temporary runner directory; only their hashes/sizes and safe admission/cleanup/failure originals are retained here. No comparison material, foreign inventory rows or writer ownership is retained."
+}

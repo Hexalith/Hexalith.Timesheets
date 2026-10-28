@@ -1,0 +1,8 @@
+{
+  "started_unix_ns": 1793217463973046604,
+  "completed": false,
+  "phase": "redis_database",
+  "database": 0,
+  "exception_category": "TimeoutError",
+  "completed_unix_ns": 1793217483992458421
+}

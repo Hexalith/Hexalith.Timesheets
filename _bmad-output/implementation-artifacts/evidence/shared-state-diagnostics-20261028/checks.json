@@ -1,0 +1,81 @@
+{
+  "starting_revision": "ccf6fb1dc7469322e2c85f8fe1db4bfe5fcb28bb",
+  "commands": [
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_isolated_magic_link_dapr.py'",
+      "stage": "baseline",
+      "exit_code": 0,
+      "tests": 193,
+      "seconds": 51.781,
+      "output": {
+        "path": "baseline-tests.txt.gz",
+        "sha256": "7cf5d9a5d0d9a3b1ff06501a0538062d027cebdca7489f039098e681cde96105",
+        "original_sha256": "7a7847c8824e0fbf5cdaea81dd71e00b99d209ee241b5eb12a373d7f6be3170d",
+        "original_bytes": 464
+      }
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_isolated_magic_link_dapr.py'",
+      "stage": "adaptation",
+      "exit_code": 1,
+      "tests": 200,
+      "failures": 4,
+      "seconds": 70.135,
+      "output": {
+        "path": "adaptation-tests.txt.gz",
+        "sha256": "3fa75dbfaf7d7e53cfc7db09f856c2bdb03ea012d69a15dbc62993abeca80e9f",
+        "original_sha256": "d0f4281ef8d764b6630fb27cbfc0bf99160facc53ab637a34571e27ccd4ceecd",
+        "original_bytes": 3898
+      },
+      "scope": "Two old test methods still injected the removed public scheduler hash; corrected to mutate the private comparison. Source was being adapted; no exact execution-source hashes claimed."
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_isolated_magic_link_dapr.py'",
+      "stage": "verified",
+      "exit_code": 0,
+      "tests": 200,
+      "seconds": 69.552,
+      "output": {
+        "path": "fixture-tests.txt.gz",
+        "sha256": "40e94e55c84df9810f49c070fa57f06dc1fdf3daf7e675d1bee4ae7c9afae76b",
+        "original_sha256": "a10c50fd94545a757687c23725a7ae3fb25e57f4b24dc6bfc7122f116d708962",
+        "original_bytes": 471
+      },
+      "source_sha256": {
+        "scripts/run_isolated_magic_link_dapr.py": "b12c11e3178b22f1ae7b3346af191c2f75388e85f7b25caa242e3d53fad097b2",
+        "scripts/check_magic_link_apphost_guards.py": "6210c4b7a7c982e633157dfa3e570c90036b1657bb118ed204a1c51d4c4c80cc",
+        "scripts/test_isolated_magic_link_dapr.py": "d701e402c6b1de3ddad738c57e9bd38310655375e501fdb404213af8ba97ae2f"
+      }
+    },
+    {
+      "command": "python3 -m py_compile scripts/run_isolated_magic_link_dapr.py scripts/check_magic_link_apphost_guards.py scripts/test_isolated_magic_link_dapr.py",
+      "exit_code": 0
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_isolated_magic_link_dapr.py'",
+      "stage": "post-review",
+      "exit_code": 0,
+      "tests": 203,
+      "seconds": 47.517,
+      "source_sha256": {
+        "scripts/run_isolated_magic_link_dapr.py": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+        "scripts/check_magic_link_apphost_guards.py": "484e9ce362b2f6acfddee7d3a40b1d068cdef53b189deb9349069cb20756a1b6",
+        "scripts/test_isolated_magic_link_dapr.py": "860c7b51a717a29bf1e7520fbe24d842e8faf80c2b6dceec5af217e09e3813b5"
+      },
+      "output": {
+        "path": "post-review-tests.txt.gz",
+        "sha256": "5ac089d433e84bc208831555dd489afada443af3e5516ea530b018c1ddfb67a1",
+        "original_sha256": "904ace3dcb936481b4dffd2b8998cfb3a761b95c68601080f7386331b3313442",
+        "original_bytes": 474
+      }
+    }
+  ],
+  "limits": [
+    "No C# changes; no new solution build or six-suite pass claimed.",
+    "Offline fixture checks are not runtime qualification."
+  ]
+}

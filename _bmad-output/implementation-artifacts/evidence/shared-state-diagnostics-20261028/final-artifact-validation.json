@@ -1,0 +1,51 @@
+{
+  "passed": true,
+  "started_unix_ns": 1793217731017115677,
+  "completed_unix_ns": 1793217731102734559,
+  "baseline_revision": "ccf6fb1dc7469322e2c85f8fe1db4bfe5fcb28bb",
+  "checks": {
+    "runtime_original_copies_verified": 3,
+    "runtime_command_logs_verified": 5,
+    "runtime_result": "exit1; first DB0 baseline phase timed out; no pair, preservation result or startup",
+    "runtime_safe_output_and_schema": true,
+    "test_archives_verified": 4,
+    "tested_runtime_final_source_binding": true,
+    "independent_artifact_copies_verified": 5,
+    "benchmark_scope_metrics_and_anomaly_verified": true,
+    "protected_historical_source_pins_gitlinks_unchanged": true,
+    "historical_investigation_body_preserved": true,
+    "documentation_links_verified": 18,
+    "documentation_claims_and_triage_verified": true
+  },
+  "validated_artifact_sha256": {
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/adaptation-tests.txt.gz": "3fa75dbfaf7d7e53cfc7db09f856c2bdb03ea012d69a15dbc62993abeca80e9f",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/baseline-tests.txt.gz": "7cf5d9a5d0d9a3b1ff06501a0538062d027cebdca7489f039098e681cde96105",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/benchmark_synthetic.py": "b403ef38b37fef82d835a0fe06c88172819f7aeebc31437b6ddb2ce06eb7d714",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/checks.json": "b6375e07d618610bdf96d52e9625bf4ec8b7dc1acf1e26c2f068e9187f1fda73",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/commitlint.json": "87bbc3ae827bb220533db4c1d2f37b07194b2d7f1ed4cea2a0fcb65c1d79e8bd",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/commitlint.txt.gz": "87860a6e9b9f8e9dd9f26dfead5850b049f3723443b255667007911da23a0b9d",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/fixture-tests.txt.gz": "40e94e55c84df9810f49c070fa57f06dc1fdf3daf7e675d1bee4ae7c9afae76b",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/independent-focused-tests.json": "915d2695d330f177be3f4b9f86c29eded0b13e6f98645cfafbb62cb63fbfb694",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/independent-focused-tests.txt.gz": "61ed053816a84983ab9c0084505eed7cb2da42da15d7a95b1ff890770fcba396",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/independent-verification.json": "b983292c589ef1883020230fbc4994793a6bb3b4e6945a1d79f8cc39728a24b3",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/post-review-tests.txt.gz": "5ac089d433e84bc208831555dd489afada443af3e5516ea530b018c1ddfb67a1",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/runtime-admission.json": "95811cdeec23ebead710f45ea0dc6e213bdcf29d21a2dc1a65d8e1514dd3137b",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/runtime-attempt.json": "728c3c54d9c125e471141e5fa08bdc426a4ace0ddcb1ebda12f2bf0880f2dabb",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/runtime-cleanup.json": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/runtime-observation-failure.json": "630845dc2c99a662f1740f0b33a005db0a24d0116939815fefec82cc4af782db",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/synthetic-benchmark.json": "76302d6d1eb09b43b060015f9dfbdb3151ca653d72c983839fd58f681065a981",
+    "_bmad-output/implementation-artifacts/evidence/shared-state-diagnostics-20261028/verify_offline.py": "d6f5a2782cdb5183cdb93bae6b53272f755c182be4cbab8f4d09840da635c5cc"
+  },
+  "validated_document_sha256": {
+    "_bmad-output/implementation-artifacts/tests/shared-state-preservation-investigation.md": "423470f464899db19be2ccc400af260b5d339fb94724060b3a954afd9a0c5720",
+    "docs/launch-readiness.md": "6dc17be826836dfe6b734eebe4af1feb42f1bc84b46a7f54f09516f7bf32d218",
+    "docs/local-magic-link-dapr-proof.md": "a9e94d80a290e6d5a76c879da7b5212243b383512dc5d1ac150585b7eb4462fe",
+    "_bmad-output/implementation-artifacts/spec-shared-state-preservation-diagnostics.md": "3ac3111b13687af86263293a7073d912a7636b8f7b92cd225c556d5f59104f47"
+  },
+  "limits": [
+    "Local byte verification only; no service contacted or runtime attempt repeated.",
+    "No complete snapshot pair, preservation outcome, server identity comparison, runtime qualification or writer attribution established.",
+    "Available receipts document one attempt; this is not a global audit of every process/session.",
+    "Spec status may advance to done after this validation; evidence hashes bind the then-current content."
+  ]
+}

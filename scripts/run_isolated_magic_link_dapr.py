@@ -1141,38 +1141,92 @@ def verify_dashboard_ready(identity, directory=Path("/proc"), diagnostic=None):
         report["observation_completed_unix_ns"] = time.time_ns()
 
 
-class SharedSnapshot(dict):
-    """Public aggregate evidence plus private in-memory TTL comparison data."""
+class SharedComparison:
+    """One run's private, domain-separated comparison key; never sent to services."""
 
     def __init__(self):
+        self._key = secrets.token_bytes(32)
+
+    def fingerprint(self, domain, value):
+        return hmac.digest(self._key, domain + b"\0" + value, "sha256")
+
+
+class SharedObservationError(FixtureError):
+    """Safe phase evidence for one failed observation, without service responses."""
+
+    def __init__(self, observation):
+        super().__init__("Shared-service observation failed during " + observation["phase"] + "; preservation is unproved")
+        self.shared_observation = observation
+
+
+class SharedSnapshot(dict):
+    """Serializable aggregate evidence; comparison material lives only in attributes."""
+
+    def __init__(self, comparison):
+        require(isinstance(comparison, SharedComparison), "An explicit shared comparison scope is required")
         super().__init__(redis={})
+        self.comparison = comparison
+        self.persistent = {}
         self.expiring = {}
         self.captured_at = {}
+        self.redis_identity = None
+        self.scheduler_identity = None
+        self.scheduler_content = None
 
 
 def shared_preservation(before, after):
     """Allow only a previously captured, elapsed Redis TTL to remove a key."""
+    require(before.comparison is after.comparison, "Shared preservation comparison scopes differ")
+    require(all(isinstance(snapshot.redis_identity, bytes) and len(snapshot.redis_identity) == 32
+                for snapshot in (before, after)), "Redis preservation identity is unavailable")
+    require(all(isinstance(value, bytes) and len(value) == 32 for snapshot in (before, after)
+                for value in (snapshot.scheduler_identity, snapshot.scheduler_content)),
+            "Scheduler preservation comparison is unavailable")
     expires = {}
     redis = {}
     mismatches = []
-    scheduler_fields = ("cluster_id", "keys", "sha256")
+    redis_identity_matches = before.redis_identity == after.redis_identity
+    if not redis_identity_matches:
+        mismatches.append("Redis server identity changed")
+    scheduler_fields = ("keys",)
     require(all(field in snapshot["scheduler"] for snapshot in (before, after) for field in scheduler_fields),
             "Scheduler preservation identity is unavailable")
-    identity_matches = before["scheduler"]["cluster_id"] == after["scheduler"]["cluster_id"]
-    contents_match = all(before["scheduler"][field] == after["scheduler"][field] for field in ("keys", "sha256"))
+    identity_matches = before.scheduler_identity == after.scheduler_identity
+    contents_match = (before.scheduler_content == after.scheduler_content
+                     and before["scheduler"]["keys"] == after["scheduler"]["keys"])
     scheduler = {"identity_matches": identity_matches, "contents_match": contents_match,
                  "keys_before": before["scheduler"]["keys"], "keys_after": after["scheduler"]["keys"],
                  "revision_before": before["scheduler"].get("revision"),
                  "revision_after": after["scheduler"].get("revision")}
-    require(before["redis"].keys() == after["redis"].keys(), "Redis preservation database coverage changed")
+    require(all(set(snapshot["redis"]) == {"0", "13", "14"} for snapshot in (before, after)),
+            "Redis preservation requires complete DB0/13/14 coverage")
     for database in before["redis"]:
         previous, current = before["redis"][database], after["redis"][database]
-        persistent_matches = (previous["persistent_keys"], previous["persistent_sha256"]) == (
-            current["persistent_keys"], current["persistent_sha256"])
+        require(all(database in snapshot.persistent and database in snapshot.expiring
+                    and database in snapshot.captured_at for snapshot in (before, after)),
+                "Redis preservation comparison is unavailable")
+        old_persistent, new_persistent = before.persistent[database], after.persistent[database]
+        for snapshot, public in ((before, previous), (after, current)):
+            require(all(isinstance(public.get(field), int) and not isinstance(public[field], bool)
+                        for field in ("keys", "persistent_keys", "expiring_keys"))
+                    and len(snapshot.persistent[database]) == public["persistent_keys"]
+                    and len(snapshot.expiring[database]) == public["expiring_keys"]
+                    and public["keys"] == public["persistent_keys"] + public["expiring_keys"],
+                    "Redis comparison coverage is incomplete")
         old, new = before.expiring[database], after.expiring[database]
+        require(old_persistent.keys().isdisjoint(old) and new_persistent.keys().isdisjoint(new),
+                "Redis preservation TTL classification is inconsistent")
+        persistent_added = sum(key not in old_persistent and key not in old for key in new_persistent)
+        persistent_removed = sum(key not in new_persistent and key not in new for key in old_persistent)
+        persistent_updates = sum(value != new_persistent[key] for key, value in old_persistent.items() if key in new_persistent)
+        to_expiring = sum(key in old_persistent for key in new)
+        to_persistent = sum(key in new_persistent for key in old)
+        persistent_matches = old_persistent == new_persistent
         allowed = missing = value_changes = deadline_changes = 0
         for key, (value, deadline) in old.items():
             if key not in new:
+                if key in new_persistent:
+                    continue
                 if deadline <= after.captured_at[database]:
                     allowed += 1
                 else:
@@ -1181,11 +1235,15 @@ def shared_preservation(before, after):
                 new_value, new_deadline = new[key]
                 value_changes += value != new_value
                 deadline_changes += abs(deadline - new_deadline) > 2
-        added = len(new.keys() - old.keys())
-        expiring_matches = not any((added, missing, value_changes, deadline_changes))
+        added = sum(key not in old and key not in old_persistent for key in new)
+        expiring_matches = not any((added, missing, value_changes, deadline_changes, to_expiring, to_persistent))
         redis[database] = {
+            "captured_before_unix_ms": before.captured_at[database],
+            "captured_after_unix_ms": after.captured_at[database],
             "persistent": {"matches": persistent_matches, "keys_before": previous["persistent_keys"],
-                           "keys_after": current["persistent_keys"]},
+                           "keys_after": current["persistent_keys"], "added": persistent_added,
+                           "removed": persistent_removed, "value_changes": persistent_updates},
+            "ttl_transitions": {"persistent_to_expiring": to_expiring, "expiring_to_persistent": to_persistent},
             "expiring": {"matches": expiring_matches, "added": added, "missing_unexpired": missing,
                          "value_changes": value_changes, "deadline_changes": deadline_changes,
                          "confirmed_natural_expirations": allowed}}
@@ -1199,12 +1257,15 @@ def shared_preservation(before, after):
     if not contents_match:
         mismatches.append("Scheduler contents changed")
     return {"matches": not mismatches, "confirmed_natural_expirations": expires,
+            "redis_server": {"identity_matches": redis_identity_matches},
+            "observation": {"before": before.get("observation"), "after": after.get("observation")},
             "redis": redis, "scheduler": scheduler, "mismatches": mismatches,
-            "method": "Atomic read-only Redis KEYS/DUMP/PTTL/TIME DB0/13/14; etcd v3 all-key range on loopback:2379",
+            "method": "Redis INFO server identity; atomic read-only KEYS/DUMP/PTTL/TIME DB0/13/14; etcd v3 all-key range on loopback:2379",
+            "attribution": "Snapshot differences do not establish a writer or intervening mutation history",
             "ttl_rule": "Retained expiring values and deadlines match; absent keys allowed only after their captured deadline"}
 
 
-def scheduler_fingerprint(response):
+def scheduler_fingerprint(response, snapshot=None):
     """Accept only a complete etcd range, including a genuine empty range."""
     message = "Scheduler preservation range is unavailable or malformed"
     require(isinstance(response, dict) and set(response) <= {"header", "kvs", "count", "more"}, message)
@@ -1244,12 +1305,14 @@ def scheduler_fingerprint(response):
         if "lease" in row:
             integer(row["lease"])
     rows = sorted(rows, key=lambda row: row["key"])
-    return {"cluster_id": str(int(header["cluster_id"])), "revision": str(int(header["revision"])),
-            "keys": len(rows), "sha256": hashlib.sha256(
-        json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()}
+    if snapshot is not None:
+        snapshot.scheduler_identity = snapshot.comparison.fingerprint(b"scheduler-identity", str(int(header["cluster_id"])).encode())
+        snapshot.scheduler_content = snapshot.comparison.fingerprint(b"scheduler-content",
+            json.dumps(rows, sort_keys=True, separators=(",", ":")).encode())
+    return {"revision": str(int(header["revision"])), "keys": len(rows)}
 
 
-def read_only_shared_snapshot():
+def read_only_shared_snapshot(comparison):
     """Fingerprint retained broker/state and scheduler KV without exposing data."""
     def read_resp(stream):
         prefix = stream.read(1)
@@ -1269,20 +1332,32 @@ def read_only_shared_snapshot():
             return [read_resp(stream) for _ in range(int(line))]
         raise FixtureError("Redis preservation snapshot is unavailable")
 
-    result = SharedSnapshot()
-    with socket.create_connection(("127.0.0.1", 6379), timeout=20) as connection:
-        with connection.makefile("rb") as stream:
-            def command(*arguments):
-                arguments = [arg if isinstance(arg, bytes) else str(arg).encode() for arg in arguments]
-                connection.sendall(b"*" + str(len(arguments)).encode() + b"\r\n" + b"".join(
-                    b"$" + str(len(arg)).encode() + b"\r\n" + arg + b"\r\n" for arg in arguments))
-                return read_resp(stream)
-            for database in (0, 13, 14):
-                require(command("SELECT", database) == b"OK", "Redis snapshot database selection failed")
-                # Script reads only and holds atomic access. Pair each PTTL
-                # with TIME so its absolute expiry remains comparable even
-                # while a large broker snapshot takes measurable time.
-                script = """
+    require(isinstance(comparison, SharedComparison), "An explicit shared comparison scope is required")
+    observation = {"started_unix_ns": time.time_ns(), "completed": False, "phase": "initializing", "database": None}
+    try:
+        result = SharedSnapshot(comparison)
+        observation["phase"] = "redis_connection"
+        with socket.create_connection(("127.0.0.1", 6379), timeout=20) as connection:
+            with connection.makefile("rb") as stream:
+                def command(*arguments):
+                    arguments = [arg if isinstance(arg, bytes) else str(arg).encode() for arg in arguments]
+                    connection.sendall(b"*" + str(len(arguments)).encode() + b"\r\n" + b"".join(
+                        b"$" + str(len(arg)).encode() + b"\r\n" + arg + b"\r\n" for arg in arguments))
+                    return read_resp(stream)
+                observation["phase"] = "redis_identity"
+                server = command("INFO", "server")
+                require(isinstance(server, bytes), "Redis preservation identity is unavailable")
+                identities = re.findall(rb"(?m)^run_id:([0-9a-f]{40})\r?$", server)
+                require(len(identities) == 1 and len(re.findall(rb"(?m)^run_id:", server)) == 1,
+                        "Redis preservation identity is unavailable or malformed")
+                result.redis_identity = result.comparison.fingerprint(b"redis-identity", identities[0])
+                for database in (0, 13, 14):
+                    observation.update(phase="redis_database", database=database)
+                    require(command("SELECT", database) == b"OK", "Redis snapshot database selection failed")
+                    # Script reads only and holds atomic access. Pair each PTTL
+                    # with TIME so its absolute expiry remains comparable even
+                    # while a large broker snapshot takes measurable time.
+                    script = """
 local keys = redis.call('KEYS', '*')
 local rows = {}
 for _, key in ipairs(keys) do
@@ -1299,24 +1374,48 @@ for _, key in ipairs(keys) do
 end
 return {redis.call('TIME'), rows}
 """
-                now, rows = command("EVAL", script, 0)
-                timestamp = int(now[0]) * 1000 + int(now[1]) // 1000
-                permanent = sorted((key.decode(), value.decode()) for key, value, ttl in rows if ttl == -1)
-                result.expiring[str(database)] = {key.decode(): (value.decode(), ttl)
-                                                  for key, value, ttl in rows if ttl >= 0}
-                result.captured_at[str(database)] = timestamp
-                result["redis"][str(database)] = {"keys": len(rows), "persistent_keys": len(permanent),
-                    "persistent_sha256": hashlib.sha256(json.dumps(permanent, separators=(",", ":")).encode()).hexdigest(),
-                    "expiring_keys": len(result.expiring[str(database)])}
-    request = urllib.request.Request("http://127.0.0.1:2379/v3/kv/range", data=b'{"key":"AA==","range_end":"AA=="}',
-                                     headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(request, timeout=20) as response:
-        try:
-            scheduler = json.load(response)
-        except ValueError:
-            raise FixtureError("Scheduler preservation range did not return valid JSON") from None
-    result["scheduler"] = scheduler_fingerprint(scheduler)
-    return result
+                    now, rows = command("EVAL", script, 0)
+                    timestamp = int(now[0]) * 1000 + int(now[1]) // 1000
+                    # Lua's existing fixed-size digests never leave memory. Key them
+                    # locally without exporting the run secret or expanding the read.
+                    permanent, expiring = {}, {}
+                    for key, value, ttl in rows:
+                        require(isinstance(key, bytes) and isinstance(value, bytes)
+                                and re.fullmatch(rb"[0-9a-f]{40}", key) and re.fullmatch(rb"[0-9a-f]{40}", value)
+                                and isinstance(ttl, int) and not isinstance(ttl, bool) and ttl >= -1,
+                                "Redis preservation row is malformed")
+                        key = result.comparison.fingerprint(b"redis-key", key)
+                        value = result.comparison.fingerprint(b"redis-value", value)
+                        require(key not in permanent and key not in expiring, "Redis preservation row is duplicated")
+                        if ttl == -1:
+                            permanent[key] = value
+                        else:
+                            expiring[key] = (value, ttl)
+                    result.persistent[str(database)] = permanent
+                    result.expiring[str(database)] = expiring
+                    result.captured_at[str(database)] = timestamp
+                    result["redis"][str(database)] = {"keys": len(rows), "persistent_keys": len(permanent),
+                        "expiring_keys": len(result.expiring[str(database)]), "captured_at_unix_ms": timestamp}
+        observation.update(phase="scheduler_range", database=None)
+        request = urllib.request.Request("http://127.0.0.1:2379/v3/kv/range", data=b'{"key":"AA==","range_end":"AA=="}',
+                                         headers={"Content-Type": "application/json"})
+        with urllib.request.urlopen(request, timeout=20) as response:
+            try:
+                scheduler = json.load(response)
+            except ValueError:
+                raise FixtureError("Scheduler preservation range did not return valid JSON") from None
+        result["scheduler"] = scheduler_fingerprint(scheduler, result)
+        observation.update(completed=True, phase="complete")
+        result["observation"] = observation
+        return result
+    except (FixtureError, OSError, ValueError, KeyError, TypeError, IndexError, KeyboardInterrupt) as error:
+        observation["exception_category"] = type(error).__name__
+        if isinstance(error, KeyboardInterrupt):
+            error.shared_observation = observation
+            raise
+        raise SharedObservationError(observation) from None
+    finally:
+        observation["completed_unix_ns"] = time.time_ns()
 
 
 class IsolatedFixture:
@@ -1326,6 +1425,7 @@ class IsolatedFixture:
                  ownership_check=None, resource_check=bound_resource_processes, public_port=8080, security_smoke=False):
         self.public_port = validate_public_port(public_port)
         self.security_smoke = security_smoke
+        self.shared_comparison = SharedComparison()
         self.security_container = None
         self.command = command or self._command
         self.injected_command = command is not None
@@ -1725,16 +1825,26 @@ class IsolatedFixture:
             "Gateway invocation evidence is incomplete; no resources started")
         self.environment.update({GATEWAY_EXECUTABLE_SETTING: executable, GATEWAY_DIRECTORY_SETTING: directory})
 
+    def capture_shared_snapshot(self, reader=None):
+        """Retain a safe failure receipt without repeating an observation."""
+        try:
+            return (reader or read_only_shared_snapshot)(self.shared_comparison)
+        except (SharedObservationError, KeyboardInterrupt) as error:
+            observation = getattr(error, "shared_observation", None)
+            if observation is not None:
+                self.write_evidence("shared-observation-failure.json", json.dumps(observation, indent=2) + "\n")
+            raise
+
     def capture_shared_baseline(self, snapshot_reader=None):
         """Admit only two matching read-only observations before creating resources."""
         reader = snapshot_reader or read_only_shared_snapshot
-        before = reader()
+        before = self.capture_shared_snapshot(reader)
         before_observed = time.time_ns()
         observation_started = time.monotonic()
         require(self.write_evidence("shared-baseline-before.json", json.dumps(before, indent=2) + "\n"),
                 "Shared baseline evidence is incomplete; no resources started")
         time.sleep(1)
-        after = reader()
+        after = self.capture_shared_snapshot(reader)
         after_observed = time.time_ns()
         elapsed = time.monotonic() - observation_started
         require(self.write_evidence("shared-before.json", json.dumps(after, indent=2) + "\n"),
@@ -2234,7 +2344,7 @@ class IsolatedFixture:
                     exit_code = 1
             if self.shared_before is not None:
                 try:
-                    after = read_only_shared_snapshot()
+                    after = self.capture_shared_snapshot()
                     self.write_evidence("shared-after.json", json.dumps(after, indent=2) + "\n")
                     preservation = shared_preservation(self.shared_before, after)
                     self.write_evidence("shared-preservation.json", json.dumps(preservation, indent=2) + "\n")

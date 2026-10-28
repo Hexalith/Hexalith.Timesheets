@@ -361,7 +361,7 @@ def _run_guards(log_directory, configuration_only, configuration):
             status = 1
         if fixture.shared_before is not None:
             try:
-                after = read_only_shared_snapshot()
+                after = fixture.capture_shared_snapshot(read_only_shared_snapshot)
                 fixture.write_evidence("shared-after.json", json.dumps(after, indent=2) + "\n")
                 preservation = shared_preservation(fixture.shared_before, after)
                 fixture.write_evidence("shared-preservation.json", json.dumps(preservation, indent=2) + "\n")

@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "npm",
+    "run",
+    "commitlint",
+    "--",
+    "--edit",
+    "/tmp/timesheets-preservation-diagnostics-commit-message.txt"
+  ],
+  "started_unix_ns": 1793217682945235876,
+  "completed_unix_ns": 1793217683351966769,
+  "exit_code": 0,
+  "message": "fix(runtime): close shared-state preservation evidence gaps\n",
+  "output": {
+    "path": "commitlint.txt.gz",
+    "sha256": "87860a6e9b9f8e9dd9f26dfead5850b049f3723443b255667007911da23a0b9d",
+    "original_sha256": "8d45c426e43d5b024791551bd02ae5649377b4ab6d8f5c9eaafffc85de610441",
+    "original_bytes": 121
+  }
+}

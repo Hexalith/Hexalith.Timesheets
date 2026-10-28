@@ -867,14 +867,46 @@ Sanitized stdout/stderr, including timeout streams, stay in a unique evidence
 directory per invocation. Cleanup/evidence failures preserve a journey's
 original nonzero status. Ordinary starts retain checked-in defaults.
 
-`shared-preservation.json` reports each Redis database's persistent-key counts
-and whether its persistent content matches. Expiring-key diagnostics distinguish
+`shared-preservation.json` reports whether the Redis server identity matches,
+independently of each database's content comparison. The reader validates
+`INFO server`'s `run_id` on the same connection used for DB0/13/14. Replacement
+fails preservation even when contents match; unavailable identity refuses the
+observation. Matching identity establishes the same observed Redis process,
+not continuous contents or writer ownership between observations.
+
+Persistent-key diagnostics report before/after counts, additions, removals and
+value changes among keys persistent in both observations. Additions/removals
+mean complete absence from the other observation's key set; TTL transitions
+have separate persistent-to-expiring and expiring-to-persistent counts. These
+are snapshot differences, not counts of intervening write commands. An
+expiring key becoming persistent fails even after its old deadline.
+Expiring-key diagnostics distinguish
 added keys, missing unexpired keys, changed values, changed expiry deadlines,
 and confirmed natural expirations. Scheduler diagnostics distinguish cluster
 identity from range contents and include before/after key counts and revisions.
+New snapshot JSON retains counts, revisions and observation times only. Per-key comparison maps,
+Redis/scheduler identity and content fingerprints, and their random run key
+remain private in memory. Domain-separated HMAC-SHA256 fingerprints reuse the
+existing fixed-size Lua digest rows; no run secret is sent to a service.
+The two admission observations and final check share one explicit comparison
+scope. A missing scope refuses before I/O; incomplete DB0/13/14 coverage,
+inconsistent map/count totals, missing comparison material or another scope
+refuses comparison. Per-database Redis capture times and local observation
+start/end times remain in aggregate evidence. `shared-observation-failure.json`
+records a failed observation's phase, database when applicable, exception
+category, completion status and local start/end times. It contains no response
+or exception message and triggers no repeated read. This adds
+one small `INFO server` read per snapshot without increasing the existing
+KEYS/DUMP/PTTL/TIME or scheduler-range reads, their payloads, or their
+20-second socket/HTTP timeouts. The prior fingerprint timeout remains
+unresolved; no new full read is justified outside guarded idle admission.
+Historical read-only audit helpers depend on the earlier runner source/schema;
+their archived execution bytes remain unchanged and must not be rerun against
+the current reader's explicit-scope API. Aggregate evidence cannot reconstruct
+per-key comparisons after the run ends.
 Console failures name the changed services. Reports contain no state keys or
-values, and genuine mutations remain failures; unrelated writes are not
-ignored or attributed to the fixture without evidence. The compiled guard
+values or comparison fingerprints. All unexplained differences fail; namespaces,
+active sessions and command counters alone do not identify a writer. The compiled guard
 driver uses the same admission and preservation checks, while its
 `--configuration-only` mode continues to avoid storage and runtime startup.
 

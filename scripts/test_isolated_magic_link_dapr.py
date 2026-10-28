@@ -92,15 +92,101 @@ class Commands:
         return subprocess.CompletedProcess(arguments, 0, output, "")
 
 
+class RedisSnapshotConnection:
+    """RESP transport double; never connects to a service."""
+
+    def __init__(self, databases, server=b"# Server\r\nrun_id:" + b"a" * 40 + b"\r\n", digest_rows=True):
+        self.databases = databases
+        self.server = server
+        self.digest_rows = digest_rows
+        self.database = None
+        self.arguments = []
+        self.stream = io.BytesIO()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        pass
+
+    def makefile(self, _):
+        return self.stream
+
+    @staticmethod
+    def resp(value):
+        if isinstance(value, list):
+            return b"*" + str(len(value)).encode() + b"\r\n" + b"".join(RedisSnapshotConnection.resp(item) for item in value)
+        if isinstance(value, int):
+            return b":" + str(value).encode() + b"\r\n"
+        value = value if isinstance(value, bytes) else str(value).encode()
+        return b"$" + str(len(value)).encode() + b"\r\n" + value + b"\r\n"
+
+    def sendall(self, data):
+        request = io.BytesIO(data)
+        count = int(request.readline()[1:])
+        arguments = []
+        for _ in range(count):
+            length = int(request.readline()[1:])
+            arguments.append(request.read(length))
+            request.read(2)
+        self.arguments.append(arguments)
+        if arguments[0] == b"INFO":
+            response = self.resp(self.server)
+        elif arguments[0] == b"SELECT":
+            self.database = int(arguments[1])
+            response = b"+OK\r\n"
+        else:
+            rows = self.databases[self.database]
+            if self.digest_rows:
+                rows = [[fixture.hashlib.sha1(key.encode()).hexdigest(), fixture.hashlib.sha1(value.encode()).hexdigest(), ttl]
+                        for key, value, ttl in rows]
+            response = self.resp([["1", "0"], rows])
+        position = self.stream.tell()
+        self.stream.seek(0, io.SEEK_END)
+        self.stream.write(response)
+        self.stream.seek(position)
+
+
 class IsolatedFixtureTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.logs = Path(self.temporary.name) / "logs"
+        self.comparison = fixture.SharedComparison()
         self.native_dapr_inventory = fixture.running_dapr_processes
         inventory = patch.object(fixture, "running_dapr_processes", return_value=[])
         inventory.start()
         self.addCleanup(inventory.stop)
+
+    def new_shared_snapshot(self):
+        snapshot = fixture.SharedSnapshot(self.comparison)
+        snapshot.redis_identity = self.comparison.fingerprint(b"redis-identity", b"server")
+        snapshot.scheduler_identity = self.comparison.fingerprint(b"scheduler-identity", b"1")
+        snapshot.scheduler_content = self.comparison.fingerprint(b"scheduler-content", b"fixed")
+        for database in ("0", "13", "14"):
+            snapshot["redis"][database] = {"keys": 0, "persistent_keys": 0, "expiring_keys": 0}
+            snapshot.persistent[database] = {}
+            snapshot.expiring[database] = {}
+            snapshot.captured_at[database] = 900
+        return snapshot
+
+    @staticmethod
+    def update_shared_counts(snapshot):
+        for database in snapshot["redis"]:
+            persistent, expiring = len(snapshot.persistent[database]), len(snapshot.expiring[database])
+            snapshot["redis"][database].update(keys=persistent + expiring, persistent_keys=persistent, expiring_keys=expiring)
+
+    def read_shared_rows(self, databases, server=b"# Server\r\nrun_id:" + b"a" * 40 + b"\r\n",
+                         comparison=None, scheduler=None, digest_rows=True):
+        connection = RedisSnapshotConnection(databases, server, digest_rows)
+        if scheduler is None:
+            scheduler = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        with patch.object(fixture.socket, "create_connection", return_value=connection) as connect, \
+                patch.object(fixture.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps(scheduler).encode())) as urlopen:
+            snapshot = fixture.read_only_shared_snapshot(comparison if comparison is not None else self.comparison)
+        connect.assert_called_once_with(("127.0.0.1", 6379), timeout=20)
+        self.assertEqual(20, urlopen.call_args.kwargs["timeout"])
+        return snapshot, connection
 
     @contextlib.contextmanager
     def owned_http_server(self, respond):
@@ -582,13 +668,14 @@ class IsolatedFixtureTests(unittest.TestCase):
         def while_cleanup():
             self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
             return cleanup()
-        def while_preservation():
+        def while_preservation(comparison):
             self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
             return snapshot
         with patch.object(instance, "cleanup", side_effect=while_cleanup), \
-                patch.object(fixture, "read_only_shared_snapshot", side_effect=while_preservation), \
+                patch.object(fixture, "read_only_shared_snapshot", side_effect=while_preservation) as reader, \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(42, instance.execute())
+        reader.assert_called_once_with(instance.shared_comparison)
         self.assertFalse(Path(instance.scratch).exists())
         self.assertEqual(0, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
 
@@ -601,17 +688,18 @@ class IsolatedFixtureTests(unittest.TestCase):
         def while_cleanup():
             self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
             return cleanup()
-        def while_preservation():
+        def while_preservation(comparison):
             self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
             return snapshot
         executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
-                patch.object(guards, "read_only_shared_snapshot", side_effect=while_preservation), \
+                patch.object(guards, "read_only_shared_snapshot", side_effect=while_preservation) as reader, \
                 patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
                 patch.object(instance, "cleanup", side_effect=while_cleanup), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(1, guards.run_guards())
+        self.assertEqual([((instance.shared_comparison,), {})] * 3, reader.call_args_list)
         self.assertFalse(Path(instance.scratch).exists())
         self.assertEqual(0, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
 
@@ -3094,8 +3182,8 @@ sys.stdin.read()
     def test_compiled_guard_driver_covers_incomplete_fixture_settings_with_harmless_probes(self):
         commands = self.guard_commands()
         instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
-        snapshot = fixture.SharedSnapshot()
-        snapshot["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 0, "sha256": "fixed"}
+        snapshot = self.new_shared_snapshot()
+        snapshot["scheduler"] = {"revision": "1", "keys": 0}
         executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
@@ -4230,11 +4318,12 @@ sys.stdin.read()
 
     def test_preservation_allows_only_confirmed_natural_expiry(self):
         def snapshot(expiring, captured):
-            result = fixture.SharedSnapshot()
-            result["redis"] = {"0": {"persistent_keys": 1, "persistent_sha256": "fixed"}}
-            result["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 1, "sha256": "fixed"}
-            result.expiring = {"0": expiring}
-            result.captured_at = {"0": captured}
+            result = self.new_shared_snapshot()
+            result["scheduler"] = {"revision": "1", "keys": 1}
+            result.persistent["0"] = {"persistent-key": "value"}
+            result.expiring["0"] = expiring
+            result.captured_at["0"] = captured
+            self.update_shared_counts(result)
             return result
         before = snapshot({"key-a": ("value-a", 1000)}, 900)
         self.assertTrue(fixture.shared_preservation(before, snapshot({}, 1001))["matches"])
@@ -4244,26 +4333,27 @@ sys.stdin.read()
             self.assertFalse(fixture.shared_preservation(before, snapshot(altered, 950))["matches"])
         after = snapshot({"key-a": ("value-a", 1001)}, 950)
         self.assertTrue(fixture.shared_preservation(before, after)["matches"])
-        after["redis"]["0"]["persistent_sha256"] = "changed"
+        after.persistent["0"]["persistent-key"] = "changed"
         self.assertFalse(fixture.shared_preservation(before, after)["matches"])
 
-    @staticmethod
-    def shared_snapshot():
-        snapshot = fixture.SharedSnapshot()
-        snapshot["redis"] = {"0": {"persistent_keys": 1, "persistent_sha256": "fixed"}}
-        snapshot.expiring = {"0": {"PRIVATE-KEY": ("PRIVATE-VALUE", 1000)}}
-        snapshot.captured_at = {"0": 900}
-        snapshot["scheduler"] = {"cluster_id": "1", "revision": "3", "keys": 2, "sha256": "fixed"}
+    def shared_snapshot(self):
+        snapshot = self.new_shared_snapshot()
+        snapshot.persistent["0"] = {"persistent-key": "value"}
+        snapshot.expiring["0"] = {"PRIVATE-KEY": ("PRIVATE-VALUE", 1000)}
+        self.update_shared_counts(snapshot)
+        snapshot["scheduler"] = {"revision": "3", "keys": 2}
         return snapshot
 
     def test_preservation_reports_actual_changed_services_without_keys_or_values(self):
         before, after = self.shared_snapshot(), self.shared_snapshot()
-        after["redis"]["0"].update(persistent_keys=15, persistent_sha256="changed")
-        after["scheduler"].update(revision="17", sha256="changed")
+        after.persistent["0"].update({f"new-{index}": "value" for index in range(14)})
+        self.update_shared_counts(after)
+        after["scheduler"]["revision"] = "17"
+        after.scheduler_content = self.comparison.fingerprint(b"scheduler-content", b"changed")
         result = fixture.shared_preservation(before, after)
         self.assertFalse(result["matches"])
         self.assertEqual(["Redis DB 0 persistent content changed", "Scheduler contents changed"], result["mismatches"])
-        self.assertEqual({"matches": False, "keys_before": 1, "keys_after": 15}, result["redis"]["0"]["persistent"])
+        self.assertEqual({"matches": False, "keys_before": 1, "keys_after": 15, "added": 14, "removed": 0, "value_changes": 0}, result["redis"]["0"]["persistent"])
         self.assertTrue(result["scheduler"]["identity_matches"])
         self.assertFalse(result["scheduler"]["contents_match"])
         self.assertEqual("3", result["scheduler"]["revision_before"])
@@ -4276,13 +4366,173 @@ sys.stdin.read()
         before.expiring["0"].update({"expired": ("old", 910), "missing": ("old", 2000)})
         after.captured_at["0"] = 950
         after.expiring["0"] = {"PRIVATE-KEY": ("changed", 1100), "added": ("new", 2000)}
+        self.update_shared_counts(before)
+        self.update_shared_counts(after)
         result = fixture.shared_preservation(before, after)
         self.assertFalse(result["matches"])
         self.assertEqual(["Redis DB 0 expiring content or deadlines changed"], result["mismatches"])
         self.assertEqual({"matches": False, "added": 1, "missing_unexpired": 1,
                           "value_changes": 1, "deadline_changes": 1, "confirmed_natural_expirations": 1},
                          result["redis"]["0"]["expiring"])
-        self.assertEqual({"0": 1}, result["confirmed_natural_expirations"])
+        self.assertEqual({"0": 1, "13": 0, "14": 0}, result["confirmed_natural_expirations"])
+
+    def test_preservation_counts_offsetting_persistent_differences_and_same_count_update(self):
+        rows = {0: [["removed", "one", -1], ["updated", "old", -1], ["retained", "fixed", -1]], 13: [], 14: []}
+        before, _ = self.read_shared_rows(rows)
+        for replacement, expected in (([["added", "new", -1], ["updated", "changed", -1], ["retained", "fixed", -1]],
+                                       {"added": 1, "removed": 1, "value_changes": 1}),
+                                      ([["removed", "one", -1], ["updated", "changed", -1], ["retained", "fixed", -1]],
+                                       {"added": 0, "removed": 0, "value_changes": 1})):
+            after, _ = self.read_shared_rows(rows | {0: replacement})
+            report = fixture.shared_preservation(before, after)
+            self.assertFalse(report["matches"])
+            self.assertTrue(report["redis_server"]["identity_matches"])
+            self.assertEqual({"matches": False, "keys_before": 3, "keys_after": 3, **expected},
+                             report["redis"]["0"]["persistent"])
+            self.assertEqual(["Redis DB 0 persistent content changed"], report["mismatches"])
+
+    def test_preservation_reports_ttl_transitions_without_allowing_expiry_or_double_counting(self):
+        for old_ttl, new_ttl, direction in ((-1, 2000, "persistent_to_expiring"),
+                                            (2000, -1, "expiring_to_persistent"),
+                                            (900, -1, "expiring_to_persistent")):
+            with self.subTest(old_ttl=old_ttl, new_ttl=new_ttl):
+                before, _ = self.read_shared_rows({0: [["key", "value", old_ttl]], 13: [], 14: []})
+                after, _ = self.read_shared_rows({0: [["key", "value", new_ttl]], 13: [], 14: []})
+                report = fixture.shared_preservation(before, after)
+                self.assertFalse(report["matches"])
+                self.assertEqual(1, report["redis"]["0"]["ttl_transitions"][direction])
+                self.assertEqual(1, sum(report["redis"]["0"]["ttl_transitions"].values()))
+                self.assertEqual({"0": 0, "13": 0, "14": 0}, report["confirmed_natural_expirations"])
+                self.assertEqual(0, report["redis"]["0"]["persistent"]["added"])
+                self.assertEqual(0, report["redis"]["0"]["persistent"]["removed"])
+                self.assertEqual(0, report["redis"]["0"]["expiring"]["added"])
+                self.assertEqual(0, report["redis"]["0"]["expiring"]["missing_unexpired"])
+                self.assertFalse(report["redis"]["0"]["expiring"]["matches"])
+
+    def test_preservation_distinguishes_server_replacement_even_when_contents_match(self):
+        rows = {0: [["key", "value", -1]], 13: [], 14: []}
+        before, _ = self.read_shared_rows(rows)
+        identical, _ = self.read_shared_rows(rows)
+        self.assertTrue(fixture.shared_preservation(before, identical)["matches"])
+        after, _ = self.read_shared_rows(rows, server=b"run_id:" + b"b" * 40 + b"\r\n")
+        report = fixture.shared_preservation(before, after)
+        self.assertFalse(report["matches"])
+        self.assertFalse(report["redis_server"]["identity_matches"])
+        self.assertTrue(report["redis"]["0"]["persistent"]["matches"])
+        self.assertEqual(["Redis server identity changed"], report["mismatches"])
+
+    def test_preservation_refuses_missing_identity_private_coverage_and_comparison_scope(self):
+        for change in (lambda snapshot: setattr(snapshot, "redis_identity", None),
+                       lambda snapshot: setattr(snapshot, "scheduler_identity", None),
+                       lambda snapshot: setattr(snapshot, "scheduler_content", None),
+                       lambda snapshot: setattr(snapshot, "comparison", fixture.SharedComparison()),
+                       lambda snapshot: snapshot["redis"].clear(),
+                       lambda snapshot: snapshot["redis"].pop("14"),
+                       lambda snapshot: snapshot["redis"]["0"].update(keys=999),
+                       lambda snapshot: snapshot.expiring["0"].clear(),
+                       lambda snapshot: snapshot.persistent.clear(),
+                       lambda snapshot: snapshot.persistent["0"].clear()):
+            before, after = self.shared_snapshot(), self.shared_snapshot()
+            change(after)
+            with self.assertRaises(fixture.FixtureError):
+                fixture.shared_preservation(before, after)
+
+    def test_snapshot_reader_refuses_unavailable_malformed_or_duplicate_server_identity(self):
+        for server in (b"", b"# Server\r\n", b"run_id:PRIVATE\r\n", b"run_id:" + b"a" * 39 + b"\r\n",
+                       b"run_id:" + b"a" * 40 + b"\r\nrun_id:" + b"b" * 40 + b"\r\n",
+                       b"run_id:" + b"a" * 40 + b"\r\nrun_id:invalid\r\n"):
+            connection = RedisSnapshotConnection({}, server)
+            with self.subTest(server=server), \
+                    patch.object(fixture.socket, "create_connection", return_value=connection), \
+                    patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Unexpected scheduler read")), \
+                    self.assertRaises(fixture.FixtureError) as failure:
+                fixture.read_only_shared_snapshot(self.comparison)
+            self.assertNotIn("PRIVATE", str(failure.exception))
+            self.assertEqual([[b"INFO", b"server"]], connection.arguments)
+
+    def test_snapshot_reader_refuses_invalid_or_duplicate_digest_rows(self):
+        key, value = "a" * 40, "b" * 40
+        for rows in ([[key, value, -2]], [[key, value, -1], [key, value, 2000]],
+                     [["private-key", value, -1]], [[key, "private-value", -1]]):
+            with self.subTest(rows=rows), self.assertRaises(fixture.FixtureError):
+                self.read_shared_rows({0: rows, 13: [], 14: []}, digest_rows=False)
+
+    def test_snapshot_requires_explicit_scope_before_any_service_read(self):
+        with patch.object(fixture.socket, "create_connection", side_effect=AssertionError("Unexpected Redis read")), \
+                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Unexpected scheduler read")):
+            with self.assertRaises(TypeError):
+                fixture.read_only_shared_snapshot()
+            with self.assertRaises(fixture.FixtureError):
+                fixture.read_only_shared_snapshot(None)
+
+    def test_snapshot_preserves_aggregate_observation_times_for_natural_expiry(self):
+        before, _ = self.read_shared_rows({0: [["expiring", "value", 900]], 13: [], 14: []})
+        after, _ = self.read_shared_rows({0: [], 13: [], 14: []})
+        report = fixture.shared_preservation(before, after)
+        self.assertTrue(report["matches"])
+        self.assertEqual(1, report["confirmed_natural_expirations"]["0"])
+        for snapshot in (before, after):
+            self.assertTrue(snapshot["observation"]["completed"])
+            self.assertLessEqual(snapshot["observation"]["started_unix_ns"], snapshot["observation"]["completed_unix_ns"])
+            for database in ("0", "13", "14"):
+                self.assertEqual(1000, snapshot["redis"][database]["captured_at_unix_ms"])
+                self.assertEqual(1000, report["redis"][database]["captured_before_unix_ms"])
+                self.assertEqual(1000, report["redis"][database]["captured_after_unix_ms"])
+        self.assertEqual(before["observation"], report["observation"]["before"])
+        self.assertEqual(after["observation"], report["observation"]["after"])
+
+    def test_failed_observations_retain_safe_phase_and_category_without_retry(self):
+        for mode in ("connection", "identity", "database", "scheduler", "interrupt"):
+            with self.subTest(mode=mode):
+                connection = RedisSnapshotConnection({0: [], 13: [], 14: []})
+                sendall = connection.sendall
+                def send(data):
+                    if (mode == "identity" and b"INFO" in data) or (mode == "database" and b"EVAL" in data):
+                        raise TimeoutError("PRIVATE response or endpoint")
+                    sendall(data)
+                connection.sendall = send
+                instance = fixture.IsolatedFixture(log_directory=self.logs)
+                with patch.object(fixture.socket, "create_connection", side_effect=TimeoutError("PRIVATE")
+                                  if mode == "connection" else lambda *_args, **_kwargs: connection) as connect, \
+                        patch.object(fixture.urllib.request, "urlopen", side_effect=KeyboardInterrupt()
+                                     if mode == "interrupt" else TimeoutError("PRIVATE scheduler")) as urlopen:
+                    with self.assertRaises(KeyboardInterrupt if mode == "interrupt" else fixture.SharedObservationError):
+                        instance.capture_shared_snapshot()
+                receipt = json.loads((instance.log_directory / "shared-observation-failure.json").read_text())
+                phase = {"connection": "redis_connection", "identity": "redis_identity", "database": "redis_database",
+                         "scheduler": "scheduler_range", "interrupt": "scheduler_range"}[mode]
+                self.assertFalse(receipt["completed"])
+                self.assertEqual(phase, receipt["phase"])
+                self.assertEqual(0 if mode == "database" else None, receipt["database"])
+                self.assertEqual("KeyboardInterrupt" if mode == "interrupt" else "TimeoutError", receipt["exception_category"])
+                self.assertLessEqual(receipt["started_unix_ns"], receipt["completed_unix_ns"])
+                self.assertNotIn("PRIVATE", json.dumps(receipt))
+                self.assertIsNone(instance.shared_before)
+                self.assertFalse(instance.start_attempted)
+                self.assertFalse(instance.containers)
+                self.assertEqual(1, connect.call_count)
+                self.assertEqual(1 if mode in ("scheduler", "interrupt") else 0, urlopen.call_count)
+
+    def test_private_fingerprints_are_run_scoped_domain_separated_and_never_serialized(self):
+        rows = {0: [["PRIVATE-key", "PRIVATE-value", -1], ["PRIVATE-ttl", "PRIVATE-expiring", 10000]], 13: [], 14: []}
+        before, connection = self.read_shared_rows(rows)
+        after, _ = self.read_shared_rows(rows)
+        other, _ = self.read_shared_rows(rows, comparison=fixture.SharedComparison())
+        self.assertEqual(before.persistent, after.persistent)
+        self.assertNotEqual(before.persistent, other.persistent)
+        self.assertNotEqual(self.comparison.fingerprint(b"redis-key", b"same"),
+                            self.comparison.fingerprint(b"redis-value", b"same"))
+        report = fixture.shared_preservation(before, after)
+        serialized = json.dumps([before, after, report]) + repr(before) + repr(after)
+        for private in ("PRIVATE", self.comparison._key.hex(), before.redis_identity.hex(),
+                        before.scheduler_identity.hex(), before.scheduler_content.hex(),
+                        next(iter(before.persistent["0"])).hex(), next(iter(before.persistent["0"].values())).hex(),
+                        fixture.hashlib.sha1(b"PRIVATE-key").hexdigest(), fixture.hashlib.sha1(b"PRIVATE-value").hexdigest(),
+                        "persistent_sha256", "sha256", "cluster_id"):
+            self.assertNotIn(private, serialized)
+        self.assertNotIn(self.comparison._key, b"".join(b"".join(args) for args in connection.arguments))
+        with self.assertRaises(fixture.FixtureError):
+            fixture.shared_preservation(before, other)
 
     def test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json(self):
         for output in ('[{"appId":"standalone-other"}]', '{}', 'null', '', 'not-json []'):
@@ -4299,7 +4549,7 @@ sys.stdin.read()
 
     def test_unstable_baseline_refuses_live_and_guard_resources_before_creation(self):
         before, after = self.shared_snapshot(), self.shared_snapshot()
-        after["redis"]["0"]["persistent_sha256"] = "changed"
+        after.persistent["0"]["persistent-key"] = "changed"
         for mode in ("live", "guards"):
             with self.subTest(mode=mode):
                 commands = self.guard_commands() if mode == "guards" else Commands()
@@ -4328,13 +4578,14 @@ sys.stdin.read()
         before, after = self.shared_snapshot(), self.shared_snapshot()
         after.captured_at["0"] = 950
         instance = fixture.IsolatedFixture(log_directory=self.logs)
-        with patch.object(fixture, "read_only_shared_snapshot", side_effect=(before, after)), \
+        with patch.object(fixture, "read_only_shared_snapshot", side_effect=(before, after)) as reader, \
                 patch.object(fixture.time, "sleep") as pause, \
                 patch.object(fixture.time, "time_ns", side_effect=(1000000000, 2250000000)), \
                 patch.object(fixture.time, "monotonic", side_effect=(10, 11.25)):
             instance.capture_shared_baseline()
         pause.assert_called_once_with(1)
         self.assertIs(after, instance.shared_before)
+        self.assertEqual([((instance.shared_comparison,), {})] * 2, reader.call_args_list)
         report = json.loads((instance.log_directory / "shared-baseline-preservation.json").read_text())
         self.assertTrue(report["matches"])
         self.assertEqual({"before_unix_ns": 1000000000, "after_unix_ns": 2250000000,
@@ -4464,7 +4715,7 @@ sys.stdin.read()
         for failed in (False, True):
             with self.subTest(failed=failed):
                 before, after = self.shared_snapshot(), self.shared_snapshot()
-                after["scheduler"]["sha256"] = "changed"
+                after.scheduler_content = self.comparison.fingerprint(b"scheduler-content", b"changed")
                 commands = self.guard_commands(failed)
                 instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
                 executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
@@ -4486,7 +4737,7 @@ sys.stdin.read()
         for original_exit in (0, 42):
             with self.subTest(original_exit=original_exit):
                 before, after = self.shared_snapshot(), self.shared_snapshot()
-                after["scheduler"]["sha256"] = "changed"
+                after.scheduler_content = self.comparison.fingerprint(b"scheduler-content", b"changed")
                 commands = Commands(lambda args: subprocess.CompletedProcess(args, original_exit,
                     "Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0", "") if "-class" in args else None)
                 instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
@@ -4661,8 +4912,8 @@ time.sleep(60)
                     self.assertFalse(Path(instance.scratch).exists())
 
     def test_late_preservation_evidence_write_failure_cannot_return_success(self):
-        snapshot = fixture.SharedSnapshot()
-        snapshot["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 0, "sha256": "fixed"}
+        snapshot = self.new_shared_snapshot()
+        snapshot["scheduler"] = {"revision": "1", "keys": 0}
         for filename in ("shared-after.json", "shared-preservation.json"):
             for original_exit in (0, 42):
                 with self.subTest(filename=filename, original_exit=original_exit):
@@ -4688,8 +4939,8 @@ time.sleep(60)
                     self.assertFalse(Path(instance.scratch).exists())
 
     def test_guard_late_preservation_write_failure_cannot_return_success(self):
-        snapshot = fixture.SharedSnapshot()
-        snapshot["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 0, "sha256": "fixed"}
+        snapshot = self.new_shared_snapshot()
+        snapshot["scheduler"] = {"revision": "1", "keys": 0}
         for filename in ("shared-after.json", "shared-preservation.json"):
             with self.subTest(filename=filename):
                 commands = self.guard_commands()
@@ -4795,30 +5046,17 @@ time.sleep(60)
                 fixture.scheduler_fingerprint(response)
 
     def test_snapshot_reader_rejects_http_success_with_invalid_scheduler_range(self):
-        class RedisConnection:
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *_):
-                pass
-
-            def sendall(self, _):
-                pass
-
-            def makefile(self, _):
-                return io.BytesIO(b'+OK\r\n*2\r\n*2\r\n$1\r\n1\r\n$1\r\n0\r\n*0\r\n' * 3)
-
         header = {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}
         for response in (b'{"error":"unavailable"}', b'{"header":{},"count":"0"}',
                          b'{"count":"0","kvs":[]}', b'not-json'):
             with self.subTest(response=response), \
-                    patch.object(fixture.socket, "create_connection", return_value=RedisConnection()), \
+                    patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
                     patch.object(fixture.urllib.request, "urlopen", return_value=io.BytesIO(response)):
                 with self.assertRaises(fixture.FixtureError):
-                    fixture.read_only_shared_snapshot()
-        with patch.object(fixture.socket, "create_connection", return_value=RedisConnection()), \
+                    fixture.read_only_shared_snapshot(self.comparison)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
                 patch.object(fixture.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps({"header": header}).encode())):
-            snapshot = fixture.read_only_shared_snapshot()
+            snapshot = fixture.read_only_shared_snapshot(self.comparison)
             self.assertEqual(0, snapshot["scheduler"]["keys"])
 
     def test_query_redaction_covers_uppercase_schemes_and_relative_urls(self):
@@ -4846,8 +5084,8 @@ time.sleep(60)
                 self.assertTrue(instance.journey_shutdown_confirmed)
 
     def test_final_preservation_cancellation_keeps_completed_journey_failure(self):
-        snapshot = fixture.SharedSnapshot()
-        snapshot["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 0, "sha256": "fixed"}
+        snapshot = self.new_shared_snapshot()
+        snapshot["scheduler"] = {"revision": "1", "keys": 0}
         for original_exit in (0, 42):
             with self.subTest(original_exit=original_exit):
                 commands = Commands(lambda args: subprocess.CompletedProcess(args, original_exit,
@@ -4864,8 +5102,8 @@ time.sleep(60)
                 self.assertFalse(Path(instance.scratch).exists())
 
     def test_guard_final_preservation_cancellation_keeps_existing_failure(self):
-        snapshot = fixture.SharedSnapshot()
-        snapshot["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 0, "sha256": "fixed"}
+        snapshot = self.new_shared_snapshot()
+        snapshot["scheduler"] = {"revision": "1", "keys": 0}
         executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         for failed in (False, True):
@@ -4883,11 +5121,11 @@ time.sleep(60)
         header = {"cluster_id": "01", "member_id": "2", "revision": "003", "raft_term": "1"}
         row = {"key": "a2V5", "value": "dmFsdWU=", "create_revision": "1", "mod_revision": "3", "version": "1"}
         def snapshot(range_response):
-            value = fixture.SharedSnapshot()
-            value["scheduler"] = fixture.scheduler_fingerprint(range_response)
+            value = self.new_shared_snapshot()
+            value["scheduler"] = fixture.scheduler_fingerprint(range_response, value)
             return value
         before = snapshot({"header": header, "kvs": [row], "count": "1"})
-        self.assertEqual("1", before["scheduler"]["cluster_id"])
+        self.assertEqual(self.comparison.fingerprint(b"scheduler-identity", b"1"), before.scheduler_identity)
         self.assertEqual("3", before["scheduler"]["revision"])
         changed_leader = dict(header, cluster_id=1, member_id="4", revision="4", raft_term="2")
         after = snapshot({"header": changed_leader, "kvs": [row], "count": "1"})
@@ -4923,8 +5161,8 @@ time.sleep(60)
 
     def test_runner_retains_captured_identities_and_generates_exit_evidence(self):
         commands = Commands()
-        snapshot = fixture.SharedSnapshot()
-        snapshot["scheduler"] = {"cluster_id": "1", "revision": "1", "keys": 0, "sha256": "fixed"}
+        snapshot = self.new_shared_snapshot()
+        snapshot["scheduler"] = {"revision": "1", "keys": 0}
         identity = {"pid": 999999999, "start": "1", "state": "S"}
         instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
             ownership_check=lambda: commands.started and not commands.stopped, resource_check=lambda *_: [])
@@ -4942,64 +5180,19 @@ time.sleep(60)
         self.assertEqual([dict(identity, gone=True)], evidence["processes"])
 
     def test_populated_snapshot_reader_selects_db0_13_14_and_detects_changed_broker_value(self):
-        def resp(value):
-            if isinstance(value, list):
-                return b"*" + str(len(value)).encode() + b"\r\n" + b"".join(resp(item) for item in value)
-            if isinstance(value, int):
-                return b":" + str(value).encode() + b"\r\n"
-            value = str(value).encode()
-            return b"$" + str(len(value)).encode() + b"\r\n" + value + b"\r\n"
-        class RedisConnection:
-            def __init__(self, databases):
-                self.databases = databases
-                self.database = None
-                self.selected = []
-                self.stream = io.BytesIO()
-
-            def __enter__(self):
-                return self
-
-            def __exit__(self, *_):
-                pass
-
-            def makefile(self, _):
-                return self.stream
-
-            def sendall(self, data):
-                request = io.BytesIO(data)
-                count = int(request.readline()[1:])
-                arguments = []
-                for _ in range(count):
-                    length = int(request.readline()[1:])
-                    arguments.append(request.read(length))
-                    request.read(2)
-                if arguments[0] == b"SELECT":
-                    self.database = int(arguments[1])
-                    self.selected.append(self.database)
-                    response = b"+OK\r\n"
-                else:
-                    response = resp([["1", "0"], self.databases[self.database]])
-                position = self.stream.tell()
-                self.stream.seek(0, io.SEEK_END)
-                self.stream.write(response)
-                self.stream.seek(position)
-
         databases = {0: [["broker-key", "broker-v1", -1], ["broker-ttl", "ttl-value", 10000]],
                      13: [["actor-key", "actor-value", -1]], 14: [["model-key", "model-value", -1]]}
-        scheduler = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
         def read(database_rows):
-            connection = RedisConnection(database_rows)
-            with patch.object(fixture.socket, "create_connection", return_value=connection), \
-                    patch.object(fixture.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps(scheduler).encode())):
-                snapshot = fixture.read_only_shared_snapshot()
-            self.assertEqual([0, 13, 14], connection.selected)
+            snapshot, connection = self.read_shared_rows(database_rows)
+            self.assertEqual([0, 13, 14], [int(args[1]) for args in connection.arguments if args[0] == b"SELECT"])
+            self.assertEqual([b"INFO", b"SELECT", b"EVAL", b"SELECT", b"EVAL", b"SELECT", b"EVAL"],
+                             [args[0] for args in connection.arguments])
+            self.assertEqual([b"INFO", b"server"], connection.arguments[0])
             self.assertEqual({"0", "13", "14"}, set(snapshot["redis"]))
-            for database, expected_key in (("0", "broker-key"), ("13", "actor-key"), ("14", "model-key")):
-                permanent = [(key, value) for key, value, ttl in database_rows[int(database)] if ttl == -1]
-                expected = fixture.hashlib.sha256(json.dumps(permanent, separators=(",", ":")).encode()).hexdigest()
-                self.assertEqual(expected, snapshot["redis"][database]["persistent_sha256"])
-                self.assertEqual(expected_key, permanent[0][0])
-            self.assertEqual({"broker-ttl": ("ttl-value", 10000)}, snapshot.expiring["0"])
+            self.assertEqual({"keys": 2, "persistent_keys": 1, "expiring_keys": 1, "captured_at_unix_ms": 1000}, snapshot["redis"]["0"])
+            key = self.comparison.fingerprint(b"redis-key", fixture.hashlib.sha1(b"broker-ttl").hexdigest().encode())
+            value = self.comparison.fingerprint(b"redis-value", fixture.hashlib.sha1(b"ttl-value").hexdigest().encode())
+            self.assertEqual({key: (value, 10000)}, snapshot.expiring["0"])
             return snapshot
         before = read(databases)
         self.assertTrue(fixture.shared_preservation(before, read(databases))["matches"])

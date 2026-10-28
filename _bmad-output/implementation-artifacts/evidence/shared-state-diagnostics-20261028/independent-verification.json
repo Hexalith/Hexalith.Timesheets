@@ -1,0 +1,326 @@
+{
+  "passed": true,
+  "started_unix_ns": 1793217323120807854,
+  "completed_unix_ns": 1793217323345474510,
+  "source_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+    "scripts/check_magic_link_apphost_guards.py": "484e9ce362b2f6acfddee7d3a40b1d068cdef53b189deb9349069cb20756a1b6",
+    "scripts/test_isolated_magic_link_dapr.py": "860c7b51a717a29bf1e7520fbe24d842e8faf80c2b6dceec5af217e09e3813b5",
+    "docs/local-magic-link-dapr-proof.md": "7c58ddaae0bfdde69dfd55ae225c3a9e4ca111ea2d46cb8370f98150375ce12e"
+  },
+  "checks": {
+    "redis_lua_byte_identical_to_baseline": true,
+    "scheduler_range_payload_identical": true,
+    "database_scope": [
+      0,
+      13,
+      14
+    ],
+    "socket_http_timeouts_seconds": 20,
+    "redis_command_budget": "one INFO server plus unchanged SELECT/EVAL for DB0/13/14",
+    "randomized_12_key_comparisons": 1000,
+    "exhaustive_single_key_comparisons": 49,
+    "private_material_excluded_from_json": true,
+    "persistent_delta_accounting": true
+  },
+  "limits": [
+    "No service contacted; no runtime qualification or preservation of a live store established.",
+    "Snapshot comparison cannot establish writer ownership or intermediate writes.",
+    "INFO identity is observed on the same connection; no continuous isolation proof is claimed."
+  ],
+  "verifier_sha256": "d6f5a2782cdb5183cdb93bae6b53272f755c182be4cbab8f4d09840da635c5cc",
+  "focused_tests": {
+    "environment": {
+      "PYTHONPATH": "scripts"
+    },
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "-v",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_counts_offsetting_persistent_differences_and_same_count_update",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_reports_ttl_transitions_without_allowing_expiry_or_double_counting",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_distinguishes_server_replacement_even_when_contents_match",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_refuses_missing_identity_private_coverage_and_comparison_scope",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_reader_refuses_unavailable_malformed_or_duplicate_server_identity",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_reader_refuses_invalid_or_duplicate_digest_rows",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_private_fingerprints_are_run_scoped_domain_separated_and_never_serialized",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_populated_snapshot_reader_selects_db0_13_14_and_detects_changed_broker_value",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_allows_only_confirmed_natural_expiry",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_preservation_requires_same_cluster_and_range_contents",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_stable_baseline_selects_latest_observation_and_requires_evidence",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_admission_is_held_through_failure_cleanup_and_preservation",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_admission_is_held_through_failure_cleanup_and_preservation",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unstable_baseline_refuses_live_and_guard_resources_before_creation"
+    ],
+    "exit_code": 0,
+    "tests": 14,
+    "elapsed_seconds": 1.37,
+    "failures": 0,
+    "errors": 0
+  },
+  "protected_verification": {
+    "argv": [
+      "git",
+      "diff",
+      "--exit-code",
+      "HEAD",
+      "--",
+      ".gitmodules",
+      "global.json",
+      "Directory.Build.props",
+      "Directory.Build.targets",
+      "Directory.Packages.props",
+      "references",
+      "_bmad-output/implementation-artifacts/evidence/shared-state-preservation-20261028",
+      "_bmad-output/implementation-artifacts/evidence/remaining-repair-and-guidance-20261028/baseline-runtime"
+    ],
+    "exit_code": 0,
+    "top_level_submodule_pointers_matched": 13,
+    "diff_check_exit_code": 0
+  },
+  "focused_test_source_snapshot_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "b12c11e3178b22f1ae7b3346af191c2f75388e85f7b25caa242e3d53fad097b2",
+    "scripts/check_magic_link_apphost_guards.py": "6210c4b7a7c982e633157dfa3e570c90036b1657bb118ed204a1c51d4c4c80cc",
+    "scripts/test_isolated_magic_link_dapr.py": "d701e402c6b1de3ddad738c57e9bd38310655375e501fdb404213af8ba97ae2f",
+    "docs/local-magic-link-dapr-proof.md": "7c58ddaae0bfdde69dfd55ae225c3a9e4ca111ea2d46cb8370f98150375ce12e"
+  },
+  "baseline_revision": "ccf6fb1dc7469322e2c85f8fe1db4bfe5fcb28bb",
+  "argv": [
+    "/tmp/timesheets-preservation-independent-verifier.py"
+  ],
+  "baseline_protected_verification": {
+    "argv": [
+      "git",
+      "diff",
+      "--exit-code",
+      "ccf6fb1dc7469322e2c85f8fe1db4bfe5fcb28bb",
+      "--",
+      ".gitmodules",
+      "global.json",
+      "Directory.Build.props",
+      "Directory.Build.targets",
+      "Directory.Packages.props",
+      "references",
+      "_bmad-output/implementation-artifacts/evidence/shared-state-preservation-20261028",
+      "_bmad-output/implementation-artifacts/evidence/remaining-repair-and-guidance-20261028/baseline-runtime"
+    ],
+    "exit_code": 0
+  },
+  "verification_runs": [
+    {
+      "passed": true,
+      "started_unix_ns": 1793217008539223036,
+      "completed_unix_ns": 1793217008677428462,
+      "source_sha256": {
+        "scripts/run_isolated_magic_link_dapr.py": "b12c11e3178b22f1ae7b3346af191c2f75388e85f7b25caa242e3d53fad097b2",
+        "scripts/check_magic_link_apphost_guards.py": "6210c4b7a7c982e633157dfa3e570c90036b1657bb118ed204a1c51d4c4c80cc",
+        "scripts/test_isolated_magic_link_dapr.py": "d701e402c6b1de3ddad738c57e9bd38310655375e501fdb404213af8ba97ae2f",
+        "docs/local-magic-link-dapr-proof.md": "7c58ddaae0bfdde69dfd55ae225c3a9e4ca111ea2d46cb8370f98150375ce12e"
+      },
+      "checks": {
+        "redis_lua_byte_identical_to_HEAD": true,
+        "scheduler_range_payload_identical": true,
+        "redis_command_budget": "one INFO server plus unchanged SELECT/EVAL for DB0/13/14",
+        "randomized_12_key_comparisons": 1000,
+        "exhaustive_single_key_comparisons": 49,
+        "private_material_excluded_from_json": true,
+        "persistent_delta_accounting": true
+      },
+      "limits": [
+        "No service contacted; no runtime qualification or preservation of a live store established.",
+        "Snapshot comparison cannot establish writer ownership or intermediate writes.",
+        "INFO identity is observed on the same connection; no continuous isolation proof is claimed."
+      ],
+      "verifier_sha256": "bed0f69805bab808cf33f0dfbc5c2d980bc27f29aab049c242686ff1b15d9524"
+    },
+    {
+      "passed": true,
+      "baseline_revision": "ccf6fb1dc7469322e2c85f8fe1db4bfe5fcb28bb",
+      "argv": [
+        "/tmp/timesheets-preservation-independent-verifier.py"
+      ],
+      "started_unix_ns": 1793217323120807854,
+      "completed_unix_ns": 1793217323345474510,
+      "source_sha256": {
+        "scripts/run_isolated_magic_link_dapr.py": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+        "scripts/check_magic_link_apphost_guards.py": "484e9ce362b2f6acfddee7d3a40b1d068cdef53b189deb9349069cb20756a1b6",
+        "scripts/test_isolated_magic_link_dapr.py": "860c7b51a717a29bf1e7520fbe24d842e8faf80c2b6dceec5af217e09e3813b5",
+        "docs/local-magic-link-dapr-proof.md": "7c58ddaae0bfdde69dfd55ae225c3a9e4ca111ea2d46cb8370f98150375ce12e"
+      },
+      "checks": {
+        "redis_lua_byte_identical_to_baseline": true,
+        "scheduler_range_payload_identical": true,
+        "database_scope": [
+          0,
+          13,
+          14
+        ],
+        "socket_http_timeouts_seconds": 20,
+        "redis_command_budget": "one INFO server plus unchanged SELECT/EVAL for DB0/13/14",
+        "randomized_12_key_comparisons": 1000,
+        "exhaustive_single_key_comparisons": 49,
+        "private_material_excluded_from_json": true,
+        "persistent_delta_accounting": true
+      },
+      "baseline_protected_verification": {
+        "argv": [
+          "git",
+          "diff",
+          "--exit-code",
+          "ccf6fb1dc7469322e2c85f8fe1db4bfe5fcb28bb",
+          "--",
+          ".gitmodules",
+          "global.json",
+          "Directory.Build.props",
+          "Directory.Build.targets",
+          "Directory.Packages.props",
+          "references",
+          "_bmad-output/implementation-artifacts/evidence/shared-state-preservation-20261028",
+          "_bmad-output/implementation-artifacts/evidence/remaining-repair-and-guidance-20261028/baseline-runtime"
+        ],
+        "exit_code": 0
+      },
+      "limits": [
+        "No service contacted; no runtime qualification or preservation of a live store established.",
+        "Snapshot comparison cannot establish writer ownership or intermediate writes.",
+        "INFO identity is observed on the same connection; no continuous isolation proof is claimed."
+      ],
+      "verifier_sha256": "d6f5a2782cdb5183cdb93bae6b53272f755c182be4cbab8f4d09840da635c5cc"
+    }
+  ],
+  "final_focused_tests": {
+    "environment": {
+      "PYTHONPATH": "scripts"
+    },
+    "argv": [
+      "python3",
+      "-m",
+      "unittest",
+      "-v",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_counts_offsetting_persistent_differences_and_same_count_update",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_reports_ttl_transitions_without_allowing_expiry_or_double_counting",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_distinguishes_server_replacement_even_when_contents_match",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_refuses_missing_identity_private_coverage_and_comparison_scope",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_reader_refuses_unavailable_malformed_or_duplicate_server_identity",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_reader_refuses_invalid_or_duplicate_digest_rows",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_private_fingerprints_are_run_scoped_domain_separated_and_never_serialized",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_populated_snapshot_reader_selects_db0_13_14_and_detects_changed_broker_value",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preservation_allows_only_confirmed_natural_expiry",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_preservation_requires_same_cluster_and_range_contents",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_stable_baseline_selects_latest_observation_and_requires_evidence",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_admission_is_held_through_failure_cleanup_and_preservation",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_admission_is_held_through_failure_cleanup_and_preservation",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unstable_baseline_refuses_live_and_guard_resources_before_creation",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_requires_explicit_scope_before_any_service_read",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_snapshot_preserves_aggregate_observation_times_for_natural_expiry",
+      "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_failed_observations_retain_safe_phase_and_category_without_retry"
+    ],
+    "started_unix_ns": 1793217323085905037,
+    "completed_unix_ns": 1793217324334668748,
+    "source_sha256": {
+      "scripts/run_isolated_magic_link_dapr.py": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+      "scripts/check_magic_link_apphost_guards.py": "484e9ce362b2f6acfddee7d3a40b1d068cdef53b189deb9349069cb20756a1b6",
+      "scripts/test_isolated_magic_link_dapr.py": "860c7b51a717a29bf1e7520fbe24d842e8faf80c2b6dceec5af217e09e3813b5"
+    },
+    "exit_code": 0,
+    "log": "/tmp/timesheets-preservation-independent-focused-tests.txt",
+    "log_sha256": "35defe54de1a839e050159a3de1a7494af7b9e7bd25577111935947b93fa7983",
+    "tests": 17,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_seconds": 1.172
+  },
+  "scale_benchmark": {
+    "status": "passed",
+    "started_unix_ns": 1793217385927518617,
+    "completed_unix_ns": 1793217392116193664,
+    "argv": [
+      "/tmp/timesheets-preservation-synthetic-benchmark.py"
+    ],
+    "keys_per_snapshot": 829212,
+    "retained_snapshots": 2,
+    "memory_cap_bytes": 1073741824,
+    "build_seconds": [
+      2.4636623919941485,
+      3.0277591890044278
+    ],
+    "comparison_seconds": 0.6985592459968757,
+    "total_seconds": 6.190014362000511,
+    "subprocess_peak_rss_kib": 411952,
+    "process_start_memory_kib": {
+      "VmPeak": 39152,
+      "VmSize": 39152,
+      "VmHWM": 29568,
+      "VmRSS": 29568
+    },
+    "process_final_memory_kib": {
+      "VmPeak": 424832,
+      "VmSize": 424832,
+      "VmHWM": 411952,
+      "VmRSS": 411952
+    },
+    "rusage_maxrss_initial_kib": 4525240,
+    "rusage_maxrss_final_kib": 4525240,
+    "rlimit_as_bytes": [
+      1073741824,
+      1073741824
+    ],
+    "source_sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+    "benchmark_sha256": "b403ef38b37fef82d835a0fe06c88172819f7aeebc31437b6ddb2ce06eb7d714",
+    "measurement_scope": "Two retained keyed persistent maps, empty TTL maps, and the actual aggregate comparator.",
+    "excluded": [
+      "Live service I/O",
+      "Redis Lua execution",
+      "RESP decoding/row-buffer peak",
+      "Python row validation",
+      "Scheduler populated range cost"
+    ],
+    "limits": [
+      "Synthetic observation only; not a full-reader memory bound, shared-state timeout qualification, or runtime acceptance.",
+      "No real service reads or writes; memory cap failure ends measurement without escalation."
+    ],
+    "prior_measurements": [
+      {
+        "status": "passed",
+        "started_unix_ns": 1793217323182147305,
+        "completed_unix_ns": 1793217328253885350,
+        "argv": [
+          "/tmp/timesheets-preservation-synthetic-benchmark.py"
+        ],
+        "keys_per_snapshot": 829212,
+        "retained_snapshots": 2,
+        "memory_cap_bytes": 1073741824,
+        "build_seconds": [
+          2.2330966529989382,
+          2.26069430699863
+        ],
+        "comparison_seconds": 0.577924320998136,
+        "total_seconds": 5.071741741994629,
+        "subprocess_peak_rss_kib": 4525240,
+        "source_sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+        "benchmark_sha256": "35826c09c8c90ed116544eed9f4dd64b3ba8691cae3aef6ab21eec75ff9ff2b6",
+        "measurement_scope": "Two retained keyed persistent maps, empty TTL maps, and the actual aggregate comparator.",
+        "excluded": [
+          "Live service I/O",
+          "Redis Lua execution",
+          "RESP decoding/row-buffer peak",
+          "Python row validation",
+          "Scheduler populated range cost"
+        ],
+        "limits": [
+          "Synthetic observation only; not a full-reader memory bound, shared-state timeout qualification, or runtime acceptance.",
+          "No real service reads or writes; memory cap failure ends measurement without escalation."
+        ],
+        "measurement_limit": "Initial getrusage peak conflicts with the address-space cap; not a qualified RSS measurement"
+      }
+    ]
+  },
+  "artifact_sha256": {
+    "/tmp/timesheets-preservation-independent-verifier.py": "d6f5a2782cdb5183cdb93bae6b53272f755c182be4cbab8f4d09840da635c5cc",
+    "/tmp/timesheets-preservation-independent-focused-tests.json": "915d2695d330f177be3f4b9f86c29eded0b13e6f98645cfafbb62cb63fbfb694",
+    "/tmp/timesheets-preservation-independent-focused-tests.txt": "35defe54de1a839e050159a3de1a7494af7b9e7bd25577111935947b93fa7983",
+    "/tmp/timesheets-preservation-synthetic-benchmark.py": "b403ef38b37fef82d835a0fe06c88172819f7aeebc31437b6ddb2ce06eb7d714",
+    "/tmp/timesheets-preservation-synthetic-benchmark.json": "76302d6d1eb09b43b060015f9dfbdb3151ca653d72c983839fd58f681065a981"
+  }
+}

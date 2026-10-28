@@ -1,0 +1,85 @@
+{
+  "status": "passed",
+  "started_unix_ns": 1793217385927518617,
+  "completed_unix_ns": 1793217392116193664,
+  "argv": [
+    "/tmp/timesheets-preservation-synthetic-benchmark.py"
+  ],
+  "keys_per_snapshot": 829212,
+  "retained_snapshots": 2,
+  "memory_cap_bytes": 1073741824,
+  "build_seconds": [
+    2.4636623919941485,
+    3.0277591890044278
+  ],
+  "comparison_seconds": 0.6985592459968757,
+  "total_seconds": 6.190014362000511,
+  "subprocess_peak_rss_kib": 411952,
+  "process_start_memory_kib": {
+    "VmPeak": 39152,
+    "VmSize": 39152,
+    "VmHWM": 29568,
+    "VmRSS": 29568
+  },
+  "process_final_memory_kib": {
+    "VmPeak": 424832,
+    "VmSize": 424832,
+    "VmHWM": 411952,
+    "VmRSS": 411952
+  },
+  "rusage_maxrss_initial_kib": 4525240,
+  "rusage_maxrss_final_kib": 4525240,
+  "rlimit_as_bytes": [
+    1073741824,
+    1073741824
+  ],
+  "source_sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+  "benchmark_sha256": "b403ef38b37fef82d835a0fe06c88172819f7aeebc31437b6ddb2ce06eb7d714",
+  "measurement_scope": "Two retained keyed persistent maps, empty TTL maps, and the actual aggregate comparator.",
+  "excluded": [
+    "Live service I/O",
+    "Redis Lua execution",
+    "RESP decoding/row-buffer peak",
+    "Python row validation",
+    "Scheduler populated range cost"
+  ],
+  "limits": [
+    "Synthetic observation only; not a full-reader memory bound, shared-state timeout qualification, or runtime acceptance.",
+    "No real service reads or writes; memory cap failure ends measurement without escalation."
+  ],
+  "prior_measurements": [
+    {
+      "status": "passed",
+      "started_unix_ns": 1793217323182147305,
+      "completed_unix_ns": 1793217328253885350,
+      "argv": [
+        "/tmp/timesheets-preservation-synthetic-benchmark.py"
+      ],
+      "keys_per_snapshot": 829212,
+      "retained_snapshots": 2,
+      "memory_cap_bytes": 1073741824,
+      "build_seconds": [
+        2.2330966529989382,
+        2.26069430699863
+      ],
+      "comparison_seconds": 0.577924320998136,
+      "total_seconds": 5.071741741994629,
+      "subprocess_peak_rss_kib": 4525240,
+      "source_sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+      "benchmark_sha256": "35826c09c8c90ed116544eed9f4dd64b3ba8691cae3aef6ab21eec75ff9ff2b6",
+      "measurement_scope": "Two retained keyed persistent maps, empty TTL maps, and the actual aggregate comparator.",
+      "excluded": [
+        "Live service I/O",
+        "Redis Lua execution",
+        "RESP decoding/row-buffer peak",
+        "Python row validation",
+        "Scheduler populated range cost"
+      ],
+      "limits": [
+        "Synthetic observation only; not a full-reader memory bound, shared-state timeout qualification, or runtime acceptance.",
+        "No real service reads or writes; memory cap failure ends measurement without escalation."
+      ],
+      "measurement_limit": "Initial getrusage peak conflicts with the address-space cap; not a qualified RSS measurement"
+    }
+  ]
+}

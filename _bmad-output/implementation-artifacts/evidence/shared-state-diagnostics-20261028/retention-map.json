@@ -1,0 +1,107 @@
+{
+  "scope": "All files in this evidence directory except this manifest; comparison material is not retained.",
+  "files": [
+    {
+      "path": "adaptation-tests.txt.gz",
+      "sha256": "3fa75dbfaf7d7e53cfc7db09f856c2bdb03ea012d69a15dbc62993abeca80e9f",
+      "bytes": 753,
+      "original_sha256": "d0f4281ef8d764b6630fb27cbfc0bf99160facc53ab637a34571e27ccd4ceecd",
+      "original_bytes": 3898
+    },
+    {
+      "path": "baseline-tests.txt.gz",
+      "sha256": "7cf5d9a5d0d9a3b1ff06501a0538062d027cebdca7489f039098e681cde96105",
+      "bytes": 139,
+      "original_sha256": "7a7847c8824e0fbf5cdaea81dd71e00b99d209ee241b5eb12a373d7f6be3170d",
+      "original_bytes": 464
+    },
+    {
+      "path": "benchmark_synthetic.py",
+      "sha256": "b403ef38b37fef82d835a0fe06c88172819f7aeebc31437b6ddb2ce06eb7d714",
+      "bytes": 5609
+    },
+    {
+      "path": "checks.json",
+      "sha256": "b6375e07d618610bdf96d52e9625bf4ec8b7dc1acf1e26c2f068e9187f1fda73",
+      "bytes": 3463
+    },
+    {
+      "path": "commitlint.json",
+      "sha256": "87bbc3ae827bb220533db4c1d2f37b07194b2d7f1ed4cea2a0fcb65c1d79e8bd",
+      "bytes": 583
+    },
+    {
+      "path": "commitlint.txt.gz",
+      "sha256": "87860a6e9b9f8e9dd9f26dfead5850b049f3723443b255667007911da23a0b9d",
+      "bytes": 108,
+      "original_sha256": "8d45c426e43d5b024791551bd02ae5649377b4ab6d8f5c9eaafffc85de610441",
+      "original_bytes": 121
+    },
+    {
+      "path": "final-artifact-validation.json",
+      "sha256": "9058fa6c8e6af9db0eda4988b9c258af36aa313ffcfc9fe7952b534921c6bbea",
+      "bytes": 4936
+    },
+    {
+      "path": "fixture-tests.txt.gz",
+      "sha256": "40e94e55c84df9810f49c070fa57f06dc1fdf3daf7e675d1bee4ae7c9afae76b",
+      "bytes": 140,
+      "original_sha256": "a10c50fd94545a757687c23725a7ae3fb25e57f4b24dc6bfc7122f116d708962",
+      "original_bytes": 471
+    },
+    {
+      "path": "independent-focused-tests.json",
+      "sha256": "915d2695d330f177be3f4b9f86c29eded0b13e6f98645cfafbb62cb63fbfb694",
+      "bytes": 2970
+    },
+    {
+      "path": "independent-focused-tests.txt.gz",
+      "sha256": "61ed053816a84983ab9c0084505eed7cb2da42da15d7a95b1ff890770fcba396",
+      "bytes": 715,
+      "original_sha256": "35defe54de1a839e050159a3de1a7494af7b9e7bd25577111935947b93fa7983",
+      "original_bytes": 3577
+    },
+    {
+      "path": "independent-verification.json",
+      "sha256": "b983292c589ef1883020230fbc4994793a6bb3b4e6945a1d79f8cc39728a24b3",
+      "bytes": 16293
+    },
+    {
+      "path": "post-review-tests.txt.gz",
+      "sha256": "5ac089d433e84bc208831555dd489afada443af3e5516ea530b018c1ddfb67a1",
+      "bytes": 140,
+      "original_sha256": "904ace3dcb936481b4dffd2b8998cfb3a761b95c68601080f7386331b3313442",
+      "original_bytes": 474
+    },
+    {
+      "path": "runtime-admission.json",
+      "sha256": "95811cdeec23ebead710f45ea0dc6e213bdcf29d21a2dc1a65d8e1514dd3137b",
+      "bytes": 124
+    },
+    {
+      "path": "runtime-attempt.json",
+      "sha256": "728c3c54d9c125e471141e5fa08bdc426a4ace0ddcb1ebda12f2bf0880f2dabb",
+      "bytes": 3640
+    },
+    {
+      "path": "runtime-cleanup.json",
+      "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+      "bytes": 173
+    },
+    {
+      "path": "runtime-observation-failure.json",
+      "sha256": "630845dc2c99a662f1740f0b33a005db0a24d0116939815fefec82cc4af782db",
+      "bytes": 197
+    },
+    {
+      "path": "synthetic-benchmark.json",
+      "sha256": "76302d6d1eb09b43b060015f9dfbdb3151ca653d72c983839fd58f681065a981",
+      "bytes": 3011
+    },
+    {
+      "path": "verify_offline.py",
+      "sha256": "d6f5a2782cdb5183cdb93bae6b53272f755c182be4cbab8f4d09840da635c5cc",
+      "bytes": 9277
+    }
+  ]
+}
