@@ -1,0 +1,10 @@
+{
+  "head": "69f3622b17de70bf3e9043f96577f2b6d1a4cbd9",
+  "requested_ancestor": "509c6341e306309cf9f57ed49450e8d7934670e7",
+  "gitlinks": "160000 commit 3f194e17174994d308ec84af9ee2b5aa68674d0d\treferences/Hexalith.AI.Tools\n160000 commit 12e48f1dc3d3a4e0c2e6d09e16ad4841216b83a4\treferences/Hexalith.Builds\n160000 commit 1663028fb6d9f46a0bf17919edeb21bb99be1587\treferences/Hexalith.Commons\n160000 commit 855de783fb294299fcdc151379977331ba1c99a1\treferences/Hexalith.Conversations\n160000 commit 092abef078b4a70a77831fe0f60d76b3a85a8f1c\treferences/Hexalith.EventStore\n160000 commit 8d2b47bd206ffd5c5e77a5ac0461b9cfe52ea4fd\treferences/Hexalith.FrontComposer\n160000 commit 8bfd1e0592bfee258b381f41b098fe3b35170fdd\treferences/Hexalith.McpCli\n160000 commit 6ba02654ca390b3333183962355bd5c5857b8224\treferences/Hexalith.Parties\n160000 commit 3a8ec2e6ba9d02c024549288bd7b3e513579337c\treferences/Hexalith.Platform\n160000 commit 221ac4592ba908ae7661ba1fa9e2d1fcc23baee0\treferences/Hexalith.PolymorphicSerializations\n160000 commit c978a5e86c8134ba09a166e093a1a4d6b4db77a8\treferences/Hexalith.Projects\n160000 commit a4489bc79f3178437f2491e0bb9e0bed983697ea\treferences/Hexalith.Tenants\n160000 commit d7ed47a61ba64443c8959a37a5b22211924841d0\treferences/Hexalith.Works",
+  "sha256": {
+    "docs/launch-readiness.md": "f9f6a8d2583b49a50b4af4490af0e7ee7b3fbf9a05ce9c67047d2c28bb200f39",
+    "scripts/run_isolated_magic_link_dapr.py": "f09601d3f7a44a93bc44421c2fc01c8037138e44f10c277a74759fda898624f8",
+    "scripts/test_isolated_magic_link_dapr.py": "705b87dd30286274c388c6361cf688d27be2dc86182fbae15cc089ba9578bc32"
+  }
+}

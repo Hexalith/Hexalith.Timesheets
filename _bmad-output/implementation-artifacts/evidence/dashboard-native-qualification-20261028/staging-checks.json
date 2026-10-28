@@ -1,0 +1,21 @@
+{
+  "initial_command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "initial_exit_code": 2,
+  "findings": [
+    "commitlint.txt: new blank line at EOF",
+    "runtime/run-4y_0l_yg/gateway-invocation.json: new blank line at EOF"
+  ],
+  "correction": "Lossless gzip archives; no original receipt byte was edited",
+  "final_command": [
+    "git",
+    "diff",
+    "--cached",
+    "--check"
+  ],
+  "final_exit_code": 0
+}

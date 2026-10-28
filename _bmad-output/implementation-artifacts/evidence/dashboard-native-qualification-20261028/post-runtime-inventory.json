@@ -1,0 +1,38 @@
+{
+  "recorded_utc": "2026-10-28T06:41:34.355354+00:00",
+  "results": [
+    {
+      "command": [
+        "aspire",
+        "ps",
+        "--non-interactive",
+        "--format",
+        "Json"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "safe_summary": {
+        "count": 0,
+        "rows": []
+      }
+    },
+    {
+      "command": [
+        "dapr",
+        "list",
+        "--output",
+        "json"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "safe_summary": {
+        "count": 0,
+        "rows": []
+      }
+    }
+  ]
+}

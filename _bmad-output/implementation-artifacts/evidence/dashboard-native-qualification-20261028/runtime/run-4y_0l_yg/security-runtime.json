@@ -1,0 +1,20 @@
+{
+  "container": "985765c7224493f34060459c80a42d03cd6a84d283856a488fefe3e3148dc944",
+  "loopback_only": true,
+  "http_endpoint": {
+    "resource": "security",
+    "name": "http",
+    "scheme": "https",
+    "host": "localhost",
+    "published_port": 8180,
+    "container_id": "985765c7224493f34060459c80a42d03cd6a84d283856a488fefe3e3148dc944",
+    "container_port": 8443,
+    "binding_host": "127.0.0.1"
+  },
+  "generated_credentials_accepted": true,
+  "realm": "hexalith",
+  "audience": "hexalith-eventstore",
+  "tenant_claims_match": true,
+  "domain_claims_match": true,
+  "permission_claims_match": true
+}

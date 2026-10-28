@@ -1,0 +1,165 @@
+{
+  "commands": [
+    {
+      "label": "runner",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "scripts",
+        "-p",
+        "test_isolated_magic_link_dapr.py",
+        "-v"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T06:39:01.258285+00:00",
+      "elapsed_seconds": 47.575,
+      "exit_code": 0,
+      "log": "runner.log.gz",
+      "summary": [
+        "",
+        "----------------------------------------------------------------------",
+        "Ran 193 tests in 47.476s",
+        "",
+        "OK"
+      ]
+    },
+    {
+      "label": "Hexalith.Timesheets.ArchitectureTests",
+      "command": [
+        "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noColor"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T06:39:48.830943+00:00",
+      "elapsed_seconds": 12.619,
+      "exit_code": 0,
+      "log": "Hexalith.Timesheets.ArchitectureTests.log.gz",
+      "summary": [
+        "  Discovered:  Hexalith.Timesheets.ArchitectureTests",
+        "  Starting:    Hexalith.Timesheets.ArchitectureTests",
+        "  Finished:    Hexalith.Timesheets.ArchitectureTests (ID = '388847c10d4588ad9adbd2f7d429b2f35dd0506c05e0b388b7efafe3d5bae84f')",
+        "=== TEST EXECUTION SUMMARY ===",
+        "   Hexalith.Timesheets.ArchitectureTests  Total: 118, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 12.442s"
+      ]
+    },
+    {
+      "label": "Hexalith.Timesheets.Contracts.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noColor"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T06:40:01.449325+00:00",
+      "elapsed_seconds": 0.589,
+      "exit_code": 0,
+      "log": "Hexalith.Timesheets.Contracts.Tests.log.gz",
+      "summary": [
+        "  Discovered:  Hexalith.Timesheets.Contracts.Tests",
+        "  Starting:    Hexalith.Timesheets.Contracts.Tests",
+        "  Finished:    Hexalith.Timesheets.Contracts.Tests (ID = 'aeaa55c1e5fa8db6a51f6fd6dff2b313ac493327b9cfaf82cc50c58ed0da647c')",
+        "=== TEST EXECUTION SUMMARY ===",
+        "   Hexalith.Timesheets.Contracts.Tests  Total: 108, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0.407s"
+      ]
+    },
+    {
+      "label": "Hexalith.Timesheets.Server.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noColor"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T06:40:02.039287+00:00",
+      "elapsed_seconds": 7.763,
+      "exit_code": 0,
+      "log": "Hexalith.Timesheets.Server.Tests.log.gz",
+      "summary": [
+        "  Discovered:  Hexalith.Timesheets.Server.Tests",
+        "  Starting:    Hexalith.Timesheets.Server.Tests",
+        "  Finished:    Hexalith.Timesheets.Server.Tests (ID = '22f6f61e2ce15cecc0e0e7988f869e0bdb40fd88ab6c6e2b4bb515a722f2ce88')",
+        "=== TEST EXECUTION SUMMARY ===",
+        "   Hexalith.Timesheets.Server.Tests  Total: 746, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 7.558s"
+      ]
+    },
+    {
+      "label": "Hexalith.Timesheets.Projections.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noColor"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T06:40:09.802631+00:00",
+      "elapsed_seconds": 727.239,
+      "exit_code": 0,
+      "log": "Hexalith.Timesheets.Projections.Tests.log.gz",
+      "summary": [
+        "  Starting:    Hexalith.Timesheets.Projections.Tests",
+        "Measured migration: max physical page bytes=194660; max roster bytes=155722; byte-split pages=156; owners=10000.",
+        "  Finished:    Hexalith.Timesheets.Projections.Tests (ID = '71a8c72b9d8d9e56fe75932ce95e7dc344d2c8845f6930a99f88efa1003d95f0')",
+        "=== TEST EXECUTION SUMMARY ===",
+        "   Hexalith.Timesheets.Projections.Tests  Total: 756, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 726.995s"
+      ]
+    },
+    {
+      "label": "Hexalith.Timesheets.IntegrationTests",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T06:52:17.003084+00:00",
+      "elapsed_seconds": 733.28,
+      "exit_code": 1,
+      "log": "Hexalith.Timesheets.IntegrationTests.log.gz",
+      "summary": [
+        "           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)",
+        "           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)",
+        "  Finished:    Hexalith.Timesheets.IntegrationTests (ID = '32f65c821a355e56a6b399a747027e8f06d6a6c65791661c7f82c5c5d8b8c422')",
+        "=== TEST EXECUTION SUMMARY ===",
+        "   Hexalith.Timesheets.IntegrationTests  Total: 984, Errors: 0, Failed: 1, Skipped: 5, Not Run: 0, Time: 733.035s"
+      ]
+    },
+    {
+      "label": "Hexalith.Timesheets.Works.Tests",
+      "command": [
+        "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noColor"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T07:04:30.246439+00:00",
+      "elapsed_seconds": 0.433,
+      "exit_code": 0,
+      "log": "Hexalith.Timesheets.Works.Tests.log.gz",
+      "summary": [
+        "  Discovered:  Hexalith.Timesheets.Works.Tests",
+        "  Starting:    Hexalith.Timesheets.Works.Tests",
+        "  Finished:    Hexalith.Timesheets.Works.Tests (ID = '4dc2ba346df86e546bf40ea26104c1ab5d8a392022d27975cd17ffc12276ef86')",
+        "=== TEST EXECUTION SUMMARY ===",
+        "   Hexalith.Timesheets.Works.Tests  Total: 76, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 0.253s"
+      ]
+    }
+  ],
+  "source_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "f09601d3f7a44a93bc44421c2fc01c8037138e44f10c277a74759fda898624f8",
+    "scripts/test_isolated_magic_link_dapr.py": "705b87dd30286274c388c6361cf688d27be2dc86182fbae15cc089ba9578bc32"
+  },
+  "default_suite_gate_passed": false,
+  "build_identity": "runtime/run-4y_0l_yg/source-before.json.gz",
+  "scope": "Existing compiled Debug/source assets from native build; subsequent external dependency checkout revisions are not qualified"
+}

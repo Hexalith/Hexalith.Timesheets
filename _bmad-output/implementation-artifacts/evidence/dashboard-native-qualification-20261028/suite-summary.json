@@ -1,0 +1,80 @@
+{
+  "suites": [
+    {
+      "suite": "Hexalith.Timesheets.ArchitectureTests",
+      "total": 118,
+      "passed": 118,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 12.442,
+      "exit_code": 0
+    },
+    {
+      "suite": "Hexalith.Timesheets.Contracts.Tests",
+      "total": 108,
+      "passed": 108,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 0.407,
+      "exit_code": 0
+    },
+    {
+      "suite": "Hexalith.Timesheets.Server.Tests",
+      "total": 746,
+      "passed": 746,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 7.558,
+      "exit_code": 0
+    },
+    {
+      "suite": "Hexalith.Timesheets.Projections.Tests",
+      "total": 756,
+      "passed": 756,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 726.995,
+      "exit_code": 0
+    },
+    {
+      "suite": "Hexalith.Timesheets.IntegrationTests",
+      "total": 984,
+      "passed": 978,
+      "failed": 1,
+      "skipped": 5,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 733.035,
+      "exit_code": 1
+    },
+    {
+      "suite": "Hexalith.Timesheets.Works.Tests",
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not_run": 0,
+      "seconds": 0.253,
+      "exit_code": 0
+    }
+  ],
+  "totals": {
+    "total": 2788,
+    "passed": 2782,
+    "failed": 1,
+    "skipped": 5,
+    "errors": 0,
+    "not_run": 0
+  },
+  "all_six_passed": false,
+  "focused_retry_is_separate": true
+}

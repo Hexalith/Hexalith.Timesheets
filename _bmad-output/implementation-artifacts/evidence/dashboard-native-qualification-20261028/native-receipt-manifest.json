@@ -1,0 +1,623 @@
+{
+  "scope": "Original fixture bytes versus retained copies; compression is lossless",
+  "files": {
+    "runtime/run-4y_0l_yg/01-aspire---version.log.gz": {
+      "original_sha256": "470e7c82980e16cc131b4c76717ef8fb22ebe23947d988203503cbd1de1dab03",
+      "stored_sha256": "f03096e38bb9f604414e001a81ddbc7829b282819da3f5338281136d155085ad",
+      "original_bytes": 99,
+      "stored_bytes": 112
+    },
+    "runtime/run-4y_0l_yg/02-dapr---version.log.gz": {
+      "original_sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+      "stored_sha256": "4675dd0497e5ed7349e0519f5a907d778fdda69692b8cc8b97d1633695f1122c",
+      "original_bytes": 94,
+      "stored_bytes": 94
+    },
+    "runtime/run-4y_0l_yg/03-docker-version.log.gz": {
+      "original_sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+      "stored_sha256": "94f3ea466efa064f83cebdd88f6393598af8ffaf77fd792f2e4af5c61b916dcd",
+      "original_bytes": 85,
+      "stored_bytes": 97
+    },
+    "runtime/run-4y_0l_yg/04-dapr-list.log.gz": {
+      "original_sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "stored_sha256": "96b9eae99587061f1410d36dc82b51882fb9e8bc81a0f42b740282083ead5c79",
+      "original_bytes": 61,
+      "stored_bytes": 77
+    },
+    "runtime/run-4y_0l_yg/05-aspire-ps.log.gz": {
+      "original_sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "stored_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346",
+      "original_bytes": 79,
+      "stored_bytes": 95
+    },
+    "runtime/run-4y_0l_yg/06-dapr-list.log.gz": {
+      "original_sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "stored_sha256": "96b9eae99587061f1410d36dc82b51882fb9e8bc81a0f42b740282083ead5c79",
+      "original_bytes": 61,
+      "stored_bytes": 77
+    },
+    "runtime/run-4y_0l_yg/07-aspire-ps.log.gz": {
+      "original_sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "stored_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346",
+      "original_bytes": 79,
+      "stored_bytes": 95
+    },
+    "runtime/run-4y_0l_yg/08-dotnet-msbuild.log.gz": {
+      "original_sha256": "cd79e5a1cf9609c3da4b761cedc03e6cc41013187fb79dec8af62d7274665292",
+      "stored_sha256": "7eba82819489692ea004f3bdf3ad642b3770874d45d808c9fa8f6fbd0b0ce598",
+      "original_bytes": 716,
+      "stored_bytes": 307
+    },
+    "runtime/run-4y_0l_yg/09-dotnet-build.log.gz": {
+      "original_sha256": "bcdcbe3280ccb69acaadb2d1539b87e0eb88914473e28e0a345d30d38b8bad0f",
+      "stored_sha256": "c91952756b649e136af56ac21950cc62ef4f06f2585c154b2ebbebe5ec23123f",
+      "original_bytes": 8800,
+      "stored_bytes": 888
+    },
+    "runtime/run-4y_0l_yg/10-git--C.log.gz": {
+      "original_sha256": "0260bd65f4f94d1e40bb69f49e3d51dddfceff1b72ad1cc75c7ef4d8e3556375",
+      "stored_sha256": "b690fdec091f2f027988058c191eb10456cd61e6c85d50957ca71b15938972a2",
+      "original_bytes": 146,
+      "stored_bytes": 146
+    },
+    "runtime/run-4y_0l_yg/11-git--C.log.gz": {
+      "original_sha256": "142392bc687f2c1e2cf563b98c60b75a0fda122032278ee5ddf4435021cc285a",
+      "stored_sha256": "f4899acc915dea53c2372470e8686738f3bec8398036f74d786c1171b76716fc",
+      "original_bytes": 177,
+      "stored_bytes": 165
+    },
+    "runtime/run-4y_0l_yg/12-git--C.log.gz": {
+      "original_sha256": "6a81ade128bd5d052c3341254a90176cfbe0aad885e980c3898f25c5a2769809",
+      "stored_sha256": "d93cf83e5ea4608b12a2a457e4073871e4cb2e0f4f4e080f81044a1fe956c55d",
+      "original_bytes": 174,
+      "stored_bytes": 163
+    },
+    "runtime/run-4y_0l_yg/13-git--C.log.gz": {
+      "original_sha256": "142392bc687f2c1e2cf563b98c60b75a0fda122032278ee5ddf4435021cc285a",
+      "stored_sha256": "f4899acc915dea53c2372470e8686738f3bec8398036f74d786c1171b76716fc",
+      "original_bytes": 177,
+      "stored_bytes": 165
+    },
+    "runtime/run-4y_0l_yg/14-git--C.log.gz": {
+      "original_sha256": "211c7d9ffce8f5673510a58b349eda558a768327863f0fb7856632b925a6af9b",
+      "stored_sha256": "a672126de0e48f216d7dcd03b66a702f53a3e128b04a932dc684451eafc1494e",
+      "original_bytes": 173,
+      "stored_bytes": 162
+    },
+    "runtime/run-4y_0l_yg/15-docker-inspect.log.gz": {
+      "original_sha256": "242fc509984c12e18a3d5d6be1203c00407f65729c25f5e3a1b19eeb3b5cd227",
+      "stored_sha256": "dd9dd9d4f75f94b2e45e82a2b554bd4a79b5685f03956c3e9c7326ffa3ce1494",
+      "original_bytes": 152,
+      "stored_bytes": 153
+    },
+    "runtime/run-4y_0l_yg/16-docker-image.log.gz": {
+      "original_sha256": "1602333ec955e6698d77da5593eb63bd35e0f638f6a89121a7807103cd09d1fc",
+      "stored_sha256": "d619d9fa41484efe256ec2f887137d111918ff99d431bf6450cfb5bb7911ec3c",
+      "original_bytes": 216,
+      "stored_bytes": 151
+    },
+    "runtime/run-4y_0l_yg/17-docker-inspect.log.gz": {
+      "original_sha256": "fac0e8ed6e6c44241909d92ad7805912e0199df1165ec81511b11bbd6e90c943",
+      "stored_sha256": "79a8f4fb4ed0bb45eaec684422952bf0449b52967230bf251c673ba3302dd206",
+      "original_bytes": 156,
+      "stored_bytes": 155
+    },
+    "runtime/run-4y_0l_yg/18-docker-image.log.gz": {
+      "original_sha256": "f13d59c090eb7a01a6e9277b2a2c521bbc39448dccea45f2aa891e8edaacc551",
+      "stored_sha256": "ac285f209737fa9743ffc13ef023117d36d6c29ffdd6409991c6254143b67dba",
+      "original_bytes": 216,
+      "stored_bytes": 151
+    },
+    "runtime/run-4y_0l_yg/19-docker-inspect.log.gz": {
+      "original_sha256": "b1552cb09ac226b83489e8b92281bbd68baf4a9bab7344d94d4922d9adb8b2e2",
+      "stored_sha256": "cdb42e6005ccd77a78dcf35975369a56c61c16994e9ecebd8ffca655e7a7ab1e",
+      "original_bytes": 156,
+      "stored_bytes": 156
+    },
+    "runtime/run-4y_0l_yg/20-docker-image.log.gz": {
+      "original_sha256": "f13d59c090eb7a01a6e9277b2a2c521bbc39448dccea45f2aa891e8edaacc551",
+      "stored_sha256": "ac285f209737fa9743ffc13ef023117d36d6c29ffdd6409991c6254143b67dba",
+      "original_bytes": 216,
+      "stored_bytes": 151
+    },
+    "runtime/run-4y_0l_yg/21-docker-run.log.gz": {
+      "original_sha256": "774c926343a58eb41c06499670c700030d10e671bde22956ac4bf727d554afa3",
+      "stored_sha256": "a1b050541e415b9bb6968d384c9a86d994e40e169ec30c302c1b67e9461e64ec",
+      "original_bytes": 422,
+      "stored_bytes": 302
+    },
+    "runtime/run-4y_0l_yg/22-docker-inspect.log.gz": {
+      "original_sha256": "05bc823a2de8fd2692731a390742439d193049bec6a6eda8740fd9e728c84a60",
+      "stored_sha256": "668147999b3a3d0f551770f0e5d48419a1b9dade4ea7eb301b4d0c598726fcd7",
+      "original_bytes": 212,
+      "stored_bytes": 199
+    },
+    "runtime/run-4y_0l_yg/23-docker-exec.log.gz": {
+      "original_sha256": "466b86c1fb452938fcb8201f0fd4aefd4a2260e98c0d87b0b6f921bcab103430",
+      "stored_sha256": "5acaf1f5cf215af5c82b372e124d5ac2dac0ad9e7dbd09e9691d930953c1bf94",
+      "original_bytes": 131,
+      "stored_bytes": 135
+    },
+    "runtime/run-4y_0l_yg/24-docker-run.log.gz": {
+      "original_sha256": "8299dbf58a5514c87c9b6a6c0a5a35c9e04419d431dbe217cbf0d305b14cba35",
+      "stored_sha256": "0622d9884371fc112e1a86a0f63c950bf97d0064397c8f63526704f727aeefcc",
+      "original_bytes": 445,
+      "stored_bytes": 313
+    },
+    "runtime/run-4y_0l_yg/25-docker-inspect.log.gz": {
+      "original_sha256": "aeed7bffa7434b7515babd724fdf595c8099be28ccfe5be7c4be80cbac5e0ff0",
+      "stored_sha256": "9fc607c5bc8fa5e0201ba9f297b216d87173d6f62f0d61ec08bfc0f7eac432d0",
+      "original_bytes": 213,
+      "stored_bytes": 200
+    },
+    "runtime/run-4y_0l_yg/26-docker-run.log.gz": {
+      "original_sha256": "33df0014ffa00243253eb0a8481f89caef538e717f9fd83e7e565d06980498e6",
+      "stored_sha256": "d0e7e970c37f488588b22c2c13135c7f16b2e76b9b9a6eefb32f5405ec19035a",
+      "original_bytes": 540,
+      "stored_bytes": 361
+    },
+    "runtime/run-4y_0l_yg/27-docker-inspect.log.gz": {
+      "original_sha256": "1b2a01526abdd696ce74ae320b68df64eea9866bd976b4dfdce347f0478a744d",
+      "stored_sha256": "98262ae6f2af4afe67677e3d220ac23486a49950b28a5249387dc39db82d6b0a",
+      "original_bytes": 213,
+      "stored_bytes": 198
+    },
+    "runtime/run-4y_0l_yg/28-dapr-list.log.gz": {
+      "original_sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "stored_sha256": "96b9eae99587061f1410d36dc82b51882fb9e8bc81a0f42b740282083ead5c79",
+      "original_bytes": 61,
+      "stored_bytes": 77
+    },
+    "runtime/run-4y_0l_yg/29-aspire-ps.log.gz": {
+      "original_sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "stored_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346",
+      "original_bytes": 79,
+      "stored_bytes": 95
+    },
+    "runtime/run-4y_0l_yg/30-docker-inspect.log.gz": {
+      "original_sha256": "ec30286df8a2349393407423ebe3070793b20c0dd222f9936aeb80def6375572",
+      "stored_sha256": "6d52eaa7fb6cbb146e1fb75e20b25386153439b4c5727bb0d05c8955030431be",
+      "original_bytes": 5166,
+      "stored_bytes": 2334
+    },
+    "runtime/run-4y_0l_yg/31-docker-exec.log.gz": {
+      "original_sha256": "4e118a01bee8f23400e77cccb266d2655f5d602fb4c5b8a5688cfbcdfbfef4d1",
+      "stored_sha256": "6b994a8784b88af8c75c307baaf4064367968560de313e219fdb11d9b0ad3f39",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/32-docker-exec.log.gz": {
+      "original_sha256": "7d44c71f86ed6e65251064cdf7c9d0c674b4479b7f935ff790518f76a76924cc",
+      "stored_sha256": "6d02907d99c5fc057b10010d65b4e77878f256c747f6b329b7ccfa57234a33e0",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/33-docker-exec.log.gz": {
+      "original_sha256": "68e176cb1784cddfc8ec0c205998bf21f2dd34c6a056c4670d344baacd89ab23",
+      "stored_sha256": "3bbffbe3972b63458e6ae070b9dd8d74d901491873101a266447a657b530586b",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/34-docker-exec.log.gz": {
+      "original_sha256": "fb90237d0bc777d0ac58592f4c91c2473533fa97c2855443721b48b8b134dc6c",
+      "stored_sha256": "cfa2da52a989847a318a7c0691c3ac7a8e69fed1c45b339d18b4537367eb165d",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/35-docker-exec.log.gz": {
+      "original_sha256": "d644fb7f9b6f2e7a1b2396dfc31ebcc16edc66fe6f784bff0bef480c883fbcaa",
+      "stored_sha256": "acafba60baa7bdfdc77daef2f7466b5d83a594f44d7601bcbcc1244340128cb1",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/36-docker-exec.log.gz": {
+      "original_sha256": "4d347712e289535736e1ea1929da4366ddc65ab8faab34cb1f262c2c7716605f",
+      "stored_sha256": "3283636b97725c0f184011eb02ad254b7088228f94a1bff14d8a08bb288f2963",
+      "original_bytes": 141,
+      "stored_bytes": 141
+    },
+    "runtime/run-4y_0l_yg/37-docker-exec.log.gz": {
+      "original_sha256": "005372171aeadb8fbf62aea5350d35cc2055d991b3cba65826426ecea57dfdfd",
+      "stored_sha256": "8551c85e0c1272c298f74329f5770060d8deaa8ab9749368db5585bce03c5430",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/38-docker-exec.log.gz": {
+      "original_sha256": "a3505d0d95f0370a0a7d929f92ce050cd2a1731e1792039ff8a1dc9ab1695593",
+      "stored_sha256": "225a3477744be574ef7d9cde03ece1615472d3559f907595c6393481ec7bd80d",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/39-docker-exec.log.gz": {
+      "original_sha256": "b93843bc56f2141d8b4184f370d34306a78d0c0c2132216e281960023f8e3544",
+      "stored_sha256": "d7ae20dfe1003b3f0ab9c3ae9769ed793e984b569783b9a49716275b4da72260",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/40-docker-exec.log.gz": {
+      "original_sha256": "92371d171447c9949697430760720c12f98c7cd8342aa08fd05835b51721a2f4",
+      "stored_sha256": "74c84e2c73889ae63378504b50a81bb549e6d03585d7af4354e72356c04014d1",
+      "original_bytes": 141,
+      "stored_bytes": 142
+    },
+    "runtime/run-4y_0l_yg/41-docker-exec.log.gz": {
+      "original_sha256": "cbaa163b99b206c140a7229006b7516c8f2c13039fef22c97a0b1e891da627b7",
+      "stored_sha256": "0a8d7f245e385e64192a7d290090d87024e20d641f24457c44f4822c73383bf8",
+      "original_bytes": 142,
+      "stored_bytes": 143
+    },
+    "runtime/run-4y_0l_yg/42-docker-exec.log.gz": {
+      "original_sha256": "5591b51641ae9af2778c9489631ab5874eca43668667c71c5575703b78f7e4e8",
+      "stored_sha256": "83615e55d48f31f4e1fdccfb39df454a6314afeb273696f539a14488e8d0d8af",
+      "original_bytes": 142,
+      "stored_bytes": 143
+    },
+    "runtime/run-4y_0l_yg/43-docker-exec.log.gz": {
+      "original_sha256": "9100eac7fd211f903da09837c231835a30d72447c78f3c478aa93c2cba64b64c",
+      "stored_sha256": "e0b0bec017853ae7c6cf61a6eef814f6cbf0d40baca7053d57d1e23f105f74f8",
+      "original_bytes": 142,
+      "stored_bytes": 143
+    },
+    "runtime/run-4y_0l_yg/44-docker-exec.log.gz": {
+      "original_sha256": "8039695d3ccb4d6eb6de64b8b6e39458052942bbae0e08569315cfb577d8f6b1",
+      "stored_sha256": "e5882152cb1962fd76c057e18fe24c345ec47c593cf51f2ec16313e283d1bc1b",
+      "original_bytes": 142,
+      "stored_bytes": 143
+    },
+    "runtime/run-4y_0l_yg/45-docker-exec.log.gz": {
+      "original_sha256": "4542cbcb07a81c458a3939883cf41406b8c3260d4d293f7f580821f100cee4ae",
+      "stored_sha256": "d21cef4c863eccb1d3950bdaf2d1a91b2b53c5cc25e66519f2359aba0be26d1f",
+      "original_bytes": 142,
+      "stored_bytes": 143
+    },
+    "runtime/run-4y_0l_yg/46-docker-exec.log.gz": {
+      "original_sha256": "5c5425fb4bd5434ab200157e613fe0fca25039b4f7366a345632319b68417b86",
+      "stored_sha256": "943dbeb13782ae4c9c08ff933a874acb2a8ed61c01ddd3d05de40054a49563c9",
+      "original_bytes": 142,
+      "stored_bytes": 143
+    },
+    "runtime/run-4y_0l_yg/47-git--C.log.gz": {
+      "original_sha256": "142392bc687f2c1e2cf563b98c60b75a0fda122032278ee5ddf4435021cc285a",
+      "stored_sha256": "f4899acc915dea53c2372470e8686738f3bec8398036f74d786c1171b76716fc",
+      "original_bytes": 177,
+      "stored_bytes": 165
+    },
+    "runtime/run-4y_0l_yg/48-aspire-start.log.gz": {
+      "original_sha256": "2aec8da2b1d998e14f7d42f2a429698b6ee89f5675a54935f50b293b6103f576",
+      "stored_sha256": "32ff23e3af24b3f27d61a4991e7a1e858c8339044c354eaa39e9fcbe8620c77e",
+      "original_bytes": 618,
+      "stored_bytes": 341
+    },
+    "runtime/run-4y_0l_yg/49-aspire-ps.log.gz": {
+      "original_sha256": "5bef8b79f7fafcb7d04f2a0ae9af1ba373fe2b1a7883c17ca426b7920db5cbd6",
+      "stored_sha256": "b5dfb1205ddbe066ae95258be1d6d8565f112a3a45682b40d37c03d6a459001f",
+      "original_bytes": 509,
+      "stored_bytes": 333
+    },
+    "runtime/run-4y_0l_yg/50-aspire-wait.log.gz": {
+      "original_sha256": "4352c6b77852340b0b8d3513dc3bb87aa2d286754f78a413b1b09f7c7aa26094",
+      "stored_sha256": "bd3fdfb067ac413a15baacb6fbbf9b597e638e6e477a76d3d7fdf68ac8fc22ac",
+      "original_bytes": 333,
+      "stored_bytes": 227
+    },
+    "runtime/run-4y_0l_yg/51-aspire-wait.log.gz": {
+      "original_sha256": "45cb6af20777719916fc636e301dbaef62948afd34884ea58ca9a6dee55d1e5d",
+      "stored_sha256": "7c1dfd4eb187c8b940ccab68ef7abfe470b40254491716b894615c41269d1ff1",
+      "original_bytes": 333,
+      "stored_bytes": 223
+    },
+    "runtime/run-4y_0l_yg/52-docker-inspect.log.gz": {
+      "original_sha256": "ec30286df8a2349393407423ebe3070793b20c0dd222f9936aeb80def6375572",
+      "stored_sha256": "6d52eaa7fb6cbb146e1fb75e20b25386153439b4c5727bb0d05c8955030431be",
+      "original_bytes": 5166,
+      "stored_bytes": 2334
+    },
+    "runtime/run-4y_0l_yg/53-git--C.log.gz": {
+      "original_sha256": "142392bc687f2c1e2cf563b98c60b75a0fda122032278ee5ddf4435021cc285a",
+      "stored_sha256": "f4899acc915dea53c2372470e8686738f3bec8398036f74d786c1171b76716fc",
+      "original_bytes": 177,
+      "stored_bytes": 165
+    },
+    "runtime/run-4y_0l_yg/54-aspire-wait.log.gz": {
+      "original_sha256": "b90f2ab4cab8bbb66f7db2ef7e59af09792135e1b9aa15cbf3d02e86edf5b88e",
+      "stored_sha256": "1bb67251919d1a7dfbfcc3155d87caf8ab9414e4681191de120c6c22d82290b6",
+      "original_bytes": 305,
+      "stored_bytes": 218
+    },
+    "runtime/run-4y_0l_yg/55-aspire-wait.log.gz": {
+      "original_sha256": "6c08ca939ffc0d1a2c6004469e9f999be145d62d51ffa1be7a58fe91fc4d4500",
+      "stored_sha256": "3dc4f93608a6bfd1c8f5c46c64674e5714dac13cc918f294b59843c3abc1584d",
+      "original_bytes": 311,
+      "stored_bytes": 219
+    },
+    "runtime/run-4y_0l_yg/56-aspire-wait.log.gz": {
+      "original_sha256": "b0499af8c74ceff19e4a863d0c3117e76d96f32719ee1b6fe5461ca61977aac4",
+      "stored_sha256": "92de15d0b49bf3332643f8936e2b95f7bab0ee0d577aacc183ce747fefb437a3",
+      "original_bytes": 311,
+      "stored_bytes": 214
+    },
+    "runtime/run-4y_0l_yg/57-docker-container.log.gz": {
+      "original_sha256": "e890b9a64aedb2cf0dfc6721ae1de7fe7e53aa7887c4832afb1afd231caf89ea",
+      "stored_sha256": "02edcde73e39e5d7d7336436cdaa13f5d2032adc8a59e43e179649f40c921048",
+      "original_bytes": 245,
+      "stored_bytes": 208
+    },
+    "runtime/run-4y_0l_yg/58-Hexalith.Timesheets.IntegrationTests--class.log.gz": {
+      "original_sha256": "cf6d63885dd96934828cf5d6a61a920589dc9adffa39459879d9dde5750c27fe",
+      "stored_sha256": "e25cdd3f1a80d6ff58534fa1c0bf8b17ca8679b0075a93c7c06ed93eaa0735b2",
+      "original_bytes": 716,
+      "stored_bytes": 388
+    },
+    "runtime/run-4y_0l_yg/59-git--C.log.gz": {
+      "original_sha256": "0260bd65f4f94d1e40bb69f49e3d51dddfceff1b72ad1cc75c7ef4d8e3556375",
+      "stored_sha256": "b690fdec091f2f027988058c191eb10456cd61e6c85d50957ca71b15938972a2",
+      "original_bytes": 146,
+      "stored_bytes": 146
+    },
+    "runtime/run-4y_0l_yg/60-git--C.log.gz": {
+      "original_sha256": "142392bc687f2c1e2cf563b98c60b75a0fda122032278ee5ddf4435021cc285a",
+      "stored_sha256": "f4899acc915dea53c2372470e8686738f3bec8398036f74d786c1171b76716fc",
+      "original_bytes": 177,
+      "stored_bytes": 165
+    },
+    "runtime/run-4y_0l_yg/61-git--C.log.gz": {
+      "original_sha256": "6a81ade128bd5d052c3341254a90176cfbe0aad885e980c3898f25c5a2769809",
+      "stored_sha256": "d93cf83e5ea4608b12a2a457e4073871e4cb2e0f4f4e080f81044a1fe956c55d",
+      "original_bytes": 174,
+      "stored_bytes": 163
+    },
+    "runtime/run-4y_0l_yg/62-git--C.log.gz": {
+      "original_sha256": "142392bc687f2c1e2cf563b98c60b75a0fda122032278ee5ddf4435021cc285a",
+      "stored_sha256": "f4899acc915dea53c2372470e8686738f3bec8398036f74d786c1171b76716fc",
+      "original_bytes": 177,
+      "stored_bytes": 165
+    },
+    "runtime/run-4y_0l_yg/63-git--C.log.gz": {
+      "original_sha256": "211c7d9ffce8f5673510a58b349eda558a768327863f0fb7856632b925a6af9b",
+      "stored_sha256": "a672126de0e48f216d7dcd03b66a702f53a3e128b04a932dc684451eafc1494e",
+      "original_bytes": 173,
+      "stored_bytes": 162
+    },
+    "runtime/run-4y_0l_yg/64-aspire-ps.log.gz": {
+      "original_sha256": "5bef8b79f7fafcb7d04f2a0ae9af1ba373fe2b1a7883c17ca426b7920db5cbd6",
+      "stored_sha256": "b5dfb1205ddbe066ae95258be1d6d8565f112a3a45682b40d37c03d6a459001f",
+      "original_bytes": 509,
+      "stored_bytes": 333
+    },
+    "runtime/run-4y_0l_yg/65-aspire-stop.log.gz": {
+      "original_sha256": "ccf5e849b1d9fd92a1b385051a9179409a2c5492a8a37b842368ea9e20bdd037",
+      "stored_sha256": "0d3ae3d875c5b357c7628c3b83a2bde25d498f569b92a815b3e0de8acb949840",
+      "original_bytes": 589,
+      "stored_bytes": 243
+    },
+    "runtime/run-4y_0l_yg/66-aspire-ps.log.gz": {
+      "original_sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "stored_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346",
+      "original_bytes": 79,
+      "stored_bytes": 95
+    },
+    "runtime/run-4y_0l_yg/67-docker-container.log.gz": {
+      "original_sha256": "2d2092b683be354244852653baf1f2049d41941661d63dbb7747ccfde33fc83b",
+      "stored_sha256": "2b820a37820a2b2be41f7bab200b0a354592be410a6b9d85ff7464aea965a6ab",
+      "original_bytes": 181,
+      "stored_bytes": 159
+    },
+    "runtime/run-4y_0l_yg/68-docker-container.log.gz": {
+      "original_sha256": "91430ec1db5fd93aaa67c96e1b6b49be32848422b15667bdb6490c02c590e09a",
+      "stored_sha256": "245b24c3274b1fbb3459dd2f2a7dd33eb57689a9fd99169c5e0db3e1278fc0db",
+      "original_bytes": 166,
+      "stored_bytes": 159
+    },
+    "runtime/run-4y_0l_yg/69-docker-inspect.log.gz": {
+      "original_sha256": "ec30286df8a2349393407423ebe3070793b20c0dd222f9936aeb80def6375572",
+      "stored_sha256": "6d52eaa7fb6cbb146e1fb75e20b25386153439b4c5727bb0d05c8955030431be",
+      "original_bytes": 5166,
+      "stored_bytes": 2334
+    },
+    "runtime/run-4y_0l_yg/70-docker-inspect.log.gz": {
+      "original_sha256": "6021d50213662da2eabed809480dec32084ba024c583c974fdf0bd4e9a80419a",
+      "stored_sha256": "35253e9f09126a44d4ddcec75c800fff125612bf4f9846681532a4a36675eeab",
+      "original_bytes": 4374,
+      "stored_bytes": 1986
+    },
+    "runtime/run-4y_0l_yg/71-docker-inspect.log.gz": {
+      "original_sha256": "3f9da01239948c3b35ea4851f608a552d8406819d0f0286d02e10137bacba66b",
+      "stored_sha256": "8f84c79168a7d039814b17dd2336aba167ccc55e0dba9d9b09ce1868bdb58a58",
+      "original_bytes": 4565,
+      "stored_bytes": 2040
+    },
+    "runtime/run-4y_0l_yg/72-docker-rm.log.gz": {
+      "original_sha256": "8c60635c7421a9004e718f702f06832dd92d44e38ab368d3edf936b1ec5bba1c",
+      "stored_sha256": "3655122ffafb93fbe1b05b551c7fecd7c538fb02153b4a6b50e95ef40d738feb",
+      "original_bytes": 192,
+      "stored_bytes": 135
+    },
+    "runtime/run-4y_0l_yg/73-docker-inspect.log.gz": {
+      "original_sha256": "bc01b4d59ea9baec57a7b3ba04e12dd4c984a6e045c8d7be3a2a1c0e395d6ae9",
+      "stored_sha256": "7536b041abda876fe22c94a7e2fb988599e3cd2bb97c6b07e694064b8ebc2b44",
+      "original_bytes": 220,
+      "stored_bytes": 158
+    },
+    "runtime/run-4y_0l_yg/74-docker-container.log.gz": {
+      "original_sha256": "a22a25524832e9cd1bf2217ae729ca7c73f17f647848f53f29eba99e4c7d6c5a",
+      "stored_sha256": "20450af79b505adf8598386e9659445f27caff8b4bd51b7d7df650cfa0dd0f4d",
+      "original_bytes": 159,
+      "stored_bytes": 159
+    },
+    "runtime/run-4y_0l_yg/75-docker-rm.log.gz": {
+      "original_sha256": "3cecb4a773050c0294c0879c91971ff4a15faf8094b7c192801fc0fdc77391d9",
+      "stored_sha256": "14dfe80127051ae3ef387e2347c6937dc3ec7c40564c6b4de3cdd4fe82753610",
+      "original_bytes": 192,
+      "stored_bytes": 135
+    },
+    "runtime/run-4y_0l_yg/76-docker-inspect.log.gz": {
+      "original_sha256": "90561339c87fc7db8c773afea05409353c97e7f8721620a0f824d450e9a19e69",
+      "stored_sha256": "6dbee7ffc4f2d4ccd34469f93f501332924c7139bc94f0596de65a6409072f48",
+      "original_bytes": 220,
+      "stored_bytes": 158
+    },
+    "runtime/run-4y_0l_yg/77-docker-container.log.gz": {
+      "original_sha256": "4cac4a6d7faab88251e9bd5e6ce7c29601d07681b97dbbcc7ed1595ccf46d0e4",
+      "stored_sha256": "e68310511e8f1a0a6f7656d375fc666f9c8a2f0987d9ec2759857567f3249e33",
+      "original_bytes": 159,
+      "stored_bytes": 158
+    },
+    "runtime/run-4y_0l_yg/78-docker-rm.log.gz": {
+      "original_sha256": "dd4fc0b08d8ff283217daa8a6fa9f1e35bacf6810423f0aa9348f9a24f2fac8f",
+      "stored_sha256": "9618c01b0e1c9247d206e9f604d32d68dab0f20419217f6ed07f6db0bc5b6615",
+      "original_bytes": 192,
+      "stored_bytes": 134
+    },
+    "runtime/run-4y_0l_yg/79-docker-inspect.log.gz": {
+      "original_sha256": "915c03ee780d27aa1bee115fd7039a83af813b2905c4b6958e7de71e2e26b67f",
+      "stored_sha256": "6b4d00d7aae92d582c66b27b0e4a67241602f1091ea09751698c468d30ca2814",
+      "original_bytes": 212,
+      "stored_bytes": 155
+    },
+    "runtime/run-4y_0l_yg/80-docker-container.log.gz": {
+      "original_sha256": "d1a2c749611f85c5b7243961fd23ce9eb20a04c2c5fcaf7ee5a9ce03a6246c9e",
+      "stored_sha256": "35f1152cf72f3fe48b26dbf2165f2f401a5d262bc3f687e574b17f2ffe4d4a70",
+      "original_bytes": 155,
+      "stored_bytes": 156
+    },
+    "runtime/run-4y_0l_yg/admission.json": {
+      "original_sha256": "25aa233b247164aab283eb06826d402166eeb289574aff94059665acaab7b46a",
+      "stored_sha256": "25aa233b247164aab283eb06826d402166eeb289574aff94059665acaab7b46a",
+      "original_bytes": 122,
+      "stored_bytes": 122
+    },
+    "runtime/run-4y_0l_yg/cleanup.json": {
+      "original_sha256": "7f37877c4951a156f679ef061325078147223b9407cfdeaad114ddf34c92ec3e",
+      "stored_sha256": "7f37877c4951a156f679ef061325078147223b9407cfdeaad114ddf34c92ec3e",
+      "original_bytes": 171,
+      "stored_bytes": 171
+    },
+    "runtime/run-4y_0l_yg/dashboard-listener-lifecycle.json": {
+      "original_sha256": "cb82f1cf1f4dde7d4f5c274f779856c8d7c076fee45f2381af9e24a70c0f6987",
+      "stored_sha256": "cb82f1cf1f4dde7d4f5c274f779856c8d7c076fee45f2381af9e24a70c0f6987",
+      "original_bytes": 8744,
+      "stored_bytes": 8744
+    },
+    "runtime/run-4y_0l_yg/dependency-graph.json.gz": {
+      "original_sha256": "97a971230257fd7843136aa52a74b202e97b3e0cff55c3a06022ca94b261df76",
+      "stored_sha256": "34c4b3adf86f93d7c716ced3c71a8b75d32e186027366eb8d24214cbff0a15dc",
+      "original_bytes": 508464,
+      "stored_bytes": 36880
+    },
+    "runtime/run-4y_0l_yg/empty-fixture-backup.json": {
+      "original_sha256": "d13828b4200e1b74e2647e20a43dd61681e85b6bb62dcb76d9f24c0603473454",
+      "stored_sha256": "d13828b4200e1b74e2647e20a43dd61681e85b6bb62dcb76d9f24c0603473454",
+      "original_bytes": 1291,
+      "stored_bytes": 1291
+    },
+    "runtime/run-4y_0l_yg/gateway-process-after.json": {
+      "original_sha256": "07799235fbab77b104bbc608e4b35236fcd7e058c6838b7424246f9f848a00d1",
+      "stored_sha256": "07799235fbab77b104bbc608e4b35236fcd7e058c6838b7424246f9f848a00d1",
+      "original_bytes": 648,
+      "stored_bytes": 648
+    },
+    "runtime/run-4y_0l_yg/gateway-process-before.json": {
+      "original_sha256": "ecbc34e49a44f5e4e355f15c4cc1e72216c0c3dfb58ee2cc59a0b411c4bfddcd",
+      "stored_sha256": "ecbc34e49a44f5e4e355f15c4cc1e72216c0c3dfb58ee2cc59a0b411c4bfddcd",
+      "original_bytes": 648,
+      "stored_bytes": 648
+    },
+    "runtime/run-4y_0l_yg/gateway-process-replacement.json": {
+      "original_sha256": "a5d9d0f991678d5b9e9f9e1a208771ba93eb51a1fa0f4be87ebc9b33b80c68d1",
+      "stored_sha256": "a5d9d0f991678d5b9e9f9e1a208771ba93eb51a1fa0f4be87ebc9b33b80c68d1",
+      "original_bytes": 1471,
+      "stored_bytes": 1471
+    },
+    "runtime/run-4y_0l_yg/projection-writer-bootstrap.json": {
+      "original_sha256": "69506120dfe380f64599f2acd53aa79dac08d7f3e52465a44e0588bb45c99896",
+      "stored_sha256": "69506120dfe380f64599f2acd53aa79dac08d7f3e52465a44e0588bb45c99896",
+      "original_bytes": 400,
+      "stored_bytes": 400
+    },
+    "runtime/run-4y_0l_yg/recorded-process-exit.json": {
+      "original_sha256": "d5cbb5de7dc8d580bfcbdb45b0928afd41dce957338da77eebb74d1e57419387",
+      "stored_sha256": "d5cbb5de7dc8d580bfcbdb45b0928afd41dce957338da77eebb74d1e57419387",
+      "original_bytes": 4221,
+      "stored_bytes": 4221
+    },
+    "runtime/run-4y_0l_yg/resource-exit.json": {
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "stored_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "original_bytes": 3,
+      "stored_bytes": 3
+    },
+    "runtime/run-4y_0l_yg/runtime-host.json": {
+      "original_sha256": "94047128f3bd2fd689d0f16db7f21c2a17049186bb999c80a777e4aea33074e1",
+      "stored_sha256": "94047128f3bd2fd689d0f16db7f21c2a17049186bb999c80a777e4aea33074e1",
+      "original_bytes": 12133,
+      "stored_bytes": 12133
+    },
+    "runtime/run-4y_0l_yg/runtime-isolation.json": {
+      "original_sha256": "7aa9e1d9a237e2436bd164cebc09fcf7f5fbe5864a946b8d7d56e4480235e028",
+      "stored_sha256": "7aa9e1d9a237e2436bd164cebc09fcf7f5fbe5864a946b8d7d56e4480235e028",
+      "original_bytes": 3850,
+      "stored_bytes": 3850
+    },
+    "runtime/run-4y_0l_yg/runtime-readiness.json": {
+      "original_sha256": "79e16a6aebd5e3214af7df6419b9e71ac19569d55d0442dd3ce9a04a8ee5dbfd",
+      "stored_sha256": "79e16a6aebd5e3214af7df6419b9e71ac19569d55d0442dd3ce9a04a8ee5dbfd",
+      "original_bytes": 648,
+      "stored_bytes": 648
+    },
+    "runtime/run-4y_0l_yg/security-runtime.json": {
+      "original_sha256": "486c10a0891ff68198c9a0b39967a600520d7bb885ed90baba15ba7d8a48861d",
+      "stored_sha256": "486c10a0891ff68198c9a0b39967a600520d7bb885ed90baba15ba7d8a48861d",
+      "original_bytes": 608,
+      "stored_bytes": 608
+    },
+    "runtime/run-4y_0l_yg/shared-after.json": {
+      "original_sha256": "10a40b26b7bb41cbd1c717da272a8dbf90127c621885faf841fe9de09439e598",
+      "stored_sha256": "10a40b26b7bb41cbd1c717da272a8dbf90127c621885faf841fe9de09439e598",
+      "original_bytes": 771,
+      "stored_bytes": 771
+    },
+    "runtime/run-4y_0l_yg/shared-baseline-before.json": {
+      "original_sha256": "10a40b26b7bb41cbd1c717da272a8dbf90127c621885faf841fe9de09439e598",
+      "stored_sha256": "10a40b26b7bb41cbd1c717da272a8dbf90127c621885faf841fe9de09439e598",
+      "original_bytes": 771,
+      "stored_bytes": 771
+    },
+    "runtime/run-4y_0l_yg/shared-baseline-preservation.json": {
+      "original_sha256": "054ed7c9d467dee919451609d0340ca2f23d982b1770169f70b7c554ffd57286",
+      "stored_sha256": "054ed7c9d467dee919451609d0340ca2f23d982b1770169f70b7c554ffd57286",
+      "original_bytes": 1784,
+      "stored_bytes": 1784
+    },
+    "runtime/run-4y_0l_yg/shared-before.json": {
+      "original_sha256": "10a40b26b7bb41cbd1c717da272a8dbf90127c621885faf841fe9de09439e598",
+      "stored_sha256": "10a40b26b7bb41cbd1c717da272a8dbf90127c621885faf841fe9de09439e598",
+      "original_bytes": 771,
+      "stored_bytes": 771
+    },
+    "runtime/run-4y_0l_yg/shared-preservation.json": {
+      "original_sha256": "a84f7001d7698411bdc99271f320cf96ee9aafa8a9a7d13265ea07824ed41559",
+      "stored_sha256": "a84f7001d7698411bdc99271f320cf96ee9aafa8a9a7d13265ea07824ed41559",
+      "original_bytes": 1560,
+      "stored_bytes": 1560
+    },
+    "runtime/run-4y_0l_yg/source-after.json.gz": {
+      "original_sha256": "1242209729364d92d4b60828492b5be75dd5e1794b3eb4d27e94ad4883823f6c",
+      "stored_sha256": "135d4c0c6bf3a0222c40ae4bae7a5152d457ed1d5520b9958163bd4160217369",
+      "original_bytes": 675671,
+      "stored_bytes": 75471
+    },
+    "runtime/run-4y_0l_yg/source-before.json.gz": {
+      "original_sha256": "1242209729364d92d4b60828492b5be75dd5e1794b3eb4d27e94ad4883823f6c",
+      "stored_sha256": "135d4c0c6bf3a0222c40ae4bae7a5152d457ed1d5520b9958163bd4160217369",
+      "original_bytes": 675671,
+      "stored_bytes": 75471
+    },
+    "runtime/run-4y_0l_yg/gateway-invocation.json.gz": {
+      "original_sha256": "b8523426f66cdbc94e77c69ad86fcdf633f97c7dd5e64e62e62b03b0d2a2f06e",
+      "stored_sha256": "e2300dc5ee58f811132c59d8c175fd47987b1d3b41e5b24f0bebd7c6624349d9",
+      "original_bytes": 518,
+      "stored_bytes": 198
+    }
+  }
+}

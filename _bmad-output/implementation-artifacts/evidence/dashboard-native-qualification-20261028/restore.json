@@ -1,0 +1,17 @@
+{
+  "command": [
+    "dotnet",
+    "restore",
+    "Hexalith.Timesheets.slnx",
+    "-p:Configuration=Debug",
+    "-p:UseHexalithProjectReferences=true",
+    "-m:1",
+    "/nr:false"
+  ],
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-28T06:33:44.554607+00:00",
+  "elapsed_seconds": 10.367,
+  "exit_code": 0
+}

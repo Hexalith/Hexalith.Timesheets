@@ -1,0 +1,5 @@
+{
+  "scope": "read-only observation of actual native failure receipts; no failure injection",
+  "completed": true,
+  "failure_receipts": {}
+}

@@ -1,0 +1,389 @@
+{
+  "passed": true,
+  "manifest_receipts_verified": 103,
+  "native_dashboard": {
+    "pid": 3875660,
+    "start": "5772873",
+    "state": "S",
+    "executable": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.3/tools/Aspire.Dashboard",
+    "parent": 3875172,
+    "package": "aspire.dashboard.sdk.linux-x64",
+    "version": "13.6.3",
+    "package_directory": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.3",
+    "sha256": "ce1770a0f508166833b61a71dad0d6159444380b5272df2da80a75cfed81a00a"
+  },
+  "package_metadata": {
+    "package": "Aspire.Dashboard.Sdk.linux-x64/13.6.3",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/microsoft/aspire",
+      "commit": "38294b1b31552dae42a516cffa0cbc737ec08976"
+    },
+    "files_sha256": {
+      "aspire.dashboard.sdk.linux-x64.nuspec": "9b2c7277b265794e75d283d8046e5bef773ae80c7607e38864d2d5bedeacfe23",
+      "tools/Aspire.Dashboard": "ce1770a0f508166833b61a71dad0d6159444380b5272df2da80a75cfed81a00a"
+    },
+    "assets_content_hash_sha512": "Q7hcoww2r6w7UyuPccgAbPZy27YAyQQbxaAnMQQzVsyJBVOAOLqrwN88pdcJ5gWKL2ZTaB0XKdDKFkbAxOzBHw==",
+    "metadata_content_hash_sha512": "Q7hcoww2r6w7UyuPccgAbPZy27YAyQQbxaAnMQQzVsyJBVOAOLqrwN88pdcJ5gWKL2ZTaB0XKdDKFkbAxOzBHw==",
+    "local_archive_sha512": "MDgYbY/gSIHIcWK8zf7dNlzVxq3KPmZ0+TFYVNY1zY8K/ujKtzgoi3oJzLxCw61lPaXO65Fedx6AsiJXIAXQ5g==",
+    "local_archive_sidecar_sha512": "MDgYbY/gSIHIcWK8zf7dNlzVxq3KPmZ0+TFYVNY1zY8K/ujKtzgoi3oJzLxCw61lPaXO65Fedx6AsiJXIAXQ5g=="
+  },
+  "source": {
+    "timesheets": {
+      "head": "69f3622b17de70bf3e9043f96577f2b6d1a4cbd9",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    },
+    "eventstore": {
+      "head": "092abef078b4a70a77831fe0f60d76b3a85a8f1c",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    },
+    "Hexalith.Commons": {
+      "head": "1663028fb6d9f46a0bf17919edeb21bb99be1587",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    },
+    "Hexalith.EventStore": {
+      "head": "092abef078b4a70a77831fe0f60d76b3a85a8f1c",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    },
+    "Hexalith.Builds": {
+      "head": "12e48f1dc3d3a4e0c2e6d09e16ad4841216b83a4",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "untracked_build_inputs": {}
+    }
+  },
+  "source_before_equals_after": true,
+  "samples": [
+    {
+      "phase": "before_journey",
+      "health": "before_health",
+      "verified": true,
+      "stage": "complete",
+      "expected_identity": {
+        "pid": 3875660,
+        "start": "5772873"
+      },
+      "socket_inodes": [
+        "36423797",
+        "36423798"
+      ],
+      "socket_owners": {
+        "36423797": [
+          3875660
+        ],
+        "36423798": [
+          3875660
+        ]
+      },
+      "owner_identities": [
+        {
+          "pid": 3875660,
+          "start": "5772873",
+          "identity_visibility": "observed"
+        }
+      ],
+      "expected_process_observations": {
+        "before_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        },
+        "after_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        }
+      },
+      "observation_started_unix_ns": 1793169400430505601,
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 436,
+        "inaccessible_processes": 39,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 4,
+        "disappeared_descriptors": 1,
+        "socket_tables_complete": true,
+        "descriptor_scan_completed": true,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "pid": 3875660,
+      "start": "5772873",
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "observation_completed_unix_ns": 1793169400476760560
+    },
+    {
+      "phase": "before_journey",
+      "health": "after_health",
+      "verified": true,
+      "stage": "complete",
+      "expected_identity": {
+        "pid": 3875660,
+        "start": "5772873"
+      },
+      "socket_inodes": [
+        "36423797",
+        "36423798"
+      ],
+      "socket_owners": {
+        "36423797": [
+          3875660
+        ],
+        "36423798": [
+          3875660
+        ]
+      },
+      "owner_identities": [
+        {
+          "pid": 3875660,
+          "start": "5772873",
+          "identity_visibility": "observed"
+        }
+      ],
+      "expected_process_observations": {
+        "before_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        },
+        "after_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        }
+      },
+      "observation_started_unix_ns": 1793169400480084976,
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 434,
+        "inaccessible_processes": 39,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 2,
+        "disappeared_descriptors": 1,
+        "socket_tables_complete": true,
+        "descriptor_scan_completed": true,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "pid": 3875660,
+      "start": "5772873",
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "observation_completed_unix_ns": 1793169400520146787
+    },
+    {
+      "phase": "after_journey",
+      "health": "before_health",
+      "verified": true,
+      "stage": "complete",
+      "expected_identity": {
+        "pid": 3875660,
+        "start": "5772873"
+      },
+      "socket_inodes": [
+        "36423797",
+        "36423798"
+      ],
+      "socket_owners": {
+        "36423797": [
+          3875660
+        ],
+        "36423798": [
+          3875660
+        ]
+      },
+      "owner_identities": [
+        {
+          "pid": 3875660,
+          "start": "5772873",
+          "identity_visibility": "observed"
+        }
+      ],
+      "expected_process_observations": {
+        "before_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        },
+        "after_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        }
+      },
+      "observation_started_unix_ns": 1793169497229976767,
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 436,
+        "inaccessible_processes": 38,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 2,
+        "disappeared_descriptors": 1,
+        "socket_tables_complete": true,
+        "descriptor_scan_completed": true,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "pid": 3875660,
+      "start": "5772873",
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "observation_completed_unix_ns": 1793169497283108882
+    },
+    {
+      "phase": "after_journey",
+      "health": "after_health",
+      "verified": true,
+      "stage": "complete",
+      "expected_identity": {
+        "pid": 3875660,
+        "start": "5772873"
+      },
+      "socket_inodes": [
+        "36423797",
+        "36423798"
+      ],
+      "socket_owners": {
+        "36423797": [
+          3875660
+        ],
+        "36423798": [
+          3875660
+        ]
+      },
+      "owner_identities": [
+        {
+          "pid": 3875660,
+          "start": "5772873",
+          "identity_visibility": "observed"
+        }
+      ],
+      "expected_process_observations": {
+        "before_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        },
+        "after_inventory": {
+          "pid": 3875660,
+          "start": "5772873",
+          "state": "S"
+        }
+      },
+      "observation_started_unix_ns": 1793169497286726625,
+      "visibility": {
+        "scope": "observable_process_descriptors",
+        "inspected_processes": 435,
+        "inaccessible_processes": 38,
+        "inaccessible_descriptors": 45,
+        "disappeared_processes": 2,
+        "disappeared_descriptors": 1,
+        "socket_tables_complete": true,
+        "descriptor_scan_completed": true,
+        "exclusivity_established": false,
+        "unobserved_transfer_excluded": false
+      },
+      "pid": 3875660,
+      "start": "5772873",
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ],
+      "observation_completed_unix_ns": 1793169497335436623
+    }
+  ],
+  "journey_seconds": 74.349,
+  "fixture_seconds": 282.586,
+  "captured_processes_exited": 22,
+  "cleanup": {
+    "complete": true,
+    "journey_descendants_gone": true,
+    "failure_reasons": [],
+    "components_created": true,
+    "components_removed": true,
+    "containers_removed": 3
+  },
+  "shared_preservation": {
+    "matches": true,
+    "confirmed_natural_expirations": {
+      "0": 0,
+      "13": 0,
+      "14": 0
+    },
+    "redis": {
+      "0": {
+        "persistent": {
+          "matches": true,
+          "keys_before": 828767,
+          "keys_after": 828767
+        },
+        "expiring": {
+          "matches": true,
+          "added": 0,
+          "missing_unexpired": 0,
+          "value_changes": 0,
+          "deadline_changes": 0,
+          "confirmed_natural_expirations": 0
+        }
+      },
+      "13": {
+        "persistent": {
+          "matches": true,
+          "keys_before": 0,
+          "keys_after": 0
+        },
+        "expiring": {
+          "matches": true,
+          "added": 0,
+          "missing_unexpired": 0,
+          "value_changes": 0,
+          "deadline_changes": 0,
+          "confirmed_natural_expirations": 0
+        }
+      },
+      "14": {
+        "persistent": {
+          "matches": true,
+          "keys_before": 0,
+          "keys_after": 0
+        },
+        "expiring": {
+          "matches": true,
+          "added": 0,
+          "missing_unexpired": 0,
+          "value_changes": 0,
+          "deadline_changes": 0,
+          "confirmed_natural_expirations": 0
+        }
+      }
+    },
+    "scheduler": {
+      "identity_matches": true,
+      "contents_match": true,
+      "keys_before": 1575,
+      "keys_after": 1575,
+      "revision_before": "19048",
+      "revision_after": "19048"
+    },
+    "mismatches": [],
+    "method": "Atomic read-only Redis KEYS/DUMP/PTTL/TIME DB0/13/14; etcd v3 all-key range on loopback:2379",
+    "ttl_rule": "Retained expiring values and deadlines match; absent keys allowed only after their captured deadline"
+  },
+  "actual_native_ownership_failure_observed": false,
+  "native_failure_cleanup_retention_qualified": false,
+  "inaccessible_holders_excluded": false,
+  "unobserved_transfer_excluded": false,
+  "system_wide_exclusivity_established": false,
+  "offline_expiring_comparison_limit": "Raw expiring keys, values and deadlines are deliberately absent; detailed equality relies on the runner's retained preservation predicates",
+  "scope": "local native samples and completed fixture; no deployed acceptance"
+}

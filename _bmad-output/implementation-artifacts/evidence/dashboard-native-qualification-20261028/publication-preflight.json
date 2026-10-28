@@ -1,0 +1,17 @@
+{
+  "recorded_utc": "2026-10-28T07:13:01.069890+00:00",
+  "head": "69f3622b17de70bf3e9043f96577f2b6d1a4cbd9",
+  "fetched_origin_main": "69f3622b17de70bf3e9043f96577f2b6d1a4cbd9",
+  "divergence": "0 0",
+  "allowed_stage_paths": [
+    "_bmad-output/implementation-artifacts/deferred-work.md",
+    "_bmad-output/implementation-artifacts/tests/remaining-local-deferred-followups.md",
+    "_bmad-output/implementation-artifacts/spec-native-dashboard-diagnostic-qualification.md",
+    "_bmad-output/implementation-artifacts/evidence/dashboard-native-qualification-20261028"
+  ],
+  "committed_gitlinks_unchanged": true,
+  "external_checkout_changes_excluded": true,
+  "launch_readiness_hash_unchanged": true,
+  "broad_default_gate": "FAIL: 1 integration assertion; focused five cases pass; deferred separately",
+  "publication_authorization": "Explicit user instruction to commit and push narrow qualification to main"
+}

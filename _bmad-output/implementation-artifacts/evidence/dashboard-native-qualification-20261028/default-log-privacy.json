@@ -1,0 +1,8 @@
+{
+  "scope": "Bounded pattern scan of seven verification logs; not exhaustive secret detection. Failure is a synthetic in-process test, not native shared-service data.",
+  "matches": {
+    "jwt": 0,
+    "private_key": 0,
+    "url_userinfo": 0
+  }
+}

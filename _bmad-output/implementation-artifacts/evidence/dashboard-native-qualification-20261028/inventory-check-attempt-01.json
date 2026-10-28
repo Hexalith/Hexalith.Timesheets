@@ -1,0 +1,7 @@
+{
+  "command": "python3 - <<'PY'\nimport datetime,json,os,subprocess,time\nfrom pathlib import Path\np=Path('/tmp/timesheets-native-qualification-20261028'); results=[]\nfor cmd in (['aspire','ps','--non-interactive','--format','Json'],['dapr','list','--output','json']):\n r=subprocess.run(cmd,env={**os.environ,'DOTNET_CLI_HOME':'/tmp/dotnet-cli-home'},capture_output=True,text=True); a=json.loads(r.stdout); assert r.returncode==0 and a==[]; results.append({'command':cmd,'environment':{'DOTNET_CLI_HOME':'/tmp/dotnet-cli-home'},'exit_code':r.returncode,'stdout':a})\n(p/'post-runtime-inventory.json').write_text(json.dumps({'recorded_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'results':results},indent=2)+'\\n'); print(json.dumps(results,indent=2))\nPY",
+  "exit_code": 1,
+  "result": "AssertionError at line 5; the failing inventory and its response were not retained",
+  "scope": "post-run convenience audit, after successful native fixture cleanup; not a native ownership refusal",
+  "followup": "Read-only repeated commands are retained in post-runtime-inventory.json; both exit 0 and report count zero. No process stop or guard change followed. The initial cause remains unclassified; do not infer a transfer or foreign-session absence."
+}

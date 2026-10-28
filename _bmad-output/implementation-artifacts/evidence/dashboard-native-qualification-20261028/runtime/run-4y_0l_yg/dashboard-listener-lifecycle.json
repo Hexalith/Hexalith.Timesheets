@@ -1,0 +1,318 @@
+{
+  "before_journey": {
+    "ready": true,
+    "scheme": "https",
+    "loopback": true,
+    "port": 24379,
+    "path": "/health",
+    "connect_host": "127.0.0.1",
+    "ownership": {
+      "pid": 3875660,
+      "start": "5772873",
+      "socket_inodes": [
+        "36423797",
+        "36423798"
+      ],
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ]
+    },
+    "ownership_observations": {
+      "before_health": {
+        "verified": true,
+        "stage": "complete",
+        "expected_identity": {
+          "pid": 3875660,
+          "start": "5772873"
+        },
+        "socket_inodes": [
+          "36423797",
+          "36423798"
+        ],
+        "socket_owners": {
+          "36423797": [
+            3875660
+          ],
+          "36423798": [
+            3875660
+          ]
+        },
+        "owner_identities": [
+          {
+            "pid": 3875660,
+            "start": "5772873",
+            "identity_visibility": "observed"
+          }
+        ],
+        "expected_process_observations": {
+          "before_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          },
+          "after_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          }
+        },
+        "observation_started_unix_ns": 1793169400430505601,
+        "visibility": {
+          "scope": "observable_process_descriptors",
+          "inspected_processes": 436,
+          "inaccessible_processes": 39,
+          "inaccessible_descriptors": 45,
+          "disappeared_processes": 4,
+          "disappeared_descriptors": 1,
+          "socket_tables_complete": true,
+          "descriptor_scan_completed": true,
+          "exclusivity_established": false,
+          "unobserved_transfer_excluded": false
+        },
+        "pid": 3875660,
+        "start": "5772873",
+        "loopback_hosts": [
+          "127.0.0.1",
+          "::1"
+        ],
+        "observation_completed_unix_ns": 1793169400476760560
+      },
+      "after_health": {
+        "verified": true,
+        "stage": "complete",
+        "expected_identity": {
+          "pid": 3875660,
+          "start": "5772873"
+        },
+        "socket_inodes": [
+          "36423797",
+          "36423798"
+        ],
+        "socket_owners": {
+          "36423797": [
+            3875660
+          ],
+          "36423798": [
+            3875660
+          ]
+        },
+        "owner_identities": [
+          {
+            "pid": 3875660,
+            "start": "5772873",
+            "identity_visibility": "observed"
+          }
+        ],
+        "expected_process_observations": {
+          "before_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          },
+          "after_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          }
+        },
+        "observation_started_unix_ns": 1793169400480084976,
+        "visibility": {
+          "scope": "observable_process_descriptors",
+          "inspected_processes": 434,
+          "inaccessible_processes": 39,
+          "inaccessible_descriptors": 45,
+          "disappeared_processes": 2,
+          "disappeared_descriptors": 1,
+          "socket_tables_complete": true,
+          "descriptor_scan_completed": true,
+          "exclusivity_established": false,
+          "unobserved_transfer_excluded": false
+        },
+        "pid": 3875660,
+        "start": "5772873",
+        "loopback_hosts": [
+          "127.0.0.1",
+          "::1"
+        ],
+        "observation_completed_unix_ns": 1793169400520146787
+      }
+    },
+    "visibility": {
+      "scope": "observable_process_descriptors",
+      "exclusivity_established": false,
+      "unobserved_transfer_excluded": false,
+      "inspected_processes_observations": 870,
+      "inaccessible_processes_observations": 78,
+      "inaccessible_descriptors_observations": 90,
+      "disappeared_processes_observations": 6,
+      "disappeared_descriptors_observations": 2
+    }
+  },
+  "after_journey": {
+    "ready": true,
+    "scheme": "https",
+    "loopback": true,
+    "port": 24379,
+    "path": "/health",
+    "connect_host": "127.0.0.1",
+    "ownership": {
+      "pid": 3875660,
+      "start": "5772873",
+      "socket_inodes": [
+        "36423797",
+        "36423798"
+      ],
+      "loopback_hosts": [
+        "127.0.0.1",
+        "::1"
+      ]
+    },
+    "ownership_observations": {
+      "before_health": {
+        "verified": true,
+        "stage": "complete",
+        "expected_identity": {
+          "pid": 3875660,
+          "start": "5772873"
+        },
+        "socket_inodes": [
+          "36423797",
+          "36423798"
+        ],
+        "socket_owners": {
+          "36423797": [
+            3875660
+          ],
+          "36423798": [
+            3875660
+          ]
+        },
+        "owner_identities": [
+          {
+            "pid": 3875660,
+            "start": "5772873",
+            "identity_visibility": "observed"
+          }
+        ],
+        "expected_process_observations": {
+          "before_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          },
+          "after_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          }
+        },
+        "observation_started_unix_ns": 1793169497229976767,
+        "visibility": {
+          "scope": "observable_process_descriptors",
+          "inspected_processes": 436,
+          "inaccessible_processes": 38,
+          "inaccessible_descriptors": 45,
+          "disappeared_processes": 2,
+          "disappeared_descriptors": 1,
+          "socket_tables_complete": true,
+          "descriptor_scan_completed": true,
+          "exclusivity_established": false,
+          "unobserved_transfer_excluded": false
+        },
+        "pid": 3875660,
+        "start": "5772873",
+        "loopback_hosts": [
+          "127.0.0.1",
+          "::1"
+        ],
+        "observation_completed_unix_ns": 1793169497283108882
+      },
+      "after_health": {
+        "verified": true,
+        "stage": "complete",
+        "expected_identity": {
+          "pid": 3875660,
+          "start": "5772873"
+        },
+        "socket_inodes": [
+          "36423797",
+          "36423798"
+        ],
+        "socket_owners": {
+          "36423797": [
+            3875660
+          ],
+          "36423798": [
+            3875660
+          ]
+        },
+        "owner_identities": [
+          {
+            "pid": 3875660,
+            "start": "5772873",
+            "identity_visibility": "observed"
+          }
+        ],
+        "expected_process_observations": {
+          "before_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          },
+          "after_inventory": {
+            "pid": 3875660,
+            "start": "5772873",
+            "state": "S"
+          }
+        },
+        "observation_started_unix_ns": 1793169497286726625,
+        "visibility": {
+          "scope": "observable_process_descriptors",
+          "inspected_processes": 435,
+          "inaccessible_processes": 38,
+          "inaccessible_descriptors": 45,
+          "disappeared_processes": 2,
+          "disappeared_descriptors": 1,
+          "socket_tables_complete": true,
+          "descriptor_scan_completed": true,
+          "exclusivity_established": false,
+          "unobserved_transfer_excluded": false
+        },
+        "pid": 3875660,
+        "start": "5772873",
+        "loopback_hosts": [
+          "127.0.0.1",
+          "::1"
+        ],
+        "observation_completed_unix_ns": 1793169497335436623
+      }
+    },
+    "visibility": {
+      "scope": "observable_process_descriptors",
+      "exclusivity_established": false,
+      "unobserved_transfer_excluded": false,
+      "inspected_processes_observations": 871,
+      "inaccessible_processes_observations": 76,
+      "inaccessible_descriptors_observations": 90,
+      "disappeared_processes_observations": 4,
+      "disappeared_descriptors_observations": 2
+    }
+  },
+  "journey_outcome": {
+    "command_completed": true,
+    "command_exit_code": 0,
+    "validation_completed": true,
+    "journey_succeeded": true,
+    "command_started_unix_ns": 1793169401239573340,
+    "command_completed_unix_ns": 1793169475776865596,
+    "exit_code_before_listener_observation": 0
+  },
+  "recorded_at_unix_ns": 1793169497335491631,
+  "observation_stage": "after_journey_and_gateway_proof_before_cleanup",
+  "fixture_qualification_complete": false,
+  "same_observed_listener_identity": true,
+  "scope": "observable_process_descriptors",
+  "exclusivity_established": false,
+  "unobserved_transfer_excluded": false
+}

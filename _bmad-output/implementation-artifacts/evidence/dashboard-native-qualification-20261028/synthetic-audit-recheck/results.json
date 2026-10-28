@@ -1,0 +1,220 @@
+{
+  "scope": "Synthetic offline evidence-consistency checks only; no native execution, failure or transfer.",
+  "source": "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/dashboard-native-qualification-20261028",
+  "auditor_sha256": "e1085cb7f331ed77a5ad615b4c384d93c943b987bf37a90c23ba6fe2afbf7a18",
+  "source_tree_unchanged": true,
+  "original_findings": 10,
+  "mutants_rejected": 10,
+  "all_expectations_met": true,
+  "commands": [
+    {
+      "label": "baseline",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/baseline/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:07.720733+00:00",
+      "exit_code": 0,
+      "expected": "accept",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": false,
+      "stdout": "baseline.stdout",
+      "stderr": "baseline.stderr"
+    },
+    {
+      "label": "optimized-native-exit-99",
+      "command": [
+        "/usr/bin/python3",
+        "-O",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/optimized-native-exit-99/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:07.755396+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": false,
+      "stdout": "optimized-native-exit-99.stdout",
+      "stderr": "optimized-native-exit-99.stderr"
+    },
+    {
+      "label": "manifest-original-bytes-altered",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/manifest-original-bytes-altered/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.064690+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": false,
+      "stdout": "manifest-original-bytes-altered.stdout",
+      "stderr": "manifest-original-bytes-altered.stderr"
+    },
+    {
+      "label": "wrong-dirty-source",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/wrong-dirty-source/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.159029+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "wrong-dirty-source.stdout",
+      "stderr": "wrong-dirty-source.stderr"
+    },
+    {
+      "label": "wrong-dcp-identities",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/wrong-dcp-identities/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.246815+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "wrong-dcp-identities.stdout",
+      "stderr": "wrong-dcp-identities.stderr"
+    },
+    {
+      "label": "empty-listener-inodes",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/empty-listener-inodes/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.335416+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "empty-listener-inodes.stdout",
+      "stderr": "empty-listener-inodes.stderr"
+    },
+    {
+      "label": "contradictory-owner-starts",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/contradictory-owner-starts/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.420719+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "contradictory-owner-starts.stdout",
+      "stderr": "contradictory-owner-starts.stderr"
+    },
+    {
+      "label": "nonloopback-health-endpoint",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/nonloopback-health-endpoint/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.504027+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "nonloopback-health-endpoint.stdout",
+      "stderr": "nonloopback-health-endpoint.stderr"
+    },
+    {
+      "label": "unchanged-gateway-identity",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/unchanged-gateway-identity/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.593572+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "unchanged-gateway-identity.stdout",
+      "stderr": "unchanged-gateway-identity.stderr"
+    },
+    {
+      "label": "incomplete-process-exit-set",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/incomplete-process-exit-set/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.684316+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "incomplete-process-exit-set.stdout",
+      "stderr": "incomplete-process-exit-set.stderr"
+    },
+    {
+      "label": "contradictory-shared-state",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/timesheets-native-qualification-20261028/review-recheck/results/contradictory-shared-state/audit-native.py"
+      ],
+      "environment": {
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONOPTIMIZE": "unset"
+      },
+      "started_utc": "2026-10-28T06:54:08.770185+00:00",
+      "exit_code": 1,
+      "expected": "reject",
+      "matched_expectation": true,
+      "temporary_manifest_recomputed": true,
+      "stdout": "contradictory-shared-state.stdout",
+      "stderr": "contradictory-shared-state.stderr"
+    }
+  ],
+  "top_level_command": [
+    "python3",
+    "/tmp/timesheets-native-qualification-20261028/review-recheck/recheck.py",
+    "--source",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/dashboard-native-qualification-20261028",
+    "--output",
+    "/tmp/timesheets-native-qualification-20261028/review-recheck/results"
+  ],
+  "reproduction_script_sha256": "592ff38cc687ff0735df7a7b3332622595f1ecabd79868f0f61a6834bac84e02",
+  "original_recipe_script_sha256": "f4255dad4551f0481a8462d65907fbe8ed4cce78935a721a8cd77a28ad759844"
+}

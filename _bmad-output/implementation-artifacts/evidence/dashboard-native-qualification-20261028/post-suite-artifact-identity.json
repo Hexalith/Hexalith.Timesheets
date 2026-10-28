@@ -1,0 +1,7 @@
+{
+  "recorded_utc": "2026-10-28T07:05:57.690860+00:00",
+  "recorded_files": 926,
+  "changed_recorded_files": [],
+  "missing_recorded_files": [],
+  "scope": "Native snapshot static files versus current files after six default suite executions; does not compare subsequently changed dependency source/imports"
+}

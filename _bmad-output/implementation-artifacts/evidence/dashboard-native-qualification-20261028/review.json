@@ -1,0 +1,63 @@
+{
+  "scope": "Two independent artifact reviews; no new native runtime observations and no native diagnostic defect demonstrated",
+  "native_receipt_reviewer": {
+    "initial_findings": [
+      "R1: assets content hash ambiguously labeled package_sha512; corrected to named source hashes with separate local archive/sidecar digests"
+    ],
+    "checks": {
+      "manifest_files": 103,
+      "compressed_files": 83,
+      "original_bytes": 1950094,
+      "stored_bytes": 253539,
+      "file_hashes": 926,
+      "unique_import_hashes": 276,
+      "evaluated_projects": 19,
+      "root_gitlinks": 13,
+      "privacy_pattern_scan_files_at_review": 117
+    },
+    "post_fix_result": "No new finding. Named hash sources match, original native evidence unchanged, offline audit passes and agrees with regenerated receipt; scope and launch FAIL remain intact.",
+    "privacy_scope": "Bounded JWT/private-key/URL-userinfo pattern scan; not exhaustive secret detection"
+  },
+  "blind_reviewer": {
+    "findings": 10,
+    "triage": "All patched in evidence-only offline checker; see spec review triage log B1-B10",
+    "original_provenance": "Eight semantic receipt substitutions and one optimized/exit99 substitution were executed in memory; manifest omission was established by source inspection, not an original corruption run. Original auditor bytes were not retained. Reconstructed recipe is explicitly labeled.",
+    "post_fix_baseline_exit": 0,
+    "post_fix_mutants_rejected": 10,
+    "post_fix_source_unchanged": true,
+    "post_fix_result": "No remaining findings from the recheck",
+    "recheck_results": "synthetic-audit-recheck/results.json"
+  },
+  "unresolved": [
+    "No actual native ownership refusal occurred; failure-time native cleanup retention remains unqualified",
+    "Inaccessible holders, unobserved native transfers and system-wide exclusivity remain open",
+    "Initial convenience inventory assertion cause remains unclassified",
+    "Detailed expiring value/deadline comparison cannot be reconstructed from privacy-limited snapshots",
+    "No upstream archive provenance attestation",
+    "Every unfinished deployed gate and launch FAIL preserved",
+    "Broad default IntegrationTests has one unresolved read-set assertion failure; isolated five-case method run passes",
+    "Eleven subsequent external dependency checkout-head changes preserved unstaged; later source/import graph is unqualified"
+  ],
+  "final_scope_recheck": {
+    "result": "No blocking qualification issue; broad FAIL and later source-graph exclusion are explicit",
+    "raw_totals": {
+      "passed": 2782,
+      "failed": 1,
+      "skipped": 5,
+      "total": 2788
+    },
+    "focused_passed": 5,
+    "focused_seconds": 2.837,
+    "static_file_hashes_matching": 926,
+    "native_receipts_intact": 103,
+    "committed_and_index_gitlinks_unchanged": true,
+    "external_checkout_note": "Builds advanced again after the boundary receipt sample; recorded checkout heads are historical, not a current graph attestation"
+  },
+  "publication_storage_normalization": {
+    "reason": "Staged whitespace check rejected trailing blank lines in two raw receipt files",
+    "native_gateway_invocation": "Stored as gzip without modifying original receipt bytes; manifest storage path/hash/length updated",
+    "native_original_receipts_unchanged": true,
+    "compressed_native_files_final": 84,
+    "native_original_bytes_final": 1950094
+  }
+}

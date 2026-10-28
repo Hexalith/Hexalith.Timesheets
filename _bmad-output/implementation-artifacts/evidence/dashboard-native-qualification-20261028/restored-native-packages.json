@@ -1,0 +1,38 @@
+{
+  "assets_sha256": "2e9951f6185161bf7bd36f3fab48a797b8e0c82e5cb495e02a34d934d2e0e69f",
+  "packages": [
+    {
+      "package": "Aspire.Dashboard.Sdk.linux-x64/13.6.3",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/microsoft/aspire",
+        "commit": "38294b1b31552dae42a516cffa0cbc737ec08976"
+      },
+      "files_sha256": {
+        "aspire.dashboard.sdk.linux-x64.nuspec": "9b2c7277b265794e75d283d8046e5bef773ae80c7607e38864d2d5bedeacfe23",
+        "tools/Aspire.Dashboard": "ce1770a0f508166833b61a71dad0d6159444380b5272df2da80a75cfed81a00a"
+      },
+      "assets_content_hash_sha512": "Q7hcoww2r6w7UyuPccgAbPZy27YAyQQbxaAnMQQzVsyJBVOAOLqrwN88pdcJ5gWKL2ZTaB0XKdDKFkbAxOzBHw==",
+      "metadata_content_hash_sha512": "Q7hcoww2r6w7UyuPccgAbPZy27YAyQQbxaAnMQQzVsyJBVOAOLqrwN88pdcJ5gWKL2ZTaB0XKdDKFkbAxOzBHw==",
+      "local_archive_sha512": "MDgYbY/gSIHIcWK8zf7dNlzVxq3KPmZ0+TFYVNY1zY8K/ujKtzgoi3oJzLxCw61lPaXO65Fedx6AsiJXIAXQ5g==",
+      "local_archive_sidecar_sha512": "MDgYbY/gSIHIcWK8zf7dNlzVxq3KPmZ0+TFYVNY1zY8K/ujKtzgoi3oJzLxCw61lPaXO65Fedx6AsiJXIAXQ5g=="
+    },
+    {
+      "package": "Aspire.Hosting.Orchestration.linux-x64/13.6.3",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/microsoft/aspire",
+        "commit": "38294b1b31552dae42a516cffa0cbc737ec08976"
+      },
+      "files_sha256": {
+        "aspire.hosting.orchestration.linux-x64.nuspec": "e959dd6eb9bb2f0de095575db90ad32fff2a9bd34088a7b3105c9cba686c78ae",
+        "tools/dcp": "1fb8f6c741b89fe39f73f491f5b06729dd187515bbfe37cf46d7bdefd7bd67f8"
+      },
+      "assets_content_hash_sha512": "rHwee2QgN1rCfIHAZVX1LOfHexZB5eEEZSCNVxpbt9EvIlxmUaOwncxMcamOGvGyThdf1qLHLEoAPwtOqPME9g==",
+      "metadata_content_hash_sha512": "rHwee2QgN1rCfIHAZVX1LOfHexZB5eEEZSCNVxpbt9EvIlxmUaOwncxMcamOGvGyThdf1qLHLEoAPwtOqPME9g==",
+      "local_archive_sha512": "KUocDBdn2pkJXzxB7NfTABbET6MZ//TneK3fuKbBGIN5Jp46Pdclsje6jDqI7LgS2TXQITKwlkR3R7TSGAX9mA==",
+      "local_archive_sidecar_sha512": "KUocDBdn2pkJXzxB7NfTABbET6MZ//TneK3fuKbBGIN5Jp46Pdclsje6jDqI7LgS2TXQITKwlkR3R7TSGAX9mA=="
+    }
+  ],
+  "hash_scope": "Assets/metadata content hashes and physical local archive/sidecar hashes are recorded separately. Native binary and nuspec SHA-256 bind installed artifacts; no upstream archive provenance assertion."
+}

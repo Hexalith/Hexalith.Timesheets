@@ -1,0 +1,14 @@
+{
+  "command": [
+    "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "-method",
+    "*AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+    "-noColor"
+  ],
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-28T07:05:56.281710+00:00",
+  "elapsed_seconds": 3.23,
+  "exit_code": 0
+}

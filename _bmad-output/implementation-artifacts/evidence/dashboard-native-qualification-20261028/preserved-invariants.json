@@ -1,0 +1,102 @@
+{
+  "recorded_utc": "2026-10-28T07:03:05.821364+00:00",
+  "first_broad_boundary_check": {
+    "command": [
+      "git",
+      "diff",
+      "--exit-code",
+      "--",
+      "src",
+      "scripts",
+      "Directory.Build.props",
+      "Directory.Build.targets",
+      "Directory.Packages.props",
+      "global.json",
+      ".gitmodules",
+      "references/",
+      "docs/launch-readiness.md"
+    ],
+    "exit_code": 1,
+    "cause": "11 submodule checkout revisions changed externally after native qualification and earlier independent review"
+  },
+  "module_source_diff_command": [
+    "git",
+    "diff",
+    "--exit-code",
+    "--",
+    "src",
+    "scripts",
+    "Directory.Build.props",
+    "Directory.Build.targets",
+    "Directory.Packages.props",
+    "global.json",
+    ".gitmodules",
+    "docs/launch-readiness.md"
+  ],
+  "module_source_diff_exit_code": 0,
+  "committed_gitlinks_unchanged": true,
+  "sha256": {
+    "docs/launch-readiness.md": "f9f6a8d2583b49a50b4af4490af0e7ee7b3fbf9a05ce9c67047d2c28bb200f39",
+    "scripts/run_isolated_magic_link_dapr.py": "f09601d3f7a44a93bc44421c2fc01c8037138e44f10c277a74759fda898624f8",
+    "scripts/test_isolated_magic_link_dapr.py": "705b87dd30286274c388c6361cf688d27be2dc86182fbae15cc089ba9578bc32"
+  },
+  "launch_readiness_unchanged": true,
+  "unrelated_checkout_changes_preserved_unstaged": [
+    {
+      "path": "references/Hexalith.Builds",
+      "committed_gitlink": "12e48f1dc3d3a4e0c2e6d09e16ad4841216b83a4",
+      "observed_checkout_head": "abc0e1be8069d1c7a567515a13bb015adc407536"
+    },
+    {
+      "path": "references/Hexalith.Commons",
+      "committed_gitlink": "1663028fb6d9f46a0bf17919edeb21bb99be1587",
+      "observed_checkout_head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a"
+    },
+    {
+      "path": "references/Hexalith.Conversations",
+      "committed_gitlink": "855de783fb294299fcdc151379977331ba1c99a1",
+      "observed_checkout_head": "861f13a2e728c3847a191b0688070762b1bfa29e"
+    },
+    {
+      "path": "references/Hexalith.EventStore",
+      "committed_gitlink": "092abef078b4a70a77831fe0f60d76b3a85a8f1c",
+      "observed_checkout_head": "36c78f3435d2d492a73f1b0707cf865c8735d740"
+    },
+    {
+      "path": "references/Hexalith.FrontComposer",
+      "committed_gitlink": "8d2b47bd206ffd5c5e77a5ac0461b9cfe52ea4fd",
+      "observed_checkout_head": "5f665c4d38afb2255a7dde4620330e09824a40a1"
+    },
+    {
+      "path": "references/Hexalith.McpCli",
+      "committed_gitlink": "8bfd1e0592bfee258b381f41b098fe3b35170fdd",
+      "observed_checkout_head": "2d7311cbbcc592c0ea0348463037389251d1cb4b"
+    },
+    {
+      "path": "references/Hexalith.Parties",
+      "committed_gitlink": "6ba02654ca390b3333183962355bd5c5857b8224",
+      "observed_checkout_head": "9239c531f3b0cbb4a998c419e537463b597ff14b"
+    },
+    {
+      "path": "references/Hexalith.Platform",
+      "committed_gitlink": "3a8ec2e6ba9d02c024549288bd7b3e513579337c",
+      "observed_checkout_head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4"
+    },
+    {
+      "path": "references/Hexalith.Projects",
+      "committed_gitlink": "c978a5e86c8134ba09a166e093a1a4d6b4db77a8",
+      "observed_checkout_head": "0e45105476902fcfce1f8dbd8416d7234bb16b41"
+    },
+    {
+      "path": "references/Hexalith.Tenants",
+      "committed_gitlink": "a4489bc79f3178437f2491e0bb9e0bed983697ea",
+      "observed_checkout_head": "7ddb864cda5e942925b056391617eae4895c1253"
+    },
+    {
+      "path": "references/Hexalith.Works",
+      "committed_gitlink": "d7ed47a61ba64443c8959a37a5b22211924841d0",
+      "observed_checkout_head": "4dcd9cf3413444d205859dc2554844d29792dab6"
+    }
+  ],
+  "scope": "No submodule checkout was modified by this task. Native qualification is bound to retained before/after snapshot; no qualification of subsequent external changes."
+}

@@ -1,0 +1,13 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "commitlint",
+    "--",
+    "--edit",
+    "/tmp/timesheets-native-qualification-20261028/commit-message.txt"
+  ],
+  "exit_code": 0,
+  "message_sha256": "f3088299db84f8f8042b27b0f814e973b4b931f99ae9a3725b45397fba096742",
+  "output": "commitlint.txt.gz"
+}

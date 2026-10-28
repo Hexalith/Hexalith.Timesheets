@@ -1,0 +1,4 @@
+docs: qualify native dashboard ownership diagnostics
+
+Retain restored Aspire 13.6.3 native observations, source identity, cleanup and shared-service preservation.
+Record independent review, strengthen the offline evidence audit, and preserve native visibility limits and unfinished deployed gates.
