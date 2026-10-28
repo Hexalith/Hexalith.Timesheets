@@ -1,0 +1,48 @@
+{
+  "before_files": 22135,
+  "after_files": 22135,
+  "files_equal": true,
+  "file_changes": [],
+  "repository_heads_equal": {
+    ".": true,
+    "references/Hexalith.Commons": true,
+    "references/Hexalith.AI.Tools": true,
+    "references/Hexalith.Builds": true,
+    "references/Hexalith.Tenants": true,
+    "references/Hexalith.EventStore": true,
+    "references/Hexalith.FrontComposer": true,
+    "references/Hexalith.PolymorphicSerializations": true,
+    "references/Hexalith.Projects": true,
+    "references/Hexalith.Conversations": true,
+    "references/Hexalith.Works": true,
+    "references/Hexalith.Parties": true,
+    "references/Hexalith.McpCli": true,
+    "references/Hexalith.Platform": true
+  },
+  "dependency_statuses_equal": true,
+  "test_artifacts_equal": true,
+  "artifact_files": 159,
+  "full_xml_assemblies": [
+    {
+      "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, non-parallel]",
+      "id": "d4361e38-4ca9-48c9-8d07-c6d755ae29cc",
+      "name": "/tmp/timesheets-claims-fix-20261028/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests.dll",
+      "run-date": "2026-10-28",
+      "run-time": "08:13:53",
+      "start-rtf": "2026-10-28T08:13:53.7228583+00:00",
+      "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+      "target-framework": ".NETCoreApp,Version=v10.0",
+      "errors": "0",
+      "failed": "0",
+      "finish-rtf": "2026-10-28T08:25:52.1627646+00:00",
+      "not-run": "0",
+      "passed": "981",
+      "skipped": "5",
+      "time": "718.468",
+      "time-rtf": "00:11:58.4680000",
+      "total": "986"
+    }
+  ],
+  "xml_sha256": "33c08e47bb23f3d4015ca57a058983bb8068c890c977e97208d1737fb7dd839d",
+  "note": "Root documentation/evidence was prepared during verification; source/configuration and Debug artifacts above are immutable. Repository status metadata may reflect documentation changes."
+}

@@ -1,0 +1,772 @@
+{
+  "commands": [
+    {
+      "receipt": "commitlint-tooling-install.json",
+      "command": [
+        "npm",
+        "ci"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:14:54.153598+00:00",
+      "elapsed_seconds": 6.49,
+      "exit_code": 0,
+      "summary": [],
+      "log": "commitlint-tooling-install.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "commitlint.json",
+      "command": [
+        "npm",
+        "run",
+        "commitlint",
+        "--",
+        "--edit",
+        "/tmp/timesheets-claims-evidence-20261028/commit-message.txt"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:15:36.720859+00:00",
+      "elapsed_seconds": 0.277,
+      "exit_code": 0,
+      "summary": [],
+      "log": "commitlint.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "current-deadline.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*GatewayDefaultHttpDeadlineCancelsMappedBootstrapAndColdRetryDrainsPersistedPendingWork",
+        "-parallelMode",
+        "none",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:11:23.681479+00:00",
+      "elapsed_seconds": 31.228,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 1, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 31.044s"
+      ],
+      "log": "current-deadline.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-focused-02.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-method",
+        "*IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:11:00.081968+00:00",
+      "elapsed_seconds": 2.904,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 9, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 2.730s"
+      ],
+      "log": "current-focused-02.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-focused-bound.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-method",
+        "*IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T09:11:32.581978+00:00",
+      "elapsed_seconds": 3.468,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 9, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 3.262s"
+      ],
+      "log": "current-focused-bound.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "current-focused.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-method",
+        "*IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:09:47.642340+00:00",
+      "elapsed_seconds": 3.048,
+      "exit_code": 1,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 9, Errors: 0, Failed: 4, Skipped: 0, Not Run: 0, Time: 2.847s"
+      ],
+      "log": "current-focused.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-full-serial.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-result-xml",
+        "/tmp/timesheets-claims-evidence-20261028/current-full-serial.xml",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:13:53.557412+00:00",
+      "elapsed_seconds": 718.745,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 986, Errors: 0, Failed: 0, Skipped: 5, Not Run: 0, Time: 718.468s"
+      ],
+      "log": "current-full-serial.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "current-integration-build-02.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:02:59.702141+00:00",
+      "elapsed_seconds": 4.661,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "current-integration-build-02.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-integration-build-03.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:05:11.805680+00:00",
+      "elapsed_seconds": 3.543,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "current-integration-build-03.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-integration-build-04.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:08:40.901579+00:00",
+      "elapsed_seconds": 3.155,
+      "exit_code": 1,
+      "summary": [
+        "Build FAILED."
+      ],
+      "log": "current-integration-build-04.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-integration-build-05.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:09:04.140955+00:00",
+      "elapsed_seconds": 3.393,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "current-integration-build-05.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-integration-build-06.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:10:29.222453+00:00",
+      "elapsed_seconds": 3.132,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "current-integration-build-06.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-integration-build.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:02:01.215376+00:00",
+      "elapsed_seconds": 10.08,
+      "exit_code": 1,
+      "summary": [
+        "Build FAILED."
+      ],
+      "log": "current-integration-build.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-integration-restore.json",
+      "command": [
+        "dotnet",
+        "restore",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "-p:Configuration=Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:01:06.323613+00:00",
+      "elapsed_seconds": 1.224,
+      "exit_code": 0,
+      "summary": [],
+      "log": "current-integration-restore.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "current-restore.json",
+      "command": [
+        "dotnet",
+        "restore",
+        "Hexalith.Timesheets.slnx",
+        "-p:Configuration=Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:00:49.286577+00:00",
+      "elapsed_seconds": 3.37,
+      "exit_code": 1,
+      "summary": [],
+      "log": "current-restore.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-build.json",
+      "command": [
+        "dotnet",
+        "build",
+        "Hexalith.Timesheets.slnx",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T07:53:45.895872+00:00",
+      "elapsed_seconds": 15.257,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "historical-build.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-focused-bound.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-method",
+        "*IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T09:10:57.070844+00:00",
+      "elapsed_seconds": 3.276,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 9, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 3.070s"
+      ],
+      "log": "historical-focused-bound.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "historical-focused-final.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-method",
+        "*IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:13:45.769367+00:00",
+      "elapsed_seconds": 2.97,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 9, Errors: 0, Failed: 0, Skipped: 0, Not Run: 0, Time: 2.766s"
+      ],
+      "log": "historical-focused-final.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "historical-full.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T07:54:19.628212+00:00",
+      "elapsed_seconds": 739.015,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 984, Errors: 0, Failed: 0, Skipped: 5, Not Run: 0, Time: 738.747s"
+      ],
+      "log": "historical-full.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-global-window-red-02.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-preEnumerateTheories",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-displayName",
+        "*False*",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:12:29.179842+00:00",
+      "elapsed_seconds": 1.233,
+      "exit_code": 1,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 1, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 0.975s"
+      ],
+      "log": "historical-global-window-red-02.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-global-window-red-bound.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-preEnumerateTheories",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-displayName",
+        "*False*",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T09:09:56.572989+00:00",
+      "elapsed_seconds": 2.414,
+      "exit_code": 1,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 1, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 1.737s"
+      ],
+      "log": "historical-global-window-red-bound.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "historical-global-window-red.json",
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+        "-displayName",
+        "*False*",
+        "-parallelMode",
+        "none",
+        "-showLiveOutput",
+        "-noColor"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:12:12.642273+00:00",
+      "elapsed_seconds": 0.192,
+      "exit_code": 0,
+      "summary": [
+        "Hexalith.Timesheets.IntegrationTests  Total: 0"
+      ],
+      "log": "historical-global-window-red.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-mutation-build-bound.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T09:09:00.483202+00:00",
+      "elapsed_seconds": 3.693,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "historical-mutation-build-bound.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "historical-mutation-build.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:12:02.209071+00:00",
+      "elapsed_seconds": 3.078,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "historical-mutation-build.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-replay-build-final.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:13:22.822166+00:00",
+      "elapsed_seconds": 3.262,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "historical-replay-build-final.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "historical-replay-build.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:11:10.725015+00:00",
+      "elapsed_seconds": 3.125,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "historical-replay-build.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-restore.json",
+      "command": [
+        "dotnet",
+        "restore",
+        "Hexalith.Timesheets.slnx",
+        "-p:Configuration=Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T07:53:03.893850+00:00",
+      "elapsed_seconds": 2.713,
+      "exit_code": 0,
+      "summary": [],
+      "log": "historical-restore.log.gz",
+      "has_source_and_test_artifact_hashes": false
+    },
+    {
+      "receipt": "historical-restored-build-bound.json",
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "cwd": "/tmp/timesheets-claims-investigation-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T09:10:26.182042+00:00",
+      "elapsed_seconds": 3.791,
+      "exit_code": 0,
+      "summary": [
+        "Build succeeded."
+      ],
+      "log": "historical-restored-build-bound.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "published-drain-inspection-02.json",
+      "command": [
+        "dnx",
+        "dotnet-inspect",
+        "-y",
+        "--",
+        "member",
+        "SharedProjectionEpochCoordinator",
+        "--package",
+        "Hexalith.EventStore.Client@3.128.2",
+        "-m",
+        "WaitForPromotedCleanupAsync",
+        "--all",
+        "-v:d"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:20:31.353817+00:00",
+      "elapsed_seconds": 7.712,
+      "exit_code": 0,
+      "summary": [],
+      "log": "published-drain-inspection-02.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    },
+    {
+      "receipt": "published-drain-inspection.json",
+      "command": [
+        "dnx",
+        "dotnet-inspect",
+        "-y",
+        "--",
+        "member",
+        "SharedProjectionEpochCoordinator",
+        "--package",
+        "Hexalith.EventStore.Client@3.128.2",
+        "-m",
+        "WaitForPromotedCleanupAsync",
+        "-v:d"
+      ],
+      "cwd": "/tmp/timesheets-claims-fix-20261028",
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "started_utc": "2026-10-28T08:20:14.566167+00:00",
+      "elapsed_seconds": 11.252,
+      "exit_code": 1,
+      "summary": [],
+      "log": "published-drain-inspection.log.gz",
+      "has_source_and_test_artifact_hashes": true
+    }
+  ],
+  "note": "Early failed builds, metadata attempt without --all, zero-selected red attempt and superseded focused correlation-equality failure remain explicit. Final sufficiency proof uses the bound chain."
+}

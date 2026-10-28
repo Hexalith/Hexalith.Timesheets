@@ -1,0 +1,6 @@
+{
+  "root_equal": true,
+  "submodules_equal": true,
+  "actual_original_root": "/home/administrator/projects/hexalith/timesheets",
+  "note": "No original working-tree, branch, index or dependency checkout mutations were made; independent clones own all edits. Comparing visible Git states does not inventory arbitrary ignored files or runtime sessions."
+}

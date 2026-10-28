@@ -1,0 +1,15 @@
+{
+  "observed_processes": [
+    {
+      "pid": 1104,
+      "name": "docker-desktop-",
+      "start_ticks": 5997
+    },
+    {
+      "pid": 2587096,
+      "name": "dapr",
+      "start_ticks": 6299959
+    }
+  ],
+  "scope": "read-only /proc names and PID/start; no lifecycle commands performed; inaccessible processes not inventoried"
+}

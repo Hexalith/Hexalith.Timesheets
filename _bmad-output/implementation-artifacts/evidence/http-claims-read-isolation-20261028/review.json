@@ -1,0 +1,71 @@
+{
+  "reviewers": [
+    "/root/blind_review",
+    "/root/causal_review"
+  ],
+  "scope": "independent source reviews; no reviewer ran tests/builds or mutated files; parent verification serialized",
+  "findings": [
+    {
+      "finding": "Barrier can claim the setup worker's second epoch read",
+      "verdict": "medium",
+      "action": "patch",
+      "evidence": "Classify chunk-cleanup stack before claim, then pre-drain exact setup coordinator and schedule fresh coordinator. Same SDK sources across both graphs; focused controlled stacks retained."
+    },
+    {
+      "finding": "Wrong authorization correlation could make a filtered empty set vacuous",
+      "verdict": "medium",
+      "action": "patch",
+      "evidence": "Select actual host ObservedTrustedContext.CorrelationId directly for issuance/revocation/missing-id. Proposed equality to LastAuthorizationRequest was disproved by four accepted-case failures in current-focused.json: later command-envelope authorization has another correlation. Both reviewers rechecked correction."
+    },
+    {
+      "finding": "Duplicated negative-control whitelist does not protect original assertion",
+      "verdict": "medium",
+      "action": "patch",
+      "evidence": "Original theory, global-window red control and actual HTTP foreign-read control now share AssertAdminCatalogReadSet."
+    },
+    {
+      "finding": "Release-only teardown leaves scheduled cleanup beyond fixture lifetime",
+      "verdict": "medium",
+      "action": "patch",
+      "evidence": "Test-only exact-signature bridge invokes existing SDK drain. Original coordinator drained before gate; fresh coordinator drained in finally before factory disposal even on assertion failure. SDK thirty-second budget unchanged."
+    },
+    {
+      "finding": "Key-only observations omit full store address",
+      "verdict": "low",
+      "action": "patch",
+      "evidence": "Observation retains StoreName and shared assertion requires exact expected store as well as original strict keys and counts."
+    },
+    {
+      "finding": "Current reconstructed root clone omitted executed --quiet",
+      "verdict": "low",
+      "action": "patch",
+      "evidence": "Exact reconstructed current argv corrected; setup identity and timings scope unchanged."
+    },
+    {
+      "finding": "Early red experiment lacked untracked-source and test-artifact hashes",
+      "verdict": "medium",
+      "action": "patch",
+      "evidence": "Final serial repeated bound red/build and green/build receipts match all559 source inputs and129 historical artifacts. Current bound focused/full share all559 source inputs and159 artifacts. Only deliberate one-line regression snapshot mutation differs red/green. Earlier receipts retain provenance limits."
+    }
+  ],
+  "source_recheck": "Both reviewers report no remaining actionable source findings after corrections; earlier equality approval superseded by execution and re-review.",
+  "evidence_recheck": {
+    "verdict": "clean; no remaining actionable finding",
+    "reviewers": [
+      "/root/blind_review",
+      "/root/causal_review"
+    ],
+    "independently_verified": [
+      "All30 recorded command-log hashes",
+      "All11 retained test-run intervals have no overlaps",
+      "Bound red mutation matches retained diff and differs from green only in one .cs input",
+      "Historical red/build and restored green/build input and129-artifact links",
+      "Current bound focused/full559-input and159-artifact identity",
+      "All22135 current source/configuration/Debug hashes equal before/after",
+      "XML986 total981pass5skip0fail0error0notrun718.468s non-parallel",
+      "All final report links and timings; no draft substitutions",
+      "Historical FAIL, nonreproduction, original timing limits, solution-restore blocker, launch/deployed/dashboard limits preserved"
+    ],
+    "reviewer_activity": "Read-only; neither reviewer ran tests/builds or edited files"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "git",
+    "-C",
+    "/tmp/timesheets-claims-investigation-20261028",
+    "diff",
+    "--name-status",
+    "69f3622b17de70bf3e9043f96577f2b6d1a4cbd9",
+    "f1a9f9737e386db95b9bb7657098c047f5efaee5",
+    "--",
+    "src",
+    "tests",
+    "Directory.Build.props",
+    "Directory.Build.targets",
+    "Directory.Packages.props",
+    "global.json",
+    "references"
+  ],
+  "result": "",
+  "scope": "runtime/test/build configuration and gitlinks compare between original native build base and investigation base; docs/evidence/Python audit changes excluded"
+}

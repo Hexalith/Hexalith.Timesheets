@@ -1,0 +1,37 @@
+{
+  "scope_hash_algorithm": "UTF8 length-prefixed components, SHA256, base64url without padding",
+  "keys": {
+    "tenant-1": {
+      "components": [
+        "timesheets-readmodels",
+        "tenant-1",
+        "timesheets",
+        "tenant-activity-type-catalog",
+        "tenant-activity-type-catalog",
+        "shared-epoch"
+      ],
+      "key": "shared-epoch:eU1R_Wb6QrJFlZpT4uwLU8q6r9wJhr5EcP-Psmkb2ZA"
+    },
+    "tenant-2": {
+      "components": [
+        "timesheets-readmodels",
+        "tenant-2",
+        "timesheets",
+        "tenant-activity-type-catalog",
+        "tenant-activity-type-catalog",
+        "shared-epoch"
+      ],
+      "key": "shared-epoch:thUXx7xSaZ1Q9rE6fbe9nqeL5oR6pwZZrvzAPNFXujM"
+    }
+  },
+  "sdk_sources": {
+    "/tmp/timesheets-claims-investigation-20261028": {
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.PromotedCleanup.cs": "e0573012a49ade8bbf7d9b32a6e30a5812ee912cb2147e0b1c7933df911670a8",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.cs": "10869af6df2c06a6badaa78f2ab42a2f1d2a2505191aab7641d2d8b520170a16"
+    },
+    "/tmp/timesheets-claims-fix-20261028": {
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.PromotedCleanup.cs": "e0573012a49ade8bbf7d9b32a6e30a5812ee912cb2147e0b1c7933df911670a8",
+      "src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.cs": "10869af6df2c06a6badaa78f2ab42a2f1d2a2505191aab7641d2d8b520170a16"
+    }
+  }
+}

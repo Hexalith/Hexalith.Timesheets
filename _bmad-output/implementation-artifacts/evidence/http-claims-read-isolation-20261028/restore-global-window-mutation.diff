@@ -1,0 +1,11 @@
+--- request-scoped-regression
++++ restore-original-global-window
+@@ -107,7 +107,7 @@
+             globalWindow.Select(read => read.Key).ShouldContain(requestEpochKey);
+             Should.Throw<ShouldAssertException>(() => AssertAdminCatalogReadSet(globalWindow, OtherTenant(), 0))
+                 .Message.ShouldContain(setupEpochKey);
+-            HttpBoundaryReadObservation[] requestReads = factory.Store.ReadsFor(context.CorrelationId);
++            HttpBoundaryReadObservation[] requestReads = globalWindow;
+             if (injectForeignRequestRead)
+             {
+                 requestReads.Select(read => read.Key).ShouldContain(setupEpochKey);

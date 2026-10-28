@@ -1,0 +1,7 @@
+{
+  "package": "Hexalith.EventStore.Client",
+  "version": "3.128.2",
+  "assembly": "/home/administrator/.nuget/packages/hexalith.eventstore.client/3.128.2/lib/net10.0/Hexalith.EventStore.Client.dll",
+  "sha256": "373b2575a8271b928abcca9f920f5f7ce22665e541475c651656863bcbddcb56",
+  "scope": "metadata/signature inspection only; Release graph not built or tested"
+}

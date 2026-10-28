@@ -1,0 +1,149 @@
+{
+  "original-broad": {
+    "events": [
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-AttemptTimeout"
+      },
+      {
+        "level": "Warning",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Warning",
+        "event": "OnRetry",
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-AttemptTimeout"
+      },
+      {
+        "level": "Warning",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Warning",
+        "event": "OnRetry",
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Information",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-TotalRequestTimeout"
+      }
+    ],
+    "timeout_exception_mentions": 4,
+    "forwarder_stack_present": true,
+    "claims_failures": 1
+  },
+  "historical-clean-broad": {
+    "events": [
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-AttemptTimeout"
+      },
+      {
+        "level": "Warning",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Warning",
+        "event": "OnRetry",
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-AttemptTimeout"
+      },
+      {
+        "level": "Warning",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Warning",
+        "event": "OnRetry",
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Information",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-TotalRequestTimeout"
+      }
+    ],
+    "timeout_exception_mentions": 4,
+    "forwarder_stack_present": true,
+    "claims_failures": 0
+  },
+  "deadline-only": {
+    "events": [
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-AttemptTimeout"
+      },
+      {
+        "level": "Warning",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Warning",
+        "event": "OnRetry",
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-AttemptTimeout"
+      },
+      {
+        "level": "Warning",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Warning",
+        "event": "OnRetry",
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Information",
+        "event": null,
+        "strategy": "Standard-Retry"
+      },
+      {
+        "level": "Error",
+        "event": "OnTimeout",
+        "strategy": "Standard-TotalRequestTimeout"
+      }
+    ],
+    "timeout_exception_mentions": 4,
+    "forwarder_stack_present": true,
+    "claims_failures": 0
+  },
+  "causal-focused": {
+    "events": [],
+    "timeout_exception_mentions": 0,
+    "forwarder_stack_present": false,
+    "claims_failures": 0
+  }
+}

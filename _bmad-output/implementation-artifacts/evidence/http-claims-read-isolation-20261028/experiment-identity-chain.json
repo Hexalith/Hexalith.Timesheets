@@ -1,0 +1,24 @@
+{
+  "red_build_inputs_equal_red_run": true,
+  "red_build_outputs_equal_red_run": true,
+  "red_exit_one": true,
+  "changed_red_green_inputs": [
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.ClaimsReadIsolation.cs"
+  ],
+  "only_expected_mutation": true,
+  "green_build_inputs_equal_run": true,
+  "green_build_outputs_equal_run": true,
+  "green_exit_zero": true,
+  "current_focused_and_full_inputs_equal": true,
+  "current_focused_and_full_artifacts_equal": true,
+  "current_pass": true,
+  "bound_receipts": [
+    "historical-mutation-build-bound.json",
+    "historical-global-window-red-bound.json",
+    "historical-restored-build-bound.json",
+    "historical-focused-bound.json",
+    "current-focused-bound.json",
+    "current-full-serial.json"
+  ],
+  "scope": "The red mutation repeats the original global read-window selection. Every final experiment binds root source inputs including untracked regression and exact test artifact hashes, matched to its build. Earlier unbound attempts remain historical attempts, not exact-binary identity evidence."
+}

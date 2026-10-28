@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -1232,7 +1233,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         using HttpClient client = factory.CreateClient();
         await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
             new MagicLinkCapabilityId("capability-existing"), new TimeEntryId("time-entry-existing"));
-        factory.Store.ReadKeys.Clear();
         factory.Gateway.Requests.Clear();
         var capabilityId = new MagicLinkCapabilityId("capability-admin-new");
         var command = new IssueMagicLinkConfirmationCapability(
@@ -1253,15 +1253,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         authorizedContext.Tenant.ShouldBe(expectedTenant);
         authorizedContext.Actor.ShouldBe(expectedActor);
         authorizedContext.CorrelationId.ShouldNotBeNullOrWhiteSpace();
-        string catalogKey = MagicLinkActivityTypeCatalogReadModelAddress.StateKey(expectedTenant);
-        SharedProjectionScope catalogScope = TenantActivityTypeCatalogEpoch.CreateScope(expectedTenant.TenantId);
-        string epochKey = "shared-epoch:" + catalogScope.ComputeHash();
-        string physicalPrefix = "shared-generation:" + catalogScope.ComputeHash() + ":";
-        factory.Store.ReadKeys.ShouldNotContain(catalogKey);
-        factory.Store.ReadKeys.ShouldContain(epochKey);
-        factory.Store.ReadKeys.Count(key => key.StartsWith(physicalPrefix, StringComparison.Ordinal))
-            .ShouldBe(useMismatchedClaims ? 0 : 2);
-        factory.Store.ReadKeys.ShouldAllBe(key => key == epochKey || key.StartsWith(physicalPrefix, StringComparison.Ordinal));
+        // Successful processing also authorizes a command envelope with its own correlation id.
+        // Select reads by the actual HTTP context, independently of the last authorization call.
+        AssertAdminCatalogReadSet(factory.Store.ReadsFor(factory.ObservedTrustedContext.CorrelationId.ShouldNotBeNull()), expectedTenant,
+            expectedPhysicalReads: useMismatchedClaims ? 0 : 2);
         StreamReadRequest request = factory.Gateway.Requests[0];
         request.Tenant.ShouldBe(expectedTenant.TenantId);
         request.AggregateId.ShouldBe(capabilityId.Value);
@@ -1270,7 +1265,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         // Revoking an existing capability requires the authoritative stream to be folded, whereas
         // issuance of a new id correctly succeeds when that stream is absent.
         factory.Gateway.Requests.Clear();
-        factory.Store.ReadKeys.Clear();
         var existingId = new MagicLinkCapabilityId("capability-existing");
         using HttpResponseMessage revocation = await factory.PostProtectedManagementAsync(
             client,
@@ -1280,8 +1274,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         StreamReadRequest existingRequest = factory.Gateway.Requests[0];
         existingRequest.Tenant.ShouldBe(expectedTenant.TenantId);
         existingRequest.AggregateId.ShouldBe(existingId.Value);
-        factory.Store.ReadKeys.ShouldBeEmpty();
         TimesheetsRequestContext revocationContext = factory.AccessGuard.LastAuthorizationRequest.ShouldNotBeNull().Context;
+        factory.Store.ReadsFor(factory.ObservedTrustedContext.CorrelationId.ShouldNotBeNull()).ShouldBeEmpty();
         revocationContext.Tenant.ShouldBe(expectedTenant);
         revocationContext.Actor.ShouldBe(expectedActor);
         revocationContext.CorrelationId.ShouldNotBeNullOrWhiteSpace();
@@ -1311,7 +1305,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         generator.GenerationCount.ShouldBe(1);
         factory.ObservedTrustedContext.Tenant.ShouldBe(Tenant());
         factory.ObservedTrustedContext.Actor.ShouldBe(Contributor());
-        factory.Store.ReadKeys.Clear();
         factory.Gateway.Requests.Clear();
         int authorizationBefore = factory.AccessGuard.AuthorizationCount;
         int trustedWorkBefore = factory.AccessGuard.TrustedWorkExecutionCount;
@@ -1333,7 +1326,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         CapturedFailure failure = await CaptureFailureAsync(response, omitIdentifier ? "missing-id" : "null-id", string.Empty);
         failure.RawBody.ShouldNotContain("oneTimeToken", Case.Insensitive);
         failure.RawBody.ShouldNotContain("capabilityId", Case.Insensitive);
-        factory.Store.ReadKeys.ShouldBeEmpty();
+        factory.Store.ReadsFor(factory.ObservedTrustedContext.CorrelationId.ShouldNotBeNull()).ShouldBeEmpty();
         factory.Gateway.Requests.ShouldBeEmpty();
         factory.AccessGuard.AuthorizationCount.ShouldBe(authorizationBefore);
         factory.AccessGuard.TrustedWorkExecutionCount.ShouldBe(trustedWorkBefore);
@@ -2078,6 +2071,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         /// <summary>Gets the latest index dispatch using the host's admitted route fingerprint.</summary>
         public ProjectionDispatchRequest? LastIndexDispatch { get; private set; }
 
+        /// <summary>Gets the setup coordinator so controlled cleanup tests can drain its own work.</summary>
+        public SharedProjectionEpochCoordinator? CatalogSetupCoordinator { get; private set; }
+
         public async Task ProjectValidStateAsync(
             HttpClient client,
             string token,
@@ -2156,6 +2152,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     .ProjectionFreshness.State.ShouldBe(ProjectionFreshnessState.Fresh);
                 var catalogHandler = new TenantActivityTypeCatalogProjectionHandler(Store);
                 var catalogCoordinator = new SharedProjectionEpochCoordinator(Store, Store);
+                CatalogSetupCoordinator = catalogCoordinator;
                 SharedProjectionScope catalogScope = catalogHandler.CreateScope(Tenant().TenantId);
                 var rebuildIdentity = new DomainSharedProjectionRebuildIdentity(Tenant().TenantId, "timesheets",
                     catalogHandler.ProjectionType, "fixture-catalog-rebuild", fingerprint);
@@ -2402,7 +2399,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 IReadModelStore projectionStore = readModelStore ?? (batchStore is not null
                     ? batchStore
                     : useConcreteLoader ? Store : new UnavailableReadModelStore());
-                services.AddSingleton(projectionStore);
+                services.AddSingleton<IReadModelStore>(provider =>
+                {
+                    Store.HttpContextAccessor = provider.GetRequiredService<IHttpContextAccessor>();
+                    return projectionStore;
+                });
                 services.RemoveAll<IReadModelBatchStore>();
                 services.AddSingleton<IReadModelBatchStore>(batchStore is not null
                     ? batchStore : Store);
@@ -2788,8 +2789,24 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         public int DirectIndexSeedCount { get; private set; }
 
-        /// <summary>Gets the read-model keys requested through the loader's store seam.</summary>
-        public List<string> ReadKeys { get; } = [];
+        /// <summary>Gets all store reads, including detached SDK cleanup outside HTTP requests.</summary>
+        public ConcurrentQueue<HttpBoundaryReadObservation> Reads { get; } = new();
+
+        /// <summary>Gets or sets the host accessor used to attribute reads to their actual request.</summary>
+        public IHttpContextAccessor? HttpContextAccessor { get; set; }
+
+        /// <summary>Gets or sets a barrier used to reproduce a delayed SDK cleanup read.</summary>
+        public Func<HttpBoundaryReadObservation, CancellationToken, Task>? BeforeReadAsync { get; set; }
+
+        /// <summary>Gets or sets an observer invoked after a read has entered the audit.</summary>
+        public Action<HttpBoundaryReadObservation>? ReadObserved { get; set; }
+
+        /// <summary>Snapshots every read belonging to the exact server-established HTTP request.</summary>
+        public HttpBoundaryReadObservation[] ReadsFor(string requestId)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(requestId);
+            return Reads.Where(read => read.RequestId == requestId).ToArray();
+        }
 
         public bool Contains(string key)
             => _inner.GetAsync<object>(MagicLinkTokenHashCapabilityIndexProjection.StateStoreName, key)
@@ -2913,14 +2930,22 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             return MagicLinkTokenHashCapabilityIndexProjection.FromContributions(contributions);
         }
 
-        public Task<ReadModelEntry<TValue>> GetAsync<TValue>(
+        public async Task<ReadModelEntry<TValue>> GetAsync<TValue>(
             string storeName,
             string key,
             CancellationToken cancellationToken = default)
             where TValue : class
         {
-            ReadKeys.Add(key);
-            return _inner.GetAsync<TValue>(storeName, key, cancellationToken);
+            var observation = new HttpBoundaryReadObservation(storeName, key, HttpContextAccessor?.HttpContext?.TraceIdentifier);
+            if (BeforeReadAsync is { } beforeRead)
+            {
+                await beforeRead(observation, cancellationToken).ConfigureAwait(false);
+            }
+
+            Reads.Enqueue(observation);
+            ReadModelEntry<TValue> result = await _inner.GetAsync<TValue>(storeName, key, cancellationToken).ConfigureAwait(false);
+            ReadObserved?.Invoke(observation);
+            return result;
         }
 
         // Direct, unconditional seeding is refused outright rather than merely counted. The counters

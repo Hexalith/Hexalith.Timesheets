@@ -1,0 +1,167 @@
+{
+  "command": [
+    "dotnet",
+    "build",
+    "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+    "--configuration",
+    "Debug",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=true",
+    "-warnaserror",
+    "-m:1",
+    "/nr:false"
+  ],
+  "cwd": "/tmp/timesheets-claims-fix-20261028",
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "source_before": {
+    ".": {
+      "head": "787a3d178e5d9bf135fe5138f1f8ee6b4247fa31",
+      "status": "1 .M N... 100644 100644 100644 a441d8eb8e614e4f6d1ceb5a8180c404d431e813 a441d8eb8e614e4f6d1ceb5a8180c404d431e813 tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs\n? _bmad-output/implementation-artifacts/spec-http-claims-read-isolation.md\n? tests/Hexalith.Timesheets.IntegrationTests/HttpBoundaryReadObservation.cs\n? tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.ClaimsReadIsolation.cs\n? tests/Hexalith.Timesheets.IntegrationTests/PromotedCleanupTestDrain.cs",
+      "diff_sha256": "44bd6fae24e0b30d3de5c6e9c5d0683c852e704d831e7f0c08b999b86807aa9f"
+    },
+    "references/Hexalith.Commons": {
+      "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Builds": {
+      "head": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Tenants": {
+      "head": "7ddb864cda5e942925b056391617eae4895c1253",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.EventStore": {
+      "head": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Projects": {
+      "head": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Conversations": {
+      "head": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Works": {
+      "head": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Parties": {
+      "head": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.McpCli": {
+      "head": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Platform": {
+      "head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "started_utc": "2026-10-28T08:09:04.140955+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 3.393,
+  "source_after": {
+    ".": {
+      "head": "787a3d178e5d9bf135fe5138f1f8ee6b4247fa31",
+      "status": "1 .M N... 100644 100644 100644 a441d8eb8e614e4f6d1ceb5a8180c404d431e813 a441d8eb8e614e4f6d1ceb5a8180c404d431e813 tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs\n? _bmad-output/implementation-artifacts/spec-http-claims-read-isolation.md\n? tests/Hexalith.Timesheets.IntegrationTests/HttpBoundaryReadObservation.cs\n? tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.ClaimsReadIsolation.cs\n? tests/Hexalith.Timesheets.IntegrationTests/PromotedCleanupTestDrain.cs",
+      "diff_sha256": "44bd6fae24e0b30d3de5c6e9c5d0683c852e704d831e7f0c08b999b86807aa9f"
+    },
+    "references/Hexalith.Commons": {
+      "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Builds": {
+      "head": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Tenants": {
+      "head": "7ddb864cda5e942925b056391617eae4895c1253",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.EventStore": {
+      "head": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Projects": {
+      "head": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Conversations": {
+      "head": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Works": {
+      "head": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Parties": {
+      "head": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.McpCli": {
+      "head": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "references/Hexalith.Platform": {
+      "head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "status": "",
+      "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "log": "current-integration-build-05.log.gz",
+  "log_sha256": "f09b24784e199808226fa1c1a333652eef3a567aa98f9cf4fc50b26dded0152f"
+}

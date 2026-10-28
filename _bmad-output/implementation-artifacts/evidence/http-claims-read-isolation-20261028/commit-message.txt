@@ -1,0 +1,1 @@
+fix: scope HTTP claims boundary read assertions to requests
