@@ -1,0 +1,13 @@
+import pathlib,subprocess,json,gzip,hashlib
+r=pathlib.Path('/tmp/timesheets-debug-source-20261028'); out=r/'_bmad-output/implementation-artifacts/evidence/debug-source-restore-20261028'
+commands=[]
+for label,project in [('apphost','src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj'),('eventstore-aspire','references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj')]:
+ args=['dotnet','msbuild',project,'-nologo','-p:Configuration=Debug','-p:UseHexalithProjectReferences=true','-t:CollectPackageReferences','-getProperty:AspireHostingSDKVersion,NETCoreSdkVersion,Configuration,UseHexalithProjectReferences,Hexalith1BuildPackageProps,HexalithVersionsLoaded','-getItem:PackageReference,PackageVersion,ProjectReference']
+ import os
+ p=subprocess.run(args,cwd=r,env=dict(os.environ,DOTNET_CLI_HOME='/tmp/dotnet-cli-home'),capture_output=True); assert p.returncode==0,p.stderr
+ (out/(label+'-evaluation.json.gz')).write_bytes(gzip.compress(p.stdout,mtime=0)); commands.append({'argv':args,'cwd':str(r),'exit_code':p.returncode,'output_sha256':hashlib.sha256(p.stdout).hexdigest()})
+args=['dotnet','msbuild','Hexalith.Timesheets.slnx','-nologo','-p:Configuration=Debug','-p:UseHexalithProjectReferences=true','-t:GenerateRestoreGraphFile','-p:RestoreGraphOutputPath=/tmp/timesheets-debug-source-evidence-20261028/final-graph.json','-m:1','/nr:false']
+p=subprocess.run(args,cwd=r,env=dict(os.environ,DOTNET_CLI_HOME='/tmp/dotnet-cli-home'),capture_output=True); assert p.returncode==0,p.stderr
+commands.append({'argv':args,'cwd':str(r),'exit_code':p.returncode})
+(out/'evaluation-commands.json').write_text(json.dumps(commands,indent=2)+'\n')
+print('Evaluated AppHost, EventStore Aspire and full solution graph recorded.')

@@ -1,0 +1,27 @@
+import pathlib,json,gzip,hashlib,datetime,xml.etree.ElementTree as ET,subprocess
+r=pathlib.Path('/tmp/timesheets-debug-source-20261028'); out=r/'_bmad-output/implementation-artifacts/evidence/debug-source-restore-20261028'; temp=pathlib.Path('/tmp/timesheets-debug-source-evidence-20261028')
+def read(name): return json.loads(gzip.decompress((out/(name+'.json.gz')).read_bytes()))
+def digest(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+build=read('build'); rows=[]; tests=[]; prev=None
+for suffix in ['ArchitectureTests','Contracts.Tests','Server.Tests','Projections.Tests','Works.Tests','IntegrationTests']:
+ name='Hexalith.Timesheets.'+suffix; receipt=read('suite-'+suffix); xml=temp/(name+'.xml'); root=ET.parse(xml).getroot(); assembly=root.find('assembly'); assert assembly is not None
+ counts={k:int(assembly.get(k)) for k in ['total','passed','failed','skipped','errors','not-run']}; assert counts['failed']==counts['errors']==counts['not-run']==0
+ assert receipt['exit_code']==0 and receipt['source_equal'] and receipt['artifacts_equal']
+ assert receipt['source_before']['files']==build['source_after']['files']
+ assert receipt['artifacts_before']==build['artifacts_after']
+ start=datetime.datetime.fromisoformat(receipt['started_utc']); end=datetime.datetime.fromisoformat(receipt['finished_utc']); assert prev is None or prev<=start; prev=end
+ assert 'non-parallel' in assembly.get('environment')
+ (out/(name+'.xml.gz')).write_bytes(gzip.compress(xml.read_bytes(),mtime=0))
+ rows.append({'project':name,**counts,'command_seconds':receipt['elapsed_seconds'],'suite_seconds':float(assembly.get('time')),'argv':receipt['argv'],'started_utc':receipt['started_utc'],'finished_utc':receipt['finished_utc'],'xml_sha256':digest(xml),'source_equal':True,'artifacts_equal':True,'matches_build_inputs_and_artifacts':True})
+ if suffix=='IntegrationTests': tests=list(root.iter('test'))
+claims=[t for t in tests if any(n in t.get('method','') for n in ['AdminStateLoadsUseTheHostsHttpClaimsAccessor','AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup','IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork'])]
+assert len(claims)==9 and all(t.get('result')=='Pass' for t in claims)
+files=['tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs','tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.ClaimsReadIsolation.cs']
+source={}
+for p in files:
+ original=subprocess.check_output(['git','show','740130d2db103cb7a6b96d9a399a3bf4ba5d5fc4:'+p],cwd=r)
+ assert hashlib.sha256(original).hexdigest()==digest(r/p)
+ source[p]=digest(r/p)
+summary={'suites':rows,'totals':{k:sum(x[k] for x in rows) for k in ['total','passed','failed','skipped','errors','not-run']},'no_overlapping_suite_commands':True,'matches_build_inputs_and_artifacts':True,'claims_regressions':[{k:t.get(k) for k in ['name','method','result']} for t in claims],'unchanged_claims_source_sha256':source}
+(out/'suite-summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+print(json.dumps(summary['totals'])); print('Claims cases:',len(claims)); print('Serial intervals, compiled source/artifacts, source immutability and XML results verified.')

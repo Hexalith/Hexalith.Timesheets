@@ -330,7 +330,7 @@ Use public templates only for empty project shells. Use Hexalith sibling modules
 - Magic-Link Confirmation: scoped opaque capability, single-use/expiry-bound, audited, no-disclosure on invalid states.
 - API model: EventStore command/query pipeline, typed domain outcomes, ProblemDetails for HTTP transport errors.
 - Frontend component policy: Blazor Fluent UI V5 components only; V4 icons only if V5 icon source is unavailable.
-- Infrastructure: Aspire AppHost `13.6.3` for local topology/orchestration, Dapr SDK policy target `1.18.10`, no direct DB/broker bypass.
+- Infrastructure: Aspire AppHost `13.6.4` for local topology/orchestration, Dapr SDK policy target `1.19.0`, no direct DB/broker bypass.
 
 **Important Decisions (Shape Architecture):**
 
@@ -360,11 +360,11 @@ Timesheets domain state changes will persist through `Hexalith.EventStore`. The 
 **Version notes:**
 
 - .NET SDK: local target is .NET 10, pinned to `10.0.402` with `rollForward: latestPatch`.
-- Aspire: the Timesheets-owned AppHost SDK and the imported `Aspire.Hosting`, Docker, and Redis catalog entries are aligned at stable `13.6.3`. The AppHost keeps NuGet-backed orchestration with `AspireUseCliBundle=false` and suppresses only `ASPIRE010`, the 2026-09-13 Option 2 decision already used by `Hexalith.EventStore`. Restore therefore adds `Aspire.Hosting.Orchestration` and `Aspire.Dashboard.Sdk`, the build stays self-contained without an Aspire CLI bundle, and the declared topology is unchanged. The CLI-bundle opt-in recorded by the 2026-09-12 `13.5.3` iteration is historical and was reversed.
-- Dapr SDK packages: the imported `Hexalith.Builds` catalog pins the Dapr Client, ASP.NET Core, Actors, AI, and Workflow package family at stable `1.18.10`. Timesheets has no direct Dapr `PackageReference`; Dapr reaches its restored graphs through sibling EventStore references.
+- Aspire: the Timesheets-owned AppHost SDK and the imported `Aspire.Hosting`, Docker, and Redis catalog entries are aligned at stable `13.6.4`. The AppHost keeps NuGet-backed orchestration with `AspireUseCliBundle=false` and suppresses only `ASPIRE010`, the 2026-09-13 Option 2 decision already used by `Hexalith.EventStore`. Restore therefore adds `Aspire.Hosting.Orchestration` and `Aspire.Dashboard.Sdk`, the build stays self-contained without an Aspire CLI bundle, and the declared topology is unchanged. The CLI-bundle opt-in recorded by the 2026-09-12 `13.5.3` iteration is historical and was reversed.
+- Dapr SDK packages: the imported `Hexalith.Builds` catalog pins the Dapr Client, ASP.NET Core, Actors, AI, and Workflow package family at stable `1.19.0`. Timesheets has no direct Dapr `PackageReference`; Dapr reaches its restored graphs through sibling EventStore references.
 - Fluent UI: Timesheets has no direct Fluent UI package because this repository ships no UI project. The imported catalog carries the V5 package family at `5.0.1`, a stable line; it is a platform policy surface, not a Timesheets direct-package pin.
-- Platform prerelease exception: the imported catalog also carries `Aspire.Hosting.Keycloak` `13.6.3-preview.1.26521.2` and `CommunityToolkit.Aspire.Hosting.Dapr` `13.6.1-beta.935`, both consumed through `Hexalith.EventStore.Aspire`. Ownership, risk, and revisit conditions remain recorded in `docs/launch-readiness.md`; Timesheets does not override them with root transitive pins.
-- Historical version observations: the 2026-09-12 Story 5.2 iteration recorded SDK `10.0.401`, Aspire/AppHost `13.5.3`, Dapr `1.18.7`, and Fluent UI V5 `5.0.0-rc.5-26219.1`; those are dated values, not current pins. Current audited package state is recorded in the launch-readiness package-currency verdict (2026-10-18).
+- Platform prerelease exception: the imported catalog also carries `Aspire.Hosting.Keycloak` `13.6.4-preview.1.26523.11` and `CommunityToolkit.Aspire.Hosting.Dapr` `13.6.2-beta.959`, both consumed through `Hexalith.EventStore.Aspire`. Ownership, risk, and revisit conditions remain recorded in `docs/launch-readiness.md`; The Timesheets Keycloak dependency-floor override matches the imported catalog; CommunityToolkit Dapr remains catalog-owned.
+- Historical version observations: the 2026-09-12 Story 5.2 iteration recorded SDK `10.0.401`, Aspire/AppHost `13.5.3`, Dapr `1.18.7`, and Fluent UI V5 `5.0.0-rc.5-26219.1`; those are dated values, not current pins. Dated package audits remain in the launch-readiness package-currency verdict. The 2026-10-28 Debug/source alignment follows the published catalog; it does not refresh those audits or qualify runtime/deployed behavior.
 - Historical Aspire template observation: the 2026-06-18 architecture check found `Aspire.ProjectTemplates` `13.4.5`; this is not the current AppHost package baseline above.
 
 **Aggregate boundaries:**
@@ -401,8 +401,8 @@ Internal API/UI paths use ASP.NET Core authentication with JWT bearer/OIDC integ
 
 **Version notes:**
 
-- ASP.NET Core auth/data-protection package line should align with the imported Hexalith/.NET 10 catalog, currently `10.0.13`.
-- Dapr SDK target remains the imported stable `1.18.10` family.
+- ASP.NET Core auth/data-protection package line should align with the imported Hexalith/.NET 10 catalog, currently `10.0.14`.
+- Dapr SDK target remains the imported stable `1.19.0` family.
 
 **Authorization model:**
 
@@ -494,7 +494,7 @@ Epic 4 implementation note: `PreviewApprovedTimeExport` is a contract shape; the
 
 **Version notes:**
 
-- The imported catalog pins `Microsoft.AspNetCore.OpenApi` at `10.0.13` and `Swashbuckle.AspNetCore` at `10.3.1`; neither is a direct Timesheets package today.
+- The imported catalog pins `Microsoft.AspNetCore.OpenApi` at `10.0.14` and `Swashbuckle.AspNetCore` at `10.3.1`; neither is a direct Timesheets package today.
 - The imported catalog pins `ModelContextProtocol.AspNetCore` at `2.3.0`; MCP is not selected for v1 unless a later architecture decision adds a Timesheets MCP surface.
 
 **Error handling:**
@@ -580,7 +580,7 @@ Aspire owns orchestration and observability wiring only; it does not define doma
 
 Use Dapr for service invocation, pub/sub, actors/state abstractions, and EventStore integration according to Hexalith patterns.
 
-The imported catalog's Dapr package family is stable `1.18.10`. Current root package files do not directly pin Dapr SDK packages; restored Timesheets host/test graphs consume `Dapr.Client` `1.18.10` through sibling EventStore references. See the launch-readiness package-currency verdict for the remaining platform-owned prerelease Aspire integration entries.
+The imported catalog's Dapr package family is stable `1.19.0`. Current root package files do not directly pin Dapr SDK packages; restored Timesheets host/test graphs consume `Dapr.Client` `1.19.0` through sibling EventStore references. See the launch-readiness package-currency verdict for the remaining platform-owned prerelease Aspire integration entries.
 
 **Deployment shape:**
 
@@ -755,7 +755,7 @@ This keeps Timesheets aligned with Hexalith deployment patterns while preserving
 
 - Persist domain changes only through Hexalith.EventStore.
 - Keep contracts infrastructure-free.
-- Use the imported Dapr SDK `1.18.10` family unless a later architecture update replaces it.
+- Use the imported Dapr SDK `1.19.0` family unless a later architecture update replaces it.
 - Use Blazor Fluent UI V5 components only; V4 icon package is an icons-only fallback.
 - Keep package versions centralized.
 - Treat projections as rebuildable, idempotent, and non-authoritative for writes.
@@ -1077,7 +1077,7 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
-The technology choices work together: .NET SDK `10.0.402`, Hexalith.EventStore, the imported Dapr SDK `1.18.10` family, Aspire AppHost SDK `13.6.3` with NuGet-backed orchestration, JWT/OIDC authentication, FrontComposer, and the Fluent UI V5 policy each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual stable and prerelease package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
+The technology choices work together: .NET SDK `10.0.402`, Hexalith.EventStore, the imported Dapr SDK `1.19.0` family, Aspire AppHost SDK `13.6.4` with NuGet-backed orchestration, JWT/OIDC authentication, FrontComposer, and the Fluent UI V5 policy each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual stable and prerelease package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
 
 **Pattern Consistency:**
 Implementation patterns support the decisions. Commands, events, queries, projections, magic links, exports, and UI all have consistent naming, structure, error, freshness, and enforcement rules.
@@ -1099,7 +1099,7 @@ Security, tenant isolation, auditability, data minimization, projection reliabil
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
-Critical decisions are documented with versions where version-sensitive: SDK `10.0.402`, Dapr SDK family `1.18.10`, Aspire AppHost SDK `13.6.3`, Blazor Fluent UI V5 component policy, V4 icons-only fallback, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current stable/prerelease platform package state is intentionally recorded as launch-readiness package-currency evidence.
+Critical decisions are documented with versions where version-sensitive: SDK `10.0.402`, Dapr SDK family `1.19.0`, Aspire AppHost SDK `13.6.4`, Blazor Fluent UI V5 component policy, V4 icons-only fallback, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current stable/prerelease platform package state is intentionally recorded as launch-readiness package-currency evidence.
 
 **Structure Completeness:**
 The project tree is specific enough for implementation agents to scaffold consistently and maps requirements to concrete projects, folders, and tests.
@@ -1121,7 +1121,7 @@ Naming, structure, API format, data format, event communication, projection beha
 
 ### Validation Issues Addressed
 
-- Dapr version policy ambiguity is resolved against the imported stable SDK package family `1.18.10`; actual root/submodule and prerelease platform pins are separately tracked by launch-readiness package-currency evidence.
+- Dapr version policy ambiguity is resolved against the imported stable SDK package family `1.19.0`; actual root/submodule and prerelease platform pins are separately tracked by launch-readiness package-currency evidence.
 - Fluent UI generation ambiguity resolved as a Timesheets policy: V5 components only and V4 allowed only for icons when V5 icons are unavailable; current package pins remain separate under the consuming FrontComposer host and platform-owned build policy.
 - Persistence ambiguity resolved: EventStore is the sole authoritative persistence path.
 - Projection trust ambiguity resolved: projections are rebuildable read models and cannot authorize trust-bearing writes.

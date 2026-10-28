@@ -1,0 +1,19 @@
+diff --git a/Directory.Packages.props b/Directory.Packages.props
+index 90d9d73..82fd70b 100644
+--- a/Directory.Packages.props
++++ b/Directory.Packages.props
+@@ -11,12 +11,9 @@
+   <Import Project="$(Hexalith1BuildPackageProps)" Condition="Exists('$(Hexalith1BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
+   <Import Project="$(Hexalith2BuildPackageProps)" Condition="Exists('$(Hexalith2BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
+   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
+-  <!-- Published EventStore dependency floors exceed the pinned shared catalog. -->
++  <!-- The imported catalog owns Aspire versions; retain only the remaining
++       published EventStore dependency-floor overrides below. -->
+   <ItemGroup>
+-    <PackageVersion Update="Aspire.Hosting" Version="13.6.3" />
+-    <PackageVersion Update="Aspire.Hosting.Keycloak" Version="13.6.3-preview.1.26521.2" />
+-    <PackageVersion Update="Aspire.Hosting.Redis" Version="13.6.3" />
+-    <PackageVersion Update="Aspire.Hosting.Testing" Version="13.6.3" />
+     <PackageVersion Update="ModelContextProtocol" Version="2.3.0" />
+     <PackageVersion Update="OpenTelemetry" Version="1.20.1" />
+     <PackageVersion Update="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />

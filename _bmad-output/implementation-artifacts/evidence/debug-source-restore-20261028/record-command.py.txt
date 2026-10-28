@@ -1,0 +1,41 @@
+import subprocess, pathlib, json, hashlib, time, datetime, gzip, os, sys
+root=pathlib.Path('/tmp/timesheets-debug-source-20261028')
+out=root/'_bmad-output/implementation-artifacts/evidence/debug-source-restore-20261028'; out.mkdir(parents=True,exist_ok=True)
+def hashfile(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+def git(p,*a): return subprocess.check_output(['git','-C',str(p),*a]).decode().strip()
+def repos():
+    return ['.']+[line.split('\t')[1] for line in git(root,'ls-tree','HEAD','references/').splitlines()]
+def inputs():
+    result={}; identities={}
+    for repo in repos():
+        r=root/repo
+        identities[repo]={'head':git(r,'rev-parse','HEAD'),'status':git(r,'status','--porcelain=v1','--untracked-files=no'),'diff_sha256':hashlib.sha256(subprocess.check_output(['git','-C',str(r),'diff','HEAD','--binary'])).hexdigest()}
+        names=subprocess.check_output(['git','-C',str(r),'ls-files','-z','--cached','--others','--exclude-standard']).decode().split('\0')
+        for name in names:
+            if not name or name.startswith(('_bmad','references/','.agents/','.claude/','.github/')): continue
+            p=r/name
+            if p.is_file() and (p.suffix in ['.cs','.csproj','.props','.targets','.json','.xml','.slnx','.py','.yaml','.yml','.config','.razor'] or p.name in ['.editorconfig','.gitattributes']): result[str(p.relative_to(root))]=hashfile(p)
+    return {'repositories':identities,'files':result,'files_sha256':hashlib.sha256(json.dumps(result,sort_keys=True).encode()).hexdigest()}
+def artifacts():
+    result={}
+    for base in [root/'src',root/'tests',root/'references']:
+        for directory,dirs,files in os.walk(base):
+            dirs[:]=[d for d in dirs if d not in ['.git','node_modules','_bmad-output']]
+            p=pathlib.Path(directory)
+            for name in files:
+                f=p/name
+                if '/bin/Debug/' in str(f) or (name in ['project.assets.json'] and '/obj/' in str(f)): result[str(f.relative_to(root))]=hashfile(f)
+    return result
+if __name__=='__main__':
+    name=sys.argv[1]; command=sys.argv[2:]
+    before=inputs(); art_before=artifacts(); start=datetime.datetime.now(datetime.timezone.utc).isoformat(); t=time.monotonic()
+    env=dict(os.environ,DOTNET_CLI_HOME='/tmp/dotnet-cli-home'); env.pop('TIMESHEETS_LIVE_DAPR',None); env.pop('TIMESHEETS_PERF',None)
+    raw=out/(name+'.log');
+    with raw.open('wb') as f: run=subprocess.run(command,cwd=root,env=env,stdout=f,stderr=subprocess.STDOUT)
+    elapsed=time.monotonic()-t; data=raw.read_bytes(); gz=out/(name+'.log.gz'); gz.write_bytes(gzip.compress(data,mtime=0)); raw.unlink()
+    after=inputs(); art_after=artifacts()
+    receipt={'argv':command,'cwd':str(root),'environment':{'DOTNET_CLI_HOME':env['DOTNET_CLI_HOME'],'TIMESHEETS_LIVE_DAPR':'unset','TIMESHEETS_PERF':'unset'},'started_utc':start,'finished_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'elapsed_seconds':round(elapsed,3),'exit_code':run.returncode,'source_before':before,'source_after':after,'artifacts_before':art_before,'artifacts_after':art_after,'source_equal':before==after,'artifacts_equal':art_before==art_after,'log_sha256':hashlib.sha256(data).hexdigest()}
+    (out/(name+'.json.gz')).write_bytes(gzip.compress((json.dumps(receipt,indent=2)+'\n').encode(),mtime=0))
+    print(json.dumps({k:receipt[k] for k in ['argv','elapsed_seconds','exit_code','source_equal','artifacts_equal']}),flush=True)
+    print(data.decode(errors='replace')[-4000:],flush=True)
+    sys.exit(run.returncode)

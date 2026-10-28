@@ -1,0 +1,85 @@
+{
+  "node_count": 30,
+  "all_project_paths_inside_checkout": true,
+  "project_paths": [
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/Hexalith.Commons.UniqueIds.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/Hexalith.EventStore.Admin.Abstractions.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/Hexalith.EventStore.Contracts.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Gateway/Hexalith.EventStore.Gateway.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Hexalith.EventStore.Server.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/Hexalith.EventStore.ServiceDefaults.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Testing/Hexalith.EventStore.Testing.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations.CodeGenerators/Hexalith.PolymorphicSerializations.CodeGenerators.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations/Hexalith.PolymorphicSerializations.csproj",
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.Client/Hexalith.Timesheets.Client.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.Testing/Hexalith.Timesheets.Testing.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj",
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets/Hexalith.Timesheets.csproj",
+    "/tmp/timesheets-debug-source-20261028/tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj",
+    "/tmp/timesheets-debug-source-20261028/tests/Hexalith.Timesheets.Contracts.Tests/Hexalith.Timesheets.Contracts.Tests.csproj",
+    "/tmp/timesheets-debug-source-20261028/tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+    "/tmp/timesheets-debug-source-20261028/tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj",
+    "/tmp/timesheets-debug-source-20261028/tests/Hexalith.Timesheets.Server.Tests/Hexalith.Timesheets.Server.Tests.csproj",
+    "/tmp/timesheets-debug-source-20261028/tests/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.csproj"
+  ],
+  "aspire_dependencies": {
+    "/tmp/timesheets-debug-source-20261028/references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj": {
+      "Aspire.Hosting": {
+        "target": "Package",
+        "version": "[13.6.4, )",
+        "versionCentrallyManaged": true
+      },
+      "Aspire.Hosting.Keycloak": {
+        "target": "Package",
+        "version": "[13.6.4-preview.1.26523.11, )",
+        "versionCentrallyManaged": true
+      },
+      "Aspire.Hosting.Redis": {
+        "target": "Package",
+        "version": "[13.6.4, )",
+        "versionCentrallyManaged": true
+      },
+      "CommunityToolkit.Aspire.Hosting.Dapr": {
+        "target": "Package",
+        "version": "[13.6.2-beta.959, )",
+        "versionCentrallyManaged": true
+      }
+    },
+    "/tmp/timesheets-debug-source-20261028/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj": {
+      "Aspire.Dashboard.Sdk.linux-x64": {
+        "target": "Package",
+        "version": "[13.6.4, )",
+        "autoReferenced": true
+      },
+      "Aspire.Hosting.AppHost": {
+        "target": "Package",
+        "version": "[13.6.4, )",
+        "autoReferenced": true
+      },
+      "Aspire.Hosting.Orchestration.linux-x64": {
+        "target": "Package",
+        "version": "[13.6.4, )",
+        "autoReferenced": true
+      }
+    }
+  },
+  "catalog_sha256": "f9c97805fe540f17277f0d96f16a92b5f595f24c0f059c7a2c864abe8a6c1fb5",
+  "sdk_files": {
+    "/tmp/dotnet-cli-home/.nuget/packages/aspire.apphost.sdk/13.6.3/Sdk/Sdk.props": "ca71bd547af676ddded447e66d1483ebdb1a9fce93132d6ac09e1c520070c4e2",
+    "/tmp/dotnet-cli-home/.nuget/packages/aspire.apphost.sdk/13.6.3/Sdk/Sdk.targets": "9741776af822cad68ee7cb2cf9df5fc2d6778587bfe673c24ab9d1eaf1518bee",
+    "/tmp/dotnet-cli-home/.nuget/packages/aspire.apphost.sdk/13.6.4/Sdk/Sdk.props": "bd70bed9a83193e362daa94c239815d0cff85a0c8888c762cf03b7d739aad717",
+    "/tmp/dotnet-cli-home/.nuget/packages/aspire.apphost.sdk/13.6.4/Sdk/Sdk.targets": "0db6674f619bf0bde5fe1ac75a63fad82fc31c00890155d1d3b61ab9f6e69945"
+  },
+  "http_claims_regression_sha256": "8607aa8b8a4276d183164431fb4b8a8c94fc20e6909bac1d713ea9e9ec257787"
+}

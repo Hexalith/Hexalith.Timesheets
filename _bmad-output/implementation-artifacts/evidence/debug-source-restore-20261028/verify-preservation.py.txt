@@ -1,0 +1,14 @@
+import pathlib,subprocess,json,hashlib,gzip,datetime
+original=pathlib.Path('/home/administrator/projects/hexalith/timesheets'); root=pathlib.Path('/tmp/timesheets-debug-source-20261028'); temp=pathlib.Path('/tmp/timesheets-debug-source-evidence-20261028'); out=root/'_bmad-output/implementation-artifacts/evidence/debug-source-restore-20261028'
+def git(p,*a): return subprocess.check_output(['git','-C',str(p),*a]).decode().strip()
+paths=['.']+[line.split('\t')[1] for line in git(original,'ls-tree','HEAD','references/').splitlines()]
+after={p:{'head':git(original/p,'rev-parse','HEAD'),'status':git(original/p,'status','--porcelain=v1'),'diff_sha256':hashlib.sha256(subprocess.check_output(['git','-C',str(original/p),'diff','HEAD','--binary'])).hexdigest()} for p in paths}
+before=json.loads((temp/'workspace-before.json').read_text()); baseline=json.loads((temp/'runtime-before.json').read_text()); states=[]
+for row in baseline:
+ p=pathlib.Path('/proc')/str(row['pid'])
+ try:
+  stat=(p/'stat').read_text().rsplit(')',1)[1].split(); actual={'pid':row['pid'],'start':int(stat[19]),'comm':(p/'comm').read_text().strip()}; states.append({'expected':row,'observed':actual,'same_identity':actual==row})
+ except FileNotFoundError: states.append({'expected':row,'observed':None,'same_identity':False,'observation':'process_absent'})
+ except (OSError,ValueError): states.append({'expected':row,'observed':None,'same_identity':False,'observation':'identity_unreadable'})
+result={'observed_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'workspace_before':before,'workspace_after':after,'workspace_equal':before==after,'runtime_samples':states,'all_baseline_numeric_identities_match':all(s['same_identity'] for s in states),'observable_process_count':len(states),'limits':'Read-only numeric PID/start/name samples only. No environment/arguments or health/state queried; no complete system visibility, continuous lifetime or session-state attestation. No runtime lifecycle/state command was issued.'}
+(out/'preservation.json.gz').write_bytes(gzip.compress((json.dumps(result,indent=2)+'\n').encode(),mtime=0)); print(json.dumps({k:result[k] for k in ['workspace_equal','all_baseline_numeric_identities_match','observable_process_count']}))

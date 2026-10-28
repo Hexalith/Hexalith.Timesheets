@@ -1,0 +1,35 @@
+import subprocess, pathlib, json, hashlib, time, datetime
+original=pathlib.Path('/home/administrator/projects/hexalith/timesheets')
+root=pathlib.Path('/tmp/timesheets-debug-source-20261028')
+out=pathlib.Path('/tmp/timesheets-debug-source-evidence-20261028'); out.mkdir(exist_ok=False)
+def git(p,*a): return subprocess.check_output(['git','-C',str(p),*a]).decode().strip()
+def workspace():
+    paths=['.']+[line.split('\t')[1] for line in git(original,'ls-tree','HEAD','references/').splitlines()]
+    return {p:{'head':git(original/p,'rev-parse','HEAD'),'status':git(original/p,'status','--porcelain=v1'),'diff_sha256':hashlib.sha256(subprocess.check_output(['git','-C',str(original/p),'diff','HEAD','--binary'])).hexdigest()} for p in paths}
+def processes():
+    found=[]
+    for p in pathlib.Path('/proc').iterdir():
+        if not p.name.isdigit(): continue
+        try:
+            comm=(p/'comm').read_text().strip(); stat=(p/'stat').read_text().rsplit(')',1)[1].split()
+            if any(s in comm.lower() for s in ['dotnet','dcp','dapr','redis','docker','containerd','apphost','timesheets','eventstore','dashboard']): found.append({'pid':int(p.name),'start':int(stat[19]),'comm':comm})
+        except (OSError,ValueError): pass
+    return sorted(found,key=lambda p:p['pid'])
+(out/'workspace-before.json').write_text(json.dumps(workspace(),indent=2)+'\n')
+(out/'runtime-before.json').write_text(json.dumps(processes(),indent=2)+'\n')
+commands=[]
+def run(args,cwd=original):
+    t=time.monotonic(); r=subprocess.run(args,cwd=cwd,text=True,capture_output=True)
+    commands.append({'argv':args,'cwd':str(cwd),'exit_code':r.returncode,'elapsed_seconds':round(time.monotonic()-t,3),'output':r.stdout+r.stderr})
+    (out/'setup.json').write_text(json.dumps(commands,indent=2)+'\n')
+    if r.returncode: raise SystemExit(r.stdout+r.stderr)
+run(['git','clone','--shared','--no-hardlinks',str(original),str(root)])
+run(['git','remote','set-url','origin','https://github.com/Hexalith/Hexalith.Timesheets.git'],root)
+assert git(root,'rev-parse','HEAD')=='740130d2db103cb7a6b96d9a399a3bf4ba5d5fc4'
+for line in git(root,'ls-tree','HEAD','references/').splitlines():
+    meta,p=line.split('\t'); sha=meta.split()[2]
+    run(['git','clone','--shared','--no-hardlinks','--no-checkout',str(original/p),str(root/p)],root)
+    run(['git','checkout','--detach',sha],root/p)
+    assert git(root/p,'rev-parse','HEAD')==sha
+    assert not git(root/p,'status','--porcelain=v1')
+print(str(root)); print('All thirteen root gitlinks match; no nested submodules initialized.')

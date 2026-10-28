@@ -11,12 +11,12 @@
   <Import Project="$(Hexalith1BuildPackageProps)" Condition="Exists('$(Hexalith1BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith2BuildPackageProps)" Condition="Exists('$(Hexalith2BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
-  <!-- Published EventStore dependency floors exceed the pinned shared catalog. -->
+  <!-- Keep consumer dependency floors aligned with the published EventStore graph. -->
   <ItemGroup>
-    <PackageVersion Update="Aspire.Hosting" Version="13.6.3" />
-    <PackageVersion Update="Aspire.Hosting.Keycloak" Version="13.6.3-preview.1.26521.2" />
-    <PackageVersion Update="Aspire.Hosting.Redis" Version="13.6.3" />
-    <PackageVersion Update="Aspire.Hosting.Testing" Version="13.6.3" />
+    <PackageVersion Update="Aspire.Hosting" Version="13.6.4" />
+    <PackageVersion Update="Aspire.Hosting.Keycloak" Version="13.6.4-preview.1.26523.11" />
+    <PackageVersion Update="Aspire.Hosting.Redis" Version="13.6.4" />
+    <PackageVersion Update="Aspire.Hosting.Testing" Version="13.6.4" />
     <PackageVersion Update="ModelContextProtocol" Version="2.3.0" />
     <PackageVersion Update="OpenTelemetry" Version="1.20.1" />
     <PackageVersion Update="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />

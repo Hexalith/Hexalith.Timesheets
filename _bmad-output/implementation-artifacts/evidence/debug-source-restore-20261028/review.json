@@ -1,0 +1,83 @@
+{
+  "review_model": "same model as primary agent; context-free initial review",
+  "layers": [
+    "blind-hunter source/configuration/documentation review",
+    "independent evidence/provenance continuation"
+  ],
+  "findings": [
+    {
+      "id": "R1",
+      "finding": "Four matching root Aspire overrides could repeat the downgrade on a later catalog advance.",
+      "verdict": "low",
+      "resolution": "rejected",
+      "evidence": "The published current graph resolves at 13.6.4. Existing package-evidence guards intentionally inspect explicit root floors, which also preserve older-catalog dependency floors. Removing them requires a broader policy/test change; this task retains the smallest four-value alignment and SDK contract. A future catalog move must align consumer floors and SDK in the same increment."
+    },
+    {
+      "id": "R2",
+      "finding": "AGENTS.md, CLAUDE.md and Copilot managed guidance still state AppHost SDK 13.6.1.",
+      "verdict": "low",
+      "resolution": "defer",
+      "evidence": "The same stale literal exists in base 740130d2db103cb7a6b96d9a399a3bf4ba5d5fc4, whose actual AppHost SDK is already 13.6.3. Exact build commands are correct. Instruction-entry edits are deferred by the build workflow; preserve synchronization and managed-context ownership in a separate refresh."
+    },
+    {
+      "id": "R3",
+      "finding": "README current consumer EventStore version is stale at 3.127.0.",
+      "verdict": "low",
+      "resolution": "patched",
+      "evidence": "Root CPM selects 3.128.2. Correct the current value and explain the catalog/floor relationship without changing any package."
+    },
+    {
+      "id": "R4",
+      "finding": "October 28 current package verdict leaves the older fresh npm audit undated.",
+      "verdict": "low",
+      "resolution": "patched",
+      "evidence": "Explicitly date that audit October 24; no new package audit or clean advisory result is claimed."
+    },
+    {
+      "id": "R5",
+      "finding": "Append-only implementation notes retain the preliminary removal plan alongside the final retained-floor decision.",
+      "verdict": "low",
+      "resolution": "clarified in appended implementation notes",
+      "evidence": "Retain the chronological notes and explicitly identify removal as the superseded pins-only experiment. Frozen intent remains unchanged."
+    },
+    {
+      "id": "R6",
+      "finding": "Pins-only experiment retains hashes but initially lacks the exact uncommitted source patch.",
+      "verdict": "medium",
+      "resolution": "patched",
+      "evidence": "pins-only.patch and pins-only-source-reconstruction.json reconstruct the four deletions and accompanying comment. The complete file SHA-256 and exact Git diff SHA-256 3b6ff6bd85bb810e755f945208a70009b5fba5be1781a635165ad97af8f62da4 both equal the contemporaneous pins-only receipt."
+    }
+  ],
+  "evidence_review_confirmations": [
+    "All inspected retained log digests match receipts",
+    "Baseline source hashes match published inputs",
+    "Final code hashes match compiled build inputs",
+    "First three completed suite inputs/artifacts match the build",
+    "Graphs correctly distinguish implicit SDK packages 13.6.3 versus 13.6.4"
+  ],
+  "final_recheck": {
+    "result": "No remaining findings",
+    "six_suites": {
+      "total": 2790,
+      "passed": 2785,
+      "skipped": 5,
+      "failed": 0,
+      "errors": 0,
+      "not_run": 0
+    },
+    "claims_cases_passed": 9,
+    "post_review_architecture_passed": 118,
+    "checks": [
+      "All exact suite argv, intervals, XML counts/rows and hashes",
+      "30028 source/configuration/script inputs and 4503 build artifacts match final build",
+      "Regression source files and thirteen published gitlinks unchanged",
+      "Both retained patches match recorded source/diff identities",
+      "Report and ledger links resolve",
+      "Conventional Commit validation passes",
+      "Original workspace/dependency states match; runtime continuity is not asserted",
+      "Interim 17/49 versus final 15/51 accurately stated in report, ledger and appended spec"
+    ],
+    "reviewed_final_code_patch_sha256": "58deae68c9ce151bae900742147796abf47029a407434c3d116c5ac8524926d3",
+    "patch_storage": "final-code.patch.gz; decompressed bytes exactly match reviewed SHA-256"
+  }
+}

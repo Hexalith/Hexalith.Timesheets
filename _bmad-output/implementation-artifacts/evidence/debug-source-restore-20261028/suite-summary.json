@@ -1,0 +1,215 @@
+{
+  "suites": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "total": 118,
+      "passed": 118,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "command_seconds": 29.059,
+      "suite_seconds": 28.861,
+      "argv": [
+        "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noColor",
+        "-parallel",
+        "none",
+        "-xml",
+        "/tmp/timesheets-debug-source-evidence-20261028/Hexalith.Timesheets.ArchitectureTests.xml"
+      ],
+      "started_utc": "2026-10-28T09:34:35.708124+00:00",
+      "finished_utc": "2026-10-28T09:35:06.945287+00:00",
+      "xml_sha256": "ba66ffc6a5dc921c28523cd97206ca3975cf5116f01e366d8cf70ce71713331e",
+      "source_equal": true,
+      "artifacts_equal": true,
+      "matches_build_inputs_and_artifacts": true
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "total": 108,
+      "passed": 108,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "command_seconds": 0.773,
+      "suite_seconds": 0.59,
+      "argv": [
+        "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noColor",
+        "-parallel",
+        "none",
+        "-xml",
+        "/tmp/timesheets-debug-source-evidence-20261028/Hexalith.Timesheets.Contracts.Tests.xml"
+      ],
+      "started_utc": "2026-10-28T09:35:09.321157+00:00",
+      "finished_utc": "2026-10-28T09:35:12.207750+00:00",
+      "xml_sha256": "89cd1ecdb9f81a0910fba8184b2f07c6fc18b54bd336dd09ffc1a079c23d98f0",
+      "source_equal": true,
+      "artifacts_equal": true,
+      "matches_build_inputs_and_artifacts": true
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "total": 746,
+      "passed": 746,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "command_seconds": 12.634,
+      "suite_seconds": 12.402,
+      "argv": [
+        "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noColor",
+        "-parallel",
+        "none",
+        "-xml",
+        "/tmp/timesheets-debug-source-evidence-20261028/Hexalith.Timesheets.Server.Tests.xml"
+      ],
+      "started_utc": "2026-10-28T09:35:14.665464+00:00",
+      "finished_utc": "2026-10-28T09:35:29.455234+00:00",
+      "xml_sha256": "7cdb113a3246cc8e2a7a6ed0007de605233b98843477d84d0997690c8503c8dc",
+      "source_equal": true,
+      "artifacts_equal": true,
+      "matches_build_inputs_and_artifacts": true
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "total": 756,
+      "passed": 756,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "command_seconds": 852.815,
+      "suite_seconds": 852.431,
+      "argv": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noColor",
+        "-parallel",
+        "none",
+        "-xml",
+        "/tmp/timesheets-debug-source-evidence-20261028/Hexalith.Timesheets.Projections.Tests.xml"
+      ],
+      "started_utc": "2026-10-28T09:35:31.980381+00:00",
+      "finished_utc": "2026-10-28T09:49:47.821077+00:00",
+      "xml_sha256": "cbbec82b73e68e9005738bf8c43ce8f4e650c5d4906090673050657869e74812",
+      "source_equal": true,
+      "artifacts_equal": true,
+      "matches_build_inputs_and_artifacts": true
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "errors": 0,
+      "not-run": 0,
+      "command_seconds": 0.525,
+      "suite_seconds": 0.335,
+      "argv": [
+        "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noColor",
+        "-parallel",
+        "none",
+        "-xml",
+        "/tmp/timesheets-debug-source-evidence-20261028/Hexalith.Timesheets.Works.Tests.xml"
+      ],
+      "started_utc": "2026-10-28T09:49:50.463203+00:00",
+      "finished_utc": "2026-10-28T09:49:53.154397+00:00",
+      "xml_sha256": "01605b64c67068eb07eeaa285a857749952b59e14ca364320864d53dccca229c",
+      "source_equal": true,
+      "artifacts_equal": true,
+      "matches_build_inputs_and_artifacts": true
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "total": 986,
+      "passed": 981,
+      "failed": 0,
+      "skipped": 5,
+      "errors": 0,
+      "not-run": 0,
+      "command_seconds": 1010.734,
+      "suite_seconds": 1010.335,
+      "argv": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noColor",
+        "-parallel",
+        "none",
+        "-xml",
+        "/tmp/timesheets-debug-source-evidence-20261028/Hexalith.Timesheets.IntegrationTests.xml"
+      ],
+      "started_utc": "2026-10-28T09:49:55.665754+00:00",
+      "finished_utc": "2026-10-28T10:06:50.975400+00:00",
+      "xml_sha256": "a01502ee9aa6000277e4279cec765435d1b2b9b20587344d3279fb6edacfc1f9",
+      "source_equal": true,
+      "artifacts_equal": true,
+      "matches_build_inputs_and_artifacts": true
+    }
+  ],
+  "totals": {
+    "total": 2790,
+    "passed": 2785,
+    "failed": 0,
+    "skipped": 5,
+    "errors": 0,
+    "not-run": 0
+  },
+  "no_overlapping_suite_commands": true,
+  "matches_build_inputs_and_artifacts": true,
+  "claims_regressions": [
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork(omitIdentifier: False)",
+      "method": "IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork(omitIdentifier: True)",
+      "method": "IssuanceWithMissingCapabilityIdIsOpaqueAndPerformsNoProtectedWork",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"standard\\\")",
+      "method": "AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: True, claimVariant: \\\"standard\\\")",
+      "method": "AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"tenant-fallback\\\")",
+      "method": "AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"actor-fallback\\\")",
+      "method": "AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminStateLoadsUseTheHostsHttpClaimsAccessor(useMismatchedClaims: False, claimVariant: \\\"conflicting\\\")",
+      "method": "AdminStateLoadsUseTheHostsHttpClaimsAccessor",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup(injectForeignRequestRead: False)",
+      "method": "AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+      "result": "Pass"
+    },
+    {
+      "name": "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup(injectForeignRequestRead: True)",
+      "method": "AdminRequestReadSetExcludesDemonstratedPromotedCatalogCleanup",
+      "result": "Pass"
+    }
+  ],
+  "unchanged_claims_source_sha256": {
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs": "8607aa8b8a4276d183164431fb4b8a8c94fc20e6909bac1d713ea9e9ec257787",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.ClaimsReadIsolation.cs": "c3b5387abc697df6d39418e752c941d067c3d063f1a04f3644e13452c93ac83c"
+  }
+}

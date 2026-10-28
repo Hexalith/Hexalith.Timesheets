@@ -1,0 +1,8 @@
+{
+  "base": "740130d2db103cb7a6b96d9a399a3bf4ba5d5fc4",
+  "patch_sha256": "3b6ff6bd85bb810e755f945208a70009b5fba5be1781a635165ad97af8f62da4",
+  "matches_recorded_root_diff_sha256": true,
+  "file_sha256": "fde09ea715409bc0084efeb2133cd948000f3fa26b8ed8f57c60382b3b66a8f9",
+  "matches_recorded_input_sha256": true,
+  "method": "Reconstruct the recorded four-override removal and accompanying comment; verify both the complete file and exact Git diff against the contemporaneous receipt."
+}

@@ -9,7 +9,7 @@ namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 
 public sealed class ScaffoldGovernanceTests
 {
-    private const string ApprovedAspireAppHostSdkVersion = "13.6.3";
+    private const string ApprovedAspireAppHostSdkVersion = "13.6.4";
 
     private static readonly Regex AspireDiagnosticCode = new(
         @"\bASPIRE[A-Z]*\d{3}\b",

@@ -1,0 +1,12 @@
+{
+  "base": "740130d2db103cb7a6b96d9a399a3bf4ba5d5fc4",
+  "patch_sha256": "58deae68c9ce151bae900742147796abf47029a407434c3d116c5ac8524926d3",
+  "files": {
+    "Directory.Packages.props": "624f57a559a1eee5abfdccd270d5e5521ee9debb5a572375c6ee6ed310f740a5",
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj": "3d7ff70acf49446b7d6973f2ac39073205af574091ac804de6d4f6de2fb94c71",
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/ScaffoldGovernanceTests.cs": "f893b57d0f25e9ca6c0355c8640195acfdd0181556844adddb70828b69ff2ff7"
+  },
+  "matches_compiled_build_inputs": true,
+  "patch_file": "final-code.patch.gz",
+  "patch_hash_scope": "decompressed exact Git patch bytes"
+}

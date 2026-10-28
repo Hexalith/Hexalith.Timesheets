@@ -1,0 +1,11 @@
+import subprocess,pathlib,sys,json,datetime
+root=pathlib.Path('/tmp/timesheets-debug-source-20261028'); out=pathlib.Path('/tmp/timesheets-debug-source-evidence-20261028')
+rows=[]
+for suffix in ['ArchitectureTests','Contracts.Tests','Server.Tests','Projections.Tests','Works.Tests','IntegrationTests']:
+ name='Hexalith.Timesheets.'+suffix
+ args=[f'tests/{name}/bin/Debug/net10.0/{name}','-noColor','-parallel','none','-xml',str(out/(name+'.xml'))]
+ p=subprocess.run(['python3','/tmp/timesheets-restore-record.py','suite-'+suffix,*args],cwd=root)
+ rows.append({'suite':name,'exit_code':p.returncode})
+ (out/'suite-progress.json').write_text(json.dumps(rows,indent=2)+'\n')
+ if p.returncode: sys.exit(p.returncode)
+print('All six suites completed serially.',flush=True)

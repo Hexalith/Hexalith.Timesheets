@@ -1,0 +1,50 @@
+[
+  {
+    "argv": [
+      "dotnet",
+      "msbuild",
+      "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj",
+      "-nologo",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-t:CollectPackageReferences",
+      "-getProperty:AspireHostingSDKVersion,NETCoreSdkVersion,Configuration,UseHexalithProjectReferences,Hexalith1BuildPackageProps,HexalithVersionsLoaded",
+      "-getItem:PackageReference,PackageVersion,ProjectReference"
+    ],
+    "cwd": "/tmp/timesheets-debug-source-20261028",
+    "exit_code": 0,
+    "output_sha256": "c4c7af3de2a8eb3498320e088334862e30812f45507cb9eaa378f8af863b571c"
+  },
+  {
+    "argv": [
+      "dotnet",
+      "msbuild",
+      "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj",
+      "-nologo",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-t:CollectPackageReferences",
+      "-getProperty:AspireHostingSDKVersion,NETCoreSdkVersion,Configuration,UseHexalithProjectReferences,Hexalith1BuildPackageProps,HexalithVersionsLoaded",
+      "-getItem:PackageReference,PackageVersion,ProjectReference"
+    ],
+    "cwd": "/tmp/timesheets-debug-source-20261028",
+    "exit_code": 0,
+    "output_sha256": "7ed042ed9fe85915fd5c362d111f2f173eb21be29c0287ec51d56a4186344425"
+  },
+  {
+    "argv": [
+      "dotnet",
+      "msbuild",
+      "Hexalith.Timesheets.slnx",
+      "-nologo",
+      "-p:Configuration=Debug",
+      "-p:UseHexalithProjectReferences=true",
+      "-t:GenerateRestoreGraphFile",
+      "-p:RestoreGraphOutputPath=/tmp/timesheets-debug-source-evidence-20261028/final-graph.json",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/tmp/timesheets-debug-source-20261028",
+    "exit_code": 0
+  }
+]
