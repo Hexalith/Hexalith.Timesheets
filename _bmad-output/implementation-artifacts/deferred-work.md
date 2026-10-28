@@ -1457,7 +1457,7 @@ origin: migrated from legacy ledger ("Deferred from: review of five magic-link s
 location: n/a
 source_spec: `_bmad-output/implementation-artifacts/spec-five-magic-link-safety-deferrals.md`
 reason: Review B1 traced the unchanged normal FoldCatchUpAsync through SDK AbortAsync/CatchUpAsync: journaled issuance rereads corrupt selected format/root/single metadata and refuses it, retaining the journal in Aborting. The same baseline abort path is reachable when selected metadata becomes invalid after Begin.
-status: open
+status: done 2026-10-28 (module publication; production certification and deployed acceptance remain open)
 
 <a id="deferred-from-review-of-five-magic-link-safety-deferrals-2026-10-23"></a>
 legacy_section: Deferred from: review of five magic-link safety deferrals (2026-10-23)
@@ -1470,6 +1470,9 @@ publication update 2026-10-26: SDK implementation c613e55aefd0650c1e64ed0580c849
 
 
 implementation update 2026-10-28: The package prerequisite is now available. Published EventStore Client 3.128.4 exposes both repair methods, identifies source `717a06e16c3afd81b904eaf4de646b74b13262d2`, and matches a fresh NuGet download; successful Release run 40656509578 and commit ancestry include reviewed repair `c613e55aefd0650c1e64ed0580c8495657585a89`. The held patch is applied with all four production files matching its committed hashes, and the consumer pin advances to 3.128.4 without changing dependency checkouts/gitlinks or other floors. Focused persisted-state tests cover default denial, malformed/JSON-null evidence, mismatched certificates/witness/source, repair reservation/delete interruptions and exact cold retry, original journal drain and byte/guard limits. Final verification, independent review and publication are tracked in [the repair/guidance report](tests/remaining-repair-and-guidance-deferrals.md); this implementation update alone does not close the publication gate. Production certification and deployed acceptance remain open.
+
+Publication resolution 2026-10-28: **module publication complete**. Reviewed Timesheets implementation `1b17c2e012d1fbc889686392cad98e2ee06f4547` is pushed and remotely verified on main, consuming published EventStore 3.128.4. Final matching source and full isolated package solution builds pass with zero warnings/errors; source and published-package migration lanes each pass 97 cases. Independent review and recheck are complete. This closes the held-patch/package/publication gate only. Production certification remains denied by default; larger/deployed inventories, current runtime qualification and Story 3.6 deployed acceptance remain open, with launch FAIL. Exact publication and composite verification receipts are in [the repair/guidance report](tests/remaining-repair-and-guidance-deferrals.md).
+
 
 ### DW-185: Resume an interrupted v6 migration abort through an operation-and-inventory-authorized recovery path.
 

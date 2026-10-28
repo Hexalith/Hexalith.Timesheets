@@ -51,7 +51,7 @@ context:
 - [x] Qualify capacity through persisted-state tests above; leave extension/deployed inventory open.
 - [x] Synchronize three guidance files; verify normalized equality and SDK configuration.
 - [x] Add implementation-artifact report `tests/remaining-repair-and-guidance-deferrals.md`; update `deferred-work.md` and `docs/launch-readiness.md` with precise dispositions/evidence.
-- [ ] Independently review/verify, validate Conventional Commit, fetch/inspect divergence, commit owned changes and push main without force.
+- [x] Independently review/verify, validate Conventional Commit, fetch/inspect divergence, commit owned changes and push main without force.
 
 **Acceptance Criteria:**
 
@@ -99,3 +99,7 @@ Review corrections complete: B1/B2/B5/B6/B7/B8/B9/V1/V2 are addressed. The imple
 - Check instruction equality, links, evidence and `git diff --check`; retain exact results/blockers. Skips grant no runtime acceptance.
 
 - Final verification completed: matching full Debug/source and isolated full Release/package builds pass with zero warnings/errors; Architecture 118/118 and package migration 97/97 pass. Initial six-suite run retains 2,806 passed/one stale Architecture assertion failed/five existing skips; the corrected full Architecture lane and final 97-case source migration lane supply explicitly composite coverage of 2,816 passed/five skips/zero remaining failures. Only the two test assemblies changed after the initial batch. This is not a claimed single all-six rerun. The second stale build-note assertion failure is also retained. Exact commands/XML, source identities, 16-node package graph and case evidence are under `evidence/remaining-repair-and-guidance-20261028/parent-final/`. Publication remains explicitly authorized and is recorded after remote verification; no runtime/deployed acceptance is granted.
+
+## Publication
+
+Implementation `1b17c2e012d1fbc889686392cad98e2ee06f4547` is committed with validated Conventional Commit and pushed to main without force after a zero-behind fetch. `git ls-remote` confirms that exact remote revision. All approved work is complete; DW-184 closes its module publication gate while larger-inventory extension, unverified scan cost, production certificates, native/runtime qualification and deployed acceptance remain open. This completion record follows the verified implementation push.

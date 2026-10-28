@@ -1,0 +1,15 @@
+{
+  "observed_utc": "2026-10-28T14:38:53.792618+00:00",
+  "command": [
+    "node_modules/.bin/commitlint",
+    "--edit",
+    "/tmp/timesheets-repair-guidance-20261028/completion-message.txt"
+  ],
+  "exit_code": 0,
+  "message": "docs(projections): record certified repair publication\n",
+  "stdout": "",
+  "stderr": "",
+  "completion_document_links_resolve": true,
+  "all_spec_tasks_complete": true,
+  "record_only_change": true
+}
