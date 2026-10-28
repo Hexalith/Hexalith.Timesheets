@@ -1,0 +1,8 @@
+{
+  "instruction_equality": true,
+  "instruction_sha256": "dd05ede4ff5298ffb135c461125d54cdd2609d8f9e47cc1dd1574486d884aadf",
+  "checked_local_links": 114,
+  "production_patch_hashes_match": true,
+  "review_recheck": "Both pre-verified gaps closed; 97 source cases pass; no remaining concrete issue.",
+  "instruction_hash_rule": "SHA256 of UTF-8 normalized LF text after strip(); equality uses the same normalization"
+}

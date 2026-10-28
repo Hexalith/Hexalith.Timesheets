@@ -1,0 +1,27 @@
+{
+  "command": [
+    "dotnet",
+    "build",
+    "Hexalith.Timesheets.slnx",
+    "--configuration",
+    "Release",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=false",
+    "--artifacts-path",
+    "/tmp/timesheets-repair-guidance-20261028/release-solution",
+    "-warnaserror",
+    "-m:1",
+    "/nr:false"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-28T14:28:48.380105+00:00",
+  "finished_utc": "2026-10-28T14:28:54.352480+00:00",
+  "elapsed_seconds": 5.972,
+  "exit_code": 0,
+  "log_archive": "release-solution-build.log.gz",
+  "log_sha256": "a18c4fbe142ef8896f7b197d4d4ac9d58f6dc97de50d9ba49bca27841a0dc579",
+  "archive_sha256": "dfb2a1c8edc52f9b4acd7552233a1d1705be4c0aa467735ee1dbb9c09ccb0d60"
+}

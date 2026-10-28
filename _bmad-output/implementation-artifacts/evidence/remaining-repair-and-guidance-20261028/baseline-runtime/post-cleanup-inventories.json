@@ -1,0 +1,27 @@
+[
+  {
+    "command": [
+      "aspire",
+      "ps",
+      "--non-interactive",
+      "--format",
+      "Json"
+    ],
+    "observed_utc": "2026-10-28T13:35:09.228892+00:00",
+    "exit_code": 0,
+    "stdout": "[]\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "dapr",
+      "list",
+      "--output",
+      "json"
+    ],
+    "observed_utc": "2026-10-28T13:35:09.327278+00:00",
+    "exit_code": 0,
+    "stdout": "[]",
+    "stderr": ""
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "command": [
+    "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "-noColor",
+    "-xml",
+    "/tmp/timesheets-repair-guidance-20261028/Hexalith.Timesheets.IntegrationTests.xml"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-28T14:03:26.917243+00:00",
+  "finished_utc": "2026-10-28T14:15:57.542837+00:00",
+  "elapsed_seconds": 750.67,
+  "exit_code": 0,
+  "log_archive": "Hexalith.Timesheets.IntegrationTests.log.gz",
+  "log_sha256": "63a163ab43292d91b6374500e1b5332e9df47ec458f2684bbd2c72c1b62c727d",
+  "archive_sha256": "e2093c8e485fad308d9728c50eb9cded8e0360aefcf52097844ef242b3845e8e",
+  "test_results": [
+    {
+      "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests.dll",
+      "total": "986",
+      "passed": "981",
+      "failed": "0",
+      "skipped": "5",
+      "errors": "0",
+      "time": "750.335"
+    }
+  ],
+  "xml_archive": "Hexalith.Timesheets.IntegrationTests.xml.gz",
+  "xml_sha256": "2c87f3d8c6b14ac4f48339fac5d342cc83a190a1b8d32c64640776a72841b697"
+}

@@ -1,0 +1,212 @@
+[
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/capacity-build-final.log",
+    "original_sha256": "1b1102ffdc36a30a8284f72358ce5fa75e101bce2823628988ecd52e87d27de3",
+    "original_size": 2363,
+    "archive": "capacity-build-final.log.gz",
+    "archive_sha256": "615abd35eaaf1fa6e97d962699bcf1abfffe9648cd8ea5cff94dada05fcef3f7"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/capacity-build-near.log",
+    "original_sha256": "b08e01f65cc5ee57a5d79dd602cb62d7a57de0696d6f61b02bdd3e1d35a06d39",
+    "original_size": 2363,
+    "archive": "capacity-build-near.log.gz",
+    "archive_sha256": "467d78b66b7b68c37151bc0d2b904cb3b71fdd0f31fe32c232bcb2a4526bdb1f"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-capacity-build.log",
+    "original_sha256": "8ec52295bd80c11b14dcedeea5576a57cb6d19d64b16b877e605f8bcbae7e99f",
+    "original_size": 5127,
+    "archive": "diagnostic-remaining-repair-capacity-build.log.gz",
+    "archive_sha256": "38678c4f238475b2f1837f0b66f7fcfe2ef9f7bac932fe7b3a4f6f33d0b631c3"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-capacity-build2.log",
+    "original_sha256": "98cbddc688d778c075f7716c148e53db277b359834ecbb9e5437ab08738eea2e",
+    "original_size": 6493,
+    "archive": "diagnostic-remaining-repair-capacity-build2.log.gz",
+    "archive_sha256": "b629faf8293b60c3c2b31eb316c61ddafbc66861e02cafd7487f8d8c3cba2124"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-capacity-build3.log",
+    "original_sha256": "569048f0fee879edaa7fc656b8092dd1a23403c674b70a2809816e148e4b2cdd",
+    "original_size": 2363,
+    "archive": "diagnostic-remaining-repair-capacity-build3.log.gz",
+    "archive_sha256": "27800a5476425e7e85426f4ac9be2c2e3f8fa873fce48679fcdcd759d1402b8e"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-capacity-final.log",
+    "original_sha256": "759be5d4fb29aaf971a82d613fe079c0b431a691c98c2557d664bbea88117b5a",
+    "original_size": 499,
+    "archive": "diagnostic-remaining-repair-capacity-final.log.gz",
+    "archive_sha256": "d8ff6ed4224e35223fbc9a9ad975c9f042be269454e96997b9bbf4f7c13d5783"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-capacity-final.xml",
+    "original_sha256": "5539ba113e2351d7894543abf71e2b3c3edc03af9bcabd3b39b5803361d05c3c",
+    "original_size": 4394,
+    "archive": "diagnostic-remaining-repair-capacity-final.xml.gz",
+    "archive_sha256": "6483b9eb14fd8c6961ee2b1e6b5451c1291dc2e8811c77918f3e90e2ef84ecc9"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-capacity.log",
+    "original_sha256": "5aa6a0f7189a166556879918fdb3768aedf46a408afa50da7041d50f1612ebba",
+    "original_size": 550,
+    "archive": "diagnostic-remaining-repair-capacity.log.gz",
+    "archive_sha256": "952c1bdf8e29bd787f514b95c4df9eaf645327ab8b68b3850f466cad47d39e44"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-capacity.xml",
+    "original_sha256": "eb53ec8fa2403cd8ca1cb9981c93853329563d3e4acfd474d5fc6d4b221e3b51",
+    "original_size": 907,
+    "archive": "diagnostic-remaining-repair-capacity.xml.gz",
+    "archive_sha256": "7474308dd6213d028a0d0f8565fc6ee44a82880ebb6e43b312555d96867817c8"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-debug-build.log",
+    "original_sha256": "af18585f72862946142ad019e9f50e4c89bbb546c38dfa2834d7dd4fa5220056",
+    "original_size": 8176,
+    "archive": "diagnostic-remaining-repair-debug-build.log.gz",
+    "archive_sha256": "10b961c342cefe4ac7001fabe2f41b5caa1a87aec8e0e9e6ca94b4ecca3d30c4"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-debug-restore.log",
+    "original_sha256": "5ecb2fa829d00d37843d1c6159199e2d1bf404f201ad45e471a035c8ddf54a77",
+    "original_size": 4896,
+    "archive": "diagnostic-remaining-repair-debug-restore.log.gz",
+    "archive_sha256": "0a6e72ccb5ef15acf18c661ce72b8a40faff2fbc4c16a42eaeb99bb82e872af2"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-migration.log",
+    "original_sha256": "5a4fdf12d8ff0a64017ac50a060fc509cca632cd778dd9e981ffe346bd994aae",
+    "original_size": 501,
+    "archive": "diagnostic-remaining-repair-migration.log.gz",
+    "archive_sha256": "5944e776f3cfa4973d831036d261d55eea7a6b2fea25efbc9847310f378f96ea"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/diagnostic-remaining-repair-migration.xml",
+    "original_sha256": "d4ab07cfb0fd41d8cd7405a8161157532ad21508be03cdb391df8fa0fef32c28",
+    "original_size": 59248,
+    "archive": "diagnostic-remaining-repair-migration.xml.gz",
+    "archive_sha256": "078cf8ecc69196c05ca4111aeab5da7adba66807beee11979d12f94a04fe8c3e"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/migration-final.log",
+    "original_sha256": "50b2303e330cb49627a1abe07b5dbdb9185e44d5b69fdf4e97015387cec8ce6d",
+    "original_size": 2934,
+    "archive": "migration-final.log.gz",
+    "archive_sha256": "e296f773a1a27cb694c8c1bc7f26f634324cbe4e9c9454972533ac24a6f461d7"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/migration-final.xml",
+    "original_sha256": "f81a64ec68039cd37291efab2dbf71b2b11f1186354a49506761ce6df0eda1a4",
+    "original_size": 61196,
+    "archive": "migration-final.xml.gz",
+    "archive_sha256": "5f01bec015baebb3e95aa604a887bcddd471028d06024f256a4fedab839f395e"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/migration-near.log",
+    "original_sha256": "ecac5ec55cb1b559fa6cf4bcde9666ecd2ffdb6bf9cfce500eb4674b6a2e615a",
+    "original_size": 501,
+    "archive": "migration-near.log.gz",
+    "archive_sha256": "448263518ec90e4a5ecce78083b4ea0e3549f51d80dd1977ef9d539b6189987e"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/migration-near.xml",
+    "original_sha256": "5ca0b97965e7a7d2e8e17c946d1cf11f967206d61af5e61cf45dd8a01d676f48",
+    "original_size": 59253,
+    "archive": "migration-near.xml.gz",
+    "archive_sha256": "e2a1b4c6b3c56b7c63d81260f8a6275143209a44901157f1f50a3f5ba0ae62bd"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-api-get.log",
+    "original_sha256": "e05809db86463ad61c86c243b09760d24cae16d079b052cebc7b61d4249e37b8",
+    "original_size": 1307,
+    "archive": "package-api-get.log.gz",
+    "archive_sha256": "f32336e562d1a48c890f0159f0a92b60617786e72650eef74101fda606924857"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-api-repair.log",
+    "original_sha256": "ec8501a124ab6d4706d3410926034e95f0562eb461e60797eba0163b3939df8b",
+    "original_size": 1416,
+    "archive": "package-api-repair.log.gz",
+    "archive_sha256": "58780771faa7900cffff4df74db50c6d9339c2577b9b53378eb49851a8f5e19f"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-build-final.log",
+    "original_sha256": "86443d8df9e9f3f945517c2354adf30333a14ce6e68462bbdc39b2a75bc4c133",
+    "original_size": 855,
+    "archive": "package-build-final.log.gz",
+    "archive_sha256": "104965ed81cb26609965623e46e8ef8bc709cb47afc7be4bef7ee3b904ffbecb"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-build.log",
+    "original_sha256": "9fc55f49fdc33ab6f3e590e1fc0322bc56e9846aca71cc6e3db49c4cb38e99a7",
+    "original_size": 855,
+    "archive": "package-build.log.gz",
+    "archive_sha256": "efa12e30cfe8bf4d9441e46b90dea29f6806dca7b551cfc4feb606272ba047b6"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-evaluation.log",
+    "original_sha256": "d41ce37ea2ea36ed7c380b1a2ba22126b34701bc5e05251ea47c2d83acab7915",
+    "original_size": 12417,
+    "archive": "package-evaluation.log.gz",
+    "archive_sha256": "202e439a810655969656c12f7e7a697fd0bb3afd8578dc61e8fab06664df577b"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-migration-final.log",
+    "original_sha256": "f90af120fcf0fa9f3aa937645bc0b4ea75a869290a5eeecbd8d6518dab09226b",
+    "original_size": 501,
+    "archive": "package-migration-final.log.gz",
+    "archive_sha256": "31c317ede9060d08f90f742fe1bdccff38682c19ce4cbd69a94fbc12979ee0a5"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-migration-final.xml",
+    "original_sha256": "1a5827673f6554c8e2e9722b7cb8dc3da52c3669fa68344b50f78320c46691dd",
+    "original_size": 61443,
+    "archive": "package-migration-final.xml.gz",
+    "archive_sha256": "9fa11564bcbaee7822cf63e1b6c302df412bebb7289ef54a33f045b228d2376c"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/package-restore.log",
+    "original_sha256": "0875503095d487ba7731364721fb5b6dacae90e25522fd6ae21e96ded511a3cf",
+    "original_size": 779,
+    "archive": "package-restore.log.gz",
+    "archive_sha256": "dd3749ce65faf17f403a7d3f4b709282821d448abb5f6f390e7aaa629ea7ed37"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/release-run.log",
+    "original_sha256": "6fdac2b71b2b174d5b874476bde22cfa06d58216d5d662420b0bdf9fb2dcf10a",
+    "original_size": 12801,
+    "archive": "release-run.log.gz",
+    "archive_sha256": "429d7b357a6aeaea74248ff63baba4bb59e91996b5ac29318a9bd4d5edf6f922"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/repair-ancestry.log",
+    "original_sha256": "7a083dc3d24770e765cf866f312e05d8beae70be64b40811537861ea8099eb8b",
+    "original_size": 1311948,
+    "archive": "repair-ancestry.log.gz",
+    "archive_sha256": "c0a5217f34d0e9d8cf52738c90802e158e0f32efd3aba979aca70e20b1ffe671"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/source-build-final.log",
+    "original_sha256": "bd3a84382a0b6ebeb54f217b5174e4b546e70a878dfd80fc22d94aab8e9f7bb4",
+    "original_size": 2363,
+    "archive": "source-build-final.log.gz",
+    "archive_sha256": "7a2414865b3adeff00cb04185a7312e4eea17c06d8abac4c8c5a303ca44315ce"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/source-migration-final.log",
+    "original_sha256": "4d7517380b7bc3d5eef81249472721001c58cb5ac8bb2317ec5e19cf22770a1a",
+    "original_size": 501,
+    "archive": "source-migration-final.log.gz",
+    "archive_sha256": "962c3e1d6f48ad1f31ca46338932fb647c2d0054060ef04e4eefb5b43b7bd395"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/source-migration-final.xml",
+    "original_sha256": "31ae968f74ba59471a5dd074aac31eb3939b25e9dee060c8ed9d7489d5ea3276",
+    "original_size": 61471,
+    "archive": "source-migration-final.xml.gz",
+    "archive_sha256": "ea9c469b8551e2948713a8efa022cb06d76c2866ada0466831418757d072abf5"
+  }
+]

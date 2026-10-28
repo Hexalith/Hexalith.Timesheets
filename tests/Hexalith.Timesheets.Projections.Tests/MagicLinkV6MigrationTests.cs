@@ -20,6 +20,570 @@ namespace Hexalith.Timesheets.Projections.Tests;
 
 public sealed class MagicLinkV6MigrationTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CertifiedRepairGuardsPersistedDirectoryPagesAndRefusesIdenticalContentEtagDrift(bool drift)
+    {
+        var fixture = await PrepareRepairFixtureAsync(directory: true);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        string physical = PhysicalKey(scope, fixture.Witness.SourceGeneration, fixture.SourceKey);
+        ReadModelEntry<JsonNode> original = await fixture.Coordinator.ReadGenerationJsonAsync(scope,
+            fixture.Witness.SourceGeneration, fixture.SourceKey, TestContext.Current.CancellationToken);
+        byte[] source = fixture.Store.SnapshotRaw(scope.StoreName, physical)!;
+        var metadata = RepairMetadataKeys().ToDictionary(key => key,
+            key => fixture.Store.SnapshotRaw(scope.StoreName, PhysicalKey(scope, fixture.Witness.SourceGeneration, key)));
+        if (drift)
+        {
+            fixture.Store.SeedRaw(scope.StoreName, physical, JsonDocument.Parse(source));
+            fixture.Store.SnapshotRaw(scope.StoreName, physical).ShouldBe(source);
+            (await fixture.Coordinator.ReadGenerationJsonAsync(scope, fixture.Witness.SourceGeneration,
+                fixture.SourceKey, TestContext.Current.CancellationToken)).ETag.ShouldNotBe(original.ETag);
+            await Should.ThrowAsync<InvalidOperationException>(() => RecoverFixtureAsync(fixture.Store, fixture.Digest));
+            foreach (var item in metadata)
+                fixture.Store.SnapshotRaw(scope.StoreName, PhysicalKey(scope, fixture.Witness.SourceGeneration, item.Key)).ShouldBe(item.Value);
+            (await fixture.Coordinator.GetAbortRepairAsync(scope, TestContext.Current.CancellationToken)).ShouldBeNull();
+        }
+        else
+        {
+            await RecoverFixtureAsync(fixture.Store, fixture.Digest);
+            SharedProjectionAbortRepairReceipt receipt = (await fixture.Coordinator.GetAbortRepairAsync(scope,
+                TestContext.Current.CancellationToken)).ShouldNotBeNull();
+            SharedProjectionAbortRepairGuard guard = receipt.Request.SourceGuards.Single(value => value.LogicalKey == fixture.SourceKey);
+            guard.ExpectedETag.ShouldBe(original.ETag);
+            string contentDigest = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(original.Value!.ToJsonString())));
+            guard.ContentDigest.ShouldBe(contentDigest);
+            guard.SourceGeneration.ShouldBe(original.SourceGeneration);
+            guard.PointerETag.ShouldBe(original.PointerETag);
+            fixture.Store.SnapshotRaw(scope.StoreName, physical).ShouldBe(source);
+            await AssertFixtureDeliveryAsync(fixture.Coordinator, scope, fixture.Issued);
+        }
+        SharedProjectionEpochStatus after = await fixture.Coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.ActiveGeneration.ShouldBe(fixture.Witness.SourceGeneration);
+        after.IsBuilding.ShouldBeFalse(); after.IsAborting.ShouldBe(drift); after.PendingDeliveryCount.ShouldBe(drift ? 1 : 0);
+    }
+
+    [Fact]
+    public async Task FreshMigrationRefusesPresentJsonNullShardBeforeReservingAnEpoch()
+    {
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry original = await SeedMetadataSourceAsync(coordinator, scope);
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        int nullShard = (MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(original.TokenHash) + 1) % 256;
+        string nullKey = MagicLinkTokenHashCapabilityIndexProjection.ShardKey(nullShard);
+        store.SeedRaw(scope.StoreName, PhysicalKey(scope, before.ActiveGeneration, nullKey), JsonDocument.Parse("null"));
+        ReadModelEntry<JsonNode> observed = await coordinator.ReadGenerationJsonAsync(scope, before.ActiveGeneration,
+            nullKey, TestContext.Current.CancellationToken);
+        observed.Value.ShouldBeNull(); observed.ETag.ShouldNotBeNullOrEmpty();
+        string healthyKey = PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexProjection.ShardKey(original.TokenHash));
+        byte[] healthy = store.SnapshotRaw(scope.StoreName, healthyKey)!;
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, store, new PermittedCertifiedMigration());
+        InvalidOperationException refusal = await Should.ThrowAsync<InvalidOperationException>(() => migration.MigrateAsync(
+            "explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        refusal.Message.ShouldBe("A present v6 shard cannot contain JSON null.");
+        SharedProjectionEpochStatus after = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.Epoch.ShouldBe(before.Epoch); after.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+        after.IsBuilding.ShouldBeFalse(); after.IsAborting.ShouldBeFalse(); after.PendingDeliveryCount.ShouldBe(0);
+        store.SnapshotRaw(scope.StoreName, healthyKey).ShouldBe(healthy);
+        (await coordinator.ReadGenerationJsonAsync(scope, before.ActiveGeneration, nullKey,
+            TestContext.Current.CancellationToken)).ETag.ShouldBe(observed.ETag);
+        store.SnapshotRaw(scope.StoreName, MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(before.Epoch + 1)).ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("partial-delete")]
+    [InlineData("inherited")]
+    [InlineData("inherited-source-pointer-drift")]
+    [InlineData("inherited-metadata-pointer-drift")]
+    [InlineData("reserved-source-drift")]
+    [InlineData("deleted-source-drift")]
+    public async Task ColdRepairRetainsAllMetadataAndEnforcesReservedSourceAndCopyOnWriteProvenance(string scenario)
+    {
+        bool inherited = scenario.StartsWith("inherited", StringComparison.Ordinal);
+        bool refuses = scenario.EndsWith("drift", StringComparison.Ordinal);
+        var fixture = await PrepareRepairFixtureAsync(inherited: inherited);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        long generation = fixture.Witness.SourceGeneration;
+        string[] keys = RepairMetadataKeys();
+        var originals = new Dictionary<string, ReadModelEntry<JsonNode>>(StringComparer.Ordinal);
+        foreach (string key in keys)
+            originals.Add(key, await fixture.Coordinator.ReadGenerationJsonAsync(scope, generation, key, TestContext.Current.CancellationToken));
+        ReadModelEntry<JsonNode> source = await fixture.Coordinator.ReadGenerationJsonAsync(scope, generation,
+            fixture.SourceKey, TestContext.Current.CancellationToken);
+        if (inherited)
+        {
+            source.SourceGeneration.ShouldNotBeNull().ShouldBeLessThan(generation); source.PointerETag.ShouldNotBeNullOrEmpty();
+            foreach (var item in originals)
+            {
+                item.Value.SourceGeneration.ShouldNotBeNull().ShouldBeLessThan(generation); item.Value.PointerETag.ShouldNotBeNullOrEmpty();
+                fixture.Store.SnapshotRaw(scope.StoreName, PhysicalKey(scope, generation, item.Key)).ShouldBeNull();
+            }
+        }
+        bool afterDelete = scenario is "partial-delete" or "deleted-source-drift";
+        fixture.Fault.InterruptRepairReservation = !afterDelete;
+        fixture.Fault.InterruptRepairedKey = afterDelete ? PhysicalKey(scope, generation, keys[0]) : null;
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(fixture.Coordinator, fixture.Store,
+            new PermittedCertifiedMigration(), new CertifiedAbortLayout(fixture.Digest));
+        await Should.ThrowAsync<IOException>(() => migration.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionAbortRepairReceipt receipt = (await fixture.Coordinator.GetAbortRepairAsync(scope, TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        byte[] immutable = JsonSerializer.SerializeToUtf8Bytes(receipt);
+        receipt.Request.Values.Count(value => value.OriginalJson is not null).ShouldBe(3);
+        foreach (var item in originals)
+        {
+            SharedProjectionAbortRepairValue value = receipt.Request.Values.Single(value => value.LogicalKey == item.Key);
+            JsonNode.DeepEquals(JsonNode.Parse(value.OriginalJson!), item.Value.Value).ShouldBeTrue();
+            value.ExpectedETag.ShouldBe(item.Value.ETag);
+            value.SourceGeneration.ShouldBe(item.Value.SourceGeneration); value.PointerETag.ShouldBe(item.Value.PointerETag);
+        }
+        SharedProjectionAbortRepairGuard guard = receipt.Request.SourceGuards.Single(value => value.LogicalKey == fixture.SourceKey);
+        guard.ExpectedETag.ShouldBe(source.ETag); guard.SourceGeneration.ShouldBe(source.SourceGeneration);
+        guard.PointerETag.ShouldBe(source.PointerETag);
+        var remaining = new Dictionary<string, ReadModelEntry<JsonNode>>(StringComparer.Ordinal);
+        foreach (string key in keys)
+        {
+            ReadModelEntry<JsonNode> current = await fixture.Coordinator.ReadGenerationJsonAsync(scope, generation, key, TestContext.Current.CancellationToken);
+            remaining.Add(key, current);
+            if (afterDelete && key == keys[0]) current.ETag.ShouldBeNullOrEmpty();
+            else JsonNode.DeepEquals(current.Value, originals[key].Value).ShouldBeTrue();
+        }
+        if (scenario.Contains("pointer-drift", StringComparison.Ordinal))
+        {
+            string logical = scenario == "inherited-source-pointer-drift" ? fixture.SourceKey : keys[0];
+            string pointer = "shared-cow-pointer:" + scope.ComputeHash() + ":" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(logical)));
+            byte[] bytes = fixture.Store.SnapshotRaw(scope.StoreName, pointer)!;
+            fixture.Store.SeedRaw(scope.StoreName, pointer, JsonDocument.Parse(bytes));
+            fixture.Store.SnapshotRaw(scope.StoreName, pointer).ShouldBe(bytes);
+            (await fixture.Coordinator.ReadGenerationJsonAsync(scope, generation, logical,
+                TestContext.Current.CancellationToken)).PointerETag.ShouldNotBe(logical == fixture.SourceKey ? source.PointerETag : originals[logical].PointerETag);
+        }
+        else if (refuses)
+        {
+            string physical = PhysicalKey(scope, source.SourceGeneration!.Value, fixture.SourceKey);
+            byte[] bytes = fixture.Store.SnapshotRaw(scope.StoreName, physical)!;
+            fixture.Store.SeedRaw(scope.StoreName, physical, JsonDocument.Parse(bytes));
+            fixture.Store.SnapshotRaw(scope.StoreName, physical).ShouldBe(bytes);
+            (await fixture.Coordinator.ReadGenerationJsonAsync(scope, generation, fixture.SourceKey,
+                TestContext.Current.CancellationToken)).ETag.ShouldNotBe(source.ETag);
+        }
+        var coldCoordinator = new SharedProjectionEpochCoordinator(fixture.Store, fixture.Store);
+        byte[] checkpoint = JsonSerializer.SerializeToUtf8Bytes(await coldCoordinator.GetCheckpointAsync(scope,
+            "review-pending-owner", TestContext.Current.CancellationToken));
+        if (refuses)
+        {
+            await Should.ThrowAsync<InvalidOperationException>(() => RecoverFixtureAsync(fixture.Store, fixture.Digest));
+            foreach (var item in remaining)
+            {
+                ReadModelEntry<JsonNode> current = await coldCoordinator.ReadGenerationJsonAsync(scope, generation, item.Key, TestContext.Current.CancellationToken);
+                current.ETag.ShouldBe(item.Value.ETag); JsonNode.DeepEquals(current.Value, item.Value.Value).ShouldBeTrue();
+            }
+        }
+        else
+        {
+            await RecoverFixtureAsync(fixture.Store, fixture.Digest);
+            foreach (string key in keys)
+            {
+                (await coldCoordinator.ReadGenerationJsonAsync(scope, generation, key, TestContext.Current.CancellationToken)).ETag.ShouldBeNullOrEmpty();
+                if (inherited)
+                    JsonNode.DeepEquals(JsonNode.Parse(fixture.Store.SnapshotRaw(scope.StoreName,
+                        PhysicalKey(scope, originals[key].SourceGeneration!.Value, key))!), originals[key].Value).ShouldBeTrue();
+            }
+            await AssertFixtureDeliveryAsync(coldCoordinator, scope, fixture.Issued);
+        }
+        JsonSerializer.SerializeToUtf8Bytes(await coldCoordinator.GetAbortRepairAsync(scope, TestContext.Current.CancellationToken)).ShouldBe(immutable);
+        JsonSerializer.SerializeToUtf8Bytes(await coldCoordinator.GetCheckpointAsync(scope,
+            "review-pending-owner", TestContext.Current.CancellationToken)).ShouldBe(checkpoint);
+        SharedProjectionEpochStatus after = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.Epoch.ShouldBe(fixture.Witness.Epoch); after.ActiveGeneration.ShouldBe(generation);
+        after.IsBuilding.ShouldBeFalse(); after.IsAborting.ShouldBe(refuses); after.PendingDeliveryCount.ShouldBe(refuses ? 1 : 0);
+    }
+
+    private static string[] RepairMetadataKeys() => [MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey,
+        MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, MagicLinkTokenHashCapabilityIndexProjection.StateKey];
+
+    private static async Task RecoverFixtureAsync(InMemoryReadModelStore store, string digest)
+    {
+        var cold = new MagicLinkTokenHashCapabilityIndexV6Migration(new SharedProjectionEpochCoordinator(store, store), store,
+            new PermittedCertifiedMigration(), new CertifiedAbortLayout(digest));
+        await cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+    }
+
+    private static async Task AssertFixtureDeliveryAsync(SharedProjectionEpochCoordinator coordinator,
+        SharedProjectionScope scope, MagicLinkConfirmationCapabilityIssued issued)
+    {
+        (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey(issued.TokenHash.Value), TestContext.Current.CancellationToken))
+            .Value.ShouldNotBeNull().Contributions[issued.TokenHash.Value].ShouldContain(new MagicLinkTokenHashCapabilityIndexEntry(issued.Tenant, issued.CapabilityId));
+    }
+
+    private static async Task<(InMemoryReadModelStore Store, V6AbortDrainFaultStore Fault,
+        SharedProjectionEpochCoordinator Coordinator, MagicLinkV6MigrationAbortWitness Witness,
+        string Digest, MagicLinkConfirmationCapabilityIssued Issued, string SourceKey)> PrepareRepairFixtureAsync(
+        bool directory = false, bool inherited = false)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry original = await SeedMetadataSourceAsync(coordinator, scope);
+        long originalGeneration = (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration;
+        int shard = MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(original.TokenHash);
+        string sourceKey = MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard);
+        if (directory)
+        {
+            var page = new MagicLinkTokenHashCapabilityIndexDirectoryPage([original]);
+            var root = MagicLinkTokenHashCapabilityIndexProjection.FromContributions([]) with
+            {
+                DirectoryPages = [new(0, original.TokenHash, original.TokenHash)],
+                DirectoryPageDigests = new Dictionary<int, string> { [0] = MagicLinkTokenHashCapabilityIndexProjection.DirectoryPageDigest(page) },
+                NextCandidatePageId = 1
+            };
+            MagicLinkTokenHashCapabilityIndexProjection.HasValidPageManifest(root).ShouldBeTrue();
+            MagicLinkTokenHashCapabilityIndexProjection.HasValidDirectoryPage(root, shard, root.DirectoryPages[0], page).ShouldBeTrue();
+            store.SeedRaw(scope.StoreName, PhysicalKey(scope, originalGeneration, sourceKey), root);
+            sourceKey = MagicLinkTokenHashCapabilityIndexProjection.DirectoryPageKey(shard, 0);
+            store.SeedRaw(scope.StoreName, PhysicalKey(scope, originalGeneration, sourceKey), page);
+        }
+        if (inherited)
+        {
+            _ = await coordinator.BeginAsync(scope, "sparse-selected-v6", "same-v6-source", new Dictionary<string, long>(), TestContext.Current.CancellationToken);
+            _ = await coordinator.StageStreamingAsync(scope, "sparse-selected-v6", AsAsync([
+                ReadModelBatchOperation.Write("fixture:sparse-generation", new { Selected = true }, ReadModelBatchConcurrency.LastWrite)]), TestContext.Current.CancellationToken);
+            await coordinator.CommitAsync(scope, "sparse-selected-v6", TestContext.Current.CancellationToken);
+        }
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, new PermittedCertifiedMigration());
+        long selected = (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration;
+        string digest = await migration.ComputeAbortRepairSourceFingerprintAsync(selected, TestContext.Current.CancellationToken);
+        interrupted.InterruptAfterNextSeal = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        foreach (string kind in new[] { "format", "root", "single" })
+            _ = CorruptSelectedMetadata(store, scope, inherited ? originalGeneration : selected, kind);
+        if (inherited)
+            foreach (string key in RepairMetadataKeys())
+            {
+                string pointer = "shared-cow-pointer:" + scope.ComputeHash() + ":" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key)));
+                store.SeedRaw(scope.StoreName, pointer, new { LatestGeneration = originalGeneration,
+                    LatestDeleted = false, PreviousGeneration = 0, PreviousDeleted = true, RetiredGeneration = (long?)null });
+            }
+        string pendingHash = "review-pending-hash";
+        while (MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(pendingHash) == shard) pendingHash += "x";
+        var issued = new MagicLinkConfirmationCapabilityIssued(new("review-pending-owner"), new("tenant-a"), new("party-a"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-a")), new("activity-a"), new("entry-a"),
+            MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm, new(pendingHash),
+            DateTimeOffset.UnixEpoch.AddDays(1), new("issuer-a"), DateTimeOffset.UnixEpoch.AddHours(1), new("timesheets", "pending"), true);
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var projectionEvent = new ProjectionEventDto(nameof(StoredMagicLinkIssued), JsonSerializer.SerializeToUtf8Bytes(new StoredMagicLinkIssued(issued), json),
+            "json", 1, DateTimeOffset.UnixEpoch, "correlation", "message", "user", 2);
+        var delivery = new SharedProjectionDelivery("review-pending-owner", 2,
+            JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-a", "timesheets", "review-pending-owner", [projectionEvent]), json), [4, 2]);
+        SharedProjectionLease lease = await coordinator.RefreshLeaseAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        (await coordinator.JournalAsync(scope, lease, delivery, TestContext.Current.CancellationToken)).ShouldBe(SharedProjectionJournalResult.Journaled);
+        interrupted.InterruptAfterAborting = true;
+        await Should.ThrowAsync<IOException>(() => coordinator.AbortAsync(scope, "explicit-v7", (_, _, _) =>
+            Task.FromResult<IReadOnlyList<ReadModelBatchOperation>>([]), TestContext.Current.CancellationToken));
+        MagicLinkV6MigrationAbortWitness witness = (await store.GetAsync<MagicLinkV6MigrationAbortWitness>(scope.StoreName,
+            MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(before.Epoch), TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        var fault = new V6AbortDrainFaultStore(store);
+        return (store, fault, new SharedProjectionEpochCoordinator(fault, fault), witness, digest, issued, sourceKey);
+    }
+
+    [Theory]
+    [InlineData(935, 262144, true)]
+    [InlineData(935, 262145, false)]
+    [InlineData(3840, 0, false)]
+    [InlineData(3841, 0, false)]
+    public async Task CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(
+        int pageCount, int requestBytes, bool accepted)
+    {
+        const string operation = "explicit-v7";
+        const string inventory = "certified-selected-v6";
+        var store = new InMemoryReadModelStore();
+        var coordinator = new SharedProjectionEpochCoordinator(store, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry original = await SeedMetadataSourceAsync(coordinator, scope);
+        long generation = (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration;
+        int shard = MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(original.TokenHash);
+        var sourceKeys = Enumerable.Range(0, MagicLinkTokenHashCapabilityIndexProjection.ShardCount)
+            .Select(MagicLinkTokenHashCapabilityIndexProjection.ShardKey).ToList();
+        var digests = new Dictionary<int, string>();
+        for (int pageId = 0; pageId < pageCount; pageId++)
+        {
+            var page = new MagicLinkTokenHashCapabilityIndexPage(original.TokenHash,
+                [pageId == 0 ? original.Candidate : Row("tenant-a", $"capacity-owner-{pageId}", original.TokenHash).Candidate]);
+            digests.Add(pageId, MagicLinkTokenHashCapabilityIndexProjection.CandidatePageDigest(page));
+            string key = MagicLinkTokenHashCapabilityIndexProjection.CandidatePageKey(shard, pageId);
+            sourceKeys.Add(key);
+            store.SeedRaw(scope.StoreName, PhysicalKey(scope, generation, key), page);
+        }
+        var root = MagicLinkTokenHashCapabilityIndexProjection.FromContributions([]) with
+        {
+            CandidatePageCounts = new Dictionary<string, int> { [original.TokenHash] = pageCount },
+            CandidatePageIds = new Dictionary<string, IReadOnlyList<int>>
+                { [original.TokenHash] = Enumerable.Range(0, pageCount).ToArray() },
+            CandidatePageDigests = digests,
+            NextCandidatePageId = pageCount
+        };
+        MagicLinkTokenHashCapabilityIndexProjection.HasValidPageManifest(root).ShouldBeTrue();
+        store.SeedRaw(scope.StoreName, PhysicalKey(scope, generation,
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard)), root);
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, store, new PermittedCertifiedMigration());
+        // This traverses and validates every selected v6 collision page before corruption.
+        string sourceDigest = await migration.ComputeAbortRepairSourceFingerprintAsync(generation, TestContext.Current.CancellationToken);
+        long epoch = await coordinator.BeginAsync(scope, operation, inventory, new Dictionary<string, long>(),
+            TestContext.Current.CancellationToken, operationTenantId: scope.TenantId);
+        var witness = new MagicLinkV6MigrationAbortWitness(scope.StoreName, scope.TenantId, scope.Domain,
+            scope.Family, operation, inventory, epoch, generation);
+        string witnessKey = MagicLinkTokenHashCapabilityIndexV6Migration.AbortWitnessKey(epoch);
+        (await store.TrySaveAsync(scope.StoreName, witnessKey, witness, string.Empty, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        var issued = new MagicLinkConfirmationCapabilityIssued(new("capacity-pending-owner"), new("tenant-a"), new("party-a"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-a")), new("activity-a"), new("entry-a"),
+            MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm, new("capacity-pending-hash"),
+            DateTimeOffset.UnixEpoch.AddDays(1), new("issuer-a"), DateTimeOffset.UnixEpoch.AddHours(1), new("timesheets", "pending"), true);
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var projectionEvent = new ProjectionEventDto(nameof(StoredMagicLinkIssued), JsonSerializer.SerializeToUtf8Bytes(new StoredMagicLinkIssued(issued), json),
+            "json", 1, DateTimeOffset.UnixEpoch, "correlation", "message", "user", 2);
+        var delivery = new SharedProjectionDelivery("capacity-pending-owner", 2,
+            JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-a", "timesheets", "capacity-pending-owner", [projectionEvent]), json), [1, 2]);
+        SharedProjectionLease lease = await coordinator.RefreshLeaseAsync(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        (await coordinator.JournalAsync(scope, lease, delivery, TestContext.Current.CancellationToken)).ShouldBe(SharedProjectionJournalResult.Journaled);
+        await Should.ThrowAsync<IOException>(() => coordinator.AbortAsync(scope, operation, (_, _, _) =>
+            throw new IOException("Interrupt before draining the original pending delivery"), TestContext.Current.CancellationToken));
+
+        string damagedKey = PhysicalKey(scope, generation, MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey);
+        int padding = 1;
+        SharedProjectionAbortRepairRequest measured;
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+            store.SeedRaw(scope.StoreName, damagedKey, new string('x', padding));
+            measured = await MeasureRequestAsync();
+            if (requestBytes == 0 || JsonSerializer.SerializeToUtf8Bytes(measured).Length == requestBytes) break;
+            padding += requestBytes - JsonSerializer.SerializeToUtf8Bytes(measured).Length;
+            padding.ShouldBeGreaterThan(0, "the valid v6 inventory itself must fit below the byte boundary");
+        }
+        measured = await MeasureRequestAsync();
+        padding.ShouldBeLessThan(1024, "the complete source-guard inventory must already be near the SDK byte bound");
+        measured.SourceGuards.Length.ShouldBe(256 + pageCount);
+        int actualBytes = JsonSerializer.SerializeToUtf8Bytes(measured).Length;
+        if (requestBytes != 0) actualBytes.ShouldBe(requestBytes);
+        else actualBytes.ShouldBeGreaterThan(256 * 1024);
+        TestContext.Current.TestOutputHelper?.WriteLine($"Valid v6 manifest: {measured.SourceGuards.Length} guards; {actualBytes} SDK request bytes; accepted={accepted}.");
+        byte[] corrupt = store.SnapshotRaw(scope.StoreName, damagedKey)!;
+        byte[] ownerCheckpoint = JsonSerializer.SerializeToUtf8Bytes((await coordinator.GetCheckpointAsync(scope,
+            delivery.SourceStream, TestContext.Current.CancellationToken)).ShouldNotBeNull());
+        byte[] originalWitness = store.SnapshotRaw(scope.StoreName, witnessKey)!;
+        var selectedSource = sourceKeys.ToDictionary(key => key,
+            key => store.SnapshotRaw(scope.StoreName, PhysicalKey(scope, generation, key)), StringComparer.Ordinal);
+        var coldCoordinator = new SharedProjectionEpochCoordinator(store, store);
+        var cold = new MagicLinkTokenHashCapabilityIndexV6Migration(coldCoordinator, store,
+            new PermittedCertifiedMigration(), new CertifiedAbortLayout(sourceDigest));
+        SharedProjectionEpochStatus before = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        string epochKey = "shared-epoch:" + scope.ComputeHash();
+        byte[] control = store.SnapshotRaw(scope.StoreName, epochKey)!;
+        if (accepted)
+        {
+            await cold.RecoverAbortAsync(operation, inventory, TestContext.Current.CancellationToken);
+            SharedProjectionAbortRepairReceipt receipt = (await coldCoordinator.GetAbortRepairAsync(scope, TestContext.Current.CancellationToken)).ShouldNotBeNull();
+            JsonSerializer.SerializeToUtf8Bytes(receipt.Request).Length.ShouldBe(actualBytes);
+            receipt.Request.SourceGuards.Length.ShouldBe(measured.SourceGuards.Length);
+            receipt.Request.Values.Single(value => value.OriginalJson is not null).OriginalJson.ShouldBe(JsonSerializer.Serialize(new string('x', padding)));
+            store.SnapshotRaw(scope.StoreName, damagedKey).ShouldBeNull();
+            (await coldCoordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+                MagicLinkTokenHashCapabilityIndexProjection.ShardKey(issued.TokenHash.Value), TestContext.Current.CancellationToken))
+                .Value.ShouldNotBeNull().Contributions[issued.TokenHash.Value].ShouldContain(new MagicLinkTokenHashCapabilityIndexEntry(issued.Tenant, issued.CapabilityId));
+        }
+        else
+        {
+            await Should.ThrowAsync<ArgumentException>(() => cold.RecoverAbortAsync(operation, inventory, TestContext.Current.CancellationToken));
+            store.SnapshotRaw(scope.StoreName, damagedKey).ShouldBe(corrupt);
+            store.SnapshotRaw(scope.StoreName, epochKey).ShouldBe(control);
+            (await coldCoordinator.GetAbortRepairAsync(scope, TestContext.Current.CancellationToken)).ShouldBeNull();
+        }
+        SharedProjectionEpochStatus after = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.ActiveGeneration.ShouldBe(generation);
+        after.Epoch.ShouldBe(before.Epoch);
+        after.IsBuilding.ShouldBeFalse();
+        after.IsAborting.ShouldBe(!accepted);
+        after.PendingDeliveryCount.ShouldBe(accepted ? 0 : 1);
+        store.SnapshotRaw(scope.StoreName, witnessKey).ShouldBe(originalWitness);
+        JsonSerializer.SerializeToUtf8Bytes(await coldCoordinator.GetCheckpointAsync(scope,
+            delivery.SourceStream, TestContext.Current.CancellationToken)).ShouldBe(ownerCheckpoint);
+        foreach (var item in selectedSource.Where(item => !accepted || item.Key !=
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey(issued.TokenHash.Value)))
+            store.SnapshotRaw(scope.StoreName, PhysicalKey(scope, generation, item.Key)).ShouldBe(item.Value);
+
+        async Task<SharedProjectionAbortRepairRequest> MeasureRequestAsync()
+        {
+            var guards = new List<SharedProjectionAbortRepairGuard>();
+            foreach (string key in sourceKeys)
+            {
+                ReadModelEntry<JsonNode> entry = await coordinator.ReadGenerationJsonAsync(scope, generation, key, TestContext.Current.CancellationToken);
+                string? digest = string.IsNullOrEmpty(entry.ETag) ? null
+                    : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(entry.Value?.ToJsonString() ?? "null")));
+                guards.Add(new(key, entry.ETag ?? string.Empty, digest)
+                    { SourceGeneration = entry.SourceGeneration, PointerETag = entry.PointerETag });
+            }
+            var values = new List<SharedProjectionAbortRepairValue>();
+            foreach (string key in new[] { MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey,
+                MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, MagicLinkTokenHashCapabilityIndexProjection.StateKey })
+            {
+                ReadModelEntry<JsonNode> entry = await coordinator.ReadGenerationJsonAsync(scope, generation, key, TestContext.Current.CancellationToken);
+                values.Add(new(key, entry.ETag ?? string.Empty, string.IsNullOrEmpty(entry.ETag) ? null : entry.Value?.ToJsonString() ?? "null")
+                    { SourceGeneration = entry.SourceGeneration, PointerETag = entry.PointerETag });
+            }
+            return new(operation, inventory, epoch, generation, "original-layout-certificate", values.ToArray()) { SourceGuards = guards.ToArray() };
+        }
+    }
+
+    [Theory]
+    [InlineData("format", null)]
+    [InlineData("root", null)]
+    [InlineData("single", null)]
+    [InlineData("format-json", null)]
+    [InlineData("format-null", null)]
+    [InlineData("format", "prepared-drain")]
+    [InlineData("format", "committed-drain")]
+    [InlineData("format", "reserved-repair")]
+    [InlineData("format", "deleted-repair")]
+    [InlineData("format", "reserved-foreign-certificate")]
+    [InlineData("format", "foreign-keys")]
+    [InlineData("format", "duplicate-keys")]
+    [InlineData("format", "missing-keys")]
+    [InlineData("format", "foreign-witness")]
+    [InlineData("format", "foreign-source")]
+    [InlineData("format", "layout-drift")]
+    [InlineData("format", "null-source")]
+    public async Task CertifiedRepairRestoresOriginalV6AbsenceAndDrainsPendingDeliveryAfterColdRestart(string damage, string? refusal)
+    {
+        var store = new InMemoryReadModelStore();
+        var interrupted = new InterruptSealStore(store);
+        var coordinator = new SharedProjectionEpochCoordinator(interrupted, store);
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        MagicLinkTokenHashCapabilityIndexDirectoryEntry original = await SeedMetadataSourceAsync(coordinator, scope);
+        var authority = new PermittedCertifiedMigration();
+        var migration = new MagicLinkTokenHashCapabilityIndexV6Migration(coordinator, interrupted, authority);
+        // Capture complete original key/ETag/content/absence evidence before corruption.
+        string sourceDigest = await migration.ComputeAbortRepairSourceFingerprintAsync(
+            (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).ActiveGeneration,
+            TestContext.Current.CancellationToken);
+        interrupted.InterruptAfterNextSeal = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        string damagedKey = CorruptSelectedMetadata(store, scope, before.ActiveGeneration, damage);
+        byte[] corrupt = store.SnapshotRaw(scope.StoreName, damagedKey)!;
+        var issued = new MagicLinkConfirmationCapabilityIssued(new("repair-pending-owner"), new("tenant-a"), new("party-a"),
+            TimeEntryTargetReference.ForProject(new ProjectReference("project-a")), new("activity-a"), new("entry-a"),
+            MagicLinkTargetKind.ProposedTimeEntry, MagicLinkAllowedAction.Confirm, new("repair-pending-hash"),
+            DateTimeOffset.UnixEpoch.AddDays(1), new("issuer-a"), DateTimeOffset.UnixEpoch.AddHours(1), new("timesheets", "pending"), true);
+        var json = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        var projectionEvent = new ProjectionEventDto(nameof(StoredMagicLinkIssued), JsonSerializer.SerializeToUtf8Bytes(new StoredMagicLinkIssued(issued), json),
+            "json", 1, DateTimeOffset.UnixEpoch, "correlation", "message", "user", 2);
+        var delivery = new SharedProjectionDelivery("repair-pending-owner", 2,
+            JsonSerializer.SerializeToUtf8Bytes(new ProjectionRequest("tenant-a", "timesheets", "repair-pending-owner", [projectionEvent]), json), []);
+        SharedProjectionLease lease = await coordinator.RefreshLeaseAsync(scope, MagicLinkTokenHashCapabilityIndexProjection.OrdinaryWriterId, TestContext.Current.CancellationToken);
+        (await coordinator.JournalAsync(scope, lease, delivery, TestContext.Current.CancellationToken)).ShouldBe(SharedProjectionJournalResult.Journaled);
+        interrupted.InterruptAfterAborting = true;
+        await Should.ThrowAsync<IOException>(() => migration.MigrateAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        // Default certification refuses, preserving the original bytes and journal.
+        await Should.ThrowAsync<InvalidOperationException>(() => migration.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+        store.SnapshotRaw(scope.StoreName, damagedKey).ShouldBe(corrupt);
+        (await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).PendingDeliveryCount.ShouldBe(1);
+        var drainFault = new V6AbortDrainFaultStore(store);
+        var coldCoordinator = new SharedProjectionEpochCoordinator(drainFault, drainFault);
+        var certification = new CertifiedAbortLayout(sourceDigest)
+        {
+            Transform = certificate => refusal switch
+            {
+                "foreign-keys" => certificate with { OriginallyAbsentMetadataKeys = ["foreign", .. certificate.OriginallyAbsentMetadataKeys.Skip(1)] },
+                "duplicate-keys" => certificate with { OriginallyAbsentMetadataKeys = [certificate.OriginallyAbsentMetadataKeys[0], certificate.OriginallyAbsentMetadataKeys[0], certificate.OriginallyAbsentMetadataKeys[2]] },
+                "missing-keys" => certificate with { OriginallyAbsentMetadataKeys = [] },
+                "foreign-witness" => certificate with { Witness = certificate.Witness with { Epoch = certificate.Witness.Epoch + 1 } },
+                "foreign-source" => certificate with { SourceDigest = new string('0', 64) },
+                _ => certificate
+            }
+        };
+        if (refusal == "layout-drift")
+        {
+            string key = PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexProjection.ShardKey(original.TokenHash));
+            var root = (await store.GetAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope.StoreName, key, TestContext.Current.CancellationToken)).Value!;
+            byte[] prior = store.SnapshotRaw(scope.StoreName, key)!;
+            store.SeedRaw(scope.StoreName, key, JsonDocument.Parse(prior)); // Identical rows/JSON, different original-layout ETag.
+            store.SnapshotRaw(scope.StoreName, key).ShouldBe(prior);
+        }
+        if (refusal == "null-source")
+        {
+            int shard = (MagicLinkTokenHashCapabilityIndexProjection.ShardOrdinal(original.TokenHash) + 1) % 256;
+            store.SeedRaw(scope.StoreName, PhysicalKey(scope, before.ActiveGeneration,
+                MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard)), JsonDocument.Parse("null"));
+        }
+        var cold = new MagicLinkTokenHashCapabilityIndexV6Migration(coldCoordinator, store, authority, certification);
+        if (refusal is not null && refusal is not ("prepared-drain" or "committed-drain"
+            or "reserved-repair" or "deleted-repair" or "reserved-foreign-certificate"))
+        {
+            await Should.ThrowAsync<InvalidOperationException>(() => cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+            store.SnapshotRaw(scope.StoreName, damagedKey).ShouldBe(corrupt);
+            SharedProjectionEpochStatus refused = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+            refused.IsAborting.ShouldBeTrue(); refused.PendingDeliveryCount.ShouldBe(1);
+            refused.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+            return;
+        }
+        if (refusal is "prepared-drain" or "committed-drain" or "reserved-repair"
+            or "deleted-repair" or "reserved-foreign-certificate")
+        {
+            drainFault.InterruptPrepared = refusal == "prepared-drain";
+            drainFault.InterruptRepairReservation = refusal is "reserved-repair" or "reserved-foreign-certificate";
+            drainFault.InterruptRepairedKey = refusal == "deleted-repair" ? damagedKey : null;
+            drainFault.InterruptCommittedKey = refusal == "committed-drain"
+                ? PhysicalKey(scope, before.ActiveGeneration, MagicLinkTokenHashCapabilityIndexProjection.ShardKey("repair-pending-hash")) : null;
+            if (refusal != "committed-drain")
+                await Should.ThrowAsync<IOException>(() => cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+            else
+                await Should.ThrowAsync<SharedProjectionWriteUnavailableException>(() => cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+            (await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken)).PendingDeliveryCount.ShouldBe(1);
+            if (refusal is "reserved-repair" or "deleted-repair" or "reserved-foreign-certificate")
+            {
+                SharedProjectionAbortRepairReceipt reserved = (await coldCoordinator.GetAbortRepairAsync(scope, TestContext.Current.CancellationToken)).ShouldNotBeNull();
+                JsonNode.DeepEquals(JsonNode.Parse(reserved.Request.Values.Single(value => value.OriginalJson is not null).OriginalJson!),
+                    JsonNode.Parse(corrupt)).ShouldBeTrue();
+                store.SnapshotRaw(scope.StoreName, damagedKey).ShouldBe(refusal == "deleted-repair" ? null : corrupt);
+            }
+            coldCoordinator = new SharedProjectionEpochCoordinator(store, store);
+            cold = new MagicLinkTokenHashCapabilityIndexV6Migration(coldCoordinator, store, authority, certification);
+            if (refusal == "reserved-foreign-certificate")
+            {
+                var foreign = new MagicLinkTokenHashCapabilityIndexV6Migration(coldCoordinator, store, authority,
+                    new CertifiedAbortLayout(sourceDigest) { Transform = certificate => certificate with { CertificateId = "foreign-certificate" } });
+                await Should.ThrowAsync<InvalidOperationException>(() => foreign.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken));
+                store.SnapshotRaw(scope.StoreName, damagedKey).ShouldBe(corrupt);
+                SharedProjectionEpochStatus refused = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+                refused.IsAborting.ShouldBeTrue(); refused.PendingDeliveryCount.ShouldBe(1);
+                refused.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+                // The original immutable binding remains resumable after rejecting the foreign certificate.
+            }
+        }
+        await cold.RecoverAbortAsync("explicit-v7", "certified-selected-v6", TestContext.Current.CancellationToken);
+        SharedProjectionEpochStatus after = await coldCoordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        after.IsAborting.ShouldBeFalse(); after.IsBuilding.ShouldBeFalse(); after.PendingDeliveryCount.ShouldBe(0);
+        after.ActiveGeneration.ShouldBe(before.ActiveGeneration);
+        store.SnapshotRaw(scope.StoreName, damagedKey).ShouldBeNull();
+        var retained = (await coldCoordinator.GetAbortRepairAsync(scope, TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        retained.Request.Values.Count(value => value.OriginalJson is not null).ShouldBe(1);
+        JsonNode.DeepEquals(JsonNode.Parse(retained.Request.Values.Single(value => value.OriginalJson is not null).OriginalJson!),
+            JsonNode.Parse(corrupt)).ShouldBeTrue();
+        var pending = (await coldCoordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey("repair-pending-hash"), TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
+        pending.Contributions["repair-pending-hash"].ShouldContain(new MagicLinkTokenHashCapabilityIndexEntry(issued.Tenant, issued.CapabilityId));
+    }
+
+
+    [Fact]
+    public void OriginalThreeArgumentMigrationConstructorRemainsAvailable()
+        => typeof(MagicLinkTokenHashCapabilityIndexV6Migration).GetConstructor([
+            typeof(SharedProjectionEpochCoordinator), typeof(IReadModelStore), typeof(IMagicLinkIndexMigrationAuthority)])
+            .ShouldNotBeNull();
+
     [Fact]
     public async Task ColdAuthorizedAbortRecoveryResumesAndRepeatedRecoveryNeverPromotes()
     {
@@ -425,7 +989,8 @@ public sealed class MagicLinkV6MigrationTests
     private static string CorruptSelectedMetadata(InMemoryReadModelStore store, SharedProjectionScope scope, long generation, string damage)
     {
         bool invalidJsonShape = damage.EndsWith("-json", StringComparison.Ordinal);
-        string kind = invalidJsonShape ? damage[..^5] : damage;
+        bool jsonNull = damage.EndsWith("-null", StringComparison.Ordinal);
+        string kind = invalidJsonShape || jsonNull ? damage[..^5] : damage;
         if (kind.StartsWith("wrapped-", StringComparison.Ordinal)) kind = kind[8..];
         string logicalKey = kind switch
         {
@@ -434,7 +999,7 @@ public sealed class MagicLinkV6MigrationTests
             _ => MagicLinkTokenHashCapabilityIndexProjection.StateKey
         };
         string key = kind == "direct-single" ? logicalKey : PhysicalKey(scope, generation, logicalKey);
-        object value = invalidJsonShape ? new { StorageVersion = "invalid-json-shape" } : kind switch
+        object value = jsonNull ? JsonDocument.Parse("null") : invalidJsonShape ? new { StorageVersion = "invalid-json-shape" } : kind switch
         {
             "format" => new MagicLinkTokenHashCapabilityIndexTreeFormat(6),
             "root" => new MagicLinkTokenHashCapabilityIndexTreeRoot(6, 0, null, null),

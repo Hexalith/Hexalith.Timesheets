@@ -1,0 +1,6 @@
+{
+  "normalized_instruction_equality": true,
+  "instruction_sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426",
+  "apphost_sdk": "Aspire.AppHost.Sdk/13.6.4",
+  "report_and_launch_local_links_resolve": true
+}

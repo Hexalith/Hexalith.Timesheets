@@ -1,0 +1,747 @@
+{
+  "format": "lossless gzip; original bytes are not normalized",
+  "files": [
+    {
+      "original": "initial-git-state.json",
+      "archive": "initial-git-state.json.gz",
+      "bytes": 1849,
+      "sha256": "b265f16985e586e5e67f51b085a12ecffbfe808064dd89dae15ca63d152dca93",
+      "archive_sha256": "0b8fba13b19ea5a0a615887b6eaeb29653b91e2d632fcb37f71540b8d9607c76"
+    },
+    {
+      "original": "baseline-runtime.json",
+      "archive": "baseline-runtime.json.gz",
+      "bytes": 737,
+      "sha256": "d60a5283ec76dc5dc2f6395535c1be165af80c1f6da382d90c59fbfea0c191ef",
+      "archive_sha256": "3ccf9a9545dedf43f308e6f96ac2241735508325d00e13a011215c2231e2308c"
+    },
+    {
+      "original": "baseline-runtime.log",
+      "archive": "baseline-runtime.log.gz",
+      "bytes": 753,
+      "sha256": "b3a78dbcc770efa97b582c4bd415a104f76857be3d686a8dd65da3c163634518",
+      "archive_sha256": "2dc1519549bcfa583390ec6a327f7e55142055f62fb2951f758262667ac7c6d1"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/01-aspire---version.log",
+      "archive": "baseline-runtime/run-nzdrukv5/01-aspire---version.log.gz",
+      "bytes": 99,
+      "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36",
+      "archive_sha256": "a8da931526ca694f67bbc4c265d3e4fc72a4f02d476e9bb4ecdb9de8020d22c1"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/02-dapr---version.log",
+      "archive": "baseline-runtime/run-nzdrukv5/02-dapr---version.log.gz",
+      "bytes": 94,
+      "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+      "archive_sha256": "4675dd0497e5ed7349e0519f5a907d778fdda69692b8cc8b97d1633695f1122c"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/03-docker-version.log",
+      "archive": "baseline-runtime/run-nzdrukv5/03-docker-version.log.gz",
+      "bytes": 85,
+      "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+      "archive_sha256": "94f3ea466efa064f83cebdd88f6393598af8ffaf77fd792f2e4af5c61b916dcd"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/04-dapr-list.log",
+      "archive": "baseline-runtime/run-nzdrukv5/04-dapr-list.log.gz",
+      "bytes": 61,
+      "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "archive_sha256": "96b9eae99587061f1410d36dc82b51882fb9e8bc81a0f42b740282083ead5c79"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/05-aspire-ps.log",
+      "archive": "baseline-runtime/run-nzdrukv5/05-aspire-ps.log.gz",
+      "bytes": 79,
+      "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "archive_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/06-dapr-list.log",
+      "archive": "baseline-runtime/run-nzdrukv5/06-dapr-list.log.gz",
+      "bytes": 61,
+      "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "archive_sha256": "96b9eae99587061f1410d36dc82b51882fb9e8bc81a0f42b740282083ead5c79"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/07-aspire-ps.log",
+      "archive": "baseline-runtime/run-nzdrukv5/07-aspire-ps.log.gz",
+      "bytes": 79,
+      "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "archive_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/08-dotnet-msbuild.log",
+      "archive": "baseline-runtime/run-nzdrukv5/08-dotnet-msbuild.log.gz",
+      "bytes": 716,
+      "sha256": "cd79e5a1cf9609c3da4b761cedc03e6cc41013187fb79dec8af62d7274665292",
+      "archive_sha256": "7eba82819489692ea004f3bdf3ad642b3770874d45d808c9fa8f6fbd0b0ce598"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/09-dotnet-build.log",
+      "archive": "baseline-runtime/run-nzdrukv5/09-dotnet-build.log.gz",
+      "bytes": 8800,
+      "sha256": "270bfe85667961b13f6dfb7c152a048575eab9ee12cf722daa03804bdab033f3",
+      "archive_sha256": "a7a0cf555c7e5908c0864dcaa8bbcdb8c091c9f9a6e8f134c8f022630551a4dc"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/10-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/10-git--C.log.gz",
+      "bytes": 146,
+      "sha256": "867794c681147b958f7fab8a039581b22e9a66b080ff6bc1c5b96b0e4107eb09",
+      "archive_sha256": "2da658ca19dff46fdff8fae91c3a5398fd9aeef82d56a0790e83c1d6851e3787"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/11-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/11-git--C.log.gz",
+      "bytes": 177,
+      "sha256": "41aac815e6298ed21ce8cc2b176dcf9c41759eca02f7370798f604f24ccc1fca",
+      "archive_sha256": "65ec16f4fd8ced48c07728ad2a358224de08961b734d2c5f62c9445b1e7ebba8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/12-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/12-git--C.log.gz",
+      "bytes": 174,
+      "sha256": "eb4b99303dd6b7c51dc8fdcac5938e4cb2e544639ffba32dc99b34a835805acd",
+      "archive_sha256": "49148c04c738b1bb4f677e34e86662dc0a597da23eb90eeaee35c282c3d3d431"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/13-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/13-git--C.log.gz",
+      "bytes": 177,
+      "sha256": "41aac815e6298ed21ce8cc2b176dcf9c41759eca02f7370798f604f24ccc1fca",
+      "archive_sha256": "65ec16f4fd8ced48c07728ad2a358224de08961b734d2c5f62c9445b1e7ebba8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/14-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/14-git--C.log.gz",
+      "bytes": 173,
+      "sha256": "256e64af512a7686834587e487d1c60b091eac49b13d7062e5b516317720ae51",
+      "archive_sha256": "06067b24d25c644fb18990ee6b4c41e316f48a4462d1ba0b98166da311bd6dc4"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/15-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/15-docker-inspect.log.gz",
+      "bytes": 152,
+      "sha256": "242fc509984c12e18a3d5d6be1203c00407f65729c25f5e3a1b19eeb3b5cd227",
+      "archive_sha256": "dd9dd9d4f75f94b2e45e82a2b554bd4a79b5685f03956c3e9c7326ffa3ce1494"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/16-docker-image.log",
+      "archive": "baseline-runtime/run-nzdrukv5/16-docker-image.log.gz",
+      "bytes": 216,
+      "sha256": "1602333ec955e6698d77da5593eb63bd35e0f638f6a89121a7807103cd09d1fc",
+      "archive_sha256": "d619d9fa41484efe256ec2f887137d111918ff99d431bf6450cfb5bb7911ec3c"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/17-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/17-docker-inspect.log.gz",
+      "bytes": 156,
+      "sha256": "fac0e8ed6e6c44241909d92ad7805912e0199df1165ec81511b11bbd6e90c943",
+      "archive_sha256": "79a8f4fb4ed0bb45eaec684422952bf0449b52967230bf251c673ba3302dd206"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/18-docker-image.log",
+      "archive": "baseline-runtime/run-nzdrukv5/18-docker-image.log.gz",
+      "bytes": 216,
+      "sha256": "f13d59c090eb7a01a6e9277b2a2c521bbc39448dccea45f2aa891e8edaacc551",
+      "archive_sha256": "ac285f209737fa9743ffc13ef023117d36d6c29ffdd6409991c6254143b67dba"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/19-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/19-docker-inspect.log.gz",
+      "bytes": 156,
+      "sha256": "b1552cb09ac226b83489e8b92281bbd68baf4a9bab7344d94d4922d9adb8b2e2",
+      "archive_sha256": "cdb42e6005ccd77a78dcf35975369a56c61c16994e9ecebd8ffca655e7a7ab1e"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/20-docker-image.log",
+      "archive": "baseline-runtime/run-nzdrukv5/20-docker-image.log.gz",
+      "bytes": 216,
+      "sha256": "f13d59c090eb7a01a6e9277b2a2c521bbc39448dccea45f2aa891e8edaacc551",
+      "archive_sha256": "ac285f209737fa9743ffc13ef023117d36d6c29ffdd6409991c6254143b67dba"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/21-docker-run.log",
+      "archive": "baseline-runtime/run-nzdrukv5/21-docker-run.log.gz",
+      "bytes": 422,
+      "sha256": "d1c53c5f3993b90233f617b73ba89ee97e56f6d3a16c6123b93260692c3bfc34",
+      "archive_sha256": "12647af1a0373f6d62fe2ee722d5a303594cb6dfb619bf90581774596b3a4e44"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/22-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/22-docker-inspect.log.gz",
+      "bytes": 212,
+      "sha256": "dcb416bced84fb550e8b33a63707e82ad79bb3af995f4541c73ba0e4cb4c81ea",
+      "archive_sha256": "87845b80937f24092e6a2bfc49204a8cf30b376515fd354cfc6b9cf654904f55"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/23-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/23-docker-exec.log.gz",
+      "bytes": 131,
+      "sha256": "8a3cbada9978d1af3cb875d52ab2fe55b605836d04f40bdb323eabbc25a8bba9",
+      "archive_sha256": "a3a7049468418b2dee5d5741869e09d27577629da7711056acc88531804159ae"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/24-docker-run.log",
+      "archive": "baseline-runtime/run-nzdrukv5/24-docker-run.log.gz",
+      "bytes": 445,
+      "sha256": "a5409e9e1019cc1daf4b188c76a64adc6a6abc8c0f1d94915ee62307b8398399",
+      "archive_sha256": "490de9a3dbdc30e969d2af4d8a510589b3895448d1652634ded7fe0f446aebd0"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/25-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/25-docker-inspect.log.gz",
+      "bytes": 213,
+      "sha256": "a4c548b89b8d46896ce46adccb190cf223d6ca891f9d6d0c067d22f87dfc9151",
+      "archive_sha256": "6edbdd4a61552bf338687c806bee6f547c9b79e85511abcec7c066982c837eef"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/26-docker-run.log",
+      "archive": "baseline-runtime/run-nzdrukv5/26-docker-run.log.gz",
+      "bytes": 540,
+      "sha256": "1d0347e5065d6eaf3292227eb224a4b8a951e684040a1e6c7379b5b4b4937357",
+      "archive_sha256": "1eb12aeafc28c298c5110d0aa04852f5e70e5884cf6d446f91099b25928bbe40"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/27-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/27-docker-inspect.log.gz",
+      "bytes": 213,
+      "sha256": "cb4ae547de78a7385e5ae86c070c3b9ac5fdfdc9b6f422b20021077097ea330b",
+      "archive_sha256": "d4dae61c02b42c4da08a68a3415d72d54055286da3f1112a8697aa2f334e2380"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/28-dapr-list.log",
+      "archive": "baseline-runtime/run-nzdrukv5/28-dapr-list.log.gz",
+      "bytes": 61,
+      "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26",
+      "archive_sha256": "96b9eae99587061f1410d36dc82b51882fb9e8bc81a0f42b740282083ead5c79"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/29-aspire-ps.log",
+      "archive": "baseline-runtime/run-nzdrukv5/29-aspire-ps.log.gz",
+      "bytes": 79,
+      "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "archive_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/30-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/30-docker-inspect.log.gz",
+      "bytes": 5167,
+      "sha256": "661f03858ed9e57367a24382f9ad2fa88909f428dd761b286c1b0f5cedd08eee",
+      "archive_sha256": "5a3c7e6b7d16b4c1af451786572c3607a53b4f0d62ce11b40bdadba795b39db8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/31-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/31-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "b13db324631f15abae8c57b041bf7451efc6fa6973e7b9d135fa030fddd240a9",
+      "archive_sha256": "7982cbe138680276284969222c890fc545e411cd1937c8c1c58c28ab5a7b9c86"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/32-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/32-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "d7e69273a20e5e47354d199175b60e579c45f69ce504c69ed821a9c3d4a82305",
+      "archive_sha256": "9addcc13451d1f2ba57cbe7885b30e58a09b5321dce31c9a87697b1a413343f7"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/33-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/33-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "1c9dbbbf3be531bbe9035eca4e43685d3a61f27013cf8bc01f6c0fe8914d8347",
+      "archive_sha256": "67e184c3e94c592e37c50014907320e617f9670e4b6962d7320f09bdb9d1268a"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/34-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/34-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "5cfef1af4193ee1d066a7e49e663526212929e5fd6c600a25ec2cf987ec3dc97",
+      "archive_sha256": "4d16f56074af6d1940df9f29153d3b21ae8815fa1cd7017b54cf3fbcafb2a035"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/35-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/35-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "0c45feb3eabe43a2837c70928e12889a893ec5aa2728ff6075db22e752d5ceb4",
+      "archive_sha256": "19d3f92877a6c93368bd0192ff01347a728917d9ca16d0f5fdaaafad82011e91"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/36-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/36-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "8d530c07a1894567af5f7c97e0caa98275fd5193a10ac122a68fba01efbb87ff",
+      "archive_sha256": "42bc00b86817b97c719dd40cb84a719776d35730f6d5b065f70bbfba0b727512"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/37-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/37-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "c6b5db3ee432a50ddef8e04f0462d6bbdee909e5f9a2f007eb77522e0dc79a46",
+      "archive_sha256": "b6132754337fbb3d4eb32c76d584efe9375b6ebcc2c05b5cdcf3c8620df666c1"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/38-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/38-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "e6d42a0fe75fccd980f00b22197aa2616eb572249dce04547c9339eaf7b0529e",
+      "archive_sha256": "80a3ed7f33caee70e3d9cea26f78cc824e0f1f2213ef9db9d1cd8f893caa10bc"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/39-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/39-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "3df485de6b480b904a81864fd39143a91a334b43b7be9b9f06a61bf07773c9e0",
+      "archive_sha256": "366688c272c01a033452cb9afa86d19a4f0ded9ff5026395fbb60065c217e5ea"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/40-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/40-docker-exec.log.gz",
+      "bytes": 141,
+      "sha256": "b58d0264dedef6d63f7d28e8a5425d6b118a07daca1a5dda2b8d757ddfe6aa71",
+      "archive_sha256": "466918cac079b47cf8c7ca5a773472d930789d9d952d157b82a44eef1bf638a8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/41-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/41-docker-exec.log.gz",
+      "bytes": 142,
+      "sha256": "3139be17fd686e224f4525b4867fb51dfd2a382241a4841cc86db0754906ad16",
+      "archive_sha256": "4bcfaa794e24af9b200dfbb28d092926aee733814a087333b45b2fb4b43392aa"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/42-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/42-docker-exec.log.gz",
+      "bytes": 142,
+      "sha256": "b7416129f691fdd69a56aa54621acb808733dcf07963f46008ac125260b8f61f",
+      "archive_sha256": "282b281c15400f620770daaaceceee402b6b4d185a91f8ec206bfa310e4fbddb"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/43-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/43-docker-exec.log.gz",
+      "bytes": 142,
+      "sha256": "78af66366c26b289f8d3b07bf32edbabfda8a31c52141828f7cdeb7e5a178ef5",
+      "archive_sha256": "d5332ad785d00836a1ef14e969107ddd134c82622038b82295ad1f1ae929328d"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/44-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/44-docker-exec.log.gz",
+      "bytes": 142,
+      "sha256": "6b4ba46ab4785e7d3b8714301608dba55d910833b1e58170e8b269e8478f17a9",
+      "archive_sha256": "7458805138dbf69135aaa54809b69cfae709713a3b4527b5917f6d50978091e5"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/45-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/45-docker-exec.log.gz",
+      "bytes": 142,
+      "sha256": "8ecc6c88962af05de605560d9e1d88f88b1c656b27a93d2f6e034f0a84b36e7b",
+      "archive_sha256": "f6e1b21e58ec6566dbf383d1ebe5bd23137c4bc32bde6c3b1e93d529da81614a"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/46-docker-exec.log",
+      "archive": "baseline-runtime/run-nzdrukv5/46-docker-exec.log.gz",
+      "bytes": 142,
+      "sha256": "61a35ecc0dd172e07852fc61eb9376639adce2408a147ecc8d9d21062bc64593",
+      "archive_sha256": "aba62f5545b528460af74f1655d7c20773278fc491979567cb09e4fb6c2cb7ec"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/47-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/47-git--C.log.gz",
+      "bytes": 177,
+      "sha256": "41aac815e6298ed21ce8cc2b176dcf9c41759eca02f7370798f604f24ccc1fca",
+      "archive_sha256": "65ec16f4fd8ced48c07728ad2a358224de08961b734d2c5f62c9445b1e7ebba8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/48-aspire-start.log",
+      "archive": "baseline-runtime/run-nzdrukv5/48-aspire-start.log.gz",
+      "bytes": 618,
+      "sha256": "f10096d7c4a5ed810e00f007c9bc484a3057526af6692e8a9e35b1ae9bae7e65",
+      "archive_sha256": "348ae4975431a62382f8e15f100dc9f246d5da46df9bee011452cc8999f83fc7"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/49-aspire-ps.log",
+      "archive": "baseline-runtime/run-nzdrukv5/49-aspire-ps.log.gz",
+      "bytes": 509,
+      "sha256": "270d0a284d23f3ea2ea9d851ccffa1e5bca2daaed4be92572ad5bde1f1e0ec1f",
+      "archive_sha256": "568faf925adbe1c6c8903fa02a365562d914007854420490cd8bf109544e5c23"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/50-aspire-wait.log",
+      "archive": "baseline-runtime/run-nzdrukv5/50-aspire-wait.log.gz",
+      "bytes": 333,
+      "sha256": "4352c6b77852340b0b8d3513dc3bb87aa2d286754f78a413b1b09f7c7aa26094",
+      "archive_sha256": "bd3fdfb067ac413a15baacb6fbbf9b597e638e6e477a76d3d7fdf68ac8fc22ac"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/51-aspire-wait.log",
+      "archive": "baseline-runtime/run-nzdrukv5/51-aspire-wait.log.gz",
+      "bytes": 333,
+      "sha256": "45cb6af20777719916fc636e301dbaef62948afd34884ea58ca9a6dee55d1e5d",
+      "archive_sha256": "7c1dfd4eb187c8b940ccab68ef7abfe470b40254491716b894615c41269d1ff1"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/52-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/52-docker-inspect.log.gz",
+      "bytes": 5167,
+      "sha256": "661f03858ed9e57367a24382f9ad2fa88909f428dd761b286c1b0f5cedd08eee",
+      "archive_sha256": "5a3c7e6b7d16b4c1af451786572c3607a53b4f0d62ce11b40bdadba795b39db8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/53-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/53-git--C.log.gz",
+      "bytes": 177,
+      "sha256": "41aac815e6298ed21ce8cc2b176dcf9c41759eca02f7370798f604f24ccc1fca",
+      "archive_sha256": "65ec16f4fd8ced48c07728ad2a358224de08961b734d2c5f62c9445b1e7ebba8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/54-aspire-wait.log",
+      "archive": "baseline-runtime/run-nzdrukv5/54-aspire-wait.log.gz",
+      "bytes": 305,
+      "sha256": "b90f2ab4cab8bbb66f7db2ef7e59af09792135e1b9aa15cbf3d02e86edf5b88e",
+      "archive_sha256": "1bb67251919d1a7dfbfcc3155d87caf8ab9414e4681191de120c6c22d82290b6"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/55-aspire-wait.log",
+      "archive": "baseline-runtime/run-nzdrukv5/55-aspire-wait.log.gz",
+      "bytes": 311,
+      "sha256": "483af93f428cc45c5bdf9ba8582fb66c2d9293b5629e5b9014231b7e8650cc70",
+      "archive_sha256": "32efc832bda2af90a741d89a728a52b170bafaf83f5bccc1d707c6954aa016a0"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/56-aspire-wait.log",
+      "archive": "baseline-runtime/run-nzdrukv5/56-aspire-wait.log.gz",
+      "bytes": 311,
+      "sha256": "b0499af8c74ceff19e4a863d0c3117e76d96f32719ee1b6fe5461ca61977aac4",
+      "archive_sha256": "92de15d0b49bf3332643f8936e2b95f7bab0ee0d577aacc183ce747fefb437a3"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/57-docker-container.log",
+      "archive": "baseline-runtime/run-nzdrukv5/57-docker-container.log.gz",
+      "bytes": 245,
+      "sha256": "9c032a86a9571a28c72d039986f89a3e83f88530443fb33f72170a274c035001",
+      "archive_sha256": "0018ecdb7b4aa6152cf07909bb9e76eb96cdb7d73ef5f4a14b0640049c053783"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/58-Hexalith.Timesheets.IntegrationTests--class.log",
+      "archive": "baseline-runtime/run-nzdrukv5/58-Hexalith.Timesheets.IntegrationTests--class.log.gz",
+      "bytes": 716,
+      "sha256": "d94fd4945a0fd81d2cc3e52f0e3a978ef2c29370fb93d14f9bd2ec545f41d0e4",
+      "archive_sha256": "5a76acd95efd5e1d18b81ee05d60738fdb232b1f31cfab4d1202414b4de41e4a"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/59-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/59-git--C.log.gz",
+      "bytes": 146,
+      "sha256": "867794c681147b958f7fab8a039581b22e9a66b080ff6bc1c5b96b0e4107eb09",
+      "archive_sha256": "2da658ca19dff46fdff8fae91c3a5398fd9aeef82d56a0790e83c1d6851e3787"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/60-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/60-git--C.log.gz",
+      "bytes": 177,
+      "sha256": "41aac815e6298ed21ce8cc2b176dcf9c41759eca02f7370798f604f24ccc1fca",
+      "archive_sha256": "65ec16f4fd8ced48c07728ad2a358224de08961b734d2c5f62c9445b1e7ebba8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/61-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/61-git--C.log.gz",
+      "bytes": 174,
+      "sha256": "eb4b99303dd6b7c51dc8fdcac5938e4cb2e544639ffba32dc99b34a835805acd",
+      "archive_sha256": "49148c04c738b1bb4f677e34e86662dc0a597da23eb90eeaee35c282c3d3d431"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/62-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/62-git--C.log.gz",
+      "bytes": 177,
+      "sha256": "41aac815e6298ed21ce8cc2b176dcf9c41759eca02f7370798f604f24ccc1fca",
+      "archive_sha256": "65ec16f4fd8ced48c07728ad2a358224de08961b734d2c5f62c9445b1e7ebba8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/63-git--C.log",
+      "archive": "baseline-runtime/run-nzdrukv5/63-git--C.log.gz",
+      "bytes": 173,
+      "sha256": "256e64af512a7686834587e487d1c60b091eac49b13d7062e5b516317720ae51",
+      "archive_sha256": "06067b24d25c644fb18990ee6b4c41e316f48a4462d1ba0b98166da311bd6dc4"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/64-aspire-ps.log",
+      "archive": "baseline-runtime/run-nzdrukv5/64-aspire-ps.log.gz",
+      "bytes": 509,
+      "sha256": "270d0a284d23f3ea2ea9d851ccffa1e5bca2daaed4be92572ad5bde1f1e0ec1f",
+      "archive_sha256": "568faf925adbe1c6c8903fa02a365562d914007854420490cd8bf109544e5c23"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/65-aspire-stop.log",
+      "archive": "baseline-runtime/run-nzdrukv5/65-aspire-stop.log.gz",
+      "bytes": 589,
+      "sha256": "ccf5e849b1d9fd92a1b385051a9179409a2c5492a8a37b842368ea9e20bdd037",
+      "archive_sha256": "0d3ae3d875c5b357c7628c3b83a2bde25d498f569b92a815b3e0de8acb949840"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/66-aspire-ps.log",
+      "archive": "baseline-runtime/run-nzdrukv5/66-aspire-ps.log.gz",
+      "bytes": 79,
+      "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7",
+      "archive_sha256": "936a4621b65435dbe17ee118cc7b709d9658e99f1f911da8a23aec7759a89346"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/67-docker-container.log",
+      "archive": "baseline-runtime/run-nzdrukv5/67-docker-container.log.gz",
+      "bytes": 181,
+      "sha256": "5ffe16622d86b4df7747b1faee1edf29c05c57bff44b6f86e1bbf1e8f974913a",
+      "archive_sha256": "91f3e05bd8d6643ebf84c62e1ec47c3ed0b9b9fa61cbb35f3085d876b01eec05"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/68-docker-container.log",
+      "archive": "baseline-runtime/run-nzdrukv5/68-docker-container.log.gz",
+      "bytes": 166,
+      "sha256": "272280ead9ea546e66645b21f00fd34827ad99df7883f5ac0b649a49446c19e6",
+      "archive_sha256": "4d42e00cacf81cb7aab3d5102b71e55725d7776dd194b3c4c65578708832f237"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/69-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/69-docker-inspect.log.gz",
+      "bytes": 5167,
+      "sha256": "661f03858ed9e57367a24382f9ad2fa88909f428dd761b286c1b0f5cedd08eee",
+      "archive_sha256": "5a3c7e6b7d16b4c1af451786572c3607a53b4f0d62ce11b40bdadba795b39db8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/70-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/70-docker-inspect.log.gz",
+      "bytes": 4373,
+      "sha256": "53ef5589ab0dc4fdef58cfec42bd29aeeabd78d03e76e30c47b16434446b28ea",
+      "archive_sha256": "f4d3084a9b80ec03b9c4713af62631ddb1be54ee3f9001563d0a5577d7ff19e8"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/71-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/71-docker-inspect.log.gz",
+      "bytes": 4564,
+      "sha256": "24d125dbd479fd97c1e58f00ce0375a1722cf81029cbe4ac6eafe7310b081b76",
+      "archive_sha256": "2603fe06919a3bb0a60aeca39772c6699af57876879e6644d3c5be66d829b441"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/72-docker-rm.log",
+      "archive": "baseline-runtime/run-nzdrukv5/72-docker-rm.log.gz",
+      "bytes": 192,
+      "sha256": "5885ca0f63d2f77d994d3da2dc4a27d867a97537f3eb676bc32b6fb7790a9401",
+      "archive_sha256": "81bc790568d389ce47c3fc2a6c0e16dc5ca0a62541bca70d59069ac9c4aff81c"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/73-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/73-docker-inspect.log.gz",
+      "bytes": 220,
+      "sha256": "cddadd68da30e89ef32bb344b4413844d2494990a5938a72ef37a92d465154c7",
+      "archive_sha256": "628858c36f85c650fc0cd7835f66e76700052c4f091a58c4e28abea8d143da46"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/74-docker-container.log",
+      "archive": "baseline-runtime/run-nzdrukv5/74-docker-container.log.gz",
+      "bytes": 159,
+      "sha256": "3d781630ee952ac0e1f626aba636b120a900dd23dcadfedb7c02b88e50c14b11",
+      "archive_sha256": "5fbf5680791443a996ee1750dbdd83e400b49cd57e312fefc5217d3864fb3824"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/75-docker-rm.log",
+      "archive": "baseline-runtime/run-nzdrukv5/75-docker-rm.log.gz",
+      "bytes": 192,
+      "sha256": "0162ec19cba6a0c7a19ac285c158e00f31e8e06cdb429b17c0e87dc2104fdf4f",
+      "archive_sha256": "711abeb1eb7ced165873c4a4ae20344dd1f76bf2f88a9a2bdc4c0afcbdfdc53a"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/76-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/76-docker-inspect.log.gz",
+      "bytes": 220,
+      "sha256": "3ebea1ee928bec8c9645e9fc5e1bbc1be68890144bbff8011753cec5b65a34b2",
+      "archive_sha256": "d922393d3570ff004cbfb0686cc184c7e810dac90bf1e778f9e245fc1352b7d1"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/77-docker-container.log",
+      "archive": "baseline-runtime/run-nzdrukv5/77-docker-container.log.gz",
+      "bytes": 159,
+      "sha256": "53be2f87fac604c48a7d3ea49cbdf3f9faf02db547010a78c258fd179fcd7423",
+      "archive_sha256": "92c56d090d6e6fdadae52be44977f37bbee52a05154592988f6a144253b9a2dc"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/78-docker-rm.log",
+      "archive": "baseline-runtime/run-nzdrukv5/78-docker-rm.log.gz",
+      "bytes": 192,
+      "sha256": "6b996d351efc0b56acd5874c2a401dd49c09a3b45c7fa86a1db6521fddd2ad7c",
+      "archive_sha256": "29bd9c55c4d67ed63c27cea746e919ce39e6308cef6b43c36ef50e49dc88bd07"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/79-docker-inspect.log",
+      "archive": "baseline-runtime/run-nzdrukv5/79-docker-inspect.log.gz",
+      "bytes": 212,
+      "sha256": "7a5778b17367a75f5cc06f30c1582b69422867007572bffaeada4094c250aa93",
+      "archive_sha256": "d1e15162b12f2b11c45c1faadac82bf629c04d2d47fd0c2bfce1bbf5b47ee8ab"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/80-docker-container.log",
+      "archive": "baseline-runtime/run-nzdrukv5/80-docker-container.log.gz",
+      "bytes": 155,
+      "sha256": "5b09268f0bc42e95b34f802e4846606f4010c2437a582c24db036af68f33baab",
+      "archive_sha256": "f82e1ae193d1b71fb867806f40aa64b066116434ecd53272d629169f42532cc0"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/admission.json",
+      "archive": "baseline-runtime/run-nzdrukv5/admission.json.gz",
+      "bytes": 122,
+      "sha256": "25aa233b247164aab283eb06826d402166eeb289574aff94059665acaab7b46a",
+      "archive_sha256": "346409b8ea04fe2aacaea83678058aa04983d64a0c59dd70c327373b9216df31"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/cleanup.json",
+      "archive": "baseline-runtime/run-nzdrukv5/cleanup.json.gz",
+      "bytes": 171,
+      "sha256": "7f37877c4951a156f679ef061325078147223b9407cfdeaad114ddf34c92ec3e",
+      "archive_sha256": "fad1aaaee959b93c39b05f3bb29aede8298dd2cb9b59888020b3d77cbc75a271"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/dashboard-listener-lifecycle.json",
+      "archive": "baseline-runtime/run-nzdrukv5/dashboard-listener-lifecycle.json.gz",
+      "bytes": 8746,
+      "sha256": "d88b6d18113d03022825265ab2aed6b2aa6be5915fef0ee1b72c8678cef0d655",
+      "archive_sha256": "b343dd7ca1427ab2fe36c69e301242efb090b93e1b093c48b7bea3c6f687bed1"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/dependency-graph.json",
+      "archive": "baseline-runtime/run-nzdrukv5/dependency-graph.json.gz",
+      "bytes": 508464,
+      "sha256": "70c370ef649c81304634030a41a0a74f1606ef42ebb66e747642ac5ac56e3450",
+      "archive_sha256": "dff50467b119ab85a5ab87a5a7fc0aeb7c1577b927afd62301100c6be45003bc"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/empty-fixture-backup.json",
+      "archive": "baseline-runtime/run-nzdrukv5/empty-fixture-backup.json.gz",
+      "bytes": 1291,
+      "sha256": "03c451eb6188574ef6dda2968b8353a2fe102d016515c7efacf94a8ccf585d92",
+      "archive_sha256": "82affd057eec958f22e2121b4b53963dc77183504bec7673f8579f876788c15d"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/gateway-invocation.json",
+      "archive": "baseline-runtime/run-nzdrukv5/gateway-invocation.json.gz",
+      "bytes": 518,
+      "sha256": "b8523426f66cdbc94e77c69ad86fcdf633f97c7dd5e64e62e62b03b0d2a2f06e",
+      "archive_sha256": "e2300dc5ee58f811132c59d8c175fd47987b1d3b41e5b24f0bebd7c6624349d9"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/gateway-process-after.json",
+      "archive": "baseline-runtime/run-nzdrukv5/gateway-process-after.json.gz",
+      "bytes": 648,
+      "sha256": "0fe668f89d55cd7c8c228b6a1bdf233f7ef6586579f6d2c6db9eed70b74119ea",
+      "archive_sha256": "1c4c8c5d1a4b369582848e4aaed817f3c7bdcf2e53f74ee24872b32536e7fc67"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/gateway-process-before.json",
+      "archive": "baseline-runtime/run-nzdrukv5/gateway-process-before.json.gz",
+      "bytes": 648,
+      "sha256": "5ef294e41d1b3a4b0fd98e40561408ec79effdfa7acb17d0910d7ca07dfb60a1",
+      "archive_sha256": "2669079bf8b8588ba40e9e7bbc89b74dfda62926bda416b73b072056c49becd7"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/gateway-process-replacement.json",
+      "archive": "baseline-runtime/run-nzdrukv5/gateway-process-replacement.json.gz",
+      "bytes": 1471,
+      "sha256": "7870f50e9f9179dcc2c3585ccb401230597069e831b47f66144bf794c8a09ccd",
+      "archive_sha256": "b6dde4acef88348280fa2e92d2b85cb76dd5ac96c0567597307b123b0319f5e5"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/projection-writer-bootstrap.json",
+      "archive": "baseline-runtime/run-nzdrukv5/projection-writer-bootstrap.json.gz",
+      "bytes": 400,
+      "sha256": "2351c4d2bc10e2fdf56259b9ccf535c35f241f1e175c9b22a85f93ab204f29b9",
+      "archive_sha256": "33888e20e72bde985437602392ce77a1fa244a16cfb7d95a0efb80bfa01039b4"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/recorded-process-exit.json",
+      "archive": "baseline-runtime/run-nzdrukv5/recorded-process-exit.json.gz",
+      "bytes": 4221,
+      "sha256": "62d8927d1706383a2665f7d18f85a242d796079641eed823aaf99116daa367cc",
+      "archive_sha256": "1fb539223dce6ee3e2c10ff1b4b29f4c23c13091d0ef972495256a334ff8d1c2"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/resource-exit.json",
+      "archive": "baseline-runtime/run-nzdrukv5/resource-exit.json.gz",
+      "bytes": 3,
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "archive_sha256": "abc129be8d26e8d4afe9ce45f9d5a73c8ed9aa62810ca24ee789fe4581dc4a80"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/runtime-host.json",
+      "archive": "baseline-runtime/run-nzdrukv5/runtime-host.json.gz",
+      "bytes": 12134,
+      "sha256": "486df6ea1ee3d42ee824a51fa5a27967432c2445cd47fa058b988b565527c44f",
+      "archive_sha256": "bbccaeec5bcac0db7d36ff66e86ba1b1a2a9ccf79dd28b5ea18e82ffb496b89d"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/runtime-isolation.json",
+      "archive": "baseline-runtime/run-nzdrukv5/runtime-isolation.json.gz",
+      "bytes": 3850,
+      "sha256": "701a99173081f98751f401d8c12868d703bfcdb9bb1ebcab80c4fa803be3b6ac",
+      "archive_sha256": "fbc0cac56d726a4ea255090887dbebd493b953e230f12122283ea791c991a6b9"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/runtime-readiness.json",
+      "archive": "baseline-runtime/run-nzdrukv5/runtime-readiness.json.gz",
+      "bytes": 648,
+      "sha256": "49b1517e796a52b3f94ecc8c8117bf1c26401938bdaf9a85df6b750177e5f8d8",
+      "archive_sha256": "03fb5ba48bd7cc6533b569009eed612e335d920455f821e44b33e298025f8acc"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/security-runtime.json",
+      "archive": "baseline-runtime/run-nzdrukv5/security-runtime.json.gz",
+      "bytes": 608,
+      "sha256": "00e2bc3471a36bd80f2a8aa3321751610f76e7f74d203c3ece26f3e7f03bccad",
+      "archive_sha256": "1b63601d4be8d52272ed6cdfa295cab8d2e0d57cb51f39ed64923fff9fcf89bd"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/shared-after.json",
+      "archive": "baseline-runtime/run-nzdrukv5/shared-after.json.gz",
+      "bytes": 771,
+      "sha256": "faef6d18967ac25f3deed0e97368999c8ab20a6c6b5af4e6de334ee80c56e5b4",
+      "archive_sha256": "a60cdeef3ec2da67066bd7dd1c8f22baa5e3987634c9547de14dcc3796e6253f"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/shared-baseline-before.json",
+      "archive": "baseline-runtime/run-nzdrukv5/shared-baseline-before.json.gz",
+      "bytes": 771,
+      "sha256": "ab83fbbcd8d18795934bd3b6ba46ae97890fb533cbda8cc60708bdad6931a71b",
+      "archive_sha256": "95235427935788c1b51426fd6610b937f25d24514b60c04844a05144a143d8bf"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/shared-baseline-preservation.json",
+      "archive": "baseline-runtime/run-nzdrukv5/shared-baseline-preservation.json.gz",
+      "bytes": 1784,
+      "sha256": "12d24fa4126fbbdeb78c6a0654fe5dd6c9be32269d2a34e07ea9a5dccf486f67",
+      "archive_sha256": "6c3b963983c64bee814339e78121de9108d72b84d6858156fb57e870d9902a60"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/shared-before.json",
+      "archive": "baseline-runtime/run-nzdrukv5/shared-before.json.gz",
+      "bytes": 771,
+      "sha256": "ab83fbbcd8d18795934bd3b6ba46ae97890fb533cbda8cc60708bdad6931a71b",
+      "archive_sha256": "95235427935788c1b51426fd6610b937f25d24514b60c04844a05144a143d8bf"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/shared-preservation.json",
+      "archive": "baseline-runtime/run-nzdrukv5/shared-preservation.json.gz",
+      "bytes": 1609,
+      "sha256": "bcf5fef40f8773cc6c43431ad5f145df4d5c6e5f8978b68370536cb8272eb39b",
+      "archive_sha256": "ab96fc6ccf4ac3bda09d27a400d6e84a948a7783d13a9e16891b20df4a036d62"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/source-after.json",
+      "archive": "baseline-runtime/run-nzdrukv5/source-after.json.gz",
+      "bytes": 675671,
+      "sha256": "61ab1b92a751c7489deeacc5ab75d8686fa8ae7e4ca73e173d13577cb2822834",
+      "archive_sha256": "e1c16544f80c9b165ffec233320e79f39d1d788619ae47ee6ab4f2af09a67f92"
+    },
+    {
+      "original": "baseline-runtime/run-nzdrukv5/source-before.json",
+      "archive": "baseline-runtime/run-nzdrukv5/source-before.json.gz",
+      "bytes": 675671,
+      "sha256": "61ab1b92a751c7489deeacc5ab75d8686fa8ae7e4ca73e173d13577cb2822834",
+      "archive_sha256": "e1c16544f80c9b165ffec233320e79f39d1d788619ae47ee6ab4f2af09a67f92"
+    }
+  ]
+}

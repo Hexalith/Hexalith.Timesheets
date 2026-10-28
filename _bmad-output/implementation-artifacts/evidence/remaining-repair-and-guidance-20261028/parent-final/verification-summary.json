@@ -1,0 +1,81 @@
+{
+  "kind": "composite verification; not a single all-six execution",
+  "case_identity": "project + source XML + xUnit case ID; display names are not unique and are never deduplicated",
+  "suites": [
+    {
+      "project": "Hexalith.Timesheets.ArchitectureTests",
+      "total": 118,
+      "passed": 118,
+      "failed": 0,
+      "skipped": 0,
+      "full_suite_xml": "parent-final/final-architecture.xml.gz",
+      "replacement_class_xml": null
+    },
+    {
+      "project": "Hexalith.Timesheets.Contracts.Tests",
+      "total": 108,
+      "passed": 108,
+      "failed": 0,
+      "skipped": 0,
+      "full_suite_xml": "parent-final/Hexalith.Timesheets.Contracts.Tests.xml.gz",
+      "replacement_class_xml": null
+    },
+    {
+      "project": "Hexalith.Timesheets.Server.Tests",
+      "total": 746,
+      "passed": 746,
+      "failed": 0,
+      "skipped": 0,
+      "full_suite_xml": "parent-final/Hexalith.Timesheets.Server.Tests.xml.gz",
+      "replacement_class_xml": null
+    },
+    {
+      "project": "Hexalith.Timesheets.Projections.Tests",
+      "total": 787,
+      "passed": 787,
+      "failed": 0,
+      "skipped": 0,
+      "full_suite_xml": "parent-final/Hexalith.Timesheets.Projections.Tests.xml.gz",
+      "replacement_class_xml": "review-fixes/review-fixes-migration-final.xml.gz"
+    },
+    {
+      "project": "Hexalith.Timesheets.Works.Tests",
+      "total": 76,
+      "passed": 76,
+      "failed": 0,
+      "skipped": 0,
+      "full_suite_xml": "parent-final/Hexalith.Timesheets.Works.Tests.xml.gz",
+      "replacement_class_xml": null
+    },
+    {
+      "project": "Hexalith.Timesheets.IntegrationTests",
+      "total": 986,
+      "passed": 981,
+      "failed": 0,
+      "skipped": 5,
+      "full_suite_xml": "parent-final/Hexalith.Timesheets.IntegrationTests.xml.gz",
+      "replacement_class_xml": null
+    }
+  ],
+  "total": 2821,
+  "passed": 2816,
+  "failed": 0,
+  "skipped": 5,
+  "initial_serial_batch": {
+    "total": 2812,
+    "passed": 2806,
+    "failed": 1,
+    "skipped": 5,
+    "errors": 0
+  },
+  "explanation": "The initial serial Architecture assertion failure and subsequent stale build-note assertion failure are retained. Final Architecture replaces that suite; 97 final source migration cases replace its earlier 88 cases in the 778-case Projections suite. All other suites retain their original passing XML. Only the two test assemblies changed; production repair files retain their held-patch hashes. No full-suite rerun or hosted test result is implied.",
+  "effective_case_evidence_sha256": "1d8c49d0389aacc1fa5a3e82457690b06b25e51921fa6bd47bf9f124a8ec3e9f",
+  "release_solution_projects": 16,
+  "final_package_migration": {
+    "total": 97,
+    "passed": 97,
+    "failed": 0,
+    "skipped": 0
+  },
+  "runtime_qualification": "failed baseline; live journey passed but shared DB0 content differed; cause unclassified; launch remains FAIL"
+}

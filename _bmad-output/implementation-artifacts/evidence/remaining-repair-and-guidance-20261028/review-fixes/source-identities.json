@@ -1,0 +1,12 @@
+{
+  "sha256": {
+    "README.md": "725b6c1a6323255935fb146a4a348147768d7d3bde74e6f557c0ebf1877ce6ef",
+    "docs/launch-readiness.md": "f5f2d656562a57499982907dd1e09bac1422a4fa802db47fe939326b955a1544",
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": "3c7d4816a255ffe18de924cde99bb985dd370ebf90d4199eea102abf90ba4139",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV6Migration.cs": "5cdc24d04e1aafabd9778cd6c9ca2dc64d4572a3d0c412442294420cf186e5b4",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/DenyAllMagicLinkV6AbortRepairCertification.cs": "7ace4ab43ba754b418e06350777f56ba7bfe37f7463673b03a3958e420c6dac4",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/IMagicLinkV6AbortRepairCertification.cs": "374078b1191f444dd274169cadd8e80533af08923a94e59106a7d87674b7e62c",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV6AbortRepairCertificate.cs": "4dec265e45195406b56a3e84a3b5dba6ddb26f9858c472a31dab178621260e41"
+  },
+  "production_files_match_held_patch": true
+}

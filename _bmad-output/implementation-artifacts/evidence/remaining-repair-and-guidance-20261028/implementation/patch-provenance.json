@@ -1,0 +1,28 @@
+{
+  "sdk_source_commit": "c613e55aefd0650c1e64ed0580c8495657585a89",
+  "required_package": "A published EventStore version containing the certified abort repair API",
+  "patch_sha256": "14d09dfb443f474a763f3e1184bfde85a98495e7558ac8979ec7e5147ecd1356",
+  "files": {
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV6Migration.cs": "5cdc24d04e1aafabd9778cd6c9ca2dc64d4572a3d0c412442294420cf186e5b4",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/DenyAllMagicLinkV6AbortRepairCertification.cs": "7ace4ab43ba754b418e06350777f56ba7bfe37f7463673b03a3958e420c6dac4",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/IMagicLinkV6AbortRepairCertification.cs": "374078b1191f444dd274169cadd8e80533af08923a94e59106a7d87674b7e62c",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV6AbortRepairCertificate.cs": "4dec265e45195406b56a3e84a3b5dba6ddb26f9858c472a31dab178621260e41",
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": "9da730d2da504722ced8ee91f277c4d28bea0093dd25bb87df463d1362e49c3e",
+    "tests/Hexalith.Timesheets.Projections.Tests/CertifiedAbortLayout.cs": "64791ebe74ce449f21ee4cf5d67f1196f9d8b7ae81ea145c1e17298c20d1a0f7",
+    "tests/Hexalith.Timesheets.Projections.Tests/V6AbortDrainFaultStore.cs": "aa51406208e2444222a7e02fb3aef098300b685150365969bcfd956b295728c7"
+  },
+  "status": "implemented and tested; module publication blocked by SDK package release",
+  "archive": "certified-repair-pending.patch.gz",
+  "archive_sha256": "5a22205bfe9efe687f83f89a5c7b8596956f9fbed1a37c55c0d06797ef7d2cc7",
+  "apply_after_sdk_release": "gzip -dc <archive> | git apply",
+  "applied_file_sha256": {
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexV6Migration.cs": "5cdc24d04e1aafabd9778cd6c9ca2dc64d4572a3d0c412442294420cf186e5b4",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/DenyAllMagicLinkV6AbortRepairCertification.cs": "7ace4ab43ba754b418e06350777f56ba7bfe37f7463673b03a3958e420c6dac4",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/IMagicLinkV6AbortRepairCertification.cs": "374078b1191f444dd274169cadd8e80533af08923a94e59106a7d87674b7e62c",
+    "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkV6AbortRepairCertificate.cs": "4dec265e45195406b56a3e84a3b5dba6ddb26f9858c472a31dab178621260e41",
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": "5a1528312d588ef7f3f89c08d9ee1de511ca3d404fdf8d552c134d9f52ba81b4",
+    "tests/Hexalith.Timesheets.Projections.Tests/CertifiedAbortLayout.cs": "64791ebe74ce449f21ee4cf5d67f1196f9d8b7ae81ea145c1e17298c20d1a0f7",
+    "tests/Hexalith.Timesheets.Projections.Tests/V6AbortDrainFaultStore.cs": "9e752cd1dd8f8ba6287c326744c6f47ef2093b376509d3b0ede2b773b5ba52d2"
+  },
+  "unchanged_production_patch_files": true
+}

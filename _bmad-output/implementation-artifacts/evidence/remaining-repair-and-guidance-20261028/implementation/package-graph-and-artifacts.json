@@ -1,0 +1,79 @@
+{
+  "assets_path": "/tmp/timesheets-repair-package-20261028/obj/Hexalith.Timesheets.Projections.Tests/project.assets.json",
+  "assets_sha256": "04eeb5d2eeb82985c9fc7072c4e5bf6b62deb99f8b3f6ee8fa67ab5939d6108f",
+  "hexalith_libraries": {
+    "Hexalith.Commons.UniqueIds/2.30.3": {
+      "type": "package",
+      "path": "hexalith.commons.uniqueids/2.30.3",
+      "sha512": "e0tQgVfkT4CkozW/fO1Nl0i4m9dmfk4/Er6WJXjOduSftvHW2bo3ppIQQ/ncYwpC+2hUlqezwWMeFpjZzd+1Tw=="
+    },
+    "Hexalith.EventStore.Client/3.128.4": {
+      "type": "package",
+      "path": "hexalith.eventstore.client/3.128.4",
+      "sha512": "huWLQybktZVhYkmTqVtd3P7RuQKf3ZyXArygMnaprcT02TxnCG4oSKauSG6hgy2Bl5zYPWeBZDUtw+kfkf6enw=="
+    },
+    "Hexalith.EventStore.Contracts/3.128.4": {
+      "type": "package",
+      "path": "hexalith.eventstore.contracts/3.128.4",
+      "sha512": "ys2YvqzTIU0sX8ZGkxlAgP3kiRooA9lVxpuV/JLWefIUZRmLLZ1GaxCGFDv3otRmgSCE1VVIH5Aptn6MbmwrCQ=="
+    },
+    "Hexalith.EventStore.DomainService/3.128.4": {
+      "type": "package",
+      "path": "hexalith.eventstore.domainservice/3.128.4",
+      "sha512": "rvYmrN8RERYEX2105IUIE/65G7gsMPkP9oRFk5zVuMymiEGeWWP6PdDWoiYDlxmfST9+LyX1MgFodLj2QNZN3Q=="
+    },
+    "Hexalith.EventStore.Server/3.128.4": {
+      "type": "package",
+      "path": "hexalith.eventstore.server/3.128.4",
+      "sha512": "b1k95MyqDnyiBL5v5wfFmp8pkea4DPtwoDh7MpKUa4SDdfYn1xRWqGCEdz7HEef8Ln196bgRV0gjKXCHWXLC9w=="
+    },
+    "Hexalith.EventStore.ServiceDefaults/3.128.4": {
+      "type": "package",
+      "path": "hexalith.eventstore.servicedefaults/3.128.4",
+      "sha512": "ZPONUNEJbcqU4SB0fop/nM0qYKZhTNZDPuX23WC6b333gJgqHygZRAn/u+k7bNNuEEANeKx+WEFRkQHwaVSc/Q=="
+    },
+    "Hexalith.EventStore.Testing/3.128.4": {
+      "type": "package",
+      "path": "hexalith.eventstore.testing/3.128.4",
+      "sha512": "Q1l3jTZWuzPRO6FpTipUtpjmQoaeYMz03xrokk23BImDBDwf6rGmgRlNNHKeyfT74WYjHS8BkhpoBeMEcaZasg=="
+    },
+    "Hexalith.Timesheets.Contracts/1.0.0": {
+      "type": "project",
+      "path": "../../src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj",
+      "sha512": null
+    },
+    "Hexalith.Timesheets.Projections/1.0.0": {
+      "type": "project",
+      "path": "../../src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj",
+      "sha512": null
+    },
+    "Hexalith.Timesheets.ReadModels/1.0.0": {
+      "type": "project",
+      "path": "../../src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj",
+      "sha512": null
+    },
+    "Hexalith.Timesheets.Server/1.0.0": {
+      "type": "project",
+      "path": "../../src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+      "sha512": null
+    }
+  },
+  "only_timesheets_source_projects": true,
+  "copied_client_dll": "/tmp/timesheets-repair-package-20261028/bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.EventStore.Client.dll",
+  "copied_client_dll_sha256": "6410e83f18c98b263f186833438a142f6a611f402494a2a5a5618e9f60e24123",
+  "copied_client_matches_fresh_nuget_package": true,
+  "isolated_output_artifacts": {
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.Timesheets.Projections.Tests.dll": "41e2b6e10a26f2d827db0b2a6407db28069eafc7f54348aee56f3195b7ce495b",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.EventStore.ServiceDefaults.dll": "36a58fe4467950cf2198b496e8591ef03584c43f92ddea29d0bf65f6c2628f94",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.Timesheets.Server.dll": "5838506dc4470549f1d601002c9f0a344bc2ef0d40d4731a56fdf769db063d5c",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.EventStore.DomainService.dll": "feb43fd3fdeb8f0335c330199cabd72932732513024471a1e227a8f1535bcc0a",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.Commons.UniqueIds.dll": "73db021277a5c3cc2af66a0ac117d108ec2b9f1708199984880772a575018b8e",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.Timesheets.Contracts.dll": "3c3809a381282aae04d467c47c2c6f11cffc68242b6e5aa7dc1e353c0453e202",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.EventStore.Server.dll": "0f301a04dc10cc409a6d10bf5b402e2c87ca9bf0deb965230d2522a8bdbff69b",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.EventStore.Testing.dll": "374e323266d949b92d2a3c3be764b40f15dee31fdbdf49fcc8ee828759dbbe36",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.EventStore.Client.dll": "6410e83f18c98b263f186833438a142f6a611f402494a2a5a5618e9f60e24123",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.EventStore.Contracts.dll": "1f30b66c42b66b44fb588cff339576ae118dda5627c71f87d0458de2bf10d286",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.Timesheets.Projections.dll": "d7263502ab34eebdf9c7bd7716be23da5f2130c3041ebc36c2c8ff081a2e228a",
+    "bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.Timesheets.ReadModels.dll": "a1b88b2602ae78d137ff663d62f816b77752036f47964761cf1c0375c15287b3"
+  }
+}

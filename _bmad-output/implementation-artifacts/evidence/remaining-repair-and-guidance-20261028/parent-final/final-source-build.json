@@ -1,0 +1,25 @@
+{
+  "command": [
+    "dotnet",
+    "build",
+    "Hexalith.Timesheets.slnx",
+    "--configuration",
+    "Debug",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=true",
+    "-warnaserror",
+    "-m:1",
+    "/nr:false"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-28T14:28:29.360341+00:00",
+  "finished_utc": "2026-10-28T14:28:34.409625+00:00",
+  "elapsed_seconds": 5.051,
+  "exit_code": 0,
+  "log_archive": "final-source-build.log.gz",
+  "log_sha256": "71053f0508f8eddafc7e521e6be5420a72e4041300f3876de4b0d952729ada37",
+  "archive_sha256": "fd168ccb6adfbf00a0c9382bee6c892e32b14e7c3500859877a52e48ee4e1df8"
+}

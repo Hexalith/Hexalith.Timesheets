@@ -1,0 +1,120 @@
+{
+  "review-fixes-migration-final": {
+    "argv": [
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-class",
+      "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests",
+      "-result-xml",
+      "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration-final.xml"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "started_utc": "2026-10-28T14:24:08.931880+00:00",
+    "finished_utc": "2026-10-28T14:24:35.068002+00:00",
+    "elapsed_seconds": 26.137631895006052,
+    "exit_code": 0,
+    "log": "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration-final.log"
+  },
+  "review-fixes-build3": {
+    "argv": [
+      "env",
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home",
+      "dotnet",
+      "build",
+      "tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "started_utc": "2026-10-28T14:23:18.210829+00:00",
+    "finished_utc": "2026-10-28T14:23:21.336121+00:00",
+    "elapsed_seconds": 3.1252888239978347,
+    "exit_code": 0,
+    "log": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build3.log"
+  },
+  "review-fixes-build-final": {
+    "argv": [
+      "env",
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home",
+      "dotnet",
+      "build",
+      "tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "started_utc": "2026-10-28T14:24:06.607284+00:00",
+    "finished_utc": "2026-10-28T14:24:08.911424+00:00",
+    "elapsed_seconds": 2.304139240994118,
+    "exit_code": 0,
+    "log": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build-final.log"
+  },
+  "review-fixes-build": {
+    "argv": [
+      "env",
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home",
+      "dotnet",
+      "build",
+      "tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "started_utc": "2026-10-28T14:21:30.636385+00:00",
+    "finished_utc": "2026-10-28T14:21:33.468402+00:00",
+    "elapsed_seconds": 2.833674923007493,
+    "exit_code": 1,
+    "log": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build.log"
+  },
+  "review-fixes-build2": {
+    "argv": [
+      "env",
+      "DOTNET_CLI_HOME=/tmp/dotnet-cli-home",
+      "dotnet",
+      "build",
+      "tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj",
+      "--configuration",
+      "Debug",
+      "--no-restore",
+      "-p:UseHexalithProjectReferences=true",
+      "-warnaserror",
+      "-m:1",
+      "/nr:false"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "started_utc": "2026-10-28T14:22:13.748021+00:00",
+    "finished_utc": "2026-10-28T14:22:16.053707+00:00",
+    "elapsed_seconds": 2.305683863000013,
+    "exit_code": 1,
+    "log": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build2.log"
+  },
+  "review-fixes-migration": {
+    "argv": [
+      "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+      "-class",
+      "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests",
+      "-result-xml",
+      "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration.xml"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "started_utc": "2026-10-28T14:23:21.355030+00:00",
+    "finished_utc": "2026-10-28T14:23:51.219183+00:00",
+    "elapsed_seconds": 29.865694088992313,
+    "exit_code": 1,
+    "log": "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration.log"
+  }
+}

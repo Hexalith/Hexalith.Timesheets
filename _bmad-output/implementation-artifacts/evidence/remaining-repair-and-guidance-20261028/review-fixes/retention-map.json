@@ -1,0 +1,58 @@
+[
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build-final.log",
+    "original_sha256": "491ff1e06e0dac808f61182c8a683d6b692b779e0c22e3a414950cf47d405a5d",
+    "original_size": 2363,
+    "archive": "review-fixes-build-final.log.gz",
+    "archive_sha256": "b2931fea4ffa56c27343639ad65841e11e8007306fa78319038fd8aad6f2ddc5"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build.log",
+    "original_sha256": "8fc88615d0fe09b80ead6072afb6fc21828dc44f96a5f4429e026f2d38339221",
+    "original_size": 3349,
+    "archive": "review-fixes-build.log.gz",
+    "archive_sha256": "ffcd4e846b203b51a67a0d9bf07b0e94f6f363a7921429fe7cced32ccce57997"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build2.log",
+    "original_sha256": "bcad07245e6c8a0a3da6b5f0a3da2aa9ca6a20c86a043e3aad239e6c687b1ee3",
+    "original_size": 4485,
+    "archive": "review-fixes-build2.log.gz",
+    "archive_sha256": "7296c0ea9ac85b53fbc2939dc84485b4fa5aadf38f29f228074de72000226473"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-build3.log",
+    "original_sha256": "395bd2ad78739cd34627f7cfb33abaa84765b95ed1cf45028295d879a522965a",
+    "original_size": 2363,
+    "archive": "review-fixes-build3.log.gz",
+    "archive_sha256": "a02053b5fa9c479a109ea891a76eac3c22a439137c662fdb1dc065535c11ee17"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration-final.log",
+    "original_sha256": "5fbaedaab2a1e728d80e5bfab66326bc7275db979a6f70cce5cd3d3d0212c09a",
+    "original_size": 501,
+    "archive": "review-fixes-migration-final.log.gz",
+    "archive_sha256": "025236f774b7f2869152e12ff9ded546e655753d2463a65723ab33a06648f832"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration-final.xml",
+    "original_sha256": "884c870d84eba1e9325f4830b3ca9af1fa5dcae34c09479f9f4f3e6d90dd6d35",
+    "original_size": 67690,
+    "archive": "review-fixes-migration-final.xml.gz",
+    "archive_sha256": "568258c5f8a02885212c769790fc7fda1e84164e691de1452402e0e00a377145"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration.log",
+    "original_sha256": "85433f2f2a1bb3a6cc134d2e169d04653670853f4b42c2b1baf1e4073f734b09",
+    "original_size": 2958,
+    "archive": "review-fixes-migration.log.gz",
+    "archive_sha256": "4ee9e76477b222834f43cfcb6a7bb94661e439d4780647f636e56318a2392cc1"
+  },
+  {
+    "original_path": "/tmp/timesheets-repair-implementation-20261028/review-fixes-migration.xml",
+    "original_sha256": "dd151bf06ac6e0efbd6700637ff3781a1d67eb6839ceebfa3f18b19992baa651",
+    "original_size": 70001,
+    "archive": "review-fixes-migration.xml.gz",
+    "archive_sha256": "f4b8c71ed27c6a7b6b8015269b930fcf79a984729c0216f134dc4d47b7b18d07"
+  }
+]

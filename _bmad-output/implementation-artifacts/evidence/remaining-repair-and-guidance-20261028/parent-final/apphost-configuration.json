@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "scripts/check_magic_link_apphost_guards.py",
+    "--configuration-only",
+    "--log-directory",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/remaining-repair-and-guidance-20261028/parent-final/apphost-configuration"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-28T13:49:14.275786+00:00",
+  "finished_utc": "2026-10-28T13:49:44.607994+00:00",
+  "elapsed_seconds": 30.334,
+  "exit_code": 0,
+  "log_archive": "apphost-configuration.log.gz",
+  "log_sha256": "cf6ff462115d9ce046e21595bc33c0c9dbbb359b0500036c22128bb7e206ac95",
+  "archive_sha256": "57fdbde23eade9fbf8d3c0e5a242a5297e2201e90f590d1a5fee36f425fb4a15"
+}

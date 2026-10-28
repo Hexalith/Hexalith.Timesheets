@@ -66,7 +66,8 @@ public sealed class LaunchReadinessTests
         live[1].ShouldContain("canonical token-hash index and tenant Activity Type catalog projection handlers");
         live[1].ShouldContain("valid confirm/adjust POSTs return 202 only after Completed EventStore status and exact stored-event readback");
         live[4].ShouldContain("does not establish deployed Dapr persistence");
-        live[4].ShouldContain("Current Debug/source NuGet-orchestration runtime qualification passed");
+        live[4].ShouldContain("Current Aspire 13.6.4 runtime remains unqualified");
+        live[4].ShouldContain("failed shared-state preservation baseline");
         live[5].ShouldContain("Story 3.6");
         ReadClassificationRow(readiness, "Legal-hold policy")[2].ShouldBe("unfinished");
         ReadClassificationRow(readiness, "Tenant policy configuration")[2].ShouldBe("unfinished");
@@ -79,7 +80,9 @@ public sealed class LaunchReadinessTests
         current.ShouldContain("neither story-complete nor launch-complete");
         current.ShouldContain("Overall release decision: **FAIL**");
         current.ShouldContain("historical local proof");
-        current.ShouldContain("current NuGet-orchestration AppHost graph has passing local Debug/source runtime qualification");
+        current.ShouldContain("current Aspire 13.6.4 runtime remains unqualified");
+        current.ShouldContain("baseline failure on shared-state preservation");
+        current.ShouldNotContain("current NuGet-orchestration AppHost graph has passing local Debug/source runtime qualification");
     }
 
     /// <summary>
@@ -508,7 +511,8 @@ public sealed class LaunchReadinessTests
         buildGate[2].ShouldContain("--configuration Debug --no-restore -p:UseHexalithProjectReferences=true");
         buildGate[2].ShouldContain("0 warnings and 0 errors");
         buildGate[3].ShouldContain("not current-graph runtime evidence");
-        buildGate[3].ShouldContain("separate current Debug/source AppHost smoke now passes");
+        buildGate[3].ShouldContain("2026-10-26 Debug/source AppHost smoke pass is historical");
+        buildGate[3].ShouldContain("Current Aspire 13.6.4 runtime remains unqualified");
     }
 
     /// <summary>

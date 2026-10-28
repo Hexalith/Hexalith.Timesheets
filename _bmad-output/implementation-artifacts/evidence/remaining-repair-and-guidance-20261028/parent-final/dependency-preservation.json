@@ -1,0 +1,71 @@
+{
+  "observed_utc": "2026-10-28T14:32:21.743284+00:00",
+  "matches_initial": true,
+  "repositories": [
+    {
+      "path": "references/Hexalith.Commons",
+      "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.AI.Tools",
+      "head": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.Builds",
+      "head": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.Tenants",
+      "head": "7ddb864cda5e942925b056391617eae4895c1253",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.EventStore",
+      "head": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.FrontComposer",
+      "head": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.PolymorphicSerializations",
+      "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.Projects",
+      "head": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.Conversations",
+      "head": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.Works",
+      "head": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.Parties",
+      "head": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.McpCli",
+      "head": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "status": ""
+    },
+    {
+      "path": "references/Hexalith.Platform",
+      "head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "status": ""
+    }
+  ]
+}

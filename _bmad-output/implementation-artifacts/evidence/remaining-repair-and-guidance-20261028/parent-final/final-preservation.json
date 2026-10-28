@@ -1,0 +1,9 @@
+{
+  "source_inputs_match": true,
+  "changed_compiled_test_files_since_initial_batch": [
+    "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll",
+    "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests.dll"
+  ],
+  "release_assets_projects": 16,
+  "note": "Architecture assertions and Projections test coverage were updated after the initial serial batch; production repair is unchanged."
+}

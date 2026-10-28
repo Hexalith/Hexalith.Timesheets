@@ -1,0 +1,88 @@
+{
+  "source-migration-final": {
+    "assembly": {
+      "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+      "id": "c3020391-7f20-40b6-87f3-1e80fe81f8ee",
+      "name": "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests.dll",
+      "run-date": "2026-10-28",
+      "run-time": "13:44:43",
+      "start-rtf": "2026-10-28T13:44:43.0482564+00:00",
+      "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+      "target-framework": ".NETCoreApp,Version=v10.0",
+      "errors": "0",
+      "failed": "0",
+      "finish-rtf": "2026-10-28T13:45:08.1391547+00:00",
+      "not-run": "0",
+      "passed": "88",
+      "skipped": "0",
+      "time": "25.094",
+      "time-rtf": "00:00:25.0940000",
+      "total": "88"
+    },
+    "capacity_cases": [
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 935, requestBytes: 262144, accepted: True)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 1191 guards; 262144 SDK request bytes; accepted=True.\n"
+      },
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 935, requestBytes: 262145, accepted: False)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 1191 guards; 262145 SDK request bytes; accepted=False.\n"
+      },
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 3840, requestBytes: 0, accepted: False)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 4096 guards; 950469 SDK request bytes; accepted=False.\n"
+      },
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 3841, requestBytes: 0, accepted: False)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 4097 guards; 950702 SDK request bytes; accepted=False.\n"
+      }
+    ]
+  },
+  "package-migration-final": {
+    "assembly": {
+      "environment": "64-bit (x64) .NET 10.0.13 [collection-per-class, parallel (collections, 14 threads)]",
+      "id": "df7b4225-4373-417e-bf44-a3b9b8155fdd",
+      "name": "/tmp/timesheets-repair-package-20261028/bin/Hexalith.Timesheets.Projections.Tests/release/Hexalith.Timesheets.Projections.Tests.dll",
+      "run-date": "2026-10-28",
+      "run-time": "13:46:12",
+      "start-rtf": "2026-10-28T13:46:12.6433893+00:00",
+      "test-framework": "xUnit.net v3 4.0.2+0c7aa4991f",
+      "target-framework": ".NETCoreApp,Version=v10.0",
+      "errors": "0",
+      "failed": "0",
+      "finish-rtf": "2026-10-28T13:46:35.5779525+00:00",
+      "not-run": "0",
+      "passed": "88",
+      "skipped": "0",
+      "time": "22.937",
+      "time-rtf": "00:00:22.9370000",
+      "total": "88"
+    },
+    "capacity_cases": [
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 935, requestBytes: 262144, accepted: True)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 1191 guards; 262144 SDK request bytes; accepted=True.\n"
+      },
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 935, requestBytes: 262145, accepted: False)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 1191 guards; 262145 SDK request bytes; accepted=False.\n"
+      },
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 3840, requestBytes: 0, accepted: False)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 4096 guards; 950468 SDK request bytes; accepted=False.\n"
+      },
+      {
+        "name": "Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.CertifiedRepairHonorsSdkManifestBoundsWithoutLosingPersistedEvidence(pageCount: 3841, requestBytes: 0, accepted: False)",
+        "result": "Pass",
+        "output": "Valid v6 manifest: 4097 guards; 950706 SDK request bytes; accepted=False.\n"
+      }
+    ]
+  }
+}

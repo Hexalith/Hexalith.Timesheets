@@ -1,0 +1,13 @@
+{
+  "command": [
+    "node_modules/.bin/commitlint",
+    "--edit",
+    "/tmp/timesheets-repair-guidance-20261028/commit-message.txt"
+  ],
+  "observed_utc": "2026-10-28T14:03:53.314882+00:00",
+  "exit_code": 0,
+  "message": "fix(projections): integrate published certified abort repair\n",
+  "message_sha256": "1bf5955469496e4aa84b774342723d629d431c532d2d9bf3264bd58776ef7685",
+  "stdout": "",
+  "stderr": ""
+}

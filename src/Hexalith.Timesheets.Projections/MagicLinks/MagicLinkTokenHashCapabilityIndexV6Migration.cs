@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -13,11 +14,26 @@ namespace Hexalith.Timesheets.Projections.MagicLinks;
 /// the complete source once per tenant, keeping only that tenant's bounded rows in memory. It must
 /// run in a maintenance window: the global epoch backpressures owner-sequenced delivery until promotion.
 /// </summary>
+/// <param name="coordinator">The SDK epoch coordinator.</param>
+/// <param name="readModelStore">The retained witness store.</param>
+/// <param name="authority">The server-side operation authority.</param>
+/// <param name="repairCertification">The original-layout certificate verifier, or null to deny repair.</param>
 public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
     SharedProjectionEpochCoordinator coordinator,
     IReadModelStore readModelStore,
-    IMagicLinkIndexMigrationAuthority authority)
+    IMagicLinkIndexMigrationAuthority authority,
+    IMagicLinkV6AbortRepairCertification? repairCertification)
 {
+    /// <summary>Creates a migration with certified repair denied by default.</summary>
+    /// <param name="coordinator">The SDK epoch coordinator.</param>
+    /// <param name="readModelStore">The witness store.</param>
+    /// <param name="authority">The server migration authority.</param>
+    public MagicLinkTokenHashCapabilityIndexV6Migration(SharedProjectionEpochCoordinator coordinator,
+        IReadModelStore readModelStore, IMagicLinkIndexMigrationAuthority authority)
+        : this(coordinator, readModelStore, authority, new DenyAllMagicLinkV6AbortRepairCertification())
+    {
+    }
+
     private const int AppendWidth = 8;
     private const int AppendByteLimit = 256 * 1024;
 
@@ -28,7 +44,7 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
 
     /// <summary>
     /// Resumes only a previously authorized abort. Missing witnesses never acquire ownership,
-    /// and this path cannot promote a private generation or repair corrupt selected metadata.
+    /// and this path cannot promote a private generation. Certified repair restores only proven original absence.
     /// Operation IDs must remain unique and maintenance must be serialized: the SDK abort call
     /// cannot atomically bind an expected epoch or inventory after the final status recheck.
     /// </summary>
@@ -62,7 +78,108 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
             || current.IsBuilding != status.IsBuilding || current.IsAborting != status.IsAborting
             || current.IsOffboarded != status.IsOffboarded)
             throw new InvalidOperationException("The certified migration abort binding changed during recovery.");
+        if (status.IsAborting && status.PendingDeliveryCount > 0)
+            await RepairSelectedMetadataAsync(scope, expected, cancellationToken).ConfigureAwait(false);
         await AbortAsync(scope, operationId, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task RepairSelectedMetadataAsync(SharedProjectionScope scope,
+        MagicLinkV6MigrationAbortWitness witness, CancellationToken cancellationToken)
+    {
+        string[] keys = [MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey,
+            MagicLinkTokenHashCapabilityIndexTreeReader.RootKey,
+            MagicLinkTokenHashCapabilityIndexProjection.StateKey];
+        SharedProjectionAbortRepairReceipt? reserved = await coordinator.GetAbortRepairAsync(scope,
+            cancellationToken).ConfigureAwait(false);
+        var observations = new List<SharedProjectionAbortRepairValue>();
+        if (reserved is null)
+        {
+            foreach (string key in keys)
+            {
+                ReadModelEntry<JsonNode> entry = await coordinator.ReadGenerationJsonAsync(scope,
+                    witness.SourceGeneration, key, cancellationToken).ConfigureAwait(false);
+                observations.Add(new(key, entry.ETag ?? string.Empty,
+                    string.IsNullOrEmpty(entry.ETag) ? null : entry.Value?.ToJsonString() ?? "null")
+                { SourceGeneration = entry.SourceGeneration, PointerETag = entry.PointerETag });
+            }
+            if (observations.All(value => value.OriginalJson is null)) return;
+        }
+        MagicLinkV6AbortRepairCertificate? certificate = await (repairCertification
+            ?? new DenyAllMagicLinkV6AbortRepairCertification()).CertifyAsync(witness, cancellationToken).ConfigureAwait(false);
+        if (certificate is null || certificate.Witness != witness || string.IsNullOrWhiteSpace(certificate.CertificateId)
+            || certificate.OriginallyAbsentMetadataKeys is null || certificate.OriginallyAbsentMetadataKeys.Length != keys.Length
+            || !certificate.OriginallyAbsentMetadataKeys.Order(StringComparer.Ordinal)
+                .SequenceEqual(keys.Order(StringComparer.Ordinal), StringComparer.Ordinal))
+            throw new InvalidOperationException("Certified original v6 layout and unchanged complete shards are unavailable.");
+        SharedProjectionAbortRepairRequest request;
+        if (reserved is not null)
+        {
+            request = reserved.Request;
+            // Completed repair authorizes only this original certificate. The normal drain may
+            // already have prepared a delivery or changed the source inventory after repair.
+            if (SourceGuardDigest(request.SourceGuards) != certificate.SourceDigest)
+                throw new InvalidOperationException("The durable original-layout certificate changed.");
+        }
+        else
+        {
+            _ = await FindNextTenantAsync(scope, witness.SourceGeneration, null, cancellationToken).ConfigureAwait(false);
+            SharedProjectionAbortRepairGuard[] guards = await CaptureRepairSourceGuardsAsync(scope,
+                witness.SourceGeneration, cancellationToken).ConfigureAwait(false);
+            if (SourceGuardDigest(guards) != certificate.SourceDigest)
+                throw new InvalidOperationException("The certified complete v6 layout changed before repair.");
+            _ = await FindNextTenantAsync(scope, witness.SourceGeneration, null, cancellationToken).ConfigureAwait(false);
+            request = new(witness.OperationId, witness.InventoryFingerprint, witness.Epoch,
+                witness.SourceGeneration, certificate.CertificateId, observations.ToArray()) { SourceGuards = guards };
+        }
+        if (request.CertificateId != certificate.CertificateId || request.OperationId != witness.OperationId
+            || request.InventoryFingerprint != witness.InventoryFingerprint || request.Epoch != witness.Epoch
+            || request.ActiveGeneration != witness.SourceGeneration)
+            throw new InvalidOperationException("The durable abort repair certificate binding changed.");
+        await coordinator.RepairAbortMetadataAsync(scope, request, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Computes complete original-layout evidence; this measurement never grants certification.</summary>
+    /// <param name="sourceGeneration">The original selected source generation.</param>
+    /// <param name="cancellationToken">The caller cancellation token.</param>
+    /// <returns>The canonical key, ETag, content and absence inventory fingerprint.</returns>
+    public async Task<string> ComputeAbortRepairSourceFingerprintAsync(long sourceGeneration,
+        CancellationToken cancellationToken = default)
+    {
+        SharedProjectionScope scope = MagicLinkTokenHashCapabilityIndexProjection.GlobalScope();
+        _ = await FindNextTenantAsync(scope, sourceGeneration, null, cancellationToken).ConfigureAwait(false);
+        return SourceGuardDigest(await CaptureRepairSourceGuardsAsync(scope, sourceGeneration,
+            cancellationToken).ConfigureAwait(false));
+    }
+
+    private static string SourceGuardDigest(IEnumerable<SharedProjectionAbortRepairGuard> guards)
+        => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(
+            guards.OrderBy(guard => guard.LogicalKey, StringComparer.Ordinal).ToArray())));
+
+    private async Task<SharedProjectionAbortRepairGuard[]> CaptureRepairSourceGuardsAsync(
+        SharedProjectionScope scope, long generation, CancellationToken cancellationToken)
+    {
+        var guards = new List<SharedProjectionAbortRepairGuard>();
+        async Task ObserveAsync(string key)
+        {
+            ReadModelEntry<JsonNode> observed = await coordinator.ReadGenerationJsonAsync(scope,
+                generation, key, cancellationToken).ConfigureAwait(false);
+            guards.Add(new(key, observed.ETag ?? string.Empty, string.IsNullOrEmpty(observed.ETag) ? null
+                : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(observed.Value?.ToJsonString() ?? "null"))))
+            { SourceGeneration = observed.SourceGeneration, PointerETag = observed.PointerETag });
+        }
+        for (int shard = 0; shard < MagicLinkTokenHashCapabilityIndexProjection.ShardCount; shard++)
+        {
+            string key = MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard);
+            await ObserveAsync(key).ConfigureAwait(false);
+            var root = (await coordinator.ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+                generation, key, cancellationToken).ConfigureAwait(false)).Value;
+            if (root is null) continue;
+            foreach (int page in root.CandidatePageIds.Values.SelectMany(ids => ids).Distinct())
+                await ObserveAsync(MagicLinkTokenHashCapabilityIndexProjection.CandidatePageKey(shard, page)).ConfigureAwait(false);
+            foreach (var page in root.DirectoryPages)
+                await ObserveAsync(MagicLinkTokenHashCapabilityIndexProjection.DirectoryPageKey(shard, page.PageId)).ConfigureAwait(false);
+        }
+        return guards.ToArray();
     }
 
     /// <summary>
@@ -576,6 +693,10 @@ public sealed class MagicLinkTokenHashCapabilityIndexV6Migration(
         bool hadShard = false;
         for (int shard = 0; shard < MagicLinkTokenHashCapabilityIndexProjection.ShardCount; shard++)
         {
+            ReadModelEntry<JsonNode> observation = await coordinator.ReadGenerationJsonAsync(scope, generation,
+                MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard), cancellationToken).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(observation.ETag) && observation.Value is null)
+                throw new InvalidOperationException("A present v6 shard cannot contain JSON null.");
             ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> selected = await coordinator
                 .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope, generation,
                     MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard), cancellationToken)

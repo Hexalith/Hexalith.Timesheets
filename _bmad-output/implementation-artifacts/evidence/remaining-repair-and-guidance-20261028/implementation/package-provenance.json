@@ -1,0 +1,13 @@
+{
+  "url": "https://api.nuget.org/v3-flatcontainer/hexalith.eventstore.client/3.128.4/hexalith.eventstore.client.3.128.4.nupkg",
+  "size": 532460,
+  "sha256": "a37b876b715cd47c4640b2f1d60cd4143126c4722cd88bf02182a06e5c38256d",
+  "sha512_base64": "nH5LX2mWdbuh2oFAVtaC/ODBCbYzM9FqmKzj/vfDmq/LER2EVdTHLJBahEwXu+k6yoSkSdlqXz4FknnaWwrhyg==",
+  "fresh_download_matches_cache": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Hexalith/Hexalith.EventStore",
+    "commit": "717a06e16c3afd81b904eaf4de646b74b13262d2"
+  },
+  "dll_sha256": "6410e83f18c98b263f186833438a142f6a611f402494a2a5a5618e9f60e24123"
+}

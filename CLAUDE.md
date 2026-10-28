@@ -90,7 +90,7 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 
 ## Running and verifying
 
-- Use the SDK in `global.json` (`10.0.402`, `rollForward: latestPatch`). The AppHost SDK is `13.6.1`; package pins come from the imported Builds catalog plus root CPM overrides.
+- Use the SDK in `global.json` (`10.0.402`, `rollForward: latestPatch`). The AppHost SDK is `13.6.4`; package pins come from the imported Builds catalog plus root CPM overrides.
 - Restore/build `Hexalith.Timesheets.slnx` with matching local Debug/source-reference mode: `dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false`, then `dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false`.
 - CI workflows exist under `.github/workflows/`; CI/CD uses Release/published packages. Never mix these restore/build graphs. Works source edges receive the evaluated consuming EventStore version, including explicit caller overrides; the documented Debug/source commands require no version workaround.
 - Prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home` in restricted environments. Run all six built xUnit v3 executables individually under `tests/<Project>/bin/Debug/net10.0/<Project>`, including `Hexalith.Timesheets.Works.Tests`. `global.json` selects Microsoft.Testing.Platform; alternatively use `dotnet test --project <project.csproj> --configuration Debug --no-build -p:UseHexalithProjectReferences=true` for each project. See README commands.
@@ -104,6 +104,6 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 ## Known pitfalls
 
 - Do not stage `references/` submodule gitlinks unless the change owns that pointer.
-- The HTTP host registers the projection assembly and EventStore processing. Capability-index, Time Entry evidence, and tenant Activity Type catalog handlers have composed and historical isolated local persistence proof. Missing state still fails closed. Current Debug/source NuGet AppHost local qualification passed on 2026-10-26; see `_bmad-output/implementation-artifacts/tests/five-apphost-security-runtime-deferrals.md`. Deployed authority/shared-rebuild acceptance remains unfinished (Story 3.6). Do not restore the obsolete unwired-index diagnosis or infer deployed acceptance from local proof.
+- The HTTP host registers the projection assembly and EventStore processing. Capability-index, Time Entry evidence, and tenant Activity Type catalog handlers have composed and historical isolated local persistence proof. Missing state still fails closed. The 2026-10-26 local pass is historical; the current Aspire 13.6.4 runtime remains unqualified after the 2026-10-28 admission refusal and failed shared-state preservation baseline. See `_bmad-output/implementation-artifacts/tests/remaining-repair-and-guidance-deferrals.md`; source/package builds and configuration-only probes grant no runtime acceptance. Deployed authority/shared-rebuild acceptance remains unfinished (Story 3.6). Do not restore the obsolete unwired-index diagnosis or infer deployed acceptance from local proof.
 
 <!-- /bmad:context -->
