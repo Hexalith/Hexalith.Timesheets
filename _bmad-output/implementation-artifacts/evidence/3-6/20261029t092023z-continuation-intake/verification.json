@@ -1,0 +1,185 @@
+{
+  "kind": "timesheets-current-intake-verification",
+  "recordedAt": "2026-10-29T09:26:16.391622+00:00",
+  "sourceHeads": {
+    "timesheets": "bc97acea37435fea73cc2fa818d27a1d053933fa",
+    "platform": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+    "eventstore": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16"
+  },
+  "collectorSafetyTests": {
+    "argv": [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "discover",
+      "-s",
+      "eng/timesheets-deployment",
+      "-p",
+      "test_inspect.py",
+      "-v"
+    ],
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform",
+    "exitCode": 0,
+    "passed": 16,
+    "failed": 0,
+    "skipped": 0,
+    "unittestReportedSeconds": 0.021,
+    "testSourceSha256": "36acc6abbdf3694c289e77d175a38c58847b83fae9756159915d8acb4b232735",
+    "testNames": [
+      "test_workload_projection_excludes_environment_and_secret_values",
+      "test_component_projection_never_retains_metadata_values",
+      "test_binding_projection_preserves_exact_user_and_role_only",
+      "test_queries_contain_no_domain_secret_or_mutation_request",
+      "test_wrong_server_refuses_before_native_request",
+      "test_insecure_context_refuses_before_native_request",
+      "test_changed_cluster_incarnation_stops_inspection",
+      "test_unavailable_cluster_identity_stops_before_other_native_queries",
+      "test_process_output_limit_applies_during_both_stream_reads",
+      "test_deployment_uses_template_dapr_annotations",
+      "test_installed_acl_and_route_wiring_retains_only_nonsecret_fields",
+      "test_every_network_request_pins_target_and_rechecks_identity",
+      "test_changed_config_or_public_certificate_refuses_combined_evidence",
+      "test_frozen_context_is_sealed_anonymous_and_uses_only_selected_identity",
+      "test_frozen_context_refuses_plugins_external_keys_and_proxy",
+      "test_ingress_backend_and_route_parent_conditions_keep_identity"
+    ],
+    "resultSource": "Observed unittest tool output in this continuation; unchanged suite not repeated"
+  },
+  "matrixScope": {
+    "executedCollectorCoverage": [
+      "wrong endpoint refusal",
+      "disabled TLS verification refusal",
+      "changed/unavailable cluster identity refusal",
+      "credentials and environment omitted",
+      "sealed immutable existing identity",
+      "bounded process output"
+    ],
+    "missingGrantImageDeploymentHistoricalSource": "Current handoff/absence/withdrawal observations retained; dependent acceptance closed. No replacement authority test claimed.",
+    "expiredHistoricalCandidateOrRefusedVerifier": "Original packets/refusal unchanged; no fresh replacement allocated without substantive progress.",
+    "properlyScopedSignedProductionBinding": "No new current qualification; historical 187/83 runs remain withdrawn."
+  },
+  "preservation": {
+    "unchangedInputFiles": 164,
+    "specHistoricalBytePrefixPreserved": true,
+    "historicalSpecBytes": 14681,
+    "historicalSpecSha256": "44781ce44c014f4de846211a65a3b01f3b4be63d9db11505659fbd315f037d06",
+    "dependencyRepositories": [
+      {
+        "path": "references/Hexalith.Commons",
+        "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.AI.Tools",
+        "head": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.Builds",
+        "head": "81ab049208678bd6616828824729c0ddac02f7d1",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.Tenants",
+        "head": "7ddb864cda5e942925b056391617eae4895c1253",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.EventStore",
+        "head": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.FrontComposer",
+        "head": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.PolymorphicSerializations",
+        "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.Projects",
+        "head": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.Conversations",
+        "head": "861f13a2e728c3847a191b0688070762b1bfa29e",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.Works",
+        "head": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.Parties",
+        "head": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.McpCli",
+        "head": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+        "branch": "main",
+        "status": ""
+      },
+      {
+        "path": "references/Hexalith.Platform",
+        "head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+        "branch": "main",
+        "status": ""
+      }
+    ],
+    "rootHeadUnchanged": true,
+    "spec23Draft": true,
+    "remainingLiveTaskUnchecked": true,
+    "noGitMutation": true
+  },
+  "localChecks": {
+    "allPacketJsonParsed": true,
+    "newRelativeLinksResolve": true,
+    "canonicalHeadsMatchDocs": true,
+    "handoffBlocked": true,
+    "requiredValuesAndPinnedHelmAbsent": true,
+    "retainedChartDigestsMatch": true,
+    "gitDiffCheckExitCode": 0
+  },
+  "initialVerificationStop": {
+    "check": "new relative links",
+    "result": "verification.json did not yet exist when README link was first checked; final output creation/check order corrected",
+    "productOrOperationalFailure": false
+  },
+  "notPerformed": [
+    "withdrawn authority qualification",
+    "original verifier replay",
+    "fresh unsigned recovery allocation",
+    "deployment",
+    "recovery",
+    "migration",
+    "permission changes",
+    "domain writes",
+    "build",
+    "runtime journey",
+    "signing",
+    "staging",
+    "commit",
+    "push"
+  ],
+  "story36Status": "in-progress",
+  "launchVerdict": "FAIL",
+  "concreteExecutableApprovalReady": false
+}

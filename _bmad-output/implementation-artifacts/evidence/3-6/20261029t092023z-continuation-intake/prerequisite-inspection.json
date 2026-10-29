@@ -1,0 +1,162 @@
+{
+  "kind": "timesheets-current-operational-prerequisite-inspection",
+  "observedAt": "2026-10-29T09:23:12.773968+00:00",
+  "plan": {
+    "path": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform/eng/timesheets-deployment/platform-managed-operations.json",
+    "exists": true,
+    "sha256": "2cead86dcd490aa219497258db62b18d85af50b66ddb2b27a1a91c4468477af3",
+    "bytes": 8698
+  },
+  "status": "BLOCKED_NOT_FOR_EXECUTION",
+  "approvalGranted": false,
+  "executableDispatcherExists": false,
+  "target": {
+    "context": "jpiquot@local",
+    "api": "https://192.168.1.30:6443",
+    "clusterUid": "b5860674-1d1e-4a3b-b413-e1bb3b9a4557",
+    "applicationNamespace": "hexalith-staging",
+    "dataNamespace": "hexalith-staging-data",
+    "environment": "staging"
+  },
+  "declaredHelm": {
+    "path": "/tmp/timesheets-hosting-helm-4.2.0/helm",
+    "exists": false,
+    "declaredSha256": "bf1e2f933afaaab981b4dce6f0caea951635539336f463780ad479de5408f869"
+  },
+  "values": {
+    "application": {
+      "path": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform/eng/timesheets-deployment/environments/staging/approved-application-values.yaml",
+      "exists": false
+    },
+    "environment": {
+      "path": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform/eng/timesheets-deployment/environments/staging/approved-environment-values.yaml",
+      "exists": false
+    }
+  },
+  "packages": [
+    {
+      "path": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform/_bmad-output/implementation-artifacts/evidence/story-3-6/20261017t143312z-hosted-package-preparation/reviewed-v2/hexalith-platform-timesheets-environment-0.1.0.tgz",
+      "exists": true,
+      "sha256": "db5941a1fc69fb7f4a44a13c9c5e662213aba2c20067035784de80a7cf329f76",
+      "bytes": 2343,
+      "name": "hexalith-platform-timesheets-environment-0.1.0.tgz",
+      "declaredSha256": "db5941a1fc69fb7f4a44a13c9c5e662213aba2c20067035784de80a7cf329f76",
+      "matchesDeclaredSha256": true
+    },
+    {
+      "path": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform/_bmad-output/implementation-artifacts/evidence/story-3-6/20261017t143312z-hosted-package-preparation/reviewed-v2/hexalith-platform-0.1.0.tgz",
+      "exists": true,
+      "sha256": "186490b2d72fa8abce88b8115baa6abb4935d0ea71dbaf67ac3839196d13ad9e",
+      "bytes": 3775,
+      "name": "hexalith-platform-0.1.0.tgz",
+      "declaredSha256": "186490b2d72fa8abce88b8115baa6abb4935d0ea71dbaf67ac3839196d13ad9e",
+      "matchesDeclaredSha256": true
+    }
+  ],
+  "kubectl": {
+    "path": "/usr/local/bin/kubectl",
+    "resolvedPath": "/mnt/wsl/docker-desktop/cli-tools/usr/local/bin/kubectl",
+    "sha256": "629d3f410e09bf49b64ae7079f7f0bda1191efed311f7d37fdbab0ad5b0ec2b7",
+    "clientVersion": "v1.36.1",
+    "versionCommand": [
+      "kubectl",
+      "version",
+      "--client",
+      "-o",
+      "json"
+    ],
+    "versionCommandExitCode": 0
+  },
+  "recovery": {
+    "inspectedAllocationDirectory": "/home/administrator/hexalith-recovery-evidence/4-0",
+    "scopedAllocations": [
+      "20260929t124806z",
+      "20261001t061620z",
+      "20261014t112353z",
+      "20261015t162756z",
+      "20261016t063900z-native-measurement-supplement",
+      "20261016t103632z-native-enrollment-execution-revision",
+      "20261016t103632z-native-enrollment-execution-revision-sealed",
+      "20261017t143202z",
+      "final-run-tools"
+    ],
+    "latestInspectedRid": "20261017t143202z",
+    "preparedAt": "2026-10-17T14:32:02Z",
+    "expiresAtExclusive": "2026-10-18T14:32:02Z",
+    "expiredAtObservedTime": true,
+    "packetSha256": "d14efe6e8e82d983187416392ccc77207b446827f149caf3b45ed4b1ae90939a",
+    "payloadChecks": [
+      {
+        "name": "original-verifier-refusal.json",
+        "matchesDeclaredBytesAndSha256": true
+      },
+      {
+        "name": "owner-documentary-policy.original.json",
+        "matchesDeclaredBytesAndSha256": true
+      },
+      {
+        "name": "policy.candidate.json",
+        "matchesDeclaredBytesAndSha256": true
+      },
+      {
+        "name": "prerequisite.json",
+        "matchesDeclaredBytesAndSha256": true
+      },
+      {
+        "name": "prior-policy.original.json",
+        "matchesDeclaredBytesAndSha256": true
+      }
+    ],
+    "operationalResults": {
+      "acceptance": null,
+      "capture": null,
+      "cleanup": null,
+      "publication": null,
+      "restore": null,
+      "signatures": null
+    },
+    "unestablishedCategories": [
+      "current-native-authority-and-revocations",
+      "current-selector-rights",
+      "current-server-and-client-identity",
+      "current-source-continuity",
+      "deployed-timesheets-runtime-acceptance",
+      "exact-operational-approval",
+      "fresh-capture-and-isolated-restores",
+      "legacy-inventory-and-writer-delivery-quiescence",
+      "maintenance-window-and-resume",
+      "protected-credential-custody",
+      "provider-retention-iam-and-immutable-readback",
+      "qualified-capture-restore-and-cleanup-adapters"
+    ],
+    "originalVerifierRerun": false,
+    "replacementAllocated": false
+  },
+  "historicalAuthorityOverlay": {
+    "path": "references/Hexalith.EventStore/_bmad-output/implementation-artifacts/evidence/6-4-historical-retirement-20261018/authority-overlay.json",
+    "present": false,
+    "lookupCommand": [
+      "cat",
+      "references/Hexalith.EventStore/_bmad-output/implementation-artifacts/evidence/6-4-historical-retirement-20261018/authority-overlay.json"
+    ],
+    "exitCode": 1,
+    "result": "No such file or directory",
+    "currentWithdrawalStatement": {
+      "path": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/docs/security/workload-binding-authority.md",
+      "exists": true,
+      "sha256": "52da70e0d05fe299777deee3ae71c860d487d9a2ce9278746f90543a534da8eb",
+      "bytes": 13209
+    },
+    "withdrawnQualificationRerun": false
+  },
+  "qualifiedCaptureRestoreCleanupEstablished": false,
+  "retainedImmutableReleaseClosureEstablished": false,
+  "configuredSignerClientGrantsAndServerProvidersEstablished": false,
+  "certifiedLegacyInventoryContinuityMaintenanceEstablished": false,
+  "concreteExecutableApprovalReady": false,
+  "limits": [
+    "Local declarations, package hashes and preserved packets establish neither current authority nor recovery acceptance.",
+    "The recovery allocation inspection covers only the named local custody directory.",
+    "Native rights are recorded separately; no Timesheets application or migration authorization is inferred."
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "kind": "timesheets-native-inspection-command",
+  "startedAt": "2026-10-29T09:21:18.691375+00:00",
+  "finishedAt": "2026-10-29T09:21:23.036254+00:00",
+  "argv": [
+    "python3",
+    "-B",
+    "eng/timesheets-deployment/observe_native.py",
+    "--output",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261029t092023z-continuation-intake/native-observation.json"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.Platform",
+  "exitCode": 0,
+  "elapsedSeconds": 4.345,
+  "rawStdoutRetained": false,
+  "rawStderrRetained": false,
+  "nativeMutationRequested": false,
+  "operationalApprovalGranted": false,
+  "toolSummary": {
+    "output": "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261029t092023z-continuation-intake/native-observation.json",
+    "completedAt": "2026-10-29T09:21:23.024621+00:00",
+    "story36Accepted": false
+  }
+}

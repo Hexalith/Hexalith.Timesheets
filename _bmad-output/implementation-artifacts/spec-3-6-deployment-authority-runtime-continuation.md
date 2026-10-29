@@ -209,3 +209,49 @@ spec-23 stays `draft`, the 4.1 operational gate stays closed and release stays
 dependency, gitlink, task status or parent status is rewritten. Local JSON/path/
 package inspection passed; unchanged builds, suites, old verifiers and the
 disposable runtime were not repeated for this documentation-only resumption.
+
+## Current prerequisite intake — 2026-10-29
+
+The [new bounded intake](evidence/3-6/20261029t092023z-continuation-intake/README.md)
+records Timesheets `bc97acea37435fea73cc2fa818d27a1d053933fa`, Platform
+`8de90958bc41b7fd01b7ed22b8ab364447a800e4` and EventStore
+`41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16`. Existing-access read-only native
+inspection completed at **2026-10-29T09:21:23.024621+00:00**, collector exit
+**0**. It pinned the expected API and verified TLS, matched the expected cluster
+UID before and after inspection, and authenticated `jpiquot` with the selected
+client certificate. Current native rules were recorded without claiming
+revocation history or Timesheets application/migration authority.
+
+The queried resources contain neither staging namespace nor an identifiable
+Timesheets workload, Service, pod, ingress, component, subscription or Dapr
+configuration. Gateway and HTTPRoute queries each exit **1**, classified as
+resource-type absent. This bounded census cannot exclude renamed installations
+or certify complete legacy coverage. No Secret object, environment value or raw
+native object is retained.
+
+The Platform handoff remains `BLOCKED_NOT_FOR_EXECUTION`, with approval and
+dispatcher false. Both approved values files and its exact Helm binary remain
+absent; both retained chart archives match their declared SHA-256 digests. In
+the inspected local recovery custody directory, the latest RID remains
+`20261017t143202z`, expired at **2026-10-18T14:32:02Z**, with all six operational
+results null and twelve evidence categories unestablished. No replacement is
+allocated merely to refresh preparation time. Qualified current recovery and
+adapters, complete immutable Release closure, actual signer/client grants and
+server-side providers, and certified legacy continuity/maintenance still block
+an executable approval bundle.
+
+The retired EventStore authority-overlay path referenced in the October 22
+snapshot is absent in the current checkout; its [current authority
+documentation](../../references/Hexalith.EventStore/docs/security/workload-binding-authority.md#validation)
+still expressly withdraws the earlier 187/187 and two 83-case results. They were
+not rerun or reinstated. The existing collector's **16/16** safety tests pass,
+including endpoint/TLS/cluster refusal, credential suppression and immutable
+context checks. Those checks and current native access establish neither
+production workload authority nor runtime acceptance. The current Aspire
+13.6.4 runtime remains unqualified under the retained October 28 evidence.
+
+The remaining live task stays unchecked, Story 3.6 remains `in-progress`,
+spec-23 remains `draft`, the 4.1 operational gate stays closed and release stays
+**FAIL**. This intake changes no code, dependency, gitlink, historical evidence,
+expired packet or original verifier refusal. No deployment, recovery, migration,
+grant change, domain write, build or runtime journey is performed.

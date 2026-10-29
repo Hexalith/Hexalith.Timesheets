@@ -1,0 +1,900 @@
+{
+  "kind": "timesheets-continuation-local-preservation",
+  "observedAt": "2026-10-29T09:21:03.306282+00:00",
+  "rootHead": "bc97acea37435fea73cc2fa818d27a1d053933fa",
+  "dependencyRepositories": {
+    "references/Hexalith.Commons": {
+      "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "3f194e17174994d308ec84af9ee2b5aa68674d0d",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.Builds": {
+      "head": "81ab049208678bd6616828824729c0ddac02f7d1",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.Tenants": {
+      "head": "7ddb864cda5e942925b056391617eae4895c1253",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.EventStore": {
+      "head": "41456b6ec8b8baf8e0ac4d0ff2f5e86f7a10be16",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "5f665c4d38afb2255a7dde4620330e09824a40a1",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.Projects": {
+      "head": "0e45105476902fcfce1f8dbd8416d7234bb16b41",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.Conversations": {
+      "head": "861f13a2e728c3847a191b0688070762b1bfa29e",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.Works": {
+      "head": "fc4638d176082a679ebc23b92a3a3ae02f23b56e",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.Parties": {
+      "head": "9239c531f3b0cbb4a998c419e537463b597ff14b",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.McpCli": {
+      "head": "2d7311cbbcc592c0ea0348463037389251d1cb4b",
+      "branch": "main",
+      "status": ""
+    },
+    "references/Hexalith.Platform": {
+      "head": "8de90958bc41b7fd01b7ed22b8ab364447a800e4",
+      "branch": "main",
+      "status": ""
+    }
+  },
+  "files": {
+    "_bmad-output/implementation-artifacts/spec-3-6-deployment-authority-runtime-continuation.md": {
+      "exists": true,
+      "sha256": "44781ce44c014f4de846211a65a3b01f3b4be63d9db11505659fbd315f037d06",
+      "bytes": 14681
+    },
+    "_bmad-output/implementation-artifacts/evidence/3-6/20261016t112503z-offline-owner-evidence-intake/exact-verifier-result.json": {
+      "exists": true,
+      "sha256": "38610efadcc9e0358a806e9178c9de75cb737079e864e5186cee21c744d6f810",
+      "bytes": 646
+    },
+    "references/Hexalith.Platform/eng/timesheets-deployment/platform-managed-operations.json": {
+      "exists": true,
+      "sha256": "2cead86dcd490aa219497258db62b18d85af50b66ddb2b27a1a91c4468477af3",
+      "bytes": 8698
+    },
+    "references/Hexalith.Platform/eng/timesheets-deployment/platform-managed-operations.md": {
+      "exists": true,
+      "sha256": "14421a59406d773d92377e3d87f0ede8bf18c25cb0a5d50978dc1f4d645b7be7",
+      "bytes": 2861
+    },
+    "references/Hexalith.Platform/eng/timesheets-deployment/observe_native.py": {
+      "exists": true,
+      "sha256": "d565bdf441242463ba0fb7d4ddaf656be0484daf7d672bad2ed6e8c6b4e67155",
+      "bytes": 18646
+    },
+    "references/Hexalith.Platform/eng/timesheets-deployment/test_inspect.py": {
+      "exists": true,
+      "sha256": "36acc6abbdf3694c289e77d175a38c58847b83fae9756159915d8acb4b232735",
+      "bytes": 13555
+    },
+    "references/Hexalith.Platform/eng/recovery-preparation/fresh_prerequisite.py": {
+      "exists": true,
+      "sha256": "ced52b51b6a44ede182a42b8e09a164354b6b7f2575211615ea097d2d6724266",
+      "bytes": 19957
+    },
+    "references/Hexalith.Platform/eng/recovery-preparation/test_fresh_prerequisite.py": {
+      "exists": true,
+      "sha256": "c551a27914cd451b1c876079e23f2cfd95b8738a30f281597880d9a88b26df59",
+      "bytes": 13380
+    },
+    "references/Hexalith.Platform/eng/recovery-preparation/FRESH-PREREQUISITE.md": {
+      "exists": true,
+      "sha256": "d5979d5db8202991e40b111462f405ce4f4629527d2fd2d04bfb722180b25f0c",
+      "bytes": 4322
+    },
+    "references/Hexalith.Platform/_bmad-output/implementation-artifacts/evidence/epic-4/4-27/20261017t093206z-sole-owner-documentary-policy/sole-owner-policy.json": {
+      "exists": true,
+      "sha256": "d3c654d2e9c9f91a236fde5751f28a29ff02b8580dbb029cfc4fdd2e7b0bcbd7",
+      "bytes": 4162
+    },
+    "references/Hexalith.EventStore/docs/security/workload-binding-authority.md": {
+      "exists": true,
+      "sha256": "52da70e0d05fe299777deee3ae71c860d487d9a2ce9278746f90543a534da8eb",
+      "bytes": 13209
+    },
+    "_bmad-output/implementation-artifacts/tests/remaining-repair-and-guidance-deferrals.md": {
+      "exists": true,
+      "sha256": "0c18da2fefb797a1170d6150562ae4660a621b57a1c83c7d59596f28d4fdee3d",
+      "bytes": 14595
+    },
+    "docs/launch-readiness.md": {
+      "exists": true,
+      "sha256": "6dc17be826836dfe6b734eebe4af1feb42f1bc84b46a7f54f09516f7bf32d218",
+      "bytes": 153658
+    },
+    "docs/deployed-magic-link-acceptance.md": {
+      "exists": true,
+      "sha256": "f3fa3e844f0e23f732371e80258945feede0866b0608e5768457433ebacb2118",
+      "bytes": 10037
+    },
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": {
+      "exists": true,
+      "sha256": "8002bfba2a94ec9442834e53350f6c695ef672cc5faea5d23e6abc3be80a62f8",
+      "bytes": 4586
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/NEXT-OPERATIONAL-APPROVAL-v4.md": {
+      "exists": true,
+      "sha256": "6fbf05a4b39e960faf6767525f174f11809ad4fb42142efe0d12730974b0a44f",
+      "bytes": 5455
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/SHA256SUMS": {
+      "exists": true,
+      "sha256": "4f9997c846d6f3095789525b6c75040fb700a6556fc4386ddacbcf903c20ae35",
+      "bytes": 12994
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/SHA256SUMS-v3": {
+      "exists": true,
+      "sha256": "8147c4f426f6361f6f9e2ea6f7eab1d98204f682f3df51d598b17166b1a6e4b5",
+      "bytes": 14109
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/packet-v3.json": {
+      "exists": true,
+      "sha256": "5582ea912dcca2b2839f08236405747d6a54232d096d5ce25286c831dfed042a",
+      "bytes": 21575
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/README-v3.md": {
+      "exists": true,
+      "sha256": "26a49e1c0ff724bb529ba3a43b8832e82407a0fb196ba50c98b2c6fee7b6eace",
+      "bytes": 3314
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/README-v2.md": {
+      "exists": true,
+      "sha256": "9d20c6df74cd161bc149d6119c6f3a26ee25a25cce8d040cdc7761e19c238f96",
+      "bytes": 2001
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/FUTURE-MEASUREMENTS-v3.md": {
+      "exists": true,
+      "sha256": "a91428868f569dd49900030d443d0e4d1ac0bee6762e0b7d0a692cd0b8258d72",
+      "bytes": 11643
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/packet-v2.json": {
+      "exists": true,
+      "sha256": "70a721ca7ced74281029c480419d08889658dc07f83844cdcefd10c7f8f99d59",
+      "bytes": 20439
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/static-transport-preflight-v4.json": {
+      "exists": true,
+      "sha256": "33e92de1a846f43f7f09f9a7e4a341e039b7e5e40ac1110ab2ef224b4c061c30",
+      "bytes": 1113
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/preservation-inventory.json": {
+      "exists": true,
+      "sha256": "3599660b8e66c426588267c4e6e6a883741ca3d8f53c3eb8556798531d14a5cf",
+      "bytes": 81855
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/SHA256SUMS-v2": {
+      "exists": true,
+      "sha256": "cb357a3cf3dc1f4b828e4c142252542997f5ef6b8de7375b73869970b9c7b20c",
+      "bytes": 13409
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/NEXT-OPERATIONAL-APPROVAL-v2.md": {
+      "exists": true,
+      "sha256": "e28a5d3b8c7c489b01a154d97adbc4dfb3c8d632cb5a51ffb5ea0f375649c30a",
+      "bytes": 13041
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/packet.json": {
+      "exists": true,
+      "sha256": "3f4dc1e480c03413d44f3a8343e2730913aea220456c2dc4736a8df3eeebed2d",
+      "bytes": 19747
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/packet-v4.json": {
+      "exists": true,
+      "sha256": "1ed5eec5579adeedf7e49519fcba125656caacbaaeaffb6509c49b6575714b14",
+      "bytes": 22714
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/NEXT-OPERATIONAL-APPROVAL.md": {
+      "exists": true,
+      "sha256": "e2b5d9adbaa0b14ef905331af17f1fc967feaf1a376b3e040024fb47024e9938",
+      "bytes": 12031
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/operation-plan.json": {
+      "exists": true,
+      "sha256": "b239b52a15de5ddaacfe156215a9f7e9666204711e6490b01126f505579b677d",
+      "bytes": 7463
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/NEXT-OPERATIONAL-APPROVAL-v3.md": {
+      "exists": true,
+      "sha256": "ce96f0d47e0014b6a5caa9cd06c4994559509b163a677da69a517559d78a9de5",
+      "bytes": 5197
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/source-freeze.json": {
+      "exists": true,
+      "sha256": "2087cf86e860b87333fa5fc624aa2ac75a805adb936cd58e7d2987c252f0cb57",
+      "bytes": 37852
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/README.md": {
+      "exists": true,
+      "sha256": "aa63b24c3e4d131eed52b96193d14b2701f5bfa1170c53abf2881a36d2e7744a",
+      "bytes": 3794
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/SHA256SUMS-v4": {
+      "exists": true,
+      "sha256": "b15a23899b97a4ad9cbdc2d31af55b2c5dab1e84e1078fe2959cb3587f457fc5",
+      "bytes": 14812
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/bindings-v4.json": {
+      "exists": true,
+      "sha256": "b5fa825a7914a4a71294c5d4c7512c074caf8d144e775a234d7f95adb1e8d346",
+      "bytes": 33381
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/FUTURE-MEASUREMENTS-v4.md": {
+      "exists": true,
+      "sha256": "81bed336655f99b330c7e5265b174c540b65bd6117fb2ac44a0feb1c33a5f1e9",
+      "bytes": 11646
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/bindings-v3.json": {
+      "exists": true,
+      "sha256": "ecd5eb15b1b5cd68f73182d0661e8546ce56ba1945c2317dd3bab5bc23e4ab4f",
+      "bytes": 33242
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/measurements.json": {
+      "exists": true,
+      "sha256": "a7a615aacdffd1fd4ab0553ad6400cdc68bd0719a8500adad025a768a99976b7",
+      "bytes": 3328
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/bindings.json": {
+      "exists": true,
+      "sha256": "8ee9ac6239ccde7c48dcd827870515edcaee3e6486853614d8856c057b57d4d5",
+      "bytes": 31382
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/bindings-v2.json": {
+      "exists": true,
+      "sha256": "b3c9c703044ee26da0e3a0671ba5b580d41af9f96cd4fb91bd033343ff3b38eb",
+      "bytes": 31380
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/operation-plan-v3.json": {
+      "exists": true,
+      "sha256": "ac73cb5110897688b99321557f857aa196a40ed67630c2d98153618a8a815e47",
+      "bytes": 8002
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/operation-plan-v4.json": {
+      "exists": true,
+      "sha256": "1fd5d5e758f6960ac90ba06f3b0053c01b66231b3e4157be54ea92493bb1899a",
+      "bytes": 8002
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/static-transport-preflight.json": {
+      "exists": true,
+      "sha256": "4f9e7975ac52ce099f5090d10049ca847e138160888873a191966d9c9015a672",
+      "bytes": 1113
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/README-v4.md": {
+      "exists": true,
+      "sha256": "c4f4891652321fb960b6198f906bee9299056c35838560a129af8d766ba6d2d5",
+      "bytes": 3337
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--iso_mem.py.txt": {
+      "exists": true,
+      "sha256": "6f9f9b558733f8ad36e898ab08df110ac1c2143726ad37139b2a9697aee6e4d2",
+      "bytes": 4323
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_restore.py.txt": {
+      "exists": true,
+      "sha256": "daaae4aa916982e3b025b5e1f63e3b234deca0e5401cca2362f623fa71d49bc8",
+      "bytes": 2312
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--openbao-source-ca.crt.txt": {
+      "exists": true,
+      "sha256": "01231c6395314bcea87f77f4f0af07e1ced943688969cb4cc39b781c79da8e98",
+      "bytes": 1582
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-2--seal_preparation.py.txt": {
+      "exists": true,
+      "sha256": "70ec13cd5bfc6de578ac93fabbed43ae69175fee478ed8fec3d82b7b0c941c37",
+      "bytes": 11510
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--iso_mem.py.txt": {
+      "exists": true,
+      "sha256": "6f9f9b558733f8ad36e898ab08df110ac1c2143726ad37139b2a9697aee6e4d2",
+      "bytes": 4323
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--validate.py.txt": {
+      "exists": true,
+      "sha256": "8324354d306cc0346e1b6c63452ddaca2defd8074699abeb6d86f4110ac35a5e",
+      "bytes": 37387
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_live_enable.py.txt": {
+      "exists": true,
+      "sha256": "3c37fce6e1b429f0a05a00883dec99a2751919deeb3cadd8c4a2b568a5bc5aa7",
+      "bytes": 642
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--manifest.py.txt": {
+      "exists": true,
+      "sha256": "55c5e24f2662c258e9b5736d9fce0f133cb16a9df37d363adc9b1221599f8e99",
+      "bytes": 7499
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--cleanup_dispatch.py.txt": {
+      "exists": true,
+      "sha256": "df5180fe3f7adc40a6433ebed756386570edc67657292e299c11f81f3624bc6f",
+      "bytes": 361
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-2--tools--proofs_private_oidc.py.txt": {
+      "exists": true,
+      "sha256": "8e65d275ef4bb2856c88f2f7536f9689a61bef166632282ac912be3080447e57",
+      "bytes": 15337
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--run_step.py.txt": {
+      "exists": true,
+      "sha256": "28eeac07ab4316a09ccea142b54fa7dbeaa42f8714b0d595c7ccc33f75725ee2",
+      "bytes": 23033
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--selftest.sh.txt": {
+      "exists": true,
+      "sha256": "c919b8f37627d380b5f1a371d531785074aa52eec2429406babf62aaf8e3e5ac",
+      "bytes": 25001
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--mem.py.txt": {
+      "exists": true,
+      "sha256": "30aa570758d2c74c8818dae5f0fe49e7df5b7e659be25fea3485e8c6024f6cae",
+      "bytes": 30598
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--sign.sh.txt": {
+      "exists": true,
+      "sha256": "e38f8cdf44b81ca64f72e5eb576a683c0a3a92db0c364b1d41c93b4d0684ea7d",
+      "bytes": 2905
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--timesheets-reviewed-source--GUARDED-RECOVERY-PREPARATION.md.txt": {
+      "exists": true,
+      "sha256": "3caef5a501038d4777d69d0ef4e7e4c87c50ee39bc32cf68a983ae8478913e5c",
+      "bytes": 22419
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_restore.py.txt": {
+      "exists": true,
+      "sha256": "daaae4aa916982e3b025b5e1f63e3b234deca0e5401cca2362f623fa71d49bc8",
+      "bytes": 2312
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_verify_db.py.txt": {
+      "exists": true,
+      "sha256": "55ed018a46f87b9638b86a016ced5608f9c585e76e47c719eb989a94c97e0c75",
+      "bytes": 1749
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_app.py.txt": {
+      "exists": true,
+      "sha256": "1de3fc94f60c9cce974d8a309b08ef75bf0ab6b604e2943f572710d6c6bde43e",
+      "bytes": 3215
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--s40lib.py.txt": {
+      "exists": true,
+      "sha256": "9b4ac17788eb61b23b9b6543b1dc31ab8dc37a524a4d2926fd2a60ec63356729",
+      "bytes": 4597
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--target_identity.py.txt": {
+      "exists": true,
+      "sha256": "985473d2d934e0771b5e3fe302172977a297f21eee0099e8e91111ac27fb7b58",
+      "bytes": 1210
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--baolib.py.txt": {
+      "exists": true,
+      "sha256": "6ee1613f74d8652c1553a51c0a382fa5e6372fd75598b68c79c04df6efb6ef3e",
+      "bytes": 2418
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--CHECK-READINESS.sh.txt": {
+      "exists": true,
+      "sha256": "9fc4ae22ec0732b895f01b958a7ac4582fefd9bc1d1dd6f3abbb2f132c74c657",
+      "bytes": 577
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--precheck.py.txt": {
+      "exists": true,
+      "sha256": "f949c9eea2e87ed3f66aa7d156ffc59652fd23107db747b9d4d72c45ad77d6fe",
+      "bytes": 3682
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--bao_inventory.py.txt": {
+      "exists": true,
+      "sha256": "d427367dbe5ab76e3545de37dac4701c3a70e0599f1b4cb05b7773c094e66d67",
+      "bytes": 3677
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--bao_capture.py.txt": {
+      "exists": true,
+      "sha256": "87590e86630fe87588bde2e17e7f64078c26b73280f2ceb4ded576138cfa96cf",
+      "bytes": 7713
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--closeout-20261015t143451z-4fbeb896--CHECK-READINESS.sh.txt": {
+      "exists": true,
+      "sha256": "7f2311ecd166a9fa88ce2759a84407c176333865f86a1409190cf21fa06c50bb",
+      "bytes": 664
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-2--tools--incident_guard.py.txt": {
+      "exists": true,
+      "sha256": "fd2691d0995cf53beaa7765e51a19329a9695450a131120efc0621cbbfb04e38",
+      "bytes": 5836
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--manifest.py.txt": {
+      "exists": true,
+      "sha256": "55c5e24f2662c258e9b5736d9fce0f133cb16a9df37d363adc9b1221599f8e99",
+      "bytes": 7499
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--baolib.py.txt": {
+      "exists": true,
+      "sha256": "6ee1613f74d8652c1553a51c0a382fa5e6372fd75598b68c79c04df6efb6ef3e",
+      "bytes": 2418
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--bao_caps.py.txt": {
+      "exists": true,
+      "sha256": "8d8888ad19f1a58c3874ba671a017c04d027623da15806d31b4e1cb141ba5fa8",
+      "bytes": 1174
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--mem.py.txt": {
+      "exists": true,
+      "sha256": "30aa570758d2c74c8818dae5f0fe49e7df5b7e659be25fea3485e8c6024f6cae",
+      "bytes": 30598
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--concurrent-deferred-work.md.txt": {
+      "exists": true,
+      "sha256": "c35809e6517495ea972d50610c788ef4edebd9514d932dc0a7fef2fe19247dd1",
+      "bytes": 68539
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--CHECK-READINESS-TIMESHEETS-REVIEWED.sh.txt": {
+      "exists": true,
+      "sha256": "f38dfd797eca61d0efd4fd935aa4de4b76a729cbcd2273196b421c4abd9df84c",
+      "bytes": 2169
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--preflight.py.txt": {
+      "exists": true,
+      "sha256": "634e426300350fabbcd4b2756650e98348cf704c7fc4876891fdb0157521dab3",
+      "bytes": 1328
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--bao_restore.py.txt": {
+      "exists": true,
+      "sha256": "e9472515ac0817c6c7067d746e42c73f59decbd3ddf5ab8996ceaf3d97ef835f",
+      "bytes": 5274
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-2--tools--proof_input_guard.py.txt": {
+      "exists": true,
+      "sha256": "ddc9d9395efbf5ac8fc34af5bac0b02cfb544646772046ff506b8e27230aca2e",
+      "bytes": 7356
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--concurrent-final-spec-1-6-compose-environments-from-declarations-with-one-platform-aspire-model.md.txt": {
+      "exists": true,
+      "sha256": "d4d77eccac8fccf4dfbb8a41b343419bb9a0e864e1f324533c1af5be4ba3727d",
+      "bytes": 103958
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--s40verify.py.txt": {
+      "exists": true,
+      "sha256": "1273b2e3936ab9e69318f35776e1badab90c4670089a3ebea5f975d6fe20e3a1",
+      "bytes": 9882
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--concurrent-spec-1-6-compose-environments-from-declarations-with-one-platform-aspire-model.md.txt": {
+      "exists": true,
+      "sha256": "bb0eee3ea3aac53d2afc82ba606b34e7936f2353c3665b1f5d1607baa20ba371",
+      "bytes": 101828
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--records_prerequisite.py.txt": {
+      "exists": true,
+      "sha256": "924d65949664367efb5c2cedb2679ba44f669d9cd1fb9cfabd3668b38c48be5c",
+      "bytes": 3298
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--k8s40.py.txt": {
+      "exists": true,
+      "sha256": "92f17f55879bdfaa13a289ed0352cede361a142de738c7f4c262f5747311797e",
+      "bytes": 5408
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--proofs.py.txt": {
+      "exists": true,
+      "sha256": "1d7ec524fe3250382371ee2e549aee9945224e77d695bfb5443c151316d38e6c",
+      "bytes": 15223
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-2--INCIDENT-ACTION.md.txt": {
+      "exists": true,
+      "sha256": "652894ca35acad46b24fbb4579e57565e5bf35c4df4975ff9c6920126318dd2f",
+      "bytes": 11891
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_oidc.py.txt": {
+      "exists": true,
+      "sha256": "3bd662e7badaba7f9a8c0dec8cc37cd1d7a087b62dc587dae88491ac1ca90376",
+      "bytes": 7183
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--policy.py.txt": {
+      "exists": true,
+      "sha256": "eb68fcf5ae4251e0fcceaf56c138027a3c46ce06d435a0fc3d82ff80b575fde6",
+      "bytes": 16032
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--timesheets-reviewed-source--test_recovery_readiness.py.txt": {
+      "exists": true,
+      "sha256": "298c73f6b51363d635db3f5ba7067ded4a50e367e894e45cba7aa5061b6ebc12",
+      "bytes": 47005
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--barman-cloud-v0.15.0-pinned.yaml.txt": {
+      "exists": true,
+      "sha256": "484a27e278f5f39d8ab922fe2b0fa7f5dfabf96e60e7587a8c34599322283423",
+      "bytes": 45192
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--verify_expired_originals.py.txt": {
+      "exists": true,
+      "sha256": "28c4d72f383be5b1da53775b675a88c9d1d88f7360e2d6447958deb946193433",
+      "bytes": 9216
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--run_step-v3.py.txt": {
+      "exists": true,
+      "sha256": "d3cc8e57e926d46d38507b9246bff49f158aa33a73098e6232f37907c489c7a2",
+      "bytes": 20822
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--cleanup_record.py.txt": {
+      "exists": true,
+      "sha256": "0168faadf97229a003a69a1d86fe5c4542c2022d7d57d07b9a469bb09387c28a",
+      "bytes": 4409
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--gate.py.txt": {
+      "exists": true,
+      "sha256": "b8adfe86198e3dcb7eeea5a9e7dcb46093e5d20ea0b238db2bc3e688f3028113",
+      "bytes": 11822
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--timesheets-reviewed-source--recovery_readiness.py.txt": {
+      "exists": true,
+      "sha256": "df752a839a16973d04ac66896effb6fae5db00df8243310ebd4045129116c389",
+      "bytes": 32971
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--concurrent-final-deferred-work.md.txt": {
+      "exists": true,
+      "sha256": "c35809e6517495ea972d50610c788ef4edebd9514d932dc0a7fef2fe19247dd1",
+      "bytes": 68539
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--policy--recovery-policy.json.txt": {
+      "exists": true,
+      "sha256": "021a8c773366fc2cc5b36e5407e03fd0e0a4dca363df1da71704725443bdc85a",
+      "bytes": 17780
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--bao_target.py.txt": {
+      "exists": true,
+      "sha256": "21e24b9f35258254d38dffc371556d00980861ce74ef770bd1982d2bf69ea7cb",
+      "bytes": 9967
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--gate.py.txt": {
+      "exists": true,
+      "sha256": "b8adfe86198e3dcb7eeea5a9e7dcb46093e5d20ea0b238db2bc3e688f3028113",
+      "bytes": 11822
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--s40lib.py.txt": {
+      "exists": true,
+      "sha256": "9b4ac17788eb61b23b9b6543b1dc31ab8dc37a524a4d2926fd2a60ec63356729",
+      "bytes": 4597
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--root_m2_iam_readback_v2.py.txt": {
+      "exists": true,
+      "sha256": "7f1c66386df05f79323b45a07079a7f8721b5637c0a7c7d1904ee0f410c887fc",
+      "bytes": 10310
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--barman-cloud-v0.15.0-pinned.yaml.txt": {
+      "exists": true,
+      "sha256": "484a27e278f5f39d8ab922fe2b0fa7f5dfabf96e60e7587a8c34599322283423",
+      "bytes": 45192
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--bao_capture.py.txt": {
+      "exists": true,
+      "sha256": "87590e86630fe87588bde2e17e7f64078c26b73280f2ceb4ded576138cfa96cf",
+      "bytes": 7713
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--upload_signed.py.txt": {
+      "exists": true,
+      "sha256": "2013b2d610c8bf9f35e6dffd25a095925d7d093a4dc757582b4ee6943f33b794",
+      "bytes": 1517
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--memories_run_id_read.py.txt": {
+      "exists": true,
+      "sha256": "d255a5b25d0bd8c5a53ac719b8b464d27e410faa2eaf0bb315cc37cc079a4819",
+      "bytes": 3309
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--cleanup_record.py.txt": {
+      "exists": true,
+      "sha256": "0168faadf97229a003a69a1d86fe5c4542c2022d7d57d07b9a469bb09387c28a",
+      "bytes": 4409
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--bao_restore.py.txt": {
+      "exists": true,
+      "sha256": "e9472515ac0817c6c7067d746e42c73f59decbd3ddf5ab8996ceaf3d97ef835f",
+      "bytes": 5274
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--run_step-v4.py.txt": {
+      "exists": true,
+      "sha256": "3a5d181137c51d5c99260ec3787d39a28a93e6d6af807012532e74ae4eebe75c",
+      "bytes": 22298
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--run_step-v2.py.txt": {
+      "exists": true,
+      "sha256": "026770d7b660e7688a039f5f707e0c61cbadc2cd7d74804c8a538b5c62c9eb44",
+      "bytes": 14520
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--sign.sh.txt": {
+      "exists": true,
+      "sha256": "e38f8cdf44b81ca64f72e5eb576a683c0a3a92db0c364b1d41c93b4d0684ea7d",
+      "bytes": 2905
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--final-run-order.sh.txt": {
+      "exists": true,
+      "sha256": "660f660bdd09d5b51217c5ec3ed79a960c0824424395226308a88007581c778c",
+      "bytes": 8443
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--validate.py.txt": {
+      "exists": true,
+      "sha256": "8324354d306cc0346e1b6c63452ddaca2defd8074699abeb6d86f4110ac35a5e",
+      "bytes": 37387
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--cleanup_preflight.py.txt": {
+      "exists": true,
+      "sha256": "0c6496f07bbe96fca548e0966afc51a070066241f1acd766e8520f7437dc43a9",
+      "bytes": 5779
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--upload_signed.py.txt": {
+      "exists": true,
+      "sha256": "2013b2d610c8bf9f35e6dffd25a095925d7d093a4dc757582b4ee6943f33b794",
+      "bytes": 1517
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_capture.py.txt": {
+      "exists": true,
+      "sha256": "6e029770a50b4048c86ee660a716486ebf87ff491c2ee38ae9eff4d41b7d4167",
+      "bytes": 4695
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_verifier_bootstrap.py.txt": {
+      "exists": true,
+      "sha256": "918e01eefe368f81d55230b33689167d10fc41b27fcdd5b24a0126d44db4d3e4",
+      "bytes": 960
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--selftest.sh.txt": {
+      "exists": true,
+      "sha256": "c919b8f37627d380b5f1a371d531785074aa52eec2429406babf62aaf8e3e5ac",
+      "bytes": 25001
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--seal_continuation.py.txt": {
+      "exists": true,
+      "sha256": "c244f5847043173c1d600b87061382265f1ff11bc8be84ddda501ae732389094",
+      "bytes": 20648
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--k8s40.py.txt": {
+      "exists": true,
+      "sha256": "92f17f55879bdfaa13a289ed0352cede361a142de738c7f4c262f5747311797e",
+      "bytes": 5408
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--restore-bao-ca.crt.txt": {
+      "exists": true,
+      "sha256": "5d76054d5dce215b44e6527271a77e4dd36d924bd4d42e383007e72fcc6d4668",
+      "bytes": 631
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--cleanup_signing_guard.py.txt": {
+      "exists": true,
+      "sha256": "cf2f97c22a6e3a3e6d37a8c975fcfb48bd406886f356c8beb011846d854179d4",
+      "bytes": 5125
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--bao_inventory.py.txt": {
+      "exists": true,
+      "sha256": "d427367dbe5ab76e3545de37dac4701c3a70e0599f1b4cb05b7773c094e66d67",
+      "bytes": 3677
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--openbao-source-ca.crt.txt": {
+      "exists": true,
+      "sha256": "01231c6395314bcea87f77f4f0af07e1ced943688969cb4cc39b781c79da8e98",
+      "bytes": 1582
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--target_identity.py.txt": {
+      "exists": true,
+      "sha256": "985473d2d934e0771b5e3fe302172977a297f21eee0099e8e91111ac27fb7b58",
+      "bytes": 1210
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_inventory.sql.txt": {
+      "exists": true,
+      "sha256": "4d3f057d66220552ed0b0047cd196622e1e784764e9444a1556f214b843a9bf6",
+      "bytes": 3303
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--proofs.py.txt": {
+      "exists": true,
+      "sha256": "1d7ec524fe3250382371ee2e549aee9945224e77d695bfb5443c151316d38e6c",
+      "bytes": 15223
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--final-run-order.sh.txt": {
+      "exists": true,
+      "sha256": "660f660bdd09d5b51217c5ec3ed79a960c0824424395226308a88007581c778c",
+      "bytes": 8443
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_app.py.txt": {
+      "exists": true,
+      "sha256": "1de3fc94f60c9cce974d8a309b08ef75bf0ab6b604e2943f572710d6c6bde43e",
+      "bytes": 3215
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-4--TIMESHEETS-REVIEWED-PACKET.md.txt": {
+      "exists": true,
+      "sha256": "a5185eb6049f9e4fd2928e386286573d0482399c19e46abb6878aa7c8bf728b8",
+      "bytes": 3853
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-2--tools--private_oidc.py.txt": {
+      "exists": true,
+      "sha256": "703f696ab885b2558ed08fb9856c2d67a381724a690b4c267190658c814caeaa",
+      "bytes": 18863
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--iso.py.txt": {
+      "exists": true,
+      "sha256": "4dbd30581ddbe0141258007fdd62f87ec7e04ac471aa274c8599d4880ae17340",
+      "bytes": 9452
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--s40verify.py.txt": {
+      "exists": true,
+      "sha256": "1273b2e3936ab9e69318f35776e1badab90c4670089a3ebea5f975d6fe20e3a1",
+      "bytes": 9882
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--policy.py.txt": {
+      "exists": true,
+      "sha256": "eb68fcf5ae4251e0fcceaf56c138027a3c46ce06d435a0fc3d82ff80b575fde6",
+      "bytes": 16032
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-2--tools--test_private_oidc.py.txt": {
+      "exists": true,
+      "sha256": "abab5433ed3ea517801c36a5a33cfeba35f1e6ab72dd24ab62daa7ba653fd63e",
+      "bytes": 9951
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_verify_db.py.txt": {
+      "exists": true,
+      "sha256": "55ed018a46f87b9638b86a016ced5608f9c585e76e47c719eb989a94c97e0c75",
+      "bytes": 1749
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_live_enable.py.txt": {
+      "exists": true,
+      "sha256": "3c37fce6e1b429f0a05a00883dec99a2751919deeb3cadd8c4a2b568a5bc5aa7",
+      "bytes": 642
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--cleanup_check.py.txt": {
+      "exists": true,
+      "sha256": "36179c9f50267a8e0c76b39c10d50100bd6b5383114bdb07ac9c66789293bec8",
+      "bytes": 11862
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--iso.py.txt": {
+      "exists": true,
+      "sha256": "4dbd30581ddbe0141258007fdd62f87ec7e04ac471aa274c8599d4880ae17340",
+      "bytes": 9452
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_inventory.sql.txt": {
+      "exists": true,
+      "sha256": "4d3f057d66220552ed0b0047cd196622e1e784764e9444a1556f214b843a9bf6",
+      "bytes": 3303
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--NEXT-PROTECTED-SIGNING-ACTION.md.txt": {
+      "exists": true,
+      "sha256": "6bcf84047c0d9af8f26ff0dc345bfc54bc6cfc883aead42b86f7c299a94e7545",
+      "bytes": 7772
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--kc_verifier_bootstrap.py.txt": {
+      "exists": true,
+      "sha256": "918e01eefe368f81d55230b33689167d10fc41b27fcdd5b24a0126d44db4d3e4",
+      "bytes": 960
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--run_step-v1.py.txt": {
+      "exists": true,
+      "sha256": "2b07b5ff77489264dc9ace02670a572bad1395a9126c7bff26740f57cbad8b63",
+      "bytes": 13497
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--precheck.py.txt": {
+      "exists": true,
+      "sha256": "f949c9eea2e87ed3f66aa7d156ffc59652fd23107db747b9d4d72c45ad77d6fe",
+      "bytes": 3682
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--bao_target.py.txt": {
+      "exists": true,
+      "sha256": "21e24b9f35258254d38dffc371556d00980861ce74ef770bd1982d2bf69ea7cb",
+      "bytes": 9967
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_capture.py.txt": {
+      "exists": true,
+      "sha256": "6e029770a50b4048c86ee660a716486ebf87ff491c2ee38ae9eff4d41b7d4167",
+      "bytes": 4695
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-1--cleanup_check.py.txt": {
+      "exists": true,
+      "sha256": "36179c9f50267a8e0c76b39c10d50100bd6b5383114bdb07ac9c66789293bec8",
+      "bytes": 11862
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--bao_caps.py.txt": {
+      "exists": true,
+      "sha256": "8d8888ad19f1a58c3874ba671a017c04d027623da15806d31b4e1cb141ba5fa8",
+      "bytes": 1174
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--kc_oidc.py.txt": {
+      "exists": true,
+      "sha256": "3bd662e7badaba7f9a8c0dec8cc37cd1d7a087b62dc587dae88491ac1ca90376",
+      "bytes": 7183
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-3--root_m2_iam_readback.py.txt": {
+      "exists": true,
+      "sha256": "53a6163a27711684854608aaa665e2c4f0419db54e8d31dc7a1989c735ffe32a",
+      "bytes": 10330
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/frozen/historical-0--tools--preflight.py.txt": {
+      "exists": true,
+      "sha256": "634e426300350fabbcd4b2756650e98348cf704c7fc4876891fdb0157521dab3",
+      "bytes": 1328
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/trust/allowed_signers.txt": {
+      "exists": true,
+      "sha256": "77df53775f890a393578cb5480512b532ef730bcc854a2bf1d4cdd9bb1d77247",
+      "bytes": 131
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/trust/recipient.pub": {
+      "exists": true,
+      "sha256": "1eb59a1bd7db64d2ea0dfcb969286c506ccde400183215f3f95be00c73d4c989",
+      "bytes": 100
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261015t162756z/policy/recovery-policy.candidate.json": {
+      "exists": true,
+      "sha256": "a4be017625ba312ab93d76d71bbbf8433f84c08ed43d798c892a39da8939fcdd",
+      "bytes": 18795
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261017t143202z/policy.candidate.json": {
+      "exists": true,
+      "sha256": "e09fb1a8619725f3f40d48d352d3342c2f602a3a2f6bda2308efe6ac7d825f8a",
+      "bytes": 18795
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261017t143202z/owner-documentary-policy.original.json": {
+      "exists": true,
+      "sha256": "d3c654d2e9c9f91a236fde5751f28a29ff02b8580dbb029cfc4fdd2e7b0bcbd7",
+      "bytes": 4162
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261017t143202z/original-verifier-refusal.json": {
+      "exists": true,
+      "sha256": "38610efadcc9e0358a806e9178c9de75cb737079e864e5186cee21c744d6f810",
+      "bytes": 646
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261017t143202z/packet.json": {
+      "exists": true,
+      "sha256": "d14efe6e8e82d983187416392ccc77207b446827f149caf3b45ed4b1ae90939a",
+      "bytes": 892
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261017t143202z/prior-policy.original.json": {
+      "exists": true,
+      "sha256": "a4be017625ba312ab93d76d71bbbf8433f84c08ed43d798c892a39da8939fcdd",
+      "bytes": 18795
+    },
+    "/home/administrator/hexalith-recovery-evidence/4-0/20261017t143202z/prerequisite.json": {
+      "exists": true,
+      "sha256": "9b0d5040f1c43d562469bcb8cb4b6dfeb9769fd11b43499ee3304a22b013fbd4",
+      "bytes": 5814
+    },
+    "_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-23.md": {
+      "exists": true,
+      "sha256": "311d1987f27901a864d86a3d4b86bb108c4116695bf32886fce383147d4de192",
+      "bytes": 24630
+    },
+    "_bmad-output/implementation-artifacts/3-6-resume-checkpoint.md": {
+      "exists": true,
+      "sha256": "938b59e5eefeadf62c4122a6e7998cc6e8b811414b4d590eaf8d0d035ea67bdc",
+      "bytes": 65344
+    },
+    "src/Hexalith.Timesheets/Program.cs": {
+      "exists": true,
+      "sha256": "b20c0e07703bcb870ce9dc459e2eaf997d5e87d877eb672a27368a043a2b1ec3",
+      "bytes": 4665
+    },
+    "src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs": {
+      "exists": true,
+      "sha256": "aba93678bff9d1883867dd59778f855f84521737346c030793c283f707005a96",
+      "bytes": 10137
+    }
+  },
+  "additionalHistoricalInputsObservedAt": "2026-10-29T09:23:12.583231+00:00"
+}
