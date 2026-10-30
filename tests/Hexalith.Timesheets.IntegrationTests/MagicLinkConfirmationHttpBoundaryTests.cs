@@ -743,7 +743,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         JsonSerializer.Serialize(factory.Store.GetSelectedCatalog(Tenant()), JsonOptions).ShouldBe(catalogBefore);
 
         factory.LocalPort = 8081;
-        using HttpResponseMessage admittedResponse = await factory.PostProjectionAsync(client, projectionPath, dispatch, assertion);
+        // The successful control uses the canonical SDK method; the public-port probe above retains its original casing.
+        using HttpResponseMessage admittedResponse = await factory.PostProjectionAsync(client, "/project/v2", dispatch, assertion);
         admittedResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
         (await admittedResponse.Content.ReadFromJsonAsync<ProjectionDispatchResponse>(
             JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull()
@@ -2049,6 +2050,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
+#if HEXALITH_SOURCE_REFERENCES
+        private readonly HttpRouteCatalogFixture _routeCatalog = new();
+#endif
+
         public ScriptedAccessGuard AccessGuard { get; } = new();
 
         /// <summary>Gets the tenant/role admission seam used before transition state reads.</summary>
@@ -2348,6 +2353,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
             builder.ConfigureServices(services =>
             {
+#if HEXALITH_SOURCE_REFERENCES
+                _routeCatalog.Configure(services, workloadGatewayHandler is CapturingWorkloadGatewayHandler captured
+                    ? captured.CreateInvocationTransport : null);
+#endif
                 // Port-specific tests set Connection.LocalPort before the guard; other in-process
                 // journeys explicitly open the projection route without claiming listener coverage.
                 services.Configure<InternalSurfaceOptions>(options => options.AllowOnAnyPort = internalPort is null);
@@ -2559,7 +2568,16 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             assertion ??= await IssueAssertionAsync(operation);
             request.Headers.Add(DaprAppChannelToken.HeaderName, ChannelToken);
             request.Headers.Add(EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName, assertion);
+#if HEXALITH_SOURCE_REFERENCES
+            await AddCatalogHeadersAsync(request);
+#endif
         }
+
+#if HEXALITH_SOURCE_REFERENCES
+        /// <summary>Binds a fixture call to the platform's committed generation.</summary>
+        public Task AddCatalogHeadersAsync(HttpRequestMessage request)
+            => _routeCatalog.AddHeadersAsync(Services, request, TestContext.Current.CancellationToken);
+#endif
 
         public async Task<string> IssueAssertionAsync(string operation)
         {
@@ -2571,7 +2589,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     TestContext.Current.CancellationToken)).ShouldNotBeNull();
         }
 
-        private static ProjectionEventDto ProjectionEvent(long sequence, object payload)
+        /// <summary>Creates an event for mapped fixture projection delivery.</summary>
+        public static ProjectionEventDto ProjectionEvent(long sequence, object payload)
             => new(
                 payload.GetType().FullName!,
                 JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions),

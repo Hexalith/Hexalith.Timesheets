@@ -1,0 +1,37 @@
+{
+  "baseline_commit": "61db140db055dca2c9e4e2064f57ede8960f9003",
+  "parent_revision": "7a8a89ca727f44b7b1fa6a58a79d8050f853af67",
+  "diff": {
+    "path": "/tmp/timesheets-rrp1-review.patch",
+    "bytes": 8111201,
+    "sha256": "442e4311ff37429c12bbe8f9423ebf3a4068098f1a90cce7af0198cb5a0d0888"
+  },
+  "layers": {
+    "blind_hunter": {
+      "findings": 10,
+      "triage": "RP-B1 through RP-B10"
+    },
+    "edge_case_hunter": {
+      "findings": 1,
+      "triage": "RP-E1"
+    },
+    "verification_gap": {
+      "findings": 1,
+      "triage": "RP-V1"
+    }
+  },
+  "followup": {
+    "path": "/tmp/timesheets-rrp1-review-fixes.patch",
+    "sha256": "a9d81941b39c2f4de8dd19b1b7aab3b7137f4f8653163033799de10fc1200f3d",
+    "verification_gap_result": "No verification gaps found."
+  },
+  "live_runtime_qualification_run": false,
+  "platform_guards_replaced": false,
+  "dependency_source_edits": false,
+  "late_controls_followup": {
+    "patch": "/tmp/timesheets-rrp1-late-controls.patch",
+    "sha256": "7eda76569cd9dea25707fe1c88473a6faea2199623b7d369a19fd47193dddf7e",
+    "edge_case_hunter_findings": [],
+    "scope": "canonical listener control, uppercase guarded refusal, projection-only catalog and protected process default refusal with direct keyed-processor rejection proof"
+  }
+}

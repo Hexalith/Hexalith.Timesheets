@@ -1,0 +1,175 @@
+{
+  "parent_revision": "7a8a89ca727f44b7b1fa6a58a79d8050f853af67",
+  "sdk_source_revision": "5945ba8b3575f76597075e460bb9a973453272ea",
+  "original_five_publication_complete": true,
+  "workflow_status": "in-review",
+  "current_source_http_blocker": "New and unchanged HTTP tests receive 503 from /project/v2 during ProjectValidStateAsync; neither reaches retry logic. Current SDK source requires committed route-catalog authority and incoming generation headers absent from this fixture. No guard was bypassed.",
+  "source_suite_receipts": [
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noLogo"
+      ],
+      "exit_code": 0,
+      "seconds": 13.981,
+      "log": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.ArchitectureTests.log"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noLogo"
+      ],
+      "exit_code": 0,
+      "seconds": 0.628,
+      "log": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.Contracts.Tests.log"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noLogo"
+      ],
+      "exit_code": 0,
+      "seconds": 7.751,
+      "log": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.Server.Tests.log"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noLogo"
+      ],
+      "exit_code": 0,
+      "seconds": 0.474,
+      "log": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.Works.Tests.log"
+    }
+  ],
+  "projection_broad_attempt": "Stopped by parent SIGINT after the separate source HTTP blocker was established; 542.198 seconds, partial 760-case summary with one cancellation failure. Incomplete, not a passing full suite. Integration full suite was not started.",
+  "source_build": {
+    "restore": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "build": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "result": "pass, zero warnings/errors after matching restore",
+    "initial_no_restore_attempt": "26 errors including missing Microsoft.Gen.Metrics.dll in the selected CLI home package cache; matching restore resolves it. Initial log was superseded by successful full-build log; do not claim a retained initial full log."
+  },
+  "source_header_tests": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -method '*MultipleIdempotencyKeyValuesDenyWithoutSubmission' -noLogo",
+    "exit_code": 1,
+    "total": 2,
+    "failed": 2,
+    "stage": "projection setup"
+  },
+  "unchanged_source_retry_tests": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -method '*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects' -noLogo",
+    "exit_code": 1,
+    "total": 2,
+    "failed": 2,
+    "stage": "projection setup"
+  },
+  "isolated_package_compatibility": {
+    "configuration": "Release",
+    "source_references": false,
+    "artifacts": "/tmp/timesheets-five-review-package",
+    "eventstore": "3.128.4",
+    "restore": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj -p:Configuration=Release -p:UseHexalithProjectReferences=false --artifacts-path /tmp/timesheets-five-review-package -m:1 /nr:false",
+    "build": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj --configuration Release --no-restore -p:UseHexalithProjectReferences=false --artifacts-path /tmp/timesheets-five-review-package -warnaserror -m:1 /nr:false",
+    "tests": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home /tmp/timesheets-five-review-package/bin/Hexalith.Timesheets.IntegrationTests/release/Hexalith.Timesheets.IntegrationTests -method '*MultipleIdempotencyKeyValuesDenyWithoutSubmission' -method '*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects' -noLogo",
+    "build_result": "pass, zero warnings/errors",
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  },
+  "review": "All three layers completed; each finding classified in the spec; accepted header regression independently rechecked.",
+  "source_changes": "HTTP regression tests and documentation only; no production code, dependency pin or checkout change.",
+  "publication": "No commit or push in this resumed session; verification blocker prevents step-05 completion.",
+  "archives": [
+    {
+      "original": "/tmp/timesheets-five-review-restore.log",
+      "archive": "timesheets-five-review-restore.log.gz",
+      "sha256": "67a9e53b1c8a503e9692fda69f446665e4a6100bb9559e47e701079688c5f1fa",
+      "archive_sha256": "ef3063ba7fb3e14fde6587c858d66394418ce3ae5504ec637e00da7afdadcd72"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-build.log",
+      "archive": "timesheets-five-review-build.log.gz",
+      "sha256": "69b38d7d5b84eadd4778b823ea6fd1106ce650f39c7ed41174a80b6e616a1b5e",
+      "archive_sha256": "d89f046c438b90f416f48ef41f3f315c142c3b4e668c3cc25bada24682a0af7d"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-test-build.log",
+      "archive": "timesheets-five-review-test-build.log.gz",
+      "sha256": "5895eec75c59da71100c8bd16e16b9b0d1ff7bd9d34c444e97b3013ed28243dc",
+      "archive_sha256": "40eecd2e78995b18ca816a8a0521cc06d87f890b714242ca91a65c13c3cba277"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-header-tests.log",
+      "archive": "timesheets-five-review-header-tests.log.gz",
+      "sha256": "bdeaab05853238df29ab96269d7fb74940472b921189865993efe058743455e4",
+      "archive_sha256": "677e01f5755a0e1ff09b5b3d75929ba22427823c1c0a76b2ee4494b92bb82844"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-existing-retry.log",
+      "archive": "timesheets-five-review-existing-retry.log.gz",
+      "sha256": "bcfcd4347b3f26bd0abeb51024db93005db4ea8174bf752f31b5404900c70f3f",
+      "archive_sha256": "1ebfd7682276593284b1a671ee5e1caf45466910345508f1a4fe534a481ea097"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-package-restore.log",
+      "archive": "timesheets-five-review-package-restore.log.gz",
+      "sha256": "cea0bff92a8dc1443b211334b95869c497a5bd66f3231d8c6d61c799b06c6984",
+      "archive_sha256": "817a8df1782ed7ead6e3f3f4126f25d392fa3a2a30f9d720bbb01a42e848ada8"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-package-build.log",
+      "archive": "timesheets-five-review-package-build.log.gz",
+      "sha256": "137e7a69ed9259de7ccf07869313b0de27172a94d18296e42e65da78150684da",
+      "archive_sha256": "6543c30f90299d2f3192077272a60eadaedd42e57e55e38afdb9d3f97875b63f"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-package-tests.log",
+      "archive": "timesheets-five-review-package-tests.log.gz",
+      "sha256": "c5c9467f671b99f011d1d0119d630f8aefa5e07a7bbf59c11d0c9b58ea83dc8b",
+      "archive_sha256": "c59221cfdf3d91349efb53611c7ff348d3e51d0f39e5c2173499e08969ea8957"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.Works.Tests.log",
+      "archive": "Hexalith.Timesheets.Works.Tests.log.gz",
+      "sha256": "a6ddc35eb18d75c23abc905f13d2c13fd9e6e8f31bdc82e8cda7af608ef72398",
+      "archive_sha256": "04416f474146a2a44e23141808729d7607e1df8364bafe5efa18a0e7b917dea9"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.Server.Tests.log",
+      "archive": "Hexalith.Timesheets.Server.Tests.log.gz",
+      "sha256": "95dde61163c02029157f72274be80e8fd233bbaa1a327f0042f0a26289926b53",
+      "archive_sha256": "97f92f47e9da9b9b068fa78a49173ec9389751dd7b745b4085dc9568d2fb3923"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.Projections.Tests.log",
+      "archive": "Hexalith.Timesheets.Projections.Tests.log.gz",
+      "sha256": "564bad2cb172b95d31f587c9f95c8978e3c78a8706b4df10fb74c3e5621c50ed",
+      "archive_sha256": "2dc704fe523c40e91e71e32be9f1e6476e1298b493a13fe0b649d47e47a2c8ec"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.ArchitectureTests.log",
+      "archive": "Hexalith.Timesheets.ArchitectureTests.log.gz",
+      "sha256": "ef8871bbb72e1e7051b1c45247f239d466681ef476edab11f8ef6c01a09b365a",
+      "archive_sha256": "c7236d7ec075f74152ab2ce781a110f56938961c92a4687969d06ddc3b75b454"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-verification/Hexalith.Timesheets.Contracts.Tests.log",
+      "archive": "Hexalith.Timesheets.Contracts.Tests.log.gz",
+      "sha256": "2057bce43e9295f6bc1f18989179f9a81913084d63c6c7f9647294c150ebb6e6",
+      "archive_sha256": "5d5f09bfa8e814a4891e4d2206b55c8c376c79caff3730efad189f792de7e73f"
+    },
+    {
+      "original": "/tmp/timesheets-five-review-migration-tests.log",
+      "archive": "timesheets-five-review-migration-tests.log.gz",
+      "sha256": "b3725ce4761c7294a1a9984ba328ea1d8529d5cbecfa22cbbef4edfbe5dd3d0a",
+      "archive_sha256": "9317efac3ed0bfa00e6f553a62f330bb1646f82fb26aa68e78fb44573444153d"
+    }
+  ],
+  "current_focused_migration": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class '*MagicLinkV6MigrationTests' -noLogo",
+    "exit_code": 0,
+    "total": 97,
+    "passed": 97,
+    "failed": 0
+  }
+}

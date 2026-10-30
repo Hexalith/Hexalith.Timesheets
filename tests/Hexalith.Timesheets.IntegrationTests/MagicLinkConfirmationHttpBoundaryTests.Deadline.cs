@@ -88,6 +88,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             var root = (await epoch.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(MagicLinkTokenHashCapabilityIndexProjection.GlobalScope(),
                 MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken)).Value.ShouldNotBeNull();
             root.StorageVersion.ShouldBe(7);
+            var reader = new MagicLinkTokenHashCapabilityIndexTreeReader(epoch,
+                MagicLinkTokenHashCapabilityIndexProjection.GlobalScope());
+            (await reader.FindCandidatesAsync(root.TokenRoot, issued.TokenHash.Value, TestContext.Current.CancellationToken))
+                .ShouldHaveSingleItem().ShouldBe(new MagicLinkTokenHashCapabilityIndexEntry(Tenant(), capabilityId));
         }
     }
 

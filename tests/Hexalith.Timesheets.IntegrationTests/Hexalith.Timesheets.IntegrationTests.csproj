@@ -2,6 +2,10 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <!-- Current source adds catalog activation APIs absent from the published SDK. -->
+  <PropertyGroup Condition="'$(UseHexalithProjectReferences)' == 'true'">
+    <DefineConstants>$(DefineConstants);HEXALITH_SOURCE_REFERENCES</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector">

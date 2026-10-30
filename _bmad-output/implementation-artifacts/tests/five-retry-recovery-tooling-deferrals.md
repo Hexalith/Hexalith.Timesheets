@@ -1,5 +1,42 @@
 # Five retry, recovery and tooling deferrals — 2026-10-26
 
+## RR-P1 fixture admission — 2026-10-30
+
+The newer Debug/source route-catalog admission is configured through the supported Development prepare/ready/commit lifecycle, actual named-handler/capability/endpoint observations, an isolated CAS authority cell and committed root/epoch headers. Platform guards and fail-closed defaults remain installed. The capturing gateway uses its own observed auxiliary capability and separately owned transport. Published-package compatibility evidence below is preserved; no dependency checkout was edited.
+
+The fixed-output focused run passes **32/32**, including the original four source failures, both-route header boundaries, stored-comment tampering, complete-intent conflicts, exact cold-recovery index contents and eleven catalog refusal cases. The bootstrap budget cases pass **2/2** in isolation at the unchanged budget. Independent review corrections are verified; the follow-up verification reviewer reports no gaps. Four ordinary full suites pass Architecture **118**, Contracts **108**, Server **746**, Works **76**; migration passes **97**. Fixed-output full Projections passes **787/787** in **949.004 s**, with no skips; corrected full Integration passes **1004 tests / 5 declared skips / 0 failures** in **1048.269 s**. The preceding complete Integration run reports **1001 passed / 2 failed / 5 declared skips** in **947.177 s**, exposing two newer admission expectations.
+
+Current SDK coordinator **38**, abort repair **13**, Admin UI **7**, Sample UI **7** and PolicyLifecycle **22** pass. Its unchanged whole-content secret scan fails **1/1**, reporting three existing route-catalog test paths; no scanner exclusion or dependency edit was made. The spec remains **in-review** because that required gate has not passed. The initial broad attempts were interrupted and superseded after a rebuild invalidated running Integration assets; their partial summaries do not count as full passes.
+
+The listener test retains both public-port casing probes and uses canonical `/project/v2` for its successful internal control. A separate negative proves uppercase internal refusal. The projection-only fixture grants no `/process` command admission: source tests verify 503 and unchanged state, then separately verify the registered keyed processor's forged-origin rejection. Package-mode keeps its original mapped HTTP assertion. No owner policy or adapter is fabricated; actual source command enrollment remains an open follow-up. Independent edge-case review of these corrections finds no issues.
+
+[RR-P1 commands and lossless logs](../evidence/five-retry-recovery-tooling-deferrals/resume-20261030/rr-p1/checks.json) retain all completed, failed, superseded and passing checks.
+
+Final six-suite source result: **2839 passed**, zero failures and **5** declared Integration skips. Matching restore and final warnings-as-errors solution build pass with zero warnings/errors. `npm ci`, final audit (zero vulnerabilities), registry signatures and **99** release-tooling tests pass; pinned commitlint validates the exact local commit message. The SDK scan's three pre-existing violations remain unpassed, so the spec stays **in-review**. No closure or deployment waiver is granted.
+
+| Full Timesheets suite | Passed | Failed | Skipped |
+| --- | ---: | ---: | ---: |
+| Architecture | 118 | 0 | 0 |
+| Contracts | 108 | 0 | 0 |
+| Server | 746 | 0 | 0 |
+| Works | 76 | 0 | 0 |
+| Projections (`-parallel none`) | 787 | 0 | 0 |
+| Integration | 1004 | 0 | 5 |
+
+The original multiple-header regression is preserved verbatim and all **15** prior evidence files are byte-identical. No live runtime qualification or deployed acceptance is claimed; launch remains **FAIL**. This resume requests a local commit only.
+
+## Earlier resume checkpoint — 2026-10-30
+
+All five original items are published. The remaining DW-184 module wiring shipped in `1b17c2e012d1fbc889686392cad98e2ee06f4547` against published EventStore **3.128.4**. That implementation is an ancestor of the current main branch; the ledger already records module publication complete. The [repair/guidance report](remaining-repair-and-guidance-deferrals.md) retains package provenance, independent review, source/package builds, 97 migration cases and the publication receipt. The archive below is historical provenance, not an unapplied change or a current package blocker.
+
+The resumed review adds rejection coverage for multiple `Idempotency-Key` values on both submit routes, including exact unchanged stored events and a subsequent successful use of the same capability. README now documents the optional retry contract. Production certification remains denied by default; scalable manifests, deployed inventory, current runtime qualification and Story 3.6 deployed acceptance remain open. Launch remains **FAIL**.
+
+Fresh source verification exposes a separate SDK compatibility blocker: both the two new header cases and two unchanged retry cases fail during projection setup because `/project/v2` returns 503, before retry logic executes. The same four cases pass against the isolated published EventStore 3.128.4 graph, with a warnings-as-errors build. The current SDK source checkout has newer platform route-catalog admission guards; those guards are preserved. This resumed workflow remains in-review pending supported source-fixture admission. Historical passing receipts below are not current source verification.
+
+Current matching Debug/source solution restore/build passes with zero warnings/errors. Architecture **118**, Contracts **108**, Server **746**, Works **76**, and the focused migration class **97** pass. The full Projections attempt was interrupted after the separate HTTP blocker was confirmed: its partial 760-case summary includes one cancellation failure and grants no full-suite pass. The full Integration suite was not started. [Resumed verification receipts](../evidence/five-retry-recovery-tooling-deferrals/resume-20261030/checks.json) retain exact commands, outcomes and lossless log archives. No commit or push was made during this resume.
+
+## Historical handoff — 2026-10-26
+
 Four items are pushed to main: DW-130, DW-188, DW-189 and the composed HTTP timeout follow-up. **DW-184 remains open**: its implementation is independently reviewed and tested, but the required SDK package cannot currently be released. The complete module wiring is preserved in [the pending patch](../evidence/five-retry-recovery-tooling-deferrals/certified-repair-pending.patch.gz), with [file hashes and prerequisite](../evidence/five-retry-recovery-tooling-deferrals/certified-repair-pending.json). It is excluded from compiled source until a published SDK supplies the API. Launch remains **FAIL**; DW-194 and deployed Story 3.6 acceptance remain open.
 
 | Item | Verified behavior | Publication disposition |

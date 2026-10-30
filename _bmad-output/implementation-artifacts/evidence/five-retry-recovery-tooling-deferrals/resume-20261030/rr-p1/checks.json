@@ -1,0 +1,1592 @@
+{
+  "recorded_utc": "2026-10-30T10:33:30.154186+00:00",
+  "parent_revision": "7a8a89ca727f44b7b1fa6a58a79d8050f853af67",
+  "sdk_source_revision": "5945ba8b3575f76597075e460bb9a973453272ea",
+  "sdk_source_status": "",
+  "workflow_status": "in-review",
+  "rr_p1_resolved": true,
+  "required_checks": [
+    "source-restore",
+    "source-build-late-controls",
+    "http-final-controls",
+    "focused-migration-final",
+    "full-ArchitectureTests",
+    "full-Contracts.Tests",
+    "full-Server.Tests",
+    "full-Works.Tests",
+    "full-projections-serial",
+    "full-integration-corrected",
+    "sdk-coordinator",
+    "sdk-abort-repair",
+    "sdk-admin-fixture",
+    "sdk-sample-fixture",
+    "sdk-policy-fixture",
+    "sdk-secrets",
+    "npm-ci",
+    "npm-audit",
+    "npm-signatures",
+    "release-tooling",
+    "commitlint",
+    "diff-check"
+  ],
+  "checks": [
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-method",
+        "*DelayedCombinedInventoryPersistsV7WithinGatewayAttemptBudget",
+        "-parallel",
+        "none",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 6.39,
+      "log": "bootstrap-isolated.log",
+      "name": "bootstrap-isolated",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "bootstrap-isolated.log.gz",
+      "summary": {
+        "total": 2,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 6.182
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 6.455,
+      "log": "boundary-build-final.log",
+      "name": "boundary-build-final",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "boundary-build-final.log.gz"
+    },
+    {
+      "command": [
+        "node",
+        "node_modules/@commitlint/cli/cli.js",
+        "--edit",
+        "/tmp/timesheets-rrp1-commit-message.txt"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 0.294,
+      "log": "commitlint.log",
+      "name": "commitlint",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "commitlint.log.gz"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 0.086,
+      "log": "diff-check.log",
+      "name": "diff-check",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "diff-check.log.gz"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*InvalidIdempotencyKeyPreservesCapabilityAndMaximumLengthKeySucceeds",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 8.645,
+      "log": "empty-header-boundary.log",
+      "name": "empty-header-boundary",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "empty-header-boundary.log.gz",
+      "summary": {
+        "total": 8,
+        "errors": 0,
+        "failed": 2,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 8.198
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*ComposedHostGatewaySendsBoundAssertionOnWorkloadSubmitRoute",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 3.613,
+      "log": "focused-gateway.log",
+      "name": "focused-gateway",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "focused-gateway.log.gz",
+      "summary": {
+        "total": 1,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 3.212
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*MultipleIdempotencyKeyValuesDenyWithoutSubmission",
+        "-method",
+        "*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects",
+        "-method",
+        "*FixtureCatalogRefusesUnboundProjectionWithoutWritingState",
+        "-method",
+        "*GatewayDefaultHttpDeadlineCancelsMappedBootstrapAndColdRetryDrainsPersistedPendingWork",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 54.626,
+      "log": "focused-http-final.log",
+      "name": "focused-http-final",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "focused-http-final.log.gz",
+      "summary": {
+        "total": 15,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 54.083
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-class",
+        "*MagicLinkV6MigrationTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 34.959,
+      "log": "focused-migration-final.log",
+      "name": "focused-migration-final",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "focused-migration-final.log.gz",
+      "summary": {
+        "total": 97,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 34.525
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 32.259,
+      "log": "full-ArchitectureTests.log",
+      "name": "full-ArchitectureTests",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-ArchitectureTests.log.gz",
+      "summary": {
+        "total": 118,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 31.923
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 1.062,
+      "log": "full-Contracts.Tests.log",
+      "name": "full-Contracts.Tests",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-Contracts.Tests.log.gz",
+      "summary": {
+        "total": 108,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 0.71
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 8.912,
+      "log": "full-Server.Tests.log",
+      "name": "full-Server.Tests",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-Server.Tests.log.gz",
+      "summary": {
+        "total": 746,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 8.496
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 0.7,
+      "log": "full-Works.Tests.log",
+      "name": "full-Works.Tests",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-Works.Tests.log.gz",
+      "summary": {
+        "total": 76,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 0.428
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 1048.528,
+      "log": "full-integration-corrected.log",
+      "name": "full-integration-corrected",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-integration-corrected.log.gz",
+      "summary": {
+        "total": 1009,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 5,
+        "not_run": 0,
+        "test_seconds": 1048.269
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 947.411,
+      "log": "full-integration-final.log",
+      "name": "full-integration-final",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-integration-final.log.gz",
+      "summary": {
+        "total": 1008,
+        "errors": 0,
+        "failed": 2,
+        "skipped": 5,
+        "not_run": 0,
+        "test_seconds": 947.177
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 58,
+      "seconds": 772.307,
+      "log": "full-integration.log",
+      "name": "full-integration",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-integration.log.gz",
+      "summary": {
+        "total": 757,
+        "errors": 0,
+        "failed": 2,
+        "skipped": 5,
+        "not_run": 0,
+        "test_seconds": 771.808
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-parallel",
+        "none",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 949.243,
+      "log": "full-projections-serial.log",
+      "name": "full-projections-serial",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-projections-serial.log.gz",
+      "summary": {
+        "total": 787,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 949.004
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 58,
+      "seconds": 772.325,
+      "log": "full-projections.log",
+      "name": "full-projections",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "full-projections.log.gz",
+      "summary": {
+        "total": 760,
+        "errors": 0,
+        "failed": 2,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 771.805
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*InvalidIdempotencyKeyPreservesCapabilityAndMaximumLengthKeySucceeds",
+        "-method",
+        "*MultipleIdempotencyKeyValuesDenyWithoutSubmission",
+        "-method",
+        "*KeyedAdjustmentReceiptRejectsMismatchingStoredComment",
+        "-method",
+        "*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects",
+        "-method",
+        "*KeyedAdjustmentReconcilesReplacementActivityAndOriginalCommentAcrossPolicyChange",
+        "-method",
+        "*GatewayDefaultHttpDeadlineCancelsMappedBootstrapAndColdRetryDrainsPersistedPendingWork",
+        "-method",
+        "*FixtureCatalogRefusesUnboundProjectionWithoutWritingState",
+        "-method",
+        "*ComposedHostGatewaySendsBoundAssertionOnWorkloadSubmitRoute",
+        "-method",
+        "*ConfiguredInternalPortRefusesProjectionWritesOnThePublicPort",
+        "-method",
+        "*ProtectedProcessRoutePreservesCatalogAdmissionAndKeyedProcessorRejection",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 72.715,
+      "log": "http-final-controls.log",
+      "name": "http-final-controls",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "http-final-controls.log.gz",
+      "summary": {
+        "total": 32,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 72.506
+      }
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*InvalidIdempotencyKeyPreservesCapabilityAndMaximumLengthKeySucceeds",
+        "-method",
+        "*MultipleIdempotencyKeyValuesDenyWithoutSubmission",
+        "-method",
+        "*KeyedAdjustmentReceiptRejectsMismatchingStoredComment",
+        "-method",
+        "*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects",
+        "-method",
+        "*KeyedAdjustmentReconcilesReplacementActivityAndOriginalCommentAcrossPolicyChange",
+        "-method",
+        "*GatewayDefaultHttpDeadlineCancelsMappedBootstrapAndColdRetryDrainsPersistedPendingWork",
+        "-method",
+        "*FixtureCatalogRefusesUnboundProjectionWithoutWritingState",
+        "-method",
+        "*ComposedHostGatewaySendsBoundAssertionOnWorkloadSubmitRoute",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 73.501,
+      "log": "http-fixed-assets.log",
+      "name": "http-fixed-assets",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "http-fixed-assets.log.gz",
+      "summary": {
+        "total": 28,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 73.26
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "exit_code": 0,
+      "seconds": 4.922,
+      "name": "integration-build-3",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "exit_code": 0,
+      "seconds": 4.504,
+      "name": "integration-build-4",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 7.483,
+      "log": "integration-gateway-rebuild.log",
+      "name": "integration-gateway-rebuild",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "integration-gateway-rebuild.log.gz"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*InvalidIdempotencyKeyPreservesCapabilityAndMaximumLengthKeySucceeds",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 8.872,
+      "log": "key-boundaries-corrected.log",
+      "name": "key-boundaries-corrected",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "key-boundaries-corrected.log.gz",
+      "summary": {
+        "total": 8,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 8.587
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 15.546,
+      "log": "late-controls-build.log",
+      "name": "late-controls-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "late-controls-build.log.gz"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*ConfiguredInternalPortRefusesProjectionWritesOnThePublicPort",
+        "-method",
+        "*ProtectedProcessRoutePreservesCatalogAdmissionAndKeyedProcessorRejection",
+        "-method",
+        "*FixtureCatalogRefusesUnboundProjectionWithoutWritingState",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 7.482,
+      "log": "late-controls-focused.log",
+      "name": "late-controls-focused",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "late-controls-focused.log.gz",
+      "summary": {
+        "total": 12,
+        "errors": 0,
+        "failed": 1,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 6.945
+      }
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "--json"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 0.504,
+      "log": "npm-audit.log",
+      "name": "npm-audit",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "npm-audit.log.gz"
+    },
+    {
+      "command": [
+        "npm",
+        "ci"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 9.765,
+      "log": "npm-ci.log",
+      "name": "npm-ci",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "npm-ci.log.gz"
+    },
+    {
+      "command": [
+        "npm",
+        "audit",
+        "signatures"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 7.232,
+      "log": "npm-signatures.log",
+      "name": "npm-signatures",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "npm-signatures.log.gz"
+    },
+    {
+      "command": [
+        "npm",
+        "run",
+        "test:release-tooling"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 1.736,
+      "log": "release-tooling.log",
+      "name": "release-tooling",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "release-tooling.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 19.041,
+      "log": "review-fixes-build-final.log",
+      "name": "review-fixes-build-final",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "review-fixes-build-final.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 4.982,
+      "log": "review-patch-build-final.log",
+      "name": "review-patch-build-final",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "review-patch-build-final.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.Timesheets.IntegrationTests/Hexalith.Timesheets.IntegrationTests.csproj",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 14.955,
+      "log": "review-patch-build.log",
+      "name": "review-patch-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "review-patch-build.log.gz"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*InvalidIdempotencyKeyPreservesCapabilityAndMaximumLengthKeySucceeds",
+        "-method",
+        "*KeyedAdjustmentReceiptRejectsMismatchingStoredComment",
+        "-method",
+        "*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects",
+        "-method",
+        "*KeyedAdjustmentReconcilesReplacementActivityAndOriginalCommentAcrossPolicyChange",
+        "-method",
+        "*GatewayDefaultHttpDeadlineCancelsMappedBootstrapAndColdRetryDrainsPersistedPendingWork",
+        "-method",
+        "*FixtureCatalogRefusesUnboundProjectionWithoutWritingState",
+        "-method",
+        "*ComposedHostGatewaySendsBoundAssertionOnWorkloadSubmitRoute",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 74.79,
+      "log": "review-patch-http.log",
+      "name": "review-patch-http",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "review-patch-http.log.gz",
+      "summary": {
+        "total": 26,
+        "errors": 0,
+        "failed": 3,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 74.484
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "tests/Hexalith.EventStore.Client.Tests/bin/Debug/net10.0/Hexalith.EventStore.Client.Tests.dll",
+        "-class",
+        "*SharedProjectionAbortRepairTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 0.676,
+      "log": "sdk-abort-repair.log",
+      "name": "sdk-abort-repair",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-abort-repair.log.gz",
+      "summary": {
+        "total": 13,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 0.408
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.EventStore.Admin.UI.Tests/Hexalith.EventStore.Admin.UI.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:HexalithEventStoreVersion=3.128.4",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 18.176,
+      "log": "sdk-admin-fixture-build.log",
+      "name": "sdk-admin-fixture-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-admin-fixture-build.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "tests/Hexalith.EventStore.Admin.UI.Tests/bin/Debug/net10.0/Hexalith.EventStore.Admin.UI.Tests.dll",
+        "-class",
+        "*AdminUiDaprTargetTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 1.106,
+      "log": "sdk-admin-fixture.log",
+      "name": "sdk-admin-fixture",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-admin-fixture.log.gz",
+      "summary": {
+        "total": 7,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 0.588
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.EventStore.Client.Tests/Hexalith.EventStore.Client.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:HexalithEventStoreVersion=3.128.4",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 21.394,
+      "log": "sdk-client-build.log",
+      "name": "sdk-client-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-client-build.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "tests/Hexalith.EventStore.Client.Tests/bin/Debug/net10.0/Hexalith.EventStore.Client.Tests.dll",
+        "-class",
+        "*SharedProjectionEpochCoordinatorTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 2.932,
+      "log": "sdk-coordinator.log",
+      "name": "sdk-coordinator",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-coordinator.log.gz",
+      "summary": {
+        "total": 38,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 1.752
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.EventStore.PayloadProtection.Tests/Hexalith.EventStore.PayloadProtection.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:HexalithEventStoreVersion=3.128.4",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 11.179,
+      "log": "sdk-policy-fixture-build.log",
+      "name": "sdk-policy-fixture-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-policy-fixture-build.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "tests/Hexalith.EventStore.PayloadProtection.Tests/bin/Debug/net10.0/Hexalith.EventStore.PayloadProtection.Tests.dll",
+        "-class",
+        "*PolicyLifecycleTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 2.229,
+      "log": "sdk-policy-fixture.log",
+      "name": "sdk-policy-fixture",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-policy-fixture.log.gz",
+      "summary": {
+        "total": 22,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 1.702
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.EventStore.Sample.Tests/Hexalith.EventStore.Sample.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:HexalithEventStoreVersion=3.128.4",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 17.03,
+      "log": "sdk-sample-fixture-build.log",
+      "name": "sdk-sample-fixture-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-sample-fixture-build.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "tests/Hexalith.EventStore.Sample.Tests/bin/Debug/net10.0/Hexalith.EventStore.Sample.Tests.dll",
+        "-class",
+        "*SampleUiDaprTargetTests",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 1.258,
+      "log": "sdk-sample-fixture.log",
+      "name": "sdk-sample-fixture",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-sample-fixture.log.gz",
+      "summary": {
+        "total": 7,
+        "errors": 0,
+        "failed": 0,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 0.7
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "tests/Hexalith.EventStore.Server.Tests/Hexalith.EventStore.Server.Tests.csproj",
+        "--configuration",
+        "Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-p:HexalithEventStoreVersion=3.128.4",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 29.499,
+      "log": "sdk-secrets-build.log",
+      "name": "sdk-secrets-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-secrets-build.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "tests/Hexalith.EventStore.Server.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.Tests.dll",
+        "-method",
+        "*SecretsProtectionTests.TrackedReusableContent_DoesNotContainUsableSecrets",
+        "-noLogo"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 6.544,
+      "log": "sdk-secrets.log",
+      "name": "sdk-secrets",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+      "archived_log": "sdk-secrets.log.gz",
+      "summary": {
+        "total": 1,
+        "errors": 0,
+        "failed": 1,
+        "skipped": 0,
+        "not_run": 0,
+        "test_seconds": 5.954
+      }
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "Hexalith.Timesheets.slnx",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 11.678,
+      "log": "source-build-final.log",
+      "name": "source-build-final",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "source-build-final.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "Hexalith.Timesheets.slnx",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 9.454,
+      "log": "source-build-fixed-assets.log",
+      "name": "source-build-fixed-assets",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "source-build-fixed-assets.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "Hexalith.Timesheets.slnx",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 7.729,
+      "log": "source-build-late-controls.log",
+      "name": "source-build-late-controls",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "source-build-late-controls.log.gz"
+    },
+    {
+      "command": [
+        "dotnet",
+        "build",
+        "Hexalith.Timesheets.slnx",
+        "--configuration",
+        "Debug",
+        "--no-restore",
+        "-p:UseHexalithProjectReferences=true",
+        "-warnaserror",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 1,
+      "seconds": 11.016,
+      "log": "source-build.log",
+      "name": "source-build",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "source-build.log.gz"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*MultipleIdempotencyKeyValuesDenyWithoutSubmission",
+        "-method",
+        "*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects",
+        "-noLogo"
+      ],
+      "exit_code": 1,
+      "seconds": 3.268,
+      "name": "source-four-http-3",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets"
+    },
+    {
+      "command": [
+        "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+        "-method",
+        "*MultipleIdempotencyKeyValuesDenyWithoutSubmission",
+        "-method",
+        "*KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects",
+        "-noLogo"
+      ],
+      "exit_code": 0,
+      "seconds": 13.848,
+      "name": "source-four-http-4",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets"
+    },
+    {
+      "command": [
+        "dotnet",
+        "restore",
+        "Hexalith.Timesheets.slnx",
+        "-p:Configuration=Debug",
+        "-p:UseHexalithProjectReferences=true",
+        "-m:1",
+        "/nr:false"
+      ],
+      "environment": {
+        "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+      },
+      "exit_code": 0,
+      "seconds": 2.537,
+      "log": "source-restore.log",
+      "name": "source-restore",
+      "working_directory": "/home/administrator/projects/hexalith/timesheets",
+      "archived_log": "source-restore.log.gz"
+    }
+  ],
+  "logs": {
+    "bootstrap-isolated.log": {
+      "archive": "bootstrap-isolated.log.gz",
+      "raw_sha256": "08adf8e967783e6386ead3ce352dfffbaca5f543c3dad4d0282db9ed2ee3d53d",
+      "archive_sha256": "431b1b571e9a906f2fb9668b8886a566a9cc01bb3fe3ddbd335c09028a9233e2",
+      "raw_bytes": 546
+    },
+    "boundary-build-final.log": {
+      "archive": "boundary-build-final.log.gz",
+      "raw_sha256": "0656268a5b572d4414432353b4ac28eba6b067d2386a0bce8cea3e0e97053577",
+      "archive_sha256": "c9acf6dbe1b230c09d08ca703c2c9428f78e5ca293b57dbb64afd514eb380ed3",
+      "raw_bytes": 2688
+    },
+    "commitlint.log": {
+      "archive": "commitlint.log.gz",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archive_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "raw_bytes": 0
+    },
+    "diff-check.log": {
+      "archive": "diff-check.log.gz",
+      "raw_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "archive_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "raw_bytes": 0
+    },
+    "empty-header-boundary.log": {
+      "archive": "empty-header-boundary.log.gz",
+      "raw_sha256": "d18c3900546d8ee3f10d4de6bb80d3a0f4a29020d665cd61a0c01cfa27d4e19c",
+      "archive_sha256": "027db53053d2cec98a90ba62cb339572efb2b695c4fb90c5e2690151d6153b81",
+      "raw_bytes": 3062
+    },
+    "focused-gateway.log": {
+      "archive": "focused-gateway.log.gz",
+      "raw_sha256": "a072835c5f68bc3bbc3983ff36da2a7055b1a88cdb2cb4af1f89c8eaa3bc331e",
+      "archive_sha256": "732dc6430a806ae4d34a664809615614e98b1e17dbf53b88dd50cfa1dda89a5e",
+      "raw_bytes": 423
+    },
+    "focused-http-final.log": {
+      "archive": "focused-http-final.log.gz",
+      "raw_sha256": "6128b523834906f10edd5cfb129173b03bf94dc12ea788a710910edfa8cfd2cf",
+      "archive_sha256": "8c66d633ed0991a507421cf9850a3e9a570f49537d932f8836ec51dc0cb5026f",
+      "raw_bytes": 85911
+    },
+    "focused-migration-final.log": {
+      "archive": "focused-migration-final.log.gz",
+      "raw_sha256": "baf89bb5679b16c1122f8ffccb315eaf8c85b9c834c7cb998003e1aeb9230ed6",
+      "archive_sha256": "929e861f4c1159eebd14387220ae1af3c8fc153eaea9bd193ca853054f6d622b",
+      "raw_bytes": 430
+    },
+    "full-ArchitectureTests.log": {
+      "archive": "full-ArchitectureTests.log.gz",
+      "raw_sha256": "d672d5a808530567c34503088b6cb7e99512c752850f4795a63b55db5e79c065",
+      "archive_sha256": "d347709f900d3ec9f388fb94a4304cfbd40642cb344521feb0929e218e849aa8",
+      "raw_bytes": 431
+    },
+    "full-Contracts.Tests.log": {
+      "archive": "full-Contracts.Tests.log.gz",
+      "raw_sha256": "8e855ff8cf09a3d78a140b4bf2c155c5f5f80e89fb40a54c04f1767f5761dde3",
+      "archive_sha256": "f29f859304b70fb9df52f0399ff321644aa7aabc40ab31b746b50d899c7b6786",
+      "raw_bytes": 420
+    },
+    "full-Server.Tests.log": {
+      "archive": "full-Server.Tests.log.gz",
+      "raw_sha256": "fc4d680cf0679b7c47ed018d7df2e87c4eda37cfe5bf70d15474b8b6678a3e7c",
+      "archive_sha256": "bc0c1bb13acc2ec63c5ddec3ed2d0d9bf36694c466cbe3af260c48c25c298386",
+      "raw_bytes": 405
+    },
+    "full-Works.Tests.log": {
+      "archive": "full-Works.Tests.log.gz",
+      "raw_sha256": "00baebd7f669cf3ca0c14a442f932e5eae88704787397dc3a66c3215409dc5b7",
+      "archive_sha256": "fabe9d7b069620851cb047551bf379902f0fc3b6731022d17e4e4c78649fe733",
+      "raw_bytes": 399
+    },
+    "full-integration-corrected.log": {
+      "archive": "full-integration-corrected.log.gz",
+      "raw_sha256": "6e7c0cf7448edae73f0d8515bf4bd9d0ddffcfef41ed423486ec12ba9f848824",
+      "archive_sha256": "dbdd71305f8478d8eed781225b7af9b0b426d55b8e470bed610548eebf0f3352",
+      "raw_bytes": 76560
+    },
+    "full-integration-final.log": {
+      "archive": "full-integration-final.log.gz",
+      "raw_sha256": "cd6033ada4a893986fcf5d98fa1628c1b0560cd088205d1f4b525a130bdfa4c2",
+      "archive_sha256": "a30ad4c10e6429d7fd58ecd1e044f052f40871bcb19765010710b680c54e8b12",
+      "raw_bytes": 78918
+    },
+    "full-integration.log": {
+      "archive": "full-integration.log.gz",
+      "raw_sha256": "04ba23bf4156bc9cf216d36775712cd41e0c21ccec5d1301926dadbea908d878",
+      "archive_sha256": "d0c1cc3c0995512d0ffc63cff4d38dd08f679baaa9f994e00c603a4852059b7a",
+      "raw_bytes": 11589
+    },
+    "full-projections-serial.log": {
+      "archive": "full-projections-serial.log.gz",
+      "raw_sha256": "b94bdade5a777da7a0cbeeb578e09c8c7a3d36bd8a2b862387df68fd6d459809",
+      "archive_sha256": "5e8ec819ac0ff9a4a9a90c0d32efa6dec589d541995aeaefb5cd2e628b5c2537",
+      "raw_bytes": 663
+    },
+    "full-projections.log": {
+      "archive": "full-projections.log.gz",
+      "raw_sha256": "62fb344ed2696a29c32b6ac39123499f85456e9cd3a12fb9662d02705400b3f6",
+      "archive_sha256": "618daf4d2df871958f6713f9316a93ddc5e51edb193da1d6c17ab13609a9c6d8",
+      "raw_bytes": 8643
+    },
+    "http-final-controls.log": {
+      "archive": "http-final-controls.log.gz",
+      "raw_sha256": "33c2e5e1f495d75aa21b47f0bcabeec6184abb477f29114db992844f7ed0cc3c",
+      "archive_sha256": "30c0c33261dd1eb5d3e93d48b7356c328f00af0d1ab25ee89d967806907fc89a",
+      "raw_bytes": 84683
+    },
+    "http-fixed-assets.log": {
+      "archive": "http-fixed-assets.log.gz",
+      "raw_sha256": "667c9c03d53acc8f2c6d1ae0642d492baff91104b516bc5d63a4a882848beaef",
+      "archive_sha256": "17363da341e1644a903cc01f386bc5bf5a53509f3ab2258c2a893f28a1f25647",
+      "raw_bytes": 84683
+    },
+    "integration-build-2.log": {
+      "archive": "integration-build-2.log.gz",
+      "raw_sha256": "5ed514b0939b96d9cb0ea489f03d35be21ba0e508744638cbee5c0d66153d93c",
+      "archive_sha256": "d8a24a3234927aa0ff6ed6b01679238965622a5ba8c2a10672ae9a557074a5a5",
+      "raw_bytes": 2688
+    },
+    "integration-build-3.log": {
+      "archive": "integration-build-3.log.gz",
+      "raw_sha256": "2ed4e93baa57d641df78b97514d5386ac387c7b4a215314022c4c2728b4b2929",
+      "archive_sha256": "10aaf46771790919f507ae3e6c497e588eeb344e4e83511b8e4e2647fdd817ae",
+      "raw_bytes": 2688
+    },
+    "integration-build-4.log": {
+      "archive": "integration-build-4.log.gz",
+      "raw_sha256": "070575a3f669b2c57d359405d51d4119e8a1b3c360877e559b369cb584f4ac6a",
+      "archive_sha256": "2aeb4578f42593897d96fa4517da83416e767611912bc6fcbb5fb8d5608a9af7",
+      "raw_bytes": 2688
+    },
+    "integration-build.log": {
+      "archive": "integration-build.log.gz",
+      "raw_sha256": "dba0af5bd5978156c9de0b2e92df6020755fda2a5ccd4f0d4a02bbd119e8fe95",
+      "archive_sha256": "05972da92ceaa9d242c3f3ce3c7e61c80beb57009d39875f375215eefdfe5562",
+      "raw_bytes": 2688
+    },
+    "integration-gateway-rebuild.log": {
+      "archive": "integration-gateway-rebuild.log.gz",
+      "raw_sha256": "ad9523b0224a06559f8adf0d679e919e226e346461056543a438b59077266e17",
+      "archive_sha256": "aea4a0874fbd3f622f0595e8d370ee29da633cf9b98b6d80944a41808bdb3f13",
+      "raw_bytes": 2688
+    },
+    "key-boundaries-corrected.log": {
+      "archive": "key-boundaries-corrected.log.gz",
+      "raw_sha256": "40dcc51ce63aacf409877cca70b391908d3c729c8bfc33a05b518a2b17ebd916",
+      "archive_sha256": "c9f97335bbaad019d2fb5d17ad37c9ad5d6ac9a4fa58a2550db696344321859b",
+      "raw_bytes": 423
+    },
+    "late-controls-build.log": {
+      "archive": "late-controls-build.log.gz",
+      "raw_sha256": "86ed2e8ec762db2d047d81387a71b5b9d6ff74d2f402c4310ed655d1e996a3e2",
+      "archive_sha256": "8149e7acdee9bad722626c32d78e214619031ae63c54c8e5181dfd31fcc0c788",
+      "raw_bytes": 4207
+    },
+    "late-controls-focused.log": {
+      "archive": "late-controls-focused.log.gz",
+      "raw_sha256": "1962816d329dfb7015ddac273679bc7f5cfe8657ec8b69b6f5571363fba0f114",
+      "archive_sha256": "aa840bceb14660c21ac4812437d3220fd736939371fa8dcf668af1430f73df92",
+      "raw_bytes": 1865
+    },
+    "npm-audit.log": {
+      "archive": "npm-audit.log.gz",
+      "raw_sha256": "f8a4c86936c24d169570a635bfa01d6b4dcf5deb78f41d5b31e017c5eae31718",
+      "archive_sha256": "9230e3d0e9811ec0083b05a1ec688c14845c5f7352bb47fbb5477c865bcc6969",
+      "raw_bytes": 364
+    },
+    "npm-ci.log": {
+      "archive": "npm-ci.log.gz",
+      "raw_sha256": "2b4d42ac2c9c1c50e2e9230b9431765e85cdf5b9b288a34fc64f62769fe00d1f",
+      "archive_sha256": "96dd1976687cabfd1540fb39bdf8f1dc40f56ff1897a5a2298491c7599104373",
+      "raw_bytes": 483
+    },
+    "npm-signatures.log": {
+      "archive": "npm-signatures.log.gz",
+      "raw_sha256": "bc1e7203ae1166b788b327b622f7be51b264029877ae43da604817505c46d1ba",
+      "archive_sha256": "31525c5f7a90a06d928428d49290e0f16698e399f227ed295e26ed6034891c87",
+      "raw_bytes": 181
+    },
+    "release-tooling.log": {
+      "archive": "release-tooling.log.gz",
+      "raw_sha256": "e9cf5494f14dd6df94b30de076eac62009af6030fe9308a37431d9e4b5b84726",
+      "archive_sha256": "23184599c02949a47f32f60d67b98be8ba274e1f2d9460d39012fc195dffb9e2",
+      "raw_bytes": 16954
+    },
+    "review-fixes-build-final.log": {
+      "archive": "review-fixes-build-final.log.gz",
+      "raw_sha256": "73b78cb91d486b3cdbc87aadc37a2bd7218d0cbccc6216f74f2304f86f018448",
+      "archive_sha256": "2226055df952d8ac4ebcd66a7805ea1a27f3a2989bf251f6e11e5e7a30e2b7d3",
+      "raw_bytes": 2688
+    },
+    "review-patch-build-final.log": {
+      "archive": "review-patch-build-final.log.gz",
+      "raw_sha256": "7c6a5e778420b2c2ec4b588da421e0cf9f22f6b23bb2335dcf8616984bd91816",
+      "archive_sha256": "e2042fdf6e0e4503683bc42ff9fa2a1536a663a65161bb2029d2e8816fc25a8c",
+      "raw_bytes": 2688
+    },
+    "review-patch-build.log": {
+      "archive": "review-patch-build.log.gz",
+      "raw_sha256": "217ac079bab8bf54691dc6c3708b202a332c7afed455cbd9d8179cee11d67b6b",
+      "archive_sha256": "c9c6d15fb8a998bc871885794bf6a109afc99d932f4331dad5aed4603081dc6c",
+      "raw_bytes": 3672
+    },
+    "review-patch-http.log": {
+      "archive": "review-patch-http.log.gz",
+      "raw_sha256": "2ab7b9313cee2ecfa2d6ed7046b6296127962b3fa1a838e7b39a511a7d430594",
+      "archive_sha256": "fe92b71c26af56d26b7929b25921c2f98a5ed4c712766767933c67db060f8bb8",
+      "raw_bytes": 88411
+    },
+    "sdk-abort-repair.log": {
+      "archive": "sdk-abort-repair.log.gz",
+      "raw_sha256": "8d11b7eb5c450ea82fb76637f1d9eae610ef096dc02048fe43407f7677c323b2",
+      "archive_sha256": "8a37799101112e23738f6ed1789be715948d9c1ed9de22113760c58ae5078401",
+      "raw_bytes": 404
+    },
+    "sdk-admin-fixture-build.log": {
+      "archive": "sdk-admin-fixture-build.log.gz",
+      "raw_sha256": "cd2d61ba6ffdd637b782bc41961632d0e3317801e902d5b01e909aa75e4d41bc",
+      "archive_sha256": "88743befb071667fbe7126ab137594ee113a78e2b4ba7562c6980a2c7d1415d8",
+      "raw_bytes": 2945
+    },
+    "sdk-admin-fixture.log": {
+      "archive": "sdk-admin-fixture.log.gz",
+      "raw_sha256": "9dc04b3ac97cf113b52ca3984b767a00e558864c295a9420c57ff42a87735708",
+      "archive_sha256": "f87b0bca23928700b555f2e13c72e5f5265495954c23d66578aed19c2b5975b0",
+      "raw_bytes": 1479
+    },
+    "sdk-client-build.log": {
+      "archive": "sdk-client-build.log.gz",
+      "raw_sha256": "aee59480c7935604d7ce9644edc215ba9533402be2c7b9ad8f4d71200de84081",
+      "archive_sha256": "75b31fb0abe371f4f2e82a047159911aa44fb9dfe7911bb1c6456030bc4d4358",
+      "raw_bytes": 3000
+    },
+    "sdk-coordinator.log": {
+      "archive": "sdk-coordinator.log.gz",
+      "raw_sha256": "d5a3018ef13045ac61fb0b59066ccbf9ff857e865e1d9e13da2aa12ec670c2b5",
+      "archive_sha256": "54f0525607ab6c5a41a41810ad37b327b744a8ac403171836602271cbe9d48ac",
+      "raw_bytes": 404
+    },
+    "sdk-policy-fixture-build.log": {
+      "archive": "sdk-policy-fixture-build.log.gz",
+      "raw_sha256": "cac92536e6556d97c52b267d18d6a498174d7393330694ac62d9bc9f8e9f9ee1",
+      "archive_sha256": "f79291eb95f7af1b5af43e62acf4a63ebf3c6fa8ca308b0c5a8a291ba0de0d1a",
+      "raw_bytes": 1425
+    },
+    "sdk-policy-fixture.log": {
+      "archive": "sdk-policy-fixture.log.gz",
+      "raw_sha256": "041f4ef118dd8e0d7241f102c3f187df175b89c96924b23e5d56969415009345",
+      "archive_sha256": "d95d21c94936b0a92058027da814bff64cfbbc0221c6bdb557c89f0024a1dfba",
+      "raw_bytes": 459
+    },
+    "sdk-sample-fixture-build.log": {
+      "archive": "sdk-sample-fixture-build.log.gz",
+      "raw_sha256": "169ef1bbb012bc8dc0aea5b471a9cd655fa34da8145d33f06e6d8f677f210d13",
+      "archive_sha256": "f40dd1d4eba81e50221a9e91c8d317baf35f32ee75c5ec77368f5e3404d57eee",
+      "raw_bytes": 4180
+    },
+    "sdk-sample-fixture.log": {
+      "archive": "sdk-sample-fixture.log.gz",
+      "raw_sha256": "51d54eddd5d1f273850508bb14dc466b08657ccd39a4d2a863da838539b60620",
+      "archive_sha256": "712158d527ac108826a810b624e1a8487251622564cef5ed3182ccf0aa82ada7",
+      "raw_bytes": 1645
+    },
+    "sdk-secrets-build.log": {
+      "archive": "sdk-secrets-build.log.gz",
+      "raw_sha256": "5e02cad08bc8a57075b137a6500eff666271a03eaf840a2e013b4b62ad39e72f",
+      "archive_sha256": "2987d674b637be814d2b83b85fbded82047ea8405ddf55f6b3c1917f2dd80956",
+      "raw_bytes": 6835
+    },
+    "sdk-secrets.log": {
+      "archive": "sdk-secrets.log.gz",
+      "raw_sha256": "e2802757bc702d5f252b39952e87c476a4616fc1cbe6d98dfc249f84fb221305",
+      "archive_sha256": "e96374e6c815a7b627dfe161b421274f4460b4f028e415d4aba76c90f25847fc",
+      "raw_bytes": 1454
+    },
+    "source-build-final.log": {
+      "archive": "source-build-final.log.gz",
+      "raw_sha256": "413bfc303ebc6b6cba8edc3b2a447afff81af51819398171cc0942a81f208a27",
+      "archive_sha256": "a98876e8e5eb7126bf000bce9551227480997264aef7c8d997631988a209dabe",
+      "raw_bytes": 8176
+    },
+    "source-build-fixed-assets.log": {
+      "archive": "source-build-fixed-assets.log.gz",
+      "raw_sha256": "84431ef33dcc235eaa822ebad4ad7b7f00b09ed93422ec7b1f252b81a4916b2e",
+      "archive_sha256": "3675d1e422393834fa4b9bf9dd8dd0748fea8eded35aa16d90146cd2adc9afb1",
+      "raw_bytes": 8176
+    },
+    "source-build-late-controls.log": {
+      "archive": "source-build-late-controls.log.gz",
+      "raw_sha256": "ebc4e2ce14459950aba2644765d6e8d73bb1d34244e20875de18c4b51c6dfa28",
+      "archive_sha256": "5df4488ad38e9c7ae32b5d69c61c4ca331b4b3dc261cccfb7052e48ced89493c",
+      "raw_bytes": 8176
+    },
+    "source-build.log": {
+      "archive": "source-build.log.gz",
+      "raw_sha256": "9ca486d9651a0230d9499772cd51788f80eafed36fa19c523287f6b93449df64",
+      "archive_sha256": "92c33f76253b8fbe5e2af29cc372cea8b426fa9fcb547a2f2fa66b4f5e344132",
+      "raw_bytes": 10483
+    },
+    "source-four-http-2.log": {
+      "archive": "source-four-http-2.log.gz",
+      "raw_sha256": "c01be3081acb9bc1c63f54d648010b25d7c0cc46c7c4b56daf62c52d3d73a674",
+      "archive_sha256": "ef6533a38a7a67672da50dc4e16567c80bc4a032ea700d6aa883c301877f3a0b",
+      "raw_bytes": 12535
+    },
+    "source-four-http-3.log": {
+      "archive": "source-four-http-3.log.gz",
+      "raw_sha256": "0b660938999a1657d34af9b8acebc0e6109e0e8837b4a733846bf2ed87991468",
+      "archive_sha256": "a0908096b265e6de4c3bc7b015ebe578f445e0cb4504d8ca6da895ea1a992913",
+      "raw_bytes": 19103
+    },
+    "source-four-http-4.log": {
+      "archive": "source-four-http-4.log.gz",
+      "raw_sha256": "20951d8c2c1f3435ecce25c5f9bd58347eacd14eaea02e4567ed46da59fd9c9a",
+      "archive_sha256": "5410fc53a59e74fcc71a3753042550b4f1f8cb2dc321f0ec25b52f53fbade6da",
+      "raw_bytes": 424
+    },
+    "source-four-http.log": {
+      "archive": "source-four-http.log.gz",
+      "raw_sha256": "a707d56b06bfa8d066a9ebf8c71e056e85f02ceddd6db92c12690c3dc5b13651",
+      "archive_sha256": "e0e37692961277a9e991fb0e752c7c1ab8adb431d805dca2a5182e8bbdb5bfbf",
+      "raw_bytes": 16795
+    },
+    "source-restore.log": {
+      "archive": "source-restore.log.gz",
+      "raw_sha256": "88055c5aeffa24f2d6489b904d9dced5a3c8e89d180d7df96d4fd13bbba8f590",
+      "archive_sha256": "452a4ec403bfca37c476cbaa81afe4ffc08ce244bd5d8e3051cf0952222226a0",
+      "raw_bytes": 981
+    }
+  },
+  "full_timesheets_suites": {
+    "passed": 2839,
+    "failed": 0,
+    "skipped": 5,
+    "count": 6
+  },
+  "source_build_configuration_sha256": "48705eb11cf98af1193f35d601aa78fe7489d1b4b55a4da6fd1d8ba99a131b9c",
+  "original_four_published_package_cases": "Previously passing published EventStore 3.128.4 receipts retained unchanged in the enclosing resume directory; not rerun.",
+  "initial_broad_attempts": "full-projections and full-integration were interrupted by the parent after Integration assets were rebuilt during execution. Partial summaries and failures are retained, not passing full-suite receipts. Fixed-asset runs supersede them.",
+  "initial_fixture_trials": "Initial source admission trials exposed invalid route IDs, absent v2 tenant resolver scope and root-provider scoped-handler resolution; these fixture errors were corrected before the fixed-asset verification. Logs are retained.",
+  "completed_broad_failure": "full-integration-final completed 1008 cases: 1001 passed, two failures and five declared skips. The two failures exposed the newer SDK canonical-path policy and missing owner-declared process command admission. The listener positive control now uses the canonical path, a separate negative covers uppercase admission, and the process test preserves source 503 refusal plus direct keyed-processor rejection proof; it grants no command enrollment. full-integration-corrected supersedes this completed failure.",
+  "late_controls_trial": "late-controls-focused used the preceding binary after a compile failure and is superseded by the successful source-build-late-controls and 32-case http-final-controls run.",
+  "empty_header_trials": "HttpClient omitted the explicitly empty header. Direct TestServer coverage now preserves header presence and marks its explicit JSON request body; all eight boundary cases pass.",
+  "sdk_secrets_blocker": "The unchanged full tracked-content scan fails on three pre-existing SDK routing fixture paths. No source edit or scanner exclusion was made.",
+  "launch_readiness": "FAIL",
+  "live_runtime_qualification_run": false,
+  "deployed_acceptance_inferred": false,
+  "push_attempted": false,
+  "commit_message_sha256": "ba81a82ac7edeea6586b6d3b9a6e15ec1100df943ec309dbd528d92f4cbd8d79",
+  "code_sha256": {
+    "tests/Hexalith.Timesheets.IntegrationTests/HttpBoundaryRequestBodyDetectionFeature.cs": "40e0b739083fc25dd0e76eeb45e9eb5093984b442eaafee0ff38afc6e6c29edc",
+    "tests/Hexalith.Timesheets.IntegrationTests/HttpRouteCatalogFixture.cs": "97464db6daddb106c9c7b444f30405c41e832b213dce1171d99373536644e618",
+    "tests/Hexalith.Timesheets.IntegrationTests/HttpRouteCatalogStateStore.cs": "9bb6f9b35940b1cac6f259358d2b80d6f364dabf85db939a8c0e474aef396678",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.Deadline.cs": "e9195745b1b9570e67379a98f4f014288be4ac504ea037c74665135bfeee55c8",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.Retry.cs": "189b981e54314a6e69eb3b41f7fae13368b49944f6e4c465054146650a77e263",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.RouteCatalog.cs": "4104faafe92292f46444d2a4939cdcb6ed3c3189ee2337fbb9f778503141a5fd",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.cs": "91a1792e1bb8db90e36870bbaaf39db4f32fe9dd5ce7057279d1b131ee12f60f",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkEventStoreActorPersistenceTests.cs": "c1cb9e558bcf3499e7ecb3e3764e9379ef7b04820a8d21f184d18b5b52897422",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkPersistedSubmissionTests.cs": "777ca470959da1e5226a90241c3c299691b48e5d7c43378eb5989d9a6daa4601"
+  }
+}

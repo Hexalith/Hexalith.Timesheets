@@ -1,0 +1,43 @@
+{
+  "original_files": {
+    "README.md": "25f066e4db6e005333ce021b070e7949afc046b8c5e76b7680de84ec0b3dbf52",
+    "_bmad-output/implementation-artifacts/deferred-work.md": "442e25a9b064e6461094af6e6b8e9638e6909362c21695bcf1e003910aae8675",
+    "_bmad-output/implementation-artifacts/spec-five-retry-recovery-tooling-deferrals.md": "125889a274a4b7313448a316b77aa88c1aa934b4e1ed84462e0dd45e3f797643",
+    "_bmad-output/implementation-artifacts/tests/five-retry-recovery-tooling-deferrals.md": "10f4e8a41cd193056f6ef29dad50a08f50311424c569dba0dce47a8a3be900cd",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkConfirmationHttpBoundaryTests.Retry.cs": "529db1573c093444164e3dd27279743b81206d0ccb8a9fab27add4baeebb7056",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-build.log.gz": "d89f046c438b90f416f48ef41f3f315c142c3b4e668c3cc25bada24682a0af7d",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Contracts.Tests.log.gz": "5d5f09bfa8e814a4891e4d2206b55c8c376c79caff3730efad189f792de7e73f",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-package-tests.log.gz": "c59221cfdf3d91349efb53611c7ff348d3e51d0f39e5c2173499e08969ea8957",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Server.Tests.log.gz": "97f92f47e9da9b9b068fa78a49173ec9389751dd7b745b4085dc9568d2fb3923",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-migration-tests.log.gz": "9317efac3ed0bfa00e6f553a62f330bb1646f82fb26aa68e78fb44573444153d",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-package-restore.log.gz": "817a8df1782ed7ead6e3f3f4126f25d392fa3a2a30f9d720bbb01a42e848ada8",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-restore.log.gz": "ef3063ba7fb3e14fde6587c858d66394418ce3ae5504ec637e00da7afdadcd72",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-test-build.log.gz": "40eecd2e78995b18ca816a8a0521cc06d87f890b714242ca91a65c13c3cba277",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.ArchitectureTests.log.gz": "c7236d7ec075f74152ab2ce781a110f56938961c92a4687969d06ddc3b75b454",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Projections.Tests.log.gz": "2dc704fe523c40e91e71e32be9f1e6476e1298b493a13fe0b649d47e47a2c8ec",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/checks.json": "a8a603673c9e8d5b8a0e7666f01b8adc843217b1b1f8e423f7ed00c881e1080b",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Works.Tests.log.gz": "04416f474146a2a44e23141808729d7607e1df8364bafe5efa18a0e7b917dea9",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-existing-retry.log.gz": "1ebfd7682276593284b1a671ee5e1caf45466910345508f1a4fe534a481ea097",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-package-build.log.gz": "6543c30f90299d2f3192077272a60eadaedd42e57e55e38afdb9d3f97875b63f",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-header-tests.log.gz": "677e01f5755a0e1ff09b5b3d75929ba22427823c1c0a76b2ee4494b92bb82844"
+  },
+  "unchanged_prior_evidence": [
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-build.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Contracts.Tests.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-package-tests.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Server.Tests.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-migration-tests.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-package-restore.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-restore.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-test-build.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.ArchitectureTests.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Projections.Tests.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/checks.json",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/Hexalith.Timesheets.Works.Tests.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-existing-retry.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-package-build.log.gz",
+    "_bmad-output/implementation-artifacts/evidence/five-retry-recovery-tooling-deferrals/resume-20261030/timesheets-five-review-header-tests.log.gz"
+  ],
+  "multiple_header_regression_preserved_verbatim": true,
+  "original_archive": "/tmp/timesheets-rrp1-preserved"
+}

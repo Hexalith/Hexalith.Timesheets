@@ -170,6 +170,16 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         IEventStoreGatewayClient gateway = factory.Services.GetRequiredService<IEventStoreGatewayClient>();
         gateway.ShouldBeOfType<EventStoreGatewayClient>();
 
+#if HEXALITH_SOURCE_REFERENCES
+        await Should.ThrowAsync<Hexalith.EventStore.ServiceDefaults.Routing.RouteCatalogUnavailableException>(() =>
+            gateway.SubmitWorkloadCommandAsync(new SubmitCommandRequest(
+                "host-message", "tenant-host", "timesheets", "capability-host", "test.command",
+                JsonSerializer.SerializeToElement(new { value = 1 }), CorrelationId: "host-message"), TestContext.Current.CancellationToken));
+        transport.SendCount.ShouldBe(0);
+        issuer.ClearReceivedCalls();
+        using var catalogBinding = new HttpRequestMessage();
+        await factory.AddCatalogHeadersAsync(catalogBinding);
+#endif
         SubmitCommandResponse response = await gateway.SubmitWorkloadCommandAsync(new SubmitCommandRequest(
             "host-message", "tenant-host", "timesheets", "capability-host", "test.command",
             JsonSerializer.SerializeToElement(new { value = 1 }), CorrelationId: "host-message"),
@@ -178,6 +188,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         response.MessageId.ShouldBe("host-message");
         transport.Path.ShouldBe("/api/v1/commands/workload");
         transport.Assertion.ShouldBe("host-signed");
+#if HEXALITH_SOURCE_REFERENCES
+        transport.CatalogRoot.ShouldBe(catalogBinding.Headers.GetValues(
+            Hexalith.EventStore.ServiceDefaults.Routing.RouteCatalogInvocationHandler.RootHeader).Single());
+        transport.CatalogEpoch.ShouldBe(catalogBinding.Headers.GetValues(
+            Hexalith.EventStore.ServiceDefaults.Routing.RouteCatalogInvocationHandler.EpochHeader).Single());
+        transport.InvocationSendCount.ShouldBe(1);
+        transport.SendCount.ShouldBe(1);
+#endif
         await issuer.Received(1).IssueAsync(Arg.Is<WorkloadAssertionRequest>(request =>
             request.Operation == EventStoreWorkloadOperations.GatewayCommandSubmit
             && request.Bindings != null
@@ -1603,18 +1621,49 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         return JsonSerializer.Deserialize<T>(streamEvent.Payload, JsonOptions).ShouldNotBeNull();
     }
 
-    private sealed class CapturingWorkloadGatewayHandler : HttpMessageHandler
+    private sealed class CapturingWorkloadGatewayHandler(CapturingWorkloadGatewayHandler? capture = null) : HttpMessageHandler
     {
         public string? Path { get; private set; }
 
         public string? Assertion { get; private set; }
 
+        /// <summary>Gets the generation root observed by the gateway fixture.</summary>
+        public string? CatalogRoot { get; private set; }
+
+        /// <summary>Gets the commit epoch observed by the gateway fixture.</summary>
+        public string? CatalogEpoch { get; private set; }
+
+        /// <summary>Gets every invocation that reached the gateway fixture.</summary>
+        public int SendCount { get; private set; }
+
+        /// <summary>Gets invocations sent through the separately owned primary transport.</summary>
+        public int InvocationSendCount { get; private set; }
+
+        /// <summary>Creates a separately owned non-redirecting transport over the same fixture observation.</summary>
+        public HttpMessageHandler CreateInvocationTransport(HttpMessageHandler original)
+            => ReferenceEquals(original, this) ? new CapturingWorkloadGatewayHandler(this)
+                : throw new InvalidOperationException("The fixture cannot clone a foreign transport.");
+
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Path = request.RequestUri?.AbsolutePath;
-            Assertion = request.Headers.TryGetValues("X-Hexalith-Workload-Assertion", out IEnumerable<string>? values)
+            CapturingWorkloadGatewayHandler observed = capture ?? this;
+            observed.SendCount++;
+            if (capture is not null)
+            {
+                observed.InvocationSendCount++;
+            }
+            observed.Path = request.RequestUri?.AbsolutePath;
+            observed.Assertion = request.Headers.TryGetValues("X-Hexalith-Workload-Assertion", out IEnumerable<string>? values)
                 ? values.Single() : null;
+            observed.CatalogRoot = request.Headers.TryGetValues("X-Hexalith-Route-Catalog-Root", out IEnumerable<string>? roots)
+                ? roots.Single() : null;
+            observed.CatalogEpoch = request.Headers.TryGetValues("X-Hexalith-Route-Catalog-Epoch", out IEnumerable<string>? epochs)
+                ? epochs.Single() : null;
+            if (observed.Path != "/api/v1/commands/workload" || request.Method != HttpMethod.Post)
+            {
+                throw new InvalidOperationException("The fixture only implements workload command submission.");
+            }
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = JsonContent.Create(new SubmitCommandResponse("host-message", MessageId: "host-message"))

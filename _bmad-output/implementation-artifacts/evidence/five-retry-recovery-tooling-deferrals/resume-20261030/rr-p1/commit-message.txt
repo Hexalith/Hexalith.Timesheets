@@ -1,0 +1,7 @@
+test(http): activate route catalogs in source fixtures
+
+Use the supported Development activation lifecycle and committed generation
+headers for current EventStore source, keeping receiver and transport guards.
+
+Add retry-boundary and receipt-integrity coverage and retain prior evidence.
+Record the unrelated current SDK secret-scan failure; keep the spec in review.
