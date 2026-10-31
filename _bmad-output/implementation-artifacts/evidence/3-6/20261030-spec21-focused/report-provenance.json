@@ -1,0 +1,106 @@
+{
+  "source_head": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "purpose": "Sanitized copies of original spec-21 focused reports; no test or runtime command rerun.",
+  "transformations": {
+    "text_reports": [
+      "Replace absolute repository path prefix with [repository]/."
+    ],
+    "xml_reports": [
+      "Remove computer, user and environment attributes.",
+      "Replace absolute repository path prefix with [repository]/.",
+      "Serialize as UTF-8 XML; retain test cases, outcomes, durations and source line numbers."
+    ]
+  },
+  "reports": [
+    {
+      "name": "global-index.log",
+      "original_sha256": "23e96f99e613052f93d86fe44f43d6a66e6651aaa8b9a0332675825bcb956025",
+      "original_bytes": 612,
+      "sanitized_path": "global-index.txt",
+      "sanitized_sha256": "23e96f99e613052f93d86fe44f43d6a66e6651aaa8b9a0332675825bcb956025",
+      "sanitized_bytes": 612,
+      "transformation_set": "text_reports"
+    },
+    {
+      "name": "global-index.xml",
+      "original_sha256": "967a063fc8cc6557f8b480dc5dfaa15e7afa2c663125b388208631672349e980",
+      "original_bytes": 52673,
+      "sanitized_path": "global-index.xml",
+      "sanitized_sha256": "b9c5da8d8e5e5c9fac1f22de5ee72a22c0215ac8e2f408b5eb0989804ffac7c2",
+      "sanitized_bytes": 49827,
+      "transformation_set": "xml_reports"
+    },
+    {
+      "name": "projections-build.log",
+      "original_sha256": "18ddf95882fb2835682ee243dd8fcb553cd3828f510eeb954c3b0cb8bb4f5b45",
+      "original_bytes": 2363,
+      "sanitized_path": "projections-build.txt",
+      "sanitized_sha256": "167570a4fe24e0dbc22596b7bb89b8b38ce238d76f3c0232a949026d55665fec",
+      "sanitized_bytes": 1931,
+      "transformation_set": "text_reports"
+    },
+    {
+      "name": "projections-restore.log",
+      "original_sha256": "40d104602671164ab3958225da3e1c8cabd55f0251d6df6bc911d9d5a24f44ce",
+      "original_bytes": 80,
+      "sanitized_path": "projections-restore.txt",
+      "sanitized_sha256": "40d104602671164ab3958225da3e1c8cabd55f0251d6df6bc911d9d5a24f44ce",
+      "sanitized_bytes": 80,
+      "transformation_set": "text_reports"
+    },
+    {
+      "name": "test_magic_link_evidence_lineage.log",
+      "original_sha256": "921b60a7fd52e978fbb551cacd29df2d6708879400278e1fcc70fceeb0c6f8e0",
+      "original_bytes": 101,
+      "sanitized_path": "test_magic_link_evidence_lineage.txt",
+      "sanitized_sha256": "921b60a7fd52e978fbb551cacd29df2d6708879400278e1fcc70fceeb0c6f8e0",
+      "sanitized_bytes": 101,
+      "transformation_set": "text_reports"
+    },
+    {
+      "name": "test_magic_link_index_selection.log",
+      "original_sha256": "a96583f6003a98b4229cce83b9ac85d96b64d2d18c6d15ea7bc9ccb490eff83e",
+      "original_bytes": 129,
+      "sanitized_path": "test_magic_link_index_selection.txt",
+      "sanitized_sha256": "a96583f6003a98b4229cce83b9ac85d96b64d2d18c6d15ea7bc9ccb490eff83e",
+      "sanitized_bytes": 129,
+      "transformation_set": "text_reports"
+    },
+    {
+      "name": "v1-migration.log",
+      "original_sha256": "c59452f5b195baf919dbb457ccb07d292a8fa337c21f92818e587755cef59356",
+      "original_bytes": 725,
+      "sanitized_path": "v1-migration.txt",
+      "sanitized_sha256": "c59452f5b195baf919dbb457ccb07d292a8fa337c21f92818e587755cef59356",
+      "sanitized_bytes": 725,
+      "transformation_set": "text_reports"
+    },
+    {
+      "name": "v1-migration.xml",
+      "original_sha256": "3167fbcd8b39e172360ee16c54ac5f6663df5df96dcafddb69f5bb0d650622f0",
+      "original_bytes": 42246,
+      "sanitized_path": "v1-migration.xml",
+      "sanitized_sha256": "d7a56a50794939a62ef6121cbcbf2f6642ff9c80799243d9fb2bdbf9025e36d3",
+      "sanitized_bytes": 39832,
+      "transformation_set": "xml_reports"
+    },
+    {
+      "name": "v6-refusal.log",
+      "original_sha256": "d535ceae5c4f9b4764ab80ce769d73663d02d788ff98c641aea827056522fd1a",
+      "original_bytes": 610,
+      "sanitized_path": "v6-refusal.txt",
+      "sanitized_sha256": "d535ceae5c4f9b4764ab80ce769d73663d02d788ff98c641aea827056522fd1a",
+      "sanitized_bytes": 610,
+      "transformation_set": "text_reports"
+    },
+    {
+      "name": "v6-refusal.xml",
+      "original_sha256": "f8238c4caaa9476f39c198cae6019072d6ef2e85a582ee608f123c5e8708ebfe",
+      "original_bytes": 3771,
+      "sanitized_path": "v6-refusal.xml",
+      "sanitized_sha256": "f4a5ae478de168e621ebb7fe0d8635b99566a6318880fc672cacc3a20f74bfa0",
+      "sanitized_bytes": 3445,
+      "transformation_set": "xml_reports"
+    }
+  ]
+}

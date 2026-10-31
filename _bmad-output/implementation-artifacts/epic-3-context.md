@@ -4,7 +4,7 @@
 
 ## Goal
 
-Let external contributors submit, confirm, or adjust scoped time without becoming full internal users, so their effort can enter the same approval and audit path as internal time. v1 offers only an API and a single-purpose magic link. Valid links must resolve in the running host; failing closed on a missing lookup is not a substitute for that behavior.
+Let external contributors submit, confirm, or adjust scoped time without becoming full internal users, so their effort enters the same approval and audit workflow as internal time. v1 supplies API-only integration and single-purpose magic-link confirmation; a full external portal is outside scope. Valid links must resolve scoped state in the live host while invalid links disclose nothing sensitive.
 
 ## Stories
 
@@ -18,44 +18,34 @@ Let external contributors submit, confirm, or adjust scoped time without becomin
 
 ## Requirements & Constraints
 
-External API callers need tenant-scoped authorization and a valid Contributor Party reference. Tenant and resource gates run before aggregate load, command dispatch, projection read, or any magic-link disclosure. JWT claims and caller-supplied tenant, user, or authorization fields are evidence, not authority.
+External API callers require tenant-scoped authorization and a valid Contributor Party reference. Server-side tenant and resource gates run before aggregate load, dispatch, projection access, or disclosure. JWT claims and caller-submitted identity or authorization fields are evidence, not authority. Unverifiable required references and missing policy fail trust-bearing actions closed.
 
-API-created entries use the same Time Entry flow as internal entries: whole-minute duration, one Project or Work target, Activity Type, billable flag, and the configured Draft or Submitted state. They follow the same approval, rejection, correction, locking, and audit rules. Confirmation and adjustment are contributor evidence, not approval. Retries with the same idempotency context must not create a second entry or a second confirmation.
+API-created entries follow ordinary Time Entry capture, validation, approval, rejection, correction, locking, and audit rules. Required capture evidence includes whole-minute duration, one Project or Work target, Activity Type, billable flag, and contributor attribution. Policy chooses Draft or Submitted workflow state. Contributor confirmation never grants approval. Matching idempotency context must avoid duplicate entries and submitted evidence.
 
-A magic link is a server-generated opaque capability, not a login session. It is bound to one tenant, one Contributor Party, one entry or proposed entry, one allowed action, an expiry, and single-use state, and it can be revoked. Persist only the token hash and capability metadata. Issue, use, revoke, and expiry are EventStore audit events. Raw tokens and decoded capability material are never logged, projected, exported, or stored in comments.
+A magic link is an opaque, server-generated capability scoped to one tenant, Contributor Party, proposed contribution, allowed action, expiry, and single-use state. Revocation and expiry are auditable. Persist only the token hash and capability metadata; issue and use flow through EventStore events. Never log, project, export, or put raw tokens or decoded capability material in comments.
 
-Every invalid path returns the same external failure: malformed, unknown, expired, used, revoked, unauthorized, wrong recipient, wrong action, cross-tenant, replayed, stale catalog, missing dependency, and rate-limited. The response must not reveal whether a link existed or why it failed, and must not reveal tenant, Party, Project, Work, Time Entry, duration, comment, Activity Type, approval, or capability state. Only authorized internal audit may distinguish those categories. Repeated abuse stays no-disclosure.
+Malformed, unknown, expired, revoked, used, unauthorized, cross-tenant, wrong-recipient, wrong-action, replayed, stale-catalog, unresolved, and rate-limited requests share equivalent external disclosure behavior. Failures reveal no token existence, reason, tenant, Party, Project, Work, Time Entry, duration, comment, Activity Type, approval state, or capability state. Only authorized internal audit may distinguish failure categories. Diagnostics retain correlation-safe outcome metadata and only permitted scoped/hash references; command bodies, personal data, target names, raw envelopes, and sensitive comments are excluded.
 
-A valid page is shown only after the token is validated. It may show the proposed date, duration, Activity Type, billable flag, and the minimum target context needed for that confirmation. Comments are sensitive: external display is off unless policy explicitly allows it, and a missing comment policy fails the trust-bearing action closed. Adjustment exposes only policy-allowed fields. Invalid adjustments persist no partial entry and do not consume the capability.
-
-Store stable Tenant, Party, Project, and Work identifiers only. Confirmation fails closed when a required reference, catalog, or authority cannot be resolved; stale display hydration is not enough for confirmation. Logs and traces carry correlation-safe outcome metadata and permitted hash or scope references only.
-
-Secondary identity verification for high-value or billable links is post-v1. Audit instants are UTC; business dates follow tenant-local period policy. Magic-link audit metadata follows the documented tenant retention default. Legal-hold override remains a separate launch gate.
+Valid confirmation displays only proposed date, duration, Activity Type, billable flag, and minimal target context. Comment disclosure requires explicit external policy and redaction; it is excluded by default. Adjustment exposes only policy-allowed fields. Invalid adjustment persists no partial entry and consumes no capability. Secondary identity verification for high-value or billable links is post-v1. Tenant-local dates define business periods; audit instants remain UTC. Legal-hold sign-off is a separate launch gate.
 
 ## Technical Decisions
 
-EventStore is the only authoritative store for Time Entry and magic-link state. Do not introduce SQL, Redis, Dapr state, local JSON, or direct projection mutation for that state.
+Hexalith.EventStore is the authoritative persistence path. Keep aggregates pure and changes append-only. Do not introduce SQL, Redis, direct Dapr state calls, local JSON, or direct projection mutation for Timesheets domain state. Store stable sibling Tenant, Party, Project, and Work identifiers only; those modules retain ownership of their data.
 
-Single-use, revoked, and expired truth comes from folding the capability aggregate. A rebuildable candidate index, folded only from issuance events and holding the token hash, may locate a candidate; it is not authority. The live host must populate that index through the existing projection host, at the address the loader reads, without a second host or a new topology. The loader then folds capability state, folds the scoped Time Entry, and loads a fresh Activity Type catalog. Missing, stale, or unavailable state uses the same opaque external failure. Data Protection may protect purpose-bound material, but it is not the revocation or single-use record.
+The rebuildable token-hash candidate index locates a candidate without granting use authority. Issuance must populate it through the configured projection path and EventStore IReadModelStore, without direct test seeding. Authoritative loading folds capability state, scoped Time Entry state, and a fresh Activity Type catalog. Missing or unavailable dependencies preserve opaque failure behavior. Duplicate delivery, replay, and rebuild must yield deterministic, idempotent results. Single-use, revoke, and expiry decisions derive from authoritative folds.
 
-Keep capability decisions, validation, and policy in the server. Keep the candidate index in projections. Keep public contracts infrastructure-free: no EventStore envelopes and no caller-supplied authority fields. External routes are describe, confirm, and adjust for one capability; they must not expose browsing APIs. Transport failures share one ProblemDetails shape; domain rejections stay typed outcomes. The server kernel stays fail-closed until the host supplies trusted tenant context and a real loader.
+Public contracts remain infrastructure-free and exclude caller-supplied authority. External routes describe, confirm, or adjust one capability without browsing broader Timesheets data. Keep server authorization defaults fail-closed. Event/contract changes remain additive; use sibling-module adapters for reference validation.
 
-Event and contract changes stay additive. Folds and projections must be deterministic under duplicate delivery, replay, and rebuild. Cross-module checks go through Tenants, Parties, Projects, and Works adapters. Do not add a Timesheets UI project.
-
-Valid-link resolution in the running host is unfinished v1 work: the candidate index is not populated, so a valid token fails closed. That gap cannot be waived. Invalid-link no-disclosure is independent and already required.
+Local persistence proof, qualification of the current runtime graph, and deployed authority, complete inventory/continuity, and shared-rebuild acceptance are distinct gates. Historical local proof cannot close deployed acceptance. FR14 remains unfinished at that boundary and the overall release verdict remains FAIL until the outstanding gates are satisfied.
 
 ## UX & Interaction Patterns
 
-The external surface is a minimal responsive page outside internal shell navigation, built with Fluent UI V5 for a FrontComposer consumer. This repository supplies contracts and metadata; it does not own rendered UI or a Timesheets UI project.
+Timesheets supplies contracts and FrontComposer-compatible metadata. A consuming FrontComposer host owns rendered Fluent UI V5 behavior, responsive layout, and browser/WCAG evidence; do not add a Timesheets UI project.
 
-Validate the token before any detail. On success, show only the allowed confirmation fields, with clear duration units. Actions are verb phrases: confirm time, and adjust when the capability allows it. Adjustment is one focused dialog. The page must work on a phone and by keyboard or touch, target WCAG 2.2 AA, and pair every state with text.
-
-Every invalid outcome uses the same factual message and one safe recovery path, with no account-style navigation and no cause. Internal issued-link views use text status, expiry, and audit metadata, and never show the raw token.
+Validate the token before any detail appears. Confirmation is a minimal single-purpose surface outside broad internal navigation, usable on a phone and by keyboard or touch, with clear duration units and accessible focus order. Adjustment uses one focused dialog. Actions use explicit verb phrases. Status pairs visual treatment with text. Every invalid state provides one neutral message and one safe recovery path without revealing whether the link existed or why it failed.
 
 ## Cross-Story Dependencies
 
-External submission and confirmation depend on Epic 1 capture, Party attribution, Activity Type catalog, comment policy, reference validation, and tenant gates, and on Epic 2 approval, rejection, correction, and locking. Confirmation never approves.
+External submission and confirmation depend on Epic 1 capture, Party attribution, Activity Type catalogs, comment policy, reference validation, and tenant gates, plus Epic 2 approval, correction, locking, and period rules. Confirmation remains contributor evidence throughout those workflows.
 
-Issuance must exist before describe, confirm, or adjust. A successful confirm or adjust records capability use so the token cannot be reused. Live confirm and adjust stay fail-closed until the projection host populates the candidate index and the loader can fold authoritative state. HTTP proof must show an issued valid token reaching describe, confirm, and adjust, and must show equivalent no-disclosure responses for every invalid case.
-
-Epic 3 owns that residual valid-link wiring. Epic 5 only checks the evidence afterward and must not be the first implementation of magic-link loading.
+Issuance precedes describe, confirm, and adjust. Accepted use prevents replay. Runtime proof must exercise authoritative loading and exact stored-event receipts through the configured host, while HTTP-boundary proof independently establishes equivalent failures and privacy-safe diagnostics. Epic 3 owns this behavior and its unfinished acceptance; Epic 5 reconciles evidence without substituting release assessment for implementation or deployed qualification.

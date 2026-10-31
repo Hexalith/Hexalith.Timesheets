@@ -1,0 +1,207 @@
+{
+  "verified_utc": "2026-10-31T06:06:32.141909+00:00",
+  "kind": "static receipt/hash/prefix/link checks only; no tests, builds or runtime probes",
+  "inspection_receipt_matches_private_original": true,
+  "inspection_harness_matches_private_and_historical_original": true,
+  "original_output_hashes_match_receipt": true,
+  "original_output_shape_matches_receipt": true,
+  "selected_source_hashes_match": true,
+  "receipt_aggregate_only_allowlist": true,
+  "runtime_command_count": 1,
+  "inspection_count": 1,
+  "canonical_lock_acquired_and_released": true,
+  "unchanged_pre_existing_files": {
+    "count": 6637,
+    "expected_count": 6637,
+    "all_match": true,
+    "source_manifest_count": 2997,
+    "prior_evidence_manifest_count": 3360
+  },
+  "document_prefixes": [
+    {
+      "file": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "original": {
+        "bytes": 12618,
+        "sha256": "8989098b549593eb7c3e89db24f6d3345d2c728ab8d19b40d9c6679d379aec22"
+      },
+      "invocation_original": {
+        "bytes": 15616,
+        "sha256": "9035265c8d431dcd19cfb2f2cebd29d5bd6cb5c6cd2fed243976c28a46145f80"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2770
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "original": {
+        "bytes": 470130,
+        "sha256": "cc93bf54afa557fd4db2c6bbb068ad1f8d3df3a16fd4a8e7357e598e4d09184d"
+      },
+      "invocation_original": {
+        "bytes": 470130,
+        "sha256": "cc93bf54afa557fd4db2c6bbb068ad1f8d3df3a16fd4a8e7357e598e4d09184d"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2164
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "original": {
+        "bytes": 282800,
+        "sha256": "7d6cd83bc4a18df0716a3d18e74bc845f88407d84c405bff25dd584b440dc045"
+      },
+      "invocation_original": {
+        "bytes": 282800,
+        "sha256": "7d6cd83bc4a18df0716a3d18e74bc845f88407d84c405bff25dd584b440dc045"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2815
+    },
+    {
+      "file": "docs/launch-readiness.md",
+      "original": {
+        "bytes": 159682,
+        "sha256": "e817b95ec2225a753dcde78d0b337bf2d37d62fef1dfebba34108c129aa5481e"
+      },
+      "invocation_original": {
+        "bytes": 159682,
+        "sha256": "e817b95ec2225a753dcde78d0b337bf2d37d62fef1dfebba34108c129aa5481e"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2055
+    }
+  ],
+  "frozen_intent": {
+    "bytes": 1499,
+    "sha256": "35fb7260266a715c75f2d57c59a88bd8356c4b19ac4c585d9f28f9d85e236570",
+    "unchanged": true
+  },
+  "source_identity_scope": "Supplied pre-attempt root/submodule source identities only; no built/running-asset identity claimed.",
+  "local_markdown_links": [
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-2/admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-2/verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-2-disposition--2026-10-31",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof-2/admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-2-disposition--2026-10-31",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "docs/launch-readiness.md",
+      "target": "../_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "../../../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#new-authorized-attempt--2026-10-31-attempt-2",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "admission-inspection.py.txt",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "qualification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "report-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "source-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md",
+      "target": "SHA256SUMS",
+      "exists": true,
+      "anchor_checked": false
+    }
+  ],
+  "story_and_spec_status": "in-progress",
+  "release_verdict": "FAIL",
+  "git_diff_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "no_post_refusal_runtime_build_or_test_work": true
+}

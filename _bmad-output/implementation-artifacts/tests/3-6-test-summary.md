@@ -3094,3 +3094,210 @@ The explicit verification property remains `HexalithEventStoreVersion=3.125.1`, 
 ## Git publication checks — 2026-10-18
 
 The later user request to push all changes authorizes Git publication after the completed qualification. EventStore fast-forwarded existing upstream commits, then published the additive helper as `9b66153515687463fc1b1e929f8b0e73d8145e2c`; the parent pointer is a separate commit. Each exact commit message passed the owning repository's pinned commitlint. An additional dependency rebuild failed on duplicate `Hexalith.Commons.UniqueIds` imports (**CS1704/MSB3243**); the documented focused-build fallback passed with zero warnings/errors and helper tests **13/13**. [Exact commands and retained publication receipts](../evidence/3-6/20261018-direct-eventstore-local-proof/README.md#publication-follow-up--2026-10-18) distinguish this extra check from the prior successful full Timesheets/live qualification. No dependency configuration was changed to hide that failure.
+
+## Spec-21 focused verification and terminal admission refusal — 2026-10-30
+
+The [approved spec-21](../spec-3-6-implement-eventstore-backed-magic-link-state-loading-21.md) was executed against Timesheets HEAD `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. The existing journey already resolves through the selected index and compares effective duration, billable/approval state, target and contributor against stored events, including packed lineage, use, rebuild and restart checks. It retains token-free diagnostics, the one-`eventstore`/one-`timesheets` duplicate-id preflight, and recording/retry delays `(1, 5, 15, 45)`. The existing Python tests cover directory candidates, approval transitions, metrics and comment publication. No source/test implementation or test case was added.
+
+### Exact focused commands and results
+
+All commands ran from the repository root. Restore and build use matching Debug/source references without version overrides.
+
+```bash
+python3 scripts/test_magic_link_index_selection.py
+python3 scripts/test_magic_link_evidence_lineage.py
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.Timesheets.Projections.Tests/Hexalith.Timesheets.Projections.Tests.csproj --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
+tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class '*MagicLinkGlobalIndexEpochTests' -noColor -xml /tmp/timesheets-spec21-checks-20261030/global-index.xml
+tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -class '*MagicLinkV1MigrationTests' -noColor -xml /tmp/timesheets-spec21-checks-20261030/v1-migration.xml
+tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -method Hexalith.Timesheets.Projections.Tests.MagicLinkV6MigrationTests.FreshInvalidSelectedMetadataNeverReservesAFence -noColor -xml /tmp/timesheets-spec21-checks-20261030/v6-refusal.xml
+```
+
+Every focused command exited **0**. Python index selection passed **30/30 in 0.057s**; lineage passed **3/3 in 0.001s**. Restore reported all projects up to date; the warning-as-error project build passed in **6.06s**, zero warnings/errors. The built global-index class passed **74/74 in 22.602s** and v1-migration class **62/62 in 18.323s**, with zero errors/failures/skips/not-run. Auditing the frozen direct-v1 row showed that those classes do not execute the v6 migrator; the additional existing method above passed **4/4 in 1.076s**, including `direct-single`, with zero errors/failures/skips/not-run. This is **173 passing focused cases** in total; no complete solution build or six-suite rerun is claimed.
+
+### Frozen matrix coverage
+
+| Frozen scenario / boundary | Passing tests actually run | Observed scope |
+| --- | --- | --- |
+| Clean index | `MagicLinkGlobalIndexEpochTests.FreshOrdinaryDeliveryBootstrapsV7AndSelectsItsCandidate` and `EmptyDirectShardInventoryBootstrapsWithAtMostSixteenConcurrentReads` | Persisted v7 root selects the issued owner; empty direct stores bootstrap with bounded reads. Replay/restart remain unqualified in this attempt because admission refused. |
+| Direct v1 root | `MagicLinkGlobalIndexEpochTests.LegacyIndexPreventsFreshOrdinaryV7Bootstrap(false)` and `DirectLegacyShardsRefuseBothBootstrapPathsWithoutLosingRecoveryEvidence`; additional `MagicLinkV6MigrationTests.FreshInvalidSelectedMetadataNeverReservesAFence("direct-single")` | Ordinary bootstrap refuses with no published v7 root and retains direct legacy bytes/ETag/recovery state. V6 migration refuses before reserving a fence, retains the direct-root ETag and leaves the selected generation/epoch unchanged. The latter is an additional existing four-case method selection, not part of the two required classes. |
+| Legacy v6 shard | `MagicLinkGlobalIndexEpochTests.LegacyIndexPreventsFreshOrdinaryV7Bootstrap(true)`; Python `SelectedIndexTests.test_manifest_rejects_overlapping_ranges_reused_ids_and_orphan_digests` and `test_inline_hit_rejects_corrupt_unrelated_page_contents` | The fold returns shard-targeted operations and no v7-root operation; the selected v7 root remains absent. This test does not commit the returned operations. Invalid manifests or page contents return no candidate. |
+| Store outage/cancellation | `MagicLinkGlobalIndexEpochTests.DirectIndexReadFailureOrCancellationKeepsBootstrapRetryable` and `SynchronousDirectShardFaultDrainsStartedReadsBeforeRetry` | I/O/JSON faults produce unavailable without publishing v7 or losing legacy/recovery state; caller cancellation propagates; recovery remains retryable. |
+| Explicit migration boundary | `MagicLinkV1MigrationTests.MissingAuthorityCoverageOrQuiescenceNeverReservesAnEpoch`, `InvalidCompleteInventoryIsRejectedBeforeReservation`, `DirectOrSelectedV1RecoversAllCertifiedCandidatesIncludingCrossTenantCollisions`, and the remaining 62-case class | Simulated certified inventory authorizes only the separate migration; absent authority/coverage/quiescence or invalid inventory retains legacy selection. No deployed inventory or live migration is certified. |
+
+The refusal/outage C# checks exercise persisted SDK state and unavailable exceptions; the live dispatcher result `delivery_state_unavailable` was not observed in this invocation because admission stopped before dispatch. These focused tests do not establish live opaque-denial, race or restart acceptance.
+
+### Single supported runtime command
+
+```bash
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-spec21-20261030
+```
+
+The command ran once from **2026-10-30T17:39:31.295966+00:00** to **2026-10-30T17:39:31.713406+00:00**, exiting **1** after **0.417432s**. It stopped at **runtime-inventory admission** with the exact reason **“A Dapr application is already running or inventory is unsafe; no AppHost started”**. The original `dapr list --output json` command exited **0** and returned a valid JSON array with **eight rows**; only that shape/count observation is retained, without row contents. The original inventory log SHA-256 remains `c18f73ee9c01d7285a6deb0e494cb30066a18bf25664cc824991ff56162ec643`. No AppHost, infrastructure, component copies, build or live test started. Cleanup completed, no journey descendants remained, and zero containers were removed. Neither shared-baseline observation nor a preservation comparison ran; no preservation receipt or passing live journey exists. There was no retry, alternative audit or live migration.
+
+The runner retained original command logs at `/tmp/timesheets-spec21-20261030/run-mmwu9279`; original check reports and the assembled safe receipt remain at `/tmp/timesheets-spec21-checks-20261030`. Sanitized focused reports are now retained in the repository and linked below, with [original/sanitized hash provenance](../evidence/3-6/20261030-spec21-focused/report-provenance.json). Raw runtime command logs remain temporary because the Dapr inventory contains foreign rows. The following inline receipt retains exact argv, **explicit invocation environment overrides**, timing, source digests, safe admission/cleanup contents and original byte counts/SHA-256. Inherited variables and the runner's effective environment were not captured; the explicit overrides cannot reconstruct that environment. The manual before/after source snapshot matched across the attempt; it binds root HEAD, tracked-diff bytes, root-submodule status and the listed sources, not a qualified running process or complete runtime-asset identity. The pre-existing user edit to this spec was retained. A later evidence-only append naturally changes the root diff digest.
+
+The original successful version-command logs reported Aspire **13.6.4+c89352703f78ae46de90fbf751ed8b52b77b89bf**, Dapr CLI **1.18.2** / runtime **1.18.7**, and Docker server **29.8.2**. These versions and the privacy-safe inventory observation are retained with original-log provenance in [runtime observations](../evidence/3-6/20261030-spec21-focused/runtime-observations.json). They were extracted from the original logs; no runtime/version command was rerun. Other inherited/effective configuration remains unrecorded.
+
+```json
+{
+  "argv": [
+    "python3",
+    "scripts/run_isolated_magic_link_dapr.py",
+    "--log-directory",
+    "/tmp/timesheets-spec21-20261030"
+  ],
+  "explicit_invocation_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "started_utc": "2026-10-30T17:39:31.295966+00:00",
+  "completed_utc": "2026-10-30T17:39:31.713406+00:00",
+  "elapsed_seconds": 0.417432,
+  "exit_code": 1,
+  "source_before": {
+    "head": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+    "tracked_diff_sha256": "7802fdac7fe66ac774c69af34dbedc837899f8405bece9f3dca62ce689226d62",
+    "source_sha256": {
+      "scripts/local_aspire_magic_link_journey.py": "b4eea1764d407b00356ed62e40c7ac9e3e46b711552086328dc82824395f390e",
+      "scripts/magic_link_index_selection.py": "1ad0c5ddb7c803b3c27d924af0e1b749af2ac09af0d835e5c97740b697e29142",
+      "scripts/magic_link_evidence_lineage.py": "8e6f3c253a748013e278c07cd5db0dcd2e3334e9d902717db7c044d73b665003",
+      "scripts/test_magic_link_index_selection.py": "9e1e988e7b8b5368aa0dbb79cb44780480cbff3dcc176d338d9c6e7aff80cf38",
+      "scripts/test_magic_link_evidence_lineage.py": "9d089d883358f7786e5afdea7a78580cb946f3515373265ab092879d470d9b42",
+      "scripts/run_isolated_magic_link_dapr.py": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e",
+      "scripts/check_magic_link_apphost_guards.py": "484e9ce362b2f6acfddee7d3a40b1d068cdef53b189deb9349069cb20756a1b6",
+      "scripts/local_runtime_admission.py": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006",
+      "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkGlobalIndexEpochTests.cs": "eed04ccaa30d9ff40e3046f0369e142f095cc49f0aeb40f87cda4c53be830354",
+      "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV1MigrationTests.cs": "2a34f98fb0a06ba6875d532abd1500146307d035d0eee361e30374d876971575",
+      "src/Hexalith.Timesheets.Projections/MagicLinks/MagicLinkTokenHashCapabilityIndexProjectionHandler.cs": "b9372c364e4cbdeabaf6583c008c3b0a6c6273c5e9dac52b7d024543d74bbf4f",
+      "src/Hexalith.Timesheets/Endpoints/MagicLinks/MagicLinkIndexMigrationEndpoints.cs": "c2008935e780ca5541044ee7fd58b3115c93b0504a90a071e0e6c3412192e49e"
+    },
+    "root_submodules_sha256": "51e570299709927d212625cd08b4f7992b777092331ee3c4828813ebec62a845"
+  },
+  "source_after_matches": true,
+  "evidence_directory": "/tmp/timesheets-spec21-20261030/run-mmwu9279",
+  "stdout_sha256": "e794ee41d2a195a1a2cb029f3b6716e6acd2dcb2c02063d40d99b4f62d805269",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_bytes": 154,
+  "stderr_bytes": 0,
+  "receipts": {
+    "admission.json": {
+      "sha256": "42ebf6ed3f976f871f5b7e19f93c6ae1760c26d8b9d924e5210d812ae2d7479c",
+      "bytes": 221,
+      "contents": {
+        "admitted": false,
+        "resources_started": false,
+        "infrastructure_started": false,
+        "apphost_start_attempted": false,
+        "reason": "A Dapr application is already running or inventory is unsafe; no AppHost started"
+      }
+    },
+    "cleanup.json": {
+      "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5",
+      "bytes": 173,
+      "contents": {
+        "complete": true,
+        "journey_descendants_gone": true,
+        "failure_reasons": [],
+        "components_created": false,
+        "components_removed": false,
+        "containers_removed": 0
+      }
+    }
+  },
+  "command_logs": [
+    {
+      "name": "01-aspire---version.log",
+      "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36",
+      "bytes": 99
+    },
+    {
+      "name": "02-dapr---version.log",
+      "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+      "bytes": 94
+    },
+    {
+      "name": "03-docker-version.log",
+      "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+      "bytes": 85
+    },
+    {
+      "name": "04-dapr-list.log",
+      "sha256": "c18f73ee9c01d7285a6deb0e494cb30066a18bf25664cc824991ff56162ec643",
+      "bytes": 3502
+    }
+  ],
+  "apphost_start_commands": 0,
+  "additional_test_source_sha256": {
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": "3c7d4816a255ffe18de924cde99bb985dd370ebf90d4199eea102abf90ba4139"
+  }
+}
+```
+
+Retrievable sanitized focused reports are linked below. The byte counts and hashes in this table describe the **original reports**, preserving the initial record. [Report provenance](../evidence/3-6/20261030-spec21-focused/report-provenance.json) records the sanitized byte counts/hashes and transformations: replace the absolute repository prefix with `[repository]/`; remove XML `computer`, `user` and `environment` attributes; serialize XML while retaining test cases, results, durations and source lines. No machine/user identity or foreign inventory rows are retained in these artifacts.
+
+| Sanitized report | Original bytes | Original SHA-256 |
+| --- | ---: | --- |
+| [global-index.txt](../evidence/3-6/20261030-spec21-focused/global-index.txt) | 612 | `23e96f99e613052f93d86fe44f43d6a66e6651aaa8b9a0332675825bcb956025` |
+| [global-index.xml](../evidence/3-6/20261030-spec21-focused/global-index.xml) | 52673 | `967a063fc8cc6557f8b480dc5dfaa15e7afa2c663125b388208631672349e980` |
+| [projections-build.txt](../evidence/3-6/20261030-spec21-focused/projections-build.txt) | 2363 | `18ddf95882fb2835682ee243dd8fcb553cd3828f510eeb954c3b0cb8bb4f5b45` |
+| [projections-restore.txt](../evidence/3-6/20261030-spec21-focused/projections-restore.txt) | 80 | `40d104602671164ab3958225da3e1c8cabd55f0251d6df6bc911d9d5a24f44ce` |
+| [test_magic_link_evidence_lineage.txt](../evidence/3-6/20261030-spec21-focused/test_magic_link_evidence_lineage.txt) | 101 | `921b60a7fd52e978fbb551cacd29df2d6708879400278e1fcc70fceeb0c6f8e0` |
+| [test_magic_link_index_selection.txt](../evidence/3-6/20261030-spec21-focused/test_magic_link_index_selection.txt) | 129 | `a96583f6003a98b4229cce83b9ac85d96b64d2d18c6d15ea7bc9ccb490eff83e` |
+| [v1-migration.txt](../evidence/3-6/20261030-spec21-focused/v1-migration.txt) | 725 | `c59452f5b195baf919dbb457ccb07d292a8fa337c21f92818e587755cef59356` |
+| [v1-migration.xml](../evidence/3-6/20261030-spec21-focused/v1-migration.xml) | 42246 | `3167fbcd8b39e172360ee16c54ac5f6663df5df96dcafddb69f5bb0d650622f0` |
+| [v6-refusal.txt](../evidence/3-6/20261030-spec21-focused/v6-refusal.txt) | 610 | `d535ceae5c4f9b4764ab80ce769d73663d02d788ff98c641aea827056522fd1a` |
+| [v6-refusal.xml](../evidence/3-6/20261030-spec21-focused/v6-refusal.xml) | 3771 | `f8238c4caaa9476f39c198cae6019072d6ef2e85a582ee608f123c5e8708ebfe` |
+
+Historical failed/refused attempts, including the [2026-10-28 preservation investigation](shared-state-preservation-investigation.md), remain unchanged. Current runtime qualification, deployed authority/inventory/continuity/shared-rebuild acceptance and Story 3.6 remain open; the story remains **in-progress** and release remains **FAIL**. AppHost/ServiceDefaults, projection stores, migration authorization defaults, opaque 403 behavior, dependencies and gitlinks were unchanged.
+
+Final `git diff --check` exited **0**. Byte-prefix SHA-256 checks confirmed all three evidence documents retain their original contents unchanged before these appends; the approved frozen spec block and every listed tested implementation source also retain their pre-work digests. The initial implementation changed this spec and the three named evidence documents; the review correction additionally retains ten sanitized focused reports and two provenance/observation files in the linked repository evidence directory. The pre-existing spec edit is preserved.
+
+
+## Current-source live-proof continuation admission refusal — 2026-10-30
+
+The [current-source continuation](../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md) performed exactly one availability inspection under `scripts/local_runtime_admission.py`'s canonical nonblocking lock against Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. The lock was acquired at **2026-10-30T18:02:28.049337+00:00** and released at **2026-10-30T18:02:28.312097+00:00**. Inspection timing was **2026-10-30T18:02:28.049236+00:00 → 2026-10-30T18:02:28.312107+00:00**, exit **1**, **0.262842s**.
+
+The sole runtime command was `dapr list --output json`, executed **2026-10-30T18:02:28.049341+00:00 → 2026-10-30T18:02:28.310875+00:00**, exit **0**, **0.261558s**. Stdout was a valid JSON array of **eight objects**, **3,451 bytes**, SHA-256 `ce7753c5eb987a5b57e839842caace5b3b45d584d521230c24b2b09e470fae79`; stderr was **0 bytes**, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. Empty inventory was mandatory, so admission was refused. No foreign row or field is retained in the [admission receipt](../evidence/3-6/20261030-current-source-live-proof/admission-inspection.json).
+
+`aspire ps --non-interactive --format Json` was not invoked. No solution restore/build, supported runner, shared-store observation, infrastructure/AppHost, component copy or fixture domain write started. The conditional command `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261030` was **not invoked**. There was no retry, alternate lane, migration or foreign-resource stop. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no resources does not qualify runner cleanup.
+
+The [durable evidence packet](../evidence/3-6/20261030-current-source-live-proof/README.md) retains the inspection harness, original/sanitized provenance, source identity, exact commands and explicit missing-gate dispositions. Only receipt/hash/prefix/link checks and `git diff --check` followed terminal refusal. Source assertions, authorization defaults, earlier evidence and original document prefixes are preserved. No tests were rerun; the earlier **173 focused cases** retain their dated spec-21 meaning. No current built/running-asset identity, runtime-version or effective-environment claim is made. Story 3.6 and current live proof remain **in-progress**, deployed authority/inventory/continuity/shared-rebuild acceptance remains unfinished, and release remains **FAIL**.
+
+
+## Authorized current-source live-proof admission refusal — 2026-10-31
+
+The one newly authorized availability inspection used the canonical `LocalRuntimeAdmission` lock at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. It ran **2026-10-31T05:06:39.210529+00:00 → 2026-10-31T05:06:39.320801+00:00**, exit **1**, **0.110244s**. The lock was acquired at **2026-10-31T05:06:39.210640+00:00** and released at **2026-10-31T05:06:39.320797+00:00**. The only runtime command, `dapr list --output json`, ran **2026-10-31T05:06:39.210643+00:00 → 2026-10-31T05:06:39.320462+00:00**, exited **0** after **0.109844s**, and returned a JSON array of **eight application objects**. The required successful empty inventory was absent.
+
+Inventory stdout was **3,451 bytes**, SHA-256 `69da8a78cdbb842539445567c8f12e61395eff0ff3458640a81dbb66641b5df8`; stderr was **0 bytes**, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. The [new admission receipt](../evidence/3-6/20261031-current-source-live-proof/admission-inspection.json) retains aggregate metadata only; foreign rows/identities remain withheld in private temporary originals.
+
+The conditional command `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261031` was **not invoked**. The [new evidence packet](../evidence/3-6/20261031-current-source-live-proof/README.md) retains original/sanitized provenance, source identity, the exact inspection harness and explicit gate dispositions. The [continuation spec](../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#authorized-continuation-disposition--2026-10-31) records this newly authorized attempt.
+
+No Aspire inventory, solution restore/build, supported runner, shared-store observation, fixture resource or fixture domain write followed. There was no retry, alternate lane, migration or foreign-resource change. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no fixture resources does not qualify runner cleanup. Only static receipt/hash/prefix/link checks and `git diff --check` followed refusal. Earlier evidence, source assertions, authorization/default-deny behavior and all original document bytes are preserved; the historical **173 focused cases** were not rerun. No current built/running-asset, runtime-version or inherited-environment claim is made.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.
+
+
+## Current-source live-proof attempt 2 admission refusal — 2026-10-31
+
+The single ordered availability inspection ran **2026-10-31T06:04:10.176510+00:00 → 2026-10-31T06:04:10.407450+00:00**, exit **1**, **0.230897s**, at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. The canonical `LocalRuntimeAdmission` lock was acquired at **2026-10-31T06:04:10.176629+00:00** and released at **2026-10-31T06:04:10.407447+00:00**. Its sole runtime command, `dapr list --output json`, ran **2026-10-31T06:04:10.176633+00:00 → 2026-10-31T06:04:10.407131+00:00**, exit **0**, **0.230515s**, and returned a JSON array of **eight application objects**. The required successful empty inventory was absent.
+
+Inventory stdout was **3,451 bytes**, SHA-256 `ef21a533f1473c44e57bc181c7828a7522a88023ea9be1e94a5de5785a15a646`; stderr was **0 bytes**, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. The [new sanitized receipt](../evidence/3-6/20261031-current-source-live-proof-2/admission-inspection.json) retains aggregate metadata only; foreign rows/identities remain withheld in private temporary originals. This is the separate attempt 2 authorization, preserving both earlier refusal histories.
+
+The conditional command `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261031-attempt2-rmqgw3i6-runner` was **not invoked**. The [fresh evidence packet](../evidence/3-6/20261031-current-source-live-proof-2/README.md) retains original/sanitized provenance, source identity, the unchanged inspection harness and explicit unobserved gates. The [spec disposition](../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-2-disposition--2026-10-31) records this attempt.
+
+No Aspire inventory, solution restore/build, supported runner, shared-store observation, fixture resource or fixture domain write followed. There was no retry, alternate lane, migration or foreign-resource change. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no fixture resources does not qualify runner cleanup. Only static receipt/hash/prefix/link checks and `git diff --check` followed terminal refusal. Source assertions, authorization/default-deny behavior, prior receipts and every pre-existing document byte are preserved. The historical **173 focused cases** were not rerun; no current built/running-asset, runtime-version or inherited-environment claim is made.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.
+
+
+## Current-source live-proof attempt 3 admission refusal — 2026-10-31
+
+The single ordered availability inspection ran **2026-10-31T06:36:18.721203+00:00 → 2026-10-31T06:36:18.824957+00:00**, exit **1**, **0.10373s**, at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. The canonical `LocalRuntimeAdmission` lock was acquired at **2026-10-31T06:36:18.721279+00:00** and released at **2026-10-31T06:36:18.824953+00:00**. Its sole runtime command, `dapr list --output json`, ran **2026-10-31T06:36:18.721281+00:00 → 2026-10-31T06:36:18.824622+00:00**, exit **0**, **0.103359s**, and returned a JSON array of **eight application objects**. The required successful empty inventory was absent.
+
+Inventory stdout was **3,451 bytes**, SHA-256 `ef21a533f1473c44e57bc181c7828a7522a88023ea9be1e94a5de5785a15a646`; stderr was **0 bytes**, SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. Foreign rows/identities remain withheld in private temporary originals. The [new sanitized receipt](../evidence/3-6/20261031-current-source-live-proof-3/admission-inspection.json) retains aggregate metadata only. This is the separate attempt 3 authorization; every earlier receipt retains its dated meaning.
+
+The conditional command `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261031-attempt3-2d4f_pb8-runner` was **not invoked**. The [fresh evidence packet](../evidence/3-6/20261031-current-source-live-proof-3/README.md) retains original/sanitized provenance, source identity, the unchanged inspection harness, exact conditional uninvoked restore/build commands and every unobserved gate. The [spec disposition](../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-3-disposition--2026-10-31) records this attempt.
+
+No Aspire inventory, solution restore/build, supported runner, shared-store observation, fixture resource or fixture domain write followed. There was no retry, alternate lane, migration or foreign-resource change. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no fixture resources does not qualify runner cleanup. Only the required sanitized receipt/provenance, append-only document recording, static receipt/hash/prefix/link checks and `git diff --check` followed terminal refusal. Source assertions, authorization/default-deny behavior, prior receipts and every pre-existing document byte are preserved. The historical **173 focused cases** were not rerun; no current built/running-asset, runtime-version or inherited-environment claim is made.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.

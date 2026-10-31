@@ -992,3 +992,53 @@ records commands, results and review disposition. These checks add no live migra
 AppHost runtime qualification, deployed authority or shared-rebuild acceptance.
 A foreign Tenants AppHost prevents the prescribed isolated live baseline; it was
 left untouched. Story 3.6 remains in progress and the launch verdict remains **FAIL**.
+
+## Story 3.6 spec-21 runtime admission refusal — 2026-10-30
+
+The [latest spec-21 verification](../_bmad-output/implementation-artifacts/tests/3-6-test-summary.md#spec-21-focused-verification-and-terminal-admission-refusal--2026-10-30), at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`, passed **173 focused cases**: Python selected-index **30**, effective-evidence/lineage **3**, persisted global-index **74**, certified-v1-migration **62**, and existing v6 direct-root/metadata refusal **4**. Matching Debug/source Projections restore and warning-as-error build exited **0**, with zero build warnings/errors and zero focused test failures/skips. These are local source and persisted-fake checks.
+
+Exactly one command, `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-spec21-20261030`, exited **1** after **0.417432s** at **runtime-inventory admission** on **2026-10-30T17:39:31.295966+00:00**. The reason was **“A Dapr application is already running or inventory is unsafe; no AppHost started”**. No infrastructure/AppHost, component copies or live test started; cleanup completed and removed zero containers. Source identities matched across the attempt. No shared baseline/preservation observation ran, and no successful live journey is claimed. Sanitized receipts and test mapping are retained in the linked summary; no retry, live migration or foreign runtime stop followed.
+
+Earlier failed/refused preservation and runtime evidence remains unchanged. Current Aspire 13.6.4 runtime qualification and deployed authority, inventory/continuity and shared-rebuild acceptance remain open. Story 3.6 remains **in-progress** and the overall launch verdict remains **FAIL**.
+
+
+## Story 3.6 current-source live-proof continuation blocked — 2026-10-30
+
+The [current-source continuation evidence](../_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md) records one canonical-lock availability inspection at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. `dapr list --output json` ran at **2026-10-30T18:02:28.049341+00:00**, exited **0**, and returned a valid JSON array of **eight objects**. The inspection exited **1** after **0.262842s**; the lock was released at **2026-10-30T18:02:28.312097+00:00**. The required empty inventory was absent.
+
+No Aspire inventory, restore/build, supported runner, fixture resource, shared-store observation or fixture write followed. No retry, migration or foreign-resource change occurred. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**, and no current local proof is qualified. The packet retains sanitized aggregate metadata and original hashes without foreign rows. Earlier evidence, including spec-21's 173 focused cases and historical preservation failures, remains unchanged and was not rerun.
+
+Current Aspire 13.6.4 runtime qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain open. Story 3.6 and the conditional live-proof task remain **in-progress**; the overall release verdict remains **FAIL**.
+
+
+## Story 3.6 authorized current-source live-proof continuation blocked — 2026-10-31
+
+The one newly authorized availability inspection used the canonical `LocalRuntimeAdmission` lock at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. It ran **2026-10-31T05:06:39.210529+00:00 → 2026-10-31T05:06:39.320801+00:00**, exit **1**, **0.110244s**. The lock was acquired at **2026-10-31T05:06:39.210640+00:00** and released at **2026-10-31T05:06:39.320797+00:00**. The only runtime command, `dapr list --output json`, ran **2026-10-31T05:06:39.210643+00:00 → 2026-10-31T05:06:39.320462+00:00**, exited **0** after **0.109844s**, and returned a JSON array of **eight application objects**. The required successful empty inventory was absent.
+
+The [new sanitized evidence packet](../_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md) retains exact commands, timing, exits, original output hashes, aggregate shape and source provenance without foreign rows/identities. This is the one newly authorized 2026-10-31 attempt, distinct from the preserved 2026-10-30 evidence.
+
+No Aspire inventory, solution restore/build, supported runner, shared-store observation, fixture resource or fixture domain write followed. There was no retry, alternate lane, migration or foreign-resource change. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no fixture resources does not qualify runner cleanup. Only static receipt/hash/prefix/link checks and `git diff --check` followed refusal. Earlier evidence, source assertions, authorization/default-deny behavior and all original document bytes are preserved; the historical **173 focused cases** were not rerun. No current built/running-asset, runtime-version or inherited-environment claim is made.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.
+
+
+## Story 3.6 current-source live-proof attempt 2 blocked — 2026-10-31
+
+The single ordered availability inspection ran **2026-10-31T06:04:10.176510+00:00 → 2026-10-31T06:04:10.407450+00:00**, exit **1**, **0.230897s**, at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. The canonical `LocalRuntimeAdmission` lock was acquired at **2026-10-31T06:04:10.176629+00:00** and released at **2026-10-31T06:04:10.407447+00:00**. Its sole runtime command, `dapr list --output json`, ran **2026-10-31T06:04:10.176633+00:00 → 2026-10-31T06:04:10.407131+00:00**, exit **0**, **0.230515s**, and returned a JSON array of **eight application objects**. The required successful empty inventory was absent.
+
+The [new sanitized attempt 2 packet](../_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-2/README.md) retains commands, timing, exits, original hashes, aggregate shape and source provenance without foreign rows/identities. Earlier 2026-10-30 and 2026-10-31 05:06 UTC receipts retain their dated meaning.
+
+No Aspire inventory, solution restore/build, supported runner, shared-store observation, fixture resource or fixture domain write followed. There was no retry, alternate lane, migration or foreign-resource change. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no fixture resources does not qualify runner cleanup. Only static receipt/hash/prefix/link checks and `git diff --check` followed terminal refusal. Source assertions, authorization/default-deny behavior, prior receipts and every pre-existing document byte are preserved. The historical **173 focused cases** were not rerun; no current built/running-asset, runtime-version or inherited-environment claim is made.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.
+
+
+## Current-source live-proof attempt 3 remains blocked — 2026-10-31
+
+The single ordered availability inspection ran **2026-10-31T06:36:18.721203+00:00 → 2026-10-31T06:36:18.824957+00:00**, exit **1**, **0.10373s**, at Timesheets `c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36`. The canonical `LocalRuntimeAdmission` lock was acquired at **2026-10-31T06:36:18.721279+00:00** and released at **2026-10-31T06:36:18.824953+00:00**. Its sole runtime command, `dapr list --output json`, ran **2026-10-31T06:36:18.721281+00:00 → 2026-10-31T06:36:18.824622+00:00**, exit **0**, **0.103359s**, and returned a JSON array of **eight application objects**. The required successful empty inventory was absent.
+
+The [fresh sanitized evidence packet](../_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md) retains exact commands, UTC timing, exits, aggregate shape, original hashes, source identity and explicit unobserved gates. This newly authorized attempt 3 preserves every earlier packet and original document byte.
+
+No Aspire inventory, solution restore/build, supported runner, shared-store observation, fixture resource or fixture domain write followed. There was no retry, alternate lane, migration or foreign-resource change. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no fixture resources does not qualify runner cleanup. Only the required sanitized receipt/provenance, append-only document recording, static receipt/hash/prefix/link checks and `git diff --check` followed terminal refusal. Source assertions, authorization/default-deny behavior, prior receipts and every pre-existing document byte are preserved. The historical **173 focused cases** were not rerun; no current built/running-asset, runtime-version or inherited-environment claim is made.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.

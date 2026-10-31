@@ -1,0 +1,58 @@
+{
+  "schema": "timesheets-current-source-live-proof-admission-v1",
+  "started_utc": "2026-10-30T18:02:28.049236+00:00",
+  "lock": {
+    "canonical_helper": "scripts/local_runtime_admission.py",
+    "acquired": true,
+    "released_before_runner": true,
+    "acquired_utc": "2026-10-30T18:02:28.049337+00:00",
+    "released_utc": "2026-10-30T18:02:28.312097+00:00"
+  },
+  "commands": [
+    {
+      "argv": [
+        "dapr",
+        "list",
+        "--output",
+        "json"
+      ],
+      "started_utc": "2026-10-30T18:02:28.049341+00:00",
+      "exit_code": 0,
+      "completed_utc": "2026-10-30T18:02:28.310875+00:00",
+      "duration_seconds": 0.261558,
+      "stdout": {
+        "bytes": 3451,
+        "sha256": "ce7753c5eb987a5b57e839842caace5b3b45d584d521230c24b2b09e470fae79"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "shape": {
+        "top_level_type": "list",
+        "count": 8,
+        "row_type_counts": {
+          "dict": 8
+        }
+      },
+      "successful_empty_inventory": false
+    }
+  ],
+  "idle_inventory": false,
+  "resources_started": false,
+  "inspection_count": 1,
+  "terminal_reason": "Dapr inventory is active, unavailable or unsafe; no build or fixture started",
+  "completed_utc": "2026-10-30T18:02:28.312107+00:00",
+  "duration_seconds": 0.262842,
+  "exit_code": 1,
+  "disposition": "terminal-blockage-no-retry",
+  "stages": {
+    "solution_restore": "not-run-after-admission-refusal",
+    "solution_build": "not-run-after-admission-refusal",
+    "runner": "not-run-after-admission-refusal",
+    "shared_baseline": "not-run-after-admission-refusal",
+    "live_journey": "not-run-after-admission-refusal",
+    "shared_preservation": "not-run-after-admission-refusal",
+    "owned_cleanup": "not-run-after-admission-refusal"
+  }
+}

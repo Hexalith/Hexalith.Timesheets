@@ -1,0 +1,42 @@
+{
+  "origin": "Extracted only from original runtime command logs; no runtime commands rerun.",
+  "explicit_invocation_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "effective_environment_limit": "Inherited environment variables and the runner effective environment were not captured; these explicit overrides do not reconstruct the effective environment.",
+  "tool_versions": {
+    "aspire": {
+      "version": "13.6.4+c89352703f78ae46de90fbf751ed8b52b77b89bf",
+      "original_log_name": "01-aspire---version.log",
+      "original_log_sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36",
+      "original_log_bytes": 99,
+      "command_exit_code": 0
+    },
+    "dapr": {
+      "cli_version": "1.18.2",
+      "runtime_version": "1.18.7",
+      "original_log_name": "02-dapr---version.log",
+      "original_log_sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+      "original_log_bytes": 94,
+      "command_exit_code": 0
+    },
+    "docker": {
+      "server_version": "29.8.2",
+      "original_log_name": "03-docker-version.log",
+      "original_log_sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+      "original_log_bytes": 85,
+      "command_exit_code": 0
+    }
+  },
+  "dapr_inventory": {
+    "stdout_is_valid_json": true,
+    "top_level_shape": "array",
+    "row_count": 8,
+    "original_log_name": "04-dapr-list.log",
+    "original_log_sha256": "c18f73ee9c01d7285a6deb0e494cb30066a18bf25664cc824991ff56162ec643",
+    "original_log_bytes": 3502,
+    "command_exit_code": 0,
+    "privacy": "No row fields or contents retained."
+  },
+  "admission_reason": "A Dapr application is already running or inventory is unsafe; no AppHost started"
+}

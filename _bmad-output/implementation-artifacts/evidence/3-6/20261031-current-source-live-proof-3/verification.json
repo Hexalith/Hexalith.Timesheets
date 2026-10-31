@@ -1,0 +1,211 @@
+{
+  "verified_utc": "2026-10-31T06:38:29.807814+00:00",
+  "kind": "Static receipt/hash/prefix/link checks only; no tests, builds, workflow review or runtime probes",
+  "inspection_receipt_matches_private_original": true,
+  "inspection_harness_matches_private_and_historical_original": true,
+  "original_output_hashes_match_receipt": true,
+  "original_output_shape_matches_receipt": true,
+  "receipt_aggregate_only_allowlist": true,
+  "selected_source_hashes_match": true,
+  "source_manifest_hashes_match": true,
+  "runtime_command_count": 1,
+  "inspection_count": 1,
+  "canonical_lock_acquired_and_released": true,
+  "unchanged_pre_existing_files": {
+    "count": 6647,
+    "expected_count": 6647,
+    "all_match": true,
+    "source_manifest_count": 2997,
+    "prior_evidence_manifest_count": 3368
+  },
+  "document_prefixes": [
+    {
+      "file": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "original": {
+        "bytes": 18386,
+        "sha256": "13e78b5b0afb3153de7d59cf869220b84541ca79bfb9125f68a782e70d441b26"
+      },
+      "invocation_original": {
+        "bytes": 22552,
+        "sha256": "5bb8003fb3f6ab2c437a34c466d76fe6946820739ba4b905efee188cab39d239"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 3009
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "original": {
+        "bytes": 472294,
+        "sha256": "c42d2bb6a63b3fb392174048d852918ebb4b7ae1af23918c04d69e17428fe231"
+      },
+      "invocation_original": {
+        "bytes": 472294,
+        "sha256": "c42d2bb6a63b3fb392174048d852918ebb4b7ae1af23918c04d69e17428fe231"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2180
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "original": {
+        "bytes": 285615,
+        "sha256": "160852840c5b62c78e244013866a6bd3c6dd8fdcffe12dd523ce48064507d9d5"
+      },
+      "invocation_original": {
+        "bytes": 285615,
+        "sha256": "160852840c5b62c78e244013866a6bd3c6dd8fdcffe12dd523ce48064507d9d5"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2943
+    },
+    {
+      "file": "docs/launch-readiness.md",
+      "original": {
+        "bytes": 161737,
+        "sha256": "a3eeceb9c1ca4936b1bc17cd06fa4423268dd8c39334799c29c5cb09a4d1dec7"
+      },
+      "invocation_original": {
+        "bytes": 161737,
+        "sha256": "a3eeceb9c1ca4936b1bc17cd06fa4423268dd8c39334799c29c5cb09a4d1dec7"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2141
+    }
+  ],
+  "frozen_intent": {
+    "bytes": 1499,
+    "sha256": "35fb7260266a715c75f2d57c59a88bd8356c4b19ac4c585d9f28f9d85e236570",
+    "unchanged": true
+  },
+  "source_identity_scope": "Supplied pre-attempt root/submodule source identities only; no built/running-asset identity claimed.",
+  "local_markdown_links": [
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-3/admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-3/verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-3-disposition--2026-10-31",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof-3/admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-3-disposition--2026-10-31",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "docs/launch-readiness.md",
+      "target": "../_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "../../../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#new-authorized-attempt--2026-10-31-attempt-3",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "admission-inspection.py.txt",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "qualification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "report-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "source-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-3/README.md",
+      "target": "SHA256SUMS",
+      "exists": true,
+      "anchor_checked": false
+    }
+  ],
+  "story_and_spec_status": "in-progress",
+  "release_verdict": "FAIL",
+  "historical_task_checkbox_bytes_preserved": true,
+  "git_diff_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-31T06:38:29.728369+00:00",
+    "completed_utc": "2026-10-31T06:38:29.807670+00:00",
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "no_post_refusal_runtime_build_test_or_workflow_review": true
+}

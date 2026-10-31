@@ -1,0 +1,251 @@
+{
+  "captured_utc": "2026-10-31T06:34:55.635965+00:00",
+  "root_head": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "root_branch": "main",
+  "initial_status": {
+    "bytes": 821,
+    "sha256": "09eb97adedf9556945c550b9d4f38ae7c9621a2d0a6498dc894f0c7380042dc8"
+  },
+  "initial_tracked_diff": {
+    "bytes": 71415,
+    "sha256": "a96cee40a596d3f17e69ef1a0d7b681f9a855e14ef97222495b733f92ec366d1"
+  },
+  "root_declared_submodules": {
+    "references/Hexalith.Commons": {
+      "head": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "70dbf73e80787299c832d30d911b16b105ab194d",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.Builds": {
+      "head": "e38700b3a8de8ef57342688e9dfbbe3f573201ff",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.Tenants": {
+      "head": "95e9a6cce041c30311baf6703e06289beafca2c6",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.EventStore": {
+      "head": "5945ba8b3575f76597075e460bb9a973453272ea",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "7e2702791451f3dd0e72e961d6993ed6f2650c61",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.Projects": {
+      "head": "0338d6ebf9f1be1bd38a8745759984d2066da5e7",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.Conversations": {
+      "head": "acd8b0b59238ee7c84c49874339cc68ebfd6d008",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.Works": {
+      "head": "4b239684166d4fe19e701907e524a33cf37b1d6e",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.Parties": {
+      "head": "784215a8fe91b4d5ae00eb65ab61d3b9507ca0c2",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.McpCli": {
+      "head": "c99aebe4a93ca611a443c83f031ef1c02bd499b7",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "references/Hexalith.Platform": {
+      "head": "965b00249b473d602a663f1f48be39424f996337",
+      "status": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "selected_source_files": {
+    "AGENTS.md": {
+      "bytes": 8730,
+      "sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426"
+    },
+    "global.json": {
+      "bytes": 139,
+      "sha256": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652"
+    },
+    "Directory.Build.props": {
+      "bytes": 5556,
+      "sha256": "92945c259d86f53f490dc26376a26aadd6dca0e7d93b24c74853979efb0d8f4c"
+    },
+    "Directory.Build.targets": {
+      "bytes": 2529,
+      "sha256": "b90ac7534a79a5ce4752ff51ba2b93e0f5235b89f2c17228e9a7ba0da9de8b89"
+    },
+    "Directory.Packages.props": {
+      "bytes": 2574,
+      "sha256": "bf2a81b8016269a5d2e9cab7c2c4498aae9387e8cb1fd77cb53ef04c24578c78"
+    },
+    "scripts/local_runtime_admission.py": {
+      "bytes": 2253,
+      "sha256": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006"
+    },
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "bytes": 157805,
+      "sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e"
+    },
+    "scripts/local_aspire_magic_link_journey.py": {
+      "bytes": 46188,
+      "sha256": "b4eea1764d407b00356ed62e40c7ac9e3e46b711552086328dc82824395f390e"
+    },
+    "scripts/test_magic_link_index_selection.py": {
+      "bytes": 37559,
+      "sha256": "9e1e988e7b8b5368aa0dbb79cb44780480cbff3dcc176d338d9c6e7aff80cf38"
+    },
+    "scripts/test_magic_link_evidence_lineage.py": {
+      "bytes": 13704,
+      "sha256": "9d089d883358f7786e5afdea7a78580cb946f3515373265ab092879d470d9b42"
+    },
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs": {
+      "bytes": 1999,
+      "sha256": "4090f650c23b1fec31304b77e5cf9bbaa944d7f4cbd19193a25f271b271f9215"
+    },
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkGlobalIndexEpochTests.cs": {
+      "bytes": 77887,
+      "sha256": "eed04ccaa30d9ff40e3046f0369e142f095cc49f0aeb40f87cda4c53be830354"
+    },
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV1MigrationTests.cs": {
+      "bytes": 49136,
+      "sha256": "2a34f98fb0a06ba6875d532abd1500146307d035d0eee361e30374d876971575"
+    },
+    "tests/Hexalith.Timesheets.Projections.Tests/MagicLinkV6MigrationTests.cs": {
+      "bytes": 121630,
+      "sha256": "3c7d4816a255ffe18de924cde99bb985dd370ebf90d4199eea102abf90ba4139"
+    },
+    "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj": {
+      "bytes": 1369,
+      "sha256": "3d7ff70acf49446b7d6973f2ac39073205af574091ac804de6d4f6de2fb94c71"
+    },
+    "src/Hexalith.Timesheets.AppHost/Program.cs": {
+      "bytes": 19168,
+      "sha256": "4f819b9a00638027df12ff65cc95a29a35f6c67da89a7f803c7908fd69e82fc4"
+    },
+    "src/Hexalith.Timesheets.ServiceDefaults/Extensions.cs": {
+      "bytes": 2617,
+      "sha256": "bfcf8c7788d755a586d8cfdbb302c9df2ab0485347d9710281b309dfd3e46767"
+    },
+    "references/Hexalith.AI.Tools/hexalith-llm-instructions.md": {
+      "bytes": 17449,
+      "sha256": "49e0fc0c04960b6f986343e87250462313394642ce9f9451de7ddca34e849bb4"
+    },
+    "references/Hexalith.AI.Tools/hexalith-state-instructions.md": {
+      "bytes": 2783,
+      "sha256": "1908bb8f46ba24b352aed0bdfe3042fe41ffa3bd0157a3276d8158c0d58fa753"
+    }
+  },
+  "selected_source_provenance": "Root files use the supplied pre-attempt manifest. Referenced baseline instruction files were byte-checked against retained historical hashes and the supplied root-declared submodule source identity.",
+  "tracked_source_corpus": {
+    "definition": "Pre-attempt manifest files outside references/, _bmad-output/ and docs/; source and guidance only, without runtime/binary identity claims.",
+    "file_count": 2997,
+    "canonical_manifest_sha256": "92824a64f5fe92bda68b7b839edbb4b0af69ef08a29b0de823e5cf7f121e2163"
+  },
+  "prior_evidence_corpus": {
+    "definition": "Every evidence file in the supplied pre-attempt snapshot; all earlier packets preserved.",
+    "file_count": 3368,
+    "canonical_manifest_sha256": "04afb09beab53ebda9bd092506605ae82d185d8f3bc1b79e68604bc76bb6d346"
+  },
+  "pre_attempt_manifest": {
+    "file_count": 6651,
+    "canonical_manifest_sha256": "3e9ff83744a7054828257ddfd710fd5becbad451cba94c499036e8f185cdf246"
+  },
+  "canonical_manifest_encoding": "UTF-8 JSON of the path-to-bytes/SHA-256 object, sort_keys=true and separators=(comma,colon), without trailing newline.",
+  "original_document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "bytes": 18386,
+      "sha256": "13e78b5b0afb3153de7d59cf869220b84541ca79bfb9125f68a782e70d441b26"
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "bytes": 472294,
+      "sha256": "c42d2bb6a63b3fb392174048d852918ebb4b7ae1af23918c04d69e17428fe231"
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "bytes": 285615,
+      "sha256": "160852840c5b62c78e244013866a6bd3c6dd8fdcffe12dd523ce48064507d9d5"
+    },
+    "docs/launch-readiness.md": {
+      "bytes": 161737,
+      "sha256": "a3eeceb9c1ca4936b1bc17cd06fa4423268dd8c39334799c29c5cb09a4d1dec7"
+    }
+  },
+  "invocation_document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "bytes": 22552,
+      "sha256": "5bb8003fb3f6ab2c437a34c466d76fe6946820739ba4b905efee188cab39d239"
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "bytes": 472294,
+      "sha256": "c42d2bb6a63b3fb392174048d852918ebb4b7ae1af23918c04d69e17428fe231"
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "bytes": 285615,
+      "sha256": "160852840c5b62c78e244013866a6bd3c6dd8fdcffe12dd523ce48064507d9d5"
+    },
+    "docs/launch-readiness.md": {
+      "bytes": 161737,
+      "sha256": "a3eeceb9c1ca4936b1bc17cd06fa4423268dd8c39334799c29c5cb09a4d1dec7"
+    }
+  },
+  "frozen_intent": {
+    "bytes": 1499,
+    "sha256": "35fb7260266a715c75f2d57c59a88bd8356c4b19ac4c585d9f28f9d85e236570"
+  },
+  "manifest_provenance": {
+    "original_name": "before.json",
+    "bytes": 1489827,
+    "sha256": "826e2aba128e6d42094506b003b4a2edef5f7409f48569693cddd5826505a949",
+    "retention": "Detailed manifests and complete original document bytes remain private; relevant source identities, hashes and aggregate counts are retained."
+  },
+  "limits": [
+    "Source identities bind inspected source only, not built or running assets.",
+    "No current runtime versions or effective inherited environment were captured.",
+    "No historical focused cases were rerun."
+  ]
+}

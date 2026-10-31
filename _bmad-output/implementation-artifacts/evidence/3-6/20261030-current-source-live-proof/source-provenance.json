@@ -1,0 +1,183 @@
+{
+  "captured_utc": "2026-10-30T18:01:54.221898+00:00",
+  "root_head": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "root_branch": "main",
+  "initial_tracked_diff": {
+    "bytes": 51796,
+    "sha256": "bb361e1bf41816cff2e425e638d217e5d212af93885e62e0768636d6a24c20e2"
+  },
+  "root_submodule_status": {
+    "bytes": 1206,
+    "sha256": "51e570299709927d212625cd08b4f7992b777092331ee3c4828813ebec62a845"
+  },
+  "root_submodules": {
+    "references/Hexalith.AI.Tools": {
+      "commit": "70dbf73e80787299c832d30d911b16b105ab194d",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Builds": {
+      "commit": "e38700b3a8de8ef57342688e9dfbbe3f573201ff",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Commons": {
+      "commit": "3edfbdafc7d4fa915286dce8a37dc4cc7c06085a",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Conversations": {
+      "commit": "acd8b0b59238ee7c84c49874339cc68ebfd6d008",
+      "index_relationship": " "
+    },
+    "references/Hexalith.EventStore": {
+      "commit": "5945ba8b3575f76597075e460bb9a973453272ea",
+      "index_relationship": " "
+    },
+    "references/Hexalith.FrontComposer": {
+      "commit": "7e2702791451f3dd0e72e961d6993ed6f2650c61",
+      "index_relationship": " "
+    },
+    "references/Hexalith.McpCli": {
+      "commit": "c99aebe4a93ca611a443c83f031ef1c02bd499b7",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Parties": {
+      "commit": "784215a8fe91b4d5ae00eb65ab61d3b9507ca0c2",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Platform": {
+      "commit": "965b00249b473d602a663f1f48be39424f996337",
+      "index_relationship": " "
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "commit": "221ac4592ba908ae7661ba1fa9e2d1fcc23baee0",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Projects": {
+      "commit": "0338d6ebf9f1be1bd38a8745759984d2066da5e7",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Tenants": {
+      "commit": "95e9a6cce041c30311baf6703e06289beafca2c6",
+      "index_relationship": " "
+    },
+    "references/Hexalith.Works": {
+      "commit": "4b239684166d4fe19e701907e524a33cf37b1d6e",
+      "index_relationship": " "
+    }
+  },
+  "selected_source_files": {
+    "AGENTS.md": {
+      "bytes": 8730,
+      "sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426"
+    },
+    "global.json": {
+      "bytes": 139,
+      "sha256": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652"
+    },
+    "Directory.Build.props": {
+      "bytes": 5556,
+      "sha256": "92945c259d86f53f490dc26376a26aadd6dca0e7d93b24c74853979efb0d8f4c"
+    },
+    "Directory.Build.targets": {
+      "bytes": 2529,
+      "sha256": "b90ac7534a79a5ce4752ff51ba2b93e0f5235b89f2c17228e9a7ba0da9de8b89"
+    },
+    "Directory.Packages.props": {
+      "bytes": 2574,
+      "sha256": "bf2a81b8016269a5d2e9cab7c2c4498aae9387e8cb1fd77cb53ef04c24578c78"
+    },
+    "Hexalith.Timesheets.slnx": {
+      "bytes": 1651,
+      "sha256": "4c36c9e88f0bed8ac1591e95b01e5de3f2752a6b2c907db8b8f425b875de8c14"
+    },
+    "scripts/local_runtime_admission.py": {
+      "bytes": 2253,
+      "sha256": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006"
+    },
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "bytes": 157805,
+      "sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e"
+    },
+    "scripts/local_aspire_magic_link_journey.py": {
+      "bytes": 46188,
+      "sha256": "b4eea1764d407b00356ed62e40c7ac9e3e46b711552086328dc82824395f390e"
+    },
+    "scripts/magic_link_index_selection.py": {
+      "bytes": 24641,
+      "sha256": "1ad0c5ddb7c803b3c27d924af0e1b749af2ac09af0d835e5c97740b697e29142"
+    },
+    "scripts/magic_link_evidence_lineage.py": {
+      "bytes": 6063,
+      "sha256": "8e6f3c253a748013e278c07cd5db0dcd2e3334e9d902717db7c044d73b665003"
+    },
+    "scripts/test_magic_link_index_selection.py": {
+      "bytes": 37559,
+      "sha256": "9e1e988e7b8b5368aa0dbb79cb44780480cbff3dcc176d338d9c6e7aff80cf38"
+    },
+    "scripts/test_magic_link_evidence_lineage.py": {
+      "bytes": 13704,
+      "sha256": "9d089d883358f7786e5afdea7a78580cb946f3515373265ab092879d470d9b42"
+    },
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs": {
+      "bytes": 1999,
+      "sha256": "4090f650c23b1fec31304b77e5cf9bbaa944d7f4cbd19193a25f271b271f9215"
+    },
+    "src/Hexalith.Timesheets.AppHost/Program.cs": {
+      "bytes": 19168,
+      "sha256": "4f819b9a00638027df12ff65cc95a29a35f6c67da89a7f803c7908fd69e82fc4"
+    },
+    "src/Hexalith.Timesheets.ServiceDefaults/Extensions.cs": {
+      "bytes": 2617,
+      "sha256": "bfcf8c7788d755a586d8cfdbb302c9df2ab0485347d9710281b309dfd3e46767"
+    }
+  },
+  "tracked_source_corpus": {
+    "definition": "Existing tracked regular files outside references/, _bmad-output/ and docs/; no runtime/binary identity is claimed.",
+    "file_count": 2997,
+    "canonical_manifest_sha256": "8f37ef8746a79dd04b9b354378b04ca79ee4c348078bccdc4932b1e10da1471d"
+  },
+  "prior_evidence_corpus": {
+    "file_count": 4727,
+    "canonical_manifest_sha256": "3d6afb76ec882a42673baed99ead55953a1efe8e202af6d242d7b2740f13cb50"
+  },
+  "document_prefixes": {
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "bytes": 466566,
+      "sha256": "814173bdfbe71dbf959f51d896255a6b83cd7e639b79bf96073eb82c6344d26b"
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "bytes": 277432,
+      "sha256": "12c6a18f24f72ea300e61f5ca457afbd4ee84f3051f0b4bcbe051e9159c4025a"
+    },
+    "docs/launch-readiness.md": {
+      "bytes": 156126,
+      "sha256": "fba23f711035ecf7b2bb1e50c15b2165d12d517140d47ad7eb58bfe3153e0df3"
+    },
+    "_bmad-output/implementation-artifacts/epic-3-context.md": {
+      "bytes": 6569,
+      "sha256": "8593587e03a409d6abde28b49b4dabd8e8607414aedf45b6b1f44ff44792d8bf"
+    },
+    "_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-21.md": {
+      "bytes": 12549,
+      "sha256": "19cd9b672e44d8c6e25e611e1eba3685cb79f80d071b46271d631ece2c1b7598"
+    },
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "bytes": 5888,
+      "sha256": "c474d93495667542a6d8734fe6a1c00ab8ee430aa763081910b566a77a314af2"
+    },
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": {
+      "bytes": 4586,
+      "sha256": "8002bfba2a94ec9442834e53350f6c695ef672cc5faea5d23e6abc3be80a62f8"
+    }
+  },
+  "manifest_provenance": {
+    "original_name": "before.json",
+    "bytes": 1756546,
+    "sha256": "8cee117b364d75ac882712c5a6b6f959b6f9cc607f9c173fea8ed76ef4928c7e",
+    "retention": "Original detailed manifest remains in the private temporary inspection directory; corpus digests and relevant source identities are retained here."
+  },
+  "limits": [
+    "No current runtime versions or effective environment were captured.",
+    "Root source identities bind inspected source only, not a built or running asset.",
+    "Historical spec-21 test results were not rerun."
+  ]
+}

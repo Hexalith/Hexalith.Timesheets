@@ -1,0 +1,144 @@
+{
+  "verified_utc": "2026-10-30T18:06:00.274952+00:00",
+  "verification_scope": "Static evidence/provenance, source hashes, prior evidence, original document prefixes, frozen intent, Markdown links and git diff --check only; no tests/build/runtime probes after terminal admission blockage.",
+  "source_files_checked": 2997,
+  "source_changed": [],
+  "prior_evidence_files_checked": 4727,
+  "prior_evidence_changed": [],
+  "document_prefix_checks": {
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "original_bytes": 466566,
+      "original_sha256": "814173bdfbe71dbf959f51d896255a6b83cd7e639b79bf96073eb82c6344d26b",
+      "prefix_matches": true
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "original_bytes": 277432,
+      "original_sha256": "12c6a18f24f72ea300e61f5ca457afbd4ee84f3051f0b4bcbe051e9159c4025a",
+      "prefix_matches": true
+    },
+    "docs/launch-readiness.md": {
+      "original_bytes": 156126,
+      "original_sha256": "fba23f711035ecf7b2bb1e50c15b2165d12d517140d47ad7eb58bfe3153e0df3",
+      "prefix_matches": true
+    }
+  },
+  "unchanged_planning_files": {
+    "_bmad-output/implementation-artifacts/epic-3-context.md": true,
+    "_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-21.md": true,
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": true
+  },
+  "original_spec_reconstruction_matches_before_sha256": true,
+  "frozen_intent_unchanged": true,
+  "frozen_intent_sha256": "35fb7260266a715c75f2d57c59a88bd8356c4b19ac4c585d9f28f9d85e236570",
+  "root_head_unchanged": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "root_submodule_status_unchanged": true,
+  "staged_diff_empty": true,
+  "admission_receipt_matches_original": true,
+  "admission_original_hashes_and_shape_verified": true,
+  "inspection_harness_matches_executed_original": true,
+  "markdown_links": [
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "../../../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "report-provenance.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "admission-inspection.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "admission-inspection.py.txt",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "qualification.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "source-provenance.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "verification.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "target": "SHA256SUMS",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261030-current-source-live-proof/admission-inspection.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261030-current-source-live-proof/README.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261030-current-source-live-proof/README.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261030-current-source-live-proof/verification.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "evidence/3-6/20261030-current-source-live-proof/README.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261030-current-source-live-proof/admission-inspection.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261030-current-source-live-proof/README.md",
+      "exists": true
+    },
+    {
+      "from": "docs/launch-readiness.md",
+      "target": "../_bmad-output/implementation-artifacts/evidence/3-6/20261030-current-source-live-proof/README.md",
+      "exists": true
+    }
+  ],
+  "git_diff_check": {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "story_3_6_in_progress": true,
+  "current_spec_in_progress": true,
+  "release_verdict": "FAIL"
+}

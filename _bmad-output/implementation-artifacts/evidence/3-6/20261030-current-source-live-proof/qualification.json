@@ -1,0 +1,64 @@
+{
+  "disposition": "blocked-current-source-live-proof-unqualified",
+  "root_head": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "current_spec_status": "in-progress",
+  "story_3_6_status": "in-progress",
+  "release_verdict": "FAIL",
+  "blocker": "Dapr returned a successful JSON array containing eight applications; empty runtime inventory is mandatory.",
+  "inspection_invocations": 1,
+  "runtime_commands_executed": [
+    [
+      "dapr",
+      "list",
+      "--output",
+      "json"
+    ]
+  ],
+  "inspection_exit_code": 1,
+  "aspire_inventory": {
+    "observed": false,
+    "reason": "Not invoked because Dapr inventory was nonempty."
+  },
+  "solution_restore": {
+    "invoked": false
+  },
+  "solution_build": {
+    "invoked": false
+  },
+  "supported_runner": {
+    "invoked": false,
+    "exit_code": null,
+    "planned_command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261030"
+  },
+  "shared_baseline": {
+    "observed": false
+  },
+  "live_journey": {
+    "invoked": false,
+    "test_results": null,
+    "qualified": false
+  },
+  "shared_preservation": {
+    "observed": false,
+    "qualified": false
+  },
+  "owned_cleanup": {
+    "invoked": false,
+    "observed": false,
+    "resources_created_by_inspection": false,
+    "qualified": false
+  },
+  "fixture_domain_writes": false,
+  "foreign_resource_changes": false,
+  "migration_invoked": false,
+  "retry_invoked": false,
+  "remaining_unproved": [
+    "Current-source isolated live journey",
+    "Shared-state baseline and preservation",
+    "Owned fixture cleanup",
+    "Deployed authority",
+    "Complete deployed inventory and writer/delivery continuity",
+    "Deployed shared-rebuild acceptance"
+  ],
+  "privacy": "Inventory stdout/stderr remain private temporary originals; only their lengths, hashes, exit, count and value-type shape are retained. No foreign application row, field, process identity or endpoint is retained."
+}

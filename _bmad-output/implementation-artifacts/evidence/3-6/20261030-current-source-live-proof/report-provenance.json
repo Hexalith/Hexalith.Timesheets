@@ -1,0 +1,43 @@
+{
+  "original_private_directory": "/tmp/timesheets-current-source-live-proof-inspection-20261030-hb5un_7o",
+  "reports": [
+    {
+      "retained_name": "admission-inspection.json",
+      "original_name": "admission-inspection.json",
+      "original_bytes": 1865,
+      "original_sha256": "fb7bb46f8a1fda42da9af2fc3e87920eb726210409815aea3f5a170fb72e2bb7",
+      "retained_bytes": 1865,
+      "retained_sha256": "fb7bb46f8a1fda42da9af2fc3e87920eb726210409815aea3f5a170fb72e2bb7",
+      "transformation": "Byte-for-byte copy; admission receipt contains aggregate metadata only."
+    },
+    {
+      "retained_name": "admission-inspection.py.txt",
+      "original_name": "inspect_admission.py",
+      "original_bytes": 3924,
+      "original_sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4",
+      "retained_bytes": 3924,
+      "retained_sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4",
+      "transformation": "Byte-for-byte copy; admission receipt contains aggregate metadata only."
+    },
+    {
+      "original_name": "dapr-list.stdout.original",
+      "original_bytes": 3451,
+      "original_sha256": "ce7753c5eb987a5b57e839842caace5b3b45d584d521230c24b2b09e470fae79",
+      "retained": false,
+      "transformation": "Original bytes withheld; only aggregate metadata in admission-inspection.json."
+    },
+    {
+      "original_name": "dapr-list.stderr.original",
+      "original_bytes": 0,
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retained": false,
+      "transformation": "Original bytes withheld; only aggregate metadata in admission-inspection.json."
+    }
+  ],
+  "explicit_inventory_environment_overrides": {},
+  "inherited_environment_captured": false,
+  "harness_invocation": [
+    "python3",
+    "/tmp/timesheets-current-source-live-proof-inspection-20261030-hb5un_7o/inspect_admission.py"
+  ]
+}

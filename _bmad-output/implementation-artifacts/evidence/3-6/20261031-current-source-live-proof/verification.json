@@ -1,0 +1,171 @@
+{
+  "verified_utc": "2026-10-31T05:08:31.845432+00:00",
+  "verification_scope": "Static receipt/output hashes and aggregate shape, source/prior-evidence hashes, original document prefixes, frozen intent, local Markdown links and git diff --check only; no tests/build/runtime probes after terminal refusal.",
+  "source_files_checked": 2997,
+  "source_changed": [],
+  "prior_evidence_files_checked": 4735,
+  "prior_evidence_changed": [],
+  "document_prefix_checks": {
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "original_bytes": 467973,
+      "original_sha256": "f7af08a1fe2c271250923ae0355efc68dad356696626cd96717fb986b39afe4d",
+      "prefix_matches": true
+    },
+    "_bmad-output/implementation-artifacts/epic-3-context.md": {
+      "original_bytes": 6569,
+      "original_sha256": "8593587e03a409d6abde28b49b4dabd8e8607414aedf45b6b1f44ff44792d8bf",
+      "prefix_matches": true
+    },
+    "_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-21.md": {
+      "original_bytes": 12549,
+      "original_sha256": "19cd9b672e44d8c6e25e611e1eba3685cb79f80d071b46271d631ece2c1b7598",
+      "prefix_matches": true
+    },
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "original_bytes": 9845,
+      "original_sha256": "70a1959e3cfd1b019afd160eb944454158fb96c3bc2b71b56d3285a51cf55789",
+      "prefix_matches": true
+    },
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": {
+      "original_bytes": 4586,
+      "original_sha256": "8002bfba2a94ec9442834e53350f6c695ef672cc5faea5d23e6abc3be80a62f8",
+      "prefix_matches": true
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "original_bytes": 280057,
+      "original_sha256": "c7712106bf61312f6a9c6688c234c6ce3d32a0867cfbcde9dbc95a7277e91779",
+      "prefix_matches": true
+    },
+    "docs/launch-readiness.md": {
+      "original_bytes": 157564,
+      "original_sha256": "113021f7dda427e65ff33cf66ec8ea9909bc4b1eee33e2ca3a663eafd584982e",
+      "prefix_matches": true
+    }
+  },
+  "unchanged_planning_files": {
+    "_bmad-output/implementation-artifacts/epic-3-context.md": true,
+    "_bmad-output/implementation-artifacts/spec-3-6-implement-eventstore-backed-magic-link-state-loading-21.md": true,
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": true
+  },
+  "original_spec_prefix_matches": true,
+  "frozen_intent_unchanged": true,
+  "frozen_intent_sha256": "416a065c67afeaaf63d396429093fad4b1557f30ac34a40adbb399d6f7284c7c",
+  "root_head_unchanged": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "root_submodule_status_unchanged": true,
+  "staged_diff_empty": true,
+  "admission_receipt_matches_original": true,
+  "admission_original_hashes_and_shape_verified": true,
+  "inspection_harness_matches_executed_and_prior_retained_original": true,
+  "original_and_retained_report_hashes_verified": true,
+  "inspection_count": 1,
+  "only_runtime_command": [
+    "dapr",
+    "list",
+    "--output",
+    "json"
+  ],
+  "terminal_branch_and_unobserved_gate_dispositions_verified": true,
+  "markdown_links": [
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "../../../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "report-provenance.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "admission-inspection.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "admission-inspection.py.txt",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "qualification.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "source-provenance.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "verification.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "target": "SHA256SUMS",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof/admission-inspection.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof/README.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof/verification.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof/README.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#authorized-continuation-disposition--2026-10-31",
+      "exists": true,
+      "anchor_exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof/admission-inspection.json",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof/README.md",
+      "exists": true
+    },
+    {
+      "from": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#authorized-continuation-disposition--2026-10-31",
+      "exists": true,
+      "anchor_exists": true
+    },
+    {
+      "from": "docs/launch-readiness.md",
+      "target": "../_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof/README.md",
+      "exists": true
+    }
+  ],
+  "git_diff_check": {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "story_3_6_in_progress": true,
+  "current_spec_in_progress": true,
+  "release_verdict": "FAIL",
+  "sha256sums_scope": "All packet regular files except SHA256SUMS itself."
+}
