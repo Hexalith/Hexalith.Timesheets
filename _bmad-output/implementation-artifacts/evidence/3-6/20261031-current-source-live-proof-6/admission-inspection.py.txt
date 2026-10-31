@@ -1,0 +1,81 @@
+"""Perform the spec's one availability inspection, retaining only safe metadata."""
+from collections import Counter
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+import time
+
+ROOT = Path.cwd()
+SCRATCH = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from local_runtime_admission import LocalRuntimeAdmission, RuntimeAdmissionError
+
+
+def now():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def digest(data):
+    return {"bytes": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+
+
+def inspect(arguments, label):
+    row = {"argv": arguments, "started_utc": now()}
+    started = time.monotonic()
+    try:
+        result = subprocess.run(arguments, cwd=ROOT, capture_output=True, timeout=60)
+        stdout, stderr = result.stdout, result.stderr
+        row["exit_code"] = result.returncode
+    except (subprocess.TimeoutExpired, OSError) as error:
+        stdout = getattr(error, "stdout", b"") or b""
+        stderr = getattr(error, "stderr", b"") or b""
+        row.update(exit_code=None, failure_type=type(error).__name__)
+    row.update(completed_utc=now(), duration_seconds=round(time.monotonic() - started, 6),
+               stdout=digest(stdout), stderr=digest(stderr))
+    (SCRATCH / (label + ".stdout.original")).write_bytes(stdout)
+    (SCRATCH / (label + ".stderr.original")).write_bytes(stderr)
+    try:
+        value = json.loads(stdout)
+        row["shape"] = {"top_level_type": type(value).__name__}
+        if isinstance(value, list):
+            row["shape"].update(count=len(value), row_type_counts=dict(Counter(type(item).__name__ for item in value)))
+        row["successful_empty_inventory"] = row["exit_code"] == 0 and isinstance(value, list) and not value
+    except (ValueError, UnicodeDecodeError):
+        row["shape"] = {"top_level_type": "invalid_json"}
+        row["successful_empty_inventory"] = False
+    return row
+
+
+receipt = {"schema": "timesheets-current-source-live-proof-admission-v1", "started_utc": now(),
+           "lock": {"canonical_helper": "scripts/local_runtime_admission.py", "acquired": False,
+                    "released_before_runner": False}, "commands": [], "idle_inventory": False,
+           "resources_started": False, "inspection_count": 1}
+started = time.monotonic()
+try:
+    with LocalRuntimeAdmission():
+        receipt["lock"].update(acquired=True, acquired_utc=now())
+        dapr = inspect(["dapr", "list", "--output", "json"], "dapr-list")
+        receipt["commands"].append(dapr)
+        if not dapr["successful_empty_inventory"]:
+            receipt["terminal_reason"] = "Dapr inventory is active, unavailable or unsafe; no build or fixture started"
+        else:
+            aspire = inspect(["aspire", "ps", "--non-interactive", "--format", "Json"], "aspire-ps")
+            receipt["commands"].append(aspire)
+            receipt["idle_inventory"] = aspire["successful_empty_inventory"]
+            if not receipt["idle_inventory"]:
+                receipt["terminal_reason"] = "Aspire inventory is active, unavailable or unsafe; no build or fixture started"
+    receipt["lock"].update(released_before_runner=True, released_utc=now())
+except RuntimeAdmissionError as error:
+    receipt["terminal_reason"] = str(error)
+receipt.update(completed_utc=now(), duration_seconds=round(time.monotonic() - started, 6),
+               exit_code=0 if receipt["idle_inventory"] else 1)
+if not receipt["idle_inventory"]:
+    receipt["disposition"] = "terminal-blockage-no-retry"
+    receipt["stages"] = {stage: "not-run-after-admission-refusal" for stage in
+        ("solution_restore", "solution_build", "runner", "shared_baseline", "live_journey", "shared_preservation", "owned_cleanup")}
+(SCRATCH / "admission-inspection.json").write_text(json.dumps(receipt, indent=2) + "\n")
+print(json.dumps(receipt, indent=2))
+raise SystemExit(receipt["exit_code"])

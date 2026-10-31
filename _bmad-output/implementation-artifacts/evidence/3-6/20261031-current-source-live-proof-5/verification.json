@@ -1,0 +1,292 @@
+{
+  "verified_utc": "2026-10-31T16:10:13.486155+00:00",
+  "kind": "Prescribed static receipt/hash/prefix/link/source/status/packet checks only; no tests, builds, workflow review or runtime probes.",
+  "inspection_receipt_matches_private_original": true,
+  "inspection_harness_matches_private_and_historical_original": true,
+  "original_output_hashes_match_receipt": true,
+  "original_output_shape_matches_receipt": true,
+  "receipt_aggregate_only_allowlist": true,
+  "report_original_to_retained_provenance_matches": true,
+  "selected_source_hashes_match": true,
+  "source_manifest_hashes_match": true,
+  "runtime_command_count": 1,
+  "inspection_count": 1,
+  "canonical_lock_acquired_and_released": true,
+  "unchanged_pre_existing_files": {
+    "count": 6661,
+    "expected_count": 6661,
+    "all_match": true,
+    "source_manifest_count": 2997,
+    "prior_evidence_manifest_count": 3384
+  },
+  "document_prefixes": [
+    {
+      "file": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "original": {
+        "bytes": 33461,
+        "sha256": "662bab5a0e5dfa69159a79a16746267f236705f02ce050f2396d4c009c53e8d9"
+      },
+      "invocation_original": {
+        "bytes": 38878,
+        "sha256": "1ff884caef04c4d45979f28d79feeadfc2610fcd543389936522447a9b58037e"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 3107
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "original": {
+        "bytes": 476654,
+        "sha256": "73bfabc0a752baa0d476aab36df4efc2804f9472df9991e9b54028fad1154422"
+      },
+      "invocation_original": {
+        "bytes": 476654,
+        "sha256": "73bfabc0a752baa0d476aab36df4efc2804f9472df9991e9b54028fad1154422"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2238
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "original": {
+        "bytes": 290857,
+        "sha256": "63e75b658823fce3a081c7dbb68cdc5818a989754c6933edcd49393dd68b7ca6"
+      },
+      "invocation_original": {
+        "bytes": 290857,
+        "sha256": "63e75b658823fce3a081c7dbb68cdc5818a989754c6933edcd49393dd68b7ca6"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2295
+    },
+    {
+      "file": "docs/launch-readiness.md",
+      "original": {
+        "bytes": 166024,
+        "sha256": "b4d1c85bed558b204e0e69131ca78fc805c0e63955331f29ea9440c278c7da26"
+      },
+      "invocation_original": {
+        "bytes": 166024,
+        "sha256": "b4d1c85bed558b204e0e69131ca78fc805c0e63955331f29ea9440c278c7da26"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2162
+    }
+  ],
+  "frozen_intent": {
+    "bytes": 1499,
+    "sha256": "35fb7260266a715c75f2d57c59a88bd8356c4b19ac4c585d9f28f9d85e236570",
+    "unchanged": true
+  },
+  "frozen_baseline_identifier_unchanged": true,
+  "local_markdown_links": [
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-5/admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-5/verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-5-disposition--2026-10-31",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof-5/admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-5-disposition--2026-10-31",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "docs/launch-readiness.md",
+      "target": "../_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "../../../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#new-authorized-attempt--2026-10-31-attempt-5",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "admission-inspection.py.txt",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "qualification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "report-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "source-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261031-current-source-live-proof-5/README.md",
+      "target": "SHA256SUMS",
+      "exists": true,
+      "anchor_checked": false
+    }
+  ],
+  "root_head_matches": true,
+  "root_branch_matches": true,
+  "root_declared_submodule_identity_checks": {
+    "references/Hexalith.AI.Tools": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Builds": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Commons": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Conversations": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.EventStore": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.FrontComposer": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.McpCli": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Parties": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Platform": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Projects": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Tenants": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    },
+    "references/Hexalith.Works": {
+      "head_matches": true,
+      "gitlink_matches": true,
+      "status_matches": true
+    }
+  },
+  "only_authorized_four_documents_and_fresh_packet_changed": true,
+  "no_staged_changes": true,
+  "story_and_spec_status": "in-progress",
+  "sprint_status_unchanged": true,
+  "release_verdict": "FAIL",
+  "historical_task_checkbox_bytes_preserved": true,
+  "git_diff_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-31T16:10:13.393317+00:00",
+    "completed_utc": "2026-10-31T16:10:13.486137+00:00",
+    "duration_seconds": 0.092825,
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "packet_hash_manifest": {
+    "file": "SHA256SUMS",
+    "coverage": "Every packet file except SHA256SUMS",
+    "entry_count": 7,
+    "all_entries_match": true
+  },
+  "no_post_refusal_runtime_build_test_or_workflow_review": true,
+  "source_identity_scope": "Inspected root and root-declared submodule source only; no built/running asset or runtime/environment claim."
+}
