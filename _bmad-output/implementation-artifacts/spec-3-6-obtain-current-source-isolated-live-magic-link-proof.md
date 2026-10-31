@@ -239,3 +239,82 @@ No Aspire inventory, solution restore/build, supported runner, shared-store obse
 [Static verification](evidence/3-6/20261031-current-source-live-proof-3/verification.json) covers receipt/output hashes and shape, unchanged source and prior evidence, all four original and invocation document byte prefixes, frozen intent, local Markdown links and `git diff --check`. Historical unchecked tasks retain their original state.
 
 Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.
+
+
+## New authorized attempt — 2026-10-31 (attempt 4)
+
+The current user invocation authorizes **one new attempt**, separate from all
+completed refusals above. This is the active continuation; earlier authorizations
+and unchecked tasks are historical. Preserve all pre-existing document bytes,
+frozen intent, baseline identifier, source assertions and authorization defaults.
+The current working tree is authorized for this bounded continuation. Leave all
+changes uncommitted; do not stage, commit, discard, branch or update dependencies.
+
+- [ ] Inspect availability **exactly once** under the canonical
+  `LocalRuntimeAdmission` lock. Copy the retained ordered harness byte-for-byte
+  from `evidence/3-6/20261030-current-source-live-proof/admission-inspection.py.txt`
+  to `/tmp/timesheets-current-source-live-proof-20261031-attempt4-dsz4_11q/admission-inspection.py` and invoke
+  `python3 /tmp/timesheets-current-source-live-proof-20261031-attempt4-dsz4_11q/admission-inspection.py` once from the repository root.
+  Dapr inventory comes first; Aspire inventory is permitted only after successful
+  empty Dapr inventory. Do not stop foreign resources. Release the inspection
+  lock before the runner. If blocked, retain a fresh sanitized blocker packet
+  and stop without retry, fallback, alternate lane or additional probe.
+- [ ] Only if idle, execute sequentially the exact root AGENTS.md commands:
+  `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false`,
+  then `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false`.
+  Only after both pass, invoke the supported runner **exactly once**, preserving
+  every admission check:
+  `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261031-attempt4-dsz4_11q-runner`.
+  Stop at the first refusal or failure. No runtime/build/test command has run for
+  this authorization at the point this section was appended.
+- [ ] Retain a fresh sanitized packet at
+  `evidence/3-6/20261031-current-source-live-proof-4/`, including source identity,
+  exact executed and conditional uninvoked commands, UTC timing, exits, original
+  hashes and sanitized provenance. Keep foreign rows and sensitive originals
+  private. Explicitly mark every unobserved gate, including shared baseline,
+  live journey, shared-state preservation and owned cleanup. Success requires
+  **live journey, shared-state preservation and owned cleanup all to pass**;
+  no fixture creation does not establish cleanup success. Preserve prior packets.
+- [ ] Append disposition and evidence links to this spec, the Story 3.6 record
+  `3-6-implement-eventstore-backed-magic-link-state-loading.md`,
+  `tests/3-6-test-summary.md` and `../../docs/launch-readiness.md`. Keep this spec
+  and Story 3.6 **in-progress**, release **FAIL** while deployed authority,
+  complete inventory/writer-delivery continuity and shared-rebuild acceptance
+  remain unfinished. Preserve historical checkbox states.
+
+The private pre-invocation snapshot is `/tmp/timesheets-current-source-live-proof-20261031-attempt4-dsz4_11q/before.json`.
+Its `manifest` contains tracked root file byte counts and SHA-256 hashes; its four
+`document-N.original` files preserve exact original document prefixes. The
+snapshot also retains full canonical root and root-declared submodule source
+identities without initializing/updating any submodules. Capture the current
+invocation prefixes before execution too. Retain sanitized manifest hashes,
+source identity, prefix hashes and original-to-sanitized receipt provenance in
+the new packet. Follow the repository's tracked guidance and configuration before
+execution. Root Story 3.6 sprint status is already in-progress; leave it intact.
+
+Do not clear stores, run migrations, change AppHost/ServiceDefaults, topology or
+dependencies, or use shared stores for fixture writes. Preserve assertions and
+default-deny behavior. Historical 173 focused cases need no rerun. After terminal
+refusal or failure, complete the required sanitized recording and append-only
+document updates, then perform **only** prescribed static receipt/hash/prefix/link
+checks and `git diff --check`: receipt/output hashes and aggregate shape, unchanged
+source and prior evidence, all four original and invocation document byte
+prefixes, frozen intent, local Markdown links, source/status identities, packet
+hash manifest and `git diff --check`. No workflow review, tests, builds or runtime
+probes follow a terminal result. Leave conditional unobserved live-proof tasks open.
+
+
+## Attempt 4 disposition — 2026-10-31
+
+The single ordered availability inspection ran **2026-10-31T06:48:08.091813+00:00 → 2026-10-31T06:48:08.444458+00:00**, exit **1**, **0.35261s**, at Timesheets `7983a715b0d15935d9c32304c35203c796d9e6a4`. The canonical `LocalRuntimeAdmission` lock was acquired at **2026-10-31T06:48:08.091930+00:00** and released at **2026-10-31T06:48:08.444449+00:00**. Its sole runtime command, `dapr list --output json`, ran **2026-10-31T06:48:08.091936+00:00 → 2026-10-31T06:48:08.444059+00:00**, exit **0**, **0.352145s**, and returned a JSON array of **eight application objects**. The required successful empty inventory was absent.
+
+- [x] Attempt 4's single ordered locked inspection completed with terminal admission refusal; the [sanitized receipt](evidence/3-6/20261031-current-source-live-proof-4/admission-inspection.json) retains exact commands, UTC timing, exits, aggregate shape and original hashes.
+- [ ] Conditional Debug/source restore/build and the supported isolated runner remain uninvoked because idle admission failed. Current-source live proof stays open; this authorization ended without retry.
+- [x] The fresh [attempt 4 evidence packet](evidence/3-6/20261031-current-source-live-proof-4/README.md) retains source identity, original/sanitized provenance, conditional uninvoked commands and every unobserved gate, preserving all prior packets.
+- [x] This disposition and evidence links were appended to this spec, the Story 3.6 record, test summary and launch-readiness record; all four original and invocation document prefixes remain intact.
+
+No Aspire inventory, solution restore/build, supported runner, shared-store observation, fixture resource or fixture domain write followed. There was no retry, fallback, alternate lane, migration or foreign-resource change. Shared baseline, live journey, shared-state preservation and owned cleanup remain **unobserved**; creating no fixture resources does not qualify runner cleanup. Only required sanitized recording, append-only document updates and prescribed static receipt/hash/prefix/link/source/status/packet checks plus `git diff --check` followed terminal refusal. Source assertions, authorization/default-deny behavior, all prior receipts and every pre-existing document byte are preserved. The historical **173 focused cases** were not rerun; no current built/running-asset, runtime-version or inherited-environment claim is made.
+
+[Static verification](evidence/3-6/20261031-current-source-live-proof-4/verification.json) covers receipt/output hashes and shape, unchanged source and prior evidence, all four original and invocation byte prefixes, frozen intent, local Markdown links, source/status identities, the packet hash manifest and `git diff --check`. Historical checkbox states and the frozen baseline identifier are preserved.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.

@@ -1,0 +1,45 @@
+{
+  "original_private_directory": "/tmp/timesheets-current-source-live-proof-20261031-attempt4-dsz4_11q",
+  "reports": [
+    {
+      "retained_name": "admission-inspection.json",
+      "original_name": "admission-inspection.json",
+      "original_bytes": 1864,
+      "original_sha256": "b5fe156673f852513b6d367279ba5dc6b2090b664033d358dd9be3e738ae0baf",
+      "retained_bytes": 1864,
+      "retained_sha256": "b5fe156673f852513b6d367279ba5dc6b2090b664033d358dd9be3e738ae0baf",
+      "transformation": "Byte-for-byte copy; aggregate-only receipt or unchanged harness contains no inventory rows or identities."
+    },
+    {
+      "retained_name": "admission-inspection.py.txt",
+      "original_name": "admission-inspection.py",
+      "original_bytes": 3924,
+      "original_sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4",
+      "retained_bytes": 3924,
+      "retained_sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4",
+      "transformation": "Byte-for-byte copy; aggregate-only receipt or unchanged harness contains no inventory rows or identities."
+    },
+    {
+      "original_name": "dapr-list.stdout.original",
+      "original_bytes": 3451,
+      "original_sha256": "ccdc36b65a2a9075ef1f53627355dff4f4b0e1ab22ec5f641657190a5534166d",
+      "retained": false,
+      "transformation": "Original bytes withheld in private temporary storage; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_name": "dapr-list.stderr.original",
+      "original_bytes": 0,
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retained": false,
+      "transformation": "Original bytes withheld in private temporary storage; only length, hash, exit and aggregate JSON shape retained."
+    }
+  ],
+  "explicit_inventory_environment_overrides": {},
+  "inherited_environment_captured": false,
+  "harness_invocation": [
+    "python3",
+    "/tmp/timesheets-current-source-live-proof-20261031-attempt4-dsz4_11q/admission-inspection.py"
+  ],
+  "inspection_harness_matches_20261030_retained_harness": true,
+  "inventory_sanitization": "Raw rows, names, endpoints, process identities and fields are withheld; output hashes and aggregate shape only are retained."
+}
