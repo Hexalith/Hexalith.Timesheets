@@ -1,89 +1,71 @@
-import { cpSync, existsSync, mkdtempSync, readFileSync, lstatSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+// Compatibility entry point for the existing install and CI commands. The unused
+// npm publisher graph is now excluded by a locked npm alias; never patch packages.
+import assert from 'node:assert/strict';
+import { existsSync, readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-function artifactDigest(directory) {
-    const digest = createHash('sha256');
-    function visit(path, relative) {
-        for (const entry of readdirSync(path, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-            const location = join(path, entry.name);
-            const name = join(relative, entry.name);
-            if (entry.isSymbolicLink() || !(entry.isDirectory() || entry.isFile())) {
-                throw new Error('Unexpected repair artifact filesystem entry');
-            }
-            digest.update(JSON.stringify([name, entry.isDirectory() ? 'directory' : 'file']));
-            if (entry.isDirectory()) visit(location, name);
-            else {
-                const bytes = readFileSync(location);
-                digest.update(String(bytes.length) + ':');
-                digest.update(bytes);
-            }
-        }
-    }
-    visit(directory, '');
-    return digest.digest('hex');
-}
-
-// npm ships these children inside its tarball, so root overrides cannot replace them.
-// Install the two registry artifacts from a dedicated integrity-pinned lock, then
-// replace only those package directories. Never rewrite npm's own manifest or code.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const source = join(root, 'scripts', 'release-tooling-bundle-repair');
-const lock = JSON.parse(readFileSync(join(source, 'package-lock.json'), 'utf8'));
-const rootLock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
-const names = ['ip-address', 'undici'];
-for (const name of names) {
-    const pinned = lock.packages[`node_modules/${name}`];
-    const selected = rootLock.packages[`node_modules/npm/node_modules/${name}`];
-    if (!pinned || !selected || selected.version !== pinned.version
-        || selected.integrity !== pinned.integrity || selected.resolved !== pinned.resolved) {
-        throw new Error(`Bundle repair lock mismatch: ${name}`);
-    }
+const readJson = path => JSON.parse(readFileSync(path, 'utf8'));
+const manifest = readJson(join(root, 'package.json'));
+const lock = readJson(join(root, 'package-lock.json'));
+const configuration = readJson(join(root, '.releaserc.json'));
+const expectedHooks = {
+    '@semantic-release/commit-analyzer': ['analyzeCommits'],
+    '@semantic-release/release-notes-generator': ['generateNotes'],
+    '@semantic-release/exec': ['verifyConditions', 'analyzeCommits', 'verifyRelease', 'generateNotes',
+        'prepare', 'publish', 'addChannel', 'success', 'fail'],
+    '@semantic-release/github': ['verifyConditions', 'publish', 'addChannel', 'success', 'fail'],
+};
+const pluginNames = plugins => plugins.map(plugin => Array.isArray(plugin) ? plugin[0] : plugin);
+assert.deepEqual(pluginNames(configuration.plugins), Object.keys(expectedHooks),
+    'Release configuration must explicitly select the four NuGet release plugins');
+assert.equal(manifest.overrides?.['semantic-release']?.['@semantic-release/npm'],
+    'npm:@semantic-release/error@4.0.0', 'Missing exact unused npm publisher override');
+const aliases = Object.entries(lock.packages).filter(([path]) => path.endsWith('/@semantic-release/npm'));
+assert.equal(aliases.length, 1, 'Expected one locked unused npm publisher alias');
+const [aliasPath, alias] = aliases[0];
+const error = lock.packages['node_modules/@semantic-release/error'];
+assert.equal(alias?.name, '@semantic-release/error', 'Unused npm publisher lock identity mismatch');
+for (const key of ['version', 'resolved', 'integrity']) {
+    assert.ok(error?.[key], `Missing locked error package ${key}`);
+    assert.equal(alias[key], error[key], `Unused npm publisher lock ${key} mismatch`);
 }
-const npmDirectory = join(root, 'node_modules', 'npm');
-for (const directory of [join(root, 'node_modules'), npmDirectory, join(npmDirectory, 'node_modules'),
-    ...names.map(name => join(npmDirectory, 'node_modules', name))]) {
-    if (existsSync(directory) && lstatSync(directory).isSymbolicLink()) throw new Error('Bundle repair refuses symbolic-link destinations');
+assert.equal(alias.version, '4.0.0', 'Unexpected unused npm publisher alias version');
+for (const path of Object.keys(lock.packages)) {
+    assert.ok(!/(^|\/)node_modules\/npm(?:\/|$)/.test(path), 'Unused bundled npm graph reintroduced');
 }
-const npmVersion = JSON.parse(readFileSync(join(npmDirectory, 'package.json'), 'utf8')).version;
-if (npmVersion !== rootLock.packages['node_modules/npm'].version) {
-    throw new Error('Unexpected bundled npm version');
+assert.ok(!existsSync(join(root, 'node_modules', 'npm')), 'Unused installed npm graph reintroduced');
+
+const require = createRequire(join(root, 'package.json'));
+const semanticDirectory = dirname(require.resolve('semantic-release'));
+const aliasDirectory = dirname(require.resolve('@semantic-release/npm', { paths: [semanticDirectory] }));
+assert.equal(aliasDirectory, join(root, aliasPath), 'Installed unused npm publisher location mismatch');
+const installedAlias = readJson(join(aliasDirectory, 'package.json'));
+assert.equal(installedAlias.name, alias.name, 'Installed unused npm publisher identity mismatch');
+assert.equal(installedAlias.version, alias.version, 'Installed unused npm publisher version mismatch');
+assert.equal(readJson(join(semanticDirectory, 'package.json')).version, manifest.devDependencies['semantic-release'],
+    'Installed semantic-release version mismatch');
+
+// Use semantic-release's actual configuration/plugin loader. Importing and
+// normalizing plugins does not execute any release lifecycle, including dry-run
+// verify hooks that could call external services or publication preflights.
+const loaded = [];
+const logger = {
+    success(message) {
+        const match = /^Loaded plugin "([^"]+)" from "([^"]+)"$/.exec(message);
+        assert.ok(match, `Unexpected plugin loader message: ${message}`);
+        loaded.push(`${match[2]}:${match[1]}`);
+    },
+};
+const { default: getConfig } = await import(pathToFileURL(join(semanticDirectory, 'lib', 'get-config.js')));
+const effective = await getConfig({ cwd: root, env: process.env, stdout: process.stdout, stderr: process.stderr, logger });
+assert.deepEqual(effective.options.plugins, configuration.plugins, 'Effective release plugins differ from the NuGet configuration');
+const expected = Object.entries(expectedHooks).flatMap(([plugin, hooks]) => hooks.map(hook => `${plugin}:${hook}`));
+assert.deepEqual(loaded.sort(), expected.sort(), 'Effective release lifecycle hooks differ from the NuGet configuration');
+for (const hooks of Object.values(expectedHooks)) {
+    for (const hook of hooks) assert.equal(typeof effective.plugins[hook], 'function', `Missing effective lifecycle: ${hook}`);
 }
-const npmCli = process.env.npm_execpath;
-if (!npmCli || !existsSync(npmCli)) throw new Error('Run bundle repair through npm install/ci');
-const temporary = mkdtempSync(join(tmpdir(), 'timesheets-npm-bundle-repair-'));
-try {
-    for (const name of ['package.json', 'package-lock.json']) cpSync(join(source, name), join(temporary, name));
-    const installed = spawnSync(process.execPath,
-        [npmCli, 'ci', '--prefix', temporary, '--ignore-scripts', '--no-fund'],
-        { stdio: 'inherit', cwd: root, env: process.env });
-    if (installed.error || installed.status !== 0) throw installed.error ?? new Error('Pinned bundle repair install failed');
-    const expectedArtifacts = new Map();
-    for (const name of names) {
-        const prepared = join(temporary, 'node_modules', name);
-        if (JSON.parse(readFileSync(join(prepared, 'package.json'), 'utf8')).version
-            !== lock.packages[`node_modules/${name}`].version) throw new Error(`Unexpected repair artifact: ${name}`);
-        expectedArtifacts.set(name, artifactDigest(prepared));
-    }
-    for (const name of names) {
-        const target = join(npmDirectory, 'node_modules', name);
-        rmSync(target, { recursive: true, force: true });
-        // Copy across filesystems; keep temporary cleanup independent of the destination.
-        cpSync(join(temporary, 'node_modules', name), target, { recursive: true, errorOnExist: true });
-    }
-    // Verify the actual canonical destinations independently of the copy loop.
-    for (const name of names) {
-        const installed = join(npmDirectory, 'node_modules', name);
-        if (JSON.parse(readFileSync(join(installed, 'package.json'), 'utf8')).version
-            !== lock.packages[`node_modules/${name}`].version
-            || artifactDigest(installed) !== expectedArtifacts.get(name)) {
-            throw new Error(`Installed repair artifact mismatch: ${name}`);
-        }
-    }
-    console.log('Installed integrity-pinned npm bundle repairs: ip-address 10.7.5, undici 6.29.1');
-} finally {
-    rmSync(temporary, { recursive: true, force: true });
-}
+console.log(JSON.stringify({ plugins: Object.keys(expectedHooks), loadedHooks: loaded, lifecycleExecution: false }));
+console.log('Verified NuGet-only release tooling: 4 plugins, 16 lifecycle hooks; no package mutation or lifecycle execution');
