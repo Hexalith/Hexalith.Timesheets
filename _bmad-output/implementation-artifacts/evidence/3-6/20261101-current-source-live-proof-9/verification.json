@@ -1,0 +1,334 @@
+{
+  "schema": "timesheets-current-source-live-proof-verification-v2",
+  "recorded_utc": "2026-11-01T18:32:00.795436+00:00",
+  "command": "python3 /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/verify-static.py",
+  "working_directory": "<repository>",
+  "scope": "Prescribed static receipt/hash/prefix/link/source/status/packet checks only; no tests, builds, runtime probes or workflow review.",
+  "result": "PASS",
+  "root_head_unchanged": true,
+  "root_branch_unchanged": true,
+  "index_unchanged_empty": true,
+  "root_status_limited_to_four_documents_deferred_work_and_packet": true,
+  "preexisting_root_files_preserved_except_append_only_documents": 6923,
+  "accepted_review_appends": {
+    "spec_review_triage_log": {
+      "heading": "## Review Triage Log \u2014 attempt 9 (2026-11-01)",
+      "bytes": 4941,
+      "sha256": "00f8ce6f9d85924d3d049085a8bab6412ce8c5cd626a989d06c602ec7209a764"
+    },
+    "deferred_work": {
+      "path": "_bmad-output/implementation-artifacts/deferred-work.md",
+      "head_prefix": {
+        "bytes": 169519,
+        "sha256": "60bb46e5ef1482b62b25af51e8f96ba49d3cc86480d6a03e281bac43517c8b6a"
+      },
+      "head_prefix_preserved": true,
+      "entries_for_this_spec": 4,
+      "appended": {
+        "bytes": 2908,
+        "sha256": "07ccb3de455be2a0d356e23845f1293b5b54495900330afe8d0ef678d7847b6b"
+      }
+    }
+  },
+  "git_tracking": {
+    "command": "git check-ignore -- <paths> (exit 1 means none ignored)",
+    "local_link_targets_not_ignored": 34,
+    "packet_files_planned": [
+      "README.md",
+      "SHA256SUMS",
+      "admission-inspection.json",
+      "admission-inspection.py.txt",
+      "build.json",
+      "build.stderr.sanitized.txt",
+      "build.stdout.sanitized.txt",
+      "diff-check.stderr.txt",
+      "diff-check.stdout.txt",
+      "execution-command.py.txt",
+      "preservation-baseline.json.gz",
+      "qualification.json",
+      "report-provenance.json",
+      "restore.json",
+      "restore.stderr.sanitized.txt",
+      "restore.stdout.sanitized.txt",
+      "runner.json",
+      "runner.stderr.sanitized.txt",
+      "runner.stdout.sanitized.txt",
+      "runner/01-aspire---version.log.txt",
+      "runner/02-dapr---version.log.txt",
+      "runner/03-docker-version.log.txt",
+      "runner/04-dapr-list.aggregate.json",
+      "runner/05-aspire-ps.aggregate.json",
+      "runner/admission.json",
+      "runner/cleanup.json",
+      "runner/shared-observation-failure.json",
+      "runner/versions.json",
+      "source-provenance.json",
+      "verification.json",
+      "verification.py.txt"
+    ],
+    "packet_files_not_ignored": "checked after SHA256SUMS write; see packet_files_planned"
+  },
+  "prior_evidence_files_preserved": 3648,
+  "new_root_files_confined_to_attempt_packet": true,
+  "submodules": {
+    "references/Hexalith.Commons": {
+      "head": "bbbce518bcca9ca359762393688f02d142af1c61",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 223,
+      "authored_manifest_sha256": "6dfcd988ff1ad28c4797517b1964ab8cdf0293e97909505bebf17b170fdf9236",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "9b78aa008cfc62cd88ad0ea4b39b1f07311956ce",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 35,
+      "authored_manifest_sha256": "34fc47897019c259e99a5ed1c73796d377c5e493afce3a9b966f968b52262892",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Builds": {
+      "head": "a346bfeae5f441ed4a6293a211a2efdc468774b8",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 3205,
+      "authored_manifest_sha256": "cf5898d88e8184bea4a90c3ee90d24ede3f452b1411ab1ee6502af519e1fb7de",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Tenants": {
+      "head": "2d3fa6da2312c1b5cf7f5c9461cc2d0ffc995b43",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 4822,
+      "authored_manifest_sha256": "5b71abee25854e3d4dc4bf2a0fe9af4ec85c59b2274c5d83cb2fa94087be70eb",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.EventStore": {
+      "head": "710d97f7cfe4ef4c382965bc69ae6556c234d2b8",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 9887,
+      "authored_manifest_sha256": "67cd0506de034a38f86252aefa29908fc141cc94410438175039427b115e3694",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "c092e8f91ebb670fad4ab959f2d3c8e13d809e0f",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 6347,
+      "authored_manifest_sha256": "067cddfc3420351eb2bb8d06449aa66b6107b79fc12f7189fbddcd38b2ea8756",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "7e53c59d3404c5c5d6ffce6666e5950af1bef8aa",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 68,
+      "authored_manifest_sha256": "c2513378baa6eef9c5e17d43a929a3a0788671e663a9d4d743146780cdf47847",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Projects": {
+      "head": "307afa0741d91a200d2e7b91728d8df5b665d910",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 10848,
+      "authored_manifest_sha256": "64fb6b5f89837ef5c8185b2efdaa112350dd0b45c3c139b708c9feb0c46f67cc",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Conversations": {
+      "head": "468ed8f0661101e03b332795173fe72f4875e699",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 50983,
+      "authored_manifest_sha256": "a856b6aa1c703ca04f36b43512f1967db95782373a83d855d77c12441f4df2de",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Works": {
+      "head": "038f49080a86d312b30d12567f521c3954593569",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 11922,
+      "authored_manifest_sha256": "1800e0ff9e3100b947732944fa3da467e6d4c6668aa0ba2a7ad56b4340723526",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Parties": {
+      "head": "a3666267868da046db164bba2668efc1325d42d5",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 7861,
+      "authored_manifest_sha256": "8fc33291b697f8a457b34ff020c4c5a7b514ce9428d02803a2df94ecf8e4f3b7",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.McpCli": {
+      "head": "ac6f6de9c9669751bc707dcf907c19e93d64685c",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 13864,
+      "authored_manifest_sha256": "23b164456225d84ee27b4f63bb43d9a6f26913a2b7b9ebb9537fc8ae3b55ade9",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Platform": {
+      "head": "03799ed553a16c8a1528068ba4d95bb5509ea75e",
+      "gitlink_matches_head": true,
+      "branch_unchanged": true,
+      "status_clean_unchanged": true,
+      "authored_manifest_count": 18447,
+      "authored_manifest_sha256": "f9fff8c383e818c2878caff9a789169dad1080b187525e89a4f9fd202577a5d5",
+      "authored_manifest_equal": true
+    }
+  },
+  "works_authored_files_read_only": {
+    "before_after_manifest_equal": true,
+    "count": 11922
+  },
+  "builds_authored_files_unchanged": {
+    "before_after_manifest_equal": true,
+    "count": 3205
+  },
+  "builds_committed_catalog_identity_matches": true,
+  "document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "original": {
+        "bytes": 70959,
+        "sha256": "07b927e2e8d87a2a8af5febbd538c84645fc1a4866b745296fa4dbd12148ff26"
+      },
+      "invocation": {
+        "bytes": 77937,
+        "sha256": "f2c753315797f3dd7d922c3f5bd7869d0649a6cb39f16fc48c1641457bb8a0d0"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "attempt_9_disposition": {
+        "bytes": 6575,
+        "sha256": "ee9b5f44eb294fa71a1e90a669f731be9ee715d580e96b41d4483391489ef2e6"
+      },
+      "accepted_review_append": {
+        "heading": "## Review Triage Log \u2014 attempt 9 (2026-11-01)",
+        "bytes": 4941,
+        "sha256": "00f8ce6f9d85924d3d049085a8bab6412ce8c5cd626a989d06c602ec7209a764"
+      }
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "original": {
+        "bytes": 490216,
+        "sha256": "84092da79d3c25efac66b2064aa8e98d6b6ffafcf38c1cc5c48bd09b0a3c476e"
+      },
+      "invocation": {
+        "bytes": 490216,
+        "sha256": "84092da79d3c25efac66b2064aa8e98d6b6ffafcf38c1cc5c48bd09b0a3c476e"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "attempt_9_disposition": {
+        "bytes": 6622,
+        "sha256": "94541cbc315bec2d4fe540efccd71db81ea8a4009459f82739debcf82b3bc0e2"
+      }
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "original": {
+        "bytes": 304529,
+        "sha256": "c5348c24803e66bdc94017b965f43e1f6d71fb45941c67e3092c7e713e520909"
+      },
+      "invocation": {
+        "bytes": 304529,
+        "sha256": "c5348c24803e66bdc94017b965f43e1f6d71fb45941c67e3092c7e713e520909"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "attempt_9_disposition": {
+        "bytes": 6637,
+        "sha256": "7994e311777ccf003db5714fde5e177766a2247b1899d8806b33b97d3d142602"
+      }
+    },
+    "docs/launch-readiness.md": {
+      "original": {
+        "bytes": 177538,
+        "sha256": "cdc20093dec074ff35bb39254792cb85cf5c046adc7817c73324435774ccd831"
+      },
+      "invocation": {
+        "bytes": 177538,
+        "sha256": "cdc20093dec074ff35bb39254792cb85cf5c046adc7817c73324435774ccd831"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "attempt_9_disposition": {
+        "bytes": 6950,
+        "sha256": "b03829d2a3d7cd3a223dd1615f09070be1d8a62747d6d77a27b083d821ccd848"
+      }
+    }
+  },
+  "frozen_intent_preserved": true,
+  "frontmatter_baseline_preserved": true,
+  "status_checks": {
+    "spec": "in-progress",
+    "story_3_6": "in-progress",
+    "epic_3": "in-progress",
+    "release": "FAIL"
+  },
+  "receipt_checks": [
+    {
+      "stage": "restore",
+      "exit_code": 0,
+      "original_stream_hashes_match": true,
+      "sanitization_matches": true
+    },
+    {
+      "stage": "build",
+      "exit_code": 0,
+      "original_stream_hashes_match": true,
+      "sanitization_matches": true
+    },
+    {
+      "stage": "runner",
+      "exit_code": 1,
+      "original_stream_hashes_match": true,
+      "sanitization_matches": true
+    }
+  ],
+  "admission_order_lock_hashes_and_shape_match": true,
+  "report_provenance_original_and_retained_hashes_match": true,
+  "retained_reports_checked": 21,
+  "withheld_inventory_streams_hash_checked": 4,
+  "packet_free_of_repository_root_path": true,
+  "runner_aggregate_shapes_and_hashes_match": true,
+  "harnesses_match": true,
+  "command_capture_harness_differs_from_attempt_8_only_in_runner_command": true,
+  "gate_outcomes": {
+    "total": 23,
+    "observed_passed": 1,
+    "observed_failed": 1,
+    "unobserved": 21
+  },
+  "no_resource_finalization_does_not_qualify_owned_cleanup": true,
+  "authored_markdown_links_checked": 66,
+  "diff_check": {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "packet_manifest": {
+    "file": "SHA256SUMS",
+    "algorithm": "SHA-256",
+    "coverage": "Every packet file except SHA256SUMS itself, including this verification and the retained static harness.",
+    "complete_and_verified_after_record_write": true
+  }
+}

@@ -1,0 +1,342 @@
+"""Perform only the attempt-9 prescribed static preservation and receipt checks."""
+from collections import Counter
+from datetime import datetime, timezone
+import gzip, hashlib, json, re, subprocess, urllib.parse
+from pathlib import Path
+
+ROOT = Path.cwd()
+PRIVATE = Path('/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private')
+EVIDENCE = ROOT / '_bmad-output/implementation-artifacts/evidence/3-6'
+PACKET = EVIDENCE / '20261101-current-source-live-proof-9'
+ATTEMPT8 = EVIDENCE / '20261101-current-source-live-proof-8'
+HEADER = '\n\n## Attempt 9 disposition — 2026-11-01\n'
+OTHER_HEADER = '\n\n## Current-source live-proof attempt 9 — terminal shared-baseline timeout, 2026-11-01\n'
+TRIAGE = '\n\n## Review Triage Log — attempt 9 (2026-11-01)\n'
+
+
+def digest(data): return {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+def canonical(data): return json.dumps(data, sort_keys=True, separators=(',', ':')).encode()
+def git(root, *args): return subprocess.run(['git', '-C', str(root), *args], capture_output=True, check=True).stdout
+
+
+def manifest(root):
+    result = {}
+    for name in sorted(set(git(root, 'ls-files', '--cached', '--others', '--exclude-standard', '-z').decode().split('\0'))):
+        if name and (root / name).is_file() and not (root / name).is_symlink():
+            result[name] = digest((root / name).read_bytes())
+    return result
+
+
+assert (Path(__file__).read_bytes() == (PACKET / 'verification.py.txt').read_bytes())
+before = json.loads((PRIVATE / 'before.json').read_text())
+invocation = json.loads((PRIVATE / 'invocation.json').read_text())
+source = json.loads((PACKET / 'source-provenance.json').read_text())
+reports = json.loads((PACKET / 'report-provenance.json').read_text())
+q = json.loads((PACKET / 'qualification.json').read_text())
+admission = json.loads((PACKET / 'admission-inspection.json').read_text())
+
+# Source and status identities.
+assert digest((PRIVATE / 'before.json').read_bytes()) == source['private_snapshot']
+assert digest((PRIVATE / 'invocation.json').read_bytes()) == source['private_invocation']
+head = git(ROOT, 'rev-parse', 'HEAD').decode().strip()
+assert source['root']['head'] == head == before['root_identity']['head'] == invocation['head'] == q['root_head'] == 'f39e2a8944ed648fdccea2fff70698815bb988ba'
+assert source['root']['branch'] == git(ROOT, 'branch', '--show-current').decode().strip() == before['root_identity']['branch']
+assert source['root']['snapshot_status_porcelain'] == before['root_identity']['status_porcelain'] == ''
+assert source['root']['manifest_sha256'] == hashlib.sha256(canonical(before['manifest'])).hexdigest()
+assert source['root']['manifest_count'] == len(before['manifest']) == 6928
+assert not git(ROOT, 'diff', '--cached', '--name-only').strip()
+for path, row in source['root']['runner_source'].items():
+    assert before['manifest'][path] == row
+DEFERRED = '_bmad-output/implementation-artifacts/deferred-work.md'
+expected_status = sorted([' M ' + p for p in [*invocation['documents'], DEFERRED]] + ['?? ' + str(PACKET.relative_to(ROOT)) + '/'])
+assert sorted(git(ROOT, 'status', '--porcelain').decode().splitlines()) == expected_status
+
+# Unchanged root source and prior receipts; new root files only in this packet.
+root_now = manifest(ROOT)
+for path, row in before['manifest'].items():
+    if path in invocation['documents'] or path == DEFERRED:
+        continue
+    assert root_now.get(path) == row, path
+# Review append to deferred-work.md: HEAD bytes (= snapshot bytes) stay a prefix; exactly four entries for this spec follow.
+deferred_head = git(ROOT, 'show', 'HEAD:' + DEFERRED)
+deferred_now = (ROOT / DEFERRED).read_bytes()
+assert digest(deferred_head) == before['manifest'][DEFERRED] and deferred_now.startswith(deferred_head)
+deferred_append = deferred_now[len(deferred_head):].decode()
+spec_entry = '\n- source_spec: `_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md`\n'
+assert deferred_append.startswith(spec_entry) and deferred_append.count('\n- source_spec: ') == deferred_append.count(spec_entry) == 4
+for path in root_now:
+    if path not in before['manifest']:
+        assert (ROOT / path).is_relative_to(PACKET), path
+prior_evidence = [p for p in before['manifest'] if p.startswith('_bmad-output/implementation-artifacts/evidence/')]
+assert all(root_now[p] == before['manifest'][p] for p in prior_evidence)
+
+# Both document-prefix sets and append-only recording.
+prefixes = {}
+for path, row in before['documents'].items():
+    original = Path(row['private_original']).read_bytes()
+    inv = Path(invocation['documents'][path]['private_original']).read_bytes()
+    current = (ROOT / path).read_bytes()
+    assert digest(original) == {k: row[k] for k in ('bytes', 'sha256')}
+    assert digest(inv) == {k: invocation['documents'][path][k] for k in ('bytes', 'sha256')}
+    assert inv.startswith(original) and current.startswith(original) and current.startswith(inv), path
+    appended = current[len(inv):].decode()
+    review = ''
+    if '/spec-' in path:
+        # The only accepted later append: the review's triage section at the end of the spec.
+        review_index = appended.find(TRIAGE)
+        assert review_index > 0 and appended.count(TRIAGE) == 1 and appended.count('\n## ') == 2
+        appended, review = appended[:review_index], appended[review_index:]
+    header = HEADER if '/spec-' in path else OTHER_HEADER
+    assert appended.startswith(header) and appended.endswith('**uncommitted**.\n') and appended.count('\n## ') == 1, path
+    assert len(re.findall('^' + re.escape(header.strip()) + '$', current.decode(), re.M)) == 1
+    assert ('this live-proof spec' in appended) == ('/spec-' in path) and ('the live-proof spec' in appended) != ('/spec-' in path)
+    assert source['original_document_prefixes'][path] == row and source['invocation_document_prefixes'][path] == invocation['documents'][path]
+    prefixes[path] = {'original': digest(original), 'invocation': digest(inv), 'original_prefix_preserved': True,
+                      'invocation_prefix_preserved': True, 'attempt_9_disposition': digest(appended.encode())}
+    if review:
+        prefixes[path]['accepted_review_append'] = {'heading': TRIAGE.strip(), **digest(review.encode())}
+
+# Root-declared submodules: identities, gitlinks and authored-file manifests before/after.
+gitlinks = {line.split('\t')[1]: line.split()[2] for line in git(ROOT, 'ls-tree', 'HEAD', 'references/').decode().splitlines()}
+submodules = {}
+for name, row in before['submodules'].items():
+    path = ROOT / name
+    assert row['initialized'] and (path / '.git').exists(), name
+    assert git(path, 'rev-parse', 'HEAD').decode().strip() == row['head'] == gitlinks[name] == source['submodules'][name]['head'], name
+    assert git(path, 'branch', '--show-current').decode().strip() == row['branch'], name
+    assert git(path, 'status', '--porcelain').decode() == row['status_porcelain'] == '', name
+    actual = manifest(path)
+    assert actual == row['manifest'], name
+    assert hashlib.sha256(canonical(actual)).hexdigest() == source['submodules'][name]['manifest_sha256'], name
+    submodules[name] = {'head': row['head'], 'gitlink_matches_head': True, 'branch_unchanged': True, 'status_clean_unchanged': True,
+                        'authored_manifest_count': len(actual), 'authored_manifest_sha256': hashlib.sha256(canonical(actual)).hexdigest(),
+                        'authored_manifest_equal': True}
+assert len(submodules) == 13
+
+# Builds committed catalog identity (no copies of unchanged committed sources).
+builds = ROOT / 'references/Hexalith.Builds'
+b = source['builds_committed_catalog']
+assert b['head'] == 'a346bfeae5f441ed4a6293a211a2efdc468774b8' == git(builds, 'rev-parse', 'HEAD').decode().strip()
+assert b['head_on_local_origin_main'] and subprocess.run(['git', '-C', str(builds), 'merge-base', '--is-ancestor', 'HEAD', 'origin/main']).returncode == 0
+catalog = (builds / 'Props/Directory.Packages.props').read_bytes()
+assert digest(catalog) == b['catalog'] and b['catalog']['sha256'] == 'e0aea6a906982bcbc04057840ed0f615cf43b48903e2e3fb4bcb7137face39c5'
+assert git(builds, 'hash-object', 'Props/Directory.Packages.props').decode().strip() == b['catalog_head_blob'] == git(builds, 'rev-parse', 'HEAD:Props/Directory.Packages.props').decode().strip()
+a8 = json.loads((ATTEMPT8 / 'source-provenance.json').read_text())['builds_uncommitted_source']['changed_source_files']
+for relative, row in b['files_retained_by_attempt_8'].items():
+    assert digest((builds / relative).read_bytes()) == row['worktree']
+    assert row['attempt_8_uncommitted_copy'] == a8[relative]['worktree'] == digest((ATTEMPT8 / a8[relative]['retained_path']).read_bytes())
+    assert row['equals_attempt_8_uncommitted_copy'] == (row['worktree'] == row['attempt_8_uncommitted_copy'])
+    assert git(builds, 'hash-object', relative).decode().strip() == row['head_blob'] == git(builds, 'rev-parse', 'HEAD:' + relative).decode().strip()
+assert b['catalog_differs_from_attempt_8_copy'] and not b['copies_retained'] and not (PACKET / 'source').exists()
+
+# Frozen intent, baseline and status identities.
+assert source['frozen_spec_baseline_commit'] == q['frozen_spec_baseline_commit'] == 'c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36'
+spec = next(path for path in invocation['documents'] if '/spec-' in path)
+orig = Path(before['documents'][spec]['private_original']).read_bytes()
+current = (ROOT / spec).read_bytes()
+frozen = rb'<frozen-after-approval.*?</frozen-after-approval>'
+assert re.search(frozen, orig, re.S).group() == re.search(frozen, current, re.S).group()
+assert current[:500] == orig[:500] and b"status: 'in-progress'" in current[:500] and b"baseline_commit: 'c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36'" in current[:500]
+story = (ROOT / '_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md').read_text()
+sprint = (ROOT / '_bmad-output/implementation-artifacts/sprint-status.yaml').read_text()
+launch = (ROOT / 'docs/launch-readiness.md').read_text()
+assert 'Status: in-progress' in story[:500]
+assert re.search(r'^  epic-3: in-progress$', sprint, re.M) and re.search(r'^  3-6-implement-eventstore-backed-magic-link-state-loading: in-progress$', sprint, re.M)
+assert 'Overall release decision: **FAIL**' in launch and q['release_verdict'] == 'FAIL'
+# Historical checkbox states: no pre-existing line changed (prefix check) and only this attempt's lines were added.
+
+# Qualification and gate outcomes.
+a8q = json.loads((ATTEMPT8 / 'qualification.json').read_text())
+names = [g['gate'] for g in a8q['unobserved_gates']] + [g['gate'] for g in a8q['observed_failed_gates']]
+assert [g['gate'] for g in q['gates']] == names and len(names) == 23
+observed = {g['gate']: g for g in q['gates'] if g['observed']}
+assert set(observed) == {'Shared-state baseline', 'Runner required-port admission'}
+assert observed['Runner required-port admission']['passed'] is True and observed['Shared-state baseline']['passed'] is False
+assert all(not g['qualified'] for g in q['gates'])
+assert len(q['unobserved_gates']) == 21 and all(not r['observed'] and not r['qualified'] for r in q['unobserved_gates'])
+assert not q['local_proof_qualified'] and not q['live_journey']['invoked'] and not q['shared_preservation']['observed']
+assert not q['owned_cleanup']['qualified'] and q['owned_cleanup']['runner_finalizer_receipt']['complete'] and not q['owned_cleanup']['resources_created']
+assert q['conditional_uninvoked_commands'] == [] and not q['retry_invoked'] and not q['repairs_invoked'] and not q['alternate_lane_invoked']
+assert q['runner_mandatory_admission']['receipt'] == json.loads((PACKET / 'runner/admission.json').read_text()) and q['runner_mandatory_admission']['receipt']['admitted']
+assert q['owned_cleanup']['runner_finalizer_receipt'] == json.loads((PACKET / 'runner/cleanup.json').read_text())
+failure = json.loads((PACKET / 'runner/shared-observation-failure.json').read_text())
+assert q['shared_baseline']['first_observation_failure'] == failure and failure['phase'] == 'redis_database' and failure['database'] == 0
+assert failure['exception_category'] == 'TimeoutError' and failure['completed'] is False
+assert not q['launch_readiness_tests_invoked'] and not q['historical_173_focused_cases_rerun']
+
+# Command receipts, original stream hashes and sanitization.
+receipt_checks = []
+for stage in ('restore', 'build', 'runner'):
+    r = json.loads((PACKET / (stage + '.json')).read_text())
+    assert r == json.loads((PRIVATE / (stage + '.json')).read_text())
+    assert r['exit_code'] == (1 if stage == 'runner' else 0)
+    assert {k: v for k, v in q[{'restore': 'solution_restore', 'build': 'solution_build', 'runner': 'supported_runner'}[stage]].items()
+            if k in r} == r
+    for stream in ('stdout', 'stderr'):
+        original = (PRIVATE / (stage + '.' + stream + '.original')).read_bytes()
+        assert digest(original) == r[stream]
+        assert (PACKET / (stage + '.' + stream + '.sanitized.txt')).read_bytes() == original.replace(str(ROOT).encode(), b'<repository>')
+    receipt_checks.append({'stage': stage, 'exit_code': r['exit_code'], 'original_stream_hashes_match': True, 'sanitization_matches': True})
+build_out = (PRIVATE / 'build.stdout.original').read_text()
+assert re.search(r'^\s+0 Warning\(s\)$', build_out, re.M) and re.search(r'^\s+0 Error\(s\)$', build_out, re.M)
+runner_out = (PRIVATE / 'runner.stdout.original').read_text().splitlines()
+assert runner_out[0] == q['blocker'] and len(runner_out) == 2
+assert runner_out[1] == 'Sanitized fixture evidence: ' + reports['runner_original_private_directory']
+assert '--public-port 18080' in json.loads((PACKET / 'runner.json').read_text())['command']
+
+# Ordered admission inspection, lock and aggregate shape.
+assert admission == json.loads((PRIVATE / 'admission-inspection.json').read_text())
+assert admission['inspection_count'] == 1 and admission['idle_inventory'] and admission['lock']['acquired'] and admission['lock']['released_before_runner']
+dapr_row, aspire_row = admission['commands']
+assert admission['started_utc'] < admission['lock']['acquired_utc'] < dapr_row['started_utc'] < dapr_row['completed_utc']
+assert dapr_row['completed_utc'] <= aspire_row['started_utc'] < aspire_row['completed_utc'] < admission['lock']['released_utc'] < admission['completed_utc']
+assert invocation['captured_utc'] < admission['started_utc']
+assert admission['completed_utc'] < q['solution_restore']['started_utc'] < q['solution_restore']['completed_utc'] < q['solution_build']['started_utc'] < q['solution_build']['completed_utc'] < q['supported_runner']['started_utc'] < q['shared_baseline']['first_observation_started_utc'] < q['shared_baseline']['first_observation_completed_utc'] < q['supported_runner']['completed_utc']
+assert [r['argv'] for r in admission['commands']] == [['dapr', 'list', '--output', 'json'], ['aspire', 'ps', '--non-interactive', '--format', 'Json']]
+for r, label in zip(admission['commands'], ('dapr-list', 'aspire-ps')):
+    original = (PRIVATE / (label + '.stdout.original')).read_bytes()
+    value = json.loads(original)
+    shape = {'top_level_type': type(value).__name__, 'count': len(value), 'row_type_counts': dict(Counter(type(item).__name__ for item in value))}
+    assert shape == r['shape'] and value == [] and r['exit_code'] == 0 and r['successful_empty_inventory']
+    for stream in ('stdout', 'stderr'):
+        assert digest((PRIVATE / (label + '.' + stream + '.original')).read_bytes()) == r[stream]
+
+# Report provenance: originals, retained copies and transformations.
+retained_reports = withheld = 0
+for r in reports['reports']:
+    if r['original'] is None:
+        assert r['retained_name'] == 'runner/versions.json' and digest((PACKET / r['retained_name']).read_bytes()) == r['retained']
+        versions = json.loads((PACKET / 'runner/versions.json').read_text())
+        assert versions == q['versions_observed']
+        for name, needle in zip(r['original_private_path'], (versions['aspire_cli'], 'CLI version: ' + versions['dapr_cli'], versions['docker_server'])):
+            assert needle in Path(name).read_text() and (PACKET / 'runner' / (Path(name).name + '.txt')).read_bytes() == Path(name).read_bytes()
+        retained_reports += 1
+        continue
+    original = Path(r['original_private_path']).read_bytes()
+    assert digest(original) == r['original']
+    if r['retained'] is False:
+        withheld += 1
+        continue
+    retained = (PACKET / r['retained_name']).read_bytes()
+    assert digest(retained) == r['retained']
+    retained_reports += 1
+    if r['retained_name'].endswith('.aggregate.json'):
+        metadata = json.loads(retained)
+        m = re.fullmatch(r'Command: (.*?)\nExit: (-?[0-9]+)\nStdout:\n(.*?)Stderr:\n(.*)', original.decode(), re.S)
+        assert m and m.group(1) == metadata['command']
+        command, exit_code, stdout, stderr = m.groups()
+        assert json.loads(stdout) == [] and int(exit_code) == 0 and metadata['shape'] == {'top_level_type': 'list', 'count': 0, 'row_type_counts': {}}
+        assert metadata['original_runner_sanitized_log'] == digest(original)
+        assert metadata['runner_sanitized_stdout'] == digest(stdout.encode()) and metadata['runner_sanitized_stderr'] == digest(stderr.encode())
+        assert metadata == q['runner_mandatory_admission']['empty_inventory_checks'][metadata['runner_log_name'][:-4]]
+    else:
+        assert retained == original.replace(str(ROOT).encode(), b'<repository>')
+assert withheld == 4
+for packet_file in PACKET.rglob('*'):
+    if packet_file.is_file() and packet_file.name not in ('verification.py.txt', 'verification.json', 'SHA256SUMS'):
+        data = packet_file.read_bytes()
+        if packet_file.suffix == '.gz':
+            data = gzip.decompress(data)
+        assert str(ROOT).encode() not in data, packet_file
+
+# Harnesses.
+assert (PRIVATE / 'admission-inspection.py').read_bytes() == (PACKET / 'admission-inspection.py.txt').read_bytes() == (EVIDENCE / '20261030-current-source-live-proof/admission-inspection.py.txt').read_bytes()
+assert (PRIVATE / 'run-prescribed-command.py').read_bytes() == (PACKET / 'execution-command.py.txt').read_bytes()
+new_lines = (PACKET / 'execution-command.py.txt').read_text().splitlines()
+old_lines = (ATTEMPT8 / 'execution-command.py.txt').read_text().splitlines()
+differences = [(o, n) for o, n in zip(old_lines, new_lines) if o != n]
+assert len(new_lines) == len(old_lines) and len(differences) == 1 and differences[0][0].strip().startswith("'runner':")
+assert differences[0][1].replace(' --public-port 18080', '').replace(
+    '/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner',
+    '/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner') == differences[0][0]
+
+# Local Markdown links in the authored README and the appended dispositions.
+link_sources = {PACKET / 'README.md': (PACKET / 'README.md').read_text()}
+for relative, row in invocation['documents'].items():
+    link_sources[ROOT / relative] = (ROOT / relative).read_bytes()[row['bytes']:].decode().split(TRIAGE, 1)[0]
+links = []
+for path, text in link_sources.items():
+    for match in re.finditer(r'\[[^\]]*\]\(([^\n)]+)\)', text):
+        href = match.group(1).split()[0].strip('<>')
+        parsed = urllib.parse.urlparse(href)
+        if parsed.scheme or not parsed.path:
+            continue
+        destination = (path.parent / urllib.parse.unquote(parsed.path)).resolve()
+        if destination not in (PACKET / 'verification.json', PACKET / 'SHA256SUMS'):
+            assert destination.exists(), (path, href)
+        links.append({'source': str(path.relative_to(ROOT)), 'target': href, 'resolved': str(destination.relative_to(ROOT))})
+
+
+def assert_not_ignored(relative_paths):
+    # git check-ignore exits 1 only when none of the given paths is ignored.
+    result = subprocess.run(['git', 'check-ignore', '--', *relative_paths], cwd=ROOT, capture_output=True)
+    assert result.returncode == 1 and not result.stdout, result.stdout.decode()
+    return len(relative_paths)
+
+
+link_targets_not_ignored = assert_not_ignored(sorted({row['resolved'] for row in links}))
+
+# Preservation baseline equals the private pre-invocation snapshot.
+baseline = json.loads(gzip.decompress((PACKET / 'preservation-baseline.json.gz').read_bytes()))
+assert baseline['manifest'] == before['manifest'] and baseline['invocation'] == invocation and baseline['documents'] == before['documents']
+assert baseline['root_identity'] == {k: before['root_identity'][k] for k in ('head', 'branch', 'status_porcelain')}
+assert all(baseline['submodules'][name]['manifest'] == row['manifest'] and baseline['submodules'][name]['head'] == row['head']
+           for name, row in before['submodules'].items())
+
+result = subprocess.run(['git', 'diff', '--check'], cwd=ROOT, capture_output=True)
+assert result.returncode == 0, result.stderr.decode()
+(PACKET / 'diff-check.stdout.txt').write_bytes(result.stdout)
+(PACKET / 'diff-check.stderr.txt').write_bytes(result.stderr)
+verification = {
+    'schema': 'timesheets-current-source-live-proof-verification-v2', 'recorded_utc': datetime.now(timezone.utc).isoformat(),
+    'command': 'python3 ' + str(PRIVATE / 'verify-static.py'), 'working_directory': '<repository>',
+    'scope': 'Prescribed static receipt/hash/prefix/link/source/status/packet checks only; no tests, builds, runtime probes or workflow review.',
+    'result': 'PASS', 'root_head_unchanged': True, 'root_branch_unchanged': True, 'index_unchanged_empty': True,
+    'root_status_limited_to_four_documents_deferred_work_and_packet': True,
+    'preexisting_root_files_preserved_except_append_only_documents': len(before['manifest']) - len(before['documents']) - 1,
+    'accepted_review_appends': {
+        'spec_review_triage_log': prefixes[spec]['accepted_review_append'],
+        'deferred_work': {'path': DEFERRED, 'head_prefix': digest(deferred_head), 'head_prefix_preserved': True,
+                          'entries_for_this_spec': 4, 'appended': digest(deferred_append.encode())}},
+    'git_tracking': {'command': 'git check-ignore -- <paths> (exit 1 means none ignored)',
+                     'local_link_targets_not_ignored': link_targets_not_ignored,
+                     'packet_files_planned': sorted([str(p.relative_to(PACKET)) for p in PACKET.rglob('*') if p.is_file()]
+                                                    + [n for n in ('verification.json', 'SHA256SUMS') if not (PACKET / n).exists()]),
+                     'packet_files_not_ignored': 'checked after SHA256SUMS write; see packet_files_planned'},
+    'prior_evidence_files_preserved': len(prior_evidence), 'new_root_files_confined_to_attempt_packet': True,
+    'submodules': submodules,
+    'works_authored_files_read_only': {'before_after_manifest_equal': True, 'count': len(before['submodules']['references/Hexalith.Works']['manifest'])},
+    'builds_authored_files_unchanged': {'before_after_manifest_equal': True, 'count': len(before['submodules']['references/Hexalith.Builds']['manifest'])},
+    'builds_committed_catalog_identity_matches': True, 'document_prefixes': prefixes,
+    'frozen_intent_preserved': True, 'frontmatter_baseline_preserved': True,
+    'status_checks': {'spec': 'in-progress', 'story_3_6': 'in-progress', 'epic_3': 'in-progress', 'release': 'FAIL'},
+    'receipt_checks': receipt_checks, 'admission_order_lock_hashes_and_shape_match': True,
+    'report_provenance_original_and_retained_hashes_match': True, 'retained_reports_checked': retained_reports,
+    'withheld_inventory_streams_hash_checked': withheld, 'packet_free_of_repository_root_path': True,
+    'runner_aggregate_shapes_and_hashes_match': True, 'harnesses_match': True,
+    'command_capture_harness_differs_from_attempt_8_only_in_runner_command': True,
+    'gate_outcomes': {'total': len(q['gates']), 'observed_passed': 1, 'observed_failed': 1, 'unobserved': len(q['unobserved_gates'])},
+    'no_resource_finalization_does_not_qualify_owned_cleanup': True,
+    'authored_markdown_links_checked': len(links),
+    'diff_check': {'command': 'git diff --check', 'exit_code': result.returncode, 'stdout': digest(result.stdout), 'stderr': digest(result.stderr)},
+    'packet_manifest': {'file': 'SHA256SUMS', 'algorithm': 'SHA-256',
+                        'coverage': 'Every packet file except SHA256SUMS itself, including this verification and the retained static harness.',
+                        'complete_and_verified_after_record_write': True}}
+(PACKET / 'verification.json').write_text(json.dumps(verification, indent=2) + '\n')
+files = {str(p.relative_to(PACKET)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(PACKET.rglob('*')) if p.is_file() and p.name != 'SHA256SUMS'}
+(PACKET / 'SHA256SUMS').write_text(''.join(sha + '  ' + path + '\n' for path, sha in files.items()))
+parsed = {line[66:]: line[:64] for line in (PACKET / 'SHA256SUMS').read_text().splitlines()}
+assert parsed == files
+assert set(parsed) == {str(p.relative_to(PACKET)) for p in PACKET.rglob('*') if p.is_file() and p.name != 'SHA256SUMS'}
+assert all(hashlib.sha256((PACKET / path).read_bytes()).hexdigest() == sha for path, sha in parsed.items())
+packet_files_not_ignored = assert_not_ignored([str(p.relative_to(ROOT)) for p in sorted(PACKET.rglob('*')) if p.is_file()])
+assert packet_files_not_ignored == len(files) + 1 == len(verification['git_tracking']['packet_files_planned'])
+for row in links:
+    origin = ROOT / row['source']
+    target = urllib.parse.urlparse(row['target']).path
+    assert (origin.parent / urllib.parse.unquote(target)).resolve().exists(), row
+print(json.dumps({'result': 'PASS', 'root_files_preserved_except_append_only_documents': verification['preexisting_root_files_preserved_except_append_only_documents'],
+                  'prior_evidence_files_preserved': len(prior_evidence), 'root_declared_submodules_preserved': len(submodules),
+                  'works_files_preserved': verification['works_authored_files_read_only']['count'],
+                  'builds_files_preserved': verification['builds_authored_files_unchanged']['count'],
+                  'authored_markdown_links_checked': len(links), 'packet_files_hashed': len(files), 'git_diff_check_exit': result.returncode}, indent=2))

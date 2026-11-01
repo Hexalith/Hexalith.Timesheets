@@ -1,0 +1,542 @@
+{
+  "schema": "timesheets-current-source-live-proof-qualification-v2",
+  "disposition": "terminal-runner-shared-baseline-observation-failure-current-source-live-proof-unqualified",
+  "authorization": "2026-11-01 attempt 9; distinct from every earlier attempt; runner argv differs from attempt 8 only in the user-selected --public-port 18080 and the required fresh per-attempt --log-directory.",
+  "root_head": "f39e2a8944ed648fdccea2fff70698815bb988ba",
+  "frozen_spec_baseline_commit": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "current_spec_status": "in-progress",
+  "story_3_6_status": "in-progress",
+  "release_verdict": "FAIL",
+  "blocker": "Shared-service observation failed during redis_database; preservation is unproved",
+  "inspection_invocations": 1,
+  "inspection_exit_code": 0,
+  "availability_inspection": {
+    "observed": true,
+    "passed": true,
+    "idle": true,
+    "lock_acquired": true,
+    "lock_released_before_restore": true
+  },
+  "solution_restore": {
+    "invoked": true,
+    "passed": true,
+    "stage": "restore",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "started_utc": "2026-11-01T18:08:23.005690+00:00",
+    "explicit_environment_overrides": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "inherited_environment_captured": false,
+    "completed_utc": "2026-11-01T18:08:27.436676+00:00",
+    "duration_seconds": 4.430972,
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 4903,
+      "sha256": "67bf692ab258c05fbe2d2c350d4c2cf14eebf0d5b56870e0345f38946f6069aa"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "solution_build": {
+    "invoked": true,
+    "passed": true,
+    "stage": "build",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "started_utc": "2026-11-01T18:08:30.371852+00:00",
+    "explicit_environment_overrides": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "inherited_environment_captured": false,
+    "completed_utc": "2026-11-01T18:09:07.717193+00:00",
+    "duration_seconds": 37.345896,
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 8579,
+      "sha256": "d5f4b63f6bf747761d7fbeebf49c52e8c8205f8990c59dcd911067cb60c0b866"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "warnings": 0,
+    "errors": 0
+  },
+  "supported_runner": {
+    "invoked": true,
+    "passed": false,
+    "stage": "runner",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --public-port 18080 --log-directory /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner",
+    "started_utc": "2026-11-01T18:09:14.678146+00:00",
+    "explicit_environment_overrides": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "inherited_environment_captured": false,
+    "completed_utc": "2026-11-01T18:09:35.395963+00:00",
+    "duration_seconds": 20.718872,
+    "exit_code": 1,
+    "stdout": {
+      "bytes": 253,
+      "sha256": "bca08a29c62e216dfcf37311d986b57cdb26f4d14fe54daea34e72207eb53715"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "public_port_selection": {
+    "argument": "--public-port 18080",
+    "runner_argv_differences_from_attempt_8": [
+      "--public-port 18080 (user-selected public port)",
+      "--log-directory <fresh per-attempt directory> (required by each authorization)"
+    ],
+    "attempt_8_terminal_refusal": "Required port 8080 is occupied; no AppHost started",
+    "basis": "The user selected the supported runner README-documented --public-port 18080 option in the attempt-9 authorization.",
+    "pre_authorization_observation_scope": "Read-only ss/ps observation recorded in the attempt-9 authorization at about 18:00 UTC; it was not repeated by this invocation and its process identities are not retained here.",
+    "foreign_listener_on_8080_stopped": false,
+    "runner_effect": "Runner validates the port, excludes it from private allocations and passes it to the AppHost (Timesheets:LocalPublicPort) and every public journey request; internal/gateway/sidecar ports, runner checks and assertions are unchanged.",
+    "runner_port_admission_passed": true
+  },
+  "runner_mandatory_admission": {
+    "observed": true,
+    "passed": true,
+    "receipt": {
+      "admitted": true,
+      "resources_started": false,
+      "infrastructure_started": false,
+      "apphost_start_attempted": false
+    },
+    "checks": [
+      "dapr list --output json empty",
+      "no Dapr sidecar outside empty CLI inventory",
+      "aspire ps --non-interactive --format Json empty",
+      "ports 18080, 8081, 8082 and 3501 bindable on the IPv4 wildcard and, where the host supports IPv6, the IPv6 wildcard"
+    ],
+    "empty_inventory_checks": {
+      "04-dapr-list": {
+        "runner_log_name": "04-dapr-list.log",
+        "command": "dapr list --output json",
+        "exit_code": 0,
+        "shape": {
+          "top_level_type": "list",
+          "count": 0,
+          "row_type_counts": {}
+        },
+        "successful_empty_inventory": true,
+        "original_runner_sanitized_log": {
+          "bytes": 61,
+          "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26"
+        },
+        "runner_sanitized_stdout": {
+          "bytes": 3,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "runner_sanitized_stderr": {
+          "bytes": 1,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        "timing_scope": "Within the outer runner interval; individual command UTC intervals are not emitted by the supported runner."
+      },
+      "05-aspire-ps": {
+        "runner_log_name": "05-aspire-ps.log",
+        "command": "aspire ps --non-interactive --format Json",
+        "exit_code": 0,
+        "shape": {
+          "top_level_type": "list",
+          "count": 0,
+          "row_type_counts": {}
+        },
+        "successful_empty_inventory": true,
+        "original_runner_sanitized_log": {
+          "bytes": 79,
+          "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7"
+        },
+        "runner_sanitized_stdout": {
+          "bytes": 3,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "runner_sanitized_stderr": {
+          "bytes": 1,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        "timing_scope": "Within the outer runner interval; individual command UTC intervals are not emitted by the supported runner."
+      }
+    }
+  },
+  "shared_baseline": {
+    "observed": true,
+    "passed": false,
+    "qualified": false,
+    "first_observation_failure": {
+      "started_unix_ns": 1793556555355289087,
+      "completed": false,
+      "phase": "redis_database",
+      "database": 0,
+      "exception_category": "TimeoutError",
+      "completed_unix_ns": 1793556575375751846
+    },
+    "first_observation_started_utc": "2026-11-01T18:09:15.355289+00:00",
+    "first_observation_completed_utc": "2026-11-01T18:09:35.375751+00:00",
+    "first_observation_duration_seconds": 20.020463,
+    "complete_snapshot_pair": false,
+    "second_observation_invoked": false,
+    "limits": "The runner sets phase redis_database only after its connection and INFO server identity read succeed; the phase covers SELECT 0 and one atomic Lua KEYS/DUMP/PTTL/TIME script over every DB0 key. TimeoutError alone does not identify the individual operation, cause or any writer. No response, key, value or exception text was retained.",
+    "prior_record": "The 2026-10-28 preservation investigation recorded DB0 at about 829k keys and two earlier TimeoutErrors from this reader (its first audit and the guarded attempt). Attempt 9 did not measure DB0. No writer or cause is attributed.",
+    "forward_prerequisite": "Another attempt with the unchanged reader needs an idle or smaller shared DB0, or a separately authorized bounded-observation change. This run authorizes neither."
+  },
+  "live_journey": {
+    "invoked": false,
+    "observed": false,
+    "test_results": null,
+    "qualified": false
+  },
+  "shared_preservation": {
+    "observed": false,
+    "qualified": false,
+    "reason": "Runner retains no preservation comparison without a complete admitted baseline."
+  },
+  "owned_cleanup": {
+    "runner_finalizer_invoked": true,
+    "runner_finalizer_receipt": {
+      "complete": true,
+      "journey_descendants_gone": true,
+      "failure_reasons": [],
+      "components_created": false,
+      "components_removed": false,
+      "containers_removed": 0
+    },
+    "observed_for_created_resources": false,
+    "qualified": false,
+    "resources_created": false,
+    "reason": "Runner finalizer reported complete without any created fixture resource. No-resource finalization does not qualify owned cleanup."
+  },
+  "versions_observed": {
+    "aspire_cli": "13.6.4+c89352703f78ae46de90fbf751ed8b52b77b89bf",
+    "dapr_cli": "1.18.2",
+    "dapr_reported_runtime": "1.18.7",
+    "docker_server": "29.8.2",
+    "scope": "Observed by supported runner version commands only; no fixture-running asset identity is claimed."
+  },
+  "fixture_domain_writes": false,
+  "foreign_resource_changes": false,
+  "foreign_resource_changes_scope": "State changes only: no foreign resource was stopped, started, written, cleared or migrated.",
+  "foreign_client_availability_impact": "possible; unobserved",
+  "foreign_client_availability_impact_basis": "The atomic read-only script blocks other shared-Redis clients while it runs, and Redis keeps running a script after its client disconnects, so any delay may have lasted beyond 20.02 seconds. This impact was not observed.",
+  "migration_invoked": false,
+  "retry_invoked": false,
+  "alternate_lane_invoked": false,
+  "repairs_invoked": false,
+  "conditional_uninvoked_commands": [],
+  "conditional_command_disposition": "All three prescribed outer commands ran exactly once; every later runner stage is uninvoked after the shared baseline observation failure.",
+  "runner_internal_uninvoked_stages": [
+    "second shared baseline observation and comparison",
+    "second preflight",
+    "dependency-graph validation",
+    "gateway invocation resolution",
+    "disposable Redis/placement/scheduler start",
+    "third preflight",
+    "fixture bootstrap preparation",
+    "aspire start --no-build",
+    "aspire wait",
+    "fixture writer bootstrap",
+    "runtime readiness and isolation capture",
+    "journey executable -class *MagicLinkLiveDaprTests",
+    "gateway native replacement proof",
+    "aspire stop and Docker removal",
+    "post-cleanup shared-state preservation"
+  ],
+  "gates": [
+    {
+      "gate": "Shared-state baseline",
+      "observed": true,
+      "passed": false,
+      "qualified": false,
+      "outcome": "First read-only shared-service observation failed after its 20-second socket timeout: TimeoutError, phase redis_database, database 0; no complete snapshot pair or second observation."
+    },
+    {
+      "gate": "Dependency-graph validation in runner",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Gateway invocation resolution in runner",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Disposable infrastructure isolation",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "AppHost start and runtime readiness",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Generated app-channel and signing credentials",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Catalog delivery and persistence",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Non-fixture assertion denial without owner event",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Confirm record/issue/index/GET/use/replay race",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Adjust record/issue/index/GET/use/replay",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Selected-index/effective-value and packed-lineage live evidence",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Composed Time Entry rebuild and persistence",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Actor restart and replay",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Fresh post-restart link",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Gateway native process replacement",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Not reached: the runner stopped at the first shared baseline observation."
+    },
+    {
+      "gate": "Shared-state preservation",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "No complete shared baseline was retained, so the runner performed no post-cleanup preservation comparison."
+    },
+    {
+      "gate": "Owned fixture cleanup",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Runner finalizer reported complete with no created fixture resource; no-resource finalization does not qualify owned cleanup."
+    },
+    {
+      "gate": "Current fixture-running asset identity",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "No fixture ran; current fixture-running asset and inherited environment identity were not captured."
+    },
+    {
+      "gate": "Inherited environment identity",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "No fixture ran; current fixture-running asset and inherited environment identity were not captured."
+    },
+    {
+      "gate": "Deployed authority",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Deployed gate; outside this local attempt and unfinished."
+    },
+    {
+      "gate": "Complete deployed inventory and writer/delivery continuity",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Deployed gate; outside this local attempt and unfinished."
+    },
+    {
+      "gate": "Deployed shared-rebuild acceptance",
+      "observed": false,
+      "passed": null,
+      "qualified": false,
+      "outcome": "Deployed gate; outside this local attempt and unfinished."
+    },
+    {
+      "gate": "Runner required-port admission",
+      "observed": true,
+      "passed": true,
+      "qualified": false,
+      "outcome": "Runner mandatory admission admitted with public port 18080 plus fixed 8081, 8082 and 3501 after empty Dapr/Aspire inventories and no out-of-inventory Dapr sidecar; ports 18080, 8081, 8082 and 3501 bindable on the IPv4 wildcard and, where the host supports IPv6, the IPv6 wildcard. Admission alone qualifies no runtime."
+    }
+  ],
+  "unobserved_gates": [
+    {
+      "gate": "Dependency-graph validation in runner",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Gateway invocation resolution in runner",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Disposable infrastructure isolation",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "AppHost start and runtime readiness",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Generated app-channel and signing credentials",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Catalog delivery and persistence",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Non-fixture assertion denial without owner event",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Confirm record/issue/index/GET/use/replay race",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Adjust record/issue/index/GET/use/replay",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Selected-index/effective-value and packed-lineage live evidence",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Composed Time Entry rebuild and persistence",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Actor restart and replay",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Fresh post-restart link",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Gateway native process replacement",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Shared-state preservation",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Owned fixture cleanup",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Current fixture-running asset identity",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Inherited environment identity",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Deployed authority",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Complete deployed inventory and writer/delivery continuity",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Deployed shared-rebuild acceptance",
+      "observed": false,
+      "qualified": false
+    }
+  ],
+  "observed_passed_gates": [
+    {
+      "gate": "Runner required-port admission",
+      "observed": true,
+      "passed": true,
+      "qualified": false,
+      "outcome": "Runner mandatory admission admitted with public port 18080 plus fixed 8081, 8082 and 3501 after empty Dapr/Aspire inventories and no out-of-inventory Dapr sidecar; ports 18080, 8081, 8082 and 3501 bindable on the IPv4 wildcard and, where the host supports IPv6, the IPv6 wildcard. Admission alone qualifies no runtime."
+    }
+  ],
+  "observed_failed_gates": [
+    {
+      "gate": "Shared-state baseline",
+      "observed": true,
+      "passed": false,
+      "qualified": false,
+      "outcome": "First read-only shared-service observation failed after its 20-second socket timeout: TimeoutError, phase redis_database, database 0; no complete snapshot pair or second observation."
+    }
+  ],
+  "local_proof_qualified": false,
+  "historical_173_focused_cases_rerun": false,
+  "launch_readiness_tests_invoked": false,
+  "launch_readiness_tests_disposition": "The authorization runs ArchitectureTests -class *LaunchReadinessTests only after a passing runner; the runner failed.",
+  "duration_semantics": "duration_seconds values are monotonic-clock measurements, so they can differ from the difference between their UTC endpoints by up to about 1 ms."
+}

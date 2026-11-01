@@ -707,3 +707,159 @@ No shared-store observation, fixture resource, AppHost start, live journey, doma
 Only required sanitized recording, append-only updates and prescribed static receipt/hash/prefix/link/source/status/packet checks plus `git diff --check` followed terminal refusal. [Static verification](evidence/3-6/20261101-current-source-live-proof-8/verification.json) covers receipt/output hashes and aggregate shape, original-to-sanitized provenance, unchanged source and all earlier evidence, both prefix sets, frozen intent, local Markdown links, source/status identities and the packet SHA-256 manifest. Assertions and server authorization/default-deny behavior are unchanged. Historical checkbox states remain intact.
 
 Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.
+
+
+## New authorized attempt — 2026-11-01 (attempt 9)
+
+On 2026-11-01 the user explicitly authorized **exactly one new attempt 9**, and
+selected the supported runner's README-documented `--public-port 18080` option.
+Attempt 8's runner refused because required port 8080 was occupied. Read-only
+`ss`/`ps` observation at about 18:00 UTC attributes 8080 to the `dcp` of a
+foreign Hexalith.Tenants AppHost started with `aspire run` on 2026-10-30. It
+is not listed by `aspire ps`; it was not and must not be stopped. A foreign
+Conversations integration-test process was also running. Ports 18080, 8081,
+8082 and 3501 were free. `--public-port 18080` is the **only authorized
+difference** from attempt 8's runner argv. The runner validates it, excludes it
+from private allocations and passes it to the AppHost (`Timesheets:LocalPublicPort`)
+and every public journey request. Internal/gateway/sidecar ports, runner checks
+and assertions stay unchanged. Precedent:
+[Aspire 13.6.4 qualification](spec-aspire-1364-local-qualification.md) and the
+[preservation investigation](tests/shared-state-preservation-investigation.md).
+
+This is the active continuation; every earlier attempt and unchecked task is
+historical. Preserve every pre-existing document byte, frozen intent, baseline
+identifier, prior receipt, source assertion and authorization/default-deny
+behavior. Leave changes **uncommitted**; do not stage, commit, discard, branch,
+update submodules or dependencies, or change source, AppHost, ServiceDefaults or
+topology. Do not discover or load skills under `references/`.
+
+- [ ] Inspect availability **exactly once** from the Timesheets root under the
+  canonical `LocalRuntimeAdmission` lock. Copy the retained ordered harness
+  byte-for-byte from
+  `evidence/3-6/20261030-current-source-live-proof/admission-inspection.py.txt`
+  to `/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/admission-inspection.py`
+  and invoke it once with `python3`. Dapr inventory comes first; Aspire inventory
+  only after a successful empty Dapr inventory. Release the inspection lock before
+  the runner. At the first refusal or failed gate, retain the result and stop
+  without retry, fallback lane or repair.
+- [ ] Only after successful admission, run sequentially from the root, each once:
+  `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false`,
+  then, only if restore passes,
+  `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false`,
+  then, only if build passes, the supported runner **exactly once**:
+  `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --public-port 18080 --log-directory /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner`.
+  Capture each with attempt 8's
+  [command-capture harness](evidence/3-6/20261101-current-source-live-proof-8/execution-command.py.txt),
+  changing only its runner command string to the one above. A passing journey can
+  take several minutes; do not interrupt it. Stop at the first failed gate.
+- [ ] Create a fresh sanitized packet at
+  `evidence/3-6/20261101-current-source-live-proof-9/` with exact executed and
+  conditional uninvoked commands, UTC timing, durations, exits, sanitized
+  diagnostics, original-to-sanitized stream hashes, source identity, the
+  port-selection rationale, and the observed outcome of **every gate** using
+  attempt 8's [qualification gate list](evidence/3-6/20261101-current-source-live-proof-8/qualification.json).
+  Keep inventory rows, foreign identities, endpoints, tokens and sensitive
+  originals private. Local proof requires **live journey, shared-state preservation
+  and owned cleanup all to pass**; no-resource finalization does not qualify cleanup.
+  Deployed gates stay unobserved.
+- [ ] Source provenance: canonical root HEAD `f39e2a8944ed648fdccea2fff70698815bb988ba`
+  and all 13 root-declared submodule HEADs. All were clean at snapshot time. Builds
+  HEAD `a346bfeae5f441ed4a6293a211a2efdc468774b8` (on `origin/main`) contains the
+  committed NU1506 repair. Its catalog SHA-256 is now
+  `e0aea6a906982bcbc04057840ed0f615cf43b48903e2e3fb4bcb7137face39c5`, which differs
+  from attempt 8's uncommitted copy because of later Builds commits. Record it
+  without copying unchanged committed sources. Prove all root-declared submodule
+  authored-file manifests, including Works and Builds, are byte-identical
+  before/after.
+- [ ] Append the attempt-9 disposition and links to this spec,
+  `3-6-implement-eventstore-backed-magic-link-state-loading.md`,
+  `tests/3-6-test-summary.md` and `../../docs/launch-readiness.md`. Preserve
+  historical checkbox states and all original and invocation prefixes. If local
+  proof qualifies, say so with exact evidence. Story 3.6 stays **in-progress**
+  and release **FAIL** either way, while deployed authority, complete
+  inventory/writer-delivery continuity and shared-rebuild acceptance remain
+  unfinished.
+
+The private pre-invocation snapshot is `/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/before.json`
+(recorded 2026-11-01T18:05:28.713451+00:00). It maps 6,928 regular tracked and
+nonignored untracked root files to byte counts and SHA-256 values. It maps the
+four documents to exact `document-N.original` prefixes and holds full canonical
+identities, statuses and authored-file manifests for all 13 root-declared
+submodules, without initializing or updating any submodule. Before admission,
+capture an `invocation.json` holding the exact post-authorization document
+prefixes, and retain their hashes in source provenance. Story 3.6 and Epic 3
+sprint status are already in-progress; leave them unchanged.
+
+Do not clear stores, run migrations or use shared stores for fixture writes.
+Preserve selected-index, effective-value, packed-lineage, replay/race/rebuild/
+restart, duplicate-id, privacy, recording-delay and server default-deny behavior.
+The historical 173 focused cases need no rerun. After a terminal refusal or
+failure, only finish the sanitized evidence/provenance and the append-only
+recording. Then run only the static checks: receipt/output hashes and aggregate
+shape, sanitized report provenance, unchanged source and prior receipts, both
+document prefix sets, frozen intent, local Markdown links, source/status
+identities, a complete packet SHA-256 manifest, and `git diff --check`. No
+further tests, builds or runtime probes follow a terminal result.
+If the runner passes, run the same static checks. Also run the existing
+ArchitectureTests executable with `-class '*LaunchReadinessTests' -noColor` once,
+after the document appends.
+
+
+## Attempt 9 disposition — 2026-11-01
+
+The single ordered availability inspection ran **2026-11-01T18:08:19.365326+00:00 → 2026-11-01T18:08:19.819649+00:00**, exit **0**, **0.454289s**, at Timesheets `f39e2a8944ed648fdccea2fff70698815bb988ba`. The canonical `LocalRuntimeAdmission` lock was acquired at **2026-11-01T18:08:19.365575+00:00** and released at **2026-11-01T18:08:19.819642+00:00**. Dapr and then Aspire inventories both returned successful empty JSON arrays. The exact prescribed Debug/source restore passed **2026-11-01T18:08:23.005690+00:00 → 2026-11-01T18:08:27.436676+00:00**, exit **0**, **4.430972s**. The exact build passed **2026-11-01T18:08:30.371852+00:00 → 2026-11-01T18:09:07.717193+00:00**, exit **0**, **37.345896s**, reporting **0 warnings and 0 errors**.
+
+The supported isolated runner was invoked **exactly once**, **2026-11-01T18:09:14.678146+00:00 → 2026-11-01T18:09:35.395963+00:00**, exit **1**, **20.718872s**. Its argv differs from attempt 8 in two places: the user-selected `--public-port 18080` and the required fresh per-attempt `--log-directory`. Its mandatory admission passed: empty Dapr/Aspire inventories, no out-of-inventory Dapr sidecar, and ports 18080, 8081, 8082 and 3501 bindable on the IPv4 wildcard and, where the host supports IPv6, the IPv6 wildcard ([admission receipt](evidence/3-6/20261101-current-source-live-proof-9/runner/admission.json)). Its first read-only shared-service baseline observation then failed after **20.020463s** with **`TimeoutError`**, phase **`redis_database`**, database **0**: **Shared-service observation failed during redis_database; preservation is unproved** ([failure receipt](evidence/3-6/20261101-current-source-live-proof-9/runner/shared-observation-failure.json)). This is the terminal result; no retry, fallback lane, repair or additional runtime/build/test probe followed.
+
+The runner sets phase `redis_database` only after its connection and `INFO server` identity read succeed; the phase covers `SELECT 0` and one atomic Lua `KEYS`/`DUMP`/`PTTL`/`TIME` script over every DB0 key. The 2026-10-28 [preservation investigation](tests/shared-state-preservation-investigation.md) recorded DB0 at about 829k keys and two earlier `TimeoutError`s from this reader (its first audit and the guarded attempt). Attempt 9 did not measure DB0, and no writer or cause is attributed. The atomic read-only script blocks other shared-Redis clients while it runs, and Redis keeps running a script after its client disconnects, so any delay may have lasted beyond 20.02 seconds. This possible impact on foreign clients was not observed. Forward prerequisite: another attempt with the unchanged reader needs an idle or smaller shared DB0, or a separately authorized bounded-observation change; this run authorizes neither.
+
+- [x] Attempt 9's single ordered locked availability inspection, exact Debug/source restore and build completed successfully; the [fresh evidence packet](evidence/3-6/20261101-current-source-live-proof-9/README.md) retains exact commands, UTC timing, durations, exits, original/sanitized stream hashes and the public-port selection rationale.
+- [x] The supported runner ran once with `--public-port 18080` and a fresh log directory; its mandatory admission passed and its first shared baseline observation failed. All three prescribed outer commands ran; later runner stages remain uninvoked.
+- [ ] Current-source shared baseline failed; live journey, shared-state preservation and owned cleanup remain unobserved and unqualified. The runner [finalizer receipt](evidence/3-6/20261101-current-source-live-proof-9/runner/cleanup.json) reports complete with zero created resources; no-resource finalization does not qualify owned cleanup.
+- [x] [Source provenance](evidence/3-6/20261101-current-source-live-proof-9/source-provenance.json) records root HEAD `f39e2a8944ed648fdccea2fff70698815bb988ba` and all 13 clean root-declared submodule HEADs with matching gitlinks. Builds HEAD `a346bfeae5f441ed4a6293a211a2efdc468774b8` contains the committed NU1506 repair; its catalog SHA-256 is `e0aea6a906982bcbc04057840ed0f615cf43b48903e2e3fb4bcb7137face39c5`, differing from attempt 8's uncommitted copy because of later Builds commits. Every root-declared submodule authored-file manifest, including **11,922 Works** and **3,205 Builds** entries, remains byte-identical before/after.
+- [x] This disposition and links were appended to all four required documents; every original and invocation document byte prefix, frozen intent, baseline identifier, prior receipt and user change remains preserved.
+
+No fixture infrastructure, AppHost start, live journey, domain write, restart or rebuild occurred, and no shared-state preservation comparison exists. [Qualification](evidence/3-6/20261101-current-source-live-proof-9/qualification.json) records the observed outcome of all **23 gates** from attempt 8's list: runner required-port admission passed, shared-state baseline failed and **21 gates** remain unobserved. It records `foreign_client_availability_impact` as possible and unobserved; `foreign_resource_changes` remains false for state changes only. Runner version commands observed Aspire CLI **13.6.4**, Dapr CLI **1.18.2** with reported runtime **1.18.7**, and Docker server **29.8.2**; these do not identify running fixture assets. Inherited environment identity remains unobserved. The historical **173 focused cases** were not rerun, and the conditional LaunchReadinessTests run was not invoked because the runner failed. The foreign listener on 8080 was not stopped or changed.
+
+Only required sanitized recording, append-only updates and prescribed static receipt/hash/prefix/link/source/status/packet checks plus `git diff --check` followed the terminal failure. [Static verification](evidence/3-6/20261101-current-source-live-proof-9/verification.json) covers receipt/output hashes and aggregate shape, original-to-sanitized provenance, unchanged source and all earlier evidence, both prefix sets, frozen intent, local Markdown links, that Git ignores no packet file or link target, source/status identities, submodule manifest equality and the packet SHA-256 manifest. Assertions and server authorization/default-deny behavior are unchanged. Historical checkbox states remain intact.
+
+Current-source local qualification and deployed authority, complete inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. Story 3.6 and this live-proof spec remain **in-progress**; release remains **FAIL**. All changes remain **uncommitted**.
+
+
+## Review Triage Log — attempt 9 (2026-11-01)
+
+The three review layers read the attempt-9 change set against HEAD
+`f39e2a8944ed648fdccea2fff70698815bb988ba`: four document appends and the new
+packet. The frozen baseline diff spans ten earlier, separately recorded commits.
+Verification Gap reported no gaps. This section is appended instead of filling
+the original empty `## Review Triage Log` heading, so that the pinned document
+prefixes stay intact. The frontmatter `in-review` status was transient.
+B = Blind Hunter, E = Edge Case Hunter.
+
+| ID | Verdict | Route | Evidence |
+| --- | --- | --- | --- |
+| B1 | medium | patch G1 | The 2026-10-28 investigation records DB0 at about 829k keys and two earlier `TimeoutError`s from this reader. The disposition cites only one and omits both facts. |
+| B2 | medium | patch G2 | The atomic Lua read blocks other Redis clients while it runs, and Redis keeps running it after the client disconnects. This possible impact on foreign clients is unrecorded. |
+| B3 | low | patch G1 | Phase `redis_database` is set only after connection and `INFO server` succeed. The README names the SELECT/script scope, but the dispositions do not. |
+| B4 | low | patch G5 | `--log-directory` also differs from attempt 8, so "only argv difference" is literally false. The authorization section is spec text and is left unchanged. |
+| B5 | low | reject | The fix would edit this build's spec. The packet's statement that no foreign identity is retained is accurate. A port-choice receipt cannot be retained without disclosing foreign identity, and the runner's own admission confirms the ports. |
+| B6 | low | reject | Private originals stay outside the repository by design, as in attempts 7–8. The packet's own hashes can be re-verified. A packet-only verifier is more than a direct correction, and that audit is rare. The home path is already in 311 committed files. |
+| B7 | maybe-false | defer | `LaunchReadinessTests` were not run after the document appends because the spec stops all tests after a terminal result. Whether pinned text breaks is unknown; running that class would settle it. |
+| B8 | false | reject | `PYTHONOPTIMIZE` was unset, and `verification.json` holds computed results, so the checks ran. The `-O` weakness is in the pre-existing harness only. |
+| B9 | low | patch G6 | The receipt shows Dapr finished (`.527955`) before Aspire started (`.528287`), but the check is weaker than the claim. The authorization links resolve. The durations come from a monotonic clock, which is not stated. |
+| B10 | false | reject | `admission.json` reports `admitted: true` only after `_preflight` reaches `port_check()` without raising, so the bindability inference holds. |
+| B11 | low | patch G7 | The three non-spec documents say "this live-proof spec" and use a heading without context. This pattern was copied from attempt 8. |
+| B12 | medium | patch G1 + defer | No forward prerequisite is recorded; G1 patches this. The stale "Current Assessment" summary is older than this change and its fix would edit earlier bytes, so it is deferred. |
+| B13 | false | reject | The project convention is `[x]` for an action performed and `[ ]` for an unqualified gate. Authorization checkboxes stay as they are to keep the invocation prefixes intact. |
+| E1 | medium | patch G3 + defer | `.gitignore:121` `*.log` ignores runner `01`–`03` logs that the README links and SHA256SUMS lists. Attempt 8's committed SHA256SUMS already lists the same uncommitted logs; that is deferred. |
+| E2 | low | patch G4 | Verification checks that files exist, not that git will track them. That is how E1 passed. |
+| E3 | false | reject | No ignored file under `_bmad-output` is newer than the pre-invocation snapshot. |
+| E4 | low | reject | Retained raw log bytes cannot be trimmed without breaking hash provenance. Committed evidence text already follows this practice. |
+| E5 | false | reject | Same as B8. |
+| E6 | low | reject | The pre-existing harness guard did not fail: `runner.json` shows a single runner invocation. Fixing it would add guards. |
+| E7 | low | reject | The pre-existing harness has no timeout, but all commands returned. Fixing it would add guards. |
+| E8 | false | reject | The README claims only literal repository-root substitution, and the home path is already committed widely. |
+| E9 | false | reject | The current top-level line 108 still reads FAIL, so no stale PASS was produced. |
+| E10 | false | reject | Builds `origin/main` resolves to HEAD `a346bfeae5f441ed4a6293a211a2efdc468774b8`. |
+| E11 | low | patch G8 | The runner skips the IPv6 bind where IPv6 is unsupported, so "bindable" should name IPv4 and say IPv6 where supported. |
+| E12 | medium | defer | This is pre-existing runner design: one atomic `KEYS`/`DUMP` over the whole shared DB0, with a 20-second client timeout. It has failed three times and may block foreign clients. Changing it needs separate authorization. |

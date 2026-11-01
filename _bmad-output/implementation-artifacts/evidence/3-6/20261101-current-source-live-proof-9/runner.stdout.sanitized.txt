@@ -1,0 +1,2 @@
+Shared-service observation failed during redis_database; preservation is unproved
+Sanitized fixture evidence: /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp

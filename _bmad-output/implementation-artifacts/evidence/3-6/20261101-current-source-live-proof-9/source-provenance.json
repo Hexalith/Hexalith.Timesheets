@@ -1,0 +1,286 @@
+{
+  "schema": "timesheets-current-source-live-proof-source-v2",
+  "captured_utc": "2026-11-01T18:12:44.687920+00:00",
+  "snapshot_recorded_utc": "2026-11-01T18:05:28.713451+00:00",
+  "root": {
+    "head": "f39e2a8944ed648fdccea2fff70698815bb988ba",
+    "branch": "main",
+    "snapshot_status_porcelain": "",
+    "invocation_status_porcelain": " M _bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md\n",
+    "manifest_count": 6928,
+    "manifest_sha256": "5514f2ea4f14a2a37a904520745a883bbc9c7a1993028bc8b72816b802a3c6b5",
+    "runner_source": {
+      "scripts/run_isolated_magic_link_dapr.py": {
+        "bytes": 157805,
+        "sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e"
+      },
+      "scripts/local_runtime_admission.py": {
+        "bytes": 2253,
+        "sha256": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006"
+      },
+      "scripts/local_aspire_magic_link_journey.py": {
+        "bytes": 46188,
+        "sha256": "b4eea1764d407b00356ed62e40c7ac9e3e46b711552086328dc82824395f390e"
+      },
+      "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs": {
+        "bytes": 1999,
+        "sha256": "4090f650c23b1fec31304b77e5cf9bbaa944d7f4cbd19193a25f271b271f9215"
+      }
+    }
+  },
+  "frozen_spec_baseline_commit": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "private_snapshot": {
+    "bytes": 34295202,
+    "sha256": "e41a76ec89d0e5fdb6c9b3e826f66c32994995a4275ea10fa7b6e1317f5be2b4"
+  },
+  "private_invocation": {
+    "bytes": 1942,
+    "sha256": "414400196113ac21ac46268b185e203932ab65f1d585c0353f37cb23e2d728e3"
+  },
+  "original_document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "bytes": 70959,
+      "sha256": "07b927e2e8d87a2a8af5febbd538c84645fc1a4866b745296fa4dbd12148ff26",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-0.original"
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "bytes": 490216,
+      "sha256": "84092da79d3c25efac66b2064aa8e98d6b6ffafcf38c1cc5c48bd09b0a3c476e",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-1.original"
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "bytes": 304529,
+      "sha256": "c5348c24803e66bdc94017b965f43e1f6d71fb45941c67e3092c7e713e520909",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-2.original"
+    },
+    "docs/launch-readiness.md": {
+      "bytes": 177538,
+      "sha256": "cdc20093dec074ff35bb39254792cb85cf5c046adc7817c73324435774ccd831",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-3.original"
+    }
+  },
+  "invocation_document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "bytes": 77937,
+      "sha256": "f2c753315797f3dd7d922c3f5bd7869d0649a6cb39f16fc48c1641457bb8a0d0",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-0.invocation",
+      "starts_with_original_prefix": true
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "bytes": 490216,
+      "sha256": "84092da79d3c25efac66b2064aa8e98d6b6ffafcf38c1cc5c48bd09b0a3c476e",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-1.invocation",
+      "starts_with_original_prefix": true
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "bytes": 304529,
+      "sha256": "c5348c24803e66bdc94017b965f43e1f6d71fb45941c67e3092c7e713e520909",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-2.invocation",
+      "starts_with_original_prefix": true
+    },
+    "docs/launch-readiness.md": {
+      "bytes": 177538,
+      "sha256": "cdc20093dec074ff35bb39254792cb85cf5c046adc7817c73324435774ccd831",
+      "private_original": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/document-3.invocation",
+      "starts_with_original_prefix": true
+    }
+  },
+  "invocation_captured_utc": "2026-11-01T18:08:05.265150+00:00",
+  "submodules": {
+    "references/Hexalith.Commons": {
+      "initialized": true,
+      "head": "bbbce518bcca9ca359762393688f02d142af1c61",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "bbbce518bcca9ca359762393688f02d142af1c61",
+      "gitlink_matches_head": true,
+      "manifest_count": 223,
+      "manifest_sha256": "6dfcd988ff1ad28c4797517b1964ab8cdf0293e97909505bebf17b170fdf9236"
+    },
+    "references/Hexalith.AI.Tools": {
+      "initialized": true,
+      "head": "9b78aa008cfc62cd88ad0ea4b39b1f07311956ce",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "9b78aa008cfc62cd88ad0ea4b39b1f07311956ce",
+      "gitlink_matches_head": true,
+      "manifest_count": 35,
+      "manifest_sha256": "34fc47897019c259e99a5ed1c73796d377c5e493afce3a9b966f968b52262892"
+    },
+    "references/Hexalith.Builds": {
+      "initialized": true,
+      "head": "a346bfeae5f441ed4a6293a211a2efdc468774b8",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "a346bfeae5f441ed4a6293a211a2efdc468774b8",
+      "gitlink_matches_head": true,
+      "manifest_count": 3205,
+      "manifest_sha256": "cf5898d88e8184bea4a90c3ee90d24ede3f452b1411ab1ee6502af519e1fb7de"
+    },
+    "references/Hexalith.Tenants": {
+      "initialized": true,
+      "head": "2d3fa6da2312c1b5cf7f5c9461cc2d0ffc995b43",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "2d3fa6da2312c1b5cf7f5c9461cc2d0ffc995b43",
+      "gitlink_matches_head": true,
+      "manifest_count": 4822,
+      "manifest_sha256": "5b71abee25854e3d4dc4bf2a0fe9af4ec85c59b2274c5d83cb2fa94087be70eb"
+    },
+    "references/Hexalith.EventStore": {
+      "initialized": true,
+      "head": "710d97f7cfe4ef4c382965bc69ae6556c234d2b8",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "710d97f7cfe4ef4c382965bc69ae6556c234d2b8",
+      "gitlink_matches_head": true,
+      "manifest_count": 9887,
+      "manifest_sha256": "67cd0506de034a38f86252aefa29908fc141cc94410438175039427b115e3694"
+    },
+    "references/Hexalith.FrontComposer": {
+      "initialized": true,
+      "head": "c092e8f91ebb670fad4ab959f2d3c8e13d809e0f",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "c092e8f91ebb670fad4ab959f2d3c8e13d809e0f",
+      "gitlink_matches_head": true,
+      "manifest_count": 6347,
+      "manifest_sha256": "067cddfc3420351eb2bb8d06449aa66b6107b79fc12f7189fbddcd38b2ea8756"
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "initialized": true,
+      "head": "7e53c59d3404c5c5d6ffce6666e5950af1bef8aa",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "7e53c59d3404c5c5d6ffce6666e5950af1bef8aa",
+      "gitlink_matches_head": true,
+      "manifest_count": 68,
+      "manifest_sha256": "c2513378baa6eef9c5e17d43a929a3a0788671e663a9d4d743146780cdf47847"
+    },
+    "references/Hexalith.Projects": {
+      "initialized": true,
+      "head": "307afa0741d91a200d2e7b91728d8df5b665d910",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "307afa0741d91a200d2e7b91728d8df5b665d910",
+      "gitlink_matches_head": true,
+      "manifest_count": 10848,
+      "manifest_sha256": "64fb6b5f89837ef5c8185b2efdaa112350dd0b45c3c139b708c9feb0c46f67cc"
+    },
+    "references/Hexalith.Conversations": {
+      "initialized": true,
+      "head": "468ed8f0661101e03b332795173fe72f4875e699",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "468ed8f0661101e03b332795173fe72f4875e699",
+      "gitlink_matches_head": true,
+      "manifest_count": 50983,
+      "manifest_sha256": "a856b6aa1c703ca04f36b43512f1967db95782373a83d855d77c12441f4df2de"
+    },
+    "references/Hexalith.Works": {
+      "initialized": true,
+      "head": "038f49080a86d312b30d12567f521c3954593569",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "038f49080a86d312b30d12567f521c3954593569",
+      "gitlink_matches_head": true,
+      "manifest_count": 11922,
+      "manifest_sha256": "1800e0ff9e3100b947732944fa3da467e6d4c6668aa0ba2a7ad56b4340723526"
+    },
+    "references/Hexalith.Parties": {
+      "initialized": true,
+      "head": "a3666267868da046db164bba2668efc1325d42d5",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "a3666267868da046db164bba2668efc1325d42d5",
+      "gitlink_matches_head": true,
+      "manifest_count": 7861,
+      "manifest_sha256": "8fc33291b697f8a457b34ff020c4c5a7b514ce9428d02803a2df94ecf8e4f3b7"
+    },
+    "references/Hexalith.McpCli": {
+      "initialized": true,
+      "head": "ac6f6de9c9669751bc707dcf907c19e93d64685c",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "ac6f6de9c9669751bc707dcf907c19e93d64685c",
+      "gitlink_matches_head": true,
+      "manifest_count": 13864,
+      "manifest_sha256": "23b164456225d84ee27b4f63bb43d9a6f26913a2b7b9ebb9537fc8ae3b55ade9"
+    },
+    "references/Hexalith.Platform": {
+      "initialized": true,
+      "head": "03799ed553a16c8a1528068ba4d95bb5509ea75e",
+      "branch": "main",
+      "status_porcelain": "",
+      "root_gitlink": "03799ed553a16c8a1528068ba4d95bb5509ea75e",
+      "gitlink_matches_head": true,
+      "manifest_count": 18447,
+      "manifest_sha256": "f9fff8c383e818c2878caff9a789169dad1080b187525e89a4f9fd202577a5d5"
+    }
+  },
+  "builds_committed_catalog": {
+    "head": "a346bfeae5f441ed4a6293a211a2efdc468774b8",
+    "head_subject": "fix(packaging): avoid duplicate Works MSBuild package versions",
+    "local_origin_main": "a346bfeae5f441ed4a6293a211a2efdc468774b8",
+    "head_on_local_origin_main": true,
+    "origin_scope": "Local remote-tracking ref only; no fetch was performed.",
+    "status_porcelain": "",
+    "catalog_path": "Props/Directory.Packages.props",
+    "catalog": {
+      "bytes": 32748,
+      "sha256": "e0aea6a906982bcbc04057840ed0f615cf43b48903e2e3fb4bcb7137face39c5"
+    },
+    "catalog_head_blob": "0aca2a1cec8a6b8d5a6ba1b2f962b4adb64753a1",
+    "attempt_8_uncommitted_catalog": {
+      "bytes": 32747,
+      "sha256": "810cb04f400bc6601160c66a3bad2ac968d7cf8f17d027ea81b43b94d5ddcc6a"
+    },
+    "catalog_differs_from_attempt_8_copy": true,
+    "files_retained_by_attempt_8": {
+      "Props/Directory.Packages.props": {
+        "worktree": {
+          "bytes": 32748,
+          "sha256": "e0aea6a906982bcbc04057840ed0f615cf43b48903e2e3fb4bcb7137face39c5"
+        },
+        "head_blob": "0aca2a1cec8a6b8d5a6ba1b2f962b4adb64753a1",
+        "worktree_equals_head_blob": true,
+        "attempt_8_uncommitted_copy": {
+          "bytes": 32747,
+          "sha256": "810cb04f400bc6601160c66a3bad2ac968d7cf8f17d027ea81b43b94d5ddcc6a"
+        },
+        "equals_attempt_8_uncommitted_copy": false
+      },
+      "Tools/README.md": {
+        "worktree": {
+          "bytes": 36320,
+          "sha256": "f2410f95403638fa471ba428277ec19f0d7f3a2634ec42260af4eaf3ed26f5c0"
+        },
+        "head_blob": "2ea60cc3920480e03bcd685a8617cc804cf921ba",
+        "worktree_equals_head_blob": true,
+        "attempt_8_uncommitted_copy": {
+          "bytes": 36320,
+          "sha256": "f2410f95403638fa471ba428277ec19f0d7f3a2634ec42260af4eaf3ed26f5c0"
+        },
+        "equals_attempt_8_uncommitted_copy": true
+      },
+      "Tools/test_works_package_versions.py": {
+        "worktree": {
+          "bytes": 5075,
+          "sha256": "05644e7e05691e9c655d0e0c2b1f706fda1f746bb32d5f64dc697ed778a89715"
+        },
+        "head_blob": "9edf2f230d74653007f033e9e9d092a590e55bd3",
+        "worktree_equals_head_blob": true,
+        "attempt_8_uncommitted_copy": {
+          "bytes": 5075,
+          "sha256": "05644e7e05691e9c655d0e0c2b1f706fda1f746bb32d5f64dc697ed778a89715"
+        },
+        "equals_attempt_8_uncommitted_copy": true
+      }
+    },
+    "copies_retained": false,
+    "copies_reason": "All three files are committed and unchanged at the recorded HEAD; their blob identities replace byte copies.",
+    "modification_authorized": false
+  },
+  "identity_scope": "Authored source at inspection; no claim of current built/running asset or inherited environment identity.",
+  "authored_manifest_capture_semantics": "Sorted unique git ls-files --cached --others --exclude-standard -z paths; hash regular file contents only when Path.is_file() and not Path.is_symlink(). Tracked symlink identity remains covered by unchanged canonical HEAD and Git status."
+}

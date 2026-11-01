@@ -1,0 +1,24 @@
+{
+  "runner_log_name": "05-aspire-ps.log",
+  "command": "aspire ps --non-interactive --format Json",
+  "exit_code": 0,
+  "shape": {
+    "top_level_type": "list",
+    "count": 0,
+    "row_type_counts": {}
+  },
+  "successful_empty_inventory": true,
+  "original_runner_sanitized_log": {
+    "bytes": 79,
+    "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7"
+  },
+  "runner_sanitized_stdout": {
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "runner_sanitized_stderr": {
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "timing_scope": "Within the outer runner interval; individual command UTC intervals are not emitted by the supported runner."
+}

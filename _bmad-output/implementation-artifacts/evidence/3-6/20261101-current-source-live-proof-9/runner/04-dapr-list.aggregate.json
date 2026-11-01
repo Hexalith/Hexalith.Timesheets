@@ -1,0 +1,24 @@
+{
+  "runner_log_name": "04-dapr-list.log",
+  "command": "dapr list --output json",
+  "exit_code": 0,
+  "shape": {
+    "top_level_type": "list",
+    "count": 0,
+    "row_type_counts": {}
+  },
+  "successful_empty_inventory": true,
+  "original_runner_sanitized_log": {
+    "bytes": 61,
+    "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26"
+  },
+  "runner_sanitized_stdout": {
+    "bytes": 3,
+    "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+  },
+  "runner_sanitized_stderr": {
+    "bytes": 1,
+    "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+  },
+  "timing_scope": "Within the outer runner interval; individual command UTC intervals are not emitted by the supported runner."
+}

@@ -1,0 +1,331 @@
+{
+  "schema": "timesheets-current-source-live-proof-report-v2",
+  "captured_utc": "2026-11-01T18:12:45.331181+00:00",
+  "original_private_directory": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private",
+  "runner_original_private_directory": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp",
+  "reports": [
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/admission-inspection.json",
+      "retained_name": "admission-inspection.json",
+      "original": {
+        "bytes": 1992,
+        "sha256": "3f65bc81efa6c61afd6d2a792fe7f585315f77e2f105ea3c41dc9a871a5a1c94"
+      },
+      "retained": {
+        "bytes": 1992,
+        "sha256": "3f65bc81efa6c61afd6d2a792fe7f585315f77e2f105ea3c41dc9a871a5a1c94"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/restore.json",
+      "retained_name": "restore.json",
+      "original": {
+        "bytes": 718,
+        "sha256": "a9a787ed34181a18e66fe0db00dd6818426a89d9aa756501fea9e99bd37b9083"
+      },
+      "retained": {
+        "bytes": 718,
+        "sha256": "a9a787ed34181a18e66fe0db00dd6818426a89d9aa756501fea9e99bd37b9083"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/build.json",
+      "retained_name": "build.json",
+      "original": {
+        "bytes": 740,
+        "sha256": "167ca3ae349feed997b0f8e51f8bb79ee8fa573c16b37b82c7ac045f972e8e31"
+      },
+      "retained": {
+        "bytes": 740,
+        "sha256": "167ca3ae349feed997b0f8e51f8bb79ee8fa573c16b37b82c7ac045f972e8e31"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/runner.json",
+      "retained_name": "runner.json",
+      "original": {
+        "bytes": 816,
+        "sha256": "8ac1a3433ce9560ba14d36d63f60682a2aa89c11f31e4c747946aa3098e3d0ee"
+      },
+      "retained": {
+        "bytes": 816,
+        "sha256": "8ac1a3433ce9560ba14d36d63f60682a2aa89c11f31e4c747946aa3098e3d0ee"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/admission-inspection.py",
+      "retained_name": "admission-inspection.py.txt",
+      "original": {
+        "bytes": 3924,
+        "sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4"
+      },
+      "retained": {
+        "bytes": 3924,
+        "sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/run-prescribed-command.py",
+      "retained_name": "execution-command.py.txt",
+      "original": {
+        "bytes": 2238,
+        "sha256": "162e361b42c0cbde440de22b072c58cf8ab01a7b7b839fcd561524b600d1c9b2"
+      },
+      "retained": {
+        "bytes": 2238,
+        "sha256": "162e361b42c0cbde440de22b072c58cf8ab01a7b7b839fcd561524b600d1c9b2"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/restore.stdout.original",
+      "retained_name": "restore.stdout.sanitized.txt",
+      "original": {
+        "bytes": 4903,
+        "sha256": "67bf692ab258c05fbe2d2c350d4c2cf14eebf0d5b56870e0345f38946f6069aa"
+      },
+      "retained": {
+        "bytes": 3823,
+        "sha256": "79f380b92e662d674e8fe152b3ff59937de45c45985b0fd066f6a64767d3452e"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/restore.stderr.original",
+      "retained_name": "restore.stderr.sanitized.txt",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/build.stdout.original",
+      "retained_name": "build.stdout.sanitized.txt",
+      "original": {
+        "bytes": 8579,
+        "sha256": "d5f4b63f6bf747761d7fbeebf49c52e8c8205f8990c59dcd911067cb60c0b866"
+      },
+      "retained": {
+        "bytes": 6959,
+        "sha256": "7de8ac6a7defaeabfb33a1df5f926683bfbfcbd919938473460503d9292bf422"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/build.stderr.original",
+      "retained_name": "build.stderr.sanitized.txt",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/runner.stdout.original",
+      "retained_name": "runner.stdout.sanitized.txt",
+      "original": {
+        "bytes": 253,
+        "sha256": "bca08a29c62e216dfcf37311d986b57cdb26f4d14fe54daea34e72207eb53715"
+      },
+      "retained": {
+        "bytes": 253,
+        "sha256": "bca08a29c62e216dfcf37311d986b57cdb26f4d14fe54daea34e72207eb53715"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/runner.stderr.original",
+      "retained_name": "runner.stderr.sanitized.txt",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/dapr-list.stdout.original",
+      "retained_name": null,
+      "original": {
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "retained": false,
+      "transformation": "Withheld inventory stream; admission-inspection.json retains its hash and aggregate shape only."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/dapr-list.stderr.original",
+      "retained_name": null,
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": false,
+      "transformation": "Withheld inventory stream; admission-inspection.json retains its hash and aggregate shape only."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/aspire-ps.stdout.original",
+      "retained_name": null,
+      "original": {
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "retained": false,
+      "transformation": "Withheld inventory stream; admission-inspection.json retains its hash and aggregate shape only."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/aspire-ps.stderr.original",
+      "retained_name": null,
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": false,
+      "transformation": "Withheld inventory stream; admission-inspection.json retains its hash and aggregate shape only."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/01-aspire---version.log",
+      "retained_name": "runner/01-aspire---version.log.txt",
+      "original": {
+        "bytes": 99,
+        "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36"
+      },
+      "retained": {
+        "bytes": 99,
+        "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36"
+      },
+      "transformation": "Byte-for-byte copy of a runner-emitted sanitized log; it contains no repository-root path or inventory row. Retained with an added .txt suffix because .gitignore ignores *.log."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/02-dapr---version.log",
+      "retained_name": "runner/02-dapr---version.log.txt",
+      "original": {
+        "bytes": 94,
+        "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1"
+      },
+      "retained": {
+        "bytes": 94,
+        "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1"
+      },
+      "transformation": "Byte-for-byte copy of a runner-emitted sanitized log; it contains no repository-root path or inventory row. Retained with an added .txt suffix because .gitignore ignores *.log."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/03-docker-version.log",
+      "retained_name": "runner/03-docker-version.log.txt",
+      "original": {
+        "bytes": 85,
+        "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416"
+      },
+      "retained": {
+        "bytes": 85,
+        "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416"
+      },
+      "transformation": "Byte-for-byte copy of a runner-emitted sanitized log; it contains no repository-root path or inventory row. Retained with an added .txt suffix because .gitignore ignores *.log."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/admission.json",
+      "retained_name": "runner/admission.json",
+      "original": {
+        "bytes": 124,
+        "sha256": "95811cdeec23ebead710f45ea0dc6e213bdcf29d21a2dc1a65d8e1514dd3137b"
+      },
+      "retained": {
+        "bytes": 124,
+        "sha256": "95811cdeec23ebead710f45ea0dc6e213bdcf29d21a2dc1a65d8e1514dd3137b"
+      },
+      "transformation": "Byte-for-byte copy of a runner-emitted sanitized log or receipt; it contains no repository-root path or inventory row."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/cleanup.json",
+      "retained_name": "runner/cleanup.json",
+      "original": {
+        "bytes": 173,
+        "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5"
+      },
+      "retained": {
+        "bytes": 173,
+        "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5"
+      },
+      "transformation": "Byte-for-byte copy of a runner-emitted sanitized log or receipt; it contains no repository-root path or inventory row."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/shared-observation-failure.json",
+      "retained_name": "runner/shared-observation-failure.json",
+      "original": {
+        "bytes": 197,
+        "sha256": "4dade104d0e88ebc33a1ba808f8c74c5a903232f95239599e00a57cde285232e"
+      },
+      "retained": {
+        "bytes": 197,
+        "sha256": "4dade104d0e88ebc33a1ba808f8c74c5a903232f95239599e00a57cde285232e"
+      },
+      "transformation": "Byte-for-byte copy of a runner-emitted sanitized log or receipt; it contains no repository-root path or inventory row."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/04-dapr-list.log",
+      "retained_name": "runner/04-dapr-list.aggregate.json",
+      "original": {
+        "bytes": 61,
+        "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26"
+      },
+      "retained": {
+        "bytes": 765,
+        "sha256": "4e46c1d4482659fdd32d9ea38f15082f0d6542bc9ead7dd49c8291ec77ee7552"
+      },
+      "transformation": "Aggregate-only receipt: command, exit, JSON shape and original/stream hashes; inventory log body withheld."
+    },
+    {
+      "original_private_path": "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/05-aspire-ps.log",
+      "retained_name": "runner/05-aspire-ps.aggregate.json",
+      "original": {
+        "bytes": 79,
+        "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7"
+      },
+      "retained": {
+        "bytes": 783,
+        "sha256": "a57a4b002972d6533daa1a1e3b14e82f6c39457391aef5bf20d3e739167581af"
+      },
+      "transformation": "Aggregate-only receipt: command, exit, JSON shape and original/stream hashes; inventory log body withheld."
+    },
+    {
+      "original_private_path": [
+        "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/01-aspire---version.log",
+        "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/02-dapr---version.log",
+        "/tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner/run-lmr1vxhp/03-docker-version.log"
+      ],
+      "retained_name": "runner/versions.json",
+      "original": null,
+      "retained": {
+        "bytes": 272,
+        "sha256": "48641ddc99e9baa8a33869bdd13b057cdd99d8144c5be53df1c3535928a9774d"
+      },
+      "transformation": "Derived summary of the three retained runner version logs."
+    }
+  ],
+  "exact_invocations": {
+    "admission": "python3 /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/admission-inspection.py",
+    "restore": "python3 /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/run-prescribed-command.py restore",
+    "build": "python3 /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/run-prescribed-command.py build",
+    "runner": "python3 /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-private/run-prescribed-command.py runner",
+    "working_directory": "<repository>"
+  },
+  "harness_change_from_attempt_8": "Only the runner command string changed, adding --public-port 18080 and the fresh log directory.",
+  "runner_log_policy": "Runner logs were already sanitized by the supported runner. Version logs (retained as *.log.txt, bytes unchanged) and admission/cleanup/failure receipts are byte copies; inventory log bodies remain private behind aggregate-only receipts."
+}

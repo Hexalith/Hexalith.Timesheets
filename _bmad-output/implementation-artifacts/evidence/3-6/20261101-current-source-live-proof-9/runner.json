@@ -1,0 +1,20 @@
+{
+  "stage": "runner",
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --public-port 18080 --log-directory /tmp/claude-1000/-home-administrator-projects-hexalith-timesheets/5b63ed99-c23e-48ca-89fc-d122f354b51c/scratchpad/attempt9-runner",
+  "started_utc": "2026-11-01T18:09:14.678146+00:00",
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "completed_utc": "2026-11-01T18:09:35.395963+00:00",
+  "duration_seconds": 20.718872,
+  "exit_code": 1,
+  "stdout": {
+    "bytes": 253,
+    "sha256": "bca08a29c62e216dfcf37311d986b57cdb26f4d14fe54daea34e72207eb53715"
+  },
+  "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
