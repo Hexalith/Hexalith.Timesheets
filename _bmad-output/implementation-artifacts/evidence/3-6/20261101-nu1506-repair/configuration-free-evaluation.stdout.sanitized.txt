@@ -1,0 +1,102 @@
+{
+  "Properties": {
+    "Configuration": "Release",
+    "UseHexalithProjectReferences": "false",
+    "NuGetAudit": "true"
+  },
+  "Items": {
+    "ProjectReference": [
+      {
+        "Identity": "../Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+        "Targets": "",
+        "OutputItemType": "",
+        "ReferenceSourceTarget": "ProjectReference",
+        "FullPath": "<repository>/src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj",
+        "RootDir": "/",
+        "Filename": "Hexalith.Timesheets.Server",
+        "Extension": ".csproj",
+        "RelativeDir": "../Hexalith.Timesheets.Server/",
+        "Directory": "home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Server/",
+        "RecursiveDir": "",
+        "ModifiedTime": "",
+        "CreatedTime": "",
+        "AccessedTime": "",
+        "DefiningProjectFullPath": "<repository>/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj",
+        "DefiningProjectDirectory": "<repository>/src/Hexalith.Timesheets.Works/",
+        "DefiningProjectName": "Hexalith.Timesheets.Works",
+        "DefiningProjectExtension": ".csproj"
+      }
+    ],
+    "PackageReference": [
+      {
+        "Identity": "MinVer",
+        "PrivateAssets": "All",
+        "FullPath": "<repository>/src/Hexalith.Timesheets.Works/MinVer",
+        "RootDir": "/",
+        "Filename": "MinVer",
+        "Extension": "",
+        "RelativeDir": "",
+        "Directory": "home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Works/",
+        "RecursiveDir": "",
+        "ModifiedTime": "",
+        "CreatedTime": "",
+        "AccessedTime": "",
+        "DefiningProjectFullPath": "<repository>/Directory.Build.props",
+        "DefiningProjectDirectory": "<repository>/",
+        "DefiningProjectName": "Directory.Build",
+        "DefiningProjectExtension": ".props"
+      },
+      {
+        "Identity": "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "FullPath": "<repository>/src/Hexalith.Timesheets.Works/Microsoft.Extensions.DependencyInjection.Abstractions",
+        "RootDir": "/",
+        "Filename": "Microsoft.Extensions.DependencyInjection",
+        "Extension": ".Abstractions",
+        "RelativeDir": "",
+        "Directory": "home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Works/",
+        "RecursiveDir": "",
+        "ModifiedTime": "",
+        "CreatedTime": "",
+        "AccessedTime": "",
+        "DefiningProjectFullPath": "<repository>/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj",
+        "DefiningProjectDirectory": "<repository>/src/Hexalith.Timesheets.Works/",
+        "DefiningProjectName": "Hexalith.Timesheets.Works",
+        "DefiningProjectExtension": ".csproj"
+      },
+      {
+        "Identity": "Hexalith.Works.Contracts",
+        "FullPath": "<repository>/src/Hexalith.Timesheets.Works/Hexalith.Works.Contracts",
+        "RootDir": "/",
+        "Filename": "Hexalith.Works",
+        "Extension": ".Contracts",
+        "RelativeDir": "",
+        "Directory": "home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Works/",
+        "RecursiveDir": "",
+        "ModifiedTime": "",
+        "CreatedTime": "",
+        "AccessedTime": "",
+        "DefiningProjectFullPath": "<repository>/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj",
+        "DefiningProjectDirectory": "<repository>/src/Hexalith.Timesheets.Works/",
+        "DefiningProjectName": "Hexalith.Timesheets.Works",
+        "DefiningProjectExtension": ".csproj"
+      },
+      {
+        "Identity": "Hexalith.EventStore.Contracts",
+        "FullPath": "<repository>/src/Hexalith.Timesheets.Works/Hexalith.EventStore.Contracts",
+        "RootDir": "/",
+        "Filename": "Hexalith.EventStore",
+        "Extension": ".Contracts",
+        "RelativeDir": "",
+        "Directory": "home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Works/",
+        "RecursiveDir": "",
+        "ModifiedTime": "",
+        "CreatedTime": "",
+        "AccessedTime": "",
+        "DefiningProjectFullPath": "<repository>/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj",
+        "DefiningProjectDirectory": "<repository>/src/Hexalith.Timesheets.Works/",
+        "DefiningProjectName": "Hexalith.Timesheets.Works",
+        "DefiningProjectExtension": ".csproj"
+      }
+    ]
+  }
+}

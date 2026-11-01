@@ -1,0 +1,80 @@
+import datetime, gzip, hashlib, json, pathlib, re, subprocess, xml.etree.ElementTree as ET
+root = pathlib.Path('/home/administrator/projects/hexalith/timesheets')
+state = json.loads(pathlib.Path(pathlib.Path('/tmp/timesheets-nu1506-repair-state-path').read_text()).read_text())
+packet = pathlib.Path(state['packet']); private = pathlib.Path(state['private'])
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+for relative, digest in state['prior_evidence'].items():
+    assert sha(root / relative) == digest, relative
+for relative, digest in state['works_tracked_files'].items():
+    assert sha(root / 'references/Hexalith.Works' / relative) == digest, relative
+links_checked = 0
+contents = [(packet / 'README.md', (packet / 'README.md').read_text())]
+for i, (relative, info) in enumerate(state['user_documents'].items()):
+    content = (root / relative).read_bytes()
+    before = (private / ('user-' + str(i) + '.original')).read_bytes()
+    assert content.startswith(before), relative
+    if i >= 2:
+        assert content == before, relative
+    else:
+        contents.append((root / relative, content[len(before):].decode()))
+# Final packet verification target is this file's output, written after assertions below.
+for source, content in contents:
+    for href in re.findall(r'\[[^\]]+\]\(([^)]+)\)', content):
+        if '://' in href or href.startswith('#'):
+            continue
+        target = (source.parent / href.split('#')[0]).resolve()
+        assert target.is_file() or target == packet / 'verification.json', (source, href)
+        links_checked += 1
+catalog = root / 'references/Hexalith.Builds/Props/Directory.Packages.props'
+original = subprocess.check_output(['git', '-C', str(root / 'references/Hexalith.Builds'), 'show', 'HEAD:Props/Directory.Packages.props'])
+entries = lambda xml: [(i.get('Include'), i.get('Version')) for i in ET.fromstring(xml).iter('PackageVersion')]
+assert entries(original) == entries(catalog.read_bytes())
+assert catalog.read_bytes().startswith(b'\xef\xbb\xbf')
+assert catalog.read_bytes().count(b'\r\n') == catalog.read_bytes().count(b'\n')
+assert b'Status: in-progress' in (root / '_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md').read_bytes()
+assert '3-6-implement-eventstore-backed-magic-link-state-loading: in-progress' in (root / '_bmad-output/implementation-artifacts/sprint-status.yaml').read_text()
+assert 'Overall release decision: **FAIL**' in (root / 'docs/launch-readiness.md').read_text()
+assert not subprocess.check_output(['git', 'diff', 'HEAD', '--', 'src/Hexalith.Timesheets.AppHost', 'src/Hexalith.Timesheets.ServiceDefaults'])
+assert not subprocess.check_output(['git', 'diff', '--cached', '--raw'])
+expected_builds = subprocess.check_output(['git', 'rev-parse', 'HEAD:references/Hexalith.Builds']).decode().strip()
+assert expected_builds == subprocess.check_output(['git', '-C', 'references/Hexalith.Builds', 'rev-parse', 'HEAD']).decode().strip()
+# Check capture receipts against retained diagnostics, including the intentional initial parser failures.
+receipts = []
+for path in packet.glob('*.json'):
+    receipt = json.loads(path.read_text())
+    if not isinstance(receipt, dict) or 'command' not in receipt:
+        continue
+    for stream in ['stdout', 'stderr']:
+        info = receipt[stream]; saved = packet / info['retained_file']
+        assert saved.stat().st_size == info['retained_bytes'] and sha(saved) == info['retained_sha256'], path
+    expected_exit = 1 if path.stem in ['evaluation-after', 'restore', 'preservation-verification'] else 0
+    assert receipt['exit_code'] == expected_exit, (path, receipt['exit_code'])
+    assert receipt['completed_utc'] >= receipt['started_utc'] and receipt['duration_seconds'] >= 0
+    receipts.append(path.name)
+for label, expected in [('final-root-diff-check', 0), ('final-builds-diff-check', 0), ('restore-final-owner', 0), ('build-final-owner', 0)]:
+    assert json.loads((packet / (label + '.json')).read_text())['exit_code'] == expected
+before = json.loads((packet / 'evaluation-before.stdout.sanitized.txt').read_text())
+after = json.loads((packet / 'final-works-contracts-debug.stdout.sanitized.txt').read_text())
+for name, version in {'Microsoft.Build':'18.9.6','Microsoft.Build.Framework':'18.9.6','Microsoft.Build.Locator':'1.11.2'}.items():
+    first = [i for i in before['Items']['PackageVersion'] if i['Identity'] == name]
+    final = [i for i in after['Items']['PackageVersion'] if i['Identity'] == name]
+    assert len(first) == 2 and {i['Version'] for i in first} == {version}
+    assert len(final) == 1 and final[0]['Version'] == version
+    assert '/Hexalith.Works/Directory.Packages.props' in final[0]['DefiningProjectFullPath']
+# Bind every retained import excerpt to the original preprocessed output.
+for entry in json.loads((packet / 'import-output-provenance.json').read_text()):
+    original = pathlib.Path(entry['original_output_file'])
+    assert original.stat().st_size == entry['original_bytes'] and sha(original) == entry['original_sha256']
+    excerpt = packet / entry['retained_excerpt']
+    assert excerpt.stat().st_size == entry['excerpt_bytes'] and sha(excerpt) == entry['excerpt_sha256']
+    lines = original.read_text().splitlines()
+    for line in excerpt.read_text().splitlines():
+        number, content = line.split(': ', 1)
+        assert lines[int(number) - 1].replace(str(root), '<repository>') == content
+for path in [root / '_bmad-output/implementation-artifacts/spec-3-6-repair-nu1506-msbuild-package-versions.md']:
+    for href in re.findall(r'\[[^\]]+\]\(([^)]+)\)', path.read_text()):
+        assert (path.parent / href.split('#')[0]).resolve().is_file(), href
+        links_checked += 1
+result = {'verified_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'result': 'PASS', 'prior_evidence_files_unchanged': len(state['prior_evidence']), 'works_tracked_files_unchanged': len(state['works_tracked_files']), 'existing_user_document_prefixes_preserved': True, 'live_proof_spec_and_launch_document_unchanged': True, 'all_catalog_package_ids_and_versions_unchanged': True, 'catalog_bom_and_crlf_preserved': True, 'apphost_and_service_defaults_unchanged': True, 'story_and_sprint_status': 'in-progress', 'release': 'FAIL', 'staged_changes': False, 'builds_gitlink_unchanged': True, 'receipt_stream_hashes_verified': len(receipts), 'local_links_checked': links_checked, 'runtime_qualification': False}
+(packet / 'verification.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result))

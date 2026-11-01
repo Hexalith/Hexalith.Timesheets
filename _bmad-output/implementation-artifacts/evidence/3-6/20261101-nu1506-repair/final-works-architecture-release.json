@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:24:52.626076+00:00",
+  "completed_utc": "2026-11-01T14:24:53.012259+00:00",
+  "duration_seconds": 0.3862131480127573,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 329548,
+    "original_sha256": "822b525f1ef7891d5654140301d765061ec0954532d3fb3f58f645ae8a8e87ab",
+    "retained_file": "final-works-architecture-release.stdout.sanitized.txt",
+    "retained_bytes": 294196,
+    "retained_sha256": "b6798dd76332377dcbed32abcfca88c6d37071014057fbb130992abc685e673c"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "final-works-architecture-release.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

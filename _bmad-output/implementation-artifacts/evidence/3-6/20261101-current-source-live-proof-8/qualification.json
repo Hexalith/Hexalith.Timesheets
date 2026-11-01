@@ -1,0 +1,313 @@
+{
+  "schema": "timesheets-current-source-live-proof-qualification-v2",
+  "disposition": "terminal-runner-admission-refusal-current-source-live-proof-unqualified",
+  "authorization": "2026-11-01 attempt 8; distinct from earlier attempts and NU1506 repair.",
+  "root_head": "8b70017e13fa6f6d5af688b1cc40f7f41b24096a",
+  "frozen_spec_baseline_commit": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "current_spec_status": "in-progress",
+  "story_3_6_status": "in-progress",
+  "release_verdict": "FAIL",
+  "blocker": "Required port 8080 is occupied; no AppHost started",
+  "inspection_invocations": 1,
+  "inspection_exit_code": 0,
+  "availability_inspection": {
+    "observed": true,
+    "passed": true,
+    "idle": true,
+    "lock_acquired": true,
+    "lock_released_before_restore": true
+  },
+  "solution_restore": {
+    "invoked": true,
+    "passed": true,
+    "stage": "restore",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "started_utc": "2026-11-01T16:53:46.571845+00:00",
+    "explicit_environment_overrides": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "inherited_environment_captured": false,
+    "completed_utc": "2026-11-01T16:53:49.634923+00:00",
+    "duration_seconds": 3.063062,
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 981,
+      "sha256": "c772f32925130a0b62e70bf5770c82814003cca24ec27ebcb8d31b27dd11a26e"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "solution_build": {
+    "invoked": true,
+    "passed": true,
+    "stage": "build",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "started_utc": "2026-11-01T16:53:54.802221+00:00",
+    "explicit_environment_overrides": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "inherited_environment_captured": false,
+    "completed_utc": "2026-11-01T16:54:05.788290+00:00",
+    "duration_seconds": 10.987938,
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 8176,
+      "sha256": "1d5d48cac9795bfe4af35315904ac048db4570570c535eb2a2da5a0fbec4fc6b"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "supported_runner": {
+    "invoked": true,
+    "passed": false,
+    "stage": "runner",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner",
+    "started_utc": "2026-11-01T16:54:08.663093+00:00",
+    "explicit_environment_overrides": {
+      "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+    },
+    "inherited_environment_captured": false,
+    "completed_utc": "2026-11-01T16:54:09.288911+00:00",
+    "duration_seconds": 0.625816,
+    "exit_code": 1,
+    "stdout": {
+      "bytes": 168,
+      "sha256": "274972f017e3b1a170a3406aad5ba7c23fd8d99f52adfd3f43341a6bc9074f6f"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "runner_mandatory_admission": {
+    "observed": true,
+    "passed": false,
+    "receipt": {
+      "admitted": false,
+      "resources_started": false,
+      "infrastructure_started": false,
+      "apphost_start_attempted": false,
+      "reason": "Required port 8080 is occupied; no AppHost started"
+    },
+    "empty_inventory_checks": {
+      "04-dapr-list": {
+        "runner_log_name": "04-dapr-list.log",
+        "command": "dapr list --output json",
+        "exit_code": 0,
+        "shape": {
+          "top_level_type": "list",
+          "count": 0,
+          "row_type_counts": {}
+        },
+        "successful_empty_inventory": true,
+        "original_runner_sanitized_log": {
+          "bytes": 61,
+          "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26"
+        },
+        "runner_sanitized_stdout": {
+          "bytes": 3,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "runner_sanitized_stderr": {
+          "bytes": 1,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        "timing_scope": "Within the outer runner interval; individual command UTC intervals are not emitted by the supported runner."
+      },
+      "05-aspire-ps": {
+        "runner_log_name": "05-aspire-ps.log",
+        "command": "aspire ps --non-interactive --format Json",
+        "exit_code": 0,
+        "shape": {
+          "top_level_type": "list",
+          "count": 0,
+          "row_type_counts": {}
+        },
+        "successful_empty_inventory": true,
+        "original_runner_sanitized_log": {
+          "bytes": 79,
+          "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7"
+        },
+        "runner_sanitized_stdout": {
+          "bytes": 3,
+          "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+        },
+        "runner_sanitized_stderr": {
+          "bytes": 1,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        },
+        "timing_scope": "Within the outer runner interval; individual command UTC intervals are not emitted by the supported runner."
+      }
+    }
+  },
+  "shared_baseline": {
+    "observed": false,
+    "qualified": false
+  },
+  "live_journey": {
+    "invoked": false,
+    "observed": false,
+    "test_results": null,
+    "qualified": false
+  },
+  "shared_preservation": {
+    "observed": false,
+    "qualified": false
+  },
+  "owned_cleanup": {
+    "runner_finalizer_invoked": true,
+    "runner_finalizer_receipt": {
+      "complete": true,
+      "journey_descendants_gone": true,
+      "failure_reasons": [],
+      "components_created": false,
+      "components_removed": false,
+      "containers_removed": 0
+    },
+    "observed_for_created_resources": false,
+    "qualified": false,
+    "resources_created": false,
+    "reason": "Runner finalizer reported complete without any created fixture resource. No-resource finalization does not qualify owned cleanup."
+  },
+  "versions_observed": {
+    "aspire_cli": "13.6.4+c89352703f78ae46de90fbf751ed8b52b77b89bf",
+    "dapr_cli": "1.18.2",
+    "dapr_reported_runtime": "1.18.7",
+    "docker_server": "29.8.2",
+    "scope": "Observed by supported runner version commands only; no fixture-running asset identity is claimed."
+  },
+  "fixture_domain_writes": false,
+  "foreign_resource_changes": false,
+  "migration_invoked": false,
+  "retry_invoked": false,
+  "alternate_lane_invoked": false,
+  "repairs_invoked": false,
+  "conditional_uninvoked_commands": [],
+  "conditional_command_disposition": "All three prescribed outer commands ran exactly once; every later runner stage is uninvoked after admission refusal.",
+  "unobserved_gates": [
+    {
+      "gate": "Shared-state baseline",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Dependency-graph validation in runner",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Gateway invocation resolution in runner",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Disposable infrastructure isolation",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "AppHost start and runtime readiness",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Generated app-channel and signing credentials",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Catalog delivery and persistence",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Non-fixture assertion denial without owner event",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Confirm record/issue/index/GET/use/replay race",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Adjust record/issue/index/GET/use/replay",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Selected-index/effective-value and packed-lineage live evidence",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Composed Time Entry rebuild and persistence",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Actor restart and replay",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Fresh post-restart link",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Gateway native process replacement",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Shared-state preservation",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Owned fixture cleanup",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Current fixture-running asset identity",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Inherited environment identity",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Deployed authority",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Complete deployed inventory and writer/delivery continuity",
+      "observed": false,
+      "qualified": false
+    },
+    {
+      "gate": "Deployed shared-rebuild acceptance",
+      "observed": false,
+      "qualified": false
+    }
+  ],
+  "observed_failed_gates": [
+    {
+      "gate": "Runner required-port admission",
+      "observed": true,
+      "passed": false,
+      "reason": "Required port 8080 is occupied; no AppHost started"
+    }
+  ],
+  "local_proof_qualified": false,
+  "historical_173_focused_cases_rerun": false
+}

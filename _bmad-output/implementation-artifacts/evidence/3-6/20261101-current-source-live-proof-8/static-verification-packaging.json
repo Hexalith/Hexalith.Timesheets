@@ -1,0 +1,7 @@
+{
+  "command": "python3 /tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/verify-static.py",
+  "exit_code": 1,
+  "classification": "Static packet-packaging diagnostic, not a runtime gate.",
+  "failure": "Link check correctly found verification.json not yet emitted by the same packaging harness. No baseline source, prior evidence or prefix check failed.",
+  "correction": "Defer the two generated verification/manifest link existence checks until after those artifacts are written; then verify all links and the complete hash manifest. No source or runtime change."
+}

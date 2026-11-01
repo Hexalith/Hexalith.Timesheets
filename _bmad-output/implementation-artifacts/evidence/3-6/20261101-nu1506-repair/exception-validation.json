@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-package-version-exceptions.ps1 -InventoryPath references/Hexalith.Builds/Tools/package-version-exceptions.json -CatalogPath references/Hexalith.Builds/Props/Directory.Packages.props",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:18:01.415264+00:00",
+  "completed_utc": "2026-11-01T14:18:07.775838+00:00",
+  "duration_seconds": 6.362126788008027,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 73,
+    "original_sha256": "e049575b1583c11442993f107cbd7880f4a6654e640084464524a44d6f685737",
+    "retained_file": "exception-validation.stdout.sanitized.txt",
+    "retained_bytes": 73,
+    "retained_sha256": "e049575b1583c11442993f107cbd7880f4a6654e640084464524a44d6f685737"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "exception-validation.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

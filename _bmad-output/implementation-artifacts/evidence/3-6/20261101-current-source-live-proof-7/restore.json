@@ -1,0 +1,20 @@
+{
+  "stage": "restore",
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+  "started_utc": "2026-11-01T12:48:52.740783+00:00",
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "completed_utc": "2026-11-01T12:48:55.054727+00:00",
+  "duration_seconds": 2.31394,
+  "exit_code": 1,
+  "stdout": {
+    "bytes": 569,
+    "sha256": "d26f8b9fc1f791dd33a7870c02ac9ca49646b6dbbeba937df139a3517d7fa9c8"
+  },
+  "stderr": {
+    "bytes": 1046,
+    "sha256": "b9c7c8c1869de208594b9d4b62855624184bf55076e4c209f1b0414f869e14db"
+  }
+}

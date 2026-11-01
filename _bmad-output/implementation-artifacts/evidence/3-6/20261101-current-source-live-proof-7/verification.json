@@ -1,0 +1,254 @@
+{
+  "verified_utc": "2026-11-01T12:52:27.324855+00:00",
+  "kind": "Prescribed static receipt/hash/prefix/link/source/status/packet checks only; no tests, builds, workflow review or runtime probes after terminal restore failure.",
+  "inspection_receipt_matches_private_original": true,
+  "inspection_harness_matches_private_and_historical_original": true,
+  "original_output_hashes_match_receipts": true,
+  "original_inventory_shape_matches_receipt": true,
+  "receipt_aggregate_only_allowlist": true,
+  "report_original_to_retained_provenance_matches": true,
+  "restore_command_and_terminal_failure_match_retained_diagnostics": true,
+  "inspection_count": 1,
+  "inventory_command_count": 2,
+  "restore_invocation_count": 1,
+  "build_invoked": false,
+  "runner_invoked": false,
+  "canonical_lock_acquired_and_released_before_restore": true,
+  "selected_source_hashes_match": true,
+  "source_manifest_hashes_match": true,
+  "unchanged_pre_existing_files": {
+    "count": 6677,
+    "expected_count": 6677,
+    "all_match": true,
+    "source_manifest_count": 596,
+    "prior_evidence_manifest_count": 3400
+  },
+  "document_prefixes": [
+    {
+      "file": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "original": {
+        "bytes": 50510,
+        "sha256": "bc7dd38a942f09bbd363705636ce3b14646c9937dba19d70f6fdf1b0e727221f"
+      },
+      "invocation_original": {
+        "bytes": 55950,
+        "sha256": "7f006ba4d386e953cd75f72e4d98de866bb2ceb48e3902a212e06bcf021c65c0"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 3672
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "original": {
+        "bytes": 481130,
+        "sha256": "2ad424c9a6979fc272d0162037844e600e99367faa54fda02173e7f88d5d643f"
+      },
+      "invocation_original": {
+        "bytes": 481130,
+        "sha256": "2ad424c9a6979fc272d0162037844e600e99367faa54fda02173e7f88d5d643f"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2559
+    },
+    {
+      "file": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "original": {
+        "bytes": 295447,
+        "sha256": "3c607b1b338f05a36f7b7d983ef232e860b21f80544a7e1c9606d36943130d7b"
+      },
+      "invocation_original": {
+        "bytes": 295447,
+        "sha256": "3c607b1b338f05a36f7b7d983ef232e860b21f80544a7e1c9606d36943130d7b"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2518
+    },
+    {
+      "file": "docs/launch-readiness.md",
+      "original": {
+        "bytes": 170348,
+        "sha256": "61b5dcd6f643470b05d668edd3a792eaab69517efb686307afcdfc4aaa189667"
+      },
+      "invocation_original": {
+        "bytes": 170348,
+        "sha256": "61b5dcd6f643470b05d668edd3a792eaab69517efb686307afcdfc4aaa189667"
+      },
+      "original_prefix_matches": true,
+      "invocation_prefix_matches": true,
+      "appended_bytes": 2470
+    }
+  ],
+  "frozen_intent": {
+    "bytes": 1499,
+    "sha256": "35fb7260266a715c75f2d57c59a88bd8356c4b19ac4c585d9f28f9d85e236570",
+    "unchanged": true
+  },
+  "frozen_baseline_identifier_unchanged": true,
+  "local_markdown_links": [
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261101-current-source-live-proof-7/admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261101-current-source-live-proof-7/restore.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md",
+      "target": "evidence/3-6/20261101-current-source-live-proof-7/verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md",
+      "target": "spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#attempt-7-disposition--2026-11-01",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md",
+      "target": "../evidence/3-6/20261101-current-source-live-proof-7/restore.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "docs/launch-readiness.md",
+      "target": "../_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "../../../spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md#new-authorized-attempt--2026-11-01-attempt-7",
+      "exists": true,
+      "anchor_checked": true
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "admission-inspection.py.txt",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "admission-inspection.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "restore.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "restore.stdout.sanitized.txt",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "restore.stderr.sanitized.txt",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "execution-command.py.txt",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "qualification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "report-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "source-provenance.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "verification.json",
+      "exists": true,
+      "anchor_checked": false
+    },
+    {
+      "source": "_bmad-output/implementation-artifacts/evidence/3-6/20261101-current-source-live-proof-7/README.md",
+      "target": "SHA256SUMS",
+      "exists": true,
+      "anchor_checked": false
+    }
+  ],
+  "root_head_and_branch_match_snapshot": true,
+  "root_declared_submodule_identities_and_status_match_snapshot": true,
+  "submodule_count": 13,
+  "only_expected_document_and_packet_changes": true,
+  "no_staged_changes": true,
+  "story_and_spec_status": "in-progress",
+  "sprint_status_unchanged": true,
+  "release_verdict": "FAIL",
+  "historical_task_checkbox_bytes_preserved": true,
+  "git_diff_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-11-01T12:52:27.232314+00:00",
+    "completed_utc": "2026-11-01T12:52:27.324636+00:00",
+    "duration_seconds": 0.092306,
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "packet_hash_manifest": {
+    "file": "SHA256SUMS",
+    "coverage": "Every packet file except SHA256SUMS",
+    "entry_count": 11,
+    "all_entries_match": true
+  },
+  "no_post_failure_runtime_build_test_or_workflow_review": true,
+  "source_identity_scope": "Inspected source only; restore stderr tool-version observation does not qualify built/running assets, inherited environment, Dapr/Aspire runtimes or deployed acceptance."
+}

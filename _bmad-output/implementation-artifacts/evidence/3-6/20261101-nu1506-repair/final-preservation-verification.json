@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 /tmp/timesheets-nu1506-repair-1q5iokfd/verify.py",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:31:10.710015+00:00",
+  "completed_utc": "2026-11-01T14:31:11.154527+00:00",
+  "duration_seconds": 0.44452680001268163,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 618,
+    "original_sha256": "1e7e99a82f87f081928870974cb4e0c1eb57165bd259220aaa40f8c4e82f3ce3",
+    "retained_file": "final-preservation-verification.stdout.sanitized.txt",
+    "retained_bytes": 618,
+    "retained_sha256": "1e7e99a82f87f081928870974cb4e0c1eb57165bd259220aaa40f8c4e82f3ce3"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "final-preservation-verification.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

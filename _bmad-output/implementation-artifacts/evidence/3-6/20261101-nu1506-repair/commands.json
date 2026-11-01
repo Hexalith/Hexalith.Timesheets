@@ -1,0 +1,542 @@
+[
+  {
+    "receipt": "evaluation-before.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,DirectoryPackagesPropsPath,HexalithEventStoreVersion,HexalithVersionsLoaded,NuGetAudit -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:14:43.166181+00:00",
+    "completed_utc": "2026-11-01T14:14:43.612746+00:00",
+    "duration_seconds": 0.4465766210341826,
+    "exit_code": 0
+  },
+  {
+    "receipt": "imports-before.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -preprocess:/tmp/timesheets-nu1506-repair-1q5iokfd/works-before.xml",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:14:43.644786+00:00",
+    "completed_utc": "2026-11-01T14:14:44.065223+00:00",
+    "duration_seconds": 0.4204647190053947,
+    "exit_code": 0
+  },
+  {
+    "receipt": "evaluation-after.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,DirectoryPackagesPropsPath,HexalithEventStoreVersion,HexalithVersionsLoaded,NuGetAudit -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:16:00.059910+00:00",
+    "completed_utc": "2026-11-01T14:16:00.391517+00:00",
+    "duration_seconds": 0.3316245870082639,
+    "exit_code": 1
+  },
+  {
+    "receipt": "restore.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:16:00.432573+00:00",
+    "completed_utc": "2026-11-01T14:16:00.838321+00:00",
+    "duration_seconds": 0.4057675139629282,
+    "exit_code": 1
+  },
+  {
+    "receipt": "evaluation-after-corrected.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,DirectoryPackagesPropsPath,HexalithEventStoreVersion,HexalithVersionsLoaded,NuGetAudit -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:16:30.399944+00:00",
+    "completed_utc": "2026-11-01T14:16:31.786237+00:00",
+    "duration_seconds": 1.386305107967928,
+    "exit_code": 0
+  },
+  {
+    "receipt": "restore-corrected.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:16:39.276895+00:00",
+    "completed_utc": "2026-11-01T14:16:46.257701+00:00",
+    "duration_seconds": 6.980817722971551,
+    "exit_code": 0
+  },
+  {
+    "receipt": "build.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:15.763784+00:00",
+    "completed_utc": "2026-11-01T14:17:37.943880+00:00",
+    "duration_seconds": 22.182066886976827,
+    "exit_code": 0
+  },
+  {
+    "receipt": "focused-evaluations.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 /tmp/timesheets-nu1506-repair-1q5iokfd/evaluation-checks.py",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:17.074866+00:00",
+    "completed_utc": "2026-11-01T14:17:25.343330+00:00",
+    "duration_seconds": 8.268509332032409,
+    "exit_code": 0
+  },
+  {
+    "receipt": "works-contracts-debug.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:17.302677+00:00",
+    "completed_utc": "2026-11-01T14:17:18.323981+00:00",
+    "duration_seconds": 1.0213319470058195,
+    "exit_code": 0
+  },
+  {
+    "receipt": "works-architecture-debug.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:18.385765+00:00",
+    "completed_utc": "2026-11-01T14:17:19.248087+00:00",
+    "duration_seconds": 0.8623436230118386,
+    "exit_code": 0
+  },
+  {
+    "receipt": "timesheets-debug.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:19.328945+00:00",
+    "completed_utc": "2026-11-01T14:17:20.186056+00:00",
+    "duration_seconds": 0.8571536800009198,
+    "exit_code": 0
+  },
+  {
+    "receipt": "works-contracts-release.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:20.272008+00:00",
+    "completed_utc": "2026-11-01T14:17:21.093766+00:00",
+    "duration_seconds": 0.8217879540170543,
+    "exit_code": 0
+  },
+  {
+    "receipt": "works-architecture-release.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:21.129491+00:00",
+    "completed_utc": "2026-11-01T14:17:22.284214+00:00",
+    "duration_seconds": 1.1547745289863087,
+    "exit_code": 0
+  },
+  {
+    "receipt": "timesheets-release.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:22.346399+00:00",
+    "completed_utc": "2026-11-01T14:17:23.130756+00:00",
+    "duration_seconds": 0.7843765700235963,
+    "exit_code": 0
+  },
+  {
+    "receipt": "caller-overrides.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.128.4 -p:HexalithWorksRoot=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:23.209009+00:00",
+    "completed_utc": "2026-11-01T14:17:23.702208+00:00",
+    "duration_seconds": 0.4932146350038238,
+    "exit_code": 0
+  },
+  {
+    "receipt": "works-caller-version.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.128.4 -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:23.737317+00:00",
+    "completed_utc": "2026-11-01T14:17:24.255980+00:00",
+    "duration_seconds": 0.5186736679752357,
+    "exit_code": 0
+  },
+  {
+    "receipt": "works-alternate-catalog.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/Directory.Packages.props -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:24.297342+00:00",
+    "completed_utc": "2026-11-01T14:17:24.783997+00:00",
+    "duration_seconds": 0.4866800209856592,
+    "exit_code": 0
+  },
+  {
+    "receipt": "workshop-catalog.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild /tmp/timesheets-nu1506-repair-1q5iokfd/Hexalith.Workshop.proj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:17:24.832089+00:00",
+    "completed_utc": "2026-11-01T14:17:25.314262+00:00",
+    "duration_seconds": 0.48217888904036954,
+    "exit_code": 0
+  },
+  {
+    "receipt": "exception-validation.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-package-version-exceptions.ps1 -InventoryPath references/Hexalith.Builds/Tools/package-version-exceptions.json -CatalogPath references/Hexalith.Builds/Props/Directory.Packages.props",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:18:01.415264+00:00",
+    "completed_utc": "2026-11-01T14:18:07.775838+00:00",
+    "duration_seconds": 6.362126788008027,
+    "exit_code": 0
+  },
+  {
+    "receipt": "consumer-validation.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-consumer-package-authority.ps1 -RepositoryRoot references/Hexalith.Builds -CatalogPath references/Hexalith.Builds/Props/Directory.Packages.props",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:18:01.415412+00:00",
+    "completed_utc": "2026-11-01T14:19:21.593546+00:00",
+    "duration_seconds": 80.1827032410074,
+    "exit_code": 0
+  },
+  {
+    "receipt": "catalog-validation.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-central-package-versions.ps1",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:18:01.419204+00:00",
+    "completed_utc": "2026-11-01T14:18:04.933659+00:00",
+    "duration_seconds": 3.515998087998014,
+    "exit_code": 0
+  },
+  {
+    "receipt": "works-distinct-caller-version.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.130.1 -getProperty:HexalithEventStoreVersion -getItem:PackageVersion",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:19:03.275789+00:00",
+    "completed_utc": "2026-11-01T14:19:04.119705+00:00",
+    "duration_seconds": 0.8439316879957914,
+    "exit_code": 0
+  },
+  {
+    "receipt": "imports-after.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -preprocess:/tmp/timesheets-nu1506-repair-1q5iokfd/works-after.xml",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:19:04.184828+00:00",
+    "completed_utc": "2026-11-01T14:19:04.876190+00:00",
+    "duration_seconds": 0.692801519006025,
+    "exit_code": 0
+  },
+  {
+    "receipt": "root-diff-check.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home git diff --check",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:21:08.640573+00:00",
+    "completed_utc": "2026-11-01T14:21:08.738198+00:00",
+    "duration_seconds": 0.09763272403506562,
+    "exit_code": 0
+  },
+  {
+    "receipt": "builds-diff-check.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home git -C references/Hexalith.Builds diff --check",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:21:08.773100+00:00",
+    "completed_utc": "2026-11-01T14:21:08.777310+00:00",
+    "duration_seconds": 0.004209122038446367,
+    "exit_code": 0
+  },
+  {
+    "receipt": "equivalent-path-before.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/./Directory.Packages.props -getProperty:DirectoryPackagesPropsPath,_HexalithWorksOwnsMSBuildPackageVersions -getItem:PackageVersion",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:22:48.490553+00:00",
+    "completed_utc": "2026-11-01T14:22:48.928020+00:00",
+    "duration_seconds": 0.43748647504253313,
+    "exit_code": 0
+  },
+  {
+    "receipt": "equivalent-dot-path-after.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/./Directory.Packages.props -getProperty:DirectoryPackagesPropsPath,_HexalithWorksOwnsMSBuildPackageVersions -getItem:PackageVersion",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:22:49.556365+00:00",
+    "completed_utc": "2026-11-01T14:22:49.938015+00:00",
+    "duration_seconds": 0.38169463904341683,
+    "exit_code": 0
+  },
+  {
+    "receipt": "equivalent-parent-path-after.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/../Hexalith.Works/Directory.Packages.props -getProperty:DirectoryPackagesPropsPath,_HexalithWorksOwnsMSBuildPackageVersions -getItem:PackageVersion",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:22:49.970479+00:00",
+    "completed_utc": "2026-11-01T14:22:50.367276+00:00",
+    "duration_seconds": 0.39681694097816944,
+    "exit_code": 0
+  },
+  {
+    "receipt": "restore-final.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:22:50.399755+00:00",
+    "completed_utc": "2026-11-01T14:22:52.551291+00:00",
+    "duration_seconds": 2.1515795209561475,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-path-probe.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/./Directory.Packages.props -getProperty:DirectoryPackagesPropsPath,_HexalithWorksOwnsMSBuildPackageVersions -getItem:PackageVersion",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:04.079128+00:00",
+    "completed_utc": "2026-11-01T14:24:04.470366+00:00",
+    "duration_seconds": 0.3912483880412765,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-focused-evaluations.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 /tmp/timesheets-nu1506-repair-1q5iokfd/final-evaluation-checks.py",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:50.883523+00:00",
+    "completed_utc": "2026-11-01T14:24:57.225883+00:00",
+    "duration_seconds": 6.342361546005122,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-works-contracts-debug.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:50.938722+00:00",
+    "completed_utc": "2026-11-01T14:24:51.297275+00:00",
+    "duration_seconds": 0.3585723639698699,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-works-architecture-debug.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:51.330980+00:00",
+    "completed_utc": "2026-11-01T14:24:51.725937+00:00",
+    "duration_seconds": 0.39497911400394514,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-timesheets-debug.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:51.765513+00:00",
+    "completed_utc": "2026-11-01T14:24:52.153627+00:00",
+    "duration_seconds": 0.38811622897628695,
+    "exit_code": 0
+  },
+  {
+    "receipt": "restore-final-owner.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:52.028648+00:00",
+    "completed_utc": "2026-11-01T14:24:54.377175+00:00",
+    "duration_seconds": 2.3485394199960865,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-works-contracts-release.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:52.189924+00:00",
+    "completed_utc": "2026-11-01T14:24:52.592429+00:00",
+    "duration_seconds": 0.40251722902758047,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-works-architecture-release.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:52.626076+00:00",
+    "completed_utc": "2026-11-01T14:24:53.012259+00:00",
+    "duration_seconds": 0.3862131480127573,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-timesheets-release.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:53.047594+00:00",
+    "completed_utc": "2026-11-01T14:24:53.453567+00:00",
+    "duration_seconds": 0.40598905802471563,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-caller-overrides.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.130.0 -p:HexalithWorksRoot=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:53.490408+00:00",
+    "completed_utc": "2026-11-01T14:24:53.887575+00:00",
+    "duration_seconds": 0.39718707295833156,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-works-caller-version.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithEventStoreVersion=3.130.0 -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:53.923539+00:00",
+    "completed_utc": "2026-11-01T14:24:54.326972+00:00",
+    "duration_seconds": 0.4034363189712167,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-works-alternate-catalog.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/Directory.Packages.props -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:54.363432+00:00",
+    "completed_utc": "2026-11-01T14:24:54.746812+00:00",
+    "duration_seconds": 0.3834033869788982,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-workshop-catalog.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild /tmp/timesheets-nu1506-repair-1q5iokfd/Hexalith.Workshop.proj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:54.781443+00:00",
+    "completed_utc": "2026-11-01T14:24:55.039094+00:00",
+    "duration_seconds": 0.2576649489928968,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-dot-path.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/./Directory.Packages.props -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:55.070746+00:00",
+    "completed_utc": "2026-11-01T14:24:55.461927+00:00",
+    "duration_seconds": 0.3912025559693575,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-parent-path.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Release -p:UseHexalithProjectReferences=false -p:DirectoryPackagesPropsPath=/home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/../Hexalith.Works/Directory.Packages.props -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:55.496629+00:00",
+    "completed_utc": "2026-11-01T14:24:55.872364+00:00",
+    "duration_seconds": 0.37578523001866415,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-arbitrary-consumer.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/_bmad-output/implementation-artifacts/evidence/story-4-15/resume-2026-10-16/sdk-abi/Consumer.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:55.906054+00:00",
+    "completed_utc": "2026-11-01T14:24:56.307383+00:00",
+    "duration_seconds": 0.40135429496876895,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-arbitrary-published-sdk.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/_bmad-output/implementation-artifacts/evidence/story-4-9/publish-live-2026-10-25/sdk-negative-control/PublishedSdk.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:56.344409+00:00",
+    "completed_utc": "2026-11-01T14:24:56.761511+00:00",
+    "duration_seconds": 0.4171180659905076,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-distinct-works-root.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -p:HexalithWorksRoot=/home/administrator/projects/hexalith/timesheets/references/./Hexalith.Works -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:24:56.800872+00:00",
+    "completed_utc": "2026-11-01T14:24:57.209671+00:00",
+    "duration_seconds": 0.4088336739805527,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-exception-validation.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-package-version-exceptions.ps1 -InventoryPath references/Hexalith.Builds/Tools/package-version-exceptions.json -CatalogPath references/Hexalith.Builds/Props/Directory.Packages.props",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:25:02.579194+00:00",
+    "completed_utc": "2026-11-01T14:25:09.723661+00:00",
+    "duration_seconds": 7.146171631990001,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-consumer-validation.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-consumer-package-authority.ps1 -RepositoryRoot references/Hexalith.Builds -CatalogPath references/Hexalith.Builds/Props/Directory.Packages.props",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:25:02.579288+00:00",
+    "completed_utc": "2026-11-01T14:26:16.283134+00:00",
+    "duration_seconds": 73.70873254298931,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-catalog-validation.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-central-package-versions.ps1",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:25:02.580641+00:00",
+    "completed_utc": "2026-11-01T14:25:06.621082+00:00",
+    "duration_seconds": 4.042166394996457,
+    "exit_code": 0
+  },
+  {
+    "receipt": "build-final-owner.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:26:44.887971+00:00",
+    "completed_utc": "2026-11-01T14:27:00.216923+00:00",
+    "duration_seconds": 15.328976683027577,
+    "exit_code": 0
+  },
+  {
+    "receipt": "configuration-free-evaluation.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj -nologo -getProperty:Configuration,UseHexalithProjectReferences,NuGetAudit -getItem:ProjectReference,PackageReference",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:26:46.056699+00:00",
+    "completed_utc": "2026-11-01T14:26:46.430246+00:00",
+    "duration_seconds": 0.3735733350040391,
+    "exit_code": 0
+  },
+  {
+    "receipt": "imports-final.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -preprocess:/tmp/timesheets-nu1506-repair-1q5iokfd/works-final.xml",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:26:46.463468+00:00",
+    "completed_utc": "2026-11-01T14:26:46.884017+00:00",
+    "duration_seconds": 0.42055779800284654,
+    "exit_code": 0
+  },
+  {
+    "receipt": "durable-regression.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 references/Hexalith.Builds/Tools/test_works_package_versions.py",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:27:40.417950+00:00",
+    "completed_utc": "2026-11-01T14:27:42.915576+00:00",
+    "duration_seconds": 2.49763927195454,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-root-diff-check.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home git diff --check",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:30:17.816673+00:00",
+    "completed_utc": "2026-11-01T14:30:17.910426+00:00",
+    "duration_seconds": 0.09375650895526633,
+    "exit_code": 0
+  },
+  {
+    "receipt": "final-builds-diff-check.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home git -C references/Hexalith.Builds diff --check",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:30:17.941612+00:00",
+    "completed_utc": "2026-11-01T14:30:17.946395+00:00",
+    "duration_seconds": 0.004784316988661885,
+    "exit_code": 0
+  },
+  {
+    "receipt": "preservation-verification.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 /tmp/timesheets-nu1506-repair-1q5iokfd/verify.py",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:30:18.002892+00:00",
+    "completed_utc": "2026-11-01T14:30:21.260473+00:00",
+    "duration_seconds": 3.2575902430107817,
+    "exit_code": 1
+  },
+  {
+    "receipt": "final-preservation-verification.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 /tmp/timesheets-nu1506-repair-1q5iokfd/verify.py",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:31:10.710015+00:00",
+    "completed_utc": "2026-11-01T14:31:11.154527+00:00",
+    "duration_seconds": 0.44452680001268163,
+    "exit_code": 0
+  },
+  {
+    "receipt": "completion-root-diff-check.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home git diff --check",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:32:36.281147+00:00",
+    "completed_utc": "2026-11-01T14:32:36.371986+00:00",
+    "duration_seconds": 0.09085385996149853,
+    "exit_code": 0
+  },
+  {
+    "receipt": "completion-builds-diff-check.json",
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home git -C references/Hexalith.Builds diff --check",
+    "cwd": "<repository>",
+    "started_utc": "2026-11-01T14:32:36.405037+00:00",
+    "completed_utc": "2026-11-01T14:32:36.409435+00:00",
+    "duration_seconds": 0.004403547034598887,
+    "exit_code": 0
+  }
+]

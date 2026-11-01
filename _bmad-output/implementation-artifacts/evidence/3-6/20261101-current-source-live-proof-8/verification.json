@@ -1,0 +1,232 @@
+{
+  "schema": "timesheets-current-source-live-proof-verification-v2",
+  "recorded_utc": "2026-11-01T17:00:02.086645+00:00",
+  "scope": "Prescribed static receipt/hash/prefix/link/source/status/packet checks only; no tests, builds, runtime probes or workflow review.",
+  "result": "PASS",
+  "root_head_unchanged": true,
+  "root_branch_unchanged": true,
+  "index_unchanged_empty": true,
+  "preexisting_root_files_preserved_except_append_only_documents": 6888,
+  "prior_evidence_files_preserved": 3612,
+  "new_root_files_confined_to_attempt_packet": true,
+  "submodules": {
+    "references/Hexalith.Commons": {
+      "head": "bbbce518bcca9ca359762393688f02d142af1c61",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 223,
+      "authored_manifest_sha256": "6dfcd988ff1ad28c4797517b1964ab8cdf0293e97909505bebf17b170fdf9236",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "9b78aa008cfc62cd88ad0ea4b39b1f07311956ce",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 35,
+      "authored_manifest_sha256": "34fc47897019c259e99a5ed1c73796d377c5e493afce3a9b966f968b52262892",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Builds": {
+      "head": "f0feeb234cbc16f88c2886a6ffae7122e05dd64b",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 3202,
+      "authored_manifest_sha256": "b77bf1012ee26a79be9b73430bd7ea4a36bf37b38938907bbde0688f8446a591",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Tenants": {
+      "head": "2d3fa6da2312c1b5cf7f5c9461cc2d0ffc995b43",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 4822,
+      "authored_manifest_sha256": "5b71abee25854e3d4dc4bf2a0fe9af4ec85c59b2274c5d83cb2fa94087be70eb",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.EventStore": {
+      "head": "710d97f7cfe4ef4c382965bc69ae6556c234d2b8",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 9887,
+      "authored_manifest_sha256": "67cd0506de034a38f86252aefa29908fc141cc94410438175039427b115e3694",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "c092e8f91ebb670fad4ab959f2d3c8e13d809e0f",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 6347,
+      "authored_manifest_sha256": "067cddfc3420351eb2bb8d06449aa66b6107b79fc12f7189fbddcd38b2ea8756",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "7e53c59d3404c5c5d6ffce6666e5950af1bef8aa",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 68,
+      "authored_manifest_sha256": "c2513378baa6eef9c5e17d43a929a3a0788671e663a9d4d743146780cdf47847",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Projects": {
+      "head": "307afa0741d91a200d2e7b91728d8df5b665d910",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 10848,
+      "authored_manifest_sha256": "64fb6b5f89837ef5c8185b2efdaa112350dd0b45c3c139b708c9feb0c46f67cc",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Conversations": {
+      "head": "468ed8f0661101e03b332795173fe72f4875e699",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 50983,
+      "authored_manifest_sha256": "a856b6aa1c703ca04f36b43512f1967db95782373a83d855d77c12441f4df2de",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Works": {
+      "head": "038f49080a86d312b30d12567f521c3954593569",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 11922,
+      "authored_manifest_sha256": "1800e0ff9e3100b947732944fa3da467e6d4c6668aa0ba2a7ad56b4340723526",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Parties": {
+      "head": "a3666267868da046db164bba2668efc1325d42d5",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 7861,
+      "authored_manifest_sha256": "8fc33291b697f8a457b34ff020c4c5a7b514ce9428d02803a2df94ecf8e4f3b7",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.McpCli": {
+      "head": "ac6f6de9c9669751bc707dcf907c19e93d64685c",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 13864,
+      "authored_manifest_sha256": "23b164456225d84ee27b4f63bb43d9a6f26913a2b7b9ebb9537fc8ae3b55ade9",
+      "authored_manifest_equal": true
+    },
+    "references/Hexalith.Platform": {
+      "head": "03799ed553a16c8a1528068ba4d95bb5509ea75e",
+      "branch_unchanged": true,
+      "status_unchanged": true,
+      "authored_manifest_count": 18447,
+      "authored_manifest_sha256": "f9fff8c383e818c2878caff9a789169dad1080b187525e89a4f9fd202577a5d5",
+      "authored_manifest_equal": true
+    }
+  },
+  "works_authored_files_read_only": {
+    "before_after_manifest_equal": true,
+    "count": 11922
+  },
+  "all_builds_worktree_copies_and_head_relative_patch_hashes_match": true,
+  "document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "original": {
+        "bytes": 59622,
+        "sha256": "d3173526911052badd5f6c4f1eba5ededfb0438f8ce897cee5127822c9455eab"
+      },
+      "invocation": {
+        "bytes": 66485,
+        "sha256": "a4b8a382c4880468df97d2a8adeaa692d3004d5c6c538f8710818d840c9e4811"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "appended_bytes": 4474
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "original": {
+        "bytes": 485742,
+        "sha256": "7e8427e737a29273f16156e1acc692074c4fb0455c68564b7b5648151e6c1586"
+      },
+      "invocation": {
+        "bytes": 485742,
+        "sha256": "7e8427e737a29273f16156e1acc692074c4fb0455c68564b7b5648151e6c1586"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "appended_bytes": 4474
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "original": {
+        "bytes": 300037,
+        "sha256": "6eb78ee0a1ca44c040df036db54fdb651e37315a3ab75adcb92b3e9af36eb362"
+      },
+      "invocation": {
+        "bytes": 300037,
+        "sha256": "6eb78ee0a1ca44c040df036db54fdb651e37315a3ab75adcb92b3e9af36eb362"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "appended_bytes": 4492
+    },
+    "docs/launch-readiness.md": {
+      "original": {
+        "bytes": 172818,
+        "sha256": "7298d3ab54eada9955f1f9d7bd4d3d5a513fa7b93996e17e58a84951b924966a"
+      },
+      "invocation": {
+        "bytes": 172818,
+        "sha256": "7298d3ab54eada9955f1f9d7bd4d3d5a513fa7b93996e17e58a84951b924966a"
+      },
+      "original_prefix_preserved": true,
+      "invocation_prefix_preserved": true,
+      "appended_bytes": 4720
+    }
+  },
+  "frozen_intent_preserved": true,
+  "frontmatter_baseline_preserved": true,
+  "status_checks": {
+    "spec": "in-progress",
+    "story_3_6": "in-progress",
+    "epic_3": "in-progress",
+    "release": "FAIL"
+  },
+  "receipt_checks": [
+    {
+      "stage": "restore",
+      "exit_code": 0,
+      "original_stream_hashes_match": true,
+      "sanitization_matches": true
+    },
+    {
+      "stage": "build",
+      "exit_code": 0,
+      "original_stream_hashes_match": true,
+      "sanitization_matches": true
+    },
+    {
+      "stage": "runner",
+      "exit_code": 1,
+      "original_stream_hashes_match": true,
+      "sanitization_matches": true
+    }
+  ],
+  "admission_order_lock_hashes_and_shape_match": true,
+  "report_provenance_original_and_retained_hashes_match": true,
+  "retained_reports_checked": 19,
+  "runner_aggregate_shapes_and_hashes_match": true,
+  "harnesses_match": true,
+  "all_22_unobserved_gates_explicit": true,
+  "no_resource_finalization_does_not_qualify_owned_cleanup": true,
+  "authored_markdown_links_checked": 58,
+  "copied_builds_markdown": "Retained as an exact source artifact; original checkout-relative links are not rewritten or interpreted as packet links.",
+  "diff_check": {
+    "command": "git diff --check",
+    "exit_code": 0,
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "packet_manifest": {
+    "file": "SHA256SUMS",
+    "algorithm": "SHA-256",
+    "coverage": "Every packet file except SHA256SUMS itself, including this verification and the retained static harness.",
+    "complete_and_verified_after_record_write": true
+  }
+}

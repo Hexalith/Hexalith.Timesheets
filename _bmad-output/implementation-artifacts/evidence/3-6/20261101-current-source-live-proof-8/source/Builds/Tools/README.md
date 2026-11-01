@@ -1,0 +1,602 @@
+# Hexalith.Builds Tools
+
+Utility scripts for consuming repositories that use `Hexalith.Builds` as a
+submodule.
+
+## Available Tools
+
+### G-4 tool package qualification
+
+`build-g4-tool-packages.ps1` builds both authorized .NET tools in Release,
+packs exactly `Hexalith.Builds.Module.Cli` and
+`Hexalith.Builds.Evidence.Cli`, and writes a SHA-256 inventory. It does not
+reuse the shared consumer `Github/scripts/build-packages.ps1` behavior.
+
+```powershell
+.\Tools\build-g4-tool-packages.ps1 -Version 0.0.0-ci.1
+```
+
+`test-g4-tool-package-contracts.ps1` performs clean source and package-mode
+qualification. It copies the fixtures into an isolated temporary consumer
+repository, generates a local-tool manifest pinned to the provided version,
+restores only from the temporary local feed, and invokes the positive and
+blocking-negative module/evidence controls, including the packaged `module
+test` command path. Retained module evidence is checked against the exact tool
+version, source revision, dirty marker, invocation, manifest hash, JSON types,
+and null rule semantics. `-RetainPackageDirectory` preserves
+the exact qualified artifacts for the semantic-release publisher.
+
+Tool help is probed through the local-tool boundary with arguments after `--`,
+so qualification verifies each tool's own root and subcommand help rather than
+the `dotnet tool run` wrapper. The qualification output directory must be new
+and empty, every retained evidence filename must be unique, and the final
+inventory is written only after source validation and all controls pass. Failed
+or reused runs expose no complete inventory.
+
+The gate also extracts the EventStore seed from the actual module-tool `.nupkg`
+and runs configured and declarative HTTP subscription checks through MVC Testing.
+The probe supplies ephemeral real SDK channel credentials and requires missing/invalid
+channel requests to the mapped notification receiver to return HTTP 401 in both
+modes; the publication validator requires both exact typed negative observations.
+It requires authenticated configured discovery HTTP 200 with exactly one projection-change
+subscription using `configured-seed-events` and matching receiver topic metadata.
+Declarative discovery must return HTTP 404 while the projection receiver remains
+present without topic metadata. Only the startup index writer's asserted hosted
+alias is removed for this metadata fixture, matching Platform's existing tests;
+no sidecar or live topology qualification is inferred. The probe has no source-host
+reference or fallback. It binds the loaded seed's hash to the archive entry and
+retains `qualification-evidence/packaged-seed-subscriptions.json`. Publication
+independently validates its typed results and exact package/seed hashes; older
+inventories missing this proof are rejected. Source validation bypasses and dirty
+or uncommitted preparation retain their existing release-ineligibility reasons.
+
+`test-g4-packaged-seed-subscriptions.ps1 -PackagePath <actual.nupkg> -Version
+<actual-version> -OutputPath <new-proof.json>` runs this focused probe separately.
+For local diagnostics an observed published version can identify freshly packed
+bytes in the isolated local feed. Such bytes are local diagnostic artifacts,
+not a new release or a replacement for the published archive with that version.
+
+```powershell
+.\Tools\test-g4-tool-package-contracts.ps1 -Version 0.0.0-ci.1 -RequireControls
+```
+
+The same gate runs the synthetic `hexalith.g4-p0-acceptance.v1` corpus in
+`test/fixtures/evidence/acceptance/` through the source and installed
+`hexalith-evidence validate` commands. The positive record must print `HXI210`;
+each negative record must fail with exit `6` and the `HXE200`–`HXE208` rule in
+its `.expected.json`. These blocking controls are not written to the package
+inventory, whose qualification-evidence name contract is unchanged. The corpus
+is never acceptance evidence.
+
+A `hexalith.g4-p0-acceptance.v1` record is a JSON object with exactly these
+fields. The validator stops at the first failing rule:
+
+| Field | Requirement | Rule |
+| --- | --- | --- |
+| (record) | Readable, at most 4 MiB, no duplicate keys, no credential or placeholder value | `HXE200` |
+| `schema` | `hexalith.g4-p0-acceptance.v1`, and no other top-level field | `HXE201` |
+| `status`, `sourceRevision`, `platformPins` | `accepted`, a 40-character lowercase revision, and the supported EventStore, Dapr runtime, Dapr SDK, and FrontComposer pins | `HXE202` |
+| `fixture` | `manifestPath` and `manifestSha256` of the current manifest bytes | `HXE203` |
+| `packages` | Exactly the two tool packages at one version, with the feed chosen by version kind. Each `.nupkg`/`.snupkg` file name, SHA-256, and nuspec `id`/`version` must match | `HXE204` |
+| `runs` | Exactly `persisted-vstest`, `persisted-mtp`, `prerequisite-unavailable`, and `cancelled`, each with distinct run IDs. Each cites clean module-run evidence at `sourceRevision` whose status, exit code, manifest, tool version, and pins match, and whose command is `dotnet tool run ` plus the evidence's canonical `invocation.command`, without `--evidence` or `--output`. Persisted runs must use a profile that declares their platform and list every persisted assertion and sequence. The controls must be native-test-profile `test` runs failing with a prerequisite rule other than `HXR029`, or with `HXC130` | `HXE205` |
+| `runs[].report*` | A persisted run cites `<evidence>.<platform>.trx`, bound in the evidence `artifactHashes`, with passing counts equal to `testCounts`. A control run has no report | `HXE206` |
+| `cleanup`, `rollback` | `cleanup` cites clean `hexalith-module down` evidence for a cited persisted run. Until the Stage 7 drill contract exists, `rollback` is an attested, hash-bound artifact whose command names the rollback | `HXE207` |
+| `approvals` | Builds Owner, Platform Owner, and Test Architect approvals of `sourceRevision`, dated no earlier than the last run's completion and not in the future | `HXE208` |
+
+A persisted profile fixture may declare `nativeTests` with a repository-relative
+`project` and a `platform` of `vstest` or `mtp`. `mtp` means xUnit v3 on
+Microsoft Testing Platform, because the runner requests `--report-xunit-trx`;
+other MTP frameworks are not supported. After the runner-owned
+persisted assertions pass, `hexalith-module test` runs `dotnet test` from the
+project directory (VSTest `--logger trx`, or Microsoft Testing Platform
+`--report-xunit-trx`), so the consumer's `global.json` still selects the
+platform. The test process receives only `HEXALITH_G4_RUN_ID`,
+`HEXALITH_G4_EVENTSTORE_URL`, `HEXALITH_G4_EVENTSTORE_PEER_URL`,
+`HEXALITH_G4_UI_URL`, `HEXALITH_G4_TENANT`, `HEXALITH_G4_RESOURCE_NAMESPACE`,
+`HEXALITH_G4_DOMAINS`, and a run-scoped `HEXALITH_G4_ACCESS_TOKEN`, plus the
+runner's environment allowlist. The signing key is never handed off. A nonzero native exit (`HXT007`), an invalid,
+zero-match, all-skipped, failed, or aborted report (`HXT001`–`HXT006`), or a
+report containing handoff or credential material (`HXT008`) never passes. A
+passing report is retained beside `--evidence` as `<evidence>.<platform>.trx`;
+the evidence records its counts in `testCounts` and its SHA-256 in
+`artifactHashes`. The retained report is redacted first: `runUser`,
+`computerName`, `runDeploymentRoot`, the run name, captured output, run
+information, and result files are removed, and `codeBase`/`storage` are reduced
+to file names. The redacted report is scanned for secrets again and hashed. The
+report still contains run GUIDs and timings, so `artifactHashes` is listed in
+`volatileFields`.
+
+The installed tool never builds inside its package folder. For each run, it
+copies the packaged EventStore and UI host projects into the private run
+workspace and points them at the packaged host binaries. A package with only
+part of that host layout fails closed.
+
+`publish-g4-tool-packages.ps1` verifies the Release inventory before
+publication. A prerelease version (one containing `-`) targets
+repository-configured GitHub Packages using `GITHUB_TOKEN`; a stable version
+targets NuGet.org using the temporary `NUGET_API_KEY` returned by NuGet.org
+Trusted Publishing. The script fails closed if the token,
+package inventory, version, NuGet package, symbol package, or SHA-256 record
+is missing. Publication additionally requires an official package build,
+executed and passed source validation and controls, repository-tracked fixtures
+whose current bytes match the complete fixture manifest, and a complete
+hash-verified qualification-evidence inventory. Every package row binds its
+exact version, and every `.nupkg` and `.snupkg` must contain exactly one nuspec
+whose ID/version matches that row. Fixture package-build modes,
+validation bypasses, external fixtures, and partial evidence are explicitly
+non-release-eligible. Before any push, the publisher also rechecks a clean exact
+source revision, proves every fixture byte against that revision, and parses
+every retained qualification artifact for its exact typed outcome, invocation,
+tool/source identity, and expected negative rule IDs. The script submits each
+primary `.nupkg` once; `dotnet nuget push` discovers and publishes the adjacent
+`.snupkg` automatically. Both primary packages are uploaded before remote
+verification starts, so processing delays do not defer the other upload or
+consume the temporary upload key's lifetime. Duplicate-safe retry downloads each
+primary package, records its remote SHA-256, and compares it with the qualified
+artifact. NuGet.org
+repository signing can hide the flat-container blob for several minutes, so a
+missing blob is retried for 15 minutes by the standalone publisher and up to one
+hour during the Create Release action. The action scopes its retry override to
+semantic-release so publisher contract tests retain their default attempt count.
+A payload mismatch fails immediately. If the feed added a repository signature,
+every unsigned payload entry must match.
+
+Producer qualification bytes are now retained with their inventory and run identity.
+See the [4.38.3 recovery and successor handoff](../docs/producer-qualification-evidence-4383-handoff.md)
+for the original publication gap, recovered content, remaining missing files and
+separately authorized publication actions.
+
+`verify-g4-tool-release.ps1` checks the target feed credential and qualifies
+the actual semantic-release version before a release tag is created. The
+release workflow requires successful push CI for the exact current branch SHA
+before and after protected approval. `main` uses the `production` environment;
+`prerelease` uses the protected `prerelease` environment. Configure required
+reviewers and branch restrictions for both environments in GitHub settings.
+
+```powershell
+.\Tools\publish-g4-tool-packages.ps1 -Version 4.20.0
+```
+
+The version shown above is illustrative. Semantic-release supplies the actual
+version; never create a consumer tool manifest with an unpublished version.
+
+The [published candidate consumer](../test/fixtures/package-consumer/README.md)
+now pins both tools to `4.29.1`, source
+`21ce044ab465ccb2adab58b3d66e394ffbecf3c2`, and clears package sources to
+NuGet.org for isolated restore. [The 2026-10-01 observations](../evidence/g4/published-4.29.1-20261001/README.md)
+retain all 97 installed-command checks, including every synthetic corpus
+negative, repeated metadata-only `down`, unavailable `run`/`test`, and absent
+owner acceptance. They retain the interrupted source/package gate and failed
+control-harness attempts separately. The release inventory's unsigned archive
+hashes differ from the repository-signed restored hashes. Payload-entry hashes
+are recorded, but independent equivalence needs the original qualified release
+archives; a signature's presence alone does not prove equality.
+
+The selected EventStore `3.110.0` / Builds `4.29.1` tuple now has independently
+recorded P1R acceptance at `2026-10-01T06:17:01Z`; fresh G-6 acceptance remains
+pending. Keep live qualification and full P0 acceptance blocked until all
+independent prerequisites are bound. The metadata-only
+fixture's `HXR003` does not describe the executable fixture: the latter supports
+the implemented native `full`/`full-mtp` lanes, with historical Stage 5 evidence.
+Current clean source/package qualification, real persisted sequences, causal
+native failure evidence, cancellation, live repeated cleanup, exercised rollback,
+and dated three-role approval remain mandatory. The rollback validator still
+checks an attestation; it does not prove a drill happened. After those actual
+artifacts and decisions exist, validate the exact final record through the
+installed `hexalith-evidence` before P4 handoff. P0 does not self-accept Story 6.1.
+
+Current source G-6 validation distinguishes stable Fluent UI from an approved
+RC exception: `5.0.0` requires `stable`, while an RC requires
+`approved-release-candidate-exception`. Other prerelease classes are rejected.
+The mutation suite now requires 165 authority controls, including 24 release-class
+and disposition controls across the three baseline fixtures. Historical baseline
+and packet bytes remain unchanged; a fresh packet must bind the new validator,
+test bytes, and exact result line. This source correction does not change the
+published `4.29.1` tools or supply current baseline approval.
+
+The preserved P1R `3.102.0` candidate bundles live in the umbrella workspace at
+`_bmad-output/implementation-artifacts/qualification-evidence/`. Its README
+and the P1R revalidation record bind the preserved `.8`, `.9`, `.13`, and
+loop-5 diagnostic/final results. The final loop-5 bundle truthfully remains
+nonrelease while its frozen fixture additions are untracked. These retained
+candidates are not release or owner acceptance evidence.
+
+### validate-central-package-versions.ps1
+
+Requires `Props/Directory.Packages.props` to begin with the exact UTF-8 BOM
+bytes `EF BB BF`, decodes the remainder as strict UTF-8, and only then evaluates
+it with MSBuild. It rejects BOM-free, truncated, or invalid UTF-8 input, blank
+or duplicate IDs, blank, unresolved, tag-prefixed, or malformed versions,
+failed evaluation, and source/effective-catalog mismatches before release.
+
+```powershell
+.\Tools\validate-central-package-versions.ps1
+```
+
+Run the focused fixture suite with:
+
+```powershell
+.\Tools\test-central-package-version-validator.ps1
+```
+
+Run `python3 Tools/test_works_package_versions.py` from the Builds root to verify the read-only Works wrapper compatibility rule. It evaluates temporary CPM wrappers in both modes, including renamed checkouts, arbitrary project names, equivalent paths, alternate catalogs and explicit EventStore versions; it does not restore packages or start applications.
+
+`test-authoritative-package-catalog.ps1` protects the approved migration package
+identities, shared package-family alignment, and
+`CentralPackageVersionOverrideEnabled=false` through evaluated MSBuild output.
+It does not pin dependency versions, so an intentional version bump remains a
+valid release input.
+
+### Revision-bound audit refresh
+
+Story 1.2 adds `NuGet.Versioning/7.9.0` and changes the catalog plus the Builds
+AppHost and Tooling declarations. Its refreshed audit is bound to the local
+source commit and retains prior family/package observations as historical
+context. All 304 existing package selections remain unchanged. Local contract
+tests grant no publication or Platform acceptance.
+
+For future declaration changes, commit the reviewed source declarations in
+`Hexalith.Builds` before feed discovery. The generator proves their bytes against
+the owning repository's actual `HEAD`. Preserve unrelated changes and validate
+each complete commit message with the repository's pinned commitlint CLI.
+
+Preserve the prior audit before a deliberate refresh. A new package family
+requires complete refresh: omit `-Family` and pass `-PriorAuditPath` to retain
+historical observations. Keep selected versions and bound qualification evidence
+unchanged unless their change is separately intended.
+
+```powershell
+$verification = './artifacts/package-audit-refresh'
+New-Item -ItemType Directory -Force $verification | Out-Null
+$priorAudit = "$verification/package-version-audit.before-refresh.json"
+Copy-Item ./Tools/package-version-audit.json $priorAudit
+pwsh -NoProfile -File ./Tools/audit-central-package-versions.ps1 `
+  -PriorAuditPath $priorAudit -OutputPath ./Tools/package-version-audit.json
+pwsh -NoProfile -File ./Tools/validate-package-version-audit.ps1
+pwsh -NoProfile -File ./Tools/test-package-version-audit-generator.ps1
+pwsh -NoProfile -File ./Tools/test-package-version-audit-validator.ps1
+git diff -- ./Props/Directory.Packages.props ./Tools/package-version-audit.json
+```
+
+Review real feed observations and retained history, then create the separately
+authorized audit commit. Run the deterministic validator against the committed
+result. Neither local commit publishes packages, pushes a branch, changes
+Platform's gitlink or grants Platform tool acceptance.
+
+### MSBuild inspection compatibility hold
+
+The architecture loader selects `Microsoft.Build` and `Microsoft.Build.Framework`
+`18.9.6`, plus Locator `1.11.2`. Package inspection confirms Build `18.10.1`
+and `18.11.0` target `net11.0`/`net472`; the attempted `18.11.0` Works Debug
+restore failed with NU1701 under `net10.0`. Version `18.9.6` supplies `net10.0`
+assets. Keep this hold until a later package supplies compatible .NET 10 assets
+and the architecture loader passes restore, compilation and its fitness tests.
+The audit retains the failed selection as historical metadata, not qualification.
+
+### Central package freshness audit
+
+`audit-central-package-versions.ps1` evaluates the complete catalog, discovers
+every enabled NuGet V3 source, and records current-version listing state plus
+the latest listed stable and prerelease candidates. It never changes the
+catalog and never treats a missing, unlisted, or unresolved result as a reason
+to downgrade. Run it only when deliberately refreshing the checked-in audit:
+
+```powershell
+.\Tools\audit-central-package-versions.ps1
+```
+
+With no family selector, generation is a complete refresh and queries every
+catalog family. An incremental refresh requires a prior audit and an explicit,
+canonical family list; only those families are queried:
+
+```powershell
+.\Tools\audit-central-package-versions.ps1 `
+  -PriorAuditPath .\Tools\package-version-audit.json `
+  -Family hexalith-eventstore,hexalith-frontcomposer
+```
+
+`-Family` is an alias of the canonical `-ChangedFamily` parameter, and PowerShell
+callers may pass an array to either name. Unknown or duplicate families, a
+missing prior audit, and catalog-selection drift in any unrequested family fail
+before output. The v2 snapshot envelope records `complete` or
+`incremental` mode and an exact, non-overlapping refreshed/preserved partition
+covering every catalog family.
+
+An incremental refresh requires a `schemaVersion` 2 prior audit, because its
+preserved rows are copied verbatim into the emitted document and must first pass
+the closed-shape prior contract. Migrate an older audit with a complete refresh.
+
+Generation compares repository-owned catalog and consumer declarations with the
+claimed revision before any feed request, including staged and unstaged changes
+while respecting Git's configured EOL normalization. Commit a catalog or
+consumer edit before regenerating: a dirty tracked declaration fails the run
+before the first feed request, because the audit can only claim bytes that
+already exist at an ancestor commit. Git blob reads are both time- and
+size-bounded at 10 seconds and 1 MiB per blob. Those bounds are fixed operator
+behavior; `-GitBlobReadTimeoutSeconds` and `-GitBlobReadMaxBytes` are hidden
+diagnostic parameters reserved for the fixture suites, accepting 1-300 seconds
+and 1-134217728 bytes. The audit is serialized to a sibling temporary file and
+atomically moved into place only after the complete document succeeds, so a
+failed refresh leaves the prior output intact.
+
+Review `Tools/package-version-audit.json` by rollback-safe family, apply only
+accepted versions to `Props/Directory.Packages.props`, and record the selected
+version and disposition for every row. Live discovery is intentionally not a
+release gate because feed results vary over time. CI and release instead run
+the deterministic validator and its fail-closed fixtures:
+
+```powershell
+.\Tools\validate-package-version-audit.ps1
+.\Tools\test-package-version-audit-generator.ps1
+.\Tools\test-package-version-audit-validator.ps1
+```
+
+The deterministic generator fixtures cover V3 resource discovery, paged
+registrations, arbitrary-size prerelease ordering, unlisted and missing
+versions, unresolved sources, complete/incremental partitioning, targeted
+querying, history deduplication, hostile family selections, and output-path
+safety without accessing a live feed. `generatedFromRevision` binds the exact
+ancestor commit whose committed catalog blob and tracked consumer declarations
+are claimed. `catalogSha256` remains the BOM+CRLF-normalized semantic hash;
+`catalogRawSha256` separately binds the exact raw Git blob so BOM or EOL drift
+cannot hide behind normalization. Consumer `declarationSha256` values likewise
+bind committed blob bytes, and validation proves the worktree copy against the
+audited revision the way Git compares tracked content, so the audit stays valid
+on a checkout whose configured EOL normalization rewrites those files.
+
+Each family owns an observation origin containing its revision/time plus
+ordered family-selection, source-scope, package-metadata, and consumer-evidence
+fingerprints. Package-metadata fingerprints include each source diagnostic as
+well as its listing state and candidates. Incremental generation validates and
+copies every preserved family decision and package row unchanged, while a
+genuinely changed refreshed family alone gains one typed family snapshot and its
+package snapshots. Repeating identical evidence does not append duplicate
+history, so the artifact grows only with genuine per-family refreshes rather
+than with every catalog byte change; Git already retains prior whole artifacts,
+so the document never needs to carry a full run-by-run history. Explicit test fixtures remain
+labeled synthetic and bound to their exact bytes and semantic relations. The
+validator independently recomputes every closed-shape invariant, exact catalog
+coverage, snapshot partition, origin fingerprint, consumer relation, and typed
+history record, while retaining coherent family dispositions and rollback
+groups, retained-exception rationale/removal triggers, and selected versions
+that exactly match the evaluated catalog.
+
+External-package decisions remain exact: retained rows cannot change, while accepted versions cannot downgrade, must be an audited
+latest stable or prerelease candidate, and cannot move an existing stable pin
+onto a prerelease channel. Internal `Hexalith.*` rows require canonical NuGet
+versions in the catalog and every audit/candidate field. Their checked-in
+`selectedVersion` is the accepted monotonic floor and must exactly match the
+actual catalog selection, so an advance requires an audit refresh and a later
+regression cannot hide above an older `auditedVersion`. An accepted advance must
+be family-aligned, remain stable when the accepted baseline is stable, and carry
+listed configured-source candidate evidence for the actual selection. Numeric
+overflow and malformed version evidence fail as controlled validation errors;
+build-metadata hyphens do not turn a stable version into a prerelease. The Tenants
+release-owner guard likewise compares the actual catalog selection to its accepted
+audit selection. `Microsoft.OpenApi` remains on 2.x until its ASP.NET Core 10
+runtime constraint is removed, and a missing source result can never advance or
+downgrade an external pin.
+
+### validate-consumer-package-authority.ps1
+
+Source-scans a consumer repository's tracked MSBuild XML and evaluates every
+tracked project. It requires a version-free root wrapper importing the shared
+catalog, CPM and override protection on every project, exact effective catalog
+values, and a catalog row for every non-implicit `PackageReference`. It rejects
+consumer `PackageVersion` items, dependency-version property overrides,
+`PackageReference`/`GlobalPackageReference` version metadata,
+`VersionOverride`, and CPM opt-outs while allowing legal asset metadata and
+SDK-implicit references.
+
+`-ExcludedPath` removes tracked standalone probe projects, such as release
+evidence that deliberately restores published package versions outside the
+consumer build graph, from both the source scan and project evaluation. Each
+entry must be an exact, case-sensitive repository-relative path of a tracked
+MSBuild file; wildcards, rooted paths, `.`/`..` segments, and stale entries fail
+validation. Separate entries with semicolons because `pwsh -File` cannot bind
+arrays.
+
+```powershell
+.\Tools\validate-consumer-package-authority.ps1 `
+  -RepositoryRoot ..\MyModule `
+  -CatalogPath .\Props\Directory.Packages.props
+.\Tools\validate-consumer-package-authority.ps1 `
+  -RepositoryRoot ..\MyModule `
+  -CatalogPath .\Props\Directory.Packages.props `
+  -ExcludedPath 'evidence/probe/Probe.csproj;evidence/consumer/Consumer.csproj'
+.\Tools\test-consumer-package-authority-validator.ps1
+```
+
+### validate-package-version-exceptions.ps1
+
+Validates `package-version-exceptions.json` as the closed allowlist for the ten
+AppHost project-SDK pins and five local tool-manifest pins. Schema-only mode is
+appropriate in the Builds checkout. Supplying a ChatBot umbrella workspace also
+compares every actual root-declared repository pin with the allowlist and keeps
+`Aspire.AppHost.Sdk` exactly aligned with the shared `Aspire.Hosting` version.
+
+```powershell
+.\Tools\validate-package-version-exceptions.ps1 `
+  -InventoryPath .\Tools\package-version-exceptions.json `
+  -CatalogPath .\Props\Directory.Packages.props
+.\Tools\test-package-version-exception-validator.ps1
+```
+
+New entries require an architecture decision; the inventory is not a general
+escape hatch for local package-reference versions.
+
+### test-domain-workflow-test-platforms.ps1
+
+Checks that reusable domain CI/release workflows retain their backward-compatible
+VSTest default and route Microsoft.Testing.Platform callers to MTP-native TRX and
+trait-filter options without leaking VSTest-only arguments.
+
+### test-commitlint-workflow.ps1
+
+Checks that the reusable Commitlint workflow validates the prospective squash
+title before the pull-request commit range, transfers the title through an
+environment variable and stdin without shell evaluation, and documents caller
+subscription to pull-request title edits.
+
+### builds-submodule-init.ps1
+
+Adds or initializes the `Hexalith.Builds` Git submodule in a parent repository
+under `references/Hexalith.Builds`.
+
+#### Purpose
+
+The script automates:
+
+1. Checking that PowerShell is running with administrator privileges.
+2. Adding the `references/Hexalith.Builds` submodule when it is not already
+   declared.
+3. Initializing the existing `references/Hexalith.Builds` submodule when it is
+   declared.
+4. Updating the submodule.
+5. Checking out the `main` branch in the initialized build submodule.
+
+#### Requirements
+
+- Administrator privileges on Windows.
+- Git available in `PATH`.
+- PowerShell 5.0 or later.
+
+#### Usage
+
+Run the script from the root directory of your repository:
+
+```powershell
+.\references\Hexalith.Builds\Tools\builds-submodule-init.ps1
+```
+
+If the submodule has not been added yet, you can download the script and run it:
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/Hexalith/Hexalith.Builds/main/Tools/builds-submodule-init.ps1" -OutFile "builds-submodule-init.ps1"
+.\builds-submodule-init.ps1
+```
+
+#### Notes
+
+- The script does not use recursive or remote submodule updates.
+- When adding a new submodule, it adds the repository root and
+  `./references/Hexalith.Builds` to Git's global safe directory list.
+- The script does not create symlinks. Use `editorconfig-symlink.ps1` for the
+  shared `.editorconfig` link.
+
+### editorconfig-symlink.ps1
+
+Creates a `.editorconfig` symbolic link in the parent repository that points to
+`references/Hexalith.Builds/.editorconfig`.
+
+#### Purpose
+
+The script lets a consuming repository reuse the shared editor and analyzer
+style settings from the `Hexalith.Builds` submodule.
+
+#### Requirements
+
+- Administrator privileges on Windows.
+- `references/Hexalith.Builds/.editorconfig` must exist.
+
+#### Usage
+
+Run the script from the `references/Hexalith.Builds` submodule:
+
+```powershell
+.\Tools\editorconfig-symlink.ps1
+```
+
+#### What the Script Does
+
+1. Resolves the `references/Hexalith.Builds` directory and its parent
+   repository.
+2. Verifies that `references/Hexalith.Builds/.editorconfig` exists.
+3. Removes any existing parent `.editorconfig` path.
+4. Creates a symbolic link from the parent `.editorconfig` to
+   `references\Hexalith.Builds\.editorconfig`.
+
+## Troubleshooting
+
+- `Error: This script requires administrator privileges`: Run PowerShell as
+  Administrator and try again.
+- Symbolic link creation fails: Confirm administrator privileges and Windows
+  symlink support.
+- Git submodule commands fail: Confirm Git is installed and that the repository
+  root is the current directory.
+
+
+The current 2026-10-01 G-6 contract is separately versioned as `hexalith.runtime-toolchain-baseline.v2` and `hexalith.runtime-toolchain-evidence.v2`. `Tools/runtime-toolchain-baseline-2026-10-01.json` records the approved tuple/run and explicit unqualified exclusions. `Tools/runtime_toolchain_v2.py` audits all root-declared consumers, including Platform file-based directives, and binds actual checkout HEADs separately from root gitlinks, with ancestor/committed-source closure for later metadata-only Projects commits, source bytes, resolved packages, exact tool logs, command/test outcomes, private sidecar discovery configuration/registry identities, actor/scheduler namespaces and shared-resource/owned cleanup. The 52 current mutation controls and accepted metadata-commit positive control also check the complete OQ8 semantics and support identities against freshly rehashed receipts. Every isolated sidecar launch and restart selects SQLite v1 with one fixture-private registry; the registry identity hashes its path, while the configuration digest binds exact bytes. The validator requires all three nodes and a distinct restarted process to share both bindings, and proves fixture runtime/discovery scratch removal. Dapr 1.18.2 mDNS ignores `NAMESPACE` for discovery, so the namespace alone is not an isolation boundary. SQLite name resolution is Alpha and qualifies only this disposable test infrastructure; no production resolver is qualified. The historical v1 contracts and baseline hashes remain preserved.
+
+Run the umbrella `tools/qualification/run_g6_qualification.py` with a new evidence output directory; it retains failures and actual counts even when strict capture validation fails. Pending or failed qualification never grants prerequisite usability. Final acceptance requires a named decision on the exact reviewed packet hash, successful technical qualification, clean committed source and exact root gitlinks. This source implementation does not change published Builds `4.29.1` tool binaries.
+
+The resumed consumer corrections explicitly align published EventStore.Aspire transitive Redis/Keycloak dependencies with the approved catalog in Builds Module.AppHost and the Platform file host. Keycloak remains runtime-unqualified; file-based directives now use the same exact exclusion crosswalk as XML. The current controls reject both an older restored preview and unauthorized file directives. Selected attempt 7 is technically valid, with all 22 commands passing, while dirty committed closure, the preserved Parties checkout/root-gitlink mismatch and separate named acceptance keep prerequisite usability false. No published tool binaries or historical packet bytes were changed.
+
+### Current G-6 policy and compact result
+
+`Tools/g6-current-policy.json` and `Tools/g6_current.py` define the replacement
+current-checkout G-6 contract. The historical v1/v2 packet validator and accepted
+records remain unchanged. Run `python3 Tools/g6_current.py audit --workspace
+<Projects-root> --policy <Projects-root>/references/Hexalith.Builds/Tools/g6-current-policy.json
+--out <audit.json>` after restoring the policy's eleven consumers. The audit
+records current root/submodule revisions, an input fingerprint, effective
+controlled versions, and the restored controlled package graph. Missing assets,
+stale restored packages, a checkout/root-gitlink mismatch, or tuple drift are
+reported as `issues` and set `tupleApproved` to false. An audit does not claim
+that the live runtime passed.
+
+CLI policy, evidence and audit output paths must resolve inside the selected
+workspace. Relative paths and absolute paths inside that workspace are accepted;
+parent traversal and symlink escapes are refused before reading or writing.
+Run `python3 Tools/test-g6-cli-paths.py` for the isolated boundary controls.
+
+The v3 policy approves the current Toolkit pin `13.6.0-preview.1.261001-0243`
+and its prerelease exception. Jérôme Piquot, as Builds/Platform/FrontComposer-Web
+owner, answered verbatim "Approve" at `2026-10-03T07:15:52Z` for tuple
+`52c8d36a…` after the pending candidate passed every critical command (result
+SHA-256 `399befab…`); the policy `reference` names the Projects decision record.
+The approval does not qualify a checkout by itself: each current checkout still
+needs a passing live result. The accepted v2 beta.910 packet remains historical.
+The Platform file host pins the same preview directly. Until all transitive material
+inputs and Platform's scratch restore graph are reviewed, `reuseEnabled` is
+false: every qualified result must match the current source SHA and gitlinks,
+including non-release validation. This allows routine committed gitlink changes
+after a new run without recapturing a historical packet. Release always uses a
+fresh exact-source result. No dirty checkout can claim qualification.
+
+`python3 Tools/g6_current.py validate --workspace <Projects-root> --policy
+<policy> --evidence <result.json> [--release]` rechecks the compact result's
+canonical digest, current audit, owner decision, exact 1/1 PostgreSQL two-sidecar
+result, 33/33 deterministic cases across the 21 selectors, retained OQ8 capture
+and command-log hashes, and isolated cleanup. The result schema is
+`schemas/hexalith.g6-current-evidence.v1.json`. The selected source-mode test
+does not qualify published EventStore archives, G-4, G-5, P1R, or release.
+
+### Historical 2026-09-27 toolchain disposition
+
+`runtime-toolchain-disposition-2026-09-27.json` records the superseded,
+unqualified disposition of the historical Aspire SDK split: the tuple names
+13.5.4, while audited AppHosts include both 13.5.3 and 13.5.4. The separate
+annotation binds the immutable baseline's normalized-LF SHA-256 (CRLF checkouts
+retain the same digest); it does not amend its
+approval or qualify the split, runtime, package adoption, deployment or release.
+Historical containment holds remain active. Lowercase `dapr` means runtime/.NET
+support-table metadata with an explicit historical exception; uppercase `Dapr`
+means the catalog package identity, recorded as not activated. They are distinct
+case-sensitive keys, not contradictory qualification claims.
+
+The defaults read the repository's pinned historical files. Explicit
+`--baseline` and `--disposition` inputs must resolve to regular files inside
+the current working directory, including through symlinks. Run from the
+workspace containing alternate inputs when validating a copied fixture.
+
+```bash
+python3 Tools/validate-runtime-toolchain-disposition.py
+python3 Tools/test-runtime-toolchain-disposition.py
+python3 Tools/test-runtime-toolchain-evidence-validator.py
+```
+
+The new validator permits only CRLF-to-LF equivalence and rejects substantive
+baseline drift even if the annotation digest is
+also changed, invented qualification or approval, weakened holds and conflated
+Dapr meanings. Existing historical evidence validators retain their contracts.

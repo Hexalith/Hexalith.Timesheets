@@ -1,0 +1,2 @@
+Required port 8080 is occupied; no AppHost started
+Sanitized fixture evidence: /tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos

@@ -1,0 +1,10 @@
+{
+  "executed_command": "python3 /tmp/timesheets-nu1506-repair-1q5iokfd/seal.py",
+  "started_utc": "2026-11-01T14:32:36.466846+00:00",
+  "completed_utc": "2026-11-01T14:32:36.478289+00:00",
+  "duration_seconds": 0.011421392962802202,
+  "exit_code": 0,
+  "capture_receipts_indexed_and_stream_hashes_verified": 60,
+  "manifest_coverage": "Every repair packet file except SHA256SUMS itself",
+  "runtime_qualification": false
+}

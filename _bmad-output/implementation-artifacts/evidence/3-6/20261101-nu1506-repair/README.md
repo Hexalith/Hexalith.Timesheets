@@ -1,0 +1,43 @@
+# Story 3.6 NU1506 configuration repair — 2026-11-01
+
+Disposition: **Debug/source restore and build PASS; runtime unqualified**. The [repair spec](../../../spec-3-6-repair-nu1506-msbuild-package-versions.md) defines this separate repair task following [live-proof attempt 7](../20261101-current-source-live-proof-7/README.md), not a live-proof attempt. Story 3.6 remains **in-progress**; release remains **FAIL** while deployed acceptance is unfinished. Changes are uncommitted.
+
+## Cause and owning fix
+
+The SDK imports Works' `Directory.Packages.props` through `DirectoryPackagesPropsPath`. That wrapper imports `references/Hexalith.Builds/Props/Directory.Packages.props` using its second candidate, then unconditionally includes its architecture-loader pins. Both files declared Microsoft.Build **18.9.6**, Microsoft.Build.Framework **18.9.6** and Microsoft.Build.Locator **1.11.2**. Before repair, each evaluated identity occurred twice, once with each file as `DefiningProjectFullPath`. This is a declaration collision, not a repeated shared-catalog import. See [before items](evaluation-before.stdout.sanitized.txt), [before import trace](imports-before.excerpt.sanitized.txt), [final items](final-works-contracts-debug.stdout.sanitized.txt), and [final import trace](imports-final.excerpt.sanitized.txt). Excerpts retain preprocessor line numbers; [output provenance](import-output-provenance.json) binds original XML byte counts and hashes to the excerpts and command receipts. Complete preprocessed XML stayed in the private temporary capture directory.
+
+The [owning catalog patch](catalog.patch) defers only these three shared entries to the normal Works wrapper, in both configurations. The normal wrapper is identified by its adjacent `Hexalith.Works.slnx`, independently of checkout or project name. The selected wrapper path is normalized before comparison with the nearest wrapper; an explicit alternate CPM wrapper retains shared defaults. Other consumers retain the existing shared pins. No versions, dependency-mode rules, root catalog overrides or EventStore-version forwarding changed. Works authored files remain read-only. The catalog's UTF-8 BOM and CRLF are preserved. [Source provenance](source-provenance.json) binds canonical revisions and original/repaired catalog hashes; the parent gitlink has not been staged or advanced. The uncommitted Builds checkout edit is part of this repair.
+
+An initial repair condition produced MSB4092 because of nested quoting inside an MSBuild condition. The initial [evaluation receipt](evaluation-after.json) and [restore receipt](restore.json), with their sanitized diagnostics, are retained. Moving the path calculation into a private property corrected the parser error before the successful validation below. These are repair diagnostics; attempt 7 and all older evidence are unchanged.
+
+## Required validation
+
+Executed from the Timesheets root with only the explicit environment override shown:
+
+```text
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
+```
+
+| Command | Start UTC | End UTC | Exit | Duration |
+|---|---|---|---:|---:|
+| [restore-final-owner](restore-final-owner.json) | 2026-11-01T14:24:52.028648+00:00 | 2026-11-01T14:24:54.377175+00:00 | 0 | 2.348539s |
+| [build-final-owner](build-final-owner.json) | 2026-11-01T14:26:44.887971+00:00 | 2026-11-01T14:27:00.216923+00:00 | 0 | 15.328977s |
+
+The build reports **0 warnings and 0 errors**. [Restore stdout](restore-final-owner.stdout.sanitized.txt), [restore stderr](restore-final-owner.stderr.sanitized.txt), [build stdout](build-final-owner.stdout.sanitized.txt) and [build stderr](build-final-owner.stderr.sanitized.txt) preserve diagnostics. No NU1506 suppression, audit opt-out, validation disablement, package update, configuration workaround or dependency override was used for these commands.
+
+## Focused checks and retained commands
+
+Independent review found equivalent-path and arbitrary-project-name ownership gaps in the initial repair; both were patched before the final commands above. The [durable Builds regression](../../../../../references/Hexalith.Builds/Tools/test_works_package_versions.py) passed [nine synthetic wrapper subcases](durable-regression.json), including a renamed checkout, without package restore or application startup. Earlier repair-stage commands remain in the command index.
+
+[Fifteen final evaluated-MSBuild probes](final-evaluation-checks.results.json), executed by the retained [focused check harness](final-evaluation-checks.py.txt), passed. They check case-insensitive PackageVersion uniqueness, exact pins and defining-file ownership for Works.Contracts and Works.ArchitectureTests in Debug/source and Release/package; unchanged source/package edges for Works.Contracts and Timesheets.Works; auditing and central override protection; EventStore override propagation through root restore properties and the Works edge; an explicit Works root; an alternate `DirectoryPackagesPropsPath`; the similarly named non-Works `Hexalith.Workshop` consumer, equivalent wrapper path spellings, arbitrary project names in the unchanged historical Works probe projects, and a distinct caller-supplied Works-root spelling in both its property and project edge. [Additional assertions](additional-evaluation-assertions.json) check that final explicit EventStore **3.130.0** overrides reach evaluated EventStore package-item versions, as well as forwarding properties and metadata; a configuration-free evaluation still selects Release/package dependencies. The earlier [distinct caller-version evaluation](works-distinct-caller-version.json) is retained separately. Override probes are evaluation-only and do not restore or update dependencies. No Release restore/build or domain/runtime tests were run for this configuration-only repair.
+
+The catalog's own documented [central](final-catalog-validation.json), [consumer](final-consumer-validation.json) and [exception](final-exception-validation.json) validators all passed (314 catalog entries, the Builds consumer graph, and 16 allowlisted exceptions). [Command index](commands.json) retains every capture command, UTC interval, duration and exit. Each named receipt binds original and sanitized stream byte counts and SHA-256 hashes. The retained [capture harness](capture.py.txt) sets DOTNET_CLI_HOME and replaces the canonical repository-root path with `<repository>`; it does not capture inherited environment values or invoke runtime tools. Sanitized stdout/stderr files are adjacent to each command receipt.
+
+[Preservation baseline](preservation-baseline.json.gz) binds all 4,795 prior evidence files, 11,926 tracked Works files and the four pre-existing modified documents. [Final verification](verification.json) records prior-receipt and Works byte preservation, append-only story/summary changes, unchanged live-proof spec and launch-readiness document, status checks, receipt hashes, local links and diff checks. [SHA256SUMS](SHA256SUMS) binds this repair packet. Existing historical receipts remain historical.
+
+No Aspire lifecycle or inventory command, Dapr inventory, isolated runner, shared-store operation, domain write, or AppHost/ServiceDefaults/topology edit was performed. Deployed authority, inventory/writer-delivery continuity and shared-rebuild acceptance remain unfinished. These restore/build results grant no runtime qualification.
+
+To replay only the retained focused evaluations in this checkout, create a new private temporary directory and a separate empty output directory. Copy `capture.py.txt` and `final-evaluation-checks.py.txt` into the private directory as `capture.py` and `final-evaluation-checks.py`. Write a `state.json` object with absolute `private` and `packet` paths naming those new directories, then write the absolute state-file path (without a newline) to `/tmp/timesheets-nu1506-repair-state-path`. From this Timesheets root run `DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 <private>/capture.py final-focused-evaluations python3 <private>/final-evaluation-checks.py`. Use fresh directories and do not overwrite this retained packet. The durable Builds regression above needs no capture-state reconstruction.
+
+The first preservation check correctly rejected the not-yet-created packet manifest; [that packaging diagnostic](preservation-verification.json) is retained. The final preservation check runs after the manifest exists. This did not require any source change or runtime command.

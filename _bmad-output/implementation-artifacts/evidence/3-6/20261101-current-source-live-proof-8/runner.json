@@ -1,0 +1,20 @@
+{
+  "stage": "runner",
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner",
+  "started_utc": "2026-11-01T16:54:08.663093+00:00",
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "completed_utc": "2026-11-01T16:54:09.288911+00:00",
+  "duration_seconds": 0.625816,
+  "exit_code": 1,
+  "stdout": {
+    "bytes": 168,
+    "sha256": "274972f017e3b1a170a3406aad5ba7c23fd8d99f52adfd3f43341a6bc9074f6f"
+  },
+  "stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

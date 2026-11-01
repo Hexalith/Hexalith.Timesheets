@@ -1,0 +1,35 @@
+[
+  {
+    "stage": "before",
+    "command_receipt": "imports-before.json",
+    "original_output_file": "/tmp/timesheets-nu1506-repair-1q5iokfd/works-before.xml",
+    "original_bytes": 1562724,
+    "original_sha256": "0ecb6b5aef894c7f5e72cf11ebc1a3d7805f2965f22a5ac7f48c0724817d8347",
+    "retained_excerpt": "imports-before.excerpt.sanitized.txt",
+    "excerpt_bytes": 3692,
+    "excerpt_sha256": "42a32cf47275103e2652bf0c5f1b5bc338dcb416ce87ab583c022a4312213ec6",
+    "extraction": "Selected preprocessor lines around Works/shared catalog imports and the three PackageVersion declarations; numbered original lines; canonical repository-root path replaced with <repository>. Final excerpt also includes ownership helper properties."
+  },
+  {
+    "stage": "after",
+    "command_receipt": "imports-after.json",
+    "original_output_file": "/tmp/timesheets-nu1506-repair-1q5iokfd/works-after.xml",
+    "original_bytes": 1572847,
+    "original_sha256": "84f7d9bc91457c3a373c127d6f60ca6dea6fa4f05ebeff711f1a8e92e3e60c8f",
+    "retained_excerpt": "imports-after.excerpt.sanitized.txt",
+    "excerpt_bytes": 4785,
+    "excerpt_sha256": "cafeabc05253e466b158efd7f5fd43d92352514a68be5183e2539ae73d094896",
+    "extraction": "Selected preprocessor lines around Works/shared catalog imports and the three PackageVersion declarations; numbered original lines; canonical repository-root path replaced with <repository>. Final excerpt also includes ownership helper properties."
+  },
+  {
+    "stage": "final",
+    "command_receipt": "imports-final.json",
+    "original_output_file": "/tmp/timesheets-nu1506-repair-1q5iokfd/works-final.xml",
+    "original_bytes": 1573179,
+    "original_sha256": "f831dab36a004da4c8b667a6c684abbb50c66b124dee1ef4edbcdf6749d14f76",
+    "retained_excerpt": "imports-final.excerpt.sanitized.txt",
+    "excerpt_bytes": 5127,
+    "excerpt_sha256": "7cfaf5083caffb2b9b3f63b6fc639eb4fa784dc49375ff0ce5ffea76e53c7a71",
+    "extraction": "Selected preprocessor lines around Works/shared catalog imports and the three PackageVersion declarations; numbered original lines; canonical repository-root path replaced with <repository>. Final excerpt also includes ownership helper properties."
+  }
+]

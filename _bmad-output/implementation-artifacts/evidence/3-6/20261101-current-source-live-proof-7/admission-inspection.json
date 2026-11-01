@@ -1,0 +1,72 @@
+{
+  "schema": "timesheets-current-source-live-proof-admission-v1",
+  "started_utc": "2026-11-01T12:48:14.313768+00:00",
+  "lock": {
+    "canonical_helper": "scripts/local_runtime_admission.py",
+    "acquired": true,
+    "released_before_runner": true,
+    "acquired_utc": "2026-11-01T12:48:14.314019+00:00",
+    "released_utc": "2026-11-01T12:48:24.894412+00:00"
+  },
+  "commands": [
+    {
+      "argv": [
+        "dapr",
+        "list",
+        "--output",
+        "json"
+      ],
+      "started_utc": "2026-11-01T12:48:14.314027+00:00",
+      "exit_code": 0,
+      "completed_utc": "2026-11-01T12:48:14.476233+00:00",
+      "duration_seconds": 0.162224,
+      "stdout": {
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "shape": {
+        "top_level_type": "list",
+        "count": 0,
+        "row_type_counts": {}
+      },
+      "successful_empty_inventory": true
+    },
+    {
+      "argv": [
+        "aspire",
+        "ps",
+        "--non-interactive",
+        "--format",
+        "Json"
+      ],
+      "started_utc": "2026-11-01T12:48:14.476543+00:00",
+      "exit_code": 0,
+      "completed_utc": "2026-11-01T12:48:24.894113+00:00",
+      "duration_seconds": 10.417591,
+      "stdout": {
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "shape": {
+        "top_level_type": "list",
+        "count": 0,
+        "row_type_counts": {}
+      },
+      "successful_empty_inventory": true
+    }
+  ],
+  "idle_inventory": true,
+  "resources_started": false,
+  "inspection_count": 1,
+  "completed_utc": "2026-11-01T12:48:24.894417+00:00",
+  "duration_seconds": 10.5806,
+  "exit_code": 0
+}

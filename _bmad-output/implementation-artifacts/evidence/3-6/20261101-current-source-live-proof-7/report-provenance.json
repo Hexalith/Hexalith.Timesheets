@@ -1,0 +1,136 @@
+{
+  "original_private_directory": "/tmp/timesheets-current-source-live-proof-20261101-attempt7-hragbqob",
+  "reports": [
+    {
+      "original_name": "admission-inspection.json",
+      "retained_name": "admission-inspection.json",
+      "original": {
+        "bytes": 1992,
+        "sha256": "db438bbdb8604f0b8dff14a70db8c074425d94a33fe9fecfc9e75bace01f7d5b"
+      },
+      "retained": {
+        "bytes": 1992,
+        "sha256": "db438bbdb8604f0b8dff14a70db8c074425d94a33fe9fecfc9e75bace01f7d5b"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_name": "admission-inspection.py",
+      "retained_name": "admission-inspection.py.txt",
+      "original": {
+        "bytes": 3924,
+        "sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4"
+      },
+      "retained": {
+        "bytes": 3924,
+        "sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_name": "run-prescribed-command.py",
+      "retained_name": "execution-command.py.txt",
+      "original": {
+        "bytes": 2164,
+        "sha256": "57052b0db7d618ddf1fc9da7978b1451e0258564e418ec2ab59d8698cfdc6f34"
+      },
+      "retained": {
+        "bytes": 2164,
+        "sha256": "57052b0db7d618ddf1fc9da7978b1451e0258564e418ec2ab59d8698cfdc6f34"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_name": "restore.json",
+      "retained_name": "restore.json",
+      "original": {
+        "bytes": 719,
+        "sha256": "7cb8c08bd9de7c1b46c682073d3a0695c28614b69e86dacec11b1fd2919b43a5"
+      },
+      "retained": {
+        "bytes": 719,
+        "sha256": "7cb8c08bd9de7c1b46c682073d3a0695c28614b69e86dacec11b1fd2919b43a5"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_name": "restore.stdout.original",
+      "retained_name": "restore.stdout.sanitized.txt",
+      "original": {
+        "bytes": 569,
+        "sha256": "d26f8b9fc1f791dd33a7870c02ac9ca49646b6dbbeba937df139a3517d7fa9c8"
+      },
+      "retained": {
+        "bytes": 533,
+        "sha256": "44fa06a486681e4f02eee3d248da14b87ee918a9bbda0471d6e5ab077792ad60"
+      },
+      "transformation": "Replace the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_name": "restore.stderr.original",
+      "retained_name": "restore.stderr.sanitized.txt",
+      "original": {
+        "bytes": 1046,
+        "sha256": "b9c7c8c1869de208594b9d4b62855624184bf55076e4c209f1b0414f869e14db"
+      },
+      "retained": {
+        "bytes": 1046,
+        "sha256": "b9c7c8c1869de208594b9d4b62855624184bf55076e4c209f1b0414f869e14db"
+      },
+      "transformation": "Replace the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_name": "dapr-list.stdout.original",
+      "original": {
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "retained": false,
+      "transformation": "Original inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_name": "dapr-list.stderr.original",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": false,
+      "transformation": "Original inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_name": "aspire-ps.stdout.original",
+      "original": {
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "retained": false,
+      "transformation": "Original inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_name": "aspire-ps.stderr.original",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": false,
+      "transformation": "Original inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    }
+  ],
+  "harness_invocation": [
+    "python3",
+    "/tmp/timesheets-current-source-live-proof-20261101-attempt7-hragbqob/admission-inspection.py"
+  ],
+  "inspection_invocations": 1,
+  "inspection_harness_matches_20261030_retained_harness": true,
+  "restore_capture_invocation": [
+    "python3",
+    "/tmp/timesheets-current-source-live-proof-20261101-attempt7-hragbqob/run-prescribed-command.py",
+    "restore"
+  ],
+  "explicit_inventory_environment_overrides": {},
+  "explicit_restore_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "inventory_sanitization": "No inventory rows, fields, identities or endpoints are retained."
+}

@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:26:44.887971+00:00",
+  "completed_utc": "2026-11-01T14:27:00.216923+00:00",
+  "duration_seconds": 15.328976683027577,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 8579,
+    "original_sha256": "0d7cd8f739731a08bc4e0a71160af9946ee53f03402e5080788b3d45a5fdb39e",
+    "retained_file": "build-final-owner.stdout.sanitized.txt",
+    "retained_bytes": 6959,
+    "retained_sha256": "96151f94b68b998c17b59e4ec56897427e73c765f9be71b5ad0a764c821d5dde"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "build-final-owner.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

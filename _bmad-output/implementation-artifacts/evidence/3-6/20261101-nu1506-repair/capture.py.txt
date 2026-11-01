@@ -1,0 +1,20 @@
+import datetime, hashlib, json, os, pathlib, shlex, subprocess, sys, time
+root = pathlib.Path('/home/administrator/projects/hexalith/timesheets')
+state = json.loads(pathlib.Path(pathlib.Path('/tmp/timesheets-nu1506-repair-state-path').read_text()).read_text())
+packet = pathlib.Path(state['packet'])
+label, *args = sys.argv[1:]
+env = os.environ.copy()
+env['DOTNET_CLI_HOME'] = '/tmp/dotnet-cli-home'
+started = datetime.datetime.now(datetime.timezone.utc).isoformat()
+clock = time.monotonic()
+result = subprocess.run(args, cwd=root, env=env, capture_output=True)
+finished = datetime.datetime.now(datetime.timezone.utc).isoformat()
+receipt = {'command': 'DOTNET_CLI_HOME=/tmp/dotnet-cli-home ' + shlex.join(args), 'cwd': '<repository>', 'started_utc': started, 'completed_utc': finished, 'duration_seconds': time.monotonic() - clock, 'exit_code': result.returncode, 'explicit_environment_overrides': {'DOTNET_CLI_HOME': '/tmp/dotnet-cli-home'}, 'inherited_environment_captured': False}
+for name, data in [('stdout', result.stdout), ('stderr', result.stderr)]:
+    retained = data.replace(str(root).encode(), b'<repository>')
+    path = packet / (label + '.' + name + '.sanitized.txt')
+    path.write_bytes(retained)
+    receipt[name] = {'original_bytes': len(data), 'original_sha256': hashlib.sha256(data).hexdigest(), 'retained_file': path.name, 'retained_bytes': len(retained), 'retained_sha256': hashlib.sha256(retained).hexdigest()}
+(packet / (label + '.json')).write_text(json.dumps(receipt, indent=2) + '\n')
+print(json.dumps({'label': label, 'exit_code': result.returncode, 'duration_seconds': receipt['duration_seconds']}))
+sys.exit(result.returncode)

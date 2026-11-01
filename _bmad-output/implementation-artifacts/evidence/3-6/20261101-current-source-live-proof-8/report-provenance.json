@@ -1,0 +1,320 @@
+{
+  "schema": "timesheets-current-source-live-proof-report-v2",
+  "captured_utc": "2026-11-01T16:55:36.566044+00:00",
+  "original_private_directory": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e",
+  "runner_original_private_directory": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos",
+  "reports": [
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/admission-inspection.json",
+      "retained_name": "admission-inspection.json",
+      "original": {
+        "bytes": 1992,
+        "sha256": "2fb294f8c7afb36ab50258b6afd81dd27b37dd04ef6462b248fca1122b1cd286"
+      },
+      "retained": {
+        "bytes": 1992,
+        "sha256": "2fb294f8c7afb36ab50258b6afd81dd27b37dd04ef6462b248fca1122b1cd286"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/restore.json",
+      "retained_name": "restore.json",
+      "original": {
+        "bytes": 717,
+        "sha256": "1936cd226eafbd531dc43d581a83dc7935ad517f0f2d6be2c70ae17dab2ae547"
+      },
+      "retained": {
+        "bytes": 717,
+        "sha256": "1936cd226eafbd531dc43d581a83dc7935ad517f0f2d6be2c70ae17dab2ae547"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/build.json",
+      "retained_name": "build.json",
+      "original": {
+        "bytes": 740,
+        "sha256": "6696468e30583e3fcf78d5546ea87ac1e8a93cd540e72b74378c38e2d273e2a3"
+      },
+      "retained": {
+        "bytes": 740,
+        "sha256": "6696468e30583e3fcf78d5546ea87ac1e8a93cd540e72b74378c38e2d273e2a3"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/runner.json",
+      "retained_name": "runner.json",
+      "original": {
+        "bytes": 741,
+        "sha256": "bb7a2656c773e4cf5d33d6ac314747691274cb6ad441bd6e7e304d1bccc878fa"
+      },
+      "retained": {
+        "bytes": 741,
+        "sha256": "bb7a2656c773e4cf5d33d6ac314747691274cb6ad441bd6e7e304d1bccc878fa"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/admission-inspection.py",
+      "retained_name": "admission-inspection.py.txt",
+      "original": {
+        "bytes": 3924,
+        "sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4"
+      },
+      "retained": {
+        "bytes": 3924,
+        "sha256": "0377de3415aebd84c8030e17721259dd6cbd1af24f32e376505beac1d7636de4"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/run-prescribed-command.py",
+      "retained_name": "execution-command.py.txt",
+      "original": {
+        "bytes": 2164,
+        "sha256": "ea3ac2c9805eaab9313ac2d0e57916e5a796828e013bb2425e8a9ca536e6cf00"
+      },
+      "retained": {
+        "bytes": 2164,
+        "sha256": "ea3ac2c9805eaab9313ac2d0e57916e5a796828e013bb2425e8a9ca536e6cf00"
+      },
+      "transformation": "Byte-for-byte copy of aggregate-only receipt or execution harness."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/restore.stdout.original",
+      "retained_name": "restore.stdout.sanitized.txt",
+      "original": {
+        "bytes": 981,
+        "sha256": "c772f32925130a0b62e70bf5770c82814003cca24ec27ebcb8d31b27dd11a26e"
+      },
+      "retained": {
+        "bytes": 801,
+        "sha256": "b6b6482ece5a9cce6fd7171b848b0d254167c6ff71f97e0b3e4e031f20698724"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/restore.stderr.original",
+      "retained_name": "restore.stderr.sanitized.txt",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/build.stdout.original",
+      "retained_name": "build.stdout.sanitized.txt",
+      "original": {
+        "bytes": 8176,
+        "sha256": "1d5d48cac9795bfe4af35315904ac048db4570570c535eb2a2da5a0fbec4fc6b"
+      },
+      "retained": {
+        "bytes": 6628,
+        "sha256": "d11be3e283315668327a7f5de122fb36ac9eb579f77dbdc0ad5a54e95e879be4"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/build.stderr.original",
+      "retained_name": "build.stderr.sanitized.txt",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/runner.stdout.original",
+      "retained_name": "runner.stdout.sanitized.txt",
+      "original": {
+        "bytes": 168,
+        "sha256": "274972f017e3b1a170a3406aad5ba7c23fd8d99f52adfd3f43341a6bc9074f6f"
+      },
+      "retained": {
+        "bytes": 168,
+        "sha256": "274972f017e3b1a170a3406aad5ba7c23fd8d99f52adfd3f43341a6bc9074f6f"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/runner.stderr.original",
+      "retained_name": "runner.stderr.sanitized.txt",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "transformation": "Replace only the canonical repository-root path with <repository>; preserve every other byte."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/dapr-list.stdout.original",
+      "original": {
+        "bytes": 2,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "retained": false,
+      "transformation": "Inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/dapr-list.stderr.original",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": false,
+      "transformation": "Inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/aspire-ps.stdout.original",
+      "original": {
+        "bytes": 3,
+        "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+      },
+      "retained": false,
+      "transformation": "Inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/aspire-ps.stderr.original",
+      "original": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "retained": false,
+      "transformation": "Inventory stream withheld privately; only length, hash, exit and aggregate JSON shape retained."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos/01-aspire---version.log",
+      "retained_name": "runner/01-aspire---version.log",
+      "original": {
+        "bytes": 99,
+        "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36"
+      },
+      "retained": {
+        "bytes": 99,
+        "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36"
+      },
+      "transformation": "Copy the supported runner safe receipt or version log, replacing only the canonical repository-root path with <repository>. Supported runner logs are already sanitized."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos/02-dapr---version.log",
+      "retained_name": "runner/02-dapr---version.log",
+      "original": {
+        "bytes": 94,
+        "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1"
+      },
+      "retained": {
+        "bytes": 94,
+        "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1"
+      },
+      "transformation": "Copy the supported runner safe receipt or version log, replacing only the canonical repository-root path with <repository>. Supported runner logs are already sanitized."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos/03-docker-version.log",
+      "retained_name": "runner/03-docker-version.log",
+      "original": {
+        "bytes": 85,
+        "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416"
+      },
+      "retained": {
+        "bytes": 85,
+        "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416"
+      },
+      "transformation": "Copy the supported runner safe receipt or version log, replacing only the canonical repository-root path with <repository>. Supported runner logs are already sanitized."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos/04-dapr-list.log",
+      "retained_name": "runner/04-dapr-list.aggregate.json",
+      "original": {
+        "bytes": 61,
+        "sha256": "9e822d53a95e0efe1b6ddff836226001b8c644aea6b4b9023ba169e55e574e26"
+      },
+      "retained": {
+        "bytes": 765,
+        "sha256": "4e46c1d4482659fdd32d9ea38f15082f0d6542bc9ead7dd49c8291ec77ee7552"
+      },
+      "transformation": "Replace the runner inventory log with aggregate-only metadata; retain no inventory rows, fields, identities or endpoints. The supported runner had already sanitized this log."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos/05-aspire-ps.log",
+      "retained_name": "runner/05-aspire-ps.aggregate.json",
+      "original": {
+        "bytes": 79,
+        "sha256": "eed7ba1a125fd7097ecbaa322f92516884119f82bf92cbf168081891044fcdc7"
+      },
+      "retained": {
+        "bytes": 783,
+        "sha256": "a57a4b002972d6533daa1a1e3b14e82f6c39457391aef5bf20d3e739167581af"
+      },
+      "transformation": "Replace the runner inventory log with aggregate-only metadata; retain no inventory rows, fields, identities or endpoints. The supported runner had already sanitized this log."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos/admission.json",
+      "retained_name": "runner/admission.json",
+      "original": {
+        "bytes": 191,
+        "sha256": "373c7336f8c9137e3c6bbcc1d96f6659385a2cbda8405aafa94cdc40d29f61c3"
+      },
+      "retained": {
+        "bytes": 191,
+        "sha256": "373c7336f8c9137e3c6bbcc1d96f6659385a2cbda8405aafa94cdc40d29f61c3"
+      },
+      "transformation": "Copy the supported runner safe receipt or version log, replacing only the canonical repository-root path with <repository>. Supported runner logs are already sanitized."
+    },
+    {
+      "original_private_path": "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e-runner/run-m1lakcos/cleanup.json",
+      "retained_name": "runner/cleanup.json",
+      "original": {
+        "bytes": 173,
+        "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5"
+      },
+      "retained": {
+        "bytes": 173,
+        "sha256": "acb0c387fd5148cfe277a07275c8076fcc25a950ac0d296d1fb0b4f299f539a5"
+      },
+      "transformation": "Copy the supported runner safe receipt or version log, replacing only the canonical repository-root path with <repository>. Supported runner logs are already sanitized."
+    }
+  ],
+  "harness_invocation": [
+    "python3",
+    "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/admission-inspection.py"
+  ],
+  "inspection_invocations": 1,
+  "inspection_harness_matches_20261030_retained_harness": true,
+  "capture_invocations": [
+    [
+      "python3",
+      "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/run-prescribed-command.py",
+      "restore"
+    ],
+    [
+      "python3",
+      "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/run-prescribed-command.py",
+      "build"
+    ],
+    [
+      "python3",
+      "/tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/run-prescribed-command.py",
+      "runner"
+    ]
+  ],
+  "explicit_inventory_environment_overrides": {},
+  "explicit_command_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "inventory_sanitization": "Original availability inventory streams and supported runner inventory logs remain private; retain only aggregate metadata and hashes."
+}

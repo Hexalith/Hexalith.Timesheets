@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/timesheets-nu1506-repair-1q5iokfd/verify.py", line 26, in <module>
+    assert target.is_file() or target == packet / 'verification.json', (source, href)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (PosixPath('<repository>/_bmad-output/implementation-artifacts/evidence/3-6/20261101-nu1506-repair/README.md'), 'SHA256SUMS')

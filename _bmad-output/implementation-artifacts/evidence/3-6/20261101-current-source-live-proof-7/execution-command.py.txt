@@ -1,0 +1,42 @@
+"""Capture the exact prescribed command once without emitting original streams."""
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+import time
+
+SCRATCH = Path(__file__).resolve().parent
+COMMANDS = {
+    'restore': 'DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false',
+    'build': 'DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false',
+    'runner': 'DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --log-directory /tmp/timesheets-current-source-live-proof-20261101-attempt7-hragbqob-runner',
+}
+stage = sys.argv[1]
+assert stage in COMMANDS
+assert not (SCRATCH / (stage + '.json')).exists()
+if stage == 'restore':
+    assert json.loads((SCRATCH / 'admission-inspection.json').read_text())['idle_inventory']
+else:
+    preceding = 'restore' if stage == 'build' else 'build'
+    assert json.loads((SCRATCH / (preceding + '.json')).read_text())['exit_code'] == 0
+
+def now():
+    return datetime.now(timezone.utc).isoformat()
+
+def digest(data):
+    return {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+
+record = {'stage': stage, 'command': COMMANDS[stage], 'started_utc': now(),
+          'explicit_environment_overrides': {'DOTNET_CLI_HOME': '/tmp/dotnet-cli-home'},
+          'inherited_environment_captured': False}
+started = time.monotonic()
+result = subprocess.run(COMMANDS[stage], shell=True, cwd=Path.cwd(), capture_output=True)
+record.update(completed_utc=now(), duration_seconds=round(time.monotonic() - started, 6),
+              exit_code=result.returncode, stdout=digest(result.stdout), stderr=digest(result.stderr))
+for stream in ('stdout', 'stderr'):
+    (SCRATCH / (stage + '.' + stream + '.original')).write_bytes(getattr(result, stream))
+(SCRATCH / (stage + '.json')).write_text(json.dumps(record, indent=2) + '\n')
+print(json.dumps(record, indent=2), flush=True)
+raise SystemExit(result.returncode)

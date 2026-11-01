@@ -1,0 +1,45 @@
+407:   <!--
+408: ============================================================================================================================================
+409:   <Import Project="$(DirectoryPackagesPropsPath)" Condition="'$(ImportDirectoryPackagesProps)' == 'true' and '$(DirectoryPackagesPropsPath)' != '' and Exists('$(DirectoryPackagesPropsPath)')">
+410: 
+411: <repository>/references/Hexalith.Works/Directory.Packages.props
+412: ============================================================================================================================================
+413: -->
+414:   <PropertyGroup>
+417:     <!-- Release restores published EventStore 3.128.4. Platform.Identity has no public package, so tests use its sibling project. -->
+418:     <HexalithEventStoreVersion Condition="'$(HexalithEventStoreVersion)' == ''">3.128.4</HexalithEventStoreVersion>
+419:     <Hexalith1BuildPackageProps>$(MSBuildThisFileDirectory)references/Hexalith.Builds/Props/Directory.Packages.props</Hexalith1BuildPackageProps>
+420:     <Hexalith2BuildPackageProps>$(MSBuildThisFileDirectory)../Hexalith.Builds/Props/Directory.Packages.props</Hexalith2BuildPackageProps>
+421:     <Hexalith3BuildPackageProps>$(MSBuildThisFileDirectory)../../references/Hexalith.Builds/Props/Directory.Packages.props</Hexalith3BuildPackageProps>
+422:   </PropertyGroup>
+423:   <!--<Import Project="$(Hexalith1BuildPackageProps)" Condition="Exists('$(Hexalith1BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />-->
+424:   <!--
+425: ============================================================================================================================================
+426:   <Import Project="$(Hexalith2BuildPackageProps)" Condition="Exists('$(Hexalith2BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'">
+427: 
+428: <repository>/references/Hexalith.Builds/Props/Directory.Packages.props
+429: ============================================================================================================================================
+430: -->
+431:   <PropertyGroup>
+665:     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="5.9.0" />
+666:     <!-- Keep the .NET 10 MSBuild line: 18.10.1 and 18.11.0 ship net11.0/net472, causing NU1701 for the net10.0 architecture loader. -->
+667:     <PackageVersion Include="Microsoft.Build" Version="18.9.6" />
+668:     <PackageVersion Include="Microsoft.Build.Framework" Version="18.9.6" />
+669:     <PackageVersion Include="Microsoft.Build.Locator" Version="1.11.2" />
+670:     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="5.9.0" />
+671:     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
+672:     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+803:   </Import>
+804: 
+805: <repository>/references/Hexalith.Works/Directory.Packages.props
+806: ============================================================================================================================================
+807: -->
+808:   <!--<Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />-->
+809:   <ItemGroup>
+810:     <!-- Architecture-only loader and compile surface; installed SDK supplies MSBuild at runtime. -->
+811:     <PackageVersion Include="Microsoft.Build.Locator" Version="1.11.2" />
+812:     <PackageVersion Include="Microsoft.Build" Version="18.9.6" />
+813:     <PackageVersion Include="Microsoft.Build.Framework" Version="18.9.6" />
+814:   </ItemGroup>
+815:   <!--
+816: ============================================================================================================================================

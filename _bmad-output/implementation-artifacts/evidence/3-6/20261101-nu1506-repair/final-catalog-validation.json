@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-central-package-versions.ps1",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:25:02.580641+00:00",
+  "completed_utc": "2026-11-01T14:25:06.621082+00:00",
+  "duration_seconds": 4.042166394996457,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 171,
+    "original_sha256": "0887a32b3ff5df1ce2c281f92edd4bdaafa060ea00c6dee1c140b5d28e5ef1d0",
+    "retained_file": "final-catalog-validation.stdout.sanitized.txt",
+    "retained_bytes": 135,
+    "retained_sha256": "6b8e3dd5307b65f6641bd8370743559c01e667dd8bd0ef4e3334799e2c89d497"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "final-catalog-validation.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

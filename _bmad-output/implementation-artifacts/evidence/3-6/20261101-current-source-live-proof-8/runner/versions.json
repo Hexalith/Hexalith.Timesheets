@@ -1,0 +1,7 @@
+{
+  "aspire_cli": "13.6.4+c89352703f78ae46de90fbf751ed8b52b77b89bf",
+  "dapr_cli": "1.18.2",
+  "dapr_reported_runtime": "1.18.7",
+  "docker_server": "29.8.2",
+  "scope": "Observed by supported runner version commands only; no fixture-running asset identity is claimed."
+}

@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home pwsh -NoLogo -NoProfile -File references/Hexalith.Builds/Tools/validate-consumer-package-authority.ps1 -RepositoryRoot references/Hexalith.Builds -CatalogPath references/Hexalith.Builds/Props/Directory.Packages.props",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:25:02.579288+00:00",
+  "completed_utc": "2026-11-01T14:26:16.283134+00:00",
+  "duration_seconds": 73.70873254298931,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 143,
+    "original_sha256": "63c4ad6773d847a4788a2a80aeec5bfe357bf3958e93042c535c2967121f4ad9",
+    "retained_file": "final-consumer-validation.stdout.sanitized.txt",
+    "retained_bytes": 107,
+    "retained_sha256": "ecfe35340f97d5dd5163629d86c1d6e0485473c8b7d3dd6015f7521904c71981"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "final-consumer-validation.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

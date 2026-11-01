@@ -1,0 +1,49 @@
+  Hexalith.Timesheets.Contracts -> <repository>/src/Hexalith.Timesheets.Contracts/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.dll
+  Hexalith.Commons.UniqueIds -> <repository>/references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/bin/Debug/net10.0/Hexalith.Commons.UniqueIds.dll
+  Hexalith.EventStore.Contracts -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/bin/Debug/net10.0/Hexalith.EventStore.Contracts.dll
+  Hexalith.EventStore.Client -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Client/bin/Debug/net10.0/Hexalith.EventStore.Client.dll
+  Hexalith.Timesheets.ReadModels -> <repository>/src/Hexalith.Timesheets.ReadModels/bin/Debug/net10.0/Hexalith.Timesheets.ReadModels.dll
+  Hexalith.EventStore.ServiceDefaults -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/bin/Debug/net10.0/Hexalith.EventStore.ServiceDefaults.dll
+  Hexalith.EventStore.DomainService -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/bin/Debug/net10.0/Hexalith.EventStore.DomainService.dll
+  Hexalith.Timesheets.Projections -> <repository>/src/Hexalith.Timesheets.Projections/bin/Debug/net10.0/Hexalith.Timesheets.Projections.dll
+  Hexalith.Timesheets.Server -> <repository>/src/Hexalith.Timesheets.Server/bin/Debug/net10.0/Hexalith.Timesheets.Server.dll
+  Hexalith.Timesheets.ServiceDefaults -> <repository>/src/Hexalith.Timesheets.ServiceDefaults/bin/Debug/net10.0/Hexalith.Timesheets.ServiceDefaults.dll
+  Hexalith.Timesheets -> <repository>/src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets.dll
+  Hexalith.EventStore.Aspire -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/bin/Debug/net10.0/Hexalith.EventStore.Aspire.dll
+  Hexalith.EventStore.Admin.Abstractions -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/bin/Debug/net10.0/Hexalith.EventStore.Admin.Abstractions.dll
+  Hexalith.EventStore.Server -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Server/bin/Debug/net10.0/Hexalith.EventStore.Server.dll
+  Hexalith.EventStore.Gateway -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Gateway/bin/Debug/net10.0/Hexalith.EventStore.Gateway.dll
+  Hexalith.EventStore -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore.dll
+  Hexalith.Timesheets.AppHost -> <repository>/src/Hexalith.Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll
+  Hexalith.Timesheets.Client -> <repository>/src/Hexalith.Timesheets.Client/bin/Debug/net10.0/Hexalith.Timesheets.Client.dll
+  Hexalith.Timesheets.Contracts -> <repository>/src/Hexalith.Timesheets.Contracts/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.dll
+  Hexalith.Timesheets.Projections -> <repository>/src/Hexalith.Timesheets.Projections/bin/Debug/net10.0/Hexalith.Timesheets.Projections.dll
+  Hexalith.Timesheets.ReadModels -> <repository>/src/Hexalith.Timesheets.ReadModels/bin/Debug/net10.0/Hexalith.Timesheets.ReadModels.dll
+  Hexalith.Timesheets.Server -> <repository>/src/Hexalith.Timesheets.Server/bin/Debug/net10.0/Hexalith.Timesheets.Server.dll
+  Hexalith.Timesheets.ServiceDefaults -> <repository>/src/Hexalith.Timesheets.ServiceDefaults/bin/Debug/net10.0/Hexalith.Timesheets.ServiceDefaults.dll
+  Hexalith.Timesheets.Testing -> <repository>/src/Hexalith.Timesheets.Testing/bin/Debug/net10.0/Hexalith.Timesheets.Testing.dll
+  Hexalith.Commons.UniqueIds -> <repository>/references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/bin/Debug/net10.0/Hexalith.Commons.UniqueIds.dll
+  Hexalith.EventStore.Contracts -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/bin/Debug/net10.0/Hexalith.EventStore.Contracts.dll
+  Hexalith.PolymorphicSerializations -> <repository>/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations/bin/Debug/net10.0/Hexalith.PolymorphicSerializations.dll
+  Hexalith.PolymorphicSerializations.CodeGenerators -> <repository>/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations.CodeGenerators/bin/Debug/netstandard2.0/Hexalith.PolymorphicSerializations.CodeGenerators.dll
+  Hexalith.Works.Contracts -> <repository>/references/Hexalith.Works/src/Hexalith.Works.Contracts/bin/Debug/net10.0/Hexalith.Works.Contracts.dll
+  Hexalith.EventStore.Contracts -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Contracts/bin/Debug/net10.0/Hexalith.EventStore.Contracts.dll
+  Hexalith.Commons.UniqueIds -> <repository>/references/Hexalith.Commons/src/libraries/Hexalith.Commons.UniqueIds/bin/Debug/net10.0/Hexalith.Commons.UniqueIds.dll
+  Hexalith.EventStore.Client -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Client/bin/Debug/net10.0/Hexalith.EventStore.Client.dll
+  Hexalith.PolymorphicSerializations -> <repository>/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations/bin/Debug/net10.0/Hexalith.PolymorphicSerializations.dll
+  Hexalith.Timesheets.Works -> <repository>/src/Hexalith.Timesheets.Works/bin/Debug/net10.0/Hexalith.Timesheets.Works.dll
+  Hexalith.Timesheets -> <repository>/src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets.dll
+  Hexalith.Timesheets.ArchitectureTests -> <repository>/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests.dll
+  Hexalith.Timesheets.Contracts.Tests -> <repository>/tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests.dll
+  Hexalith.EventStore.Testing -> <repository>/references/Hexalith.EventStore/src/Hexalith.EventStore.Testing/bin/Debug/net10.0/Hexalith.EventStore.Testing.dll
+  Hexalith.Timesheets.IntegrationTests -> <repository>/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests.dll
+  Hexalith.Timesheets.Projections.Tests -> <repository>/tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests.dll
+  Hexalith.Timesheets.Server.Tests -> <repository>/tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests.dll
+  Hexalith.Timesheets.Works -> <repository>/src/Hexalith.Timesheets.Works/bin/Debug/net10.0/Hexalith.Timesheets.Works.dll
+  Hexalith.Timesheets.Works.Tests -> <repository>/tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:10.75

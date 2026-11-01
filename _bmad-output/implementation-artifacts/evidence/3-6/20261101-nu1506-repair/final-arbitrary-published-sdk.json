@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/_bmad-output/implementation-artifacts/evidence/story-4-9/publish-live-2026-10-25/sdk-negative-control/PublishedSdk.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:24:56.344409+00:00",
+  "completed_utc": "2026-11-01T14:24:56.761511+00:00",
+  "duration_seconds": 0.4171180659905076,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 359496,
+    "original_sha256": "e67b1d2917b90d96a4ea1b733cf671e0af27c60f7ea1c6a5a1f32640aef6a780",
+    "retained_file": "final-arbitrary-published-sdk.stdout.sanitized.txt",
+    "retained_bytes": 325116,
+    "retained_sha256": "625c85da812c7020937b67e22926b9f9b58dd6c0ecd294853db731125fe1d7d0"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "final-arbitrary-published-sdk.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "verified_utc": "2026-11-01T14:31:11.139311+00:00",
+  "result": "PASS",
+  "prior_evidence_files_unchanged": 4795,
+  "works_tracked_files_unchanged": 11926,
+  "existing_user_document_prefixes_preserved": true,
+  "live_proof_spec_and_launch_document_unchanged": true,
+  "all_catalog_package_ids_and_versions_unchanged": true,
+  "catalog_bom_and_crlf_preserved": true,
+  "apphost_and_service_defaults_unchanged": true,
+  "story_and_sprint_status": "in-progress",
+  "release": "FAIL",
+  "staged_changes": false,
+  "builds_gitlink_unchanged": true,
+  "receipt_stream_hashes_verified": 57,
+  "local_links_checked": 37,
+  "runtime_qualification": false
+}

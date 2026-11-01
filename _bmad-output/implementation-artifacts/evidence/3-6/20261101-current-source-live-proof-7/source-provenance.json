@@ -1,0 +1,221 @@
+{
+  "captured_utc": "2026-11-01T12:46:39.650222+00:00",
+  "invocation_captured_utc": "2026-11-01T12:46:40.005245+00:00",
+  "root_head": "4181f242bc879a2c547a5a7390692f8c7dfde6b9",
+  "root_branch": "main",
+  "frozen_spec_baseline_commit": "c4393bbcaad70ba12901c0d71c05fd7c9a9a4c36",
+  "initial_status": "",
+  "initial_staged_diff": "",
+  "root_declared_submodules": {
+    "references/Hexalith.Commons": {
+      "head": "bbbce518bcca9ca359762393688f02d142af1c61",
+      "gitlink": "bbbce518bcca9ca359762393688f02d142af1c61",
+      "status": ""
+    },
+    "references/Hexalith.AI.Tools": {
+      "head": "9b78aa008cfc62cd88ad0ea4b39b1f07311956ce",
+      "gitlink": "9b78aa008cfc62cd88ad0ea4b39b1f07311956ce",
+      "status": ""
+    },
+    "references/Hexalith.Builds": {
+      "head": "f0feeb234cbc16f88c2886a6ffae7122e05dd64b",
+      "gitlink": "f0feeb234cbc16f88c2886a6ffae7122e05dd64b",
+      "status": ""
+    },
+    "references/Hexalith.Tenants": {
+      "head": "2d3fa6da2312c1b5cf7f5c9461cc2d0ffc995b43",
+      "gitlink": "2d3fa6da2312c1b5cf7f5c9461cc2d0ffc995b43",
+      "status": ""
+    },
+    "references/Hexalith.EventStore": {
+      "head": "710d97f7cfe4ef4c382965bc69ae6556c234d2b8",
+      "gitlink": "710d97f7cfe4ef4c382965bc69ae6556c234d2b8",
+      "status": ""
+    },
+    "references/Hexalith.FrontComposer": {
+      "head": "c092e8f91ebb670fad4ab959f2d3c8e13d809e0f",
+      "gitlink": "c092e8f91ebb670fad4ab959f2d3c8e13d809e0f",
+      "status": ""
+    },
+    "references/Hexalith.PolymorphicSerializations": {
+      "head": "7e53c59d3404c5c5d6ffce6666e5950af1bef8aa",
+      "gitlink": "7e53c59d3404c5c5d6ffce6666e5950af1bef8aa",
+      "status": ""
+    },
+    "references/Hexalith.Projects": {
+      "head": "307afa0741d91a200d2e7b91728d8df5b665d910",
+      "gitlink": "307afa0741d91a200d2e7b91728d8df5b665d910",
+      "status": ""
+    },
+    "references/Hexalith.Conversations": {
+      "head": "468ed8f0661101e03b332795173fe72f4875e699",
+      "gitlink": "468ed8f0661101e03b332795173fe72f4875e699",
+      "status": ""
+    },
+    "references/Hexalith.Works": {
+      "head": "038f49080a86d312b30d12567f521c3954593569",
+      "gitlink": "038f49080a86d312b30d12567f521c3954593569",
+      "status": ""
+    },
+    "references/Hexalith.Parties": {
+      "head": "a3666267868da046db164bba2668efc1325d42d5",
+      "gitlink": "a3666267868da046db164bba2668efc1325d42d5",
+      "status": ""
+    },
+    "references/Hexalith.McpCli": {
+      "head": "ac6f6de9c9669751bc707dcf907c19e93d64685c",
+      "gitlink": "ac6f6de9c9669751bc707dcf907c19e93d64685c",
+      "status": ""
+    },
+    "references/Hexalith.Platform": {
+      "head": "03799ed553a16c8a1528068ba4d95bb5509ea75e",
+      "gitlink": "03799ed553a16c8a1528068ba4d95bb5509ea75e",
+      "status": ""
+    }
+  },
+  "selected_source_files": {
+    "AGENTS.md": {
+      "bytes": 8730,
+      "sha256": "8320ccb13492a965bad20e53dd2028a0316dfc9911c8c7221a5a82a06168d426"
+    },
+    ".editorconfig": {
+      "bytes": 1723,
+      "sha256": "61b744ffae7925fa1f647b737011df766c0e1ad00a44baa83beb3b16cdc01732"
+    },
+    ".gitmodules": {
+      "bytes": 1695,
+      "sha256": "36afaa28da32811ec492b2663ec1d50b48a101a6c34bb30efbad0c9100f0c495"
+    },
+    "global.json": {
+      "bytes": 139,
+      "sha256": "4ec97d7c7e6bee864d2da2c965f18b94b0bd84e71058427f1f6fa69ee6824652"
+    },
+    "Directory.Build.props": {
+      "bytes": 5556,
+      "sha256": "92945c259d86f53f490dc26376a26aadd6dca0e7d93b24c74853979efb0d8f4c"
+    },
+    "Directory.Build.targets": {
+      "bytes": 2529,
+      "sha256": "b90ac7534a79a5ce4752ff51ba2b93e0f5235b89f2c17228e9a7ba0da9de8b89"
+    },
+    "Directory.Packages.props": {
+      "bytes": 2421,
+      "sha256": "c2786636394d99df842a2f68c5e2fbf56c4336390943a733def5fe2fcf7454ad"
+    },
+    "Hexalith.Timesheets.slnx": {
+      "bytes": 1651,
+      "sha256": "4c36c9e88f0bed8ac1591e95b01e5de3f2752a6b2c907db8b8f425b875de8c14"
+    },
+    "docs/boundary-decision-record.md": {
+      "bytes": 5919,
+      "sha256": "7b817dbbda5712d09d4de01cda9ff8e23eaeb046c6065680b265a2fbd13320f2"
+    },
+    "scripts/local_runtime_admission.py": {
+      "bytes": 2253,
+      "sha256": "c5922d5547fa795a28e498855c3522648706b0efdc364b6da88946d35a80a006"
+    },
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "bytes": 157805,
+      "sha256": "6f93a9e132396121630b7bd7914e41f1952225528f14fb58ac4e8759ac1e327e"
+    },
+    "scripts/local_aspire_magic_link_journey.py": {
+      "bytes": 46188,
+      "sha256": "b4eea1764d407b00356ed62e40c7ac9e3e46b711552086328dc82824395f390e"
+    },
+    "scripts/magic_link_index_selection.py": {
+      "bytes": 24641,
+      "sha256": "1ad0c5ddb7c803b3c27d924af0e1b749af2ac09af0d835e5c97740b697e29142"
+    },
+    "scripts/magic_link_evidence_lineage.py": {
+      "bytes": 6063,
+      "sha256": "8e6f3c253a748013e278c07cd5db0dcd2e3334e9d902717db7c044d73b665003"
+    },
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs": {
+      "bytes": 1999,
+      "sha256": "4090f650c23b1fec31304b77e5cf9bbaa944d7f4cbd19193a25f271b271f9215"
+    },
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprFixture.cs": {
+      "bytes": 2304,
+      "sha256": "9b3c577cf558f853c668176ceb7dbf94ad1907b4ea79b6427de82baa3e18a3e0"
+    },
+    "_bmad-output/implementation-artifacts/sprint-status.yaml": {
+      "bytes": 4586,
+      "sha256": "8002bfba2a94ec9442834e53350f6c695ef672cc5faea5d23e6abc3be80a62f8"
+    }
+  },
+  "tracked_source_corpus": {
+    "prefixes": [
+      "src/",
+      "tests/",
+      "scripts/"
+    ],
+    "count": 596,
+    "bytes": 101371,
+    "sha256": "3d3a4b8e4d87eed0089f73a9c9b65b07b85ceb4aeec745817d2f6363b76ce74a"
+  },
+  "prior_evidence_corpus": {
+    "prefix": "_bmad-output/implementation-artifacts/evidence/",
+    "count": 3400,
+    "bytes": 759401,
+    "sha256": "a20f7f65245d767732cb837ebfafec7537520cb857a74f3208d2088da24c62ef"
+  },
+  "pre_attempt_manifest": {
+    "count": 6681,
+    "bytes": 1294554,
+    "sha256": "315a38c9e93352044c62d86efc0558dc06e8d1c144c9312a9ce0209b54dc9996"
+  },
+  "canonical_manifest_encoding": "UTF-8 json.dumps(mapping, sort_keys=True, separators=(comma, colon)), no final newline.",
+  "original_document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "bytes": 50510,
+      "sha256": "bc7dd38a942f09bbd363705636ce3b14646c9937dba19d70f6fdf1b0e727221f"
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "bytes": 481130,
+      "sha256": "2ad424c9a6979fc272d0162037844e600e99367faa54fda02173e7f88d5d643f"
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "bytes": 295447,
+      "sha256": "3c607b1b338f05a36f7b7d983ef232e860b21f80544a7e1c9606d36943130d7b"
+    },
+    "docs/launch-readiness.md": {
+      "bytes": 170348,
+      "sha256": "61b5dcd6f643470b05d668edd3a792eaab69517efb686307afcdfc4aaa189667"
+    }
+  },
+  "invocation_document_prefixes": {
+    "_bmad-output/implementation-artifacts/spec-3-6-obtain-current-source-isolated-live-magic-link-proof.md": {
+      "bytes": 55950,
+      "sha256": "7f006ba4d386e953cd75f72e4d98de866bb2ceb48e3902a212e06bcf021c65c0"
+    },
+    "_bmad-output/implementation-artifacts/3-6-implement-eventstore-backed-magic-link-state-loading.md": {
+      "bytes": 481130,
+      "sha256": "2ad424c9a6979fc272d0162037844e600e99367faa54fda02173e7f88d5d643f"
+    },
+    "_bmad-output/implementation-artifacts/tests/3-6-test-summary.md": {
+      "bytes": 295447,
+      "sha256": "3c607b1b338f05a36f7b7d983ef232e860b21f80544a7e1c9606d36943130d7b"
+    },
+    "docs/launch-readiness.md": {
+      "bytes": 170348,
+      "sha256": "61b5dcd6f643470b05d668edd3a792eaab69517efb686307afcdfc4aaa189667"
+    }
+  },
+  "frozen_intent": {
+    "bytes": 1499,
+    "sha256": "35fb7260266a715c75f2d57c59a88bd8356c4b19ac4c585d9f28f9d85e236570"
+  },
+  "manifest_provenance": {
+    "private_original": "before.json",
+    "bytes": 1479145,
+    "sha256": "e1a9ff0bbf4158f894bd615002d185ee4562a8439201e7df32a83bd94d0b2fa1",
+    "transformation": "Withhold full manifest; retain canonical digest, selected source hashes and sanitized document prefix metadata."
+  },
+  "invocation_snapshot_provenance": {
+    "private_original": "invocation.json",
+    "bytes": 1323,
+    "sha256": "a30f513553c530aa85321c966e2cdfabfd23b0cdb5ffa9bc6661076bd9cc435f",
+    "transformation": "Withhold private file locations; retain prefix lengths, hashes and capture UTC."
+  },
+  "limits": "Inspected source identity only. Restore failed; no matching built/running asset, live runtime, inherited-environment or deployed acceptance claim."
+}

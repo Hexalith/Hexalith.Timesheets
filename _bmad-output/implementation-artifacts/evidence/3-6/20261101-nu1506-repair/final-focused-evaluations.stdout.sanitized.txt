@@ -1,0 +1,16 @@
+{"label": "final-works-contracts-debug", "exit_code": 0, "duration_seconds": 0.3585723639698699}
+{"label": "final-works-architecture-debug", "exit_code": 0, "duration_seconds": 0.39497911400394514}
+{"label": "final-timesheets-debug", "exit_code": 0, "duration_seconds": 0.38811622897628695}
+{"label": "final-works-contracts-release", "exit_code": 0, "duration_seconds": 0.40251722902758047}
+{"label": "final-works-architecture-release", "exit_code": 0, "duration_seconds": 0.3862131480127573}
+{"label": "final-timesheets-release", "exit_code": 0, "duration_seconds": 0.40598905802471563}
+{"label": "final-caller-overrides", "exit_code": 0, "duration_seconds": 0.39718707295833156}
+{"label": "final-works-caller-version", "exit_code": 0, "duration_seconds": 0.4034363189712167}
+{"label": "final-works-alternate-catalog", "exit_code": 0, "duration_seconds": 0.3834033869788982}
+{"label": "final-workshop-catalog", "exit_code": 0, "duration_seconds": 0.2576649489928968}
+{"label": "final-dot-path", "exit_code": 0, "duration_seconds": 0.3912025559693575}
+{"label": "final-parent-path", "exit_code": 0, "duration_seconds": 0.37578523001866415}
+{"label": "final-arbitrary-consumer", "exit_code": 0, "duration_seconds": 0.40135429496876895}
+{"label": "final-arbitrary-published-sdk", "exit_code": 0, "duration_seconds": 0.4171180659905076}
+{"label": "final-distinct-works-root", "exit_code": 0, "duration_seconds": 0.4088336739805527}
+{"result": "PASS", "groups": 14, "msbuild_evaluations": 15}

@@ -1,0 +1,97 @@
+import collections, hashlib, json, pathlib, subprocess, sys
+root = pathlib.Path('/home/administrator/projects/hexalith/timesheets')
+state = json.loads(pathlib.Path(pathlib.Path('/tmp/timesheets-nu1506-repair-state-path').read_text()).read_text())
+packet = pathlib.Path(state['packet']); private = pathlib.Path(state['private'])
+pins = {'Microsoft.Build': '18.9.6', 'Microsoft.Build.Framework': '18.9.6', 'Microsoft.Build.Locator': '1.11.2'}
+properties = '-getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties'
+
+def evaluate(label, project, configuration, mode, extra=()):
+    label = 'final-' + label
+    args = ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=' + configuration, '-p:UseHexalithProjectReferences=' + mode, *extra, properties, '-getItem:PackageVersion,ProjectReference,PackageReference']
+    subprocess.run([sys.executable, str(private / 'capture.py'), label, *args], check=True)
+    return json.loads((packet / (label + '.stdout.sanitized.txt')).read_text())
+
+def check_pins(result, owner):
+    items = result['Items']['PackageVersion']
+    counts = collections.Counter(item['Identity'].lower() for item in items)
+    assert all(count == 1 for count in counts.values()), {k: v for k, v in counts.items() if v != 1}
+    for name, version in pins.items():
+        matching = [i for i in items if i['Identity'] == name]
+        assert len(matching) == 1 and matching[0]['Version'] == version, (name, matching)
+        assert owner in matching[0]['DefiningProjectFullPath'], matching[0]
+    assert result['Properties']['NuGetAudit'] == 'true'
+    assert result['Properties']['CentralPackageVersionOverrideEnabled'] == 'false'
+
+summary = []
+for configuration, mode in [('Debug', 'true'), ('Release', 'false')]:
+    for name, project in [('contracts', 'references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj'), ('architecture', 'references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj')]:
+        label = 'works-' + name + '-' + configuration.lower()
+        result = evaluate(label, project, configuration, mode)
+        check_pins(result, '/Hexalith.Works/Directory.Packages.props')
+        assert result['Properties']['Configuration'] == configuration
+        assert result['Properties']['UseHexalithProjectReferences'] == mode
+        assert result['Properties']['HexalithEventStoreVersion'] == '3.128.4'
+        if name == 'contracts':
+            projects = result['Items']['ProjectReference']
+            packages = result['Items']['PackageReference']
+            assert any(i['Identity'] == 'Hexalith.EventStore.Contracts' for i in packages) == (mode == 'false')
+            assert any('Hexalith.EventStore.Contracts.csproj' in i['Identity'] for i in projects) == (mode == 'true')
+        summary.append({'case': label, 'result': 'PASS', 'pin_owner': 'Works', 'items_unique_case_insensitive': True})
+    label = 'timesheets-' + configuration.lower()
+    result = evaluate(label, 'src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj', configuration, mode)
+    check_pins(result, '/Hexalith.Builds/Props/Directory.Packages.props')
+    assert result['Properties']['HexalithEventStoreVersion'] == '3.130.1'
+    projects = result['Items']['ProjectReference']; packages = result['Items']['PackageReference']
+    assert any('Hexalith.Works.Contracts.csproj' in i['Identity'] for i in projects) == (mode == 'true')
+    assert any(i['Identity'] == 'Hexalith.Works.Contracts' for i in packages) == (mode == 'false')
+    summary.append({'case': label, 'result': 'PASS', 'pin_owner': 'Builds', 'source_package_boundary': True})
+
+# Different value is evaluation-only: it does not restore or update any dependency.
+version = '3.130.0'
+result = evaluate('caller-overrides', 'src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj', 'Debug', 'true', ['-p:HexalithEventStoreVersion=' + version, '-p:HexalithWorksRoot=' + str(root / 'references/Hexalith.Works')])
+check_pins(result, '/Hexalith.Builds/Props/Directory.Packages.props')
+assert result['Properties']['HexalithEventStoreVersion'] == version
+assert result['Properties']['HexalithWorksRoot'] == '<repository>/references/Hexalith.Works'
+assert 'HexalithEventStoreVersion=' + version in result['Properties']['_GenerateRestoreGraphProjectEntryInputProperties']
+edge = next(i for i in result['Items']['ProjectReference'] if 'Hexalith.Works.Contracts.csproj' in i['Identity'])
+assert 'HexalithEventStoreVersion=' + version in edge['AdditionalProperties']
+result = evaluate('works-caller-version', 'references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj', 'Debug', 'true', ['-p:HexalithEventStoreVersion=' + version])
+check_pins(result, '/Hexalith.Works/Directory.Packages.props')
+assert result['Properties']['HexalithEventStoreVersion'] == version
+summary.append({'case': 'caller-overrides', 'result': 'PASS', 'eventstore_override': version, 'explicit_works_root_retained': True, 'forwarded_to_works_edge_and_restore': True})
+
+# An explicit alternate CPM wrapper must retain the shared defaults even for a Works name.
+result = evaluate('works-alternate-catalog', 'references/Hexalith.Works/tests/Hexalith.Works.ArchitectureTests/Hexalith.Works.ArchitectureTests.csproj', 'Debug', 'true', ['-p:DirectoryPackagesPropsPath=' + str(root / 'Directory.Packages.props')])
+check_pins(result, '/Hexalith.Builds/Props/Directory.Packages.props')
+summary.append({'case': 'works-alternate-catalog', 'result': 'PASS', 'shared_defaults_preserved': True})
+
+# A similarly prefixed project must still receive the shared pins.
+probe = private / 'Hexalith.Workshop.proj'
+probe.write_text('<Project><Import Project="' + str(root / 'references/Hexalith.Builds/Props/Directory.Packages.props') + '" /></Project>')
+result = evaluate('workshop-catalog', str(probe), 'Debug', 'true')
+for name, version in pins.items():
+    matching = [i for i in result['Items']['PackageVersion'] if i['Identity'] == name]
+    assert len(matching) == 1 and matching[0]['Version'] == version
+summary.append({'case': 'workshop-catalog', 'result': 'PASS', 'similar_prefix_keeps_defaults': True})
+# Equivalent caller wrapper paths must resolve to the same package owner.
+for label, suffix, configuration, mode in [('dot-path', '/./Directory.Packages.props', 'Debug', 'true'), ('parent-path', '/../Hexalith.Works/Directory.Packages.props', 'Release', 'false')]:
+    result = evaluate(label, 'references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj', configuration, mode, ['-p:DirectoryPackagesPropsPath=' + str(root) + '/references/Hexalith.Works' + suffix])
+    check_pins(result, '/Hexalith.Works/Directory.Packages.props')
+    summary.append({'case': label, 'result': 'PASS', 'equivalent_path_ownership': True})
+
+# Wrapper ownership also applies to projects whose names do not follow the module prefix.
+for label, project in [('arbitrary-consumer', 'references/Hexalith.Works/_bmad-output/implementation-artifacts/evidence/story-4-15/resume-2026-10-16/sdk-abi/Consumer.csproj'), ('arbitrary-published-sdk', 'references/Hexalith.Works/_bmad-output/implementation-artifacts/evidence/story-4-9/publish-live-2026-10-25/sdk-negative-control/PublishedSdk.csproj')]:
+    result = evaluate(label, project, 'Debug', 'true')
+    check_pins(result, '/Hexalith.Works/Directory.Packages.props')
+    summary.append({'case': label, 'result': 'PASS', 'wrapper_ownership_independent_of_project_name': True, 'historical_project_unchanged': True})
+
+# A spelling distinct from the default proves that the caller's WorksRoot is retained.
+selected_root = str(root) + '/references/./Hexalith.Works'
+result = evaluate('distinct-works-root', 'src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj', 'Debug', 'true', ['-p:HexalithWorksRoot=' + selected_root])
+assert result['Properties']['HexalithWorksRoot'] == '<repository>/references/./Hexalith.Works'
+edge = next(i for i in result['Items']['ProjectReference'] if 'Hexalith.Works.Contracts.csproj' in i['Identity'])
+assert '/references/./Hexalith.Works/' in edge['Identity'], edge
+assert edge['FullPath'] == '<repository>/references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj'
+summary.append({'case': 'distinct-works-root', 'result': 'PASS', 'caller_spelling_retained_in_property_and_edge': True})
+(packet / 'final-evaluation-checks.results.json').write_text(json.dumps(summary, indent=2) + '\n')
+print(json.dumps({'result': 'PASS', 'groups': len(summary), 'msbuild_evaluations': 15}))

@@ -1,0 +1,82 @@
+[
+  {
+    "case": "works-contracts-debug",
+    "result": "PASS",
+    "pin_owner": "Works",
+    "items_unique_case_insensitive": true
+  },
+  {
+    "case": "works-architecture-debug",
+    "result": "PASS",
+    "pin_owner": "Works",
+    "items_unique_case_insensitive": true
+  },
+  {
+    "case": "timesheets-debug",
+    "result": "PASS",
+    "pin_owner": "Builds",
+    "source_package_boundary": true
+  },
+  {
+    "case": "works-contracts-release",
+    "result": "PASS",
+    "pin_owner": "Works",
+    "items_unique_case_insensitive": true
+  },
+  {
+    "case": "works-architecture-release",
+    "result": "PASS",
+    "pin_owner": "Works",
+    "items_unique_case_insensitive": true
+  },
+  {
+    "case": "timesheets-release",
+    "result": "PASS",
+    "pin_owner": "Builds",
+    "source_package_boundary": true
+  },
+  {
+    "case": "caller-overrides",
+    "result": "PASS",
+    "eventstore_override": "3.130.0",
+    "explicit_works_root_retained": true,
+    "forwarded_to_works_edge_and_restore": true
+  },
+  {
+    "case": "works-alternate-catalog",
+    "result": "PASS",
+    "shared_defaults_preserved": true
+  },
+  {
+    "case": "workshop-catalog",
+    "result": "PASS",
+    "similar_prefix_keeps_defaults": true
+  },
+  {
+    "case": "dot-path",
+    "result": "PASS",
+    "equivalent_path_ownership": true
+  },
+  {
+    "case": "parent-path",
+    "result": "PASS",
+    "equivalent_path_ownership": true
+  },
+  {
+    "case": "arbitrary-consumer",
+    "result": "PASS",
+    "wrapper_ownership_independent_of_project_name": true,
+    "historical_project_unchanged": true
+  },
+  {
+    "case": "arbitrary-published-sdk",
+    "result": "PASS",
+    "wrapper_ownership_independent_of_project_name": true,
+    "historical_project_unchanged": true
+  },
+  {
+    "case": "distinct-works-root",
+    "result": "PASS",
+    "caller_spelling_retained_in_property_and_edge": true
+  }
+]

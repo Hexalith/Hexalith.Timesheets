@@ -1,0 +1,11 @@
+{"label": "works-contracts-debug", "exit_code": 0, "duration_seconds": 1.0213319470058195}
+{"label": "works-architecture-debug", "exit_code": 0, "duration_seconds": 0.8623436230118386}
+{"label": "timesheets-debug", "exit_code": 0, "duration_seconds": 0.8571536800009198}
+{"label": "works-contracts-release", "exit_code": 0, "duration_seconds": 0.8217879540170543}
+{"label": "works-architecture-release", "exit_code": 0, "duration_seconds": 1.1547745289863087}
+{"label": "timesheets-release", "exit_code": 0, "duration_seconds": 0.7843765700235963}
+{"label": "caller-overrides", "exit_code": 0, "duration_seconds": 0.4932146350038238}
+{"label": "works-caller-version", "exit_code": 0, "duration_seconds": 0.5186736679752357}
+{"label": "works-alternate-catalog", "exit_code": 0, "duration_seconds": 0.4866800209856592}
+{"label": "workshop-catalog", "exit_code": 0, "duration_seconds": 0.48217888904036954}
+{"result": "PASS", "groups": 9, "msbuild_evaluations": 10}

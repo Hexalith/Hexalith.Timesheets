@@ -1,0 +1,17 @@
+{
+  "recorded_utc": "2026-11-01T14:20:14.991535+00:00",
+  "timesheets_head": "4181f242bc879a2c547a5a7390692f8c7dfde6b9",
+  "builds_head": "f0feeb234cbc16f88c2886a6ffae7122e05dd64b",
+  "works_head": "038f49080a86d312b30d12567f521c3954593569",
+  "changed_configuration": "references/Hexalith.Builds/Props/Directory.Packages.props",
+  "catalog_original_sha256": "89e9340c8ab8129d0898418a89888dbefb38e490b2ad8acff94807dafb08376a",
+  "catalog_repaired_sha256": "810cb04f400bc6601160c66a3bad2ac968d7cf8f17d027ea81b43b94d5ddcc6a",
+  "catalog_utf8_bom_preserved": true,
+  "catalog_crlf_preserved": true,
+  "dependencies_updated": false,
+  "gitlinks_staged_or_changed": false,
+  "qualification": "build configuration only; no runtime or deployed acceptance",
+  "initial_repaired_catalog_sha256": "775244d2b3ff137330b017382161b25db2cd1d3be6ad4aa162c76aa90f5fad79",
+  "final_recorded_utc": "2026-11-01T14:29:24.471242+00:00",
+  "durable_regression_sha256": "05644e7e05691e9c655d0e0c2b1f706fda1f746bb32d5f64dc697ed778a89715"
+}

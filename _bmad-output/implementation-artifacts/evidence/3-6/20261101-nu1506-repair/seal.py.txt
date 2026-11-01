@@ -1,0 +1,29 @@
+import datetime, hashlib, json, pathlib, time
+state = json.loads(pathlib.Path(pathlib.Path('/tmp/timesheets-nu1506-repair-state-path').read_text()).read_text())
+packet = pathlib.Path(state['packet'])
+started = datetime.datetime.now(datetime.timezone.utc).isoformat(); clock = time.monotonic()
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+commands = []
+for path in packet.glob('*.json'):
+    receipt = json.loads(path.read_text())
+    if not isinstance(receipt, dict) or 'command' not in receipt:
+        continue
+    for stream in ['stdout', 'stderr']:
+        info = receipt[stream]; saved = packet / info['retained_file']
+        assert saved.stat().st_size == info['retained_bytes'] and sha(saved) == info['retained_sha256'], path
+    commands.append({'receipt': path.name, **{key: receipt[key] for key in ['command','cwd','started_utc','completed_utc','duration_seconds','exit_code']}})
+commands.sort(key=lambda receipt: receipt['started_utc'])
+(packet / 'commands.json').write_text(json.dumps(commands, indent=2) + '\n')
+files = [path for path in sorted(packet.iterdir()) if path.is_file() and path.name not in ['SHA256SUMS', 'sealing.json']]
+for path in files:
+    assert path.is_file()
+sealing = {'executed_command': 'python3 /tmp/timesheets-nu1506-repair-1q5iokfd/seal.py', 'started_utc': started, 'completed_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(), 'duration_seconds': time.monotonic() - clock, 'exit_code': 0, 'capture_receipts_indexed_and_stream_hashes_verified': len(commands), 'manifest_coverage': 'Every repair packet file except SHA256SUMS itself', 'runtime_qualification': False}
+(packet / 'sealing.json').write_text(json.dumps(sealing, indent=2) + '\n')
+files = [path for path in sorted(packet.iterdir()) if path.is_file() and path.name != 'SHA256SUMS']
+manifest = ''.join(sha(path) + '  ' + path.name + '\n' for path in files)
+(packet / 'SHA256SUMS').write_text(manifest)
+for line in manifest.splitlines():
+    digest, name = line.split('  ', 1)
+    assert sha(packet / name) == digest, name
+assert len(manifest.splitlines()) == len(files)
+print(json.dumps({'result': 'PASS', 'packet_files_hashed': len(files), 'capture_receipts_verified': len(commands), 'required_restore_exit': json.loads((packet / 'restore-final-owner.json').read_text())['exit_code'], 'required_build_exit': json.loads((packet / 'build-final-owner.json').read_text())['exit_code'], 'preservation': json.loads((packet / 'verification.json').read_text())['result']}))

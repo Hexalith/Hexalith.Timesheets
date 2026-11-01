@@ -1,0 +1,26 @@
+{
+  "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet msbuild references/Hexalith.Works/_bmad-output/implementation-artifacts/evidence/story-4-15/resume-2026-10-16/sdk-abi/Consumer.csproj -nologo -p:Configuration=Debug -p:UseHexalithProjectReferences=true -getProperty:Configuration,UseHexalithProjectReferences,HexalithEventStoreVersion,HexalithWorksRoot,NuGetAudit,CentralPackageVersionOverrideEnabled,DirectoryPackagesPropsPath,_GenerateRestoreGraphProjectEntryInputProperties -getItem:PackageVersion,ProjectReference,PackageReference",
+  "cwd": "<repository>",
+  "started_utc": "2026-11-01T14:24:55.906054+00:00",
+  "completed_utc": "2026-11-01T14:24:56.307383+00:00",
+  "duration_seconds": 0.40135429496876895,
+  "exit_code": 0,
+  "explicit_environment_overrides": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "inherited_environment_captured": false,
+  "stdout": {
+    "original_bytes": 345583,
+    "original_sha256": "c379ac9a5673394305b6a4755b4d1cc8952932edcbac10437bfcff30194981c6",
+    "retained_file": "final-arbitrary-consumer.stdout.sanitized.txt",
+    "retained_bytes": 311419,
+    "retained_sha256": "64eccf7f139ea18138d498621638b8dc397d565ff8a2c5790eab5d44cfb2e7f3"
+  },
+  "stderr": {
+    "original_bytes": 0,
+    "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "retained_file": "final-arbitrary-consumer.stderr.sanitized.txt",
+    "retained_bytes": 0,
+    "retained_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

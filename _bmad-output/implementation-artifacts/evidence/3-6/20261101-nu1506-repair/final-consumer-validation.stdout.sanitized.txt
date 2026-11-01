@@ -1,0 +1,1 @@
+Consumer package authority validation passed for 23 projects in '<repository>/references/Hexalith.Builds'.

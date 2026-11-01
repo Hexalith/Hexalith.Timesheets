@@ -1,0 +1,7 @@
+{
+  "command": "python3 /tmp/timesheets-current-source-live-proof-20261101-attempt8-j9f27__e/verify-static.py",
+  "exit_code": 1,
+  "failure": "Initial checker followed a tracked EventStore architecture symlink omitted by the original snapshot. No pre-existing content differed; HEAD and Git status were unchanged.",
+  "snapshot_semantics_confirmed_by_parent": "Path.is_file() and not Path.is_symlink() over sorted unique tracked/nonignored paths.",
+  "correction": "Match original snapshot semantics when reconstructing static file manifests. No authored source changed; no runtime command was run."
+}

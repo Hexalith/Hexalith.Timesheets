@@ -1,0 +1,7 @@
+{
+  "result": "PASS",
+  "configuration_free_restore_graph": "Release/package",
+  "explicit_eventstore_override": "3.130.0",
+  "evaluated_eventstore_package_versions_match_override": true,
+  "equivalent_paths_and_arbitrary_project_names_unique": true
+}
