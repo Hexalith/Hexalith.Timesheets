@@ -9,7 +9,7 @@ Verdict vocabulary used below: **pass / concern / fail / waived**.
 
 ## Current Evidence Scope — 2026-10-20
 
-The measurements below are historical in-process results on their stated SDK/runtime and fixtures; this documentation sync does not remeasure them on SDK `10.0.402`. The default release run leaves `TIMESHEETS_PERF` unset and retains both opt-in skips. The static EventStore-backed wire-path placeholder remains skipped. Historical local persisted magic-link correctness (latest passing journey 2026-10-18 on the earlier AppHost graph) is not latency qualification of the current graph or deployed topology.
+The measurements below are historical in-process results on their stated SDK/runtime and fixtures; this documentation sync does not remeasure them on SDK `10.0.403`. The default release run leaves `TIMESHEETS_PERF` unset and retains both opt-in skips. The static EventStore-backed wire-path placeholder remains skipped. Historical local persisted magic-link correctness (latest passing journey 2026-10-18 on the earlier AppHost graph) is not latency qualification of the current graph or deployed topology.
 
 Wire-path waiver approval: the approved [2026-09-12 course correction](../_bmad-output/planning-artifacts/sprint-change-proposal-2026-09-12.md) §3 carries forward the existing performance waiver from Stories 1.11/4.10 and the approved 2026-06-20 readiness repair. Owners: Stories 1.11 and 4.10, aggregated by the release owner. Risk: in-process timings exclude persistence, Dapr transport, state store, and deployed contention. Revisit condition: realistic persisted runtime fixtures support NFR10/NFR11 measurements. Local correctness proof does not close this waiver. The overall launch verdict stays **FAIL** for unfinished deployed acceptance; see [launch readiness](launch-readiness.md).
 
@@ -124,6 +124,6 @@ TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home \
   -xml /tmp/timesheets-nfr11-performance.xml
 ```
 
-Use the direct executables for the current SDK `10.0.402`: the repository's `dotnet test` configuration fails with the unsupported Microsoft.Testing.Platform VSTest-target error. Keep `TIMESHEETS_PERF=1` on the executable invocation that runs the selected lane.
+Use the direct executables for the current SDK `10.0.403`: the repository's `dotnet test` configuration fails with the unsupported Microsoft.Testing.Platform VSTest-target error. Keep `TIMESHEETS_PERF=1` on the executable invocation that runs the selected lane.
 
 Without `TIMESHEETS_PERF=1` the test dynamically skips (`Assert.Skip`) and the fast baseline is unaffected. The per-scenario p95/min/median/max are emitted via `ITestOutputHelper` (timing aggregates and scenario names only — no command bodies, payloads, comments, or personal data, per NFR12); the two distinct `-xml` reports above capture that output for copy-pasting into this document.

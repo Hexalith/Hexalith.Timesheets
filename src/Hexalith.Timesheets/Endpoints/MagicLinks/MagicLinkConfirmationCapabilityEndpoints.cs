@@ -14,6 +14,7 @@ using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Runtime;
 
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http.Metadata;
 
 using ServerMagicLinkCapabilityState = Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState;
 
@@ -223,7 +224,6 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 HttpContext httpContext,
                 ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
-                IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
@@ -235,9 +235,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                         return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                     }
 
-                    MagicLinkEndpointTokenState state = await stateLoader
-                        .LoadTokenStateAsync(t, cancellationToken)
-                        .ConfigureAwait(false);
+                    MagicLinkEndpointTokenState state = httpContext.Features.Get<MagicLinkEndpointTokenState>()
+                        ?? throw new InvalidOperationException("Capability credential state unavailable.");
                     MagicLinkConfirmationDisplayResponse? response = await service.DescribeAsync(
                         MagicLinkExternalRequestContext.FromResolvedCapability(
                             state.CapabilityState,
@@ -258,18 +257,17 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 {
                     return Faulted(loggerFactory, "confirm-display");
                 }
-            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm");
+            }).WithMetadata(new MagicLinkCapabilityEndpointMetadata("confirm-display"))
+            .RequireAuthorization(TimesheetsAuthenticationDefaults.CapabilityPolicy);
 
         endpoints.MapPost(
             "/api/timesheets/magic-links/confirm/submit",
             static async Task<IResult> (
                 string? t,
-                ConfirmTimeThroughMagicLink command,
                 HttpContext httpContext,
                 ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
                 MagicLinkDurableSubmissionService submission,
-                IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
@@ -281,9 +279,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                         return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                     }
 
-                    MagicLinkEndpointTokenState state = await stateLoader
-                        .LoadTokenStateAsync(t, cancellationToken)
-                        .ConfigureAwait(false);
+                    MagicLinkEndpointTokenState state = httpContext.Features.Get<MagicLinkEndpointTokenState>()
+                        ?? throw new InvalidOperationException("Capability credential state unavailable.");
                     if (state.ActivityTypeCatalog.ProjectionFreshness.State != ProjectionFreshnessState.Fresh)
                     {
                         // ConfirmAsync takes no catalog, so this gate is load-bearing rather than
@@ -298,6 +295,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                             MagicLinkInvalidLinkOutcomeCategory.Unknown);
                     }
 
+                    ConfirmTimeThroughMagicLink command = httpContext.Features.Get<ConfirmTimeThroughMagicLink>()
+                        ?? throw new InvalidOperationException("Link request body unavailable.");
                     string? retryKey = httpContext.Request.Headers["Idempotency-Key"].Count == 1
                         ? httpContext.Request.Headers["Idempotency-Key"][0] : null;
                     if (httpContext.Request.Headers.ContainsKey("Idempotency-Key")
@@ -343,7 +342,12 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 {
                     return Faulted(loggerFactory, "confirm-submit");
                 }
-            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/confirm/submit");
+            }).WithMetadata(new MagicLinkCapabilityEndpointMetadata("confirm-submit", typeof(ConfirmTimeThroughMagicLink)))
+            // Body type/requiredness support API discovery; JSON is its default format.
+            // Leave media selection to the authenticated binder so routing cannot replace
+            // this protected endpoint with an unclassified synthetic 415 endpoint.
+            .WithMetadata(new AcceptsMetadata([], typeof(ConfirmTimeThroughMagicLink), isOptional: false))
+            .RequireAuthorization(TimesheetsAuthenticationDefaults.CapabilityPolicy);
 
         endpoints.MapGet(
             "/api/timesheets/magic-links/adjust",
@@ -352,7 +356,6 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 HttpContext httpContext,
                 ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
-                IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
@@ -364,9 +367,8 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                         return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                     }
 
-                    MagicLinkEndpointTokenState state = await stateLoader
-                        .LoadTokenStateAsync(t, cancellationToken)
-                        .ConfigureAwait(false);
+                    MagicLinkEndpointTokenState state = httpContext.Features.Get<MagicLinkEndpointTokenState>()
+                        ?? throw new InvalidOperationException("Capability credential state unavailable.");
                     MagicLinkAdjustmentDisplayResponse? response = await service.DescribeAdjustmentAsync(
                         MagicLinkExternalRequestContext.FromResolvedCapability(
                             state.CapabilityState,
@@ -387,18 +389,17 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 {
                     return Faulted(loggerFactory, "adjust-display");
                 }
-            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust");
+            }).WithMetadata(new MagicLinkCapabilityEndpointMetadata("adjust-display"))
+            .RequireAuthorization(TimesheetsAuthenticationDefaults.CapabilityPolicy);
 
         endpoints.MapPost(
             "/api/timesheets/magic-links/adjust/submit",
             static async Task<IResult> (
                 string? t,
-                AdjustTimeThroughMagicLink command,
                 HttpContext httpContext,
                 ILoggerFactory loggerFactory,
                 MagicLinkConfirmationCapabilityCommandService service,
                 MagicLinkDurableSubmissionService submission,
-                IMagicLinkConfirmationCapabilityStateLoader stateLoader,
                 TimeProvider timeProvider,
                 CancellationToken cancellationToken) =>
             {
@@ -410,9 +411,10 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                         return DeniedWithDiagnostics(loggerFactory, httpContext, timeProvider.GetUtcNow(), MagicLinkInvalidLinkOutcomeCategory.Malformed);
                     }
 
-                    MagicLinkEndpointTokenState state = await stateLoader
-                        .LoadTokenStateAsync(t, cancellationToken)
-                        .ConfigureAwait(false);
+                    MagicLinkEndpointTokenState state = httpContext.Features.Get<MagicLinkEndpointTokenState>()
+                        ?? throw new InvalidOperationException("Capability credential state unavailable.");
+                    AdjustTimeThroughMagicLink command = httpContext.Features.Get<AdjustTimeThroughMagicLink>()
+                        ?? throw new InvalidOperationException("Link request body unavailable.");
                     string? retryKey = httpContext.Request.Headers["Idempotency-Key"].Count == 1
                         ? httpContext.Request.Headers["Idempotency-Key"][0] : null;
                     if (httpContext.Request.Headers.ContainsKey("Idempotency-Key")
@@ -464,9 +466,33 @@ public static partial class MagicLinkConfirmationCapabilityEndpoints
                 {
                     return Faulted(loggerFactory, "adjust-submit");
                 }
-            }).AllowEventStorePublicEndpoint("/api/timesheets/magic-links/adjust/submit");
+            }).WithMetadata(new MagicLinkCapabilityEndpointMetadata("adjust-submit", typeof(AdjustTimeThroughMagicLink)))
+            // Body type/requiredness support API discovery; JSON is its default format.
+            // Leave media selection to the authenticated binder so routing cannot replace
+            // this protected endpoint with an unclassified synthetic 415 endpoint.
+            .WithMetadata(new AcceptsMetadata([], typeof(AdjustTimeThroughMagicLink), isOptional: false))
+            .RequireAuthorization(TimesheetsAuthenticationDefaults.CapabilityPolicy);
 
         return endpoints;
+    }
+
+    /// <summary>Preserves the public link denial and fault contract before an endpoint runs.</summary>
+    /// <param name="httpContext">The current request.</param>
+    /// <param name="faulted">Whether canonical loading faulted independently of caller cancellation.</param>
+    /// <param name="missing">Whether the credential was absent or blank.</param>
+    /// <returns>The fixed response execution.</returns>
+    internal static Task RejectCapabilityCredentialAsync(HttpContext httpContext, bool faulted, bool missing)
+    {
+        SetPrivateLinkResponseHeaders(httpContext);
+        ILoggerFactory loggerFactory = httpContext.RequestServices.GetRequiredService<ILoggerFactory>();
+        string operation = httpContext.GetEndpoint()?.Metadata
+            .GetMetadata<MagicLinkCapabilityEndpointMetadata>()?.Operation ?? "unknown";
+        return (faulted
+            ? Faulted(loggerFactory, operation)
+            : DeniedWithDiagnostics(loggerFactory, httpContext,
+                httpContext.RequestServices.GetRequiredService<TimeProvider>().GetUtcNow(),
+                missing ? MagicLinkInvalidLinkOutcomeCategory.Malformed : MagicLinkInvalidLinkOutcomeCategory.Unknown))
+            .ExecuteAsync(httpContext);
     }
 
     private static IResult Denied()

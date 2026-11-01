@@ -2,6 +2,7 @@ using System.Security.Claims;
 
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 namespace Hexalith.Timesheets.Endpoints;
@@ -12,7 +13,8 @@ public static class ExternalContributionEndpoints
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
-        RouteGroupBuilder group = endpoints.MapGroup("/api/timesheets/external-contributions");
+        RouteGroupBuilder group = endpoints.MapGroup("/api/timesheets/external-contributions")
+            .RequireAuthorization(TimesheetsAuthenticationDefaults.ExternalContributionPolicy);
 
         group.MapPost(
             "/",

@@ -1,4 +1,3 @@
-#if HEXALITH_SOURCE_REFERENCES
 using System.Text.Json;
 
 using Hexalith.EventStore.Contracts.Routing;
@@ -148,4 +147,3 @@ internal sealed class HttpRouteCatalogFixture
             local.AuthorityCoordinates);
     }
 }
-#endif

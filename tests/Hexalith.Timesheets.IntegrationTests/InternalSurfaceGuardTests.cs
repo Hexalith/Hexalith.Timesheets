@@ -535,7 +535,8 @@ public sealed class InternalSurfaceGuardTests
             "/metadata/timesheets",
             TestContext.Current.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        (await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldNotContain("Hexalith.Timesheets");
     }
 
     /// <summary>Management operations remain under the workload fallback when public capability routes are open.</summary>
@@ -565,8 +566,18 @@ public sealed class InternalSurfaceGuardTests
         IMagicLinkIndexMigrationCallerAuthorizer? callerAuthorizer = null,
         string operatorId = "certified-operator") : WebApplicationFactory<Program>
     {
+        protected override void ConfigureClient(HttpClient client)
+        {
+            base.ConfigureClient(client);
+            if (authenticatedOperator)
+            {
+                client.DefaultRequestHeaders.Authorization = new("Bearer", HttpBoundaryHumanCredential.Create(operatorId));
+            }
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            HttpBoundaryHumanCredential.Configure(builder);
             builder.ConfigureLogging(static logging => logging.ClearProviders());
             builder.ConfigureServices(services =>
             {
@@ -584,8 +595,6 @@ public sealed class InternalSurfaceGuardTests
                     services.RemoveAll<IMagicLinkIndexMigrationAuthority>();
                     services.AddSingleton(migrationAuthority);
                 }
-                if (authenticatedOperator)
-                    services.AddSingleton<IStartupFilter>(new OperatorPrincipalFilter(operatorId));
                 if (callerAuthorizer is not null)
                 {
                     services.RemoveAll<IMagicLinkIndexMigrationCallerAuthorizer>();
@@ -598,22 +607,6 @@ public sealed class InternalSurfaceGuardTests
                 }
             });
         }
-    }
-
-    private sealed class OperatorPrincipalFilter(string operatorId) : IStartupFilter
-    {
-        public Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> Configure(
-            Action<Microsoft.AspNetCore.Builder.IApplicationBuilder> next)
-            => app =>
-            {
-                app.Use(async (context, following) =>
-                {
-                    context.User = new ClaimsPrincipal(new ClaimsIdentity(
-                        [new Claim(ClaimTypes.NameIdentifier, operatorId)], "TestAuth"));
-                    await following(context).ConfigureAwait(false);
-                });
-                next(app);
-            };
     }
 
     private sealed class PermittedMigration : IMagicLinkIndexMigrationAuthority

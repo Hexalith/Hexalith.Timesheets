@@ -1,4 +1,3 @@
-#if HEXALITH_SOURCE_REFERENCES
 using System.Text.Json;
 
 using Hexalith.EventStore.ServiceDefaults.Routing;
@@ -43,4 +42,3 @@ internal sealed class HttpRouteCatalogStateStore : IRouteCatalogStateStore
         }
     }
 }
-#endif

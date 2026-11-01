@@ -170,7 +170,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         IEventStoreGatewayClient gateway = factory.Services.GetRequiredService<IEventStoreGatewayClient>();
         gateway.ShouldBeOfType<EventStoreGatewayClient>();
 
-#if HEXALITH_SOURCE_REFERENCES
         await Should.ThrowAsync<Hexalith.EventStore.ServiceDefaults.Routing.RouteCatalogUnavailableException>(() =>
             gateway.SubmitWorkloadCommandAsync(new SubmitCommandRequest(
                 "host-message", "tenant-host", "timesheets", "capability-host", "test.command",
@@ -179,7 +178,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         issuer.ClearReceivedCalls();
         using var catalogBinding = new HttpRequestMessage();
         await factory.AddCatalogHeadersAsync(catalogBinding);
-#endif
         SubmitCommandResponse response = await gateway.SubmitWorkloadCommandAsync(new SubmitCommandRequest(
             "host-message", "tenant-host", "timesheets", "capability-host", "test.command",
             JsonSerializer.SerializeToElement(new { value = 1 }), CorrelationId: "host-message"),
@@ -188,14 +186,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         response.MessageId.ShouldBe("host-message");
         transport.Path.ShouldBe("/api/v1/commands/workload");
         transport.Assertion.ShouldBe("host-signed");
-#if HEXALITH_SOURCE_REFERENCES
         transport.CatalogRoot.ShouldBe(catalogBinding.Headers.GetValues(
             Hexalith.EventStore.ServiceDefaults.Routing.RouteCatalogInvocationHandler.RootHeader).Single());
         transport.CatalogEpoch.ShouldBe(catalogBinding.Headers.GetValues(
             Hexalith.EventStore.ServiceDefaults.Routing.RouteCatalogInvocationHandler.EpochHeader).Single());
         transport.InvocationSendCount.ShouldBe(1);
         transport.SendCount.ShouldBe(1);
-#endif
         await issuer.Received(1).IssueAsync(Arg.Is<WorkloadAssertionRequest>(request =>
             request.Operation == EventStoreWorkloadOperations.GatewayCommandSubmit
             && request.Bindings != null

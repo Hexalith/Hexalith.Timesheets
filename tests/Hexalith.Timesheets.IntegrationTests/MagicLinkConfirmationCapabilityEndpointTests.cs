@@ -45,7 +45,8 @@ public sealed class MagicLinkConfirmationCapabilityEndpointTests
         endpoint.ShouldContain("ConfirmTimeThroughMagicLink");
         endpoint.ShouldContain("AdjustTimeThroughMagicLink");
         endpoint.ShouldContain("IMagicLinkConfirmationCapabilityStateLoader");
-        endpoint.ShouldContain("LoadTokenStateAsync");
+        endpoint.ShouldContain("Features.Get<MagicLinkEndpointTokenState>()");
+        endpoint.ShouldContain("RequireAuthorization(TimesheetsAuthenticationDefaults.CapabilityPolicy)");
         endpoint.ShouldContain("TimesheetsServerRequestContext");
         endpoint.ShouldNotContain("command.Tenant");
         endpoint.ShouldNotContain("command.Actor");

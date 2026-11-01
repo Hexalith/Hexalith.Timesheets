@@ -1,6 +1,7 @@
 using System.Security.Claims;
 
 using Hexalith.Timesheets.Projections.MagicLinks;
+using Hexalith.Timesheets.Runtime;
 
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -58,7 +59,7 @@ public static class MagicLinkIndexMigrationEndpoints
                 {
                     return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
                 }
-            }).RequireAuthorization();
+            }).RequireAuthorization(TimesheetsAuthenticationDefaults.HumanPolicy);
         endpoints.MapPost("/admin/timesheets/magic-link-index/migrate-v1",
             async (MagicLinkV1MigrationRequest request,
                 ClaimsPrincipal caller,
@@ -87,7 +88,7 @@ public static class MagicLinkIndexMigrationEndpoints
                 {
                     return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
                 }
-            }).RequireAuthorization();
+            }).RequireAuthorization(TimesheetsAuthenticationDefaults.HumanPolicy);
         return endpoints;
     }
 }

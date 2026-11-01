@@ -610,7 +610,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         using HttpResponseMessage authenticated = await factory.PostProtectedManagementAsync(
             client, "/process", request);
-#if HEXALITH_SOURCE_REFERENCES
         // The fixture enrolls projection delivery. No owner-declared command/idempotency facet grants process admission.
         authenticated.StatusCode.ShouldBe(HttpStatusCode.ServiceUnavailable);
         factory.Gateway.SubmissionCount.ShouldBe(0);
@@ -621,13 +620,6 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var rejected = await processor.ProcessAsync(command, null, TestContext.Current.CancellationToken);
         rejected.IsRejection.ShouldBeTrue();
         rejected.Events.ShouldHaveSingleItem().ShouldBeOfType<MagicLinkCommitRejected>();
-#else
-        authenticated.StatusCode.ShouldBe(HttpStatusCode.OK);
-        DomainServiceWireResult result = (await authenticated.Content.ReadFromJsonAsync<DomainServiceWireResult>(
-            JsonOptions, TestContext.Current.CancellationToken)).ShouldNotBeNull();
-        result.IsRejection.ShouldBeTrue();
-        result.Events.ShouldHaveSingleItem().EventTypeName.ShouldBe(typeof(MagicLinkCommitRejected).FullName);
-#endif
     }
 
     [Theory]

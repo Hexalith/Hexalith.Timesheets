@@ -2050,9 +2050,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     {
         private const string ChannelToken = "timesheets-test-app-channel-token";
 
-#if HEXALITH_SOURCE_REFERENCES
         private readonly HttpRouteCatalogFixture _routeCatalog = new();
-#endif
 
         public ScriptedAccessGuard AccessGuard { get; } = new();
 
@@ -2060,6 +2058,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         public ITimesheetsTenantAccessValidator TenantAccessValidator { get; } = CreateTenantAccessValidator();
 
         public CapturingLoggerProvider Logs { get; } = new();
+
+        /// <summary>Gets the actual authenticated request principal after the host boundary ran.</summary>
+        public ClaimsPrincipal? AuthenticatedPrincipal { get; private set; }
 
         public ProjectionBackedReadModelStore Store { get; } = new();
 
@@ -2353,10 +2354,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
             builder.ConfigureServices(services =>
             {
-#if HEXALITH_SOURCE_REFERENCES
                 _routeCatalog.Configure(services, workloadGatewayHandler is CapturingWorkloadGatewayHandler captured
                     ? captured.CreateInvocationTransport : null);
-#endif
                 // Port-specific tests set Connection.LocalPort before the guard; other in-process
                 // journeys explicitly open the projection route without claiming listener coverage.
                 services.Configure<InternalSurfaceOptions>(options => options.AllowOnAnyPort = internalPort is null);
@@ -2452,7 +2451,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     useMismatchedClaims ?? useConcreteLoader,
                     () => LocalPort,
                     accessor => ObservedTrustedContext = (accessor.CurrentTenant, accessor.CurrentActor, accessor.CurrentCorrelationId),
-                    claims));
+                    claims,
+                    principal => AuthenticatedPrincipal = principal));
             });
         }
 
@@ -2568,16 +2568,12 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             assertion ??= await IssueAssertionAsync(operation);
             request.Headers.Add(DaprAppChannelToken.HeaderName, ChannelToken);
             request.Headers.Add(EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName, assertion);
-#if HEXALITH_SOURCE_REFERENCES
             await AddCatalogHeadersAsync(request);
-#endif
         }
 
-#if HEXALITH_SOURCE_REFERENCES
         /// <summary>Binds a fixture call to the platform's committed generation.</summary>
         public Task AddCatalogHeadersAsync(HttpRequestMessage request)
             => _routeCatalog.AddHeadersAsync(Services, request, TestContext.Current.CancellationToken);
-#endif
 
         public async Task<string> IssueAssertionAsync(string operation)
         {
@@ -2620,7 +2616,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         bool useMismatchedClaims,
         Func<int?> localPort,
         Action<ITimesheetsTrustedContextAccessor> captureContext,
-        Claim[]? claims) : IStartupFilter
+        Claim[]? claims,
+        Action<ClaimsPrincipal> captureAuthenticatedPrincipal) : IStartupFilter
     {
         public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
             => app =>
@@ -2644,6 +2641,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     captureContext(context.RequestServices.GetRequiredService<ITimesheetsTrustedContextAccessor>());
 
                     await following(context).ConfigureAwait(false);
+                    captureAuthenticatedPrincipal(context.User);
                 });
                 next(app);
             };

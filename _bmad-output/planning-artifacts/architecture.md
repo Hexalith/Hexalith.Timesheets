@@ -155,7 +155,7 @@ This is not a generic web application starter problem. The right foundation is a
 
 Current starter/tooling checks performed during this step:
 
-- Historical SDK observations: the 2026-06-18 architecture step observed `10.0.301`; the 2026-07-17 commit `937be13` raised the repository pin to `10.0.302`; the 2026-09-12 Story 5.3 review patch raised it to `10.0.400`, the 2026-09-12 Story 5.2 reopening raised it to `10.0.401`, and the 2026-10-18 CI/CD commit `c4695a5` raised it to `10.0.402`. The current pin is recorded separately below.
+- Historical SDK observations: the 2026-06-18 architecture step observed `10.0.301`; the 2026-07-17 commit `937be13` raised the repository pin to `10.0.302`; the 2026-09-12 Story 5.3 review patch raised it to `10.0.400`, the 2026-09-12 Story 5.2 reopening raised it to `10.0.401`, and the 2026-10-18 CI/CD commit `c4695a5` raised it to `10.0.403`. The current pin is recorded separately below.
 - Local templates include `aspire-apphost`, `aspire-servicedefaults`, `aspire-starter`, `webapi`, `blazor`, `classlib`, `xunit`, and solution templates.
 - `dotnet new sln --name Hexalith.Timesheets` on the local .NET 10 SDK creates `Hexalith.Timesheets.slnx`.
 - NuGet lists `Aspire.ProjectTemplates` `13.4.5` as the current package version on 2026-06-18.
@@ -359,7 +359,7 @@ Timesheets domain state changes will persist through `Hexalith.EventStore`. The 
 
 **Version notes:**
 
-- .NET SDK: local target is .NET 10, pinned to `10.0.402` with `rollForward: latestPatch`.
+- .NET SDK: local target is .NET 10, pinned to `10.0.403` with `rollForward: latestPatch`.
 - Aspire: the Timesheets-owned AppHost SDK and the imported `Aspire.Hosting`, Docker, and Redis catalog entries are aligned at stable `13.6.4`. The AppHost keeps NuGet-backed orchestration with `AspireUseCliBundle=false` and suppresses only `ASPIRE010`, the 2026-09-13 Option 2 decision already used by `Hexalith.EventStore`. Restore therefore adds `Aspire.Hosting.Orchestration` and `Aspire.Dashboard.Sdk`, the build stays self-contained without an Aspire CLI bundle, and the declared topology is unchanged. The CLI-bundle opt-in recorded by the 2026-09-12 `13.5.3` iteration is historical and was reversed.
 - Dapr SDK packages: the imported `Hexalith.Builds` catalog pins the Dapr Client, ASP.NET Core, Actors, AI, and Workflow package family at stable `1.19.0`. Timesheets has no direct Dapr `PackageReference`; Dapr reaches its restored graphs through sibling EventStore references.
 - Fluent UI: Timesheets has no direct Fluent UI package because this repository ships no UI project. The imported catalog carries the V5 package family at `5.0.1`, a stable line; it is a platform policy surface, not a Timesheets direct-package pin.
@@ -1077,7 +1077,7 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
-The technology choices work together: .NET SDK `10.0.402`, Hexalith.EventStore, the imported Dapr SDK `1.19.0` family, Aspire AppHost SDK `13.6.4` with NuGet-backed orchestration, JWT/OIDC authentication, FrontComposer, and the Fluent UI V5 policy each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual stable and prerelease package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
+The technology choices work together: .NET SDK `10.0.403`, Hexalith.EventStore, the imported Dapr SDK `1.19.0` family, Aspire AppHost SDK `13.6.4` with NuGet-backed orchestration, JWT/OIDC authentication, FrontComposer, and the Fluent UI V5 policy each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual stable and prerelease package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
 
 **Pattern Consistency:**
 Implementation patterns support the decisions. Commands, events, queries, projections, magic links, exports, and UI all have consistent naming, structure, error, freshness, and enforcement rules.
@@ -1099,7 +1099,7 @@ Security, tenant isolation, auditability, data minimization, projection reliabil
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
-Critical decisions are documented with versions where version-sensitive: SDK `10.0.402`, Dapr SDK family `1.19.0`, Aspire AppHost SDK `13.6.4`, Blazor Fluent UI V5 component policy, V4 icons-only fallback, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current stable/prerelease platform package state is intentionally recorded as launch-readiness package-currency evidence.
+Critical decisions are documented with versions where version-sensitive: SDK `10.0.403`, Dapr SDK family `1.19.0`, Aspire AppHost SDK `13.6.4`, Blazor Fluent UI V5 component policy, V4 icons-only fallback, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current stable/prerelease platform package state is intentionally recorded as launch-readiness package-currency evidence.
 
 **Structure Completeness:**
 The project tree is specific enough for implementation agents to scaffold consistently and maps requirements to concrete projects, folders, and tests.

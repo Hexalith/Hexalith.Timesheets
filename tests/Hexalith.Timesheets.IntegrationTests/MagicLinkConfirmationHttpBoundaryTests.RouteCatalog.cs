@@ -1,4 +1,3 @@
-#if HEXALITH_SOURCE_REFERENCES
 using System.Net;
 using System.Net.Http.Json;
 
@@ -98,4 +97,3 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             .ShouldHaveSingleItem().ShouldBe(new MagicLinkTokenHashCapabilityIndexEntry(Tenant(), capability));
     }
 }
-#endif

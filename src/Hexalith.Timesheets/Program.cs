@@ -40,6 +40,7 @@ builder.AddEventStoreDomainService(
     typeof(TimesheetsProjectionsMarker).Assembly);
 // Keep the fail-closed Timesheets authorization and reference-validation seams.
 builder.Services.AddTimesheetsServerKernel();
+builder.Services.AddTimesheetsEndpointAuthentication();
 if (builder.Environment.IsDevelopment()
     && builder.Configuration.GetValue<bool>("Timesheets:LiveDaprFixture:Enabled"))
 {
@@ -87,7 +88,7 @@ app.MapGet(
         MetadataDescriptors = TimesheetsMetadataCatalog.Descriptors
             .Select(static descriptor => descriptor.Name)
             .ToArray()
-    })).AllowEventStorePublicEndpoint("/metadata/timesheets");
+    })).RequireAuthorization(TimesheetsAuthenticationDefaults.HumanPolicy);
 
 await app.RunAsync().ConfigureAwait(false);
 
