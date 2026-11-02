@@ -8,8 +8,6 @@ using Hexalith.EventStore.DomainService;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
-[assembly: RouteCatalogDeclarationSource(typeof(Hexalith.Timesheets.Server.Runtime.TimesheetsRouteCatalogDeclarations))]
-
 namespace Hexalith.Timesheets.Server.Runtime;
 
 /// <summary>Exact internal Timesheets command inventory and owner intent policies.</summary>

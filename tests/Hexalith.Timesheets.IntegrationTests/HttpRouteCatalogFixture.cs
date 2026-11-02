@@ -1,14 +1,13 @@
 using System.Text.Json;
 
-using Hexalith.EventStore.Client.Handlers;
 using Hexalith.EventStore.Client.Routing;
 using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.ServiceDefaults.Authentication;
 using Hexalith.EventStore.ServiceDefaults.Routing;
+using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Server.Runtime;
 
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
@@ -25,6 +24,9 @@ internal sealed class HttpRouteCatalogFixture
     private readonly SemaphoreSlim _activation = new(1, 1);
     private RouteCatalogGenerationReadback? _generation;
     private bool _hasGateway;
+
+    /// <summary>Allows a test to replace one observed fact before fixture activation.</summary>
+    public Func<RouteCatalogHostObservation, RouteCatalogHostObservation>? ObservationTransform { get; set; }
 
     /// <summary>Replaces only authority storage; the platform authority, trust validator and guards remain installed.</summary>
     public void Configure(IServiceCollection services, Func<HttpMessageHandler, HttpMessageHandler>? invocationTransport = null)
@@ -60,8 +62,9 @@ internal sealed class HttpRouteCatalogFixture
                 RouteCatalogHostObservation? gateway = _hasGateway ? ObserveGateway(provider, observation) : null;
                 RouteCatalogHostIdentity[] hosts = gateway is null ? [identity] : [identity, ObservedRouteCatalogHost.Identity(gateway)];
                 provider.GetRequiredService<IOptions<RouteCatalogHostOptions>>().Value.Identity = identity;
-                RouteCatalogEnvelope envelope = RouteCatalogCodec.Seal(new(2, 1, "Development", false,
-                    observation.Declarations, observation.Targets, observation.AdmissionPolicies!, "", ""));
+                RouteCatalogEnvelope envelope = RouteCatalogCodec.Seal(new(3, 1, "Development", false,
+                    observation.Declarations, observation.Targets, observation.AdmissionPolicies!, "", "",
+                    observation.Operations, []));
                 var candidate = new RouteCatalogActivation("http-fixture-bootstrap", RouteCatalogCodec.Encode(envelope),
                     RouteCatalogCodec.ComputeRootDigest(envelope), null, hosts, "Development-fixture", "",
                     [.. observation.AuxiliaryOperations!, .. gateway?.AuxiliaryOperations ?? []], observation.ProjectionCapabilities);
@@ -97,21 +100,13 @@ internal sealed class HttpRouteCatalogFixture
     private RouteCatalogHostObservation Observe(IServiceProvider services)
     {
         DomainProjectionIdentityOptions identity = services.GetRequiredService<IOptions<DomainProjectionIdentityOptions>>().Value;
-        IAsyncDomainProjectionHandler[] handlers = services.GetServices<IAsyncDomainProjectionHandler>().ToArray();
-        RouteContractDeclaration[] projections = handlers.Select(handler => new RouteContractDeclaration(
-            $"fixture-{handler.Domain}-{handler.ProjectionType}", "projection", handler.Domain, null,
-            handler.ProjectionType, identity.ServiceVersion, null, "workload",
-            EventStoreDomainServiceRoutes.Operational.Single(route => route.Route == "/project/v2").Operation,
-            null, [], new(handler.GetType().FullName!, "exact", [handler.ProjectionType], "domain-service", null,
-                [handler.ProjectionType]))).ToArray();
-        RouteContractDeclaration[] declarations = [.. TimesheetsRouteCatalogDeclarations.Routes, .. projections];
-        IDomainProcessor processor = services.GetRequiredKeyedService<IDomainProcessor>(TimesheetsEventStoreIntegration.DomainName);
-        if (processor is not IDomainCommandPayloadInventory inventory
-            || !inventory.CommandPayloadTypes.Select(type => type.FullName).Order(StringComparer.Ordinal)
-                .SequenceEqual(declarations.Where(declaration => declaration.Kind == "command")
-                    .Select(declaration => declaration.Execution!.HandlerType).Order(StringComparer.Ordinal), StringComparer.Ordinal))
+        var owners = new[] { typeof(TimesheetsRouteCatalogDeclarations).Assembly,
+            typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
+        IReadOnlyList<RouteContractDeclaration> declarations = CompiledRouteCatalogDeclarations.Read(owners);
+        IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations(owners);
+        if (declarations.Count != 8 || operations.Count != declarations.Count)
         {
-            throw new InvalidOperationException("The fixture command routes differ from the installed processor inventory.");
+            throw new RouteCatalogUnavailableException("The Timesheets owner route and operation inventory is incomplete.");
         }
         IIdempotencyIntentAdapter[] installed = services.GetServices<IIdempotencyIntentAdapter>().ToArray();
         IDeclaredIdempotencyIntentAdapter[] adapters = installed.OfType<IDeclaredIdempotencyIntentAdapter>().ToArray();
@@ -123,23 +118,11 @@ internal sealed class HttpRouteCatalogFixture
             throw new InvalidOperationException("The fixture admissions differ from installed owner adapters.");
         }
         Endpoint[] endpoints = [.. services.GetRequiredService<EndpointDataSource>().Endpoints];
-        RouteCatalogEntry[] targets = declarations.Select(declaration =>
-        {
-            string method = declaration.Kind == "command" ? "process" : "project/v2";
-            var canonical = EventStoreDomainServiceRoutes.Operational.Single(route => route.Route == "/" + method);
-            RouteEndpoint? endpoint = endpoints.OfType<RouteEndpoint>()
-                .SingleOrDefault(candidate => candidate.RoutePattern.RawText == "/" + method);
-            if (endpoint?.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods.SequenceEqual(["POST"], StringComparer.Ordinal) != true
-                || endpoint.Metadata.GetMetadata<IAllowAnonymous>() is not null
-                || !endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>().Any(policy => policy.Policy == canonical.Policy)
-                || declaration.Operation != canonical.Operation)
+        IReadOnlyList<RouteCatalogEntry> targets = DevelopmentDomainRouteCatalog.Targets(services, endpoints, declarations)
+            .Select(target => target with
             {
-                throw new InvalidOperationException("The fixture command or projection target differs from the mapped workload receiver.");
-            }
-            return new RouteCatalogEntry(declaration.RouteId, 1, RouteCatalogCodec.ComputeDeclarationDigest(declaration),
-                identity.AppId, method, declaration.ContractVersion, declaration.CredentialKind,
-                declaration.Operation, false, "*");
-        }).ToArray();
+                OperationContractDigest = operations.Single(operation => operation.RouteId == target.RouteId).Digest
+            }).ToArray();
         IdempotencyCatalogEntry[] admissions = adapters
             .Select(adapter => DevelopmentIdempotencyBindings.Bind(adapter.Declaration, 1, identity.AppId)).ToArray();
         RouteCatalogStateCoordinates coordinates = services.GetRequiredService<IRouteCatalogStateStore>().Coordinates!;
@@ -163,7 +146,7 @@ internal sealed class HttpRouteCatalogFixture
             .Get(EventStoreWorkloadAuthenticationDefaults.WorkloadScheme);
         var validation = services.GetRequiredService<IOptionsMonitor<JwtBearerOptions>>()
             .Get(EventStoreWorkloadAuthenticationDefaults.WorkloadScheme).TokenValidationParameters;
-        return new(identity.AppId, identity.AppId, declarations, targets, hosts, topology,
+        RouteCatalogHostObservation observed = new(identity.AppId, identity.AppId, declarations, targets, hosts, topology,
             JsonSerializer.SerializeToUtf8Bytes(new
             {
                 environment = services.GetRequiredService<IHostEnvironment>().EnvironmentName,
@@ -173,7 +156,8 @@ internal sealed class HttpRouteCatalogFixture
             }),
             admissions, RouteCatalogDomainObservation.Capabilities(services),
             RouteCatalogDomainObservation.Auxiliary(services, endpoints),
-            coordinates);
+            coordinates, Operations: operations);
+        return ObservationTransform?.Invoke(observed) ?? observed;
     }
 
     private static RouteCatalogHostObservation ObserveGateway(IServiceProvider services, RouteCatalogHostObservation local)
@@ -183,6 +167,6 @@ internal sealed class HttpRouteCatalogFixture
             JsonSerializer.SerializeToUtf8Bytes(new { transport = "CapturingWorkloadGatewayHandler", redirect = false,
                 method = "POST", path = "api/v1/commands/workload" }), [], [],
             [new(appId, "api/v1/commands/workload", EventStoreWorkloadOperations.GatewayCommandSubmit, "timesheets")],
-            local.AuthorityCoordinates);
+            local.AuthorityCoordinates, Operations: []);
     }
 }

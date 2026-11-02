@@ -30,13 +30,13 @@ Valid confirmation displays only proposed date, duration, Activity Type, billabl
 
 ## Technical Decisions
 
-Hexalith.EventStore is the authoritative persistence path. Keep aggregates pure and changes append-only. Do not introduce SQL, Redis, direct Dapr state calls, local JSON, or direct projection mutation for Timesheets domain state. Store stable sibling Tenant, Party, Project, and Work identifiers only; those modules retain ownership of their data.
+Hexalith.EventStore is the authoritative persistence path. Keep aggregates pure and changes append-only. Do not introduce SQL, Redis, direct Dapr state calls, local JSON, or direct projection mutation for Timesheets domain state. Store stable sibling Tenant, Party, Project, and Work identifiers only; those modules retain ownership of their data. Event and contract evolution stays additive and serialization-tolerant.
 
 The rebuildable token-hash candidate index locates a candidate without granting use authority. Issuance must populate it through the configured projection path and EventStore IReadModelStore, without direct test seeding. Authoritative loading folds capability state, scoped Time Entry state, and a fresh Activity Type catalog. Missing or unavailable dependencies preserve opaque failure behavior. Duplicate delivery, replay, and rebuild must yield deterministic, idempotent results. Single-use, revoke, and expiry decisions derive from authoritative folds.
 
 Public contracts remain infrastructure-free and exclude caller-supplied authority. External routes describe, confirm, or adjust one capability without browsing broader Timesheets data. Keep server authorization defaults fail-closed. Event/contract changes remain additive; use sibling-module adapters for reference validation.
 
-Local persistence proof, qualification of the current runtime graph, and deployed authority, complete inventory/continuity, and shared-rebuild acceptance are distinct gates. Historical local proof cannot close deployed acceptance. FR14 remains unfinished at that boundary and the overall release verdict remains FAIL until the outstanding gates are satisfied.
+Local persistence proof, qualification of the current NuGet-orchestration AppHost graph, and deployed authority, complete inventory/continuity, and shared-rebuild acceptance are distinct gates. Historical local proof cannot close deployed acceptance. FR14 remains unfinished at that boundary and the overall release verdict remains FAIL until the outstanding gates are satisfied.
 
 ## UX & Interaction Patterns
 

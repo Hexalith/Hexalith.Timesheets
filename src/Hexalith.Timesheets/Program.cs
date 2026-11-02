@@ -38,6 +38,9 @@ builder.Services.PostConfigure<LoggerFilterOptions>(static options =>
 builder.AddEventStoreDomainService(
     TimesheetsEventStoreIntegration.RegistrationAssemblyMarker.Assembly,
     typeof(TimesheetsProjectionsMarker).Assembly);
+builder.Services.AddEventStoreDevelopmentDomainCatalog(builder.Configuration,
+    TimesheetsEventStoreIntegration.RegistrationAssemblyMarker.Assembly,
+    typeof(TimesheetsProjectionsMarker).Assembly);
 // Keep the fail-closed Timesheets authorization and reference-validation seams.
 builder.Services.AddTimesheetsServerKernel();
 builder.Services.AddTimesheetsEndpointAuthentication();

@@ -2052,6 +2052,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         private readonly HttpRouteCatalogFixture _routeCatalog = new();
 
+        /// <summary>Gets the isolated catalog observation used by the HTTP fixture.</summary>
+        public HttpRouteCatalogFixture RouteCatalog => _routeCatalog;
+
         public ScriptedAccessGuard AccessGuard { get; } = new();
 
         /// <summary>Gets the tenant/role admission seam used before transition state reads.</summary>
