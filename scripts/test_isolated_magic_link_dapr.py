@@ -313,6 +313,20 @@ class IsolatedFixtureTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.public_initialization(mutation, {"Timesheets__LocalPublicPort": "18080"}, {"Timesheets__LocalPublicPort": "18080"})
 
+    def test_journey_passes_catalog_profile_directory_to_runtime_check(self):
+        from types import SimpleNamespace
+        tree = ast.parse((fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text())
+        call = next(node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name) and node.func.id == "verify_runtime_components")
+        argument = next(keyword.value for keyword in call.keywords if keyword.arg == "catalog_profile")
+        profile = "/tmp/private-owner/owner-profile.json"
+        for mode, expected in ((True, "/tmp/private-owner"), (False, None)):
+            with self.subTest(catalog_mode=mode):
+                actual = eval(compile(ast.Expression(argument), "journey-profile", "eval"),
+                              {"catalog_mode": mode, "os": SimpleNamespace(path=os.path,
+                                  environ={"TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE": profile})})
+                self.assertEqual(expected, actual)
+
     def test_projection_probe_uses_validated_process_public_port(self):
         source = (fixture.ROOT / "scripts/local_aspire_projection_probe.py").read_text()
         namespace = self.public_initialization(source, {"Timesheets__LocalPublicPort": "18080"})
@@ -809,6 +823,371 @@ class IsolatedFixtureTests(unittest.TestCase):
                     self.assertEqual("1", environment["TIMESHEETS_LIVE_DAPR_FIXTURE"], arguments)
                     self.assertEqual(instance.scratch, environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"], arguments)
                 self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_catalog_selection_owns_private_profile_closed_policies_and_cleanup(self):
+        with patch.dict(os.environ, {
+            "TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE": "/foreign/profile.json",
+            "TIMESHEETS_LIVE_DAPR_CATALOG_GATEWAY_POLICY": "/foreign/gateway.yaml",
+        }):
+            instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
+        self.assertNotIn("TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE", instance.environment)
+        self.assertNotIn("TIMESHEETS_LIVE_DAPR_CATALOG_GATEWAY_POLICY", instance.environment)
+        instance.admission_established = True
+        instance.fixture_backup = {"receipt": "admitted-empty-owned-store"}
+        instance.prepare_route_catalog()
+        root = instance.catalog_private
+        self.assertEqual(0, root.stat().st_mode & 0o077)
+        for name in ("owner-profile.json", "gateway-policy.yaml", "timesheets-policy.yaml"):
+            self.assertEqual(0, (root / name).stat().st_mode & 0o077)
+        profile = json.loads((root / "owner-profile.json").read_text())
+        self.assertEqual(str(root / "custody"), profile["CustodyDirectory"])
+        self.assertEqual("timesheets-route-authority", profile["AuthorityComponentName"])
+        self.assertNotIn(profile["DigestKeys"]["fixture-v1"],
+                         (instance.log_directory / "catalog-selection.json").read_text())
+        self.assertIn("defaultAction: deny", (root / "gateway-policy.yaml").read_text())
+        self.assertIn("defaultAction: deny", (root / "timesheets-policy.yaml").read_text())
+        self.addCleanup(shutil.rmtree, root)
+        self.assertFalse(instance.cleanup())
+        self.assertTrue(root.exists())
+        cleanup = json.loads((instance.log_directory / "cleanup.json").read_text())
+        self.assertFalse(cleanup["complete"])
+        self.assertFalse(cleanup["catalog_profile_removed"])
+        self.assertIn("Private catalog custody is incomplete; retaining protected profile", cleanup["failure_reasons"])
+
+    def test_compiled_apphost_refuses_changed_private_catalog_policies_and_owner_coordinates(self):
+        instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
+        instance.fixture_backup = {"receipt": "admitted-empty-owned-store"}
+        instance.prepare_route_catalog()
+        root = instance.catalog_private
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        components = Path(self.temporary.name) / "catalog-components"
+        fixture.write_components(components, "127.0.0.1:16379")
+        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        environment = {name: value for name, value in os.environ.items()
+                       if not name.casefold().startswith("timesheets_live_dapr_")
+                       and not name.casefold().startswith("dapr__")}
+        environment.update({
+            "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home", "DOTNET_ENVIRONMENT": "Development",
+            "ASPNETCORE_ENVIRONMENT": "Development", "Configuration": "Debug",
+            "UseHexalithProjectReferences": "true", "UseNuGetDeps": "false",
+            "TIMESHEETS_LIVE_DAPR_FIXTURE": "1", "TIMESHEETS_LIVE_DAPR_COMPONENTS": str(components),
+            "TIMESHEETS_LIVE_DAPR_CATALOG_FIXTURE_ID": instance.fixture_id,
+            "TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE": str(root / "owner-profile.json"),
+            "TIMESHEETS_LIVE_DAPR_CATALOG_GATEWAY_POLICY": str(root / "gateway-policy.yaml"),
+            "TIMESHEETS_LIVE_DAPR_CATALOG_TIMESHEETS_POLICY": str(root / "timesheets-policy.yaml"),
+            "Dapr__PlacementHostAddress": "127.0.0.1:16050",
+            "Dapr__SchedulerHostAddress": "127.0.0.1:16060",
+        })
+        def probe():
+            return subprocess.run([str(executable), "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+                                   "--AppHost:Operation=run"], cwd=fixture.ROOT, env=environment,
+                                  capture_output=True, text=True, timeout=30)
+        self.assertIn("Catalog selection: private isolated Development.", probe().stdout)
+        gateway = root / "gateway-policy.yaml"
+        timesheets = root / "timesheets-policy.yaml"
+        profile = root / "owner-profile.json"
+        original_gateway, original_timesheets, original_profile = (
+            gateway.read_text(), timesheets.read_text(), profile.read_text())
+        for label, path, changed in (
+            ("open-default", gateway, original_gateway.replace("defaultAction: deny", "defaultAction: allow", 1)),
+            ("wrong-verb", gateway, original_gateway.replace("httpVerb: [POST]", "httpVerb: [GET]", 1)),
+            ("extra-grant", timesheets, original_timesheets + "          - name: admin/all\n            httpVerb: [POST]\n            action: allow\n"),
+            ("wrong-owner-key", profile, original_profile.replace(instance.fixture_id, "b" * 32)),
+            ("wrong-generation", profile, original_profile.replace("fixture-v1", "foreign-v1")),
+        ):
+            with self.subTest(label=label):
+                path.write_text(changed)
+                result = probe()
+                self.assertNotEqual(0, result.returncode)
+                self.assertNotIn("Catalog selection: private isolated Development.", result.stdout)
+                path.write_text({gateway: original_gateway, timesheets: original_timesheets,
+                                 profile: original_profile}[path])
+        alias = Path(tempfile.mkdtemp(prefix="timesheets-route-catalog-link-"))
+        alias.rmdir()
+        alias.symlink_to(root, target_is_directory=True)
+        self.addCleanup(alias.unlink)
+        for setting, name in (("TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE", "owner-profile.json"),
+                              ("TIMESHEETS_LIVE_DAPR_CATALOG_GATEWAY_POLICY", "gateway-policy.yaml"),
+                              ("TIMESHEETS_LIVE_DAPR_CATALOG_TIMESHEETS_POLICY", "timesheets-policy.yaml")):
+            environment[setting] = str(alias / name)
+        self.assertNotEqual(0, probe().returncode)
+
+    def test_catalog_profile_is_removed_only_after_complete_sdk_custody(self):
+        instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
+        instance.fixture_backup = {"receipt": "admitted-empty-owned-store"}
+        instance.prepare_route_catalog()
+        root = instance.catalog_private
+        self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
+        digest = fixture.hashlib.sha256(b"catalog").hexdigest()
+        instance.catalog_before = {"root_digest": digest}
+        custody = root / "custody"
+        custody.mkdir(mode=0o700)
+        owner = custody / "owner.json"
+        owner.write_bytes((root / "owner-profile.json").read_bytes())
+        owner.chmod(0o600)
+        retained = custody / ("generation-" + "a" * 32)
+        retained.mkdir(mode=0o700)
+        contents = {name: b"proof" for name in (
+            "eventstore.committed.json", "timesheets.committed.json", "authority.backend.json",
+            "authority.component.json", "authority.dependencies.json")}
+        contents.update({"catalog.json": b"catalog", "activation.json": json.dumps({"RootDigest": digest}).encode()})
+        inventory = {"generation": retained.name}
+        for name, value in contents.items():
+            path = retained / name
+            path.write_bytes(value)
+            path.chmod(0o600)
+            inventory[name] = fixture.hashlib.sha256(value).hexdigest()
+        current = custody / "current.json"
+        current.write_text(json.dumps(inventory))
+        current.chmod(0o600)
+        self.assertTrue(instance.cleanup())
+        self.assertFalse(root.exists())
+
+    def catalog_sidecar_config(self, app_id):
+        receiver, caller, operations = fixture.CATALOG_RECEIVER_POLICIES[app_id]
+        return {
+            "apiVersion": "dapr.io/v1alpha1", "kind": "Configuration",
+            "metadata": {"name": "timesheets-catalog-" + receiver},
+            "spec": {"accessControl": {
+                "defaultAction": "deny", "trustDomain": "public",
+                "policies": [{"appId": caller, "defaultAction": "deny", "trustDomain": "public",
+                              "namespace": "default",
+                              "operations": [{"name": method, "httpVerb": [verb], "action": "allow"}
+                                             for method, verb in operations]}],
+            }},
+        }
+
+    def catalog_sidecar_files(self):
+        profile = Path(self.temporary.name) / "owner"
+        profile.mkdir(mode=0o700)
+        for app_id, name in (("eventstore", "gateway-policy.yaml"), ("timesheets", "timesheets-policy.yaml")):
+            policy = profile / name
+            policy.write_text(fixture.catalog_receiver_policy(app_id))
+            policy.chmod(0o600)
+        generated = Path(tempfile.mkdtemp(prefix="hexalith-route-catalog-"))
+        self.addCleanup(shutil.rmtree, generated)
+        generated.chmod(0o700)
+        for app_id in ("eventstore", "timesheets"):
+            selected = generated / (app_id + ".configuration.json")
+            selected.write_text(json.dumps(self.catalog_sidecar_config(app_id)))
+            selected.chmod(0o600)
+        return profile, generated
+
+    def test_catalog_sidecar_accepts_sdk_generated_private_closed_acl(self):
+        profile, generated = self.catalog_sidecar_files()
+        for app_id in ("eventstore", "timesheets"):
+            with self.subTest(app_id=app_id):
+                selected = generated / (app_id + ".configuration.json")
+                self.assertEqual(generated, fixture.verify_catalog_sidecar_policy(
+                    app_id, ["daprd", "--config", str(selected)], profile))
+
+    def test_catalog_sidecar_refuses_unsafe_or_mismatched_acl(self):
+        profile, generated = self.catalog_sidecar_files()
+        selected = generated / "eventstore.configuration.json"
+        original = self.catalog_sidecar_config("eventstore")
+        for label, mutate in (
+            ("open-default", lambda config: config["spec"]["accessControl"].update(defaultAction="allow")),
+            ("wrong-caller", lambda config: config["spec"]["accessControl"]["policies"][0].update(appId="foreign")),
+            ("wrong-verb", lambda config: config["spec"]["accessControl"]["policies"][0]["operations"][0].update(httpVerb=["GET"])),
+            ("extra-grant", lambda config: config["spec"]["accessControl"]["policies"][0]["operations"].append(
+                {"name": "admin/all", "httpVerb": ["POST"], "action": "allow"})),
+        ):
+            with self.subTest(label=label):
+                config = json.loads(json.dumps(original))
+                mutate(config)
+                selected.write_text(json.dumps(config))
+                with self.assertRaisesRegex(fixture.FixtureError, "owned closed policy"):
+                    fixture.verify_catalog_sidecar_policy("eventstore", ["daprd", "--config", str(selected)], profile)
+        selected.write_text(json.dumps(original))
+        selected.chmod(0o644)
+        with self.assertRaisesRegex(fixture.FixtureError, "owned closed policy"):
+            fixture.verify_catalog_sidecar_policy("eventstore", ["daprd", "--config", str(selected)], profile)
+        selected.chmod(0o600)
+        with self.assertRaisesRegex(fixture.FixtureError, "owned closed policy"):
+            fixture.verify_catalog_sidecar_policy("eventstore", ["daprd", "--config", str(profile / "gateway-policy.yaml")], profile)
+        (profile / "gateway-policy.yaml").write_text("apiVersion: dapr.io/v1alpha1\n")
+        with self.assertRaisesRegex(fixture.FixtureError, "owned closed policy"):
+            fixture.verify_catalog_sidecar_policy("eventstore", ["daprd", "--config", str(selected)], profile)
+
+    def test_runtime_component_call_site_checks_catalog_acl_and_authority(self):
+        profile, generated = self.catalog_sidecar_files()
+        components = Path(self.temporary.name) / "components"
+        fixture.write_components(components, "127.0.0.1:49152")
+        resources = {app: Path(self.temporary.name) / (app + "-resources")
+                     for app in ("eventstore", "timesheets")}
+        authority = {
+            "apiVersion": "dapr.io/v1alpha1", "kind": "Component",
+            "metadata": {"name": "timesheets-route-authority"},
+            "spec": {"type": "state.redis", "version": "v1", "metadata": [
+                {"name": "redisHost", "value": "127.0.0.1:49152"},
+                {"name": "redisPassword", "value": ""},
+                {"name": "redisDB", "value": "13"},
+                {"name": "keyPrefix", "value": "name"}]},
+            "scopes": ["eventstore", "timesheets"],
+        }
+        for app, target in resources.items():
+            target.mkdir()
+            source = components / (fixture.COMPONENT_FILES[0] if app == "eventstore" else fixture.COMPONENT_FILES[1])
+            shutil.copyfile(source, target / "store.yaml")
+            if app == "eventstore":
+                shutil.copyfile(components / "pubsub.yaml", target / "pubsub.yaml")
+            (target / "timesheets-route-authority.yaml").write_text(json.dumps(authority))
+        processes = Path(self.temporary.name) / "proc"
+        for pid, app in ((123, "eventstore"), (456, "timesheets")):
+            process = processes / str(pid)
+            process.mkdir(parents=True)
+            arguments = ["daprd", "--app-id", app, "--config", str(generated / (app + ".configuration.json")),
+                         "--resources-path", str(resources[app]),
+                         "--placement-host-address", "127.0.0.1:49153",
+                         "--scheduler-host-address", "127.0.0.1:49154"]
+            (process / "cmdline").write_bytes("\0".join(arguments).encode())
+        def verify():
+            return fixture.verify_runtime_components("127.0.0.1:49152", components,
+                "127.0.0.1:49153", "127.0.0.1:49154", process_directory=processes,
+                catalog_profile=profile)
+        with patch.object(fixture.subprocess, "check_output", return_value="123\n456\n"):
+            self.assertEqual({"eventstore", "timesheets"}, set(verify()))
+            selected = generated / "timesheets.configuration.json"
+            config = json.loads(selected.read_text())
+            config["spec"]["accessControl"]["defaultAction"] = "allow"
+            selected.write_text(json.dumps(config))
+            with self.assertRaisesRegex(fixture.FixtureError, "owned closed policy"):
+                verify()
+            selected.write_text(json.dumps(self.catalog_sidecar_config("timesheets")))
+            authority_path = resources["eventstore"] / "timesheets-route-authority.yaml"
+            authority["spec"]["metadata"].append({"name": "redisHost", "value": "foreign"})
+            authority_path.write_text(json.dumps(authority))
+            with self.assertRaises(fixture.FixtureError):
+                verify()
+            authority["spec"]["metadata"].pop()
+            authority["spec"]["metadata"][2]["value"] = "14"
+            authority_path.write_text(json.dumps(authority))
+            with self.assertRaises(fixture.FixtureError):
+                verify()
+
+    def test_catalog_capture_binds_sidecar_configs_to_one_receipt_directory_and_sanitizes_json(self):
+        profile, generated = self.catalog_sidecar_files()
+        instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs,
+                                           resource_check=lambda *_: [{"pid": pid} for pid in (101, 102, 103, 104)])
+        instance.catalog_private = profile
+        instance.scratch = str(Path(self.temporary.name) / "components")
+        alternate = Path(tempfile.mkdtemp(prefix="hexalith-route-catalog-"))
+        self.addCleanup(shutil.rmtree, alternate)
+        alternate.chmod(0o700)
+        copied = alternate / "timesheets.configuration.json"
+        copied.write_bytes((generated / copied.name).read_bytes())
+        copied.chmod(0o600)
+        process = {
+            "/proc/101/cmdline": b"/run/Hexalith.EventStore\0",
+            "/proc/102/cmdline": b"/run/Hexalith.Timesheets\0",
+            "/proc/103/cmdline": ("daprd\0--app-id\0eventstore\0--config\0"
+                                     + str(generated / "eventstore.configuration.json") + "\0").encode(),
+            "/proc/104/cmdline": ("daprd\0--app-id\0timesheets\0--config\0" + str(copied) + "\0").encode(),
+        }
+        for pid in (101, 102, 103, 104):
+            process[f"/proc/{pid}/environ"] = (
+                "TIMESHEETS_LIVE_DAPR_COMPONENTS=" + instance.scratch + "\0"
+                + "EventStore__RouteCatalog__DevelopmentBootstrap__Directory=" + str(generated) + "\0").encode()
+        original_read_bytes = Path.read_bytes
+        def read_bytes(path):
+            return process.get(str(path), None) or original_read_bytes(path)
+        with patch.object(Path, "read_bytes", read_bytes):
+            with self.assertRaisesRegex(fixture.FixtureError, "differs from the selected sidecar ACLs"):
+                instance.capture_route_catalog("before")
+            process["/proc/104/cmdline"] = process["/proc/104/cmdline"].replace(
+                str(copied).encode(), str(generated / copied.name).encode())
+            for name in ("catalog.json", "activation.json", "eventstore.observation.json",
+                         "timesheets.observation.json", "eventstore.committed.json",
+                         "timesheets.committed.json", "authority.component.json"):
+                path = generated / name
+                path.write_text("{")
+                path.chmod(0o600)
+            with self.assertRaisesRegex(fixture.FixtureError, "SDK catalog observation is malformed or incomplete"):
+                instance.capture_route_catalog("before")
+            routes = ["timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
+                      "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
+                      "timesheets-magic-link-token-hash-capability-index",
+                      "timesheets-magic-link-confirmation-capabilities",
+                      "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence"]
+            catalog = {"schemaVersion": 3, "profile": "Development", "generation": 1,
+                       "routeFacetDigest": "route-digest", "idempotencyFacetDigest": "admission-digest",
+                       "declarations": [{"routeId": route} for route in routes],
+                       "routes": [{} for _ in routes], "operations": [{} for _ in routes],
+                       "idempotency": [{} for _ in range(4)]}
+            catalog_bytes = json.dumps(catalog).encode()
+            digest = fixture.hashlib.sha256(catalog_bytes).hexdigest()
+            hosts = [{"HostId": "eventstore"}, {"HostId": "timesheets"}]
+            activation = {"RootDigest": digest, "RequiredHosts": hosts,
+                          "AttemptId": "attempt-1", "TrustProof": "binding-digest"}
+            owner_hashes = {"Hexalith.Timesheets.Server, Version=1.0.0.0": "a" * 64,
+                            "Hexalith.Timesheets.Projections, Version=1.0.0.0": "b" * 64}
+            instance.source_before = {"files": {
+                "src/Hexalith.Timesheets/bin/Debug/net10.0/" + name.split(",", 1)[0] + ".dll": value
+                for name, value in owner_hashes.items()}}
+            def observation(app):
+                receiver, caller, operations = fixture.CATALOG_RECEIVER_POLICIES[app]
+                result = {"HostId": app, "AppId": app,
+                          "RequiredHostIds": ["eventstore", "timesheets"],
+                          "SelectedAppIds": ["eventstore", "timesheets"],
+                          "DeclaredInvocations": [{"CallerAppId": caller, "Method": method,
+                                                    "HttpMethods": [verb]} for method, verb in operations],
+                          "Declarations": [], "Targets": [], "Operations": [], "AdmissionPolicies": []}
+                if app == "timesheets":
+                    for field in ("Declarations", "Targets", "Operations"):
+                        result[field] = [{"RouteId": route} for route in routes]
+                    result["ExecutableOwners"] = owner_hashes
+                else:
+                    result["AdmissionPolicies"] = [{"RouteId": route} for route in routes[:4]]
+                return result
+            readback = {"Serving": True, "Epoch": 1, "RootDigest": digest,
+                        "Generation": 1, "Profile": "Development", "RouteFacetDigest": "route-digest",
+                        "IdempotencyFacetDigest": "admission-digest", "AttemptId": None,
+                        "ActivationBindingDigest": None, "RequiredHosts": hosts}
+            documents = {"catalog.json": catalog_bytes, "activation.json": json.dumps(activation).encode(),
+                "eventstore.observation.json": json.dumps(observation("eventstore")).encode(),
+                "timesheets.observation.json": json.dumps(observation("timesheets")).encode(),
+                "eventstore.committed.json": json.dumps(readback).encode(),
+                "timesheets.committed.json": json.dumps(readback).encode(),
+                "authority.component.json": json.dumps({"metadata": {"name": "timesheets-route-authority"},
+                    "scopes": ["eventstore", "timesheets"]}).encode()}
+            for name, content in documents.items():
+                (generated / name).write_bytes(content)
+            self.assertEqual(digest, instance.capture_route_catalog("before")["root_digest"])
+            owner_hashes["Hexalith.Timesheets.Server, Version=1.0.0.0"] = "c" * 64
+            (generated / "timesheets.observation.json").write_text(json.dumps(observation("timesheets")))
+            with self.assertRaisesRegex(fixture.FixtureError, "executable owners differ"):
+                instance.capture_route_catalog("before")
+            owner_hashes["Hexalith.Timesheets.Server, Version=1.0.0.0"] = "a" * 64
+            (generated / "timesheets.observation.json").write_text(json.dumps(observation("timesheets")))
+            unexpected_admission = observation("timesheets")
+            unexpected_admission["AdmissionPolicies"] = [{"RouteId": routes[0]}]
+            (generated / "timesheets.observation.json").write_text(json.dumps(unexpected_admission))
+            with self.assertRaisesRegex(fixture.FixtureError, "workload policies are incomplete"):
+                instance.capture_route_catalog("before")
+            (generated / "timesheets.observation.json").write_text(json.dumps(observation("timesheets")))
+            readback["ActivationBindingDigest"] = "wrong-binding"
+            (generated / "timesheets.committed.json").write_text(json.dumps(readback))
+            with self.assertRaisesRegex(fixture.FixtureError, "persisted readback differs"):
+                instance.capture_route_catalog("before")
+
+    def test_catalog_admission_evidence_retains_counts_without_foreign_inventory_rows(self):
+        def foreign(arguments):
+            if arguments[:2] == ["dapr", "list"]:
+                return subprocess.CompletedProcess(arguments, 0, json.dumps([{"appId": "foreign-private-app"}]), "")
+        instance = fixture.IsolatedFixture(command=Commands(foreign), route_catalog=True, log_directory=self.logs)
+        instance.run_command(["dapr", "list", "--output", "json"])
+        evidence, = instance.log_directory.glob("*-dapr-list.log")
+        self.assertIn('"entry_count": 1', evidence.read_text())
+        self.assertNotIn("foreign-private-app", evidence.read_text())
+        def interrupted(arguments):
+            if arguments[:2] == ["dapr", "list"]:
+                raise subprocess.TimeoutExpired(arguments, 1, output="foreign-private-app", stderr="foreign-private-app")
+        failed = fixture.IsolatedFixture(command=Commands(interrupted), route_catalog=True, log_directory=self.logs)
+        with self.assertRaises(fixture.FixtureError):
+            failed.run_command(["dapr", "list", "--output", "json"])
+        failure, = failed.log_directory.glob("*-dapr-list.log")
+        self.assertIn("Inventory output withheld", failure.read_text())
+        self.assertNotIn("foreign-private-app", failure.read_text())
 
     def test_security_realm_contains_only_platform_generated_credentials_and_timesheets_claims(self):
         realm = json.loads((fixture.APPHOST.parent / "KeycloakRealms/hexalith-realm.json").read_text())
@@ -2111,6 +2490,51 @@ sys.stdin.read()
         namespace = {"json": json, "urllib": fixture.urllib, "owned_http_open": fixture.owned_http_open}
         exec(compile(ast.Module(body=[node], type_ignores=[]), "journey-call", "exec"), namespace)
         return namespace
+
+    def test_catalog_denial_uses_enrolled_projection_and_checks_persisted_absence(self):
+        tree = ast.parse((fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text())
+        names = {"require", "verified_positioned_events", "assert_catalog_denials"}
+        nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
+        calls = []
+        events = [{"sequenceNumber": 1, "globalPosition": 1, "eventTypeName": "StoredTimeEntryRecorded"}]
+        state = {"events": events, "read_model": None}
+        def call(url, method, body, assertion):
+            calls.append((url, method, body, assertion))
+            return 403, b""
+        namespace = {
+            "tenant": "fixture-tenant", "actor": "fixture-actor",
+            "timesheets": "eventstore-sidecar/v1.0/invoke/timesheets/method",
+            "timesheets_sidecar": "timesheets-sidecar", "secrets": fixture.secrets,
+            "stream": lambda _entry: state["events"],
+            "read_model": lambda _key, allow_missing=False: state["read_model"],
+            "sign": lambda audience, caller, operation, *scope: (audience, caller, operation, scope),
+            "call": call,
+        }
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), "catalog-denial", "exec"), namespace)
+        with contextlib.redirect_stdout(io.StringIO()):
+            namespace["assert_catalog_denials"](events, "entry-1", {"timeEntryId": "entry-1"}, "fingerprint")
+        self.assertEqual(2, len(calls))
+        url, method, body, assertion = calls[0]
+        self.assertEqual("eventstore-sidecar/v1.0/invoke/timesheets/method/project/v2", url)
+        self.assertEqual("POST", method)
+        self.assertEqual(("timesheets", "eventstore", "domain-service:process", ()), assertion)
+        self.assertEqual({"tenantId": "fixture-tenant", "domain": "timesheets", "aggregateId": "entry-1",
+                          "events": events}, body["request"])
+        self.assertEqual(["time-entry-evidence"], body["projectionTypes"])
+        self.assertEqual("fingerprint", body["catalogFingerprint"])
+        self.assertTrue(body["dispatchId"].startswith("live-dapr-denied-"))
+        self.assertIn("/commands/undeclared/workload", calls[1][0])
+
+        calls.clear()
+        namespace["call"] = lambda url, method, body, assertion: (200, b"") if url.endswith("/project/v2") else (404, b"")
+        with self.assertRaisesRegex(RuntimeError, "Forged or undeclared request changed persisted owner state"):
+            namespace["assert_catalog_denials"](events, "entry-1", {}, "fingerprint")
+        namespace["call"] = lambda url, method, body, assertion: (403, b"") if url.endswith("/project/v2") else (404, b"")
+        with self.assertRaisesRegex(RuntimeError, "Forged or undeclared request changed persisted owner state"):
+            namespace["assert_catalog_denials"](events, "entry-1", {}, "fingerprint")
+        state["read_model"] = {"unexpected": "effect"}
+        with self.assertRaisesRegex(RuntimeError, "initially unprojected"):
+            namespace["assert_catalog_denials"](events, "entry-1", {}, "fingerprint")
 
     def test_journey_http_contract_refuses_redirects_bypasses_proxies_and_keeps_response_bytes(self):
         sink_hits, proxy_hits = [], []

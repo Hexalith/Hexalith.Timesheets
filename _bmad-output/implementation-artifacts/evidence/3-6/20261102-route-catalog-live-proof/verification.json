@@ -1,0 +1,28 @@
+{
+  "runner_exit_code": 1,
+  "admission_refused": true,
+  "fixture_resources_created": false,
+  "private_profile_created": false,
+  "shared_redis_read_or_locked": false,
+  "catalog_observations": "unobserved",
+  "persisted_eventstore_and_dapr_end_state": "unobserved",
+  "restart_rebuild_preservation": "unobserved",
+  "no_resource_finalizer_complete": true,
+  "owned_resource_cleanup_qualified": false,
+  "sha256": {
+    "admission.json": "42ebf6ed3f976f871f5b7e19f93c6ae1760c26d8b9d924e5210d812ae2d7479c",
+    "cleanup.json": "aaca30447f85981af4053492f9869349d1e11587aee4491e16156d9bf24366ad",
+    "source-provenance.json": "9e1f693b77537f8c26b5e41d1554feda598819bf49c9736e49292f9f6840e645"
+  },
+  "offline_checks": {
+    "debug_source_restore": "pass",
+    "debug_source_solution_build": "pass; zero warnings/errors",
+    "final_apphost_build": "pass; zero warnings/errors",
+    "python_fixture_tests": "216 passed",
+    "catalog_http_cases": "30 passed",
+    "launch_readiness_cases": "16 passed",
+    "compiled_apphost_configuration_guard": "pass; no resources started",
+    "private_selection_validation": "valid profile accepted; missing policy refused before resources"
+  },
+  "source_provenance": "offline source and built asset hashes only; no runtime snapshot"
+}

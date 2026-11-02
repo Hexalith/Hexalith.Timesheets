@@ -1,10 +1,12 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using Aspire.Hosting.ApplicationModel;
 
 using Hexalith.EventStore.Aspire;
 using Hexalith.Timesheets.AppHost;
+using Microsoft.Extensions.Hosting;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
@@ -19,6 +21,12 @@ bool securitySmoke = builder.Configuration["TIMESHEETS_LIVE_DAPR_SECURITY_SMOKE"
 string? fixtureComponents = builder.Configuration["TIMESHEETS_LIVE_DAPR_COMPONENTS"];
 string? gatewayExecutable = builder.Configuration["TIMESHEETS_LIVE_DAPR_GATEWAY_EXECUTABLE"];
 string? gatewayWorkingDirectory = builder.Configuration["TIMESHEETS_LIVE_DAPR_GATEWAY_WORKING_DIRECTORY"];
+string? catalogProfile = builder.Configuration["TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE"];
+string? catalogFixtureId = builder.Configuration["TIMESHEETS_LIVE_DAPR_CATALOG_FIXTURE_ID"];
+bool catalogEnabled = catalogProfile is not null;
+string? gatewayCatalogPolicy = builder.Configuration["TIMESHEETS_LIVE_DAPR_CATALOG_GATEWAY_POLICY"];
+string? timesheetsCatalogPolicy = builder.Configuration["TIMESHEETS_LIVE_DAPR_CATALOG_TIMESHEETS_POLICY"];
+DevelopmentRouteCatalogCompositionOptions? catalogOptions = null;
 IsolatedGatewayLaunch.ValidateBuildMode(gatewayExecutable, gatewayWorkingDirectory);
 if ((gatewayExecutable is not null || gatewayWorkingDirectory is not null)
     && (!builder.ExecutionContext.IsRunMode || !fixtureEnabled || string.IsNullOrWhiteSpace(fixtureComponents)))
@@ -61,6 +69,23 @@ if (securitySmoke && (!builder.ExecutionContext.IsRunMode || !fixtureEnabled || 
 {
     throw new InvalidOperationException("Security smoke requires a validated isolated run-mode fixture.");
 }
+if (catalogEnabled || gatewayCatalogPolicy is not null || timesheetsCatalogPolicy is not null || catalogFixtureId is not null)
+{
+    if (!builder.ExecutionContext.IsRunMode || !builder.Environment.IsDevelopment() || !fixtureEnabled
+        || !catalogEnabled || string.IsNullOrWhiteSpace(catalogFixtureId) || string.IsNullOrWhiteSpace(gatewayCatalogPolicy)
+        || string.IsNullOrWhiteSpace(timesheetsCatalogPolicy) || securitySmoke)
+    {
+        throw new InvalidOperationException("Development route catalog requires a complete isolated Development fixture selection.");
+    }
+
+    catalogOptions = ValidatePrivateCatalogInput(catalogProfile!, gatewayCatalogPolicy!, timesheetsCatalogPolicy!, catalogFixtureId!,
+        componentsDirectory, Path.GetFullPath(Path.Combine(builder.AppHostDirectory, "..", "..")));
+    if (builder.Configuration["TIMESHEETS_LIVE_DAPR_MODEL_ONLY"] == "1"
+        || builder.Configuration["TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY"] == "1")
+    {
+        throw new InvalidOperationException("Private route catalog selection requires a complete runtime lifecycle.");
+    }
+}
 
 // The checked-in guard suite uses this exit before constructing any resource.
 // Invalid broker/control-plane inputs therefore remain harmless even if a
@@ -70,11 +95,16 @@ if (builder.Configuration["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"] == "1")
     Console.WriteLine(fixtureComponents is null ? "Dapr component selection: checked-in defaults." : "Dapr component selection: isolated fixture.");
     Console.WriteLine(gatewayExecutable is null ? "Gateway launch selection: project." : "Gateway launch selection: compiled executable.");
     Console.WriteLine(securitySmoke ? "Security selection: isolated smoke." : "Security selection: ordinary defaults.");
+    Console.WriteLine(catalogEnabled ? "Catalog selection: private isolated Development." : "Catalog selection: ordinary defaults.");
     return;
 }
 
 // This local topology uses a per-run Development signing key so workload assertions can
 // bind tenant, domain, and actor claims. Retain the shared security helper for publish mode.
+DevelopmentRouteCatalogPreparedOwner? preparedOwner = null;
+DevelopmentRouteCatalogComposition? routeCatalog = null;
+try
+{
 if (builder.ExecutionContext.IsRunMode)
 {
     builder.Configuration["EnableKeycloak"] = securitySmoke ? "true" : "false";
@@ -147,7 +177,7 @@ if (builder.ExecutionContext.IsRunMode)
         eventStore,
         adminServer: null,
         adminUI: null,
-        eventStoreDaprConfigPath: null,
+        eventStoreDaprConfigPath: gatewayCatalogPolicy,
         adminServerDaprConfigPath: null,
         resiliencyConfigPath: null,
         stateStoreComponentPath: actorStore,
@@ -158,6 +188,7 @@ if (builder.ExecutionContext.IsRunMode)
     _ = timesheets.AddEventStoreDomainModule(
         resources,
         "timesheets",
+        daprConfigPath: timesheetsCatalogPolicy,
         isolatedDaprResourcesPath: timesheetsResources,
         daprPlacementHostAddress: placement,
         daprSchedulerHostAddress: scheduler,
@@ -196,6 +227,17 @@ if (builder.ExecutionContext.IsRunMode)
         _ = timesheets.WithEnvironment("Timesheets__LiveDaprFixture__Enabled", "true");
     }
 
+    if (catalogEnabled)
+    {
+        preparedOwner = await timesheets.PrepareEventStoreDevelopmentOwnerAsync(
+            "Hexalith.Timesheets.Projections.dll", "Hexalith.Timesheets.Server.dll", TimeSpan.FromMinutes(5));
+        routeCatalog = builder.AddEventStoreDevelopmentRouteCatalog(eventStore,
+            [preparedOwner.Owner],
+            [eventStore.CaptureEventStoreDevelopmentReceiver(timesheets),
+             timesheets.CaptureEventStoreDevelopmentReceiver(eventStore)],
+            actorStore, catalogOptions!);
+    }
+
     // All endpoint-affecting wiring is complete. The model probe does not need
     // generated app-channel secrets or a runnable resource graph.
     if (ReportEndpointModelIfRequested(builder, timesheets))
@@ -203,8 +245,12 @@ if (builder.ExecutionContext.IsRunMode)
         return;
     }
 
-    // AddHexalithEventStore already generates the gateway's app-channel credential.
-    _ = timesheets.WithGeneratedEventStoreAppChannelToken();
+    // The catalog SDK binds every receiver's channel credential itself.
+    // Ordinary local starts keep their existing single Timesheets credential.
+    if (!catalogEnabled)
+    {
+        _ = timesheets.WithGeneratedEventStoreAppChannelToken();
+    }
 }
 
 if (ReportEndpointModelIfRequested(builder, timesheets))
@@ -233,10 +279,120 @@ if (builder.Configuration["TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY"] == "1")
     return;
 }
 
-await builder
-    .Build()
-    .RunAsync()
-    .ConfigureAwait(false);
+await using (DistributedApplication application = builder.Build())
+{
+    await application.RunAsync().ConfigureAwait(false);
+}
+}
+finally
+{
+    try
+    {
+        if (routeCatalog is not null)
+        {
+            await routeCatalog.DisposeAsync();
+        }
+    }
+    finally
+    {
+        if (preparedOwner is not null)
+        {
+            await preparedOwner.DisposeAsync();
+        }
+    }
+}
+
+static DevelopmentRouteCatalogCompositionOptions ValidatePrivateCatalogInput(
+    string profile, string gatewayPolicy, string timesheetsPolicy, string fixtureId, string componentsDirectory, string workspaceRoot)
+{
+    string root = Path.GetFullPath(Path.GetDirectoryName(profile)
+        ?? throw new InvalidOperationException("Private route catalog profile directory is missing."));
+    if (!Regex.IsMatch(fixtureId, "^[0-9a-f]{32}$")
+        || Path.GetFileName(profile) != "owner-profile.json"
+        || Path.GetFileName(gatewayPolicy) != "gateway-policy.yaml"
+        || Path.GetFileName(timesheetsPolicy) != "timesheets-policy.yaml"
+        || !Path.GetFileName(root).StartsWith("timesheets-route-catalog-", StringComparison.Ordinal)
+        || Path.GetFullPath(Path.GetDirectoryName(root)!) != Path.TrimEndingDirectorySeparator(Path.GetFullPath(Path.GetTempPath()))
+        || root == Path.GetFullPath(componentsDirectory) || root == workspaceRoot
+        || root.StartsWith(workspaceRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+        || CatalogPathHasLink(root))
+    {
+        throw new InvalidOperationException("Private route catalog profile is not isolated from source and components.");
+    }
+
+    if (!OperatingSystem.IsWindows() && (File.GetUnixFileMode(root) & (UnixFileMode.GroupRead | UnixFileMode.GroupWrite
+        | UnixFileMode.GroupExecute | UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute)) != 0)
+    {
+        throw new InvalidOperationException("Private route catalog profile directory is not private.");
+    }
+
+    foreach (string path in new[] { profile, gatewayPolicy, timesheetsPolicy })
+    {
+        if (Path.GetFullPath(Path.GetDirectoryName(path)!) != root || new FileInfo(path).LinkTarget is not null
+            || !File.Exists(path) || !OperatingSystem.IsWindows() && (File.GetUnixFileMode(path) &
+                (UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute
+                 | UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute)) != 0)
+        {
+            throw new InvalidOperationException("Private route catalog input is absent or unsafe.");
+        }
+    }
+
+    if (!string.Equals(File.ReadAllText(gatewayPolicy), ExpectedCatalogPolicy("gateway", "timesheets", [
+        ("api/v1/commands/bound/workload", "POST"), ("api/v1/commands/workload", "POST"),
+        ("api/v1/commands/status/workload/*", "GET"), ("api/v1/streams/read/workload", "POST")]), StringComparison.Ordinal)
+        || !string.Equals(File.ReadAllText(timesheetsPolicy), ExpectedCatalogPolicy("timesheets", "eventstore", [
+            ("process", "POST"), ("replay-state", "POST"), ("query", "POST"),
+            ("project/v2", "POST"), ("project/rebuild/v1", "POST"),
+            ("project/rebuild/shared/v1", "POST"), ("admin/operational-index-metadata", "POST")]), StringComparison.Ordinal))
+    {
+        throw new InvalidOperationException("Private route catalog receiver policies differ from the closed fixture.");
+    }
+
+    DevelopmentRouteCatalogCompositionOptions options = JsonSerializer.Deserialize<DevelopmentRouteCatalogCompositionOptions>(
+        File.ReadAllText(profile)) ?? throw new InvalidOperationException("Private route catalog owner profile is unavailable.");
+    if (Path.GetFullPath(options.CustodyDirectory) != Path.Combine(root, "custody")
+        || options.AuthorityComponentName != "timesheets-route-authority"
+        || options.AuthorityStateKey != "timesheets-route-" + fixtureId
+        || options.ActiveDigestKeyGeneration != "fixture-v1" || options.SecretMapGeneration != "fixture-v1"
+        || options.SecretStore != "secretstore" || options.LogicalSecretName != "eventstore-idempotency-ring"
+        || options.DigestKeys is null || options.DigestKeys.Count != 1
+        || !options.DigestKeys.TryGetValue("fixture-v1", out string? digestKey)
+        || !ValidFixtureDigestKey(digestKey))
+    {
+        throw new InvalidOperationException("Private route catalog owner profile differs from the selected fixture.");
+    }
+
+    return options;
+}
+
+static bool CatalogPathHasLink(string path)
+{
+    for (DirectoryInfo? directory = new(path); directory is not null; directory = directory.Parent)
+    {
+        if (directory.LinkTarget is not null || (directory.Attributes & FileAttributes.ReparsePoint) != 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+static bool ValidFixtureDigestKey(string? value)
+{
+    try { return value is not null && Convert.FromBase64String(value).Length == 32; }
+    catch (FormatException) { return false; }
+}
+
+static string ExpectedCatalogPolicy(string receiver, string caller, (string Method, string Verb)[] operations)
+    => "apiVersion: dapr.io/v1alpha1\nkind: Configuration\nmetadata:\n"
+       + "  name: timesheets-catalog-" + receiver + "\nspec:\n"
+       + "  accessControl:\n    defaultAction: deny\n    trustDomain: public\n"
+       + "    policies:\n      - appId: " + caller + "\n"
+       + "        defaultAction: deny\n        trustDomain: public\n"
+       + "        namespace: default\n        operations:\n"
+       + string.Join("\n", operations.Select(operation => "          - name: " + operation.Method + "\n"
+           + "            httpVerb: [" + operation.Verb + "]\n"
+           + "            action: allow")) + "\n";
 
 static bool ReportEndpointModelIfRequested(
     IDistributedApplicationBuilder builder,

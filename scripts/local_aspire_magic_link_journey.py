@@ -79,6 +79,7 @@ require(environment.get("Timesheets__LiveDaprFixture__Enabled") == "true",
         "The run-mode live Dapr fixture setting is required")
 require(os.environ.get("TIMESHEETS_LIVE_DAPR_FIXTURE") == "1",
         "The isolated fixture runner opt-in is required")
+catalog_mode = bool(os.environ.get("TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE"))
 public_port = validate_public_port(os.environ.get("Timesheets__LocalPublicPort", "8080"))
 require(environment.get("Timesheets__LocalPublicPort") == str(public_port),
         "Timesheets public listener does not match the isolated fixture")
@@ -86,7 +87,9 @@ public_origin = f"http://127.0.0.1:{public_port}"
 verify_runtime_components(os.environ.get("TIMESHEETS_LIVE_DAPR_REDIS_HOST", ""),
                           os.environ.get("TIMESHEETS_LIVE_DAPR_COMPONENTS", ""),
                           os.environ.get("Dapr__PlacementHostAddress", ""),
-                          os.environ.get("Dapr__SchedulerHostAddress", ""))
+                          os.environ.get("Dapr__SchedulerHostAddress", ""),
+                          catalog_profile=(os.path.dirname(os.environ["TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE"])
+                                           if catalog_mode else None))
 print("isolated actor/read-model/pubsub and placement/scheduler endpoints verified")
 key = environment["Authentication__JwtBearer__SigningKey"].encode()
 app_token = environment["APP_API_TOKEN"]
@@ -392,6 +395,30 @@ def read_model(key_name, allow_missing=False):
     return json.loads(data)
 
 
+def assert_catalog_denials(events, entry, record, fingerprint):
+    """Exercise the enrolled projection receiver and undeclared route before delivery."""
+    delivery_events = verified_positioned_events(events, entry)
+    evidence_key = f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence"
+    require(stream(entry) == events and read_model(evidence_key, allow_missing=True) is None,
+            "Denied projection target was not initially unprojected")
+    body = {
+        "request": {"tenantId": tenant, "domain": "timesheets", "aggregateId": entry, "events": delivery_events},
+        "projectionTypes": ["time-entry-evidence"],
+        "dispatchId": "live-dapr-denied-" + secrets.token_hex(8),
+        "catalogFingerprint": fingerprint,
+    }
+    # The real EventStore sidecar is admitted; the assertion falsely claims a
+    # process operation on a projection endpoint, which its policy must forbid.
+    forged, _ = call(timesheets + "/project/v2", "POST", body,
+                     sign("timesheets", "eventstore", "domain-service:process"))
+    undeclared, _ = call(timesheets_sidecar + "/v1.0/invoke/eventstore/method/api/v1/commands/undeclared/workload",
+                         "POST", record, sign("eventstore", "timesheets", "eventstore:command-submit", tenant, actor))
+    require(forged == 403 and undeclared == 403 and stream(entry) == events
+            and read_model(evidence_key, allow_missing=True) is None,
+            "Forged or undeclared request changed persisted owner state")
+    print("forged projection and undeclared route denied with unchanged stored state")
+
+
 def selected_catalog(scoped_tenant=tenant):
     family = "tenant-activity-type-catalog"
     components = ["timesheets-readmodels", scoped_tenant, "timesheets", family, family, "shared-epoch"]
@@ -584,7 +611,6 @@ require({"tenant-activity-type-catalog", "magic-link-token-hash-capability-index
          "time-entry-evidence", "magic-link-confirmation-capabilities"} <= set(routes),
         "Required named projection routes are unavailable")
 fingerprint = metadata["catalogFingerprint"]
-
 now = datetime.now(timezone.utc)
 catalog_event = {
     "eventTypeName": "Hexalith.Timesheets.Contracts.Events.ActivityTypes.ActivityTypeCreated",
@@ -665,6 +691,8 @@ def journey(action, race=False):
             and record_payload["activityTypeId"]["value"] == activity
             and record_payload["durationMinutes"] == 60,
             "Stored record payload differs from the accepted request")
+    if catalog_mode:
+        assert_catalog_denials(record_events, entry, record, fingerprint)
     project(record_events, entry, "time-entry-evidence", fingerprint)
     evidence = read_model(f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence")
     require(evidence["timeEntryId"]["value"] == entry
@@ -676,7 +704,14 @@ def journey(action, race=False):
     # Verify idempotent recording with the same bounded policy.
     await_success(lambda: management("/api/timesheets/external-contributions/", record), 202,
                   "Recording retry", retry_delays=ACTOR_RATE_LIMIT_RETRY_DELAYS)
-    require(event_names(entry) == recorded, "Recording retry appended another event")
+    require(stream(entry) == record_events, "Recording retry changed the stored stream")
+    if catalog_mode:
+        conflict_status, _ = management("/api/timesheets/external-contributions/",
+                                        record | {"durationMinutes": 75})
+        require(conflict_status == 403 and stream(entry) == record_events
+                and read_model(f"readmodel:{tenant}:timesheets:time-entry-evidence:{entry}:evidence") == evidence,
+                "Conflicting keyed recording changed stored events or read model")
+        print("same-key retry retained one stored effect and conflicting intent was denied")
 
     issue = {
         "capabilityId": {"value": capability},

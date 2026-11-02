@@ -6,6 +6,12 @@
 
 ## Current Verification
 
+### Private Aspire route-catalog attempt — 2026-11-02
+
+The AppHost has an isolated Development-only selection for the SDK's compiled eight-route Timesheets owner, exact gateway/Timesheets receiver cohort, closed Dapr policies and private catalog custody. The runner checks a fresh owned Redis and actual component/sidecar identities, then requires committed SDK receiver and workload observations before fixture requests. The extended journey checks valid, forged, undeclared and same-key conflicting requests against EventStore streams and Dapr read models, including restart/rebuild readback. These checks are implemented, but this attempt did **not** execute them live.
+
+Matching Debug/source solution restore and warnings-as-errors build pass with zero warnings/errors. The isolated runner's Python suite passes **216/216**, including the private-profile and foreign-inventory privacy checks. Focused catalog HTTP cases pass **30/30**, and LaunchReadiness cases pass **16/16**. The single [`--route-catalog` attempt](../evidence/3-6/20261102-route-catalog-live-proof/README.md) exited 1 at idle admission because a separate EventStore AppHost already owned eight Dapr applications. The runner created no fixture infrastructure, owner profile, AppHost or domain state and did not read or lock shared Redis. Its no-resource finalizer completed. Exact live receiver/workload observations, persisted EventStore/Dapr end state, restart/rebuild preservation, source identity across runtime and owned-resource cleanup are **unobserved**; the no-resource finalizer is not runtime cleanup proof. Current Aspire 13.6.4 and deployed acceptance remain unqualified. Story 3.6 stays in progress and launch stays **FAIL**.
+
 ### Offline native enrollment/execution revision — 2026-10-16 11:09 UTC
 
 Offline enrollment/execution safeguards and a separately sealed create-only

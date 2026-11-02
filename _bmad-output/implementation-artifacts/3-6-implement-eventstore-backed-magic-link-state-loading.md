@@ -23,6 +23,10 @@ so that confirmation and adjustment work outside service-only tests without weak
 
 ## Current Review Disposition (2026-10-14)
 
+### Private Aspire route-catalog qualification attempt — 2026-11-02
+
+The current AppHost and isolated runner now select the SDK's actual compiled eight-route owner, exact gateway/Timesheets receiver policies and private Development catalog over a fresh disposable Redis. Focused Debug/source build, fixture checks and catalog HTTP tests pass. The [single live attempt](evidence/3-6/20261102-route-catalog-live-proof/README.md) refused idle admission because a separate EventStore AppHost already owned eight Dapr applications. No Timesheets fixture resource or write started, and shared Redis was neither read nor locked. The no-resource finalizer completed; real catalog receiver/workload observations, persisted EventStore/Dapr effects, restart/rebuild, preservation and owned runtime cleanup remain unobserved. Story 3.6 stays **in progress**. Deployed FR14 authority, inventory/continuity and shared-rebuild acceptance remain open; launch stays **FAIL**.
+
 ### Owner policy and expired candidate — 2026-10-17
 
 [Current reconciliation](evidence/3-6/20261017t100251z-owner-policy-and-expiry/README.md)

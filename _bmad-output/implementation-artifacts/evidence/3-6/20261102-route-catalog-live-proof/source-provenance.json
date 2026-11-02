@@ -1,0 +1,82 @@
+{
+  "scope": "offline source and Debug/source built assets only; no live source consistency claim",
+  "repositories": {
+    "Hexalith.AI.Tools": {
+      "head": "1745b6663ad32bb1288167135ed0f979366c53a0",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Builds": {
+      "head": "6e7011fc754e74ac2a8864da1ce0b6d8f7178a48",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Commons": {
+      "head": "11555ace9efcae2928a00122dcba91243e5a8a1a",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Conversations": {
+      "head": "bab14ae9e7c2b0739dd66cc24e4cc06c5e1aae2c",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.EventStore": {
+      "head": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.FrontComposer": {
+      "head": "9cb085b926f45b5d494c67e3f57be48aa2644bcc",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.McpCli": {
+      "head": "829a98da7103b2124b2d95ee1d09db37620686a3",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Parties": {
+      "head": "d06c316fd57cbfaa0b80cf8622ec0b8ec571c6a0",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Platform": {
+      "head": "8b5ef1d03e81efdbe3b894dfc9b82186fb095489",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.PolymorphicSerializations": {
+      "head": "bce4eb9f45c6b131b960ab4fa39e50ff01e51960",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Projects": {
+      "head": "47a1ffd02cb3e1cde80bd7697ac1b46fdefda8cc",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Tenants": {
+      "head": "ba4639fa462341281f89aa7a08b7398477fc1ba9",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "Hexalith.Works": {
+      "head": "0fe60587ba48de74cd46f8f9d913a9d00c35abee",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "timesheets": {
+      "head": "1086a565b932210cc421e1b66f39f68a86a3e7ee",
+      "tracked_diff_sha256": "a19a8430a4d383a2cc72855cc8561195e23fe87805117afac2060923de952e70",
+      "tracked_diff_scope": [
+        "scripts/local_aspire_magic_link_journey.py",
+        "scripts/run_isolated_magic_link_dapr.py",
+        "scripts/test_isolated_magic_link_dapr.py",
+        "src/Hexalith.Timesheets.AppHost/Program.cs",
+        "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs"
+      ]
+    }
+  },
+  "files_sha256": {
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "5b28d6062e438f678dbd98bcaba800ff66e48dcfcb5eb6719c87d9964871178f",
+    "src/Hexalith.Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll": "fb1da4686a6d101f9d5d60528c23f2d65c80f3c0e58465187d11ce56aa14a685",
+    "src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets.dll": "fb5aaf3238af0d100607a1b82c94bbc47a8e579f4773917d4318d4f2a60223b8",
+    "src/Hexalith.Timesheets.Projections/bin/Debug/net10.0/Hexalith.Timesheets.Projections.dll": "eb993fee19b5e6bb7cf6e241eb00b28f157fdf9da6e86080a91516494c77564b",
+    "src/Hexalith.Timesheets.Server/bin/Debug/net10.0/Hexalith.Timesheets.Server.dll": "77b0c044326bc351155704e906d29e5f7e8a5b7bd688ffd3967c4950ad28ba9e",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/bin/Debug/net10.0/Hexalith.EventStore.Aspire.dll": "475f37683e7e00af14c4e04578621c205ff5c62988f0d8b056d6eab6aa397995",
+    "scripts/run_isolated_magic_link_dapr.py": "4f969b26ebfeb2c947924b4fab466f5fc56c6c5a33c08894386fe9a772a8d7e8",
+    "scripts/local_aspire_magic_link_journey.py": "4c6756c0a67d4910e1149f3aee732a87f4d891fdcf54651bd2b679faa3bfaea6",
+    "scripts/test_isolated_magic_link_dapr.py": "e86d77c935eba9e49c94226abbd5bf53ca60c59c60da7d4df92a76b904a2baba",
+    "tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs": "d42aad53c12171a3ea90f3fe255436e477c058df505e8e68f622e01696db0297"
+  },
+  "configuration": "Debug",
+  "source_references": true
+}
