@@ -1,0 +1,19 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.14)
+  Discovering: Hexalith.Timesheets.Projections.Tests
+  Discovered:  Hexalith.Timesheets.Projections.Tests
+  Starting:    Hexalith.Timesheets.Projections.Tests
+    Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.DelayedCombinedInventoryPersistsV7WithinGatewayAttemptBudget(streamed: True) [FAIL]
+      System.Threading.Tasks.TaskCanceledException : A task was canceled.
+      Stack Trace:
+        tests/Hexalith.Timesheets.Projections.Tests/BootstrapObservingReadModelStore.cs(85,0): at Hexalith.Timesheets.Projections.Tests.BootstrapObservingReadModelStore.GetAsync[TValue](String storeName, String key, CancellationToken cancellationToken)
+        references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.cs(2431,0): at Hexalith.EventStore.Client.Projections.SharedProjectionEpochCoordinator.ReadAsync[TValue](SharedProjectionScope scope, String logicalKey, CancellationToken cancellationToken)
+[credential line redacted]
+        references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.cs(1070,0): at Hexalith.EventStore.Client.Projections.SharedProjectionEpochCoordinator.StageStreamingAsync(SharedProjectionScope scope, String operationId, IAsyncEnumerable`1 operations, CancellationToken cancellationToken, SharedProjectionControlIndexIntent controlIndexIntent)
+        references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Projections/SharedProjectionEpochCoordinator.cs(1070,0): at Hexalith.EventStore.Client.Projections.SharedProjectionEpochCoordinator.StageStreamingAsync(SharedProjectionScope scope, String operationId, IAsyncEnumerable`1 operations, CancellationToken cancellationToken, SharedProjectionControlIndexIntent controlIndexIntent)
+[credential line redacted]
+        tests/Hexalith.Timesheets.Projections.Tests/MagicLinkBootstrapLatencyTests.cs(68,0): at Hexalith.Timesheets.Projections.Tests.MagicLinkBootstrapLatencyTests.DelayedCombinedInventoryPersistsV7WithinGatewayAttemptBudget(Boolean streamed)
+        --- End of stack trace from previous location ---
+Measured migration: max physical page bytes=194660; max roster bytes=155722; byte-split pages=156; owners=10000.
+  Finished:    Hexalith.Timesheets.Projections.Tests (ID = '71a8c72b9d8d9e56fe75932ce95e7dc344d2c8845f6930a99f88efa1003d95f0')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.Projections.Tests  Total: 787, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 774.458s

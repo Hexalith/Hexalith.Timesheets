@@ -1,0 +1,35 @@
+{
+  "scope": "Canonical lock and supported runner preflight only; no lifecycle invocation",
+  "started_utc": "2026-11-02T16:48:33.081481+00:00",
+  "canonical_lock_acquired": true,
+  "public_port": 18080,
+  "route_catalog": true,
+  "lock_acquired_utc": "2026-11-02T16:48:33.081622+00:00",
+  "reason": "A Dapr application is already running or inventory is unsafe; no AppHost started",
+  "no_resource_finalizer_complete": true,
+  "lock_release_requested_utc": "2026-11-02T16:48:33.187482+00:00",
+  "finished_utc": "2026-11-02T16:48:33.187502+00:00",
+  "duration_seconds": 0.105993,
+  "exit_code": 1,
+  "inventories": [
+    {
+      "argv": [
+        "dapr",
+        "list",
+        "--output",
+        "json"
+      ],
+      "started_utc": "2026-11-02T16:48:33.081696+00:00",
+      "finished_utc": "2026-11-02T16:48:33.184816+00:00",
+      "duration_seconds": 0.103137,
+      "exit_code": 0,
+      "inventory_shape": "array",
+      "entry_count": 8,
+      "raw_inventory_retained": false
+    }
+  ],
+  "preflight_directory": "preflight/run-_cw9biyz",
+  "fixture_resources_created": false,
+  "supported_runner_invoked": false,
+  "shared_redis_read_or_locked": false
+}

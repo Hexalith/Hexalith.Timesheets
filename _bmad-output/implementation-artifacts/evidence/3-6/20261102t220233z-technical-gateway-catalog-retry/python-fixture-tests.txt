@@ -1,0 +1,25 @@
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+................FF.................................................................................................................................................................................................................
+======================================================================
+FAIL: test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1279, in test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources
+    self.assertEqual(130, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 130 != 1
+
+======================================================================
+FAIL: test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1256, in test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup
+    self.assertEqual(29, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 29 != 1
+
+----------------------------------------------------------------------
+Ran 227 tests in 56.789s
+
+FAILED (failures=2)

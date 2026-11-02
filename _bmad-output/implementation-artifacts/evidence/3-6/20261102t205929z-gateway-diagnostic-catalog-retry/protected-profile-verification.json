@@ -1,0 +1,7 @@
+{
+  "profile_fixture_identity_verified": true,
+  "protected_profile_retained": true,
+  "private_profile_modes": "0700 directory; 0600 inputs",
+  "private_profile_path_sha256": "213b97f33561658f9bf05c43da6d728412d7fb5f6332eec7dc43d221892204bc",
+  "private_inputs_excluded": true
+}

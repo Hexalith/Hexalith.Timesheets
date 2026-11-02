@@ -1,0 +1,16 @@
+{
+  "recorded_utc": "2026-11-02T21:25:56.103500+00:00",
+  "changes": [
+    "Diagnostic KeyboardInterrupt records constant interrupted status then propagates for execute cancellation/cleanup.",
+    "Catalog-only commands disable MSBuild node reuse and discard conflicting inherited aliases; ordinary mode unchanged.",
+    "Existing Timesheets resource explicitly pins MSBUILDDISABLENODEREUSE=1 in catalog mode only; compiled actual declaration/environment and matching build checks verify it."
+  ],
+  "files_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "8353735af2a5128bb8c203ca29b433c4f40779e431aecf174e1a1b4b5d282f11",
+    "scripts/test_isolated_magic_link_dapr.py": "7c1136b4b7294c9b6205b20372b27c2ab38d6ed692a790b4b044b5a68bd1970e",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "f53403319011cafbb927d703727bca1d7c3ccf47be5aad687b166c00e95dd7eb"
+  },
+  "technical_enrollment_applied": false,
+  "finite_only_assertion_preserved": true,
+  "dependency_changes": false
+}

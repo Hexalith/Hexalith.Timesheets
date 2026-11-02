@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_isolated_magic_link_dapr.py",
+    "-k",
+    "test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources"
+  ],
+  "started_utc": "2026-11-02T21:03:56.648512+00:00",
+  "finished_utc": "2026-11-02T21:03:56.776364+00:00",
+  "duration_seconds": 0.127835,
+  "exit_code": 0
+}

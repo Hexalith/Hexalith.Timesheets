@@ -1,0 +1,26 @@
+{
+  "recorded_utc": "2026-11-02T22:58:05.928808+00:00",
+  "result": "pass",
+  "scope": "Observed catalog/bootstrap/source/cleanup milestones and bounded diagnostics; persisted journey still fails",
+  "checks": {
+    "earlier_packet_files_unchanged": 1250,
+    "frozen_approved_scope_preserved": true,
+    "prior_record_prefixes_preserved": 3,
+    "dependencies_preserved": 13,
+    "compressed_artifacts_verified": 80,
+    "private_inputs_excluded": true,
+    "catalog_and_v2_before_after_pass": true,
+    "writer_bootstrap_http_200": true,
+    "strict_live_source_identity_matches": true,
+    "owned_cleanup_complete": true,
+    "original_journey_403_and_test_failure_preserved": true,
+    "persisted_effects_restart_not_qualified": true,
+    "focused_diagnostics_passed": 5,
+    "full_python_passed": 231,
+    "initial_bad_selector_retained": true,
+    "caller_credentials_authority_acl_unchanged": true,
+    "local_links_verified": 16,
+    "packet_files_not_ignored": 114,
+    "git_diff_check_exit_code": 0
+  }
+}

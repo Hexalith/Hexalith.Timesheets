@@ -25,6 +25,11 @@ import run_isolated_magic_link_dapr as fixture
 import check_magic_link_apphost_guards as guards
 
 
+COMPILED_CONFIGURATION = os.environ.get("TIMESHEETS_TEST_CONFIGURATION", "Debug")
+if COMPILED_CONFIGURATION not in ("Debug", "Release"):
+    raise ValueError("TIMESHEETS_TEST_CONFIGURATION must be Debug or Release")
+
+
 class Commands:
     def __init__(self, failure=None):
         self.calls = []
@@ -824,6 +829,150 @@ class IsolatedFixtureTests(unittest.TestCase):
                     self.assertEqual(instance.scratch, environment["TIMESHEETS_LIVE_DAPR_COMPONENTS"], arguments)
                 self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
 
+    def test_catalog_commands_pin_development_without_changing_ordinary_environment(self):
+        for inherited in ({}, {
+            "DOTNET_ENVIRONMENT": "Production", "ASPNETCORE_ENVIRONMENT": "Staging", "ASPIRE_ENVIRONMENT": "Production",
+            "dotnet_environment": "Staging", "aspnetcore_environment": "Production", "aspire_environment": "Staging",
+            "Environment": "Production",
+        }):
+            with self.subTest(inherited=inherited), patch.dict(os.environ, inherited, clear=True):
+                catalog = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
+                ordinary = fixture.IsolatedFixture(command=Commands(), log_directory=self.logs)
+                for name in ("DOTNET_ENVIRONMENT", "ASPNETCORE_ENVIRONMENT", "ASPIRE_ENVIRONMENT"):
+                    self.assertEqual("Development", catalog.environment[name])
+                self.assertFalse((set(inherited) - {"DOTNET_ENVIRONMENT", "ASPNETCORE_ENVIRONMENT", "ASPIRE_ENVIRONMENT"})
+                                 & set(catalog.environment))
+                for name, value in inherited.items():
+                    self.assertEqual(value, ordinary.environment[name])
+                self.assertEqual(inherited, dict(os.environ))
+
+    def test_catalog_commands_disable_msbuild_node_reuse_and_preserve_ordinary_environment(self):
+        for inherited in ({}, {
+            "MSBUILDDISABLENODEREUSE": "0", "msbuilddisablenodereuse": "false",
+            "DOTNET_MSBUILDDISABLENODEREUSE": "0", "ASPIRE_MSBUILDDISABLENODEREUSE": "0",
+            "ASPNETCORE_MSBUILDDISABLENODEREUSE": "0",
+        }):
+            for catalog in (False, True):
+                with self.subTest(inherited=inherited, catalog=catalog), patch.dict(os.environ, inherited, clear=True):
+                    commands = Commands()
+                    instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs, route_catalog=catalog)
+                    # Exercise the shared command environment without acquiring admission or creating resources.
+                    instance.run_command(["aspire", "--version"])
+                    instance.run_command(["dotnet", "--info"])
+                    self.assertEqual(2, len(commands.calls))
+                    for _, arguments in commands.calls:
+                        environment = arguments["env"]
+                        if catalog:
+                            self.assertEqual("1", environment.get("MSBUILDDISABLENODEREUSE"))
+                            self.assertFalse((set(inherited) - {"MSBUILDDISABLENODEREUSE"}) & set(environment))
+                        else:
+                            for name, value in inherited.items():
+                                self.assertEqual(value, environment[name])
+                            if not inherited:
+                                self.assertNotIn("MSBUILDDISABLENODEREUSE", environment)
+                    self.assertEqual(inherited, dict(os.environ))
+                    self.assertFalse(commands.started)
+                    self.assertFalse(commands.containers)
+
+    def test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build(self):
+        for catalog in (False, True):
+            with self.subTest(catalog=catalog):
+                def stop_at_start(arguments):
+                    if arguments[:2] == ["aspire", "start"]:
+                        if catalog and "--no-build" in arguments:
+                            return subprocess.CompletedProcess(arguments, 2, "", "Selected child preparation rejects suppressed builds")
+                        # Stop this injected execution before resource readiness or journey calls.
+                        return subprocess.CompletedProcess(arguments, 27, "Intentional launch boundary", "")
+                commands = Commands(stop_at_start)
+                instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+                    route_catalog=catalog, ownership_check=lambda: commands.started and not commands.stopped)
+                with patch.object(instance, "capture_source_identity", return_value={"source": "pre-start"}), \
+                        contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(27, instance.execute())
+                start = next(arguments for arguments, _ in commands.calls if arguments[:2] == ["aspire", "start"])
+                self.assertEqual(not catalog, "--no-build" in start)
+                self.assertIn("--non-interactive", start)
+                self.assertEqual(str(fixture.APPHOST), start[start.index("--apphost") + 1])
+                self.assertTrue(commands.stopped)
+                self.assertFalse(commands.containers)
+
+    def test_compiled_owner_declaration_preserves_graph_and_supported_build_selection(self):
+        source = (fixture.APPHOST.parent / "Program.cs").read_text()
+        declaration = source[source.index("IResourceBuilder<ProjectResource> timesheets ="):
+                             source.index("\nif (builder.ExecutionContext.IsRunMode)",
+                                          source.index("IResourceBuilder<ProjectResource> timesheets ="))]
+        directory = Path(self.temporary.name) / "owner-selection-probe"
+        directory.mkdir()
+        output = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0"
+        project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
+        properties = ET.SubElement(project, "PropertyGroup")
+        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net10.0"), ("ImplicitUsings", "enable")):
+            ET.SubElement(properties, name).text = value
+        items = ET.SubElement(project, "ItemGroup")
+        ET.SubElement(items, "FrameworkReference", Include="Microsoft.AspNetCore.App")
+        for name in ("Aspire.Hosting", "Hexalith.Timesheets.AppHost"):
+            reference = ET.SubElement(items, "Reference", Include=name)
+            ET.SubElement(reference, "HintPath").text = str(output / (name + ".dll"))
+        (directory / "OwnerSelectionProbe.csproj").write_text(ET.tostring(project, encoding="unicode"))
+        (directory / "Program.cs").write_text("""
+using System.Text.Json;
+using Aspire.Hosting;
+using Aspire.Hosting.ApplicationModel;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
+foreach (bool catalogEnabled in new[] { false, true })
+{
+    var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions { DisableDashboard = true });
+    builder.Environment.EnvironmentName = "Development";
+    int publicPort = 18080;
+    const int InternalPort = 8081;
+""" + declaration + """
+#pragma warning disable ASPIREEXTENSION001
+    var launch = (ProjectLaunchConfiguration)await timesheets.Resource.CreateLaunchConfigurationAsync(ExecutableLaunchMode.NoDebug);
+#pragma warning restore ASPIREEXTENSION001
+    var childEnvironment = new Dictionary<string, string>();
+    await timesheets.Resource.ProcessEnvironmentVariableValuesAsync(builder.ExecutionContext,
+        (name, raw, value, error) => { if (error is not null) throw error; childEnvironment[name] = value!; }, NullLogger.Instance);
+    Console.WriteLine(JsonSerializer.Serialize(new {
+        catalogEnabled,
+        childNodeReuseValue = childEnvironment.GetValueOrDefault("MSBUILDDISABLENODEREUSE"),
+        metadataSuppressBuild = timesheets.Resource.GetProjectMetadata().SuppressBuild,
+        effectiveSuppressBuild = launch.SuppressBuild,
+        launchArgumentOverrideCount = timesheets.Resource.Annotations.Count(annotation =>
+            annotation.GetType().Name is "LaunchToolArgsCallbackAnnotation" or "ProjectLaunchArgsOverrideAnnotation"),
+        exactGeneratedProjectPath = launch.ProjectPath == new Projects.Hexalith_Timesheets().ProjectPath,
+        projectResourceCount = builder.Resources.OfType<ProjectResource>().Count(),
+        resourceNameMatches = timesheets.Resource.Name == "timesheets",
+        resources = builder.Resources.Select(resource => new { resource.Name, ResourceType = resource.GetType().FullName })
+            .OrderBy(resource => resource.Name),
+        endpoints = timesheets.Resource.Annotations.OfType<EndpointAnnotation>()
+            .Select(endpoint => new { endpoint.Name, endpoint.Port, endpoint.IsProxied, endpoint.IsExternal })
+            .OrderBy(endpoint => endpoint.Name)
+    }));
+}
+""")
+        environment = dict(os.environ, DOTNET_CLI_HOME="/tmp/dotnet-cli-home")
+        built = subprocess.run(["dotnet", "build", str(directory / "OwnerSelectionProbe.csproj"),
+            "--configuration", COMPILED_CONFIGURATION, "-m:1", "/nr:false"], cwd=fixture.ROOT, env=environment,
+            capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, built.returncode, fixture.sanitized(built.stdout + built.stderr))
+        result = subprocess.run([str(directory / f"bin/{COMPILED_CONFIGURATION}/net10.0/OwnerSelectionProbe")],
+            cwd=fixture.ROOT, env=environment, capture_output=True, text=True, timeout=30)
+        self.assertEqual(0, result.returncode, fixture.sanitized(result.stdout + result.stderr))
+        rows = [json.loads(line) for line in result.stdout.splitlines() if line.startswith("{")]
+        self.assertEqual(2, len(rows))
+        self.assertEqual(rows[0]["resources"], rows[1]["resources"])
+        for row in rows:
+            self.assertEqual("1" if row["catalogEnabled"] else None, row["childNodeReuseValue"])
+            self.assertEqual(not row["catalogEnabled"], row["metadataSuppressBuild"])
+            self.assertFalse(row["effectiveSuppressBuild"])
+            self.assertEqual(0, row["launchArgumentOverrideCount"])
+            self.assertTrue(row["exactGeneratedProjectPath"])
+            self.assertEqual(1, row["projectResourceCount"])
+            self.assertTrue(row["resourceNameMatches"])
+            self.assertEqual([{"Name": "internal", "Port": 8081, "IsProxied": False, "IsExternal": False},
+                              {"Name": "public", "Port": 18080, "IsProxied": False, "IsExternal": False}], row["endpoints"])
+
     def test_catalog_selection_owns_private_profile_closed_policies_and_cleanup(self):
         with patch.dict(os.environ, {
             "TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE": "/foreign/profile.json",
@@ -855,21 +1004,24 @@ class IsolatedFixtureTests(unittest.TestCase):
         self.assertIn("Private catalog custody is incomplete; retaining protected profile", cleanup["failure_reasons"])
 
     def test_compiled_apphost_refuses_changed_private_catalog_policies_and_owner_coordinates(self):
-        instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
+        with patch.dict(os.environ, {
+            "DOTNET_ENVIRONMENT": "Production", "ASPNETCORE_ENVIRONMENT": "Staging", "ASPIRE_ENVIRONMENT": "Production",
+        }):
+            instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
         instance.fixture_backup = {"receipt": "admitted-empty-owned-store"}
         instance.prepare_route_catalog()
         root = instance.catalog_private
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         components = Path(self.temporary.name) / "catalog-components"
         fixture.write_components(components, "127.0.0.1:16379")
-        executable = fixture.APPHOST.parent / "bin/Release/net10.0/Hexalith.Timesheets.AppHost"
-        environment = {name: value for name, value in os.environ.items()
+        executable = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0/Hexalith.Timesheets.AppHost"
+        environment = {name: value for name, value in instance.environment.items()
                        if not name.casefold().startswith("timesheets_live_dapr_")
                        and not name.casefold().startswith("dapr__")}
         environment.update({
-            "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home", "DOTNET_ENVIRONMENT": "Development",
-            "ASPNETCORE_ENVIRONMENT": "Development", "Configuration": "Release",
-            "UseHexalithProjectReferences": "false", "UseNuGetDeps": "true",
+            "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home", "Configuration": COMPILED_CONFIGURATION,
+            "UseHexalithProjectReferences": str(COMPILED_CONFIGURATION == "Debug").lower(),
+            "UseNuGetDeps": str(COMPILED_CONFIGURATION == "Release").lower(),
             "TIMESHEETS_LIVE_DAPR_FIXTURE": "1", "TIMESHEETS_LIVE_DAPR_COMPONENTS": str(components),
             "TIMESHEETS_LIVE_DAPR_CATALOG_FIXTURE_ID": instance.fixture_id,
             "TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE": str(root / "owner-profile.json"),
@@ -912,6 +1064,57 @@ class IsolatedFixtureTests(unittest.TestCase):
             environment[setting] = str(alias / name)
         self.assertNotEqual(0, probe().returncode)
 
+    def test_catalog_custody_owner_requires_exact_pinned_defaults_and_identity(self):
+        profile = {"CustodyDirectory": "/private/custody", "AuthorityComponentName": "owned",
+                   "AuthorityStateKey": "owned-key", "ActiveDigestKeyGeneration": "g1",
+                   "DigestKeys": {"g1": "retained-key"}, "SecretMapGeneration": "s1"}
+        defaults = {"SecretStore": "secretstore", "LogicalSecretName": "eventstore-idempotency-ring"}
+        owner = {**profile, **defaults}
+        for selected in (profile, {**profile, "SecretStore": "secretstore"}, owner):
+            self.assertTrue(fixture.catalog_custody_owner_matches(selected, owner))
+        for defect in ("missing", "extra-profile", "extra-owner", "null-store", "changed-store", "null-logical",
+                       "changed-logical", "changed-ring", "changed-state-key"):
+            with self.subTest(defect=defect):
+                original, retained = json.loads(json.dumps([profile, owner]))
+                if defect == "missing": retained.pop("SecretStore")
+                elif defect == "extra-profile": original["Extra"] = "unknown"
+                elif defect == "extra-owner": retained["Extra"] = "unknown"
+                elif defect in ("null-store", "changed-store", "null-logical", "changed-logical"):
+                    name = "SecretStore" if defect.endswith("store") else "LogicalSecretName"
+                    original[name] = None if defect.startswith("null") else "changed"
+                    retained[name] = original[name]
+                elif defect == "changed-ring": retained["DigestKeys"] = {"g1": "changed"}
+                else: retained["AuthorityStateKey"] = "changed"
+                self.assertFalse(fixture.catalog_custody_owner_matches(original, retained))
+
+    def test_rendered_catalog_authority_accepts_only_exact_private_db13_backend(self):
+        original = {"apiVersion": "dapr.io/v1alpha1", "kind": "Component",
+            "metadata": {"name": "timesheets-route-authority"},
+            "spec": {"type": "state.redis", "version": "v1", "metadata": [
+                {"name": "redisHost", "value": "127.0.0.1:49152"}, {"name": "redisPassword", "value": ""},
+                {"name": "redisDB", "value": 13}, {"name": "keyPrefix", "value": "name"}]},
+            "scopes": ["eventstore", "timesheets"]}
+        for database in (13, "13"):
+            selected = json.loads(json.dumps(original))
+            selected["spec"]["metadata"][2]["value"] = database
+            fixture.verify_rendered_catalog_authority(selected, "127.0.0.1:49152")
+        for defect in (False, True, 13.0, 14, "013", "13.0", None, "duplicate", "tls", "endpoint", "password",
+                       "prefix", "type", "version", "name", "scopes", "duplicate-scope", "secret-reference"):
+            with self.subTest(defect=defect):
+                selected = json.loads(json.dumps(original)); rows = selected["spec"]["metadata"]
+                if defect == "duplicate": rows.append(dict(rows[2]))
+                elif defect == "tls": rows.append({"name": "enableTLS", "value": "false"})
+                elif defect in ("endpoint", "password", "prefix"):
+                    rows[{"endpoint": 0, "password": 1, "prefix": 3}[defect]]["value"] = "changed"
+                elif defect in ("type", "version"): selected["spec"][defect] = "changed"
+                elif defect == "name": selected["metadata"]["name"] = "changed"
+                elif defect == "scopes": selected["scopes"] = ["eventstore", "foreign"]
+                elif defect == "duplicate-scope": selected["scopes"].append("timesheets")
+                elif defect == "secret-reference": rows[1] = {"name": "redisPassword", "secretKeyRef": {"name": "other"}}
+                else: rows[2]["value"] = defect
+                with self.assertRaises(fixture.FixtureError):
+                    fixture.verify_rendered_catalog_authority(selected, "127.0.0.1:49152")
+
     def test_catalog_profile_is_removed_only_after_complete_sdk_custody(self):
         instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
         instance.fixture_backup = {"receipt": "admitted-empty-owned-store"}
@@ -923,7 +1126,8 @@ class IsolatedFixtureTests(unittest.TestCase):
         custody = root / "custody"
         custody.mkdir(mode=0o700)
         owner = custody / "owner.json"
-        owner.write_bytes((root / "owner-profile.json").read_bytes())
+        owner.write_text(json.dumps({**json.loads((root / "owner-profile.json").read_text()),
+            "SecretStore": "secretstore", "LogicalSecretName": "eventstore-idempotency-ring"}))
         owner.chmod(0o600)
         retained = custody / ("generation-" + "a" * 32)
         retained.mkdir(mode=0o700)
@@ -1065,6 +1269,314 @@ class IsolatedFixtureTests(unittest.TestCase):
             with self.assertRaises(fixture.FixtureError):
                 verify()
 
+    def test_catalog_failure_diagnostics_withhold_raw_output_and_refuse_unknown_ownership(self):
+        secret = "arbitrary-private-message-body-and-token"
+        for owned in (False, True):
+            with self.subTest(owned=owned):
+                def logs(arguments):
+                    if arguments[:2] == ["aspire", "logs"]:
+                        return subprocess.CompletedProcess(arguments, 0,
+                            fixture.CATALOG_DIAGNOSTIC_CATEGORIES["local_policy"] + "\n"
+                            + "RouteCatalogUnavailableException RouteCatalogAuthority.ReadyAsync " + secret, secret)
+                commands = Commands(logs)
+                instance = fixture.IsolatedFixture(command=commands, route_catalog=True, log_directory=self.logs,
+                                                   ownership_check=lambda: owned)
+                instance.start_attempted = True
+                instance.capture_catalog_failure_diagnostics()
+                text = (instance.log_directory / "catalog-failure-diagnostics.json").read_text()
+                self.assertNotIn(secret, text)
+                receipt = json.loads(text)
+                self.assertEqual(owned, receipt["ownership_verified"])
+                calls = [(args, kwargs) for args, kwargs in commands.calls if args[:2] == ["aspire", "logs"]]
+                self.assertEqual(2 if owned else 0, len(calls))
+                for _, kwargs in calls:
+                    self.assertEqual(10, kwargs["timeout"])
+                for row in receipt["resources"].values():
+                    self.assertEqual(["local_policy"], row["sdk_categories"])
+                    self.assertEqual(["RouteCatalogUnavailableException"], row["exception_types"])
+                    self.assertEqual(["RouteCatalogAuthority.ReadyAsync"], row["frames"])
+                    self.assertTrue(row["raw_output_withheld"])
+
+    def test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup(self):
+        for diagnostic in ("finite", "timeout", "unavailable", "cancel"):
+            with self.subTest(diagnostic=diagnostic):
+                secret = "private-console-body-token-must-not-be-retained"
+                def outcome(arguments):
+                    if "-class" in arguments:
+                        return subprocess.CompletedProcess(arguments, 29, "original journey failure", "")
+                    if arguments[:2] == ["aspire", "logs"]:
+                        if diagnostic == "timeout": raise subprocess.TimeoutExpired(arguments, 10, output=secret, stderr=secret)
+                        if diagnostic == "unavailable": raise OSError(secret)
+                        if diagnostic == "cancel": raise KeyboardInterrupt
+                        return subprocess.CompletedProcess(arguments, 0, "finite-endpoint-changed " + secret, secret)
+                commands = Commands(outcome)
+                instance = fixture.IsolatedFixture(command=commands, route_catalog=True, log_directory=self.logs,
+                    port_check=lambda: None, resource_check=lambda *_: [],
+                    ownership_check=lambda: commands.started and not commands.stopped)
+                instance.injected_command = False
+                catalog = {"root_digest": "root", "generation": 1, "receivers": {}}
+                with patch.object(instance, "capture_source_identity", return_value={"source": "fixed"}), \
+                        patch.object(instance, "prepare_catalog_binding_verifier"), patch.object(instance, "prepare_fixture_bootstrap"), \
+                        patch.object(instance, "prepare_route_catalog"), patch.object(instance, "bootstrap_fixture_protocol"), \
+                        patch.object(instance, "capture_runtime_readiness"), patch.object(instance, "capture_gateway_process", return_value=None), \
+                        patch.object(instance, "capture_route_catalog", return_value=catalog), \
+                        patch.object(instance, "_journey_command", side_effect=commands), \
+                        patch.object(fixture, "verify_runtime_components", return_value={}), \
+                        contextlib.redirect_stdout(io.StringIO()) as output:
+                    self.assertEqual(130 if diagnostic == "cancel" else 29, instance.execute())
+                self.assertNotIn(secret, output.getvalue())
+                receipt = json.loads((instance.log_directory / "catalog-failure-diagnostics.json").read_text())
+                self.assertEqual("journey", receipt["phase"])
+                self.assertNotIn(secret, json.dumps(receipt))
+                if diagnostic == "finite":
+                    self.assertEqual(["finite_endpoint_changed"], receipt["resources"]["timesheets"]["sdk_categories"])
+                self.assertTrue(commands.stopped)
+                self.assertFalse(commands.containers)
+                self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+                stop = next(i for i, (args, _) in enumerate(commands.calls) if args[:2] == ["aspire", "stop"])
+                self.assertTrue(all(i < stop for i, (args, _) in enumerate(commands.calls) if args[:2] == ["aspire", "logs"]))
+
+    def test_invocation_denial_and_metadata_facts_withhold_unknown_private_values(self):
+        secret = "private-body-policy-never-retained"
+        for body, expected in ((b"", "empty_http_body"),
+            (json.dumps({"errorCode": "ERR_DIRECT_INVOKE", "message": secret}), "dapr_direct_invoke_failed"),
+            (json.dumps({"errorCode": "ERR_PERMISSION_DENIED", "message": secret}), "dapr_permission_denied"),
+            (json.dumps({"errorCode": {"private": secret}}), "unclassified_body_withheld"),
+            (json.dumps({"errorCode": secret}), "unclassified_body_withheld"),
+            (secret, "unclassified_body_withheld"), (b"x" * 65537, "unclassified_body_withheld")):
+            self.assertEqual(expected, fixture.safe_invocation_failure_category(body))
+        endpoint = {"Pattern": "/admin/operational-index-metadata", "Methods": ["POST"],
+            "Policies": ["EventStoreWorkload:domain-service:metadata"], "Operation": "domain-service:metadata",
+            "Admitted": True, "Anonymous": False, "IsPattern": False}
+        observation = {"ReceiverSurface": {"FenceVersion": "eventstore-finite-dapr-receiver-v1", "Endpoints": [endpoint]},
+            "ExecutableOwners": {"Hexalith.EventStore.DomainService, Version=1": "a" * 64}}
+        files = {"src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.EventStore.DomainService.dll": "a" * 64}
+        facts = fixture.catalog_metadata_receiver_facts(observation, files)
+        self.assertTrue(facts["admitted"] and facts["canonical_policy_present"] and facts["domain_sdk_code_matches"])
+        endpoint["Policies"] = [secret]
+        observation["ExecutableOwners"] = {secret: secret}
+        facts = fixture.catalog_metadata_receiver_facts(observation, files)
+        self.assertNotIn(secret, json.dumps(facts))
+        self.assertFalse(facts["canonical_policy_present"] or facts["domain_sdk_code_matches"])
+
+    def test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup(self):
+        secret = "untrusted-timeout-output-must-never-be-retained"
+        def timeout(arguments):
+            if arguments[:2] == ["aspire", "logs"]:
+                raise subprocess.TimeoutExpired(arguments, 10, output=secret, stderr=secret)
+        commands = Commands(timeout)
+        instance = fixture.IsolatedFixture(command=commands, route_catalog=True, log_directory=self.logs,
+            port_check=lambda: None, resource_check=lambda *_: [],
+            ownership_check=lambda: commands.started and not commands.stopped)
+        instance.injected_command = False
+        with patch.object(instance, "capture_source_identity", return_value={"source": "fixed"}), \
+                patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "prepare_route_catalog"), \
+                patch.object(instance, "prepare_catalog_binding_verifier"), \
+                patch.object(instance, "_capture_route_catalog", side_effect=fixture.FixtureError("original catalog failure", 29)), \
+                contextlib.redirect_stdout(io.StringIO()) as output:
+            self.assertEqual(29, instance.execute())
+        self.assertIn("original catalog failure", output.getvalue())
+        self.assertNotIn(secret, output.getvalue())
+        receipt = json.loads((instance.log_directory / "catalog-failure-diagnostics.json").read_text())
+        self.assertEqual({"timeout"}, {row["status"] for row in receipt["resources"].values()})
+        self.assertNotIn(secret, json.dumps(receipt))
+        self.assertTrue(commands.stopped)
+        self.assertFalse(commands.containers)
+        self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources(self):
+        def interrupt(arguments):
+            if arguments[:2] == ["aspire", "logs"]:
+                raise KeyboardInterrupt
+        commands = Commands(interrupt)
+        instance = fixture.IsolatedFixture(command=commands, route_catalog=True, log_directory=self.logs,
+            port_check=lambda: None, resource_check=lambda *_: [],
+            ownership_check=lambda: commands.started and not commands.stopped)
+        instance.injected_command = False
+        with patch.object(instance, "capture_source_identity", return_value={"source": "fixed"}), \
+                patch.object(instance, "prepare_fixture_bootstrap"), patch.object(instance, "prepare_route_catalog"), \
+                patch.object(instance, "prepare_catalog_binding_verifier"), \
+                patch.object(instance, "_capture_route_catalog", side_effect=fixture.FixtureError("catalog failure", 29)), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(130, instance.execute())
+        receipt = json.loads((instance.log_directory / "catalog-failure-diagnostics.json").read_text())
+        self.assertEqual("interrupted", receipt["status"])
+        self.assertEqual("interrupted", receipt["resources"]["eventstore"]["status"])
+        self.assertTrue(commands.stopped)
+        self.assertFalse(commands.containers)
+        self.assertTrue(json.loads((instance.log_directory / "cleanup.json").read_text())["complete"])
+
+    def test_catalog_waits_for_native_child_and_refuses_launcher_at_deadline(self):
+        profile, generated = self.catalog_sidecar_files()
+        for expired in (False, True):
+            with self.subTest(expired=expired):
+                instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs)
+                instance.catalog_private = profile
+                instance.scratch = str(Path(self.temporary.name) / "components")
+                processes = {
+                    "/proc/101/cmdline": b"/run/Hexalith.EventStore\0",
+                    "/proc/102/cmdline": b"dotnet\0run\0--project\0/owned/Hexalith.Timesheets.csproj\0",
+                    "/proc/103/cmdline": ("daprd\0--app-id\0eventstore\0--config\0"
+                        + str(generated / "eventstore.configuration.json") + "\0").encode(),
+                    "/proc/104/cmdline": ("daprd\0--app-id\0timesheets\0--config\0"
+                        + str(generated / "timesheets.configuration.json") + "\0").encode(),
+                }
+                for pid in (101, 102, 103, 104):
+                    processes[f"/proc/{pid}/environ"] = (
+                        "TIMESHEETS_LIVE_DAPR_COMPONENTS=" + instance.scratch + "\0").encode()
+                scans = 0
+                def scan(*_):
+                    nonlocal scans
+                    scans += 1
+                    if scans > 1 and not expired:
+                        processes["/proc/102/cmdline"] = b"/run/Hexalith.Timesheets\0"
+                    return [{"pid": pid} for pid in (101, 102, 103, 104)]
+                instance.resource_check = scan
+                original = Path.read_bytes
+                def read_bytes(path):
+                    return processes.get(str(path), None) or original(path)
+                with patch.object(Path, "read_bytes", read_bytes), \
+                        patch.object(fixture.time, "sleep") as sleep, \
+                        patch.object(fixture.time, "monotonic", side_effect=[2] if expired else [0, 2]):
+                    if expired:
+                        with self.assertRaisesRegex(fixture.FixtureError, "Actual catalog host processes are unavailable"):
+                            instance.wait_for_catalog_processes(1)
+                        self.assertEqual(1, scans)
+                        sleep.assert_not_called()
+                    else:
+                        hosts, sidecars = instance.wait_for_catalog_processes(1)
+                        self.assertEqual({"eventstore", "timesheets"}, set(hosts))
+                        self.assertEqual({"eventstore": generated, "timesheets": generated}, sidecars)
+                        self.assertEqual(2, scans)
+                        sleep.assert_called_once_with(0.2)
+
+    @staticmethod
+    def technical_membership_fixture():
+        action = {"Pattern": "/api/v1/commands/status/workload/{tenant}/{messageId}", "Methods": ["GET"],
+                  "ActionIdentity": "compiled-action-code", "Policies": ["DaprInternal:eventstore:command-status"],
+                  "CredentialKind": "workload", **{name: "a" * 64 for name in
+                    ("RequestDigest", "ResponseDigest", "PolicyDigest", "FilterDigest")}}
+        invocations = [{"CallerAppId": "timesheets", "Method": method, "HttpMethods": [verb]}
+                       for method, verb in fixture.CATALOG_RECEIVER_POLICIES["eventstore"][2]]
+        observed = {"Pattern": action["Pattern"], "Methods": ["GET"], "Policies": action["Policies"],
+                    "Operation": "sdk-technical-http", "Admitted": True, "Anonymous": False}
+        receiver = {"AppId": "eventstore", "FenceVersion": fixture.TECHNICAL_RECEIVER_PROFILE,
+                    "Endpoints": [action], "Invocations": invocations}
+        observations = {"eventstore": {"DeclaredInvocations": invocations,
+            "ReceiverSurface": {"FenceVersion": fixture.TECHNICAL_RECEIVER_PROFILE,
+                                "Endpoints": [observed], "TechnicalHttp": [action]}},
+            "timesheets": {"ReceiverSurface": {"FenceVersion": "eventstore-finite-dapr-receiver-v1", "Endpoints": []}}}
+        return {"TechnicalHttpReceivers": [receiver]}, observations
+
+    def test_compiled_gateway_receiver_selection_retains_exact_existing_grants(self):
+        source = (fixture.APPHOST.parent / "Program.cs").read_text()
+        gateway_expression = source[source.index("[eventStore.CaptureEventStoreDevelopmentReceiver(timesheets)"):].split("\n", 1)[0].strip()[1:].rstrip(",")
+        module_expression = source[source.index("timesheets.CaptureEventStoreDevelopmentReceiver(eventStore)"):].split("\n", 1)[0].strip().rstrip("],")
+        directory = Path(self.temporary.name) / "receiver-selection-probe"
+        directory.mkdir()
+        for app, (name, caller, operations) in fixture.CATALOG_RECEIVER_POLICIES.items():
+            (directory / (app + ".yaml")).write_text(fixture.catalog_receiver_policy(app))
+        project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
+        properties = ET.SubElement(project, "PropertyGroup")
+        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net10.0"), ("ImplicitUsings", "enable")):
+            ET.SubElement(properties, name).text = value
+        items = ET.SubElement(project, "ItemGroup")
+        ET.SubElement(items, "FrameworkReference", Include="Microsoft.AspNetCore.App")
+        output = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0"
+        for library in sorted(output.glob("*.dll")):
+            reference = ET.SubElement(items, "Reference", Include=library.stem)
+            ET.SubElement(reference, "HintPath").text = str(library)
+        (directory / "ReceiverSelection.csproj").write_text(ET.tostring(project, encoding="unicode"))
+        (directory / "Program.cs").write_text("""
+using System.Text.Json;
+using Aspire.Hosting;
+using CommunityToolkit.Aspire.Hosting.Dapr;
+using Hexalith.EventStore.Aspire;
+using Microsoft.Extensions.Hosting;
+var builder = DistributedApplication.CreateBuilder(new DistributedApplicationOptions { DisableDashboard = true });
+builder.Environment.EnvironmentName = "Development";
+builder.AddDapr(options => options.DaprPath = "/nonexistent-model-only-dapr");
+var eventStore = builder.AddProject("eventstore", new Projects.Hexalith_Timesheets().ProjectPath)
+    .WithDaprSidecar(sidecar => sidecar.WithOptions(new DaprSidecarOptions { AppId = "eventstore", Config = args[0] }));
+var timesheets = builder.AddProject("timesheets", new Projects.Hexalith_Timesheets().ProjectPath)
+    .WithDaprSidecar(sidecar => sidecar.WithOptions(new DaprSidecarOptions { AppId = "timesheets", Config = args[1] }));
+var gateway = """ + gateway_expression + ";\nvar module = " + module_expression + """;
+foreach (var receiver in new[] { gateway, module })
+    Console.WriteLine(JsonSerializer.Serialize(new { app = receiver.Project.Resource.Name, receiver.TechnicalHttp,
+        grants = receiver.Invocations.Select(invocation => new { caller = invocation.Caller.Resource.Name,
+            invocation.Method, invocation.HttpMethods }).OrderBy(invocation => invocation.Method) }));
+""")
+        environment = dict(os.environ, DOTNET_CLI_HOME="/tmp/dotnet-cli-home", MSBUILDDISABLENODEREUSE="1")
+        built = subprocess.run(["dotnet", "build", str(directory / "ReceiverSelection.csproj"),
+            "--configuration", COMPILED_CONFIGURATION, "--disable-build-servers", "-m:1", "/nr:false"], cwd=fixture.ROOT,
+            env=environment, capture_output=True, text=True, timeout=60)
+        self.assertEqual(0, built.returncode, fixture.sanitized(built.stdout + built.stderr))
+        result = subprocess.run([str(directory / f"bin/{COMPILED_CONFIGURATION}/net10.0/ReceiverSelection"),
+            str(directory / "eventstore.yaml"), str(directory / "timesheets.yaml")], cwd=fixture.ROOT,
+            env=environment, capture_output=True, text=True, timeout=30)
+        self.assertEqual(0, result.returncode, fixture.sanitized(result.stdout + result.stderr))
+        rows = [json.loads(line) for line in result.stdout.splitlines() if line.startswith("{")]
+        self.assertEqual(2, len(rows))
+        for row in rows:
+            self.assertEqual(row["app"] == "eventstore", row["TechnicalHttp"])
+            _, caller, grants = fixture.CATALOG_RECEIVER_POLICIES[row["app"]]
+            self.assertEqual(sorted((caller, method, verb) for method, verb in grants),
+                sorted((grant["caller"], grant["Method"], verb) for grant in row["grants"] for verb in grant["HttpMethods"]))
+
+    def test_catalog_sdk_verifier_binds_artifacts_and_withholds_private_parser_diagnostics(self):
+        instance = fixture.IsolatedFixture(route_catalog=True, log_directory=self.logs)
+        instance.environment["DOTNET_CLI_HOME"] = "/tmp/dotnet-cli-home"
+        instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = str(fixture.GATEWAY_PROJECT.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0/Hexalith.EventStore")
+        try:
+            instance.prepare_catalog_binding_verifier(configuration=COMPILED_CONFIGURATION)
+            owned = instance.catalog_verifier_directory
+            instance.source_before = {"catalog_binding_verifier": instance.catalog_verifier_identity}
+            private = Path(self.temporary.name) / "private-catalog"
+            private.mkdir()
+            sensitive = "private-parser-value-that-must-never-be-retained"
+            (private / "activation.json").write_text(json.dumps({"unknown": sensitive}))
+            with self.assertRaisesRegex(fixture.FixtureError, "Catalog SDK binding proof"):
+                instance.verify_catalog_sdk_binding(private)
+            refusal = json.loads((instance.log_directory / "catalog-binding-verifier-failure.json").read_text())
+            self.assertEqual({"valid": False, "stage": "input"}, refusal)
+            self.assertFalse(any(sensitive in path.read_text() for path in instance.log_directory.iterdir() if path.is_file()))
+            artifact = owned / f"bin/{COMPILED_CONFIGURATION}/net10.0/CatalogBindingVerifier.dll"
+            artifact.write_bytes(artifact.read_bytes() + b"changed")
+            with patch.object(instance, "command") as command:
+                with self.assertRaisesRegex(fixture.FixtureError, "captured verifier is invalid"):
+                    instance.verify_catalog_sdk_binding(private)
+                command.assert_not_called()
+        finally:
+            self.assertTrue(instance.cleanup())
+        self.assertFalse(owned.exists())
+
+    def test_catalog_technical_membership_requires_complete_exact_gateway_witnesses(self):
+        activation, observations = self.technical_membership_fixture()
+        self.assertEqual(1, fixture.verify_catalog_technical_membership(activation, observations))
+        for defect in ("missing", "duplicate", "extra", "profile", "finite-peer", "missing-status", "action-drift",
+                       "schema", "policy", "code", "caller", "verb", "duplicate-grant", "anonymous", "not-admitted"):
+            with self.subTest(defect=defect):
+                candidate, actual = json.loads(json.dumps([activation, observations]))
+                receiver = candidate["TechnicalHttpReceivers"][0]
+                if defect == "missing": candidate["TechnicalHttpReceivers"] = []
+                elif defect in ("duplicate", "extra"):
+                    added = dict(receiver)
+                    if defect == "extra": added["AppId"] = "timesheets"
+                    candidate["TechnicalHttpReceivers"].append(added)
+                elif defect == "profile": receiver["FenceVersion"] = "other-profile"
+                elif defect == "finite-peer": actual["timesheets"]["ReceiverSurface"]["TechnicalHttp"] = receiver["Endpoints"]
+                elif defect == "missing-status":
+                    for action in receiver["Endpoints"]: action["Pattern"] = "/other"
+                elif defect == "action-drift": receiver["Endpoints"].append(dict(receiver["Endpoints"][0]))
+                elif defect in ("schema", "policy", "code"):
+                    receiver["Endpoints"][0][{"schema": "RequestDigest", "policy": "PolicyDigest", "code": "ActionIdentity"}[defect]] = ""
+                elif defect in ("caller", "verb"):
+                    receiver["Invocations"][0]["CallerAppId" if defect == "caller" else "HttpMethods"] = "foreign" if defect == "caller" else ["DELETE"]
+                elif defect == "duplicate-grant": receiver["Invocations"].append(dict(receiver["Invocations"][0]))
+                else: actual["eventstore"]["ReceiverSurface"]["Endpoints"][0]["Anonymous" if defect == "anonymous" else "Admitted"] = defect == "anonymous"
+                with self.assertRaises(fixture.FixtureError):
+                    fixture.verify_catalog_technical_membership(candidate, actual)
+
     def test_catalog_capture_binds_sidecar_configs_to_one_receipt_directory_and_sanitizes_json(self):
         profile, generated = self.catalog_sidecar_files()
         instance = fixture.IsolatedFixture(command=Commands(), route_catalog=True, log_directory=self.logs,
@@ -1118,7 +1630,12 @@ class IsolatedFixtureTests(unittest.TestCase):
             digest = fixture.hashlib.sha256(catalog_bytes).hexdigest()
             hosts = [{"HostId": "eventstore"}, {"HostId": "timesheets"}]
             activation = {"RootDigest": digest, "RequiredHosts": hosts,
-                          "AttemptId": "attempt-1", "TrustProof": "binding-digest"}
+                          "AttemptId": "attempt-1", "TrustProof": "d" * 64}
+            membership, technical_observations = self.technical_membership_fixture()
+            activation.update(membership)
+            sdk = patch.object(instance, "verify_catalog_sdk_binding", return_value={"binding_digest": "d" * 64, "technical_action_count": 1})
+            sdk.start()
+            self.addCleanup(sdk.stop)
             owner_hashes = {"Hexalith.Timesheets.Server, Version=1.0.0.0": "a" * 64,
                             "Hexalith.Timesheets.Projections, Version=1.0.0.0": "b" * 64}
             instance.source_before = {"files": {
@@ -1138,11 +1655,12 @@ class IsolatedFixtureTests(unittest.TestCase):
                     result["ExecutableOwners"] = owner_hashes
                 else:
                     result["AdmissionPolicies"] = [{"RouteId": route} for route in routes[:4]]
+                result["ReceiverSurface"] = technical_observations[app]["ReceiverSurface"]
                 return result
             readback = {"Serving": True, "Epoch": 1, "RootDigest": digest,
                         "Generation": 1, "Profile": "Development", "RouteFacetDigest": "route-digest",
-                        "IdempotencyFacetDigest": "admission-digest", "AttemptId": None,
-                        "ActivationBindingDigest": None, "RequiredHosts": hosts}
+                        "IdempotencyFacetDigest": "admission-digest", "AttemptId": "attempt-1",
+                        "ActivationBindingDigest": "d" * 64, "RequiredHosts": hosts}
             documents = {"catalog.json": catalog_bytes, "activation.json": json.dumps(activation).encode(),
                 "eventstore.observation.json": json.dumps(observation("eventstore")).encode(),
                 "timesheets.observation.json": json.dumps(observation("timesheets")).encode(),
@@ -1153,6 +1671,14 @@ class IsolatedFixtureTests(unittest.TestCase):
             for name, content in documents.items():
                 (generated / name).write_bytes(content)
             self.assertEqual(digest, instance.capture_route_catalog("before")["root_digest"])
+            for bad_proof in (None, "e" * 64):
+                invalid = dict(activation)
+                if bad_proof is None: invalid.pop("TrustProof")
+                else: invalid["TrustProof"] = bad_proof
+                (generated / "activation.json").write_text(json.dumps(invalid))
+                with self.assertRaisesRegex(fixture.FixtureError, "binding proof differs"):
+                    instance.capture_route_catalog("before")
+            (generated / "activation.json").write_text(json.dumps(activation))
             owner_hashes["Hexalith.Timesheets.Server, Version=1.0.0.0"] = "c" * 64
             (generated / "timesheets.observation.json").write_text(json.dumps(observation("timesheets")))
             with self.assertRaisesRegex(fixture.FixtureError, "executable owners differ"):
@@ -1169,6 +1695,17 @@ class IsolatedFixtureTests(unittest.TestCase):
             (generated / "timesheets.committed.json").write_text(json.dumps(readback))
             with self.assertRaisesRegex(fixture.FixtureError, "persisted readback differs"):
                 instance.capture_route_catalog("before")
+            readback["ActivationBindingDigest"] = "d" * 64
+            for app in ("eventstore", "timesheets"):
+                (generated / (app + ".committed.json")).write_text(json.dumps(readback))
+            for app in ("eventstore", "timesheets"):
+                for field in ("AttemptId", "ActivationBindingDigest"):
+                    invalid = dict(readback)
+                    invalid.pop(field)
+                    (generated / (app + ".committed.json")).write_text(json.dumps(invalid))
+                    with self.assertRaisesRegex(fixture.FixtureError, "persisted readback differs"):
+                        instance.capture_route_catalog("before")
+                    (generated / (app + ".committed.json")).write_text(json.dumps(readback))
 
     def test_catalog_admission_evidence_retains_counts_without_foreign_inventory_rows(self):
         def foreign(arguments):

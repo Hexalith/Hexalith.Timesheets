@@ -1,0 +1,65 @@
+[
+  {
+    "pid": 3336236,
+    "same_start": true,
+    "expected_worker_shape": false,
+    "cpu_user_ticks": 489,
+    "cpu_system_ticks": 40,
+    "state": "S",
+    "open_socket_descriptors": 2
+  },
+  {
+    "pid": 3336237,
+    "same_start": true,
+    "expected_worker_shape": false,
+    "cpu_user_ticks": 570,
+    "cpu_system_ticks": 52,
+    "state": "S",
+    "open_socket_descriptors": 2
+  },
+  {
+    "pid": 3336268,
+    "same_start": true,
+    "expected_worker_shape": false,
+    "cpu_user_ticks": 631,
+    "cpu_system_ticks": 57,
+    "state": "S",
+    "open_socket_descriptors": 2
+  },
+  {
+    "pid": 3336269,
+    "same_start": true,
+    "expected_worker_shape": false,
+    "cpu_user_ticks": 517,
+    "cpu_system_ticks": 42,
+    "state": "S",
+    "open_socket_descriptors": 2
+  },
+  {
+    "pid": 3336322,
+    "same_start": true,
+    "expected_worker_shape": false,
+    "cpu_user_ticks": 517,
+    "cpu_system_ticks": 41,
+    "state": "S",
+    "open_socket_descriptors": 2
+  },
+  {
+    "pid": 3336323,
+    "same_start": true,
+    "expected_worker_shape": false,
+    "cpu_user_ticks": 465,
+    "cpu_system_ticks": 33,
+    "state": "S",
+    "open_socket_descriptors": 2
+  },
+  {
+    "pid": 3336354,
+    "same_start": true,
+    "expected_worker_shape": false,
+    "cpu_user_ticks": 470,
+    "cpu_system_ticks": 39,
+    "state": "S",
+    "open_socket_descriptors": 2
+  }
+]

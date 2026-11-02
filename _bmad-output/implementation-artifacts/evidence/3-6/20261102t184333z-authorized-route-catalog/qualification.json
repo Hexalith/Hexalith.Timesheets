@@ -1,0 +1,187 @@
+{
+  "recorded_utc": "2026-11-02T19:12:47.054288+00:00",
+  "disposition": "failed_live_startup_with_configuration_only_repair_verified",
+  "baseline_commit": "2c25a83ef71d066c5ea124922ed251aad2dd8ddc",
+  "safe_idle_admission": "passed; no AppHost stop needed",
+  "matching_debug_source_restore": "pass",
+  "matching_debug_source_warnings_as_errors_build": "pass; 0 warnings/0 errors",
+  "supported_runner": {
+    "invocation_count": 1,
+    "exit_code": 2,
+    "started_utc": "2026-11-02T18:44:34.740722+00:00",
+    "finished_utc": "2026-11-02T18:46:14.436133+00:00",
+    "command_seconds": 99.699205,
+    "public_port": 18080,
+    "route_catalog": true,
+    "failure": "AppHost Program.cs:78 rejected absent Development environment selection before catalog startup"
+  },
+  "repair": {
+    "scope": "Pin Development only for catalog-mode runner commands and remove conflicting inherited aliases",
+    "configuration_only_compiled_reproduction": {
+      "unset_environment_exit_code": -6,
+      "explicit_development_exit_code": 0
+    },
+    "python_fixture_tests_passed": 217,
+    "apphost_or_authorization_guard_changed": false,
+    "custody_guard_changed": false,
+    "second_live_attempt_performed": false
+  },
+  "default_executable_opt_ins": {
+    "TIMESHEETS_LIVE_DAPR": "unset",
+    "TIMESHEETS_PERF": "unset"
+  },
+  "test_results": {
+    "Hexalith.Timesheets.ArchitectureTests": {
+      "total": 118,
+      "passed": 117,
+      "errors": 0,
+      "failed": 1,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 41.892,
+      "command_seconds": 42.480742,
+      "exit_code": 1,
+      "receipt": "Hexalith.Timesheets.ArchitectureTests.json",
+      "transcript": "Hexalith.Timesheets.ArchitectureTests.txt"
+    },
+    "Hexalith.Timesheets.Contracts.Tests": {
+      "total": 108,
+      "passed": 108,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 1.436,
+      "command_seconds": 1.859034,
+      "exit_code": 0,
+      "receipt": "Hexalith.Timesheets.Contracts.Tests.json",
+      "transcript": "Hexalith.Timesheets.Contracts.Tests.txt"
+    },
+    "Hexalith.Timesheets.Server.Tests": {
+      "total": 746,
+      "passed": 746,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 9.86,
+      "command_seconds": 10.564848,
+      "exit_code": 0,
+      "receipt": "Hexalith.Timesheets.Server.Tests.json",
+      "transcript": "Hexalith.Timesheets.Server.Tests.txt"
+    },
+    "Hexalith.Timesheets.Works.Tests": {
+      "total": 76,
+      "passed": 76,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 0.601,
+      "command_seconds": 1.166836,
+      "exit_code": 0,
+      "receipt": "Hexalith.Timesheets.Works.Tests.json",
+      "transcript": "Hexalith.Timesheets.Works.Tests.txt"
+    },
+    "Hexalith.Timesheets.Projections.Tests": {
+      "total": 787,
+      "passed": 786,
+      "errors": 0,
+      "failed": 1,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 774.458,
+      "command_seconds": 774.93717,
+      "exit_code": 1,
+      "receipt": "Hexalith.Timesheets.Projections.Tests.json",
+      "transcript": "Hexalith.Timesheets.Projections.Tests.txt"
+    },
+    "Hexalith.Timesheets.IntegrationTests": {
+      "total": 856,
+      "passed": 850,
+      "errors": 0,
+      "failed": 1,
+      "skipped": 5,
+      "not_run": 0,
+      "test_seconds": 1225.609,
+      "command_seconds": 1226.023324,
+      "exit_code": 58,
+      "receipt": "Hexalith.Timesheets.IntegrationTests.json",
+      "transcript": "Hexalith.Timesheets.IntegrationTests.txt"
+    },
+    "focused-bootstrap-latency": {
+      "total": 2,
+      "passed": 2,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 6.166,
+      "command_seconds": 6.352955,
+      "exit_code": 0,
+      "receipt": "focused-bootstrap-latency.json",
+      "transcript": "focused-bootstrap-latency.txt"
+    },
+    "focused-catalog-http": {
+      "total": 15,
+      "passed": 15,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 10.661,
+      "command_seconds": 10.855677,
+      "exit_code": 0,
+      "receipt": "focused-catalog-http.json",
+      "transcript": "focused-catalog-http.txt"
+    },
+    "focused-launch-readiness": {
+      "total": 16,
+      "passed": 16,
+      "errors": 0,
+      "failed": 0,
+      "skipped": 0,
+      "not_run": 0,
+      "test_seconds": 0.35,
+      "command_seconds": 0.519375,
+      "exit_code": 0,
+      "receipt": "focused-launch-readiness.json",
+      "transcript": "focused-launch-readiness.txt"
+    }
+  },
+  "broad_failures_retained": {
+    "architecture": "Unchanged substring scan treats unchanged LogicalSecretName validation as logging",
+    "projections": "Streamed bootstrap canceled inside unchanged gateway budget; focused rerun pass does not establish cause or erase failure",
+    "integration": "Verified-child SIGINT after exceeding selected 1200s wait limit; cancellation at actual native elapsed 1225.950s interrupted KeyedHttpRetryReconcilesOpaqueCommittedOriginalEffects(adjust: False)"
+  },
+  "cleanup": {
+    "original_receipt_complete": false,
+    "owned_containers_removed_and_absence_verified": 3,
+    "fixture_processes_gone": true,
+    "private_owner_profile_retained": true,
+    "private_profile_modes_verified": "0700 directory; 0600 inputs",
+    "reason": "Complete committed SDK custody absent",
+    "complete_owned_cleanup_qualified": false
+  },
+  "fixture_domain_write": false,
+  "shared_redis_read_or_locked": false,
+  "foreign_persistent_resources_deleted": false,
+  "dependency_mutations_performed": false,
+  "git_mutations_performed": false,
+  "gates": {
+    "committed_catalog_eight_route_readback": "unobserved",
+    "actual_receiver_policies_and_workload_identity": "unobserved",
+    "valid_call_stored_events_and_read_models": "unobserved",
+    "denied_forged_and_undeclared_calls_with_unchanged_state": "unobserved",
+    "single_use_and_keyed_retry_conflicting_effects": "unobserved",
+    "restart_and_rebuild_continuity": "unobserved",
+    "source_consistency_through_live_lifecycle": "unobserved",
+    "deployed_authority": "unobserved",
+    "complete_inventory_and_writer_delivery_continuity": "unobserved",
+    "shared_rebuild_acceptance": "unobserved"
+  },
+  "current_aspire_13_6_4_runtime_qualified": false,
+  "story_3_6_status": "in-progress",
+  "resume_spec_status": "in-progress",
+  "launch_verdict": "FAIL"
+}

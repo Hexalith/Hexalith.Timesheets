@@ -1,0 +1,29 @@
+{
+  "recorded_utc": "2026-11-02T23:18:23.934812+00:00",
+  "result": "pass",
+  "scope": "Static seal/preservation and observed local milestones; persisted journey remains failed and blocked on owned authenticated transport scope",
+  "checks": {
+    "earlier_packet_files_unchanged": 1364,
+    "frozen_approved_scope_preserved": true,
+    "approved_proposal_preserved": true,
+    "prior_record_prefixes_preserved": 3,
+    "baseline_tracked_files_checked": 6978,
+    "dependencies_preserved": 13,
+    "compressed_artifacts_verified": 83,
+    "private_inputs_excluded": true,
+    "catalog_and_v2_before_after_pass": true,
+    "writer_bootstrap_http_200": true,
+    "strict_live_source_identity_matches": true,
+    "owned_cleanup_complete": true,
+    "original_journey_403_and_test_failure_preserved": true,
+    "persisted_effects_restart_not_qualified": true,
+    "focused_diagnostics_carried_forward_passed": 5,
+    "full_python_carried_forward_passed": 231,
+    "existing_broad_failures_preserved": true,
+    "outside_repository_scope_stop": true,
+    "no_further_live_attempt": true,
+    "local_links_verified": 36,
+    "packet_files_not_ignored_before_manifest_and_verification": 113,
+    "git_diff_check_exit_code": 0
+  }
+}

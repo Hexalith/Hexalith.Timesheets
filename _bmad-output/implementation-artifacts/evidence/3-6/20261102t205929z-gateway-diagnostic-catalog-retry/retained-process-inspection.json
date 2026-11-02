@@ -1,0 +1,72 @@
+[
+  {
+    "pid": 3336236,
+    "start": "3702267",
+    "state": "S",
+    "parent": 16775,
+    "executable": "/home/administrator/.dotnet/dotnet",
+    "argv_count": 7,
+    "components_binding_count": 1,
+    "fixture_flag": true
+  },
+  {
+    "pid": 3336237,
+    "start": "3702267",
+    "state": "S",
+    "parent": 16775,
+    "executable": "/home/administrator/.dotnet/dotnet",
+    "argv_count": 7,
+    "components_binding_count": 1,
+    "fixture_flag": true
+  },
+  {
+    "pid": 3336268,
+    "start": "3702273",
+    "state": "S",
+    "parent": 16775,
+    "executable": "/home/administrator/.dotnet/dotnet",
+    "argv_count": 7,
+    "components_binding_count": 1,
+    "fixture_flag": true
+  },
+  {
+    "pid": 3336269,
+    "start": "3702273",
+    "state": "S",
+    "parent": 16775,
+    "executable": "/home/administrator/.dotnet/dotnet",
+    "argv_count": 7,
+    "components_binding_count": 1,
+    "fixture_flag": true
+  },
+  {
+    "pid": 3336322,
+    "start": "3702296",
+    "state": "S",
+    "parent": 16775,
+    "executable": "/home/administrator/.dotnet/dotnet",
+    "argv_count": 7,
+    "components_binding_count": 1,
+    "fixture_flag": true
+  },
+  {
+    "pid": 3336323,
+    "start": "3702296",
+    "state": "S",
+    "parent": 16775,
+    "executable": "/home/administrator/.dotnet/dotnet",
+    "argv_count": 7,
+    "components_binding_count": 1,
+    "fixture_flag": true
+  },
+  {
+    "pid": 3336354,
+    "start": "3702303",
+    "state": "S",
+    "parent": 16775,
+    "executable": "/home/administrator/.dotnet/dotnet",
+    "argv_count": 7,
+    "components_binding_count": 1,
+    "fixture_flag": true
+  }
+]

@@ -1,0 +1,15 @@
+{
+  "source_before_after_equal": true,
+  "catalog_before_after_complete": true,
+  "bootstrap_activated": true,
+  "bootstrap_http_status": 200,
+  "bootstrap_attempts": 1,
+  "owned_cleanup_complete": true,
+  "owned_components_removed": true,
+  "owned_private_profile_removed": true,
+  "owned_containers_removed": 3,
+  "fixture_processes_gone": true,
+  "first_failure": "Projection metadata returned 403",
+  "persisted_journey_case_failed": 1,
+  "restart_not_reached": true
+}

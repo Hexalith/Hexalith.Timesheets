@@ -1,0 +1,20 @@
+{
+  "recorded_utc": "2026-11-02T22:29:14.302470+00:00",
+  "original_cleanup_complete": false,
+  "owned_container_removal_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "owned_containers_absence_checked_by_runner": true,
+  "owned_component_directory_removed": true,
+  "fixture_bound_processes_gone": true,
+  "protected_profile_retained": true,
+  "protected_profile_directory_private": true,
+  "protected_profile_input_modes_private": true,
+  "profile_path_sha256": "615728dbf69e616d41cfe1c93eee050e785f5a77baca622645b2e6208e03dbbe",
+  "original_owner_comparison": false,
+  "repaired_exact_owner_custody_check": true,
+  "historical_profile_not_deleted": true,
+  "private_inputs_excluded": true
+}

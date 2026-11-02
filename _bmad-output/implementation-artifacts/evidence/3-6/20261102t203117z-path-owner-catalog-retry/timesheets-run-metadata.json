@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "dotnet",
+    "msbuild",
+    "/home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets/Hexalith.Timesheets.csproj",
+    "-nologo",
+    "-target:ComputeRunArguments",
+    "-getProperty:RunCommand,RunArguments,RunWorkingDirectory,UseAppHost",
+    "-p:Configuration=Debug",
+    "-p:UseHexalithProjectReferences=true",
+    "-p:UseNuGetDeps=false",
+    "-m:1",
+    "/nr:false"
+  ],
+  "started_utc": "2026-11-02T20:37:05.991722+00:00",
+  "finished_utc": "2026-11-02T20:37:06.374747+00:00",
+  "duration_seconds": 0.383005,
+  "exit_code": 0
+}

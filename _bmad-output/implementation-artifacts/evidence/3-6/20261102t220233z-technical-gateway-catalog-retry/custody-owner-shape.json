@@ -1,0 +1,17 @@
+{
+  "original_key_count": 6,
+  "sdk_key_count": 8,
+  "common_fields_equal": {
+    "ActiveDigestKeyGeneration": true,
+    "AuthorityComponentName": true,
+    "AuthorityStateKey": true,
+    "CustodyDirectory": true,
+    "DigestKeys": true,
+    "SecretMapGeneration": true
+  },
+  "extra_sdk_fields": [
+    "LogicalSecretName",
+    "SecretStore"
+  ],
+  "extra_sdk_fields_are_defaults": false
+}

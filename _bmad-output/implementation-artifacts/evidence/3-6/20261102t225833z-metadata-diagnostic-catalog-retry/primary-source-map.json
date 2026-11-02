@@ -1,0 +1,134 @@
+{
+  "recorded_utc": "2026-11-02T23:12:52.970700+00:00",
+  "sources": [
+    {
+      "repository": "dapr/dapr",
+      "tag": "v1.18.7",
+      "commit": "b32a815fa2260983e181b95272ea555fe17d3895",
+      "path": "pkg/api/http/directmessaging.go",
+      "url": "https://github.com/dapr/dapr/blob/b32a815fa2260983e181b95272ea555fe17d3895/pkg/api/http/directmessaging.go",
+      "content_sha256": "e21f456b086478f6ee5e6d580f8b12d88736b157fdcd2eb98f2d1d7495a5121c",
+      "supports": "api.onDirectMessage: PermissionDenied transport envelope versus forwarded app HTTP response"
+    },
+    {
+      "repository": "dapr/dapr",
+      "tag": "v1.18.7",
+      "commit": "b32a815fa2260983e181b95272ea555fe17d3895",
+      "path": "pkg/api/grpc/daprinternal.go",
+      "url": "https://github.com/dapr/dapr/blob/b32a815fa2260983e181b95272ea555fe17d3895/pkg/api/grpc/daprinternal.go",
+      "content_sha256": "7c457c23fa4fb2d050af1cf90aa31f8b9e4113454c600e04ce7a996d63b5db62",
+      "supports": "api.callLocalValidateACL: normalized operation and PermissionDenied on refusal"
+    },
+    {
+      "repository": "dapr/dapr",
+      "tag": "v1.18.7",
+      "commit": "b32a815fa2260983e181b95272ea555fe17d3895",
+      "path": "pkg/acl/acl.go",
+      "url": "https://github.com/dapr/dapr/blob/b32a815fa2260983e181b95272ea555fe17d3895/pkg/acl/acl.go",
+      "content_sha256": "3032e8808ea8071fdf643d37679baf6de2398515236190beb092bd939481c975",
+      "supports": "ParseAccessControlSpec / isOperationAllowedByAccessControlPolicy: slash canonicalization; nil SPIFFE uses global default"
+    },
+    {
+      "repository": "dapr/dapr",
+      "tag": "v1.18.7",
+      "commit": "b32a815fa2260983e181b95272ea555fe17d3895",
+      "path": "cmd/daprd/options/options.go",
+      "url": "https://github.com/dapr/dapr/blob/b32a815fa2260983e181b95272ea555fe17d3895/cmd/daprd/options/options.go",
+      "content_sha256": "447147748f424a5cbce4c64d7a03b95e33eb4044324f217b3a1acb80d040e2a7",
+      "supports": "enable-mtls defaults false"
+    },
+    {
+      "repository": "dapr/dapr",
+      "tag": "v1.18.7",
+      "commit": "b32a815fa2260983e181b95272ea555fe17d3895",
+      "path": "pkg/security/security.go",
+      "url": "https://github.com/dapr/dapr/blob/b32a815fa2260983e181b95272ea555fe17d3895/pkg/security/security.go",
+      "content_sha256": "f7f551f55caf5f77f64ec726b1ff656881176c41066d2a0ecdb5adb9987a2f8a",
+      "supports": "New: no SPIFFE source with standalone mTLS disabled; CurrentNamespace defaults default"
+    },
+    {
+      "repository": "dapr/dapr",
+      "tag": "v1.18.7",
+      "commit": "b32a815fa2260983e181b95272ea555fe17d3895",
+      "path": "pkg/security/spiffe/spiffe.go",
+      "url": "https://github.com/dapr/dapr/blob/b32a815fa2260983e181b95272ea555fe17d3895/pkg/security/spiffe/spiffe.go",
+      "content_sha256": "84fee0860c525b15b694d9ef410779144fc3efd147b8ec736c624b0883b1bbb4",
+      "supports": "FromGRPCContext: peer identity comes from authenticated connection"
+    },
+    {
+      "repository": "dapr/cli",
+      "tag": "v1.18.2",
+      "commit": "f5cf43ef4b3eb586fa4061413709085ee4e7d24c",
+      "path": "pkg/standalone/run.go",
+      "url": "https://github.com/dapr/cli/blob/f5cf43ef4b3eb586fa4061413709085ee4e7d24c/pkg/standalone/run.go",
+      "content_sha256": "4712a401d0c87b312f9a7cff33c53d67969dae8a6e2719bed6cc1004ebba23ea",
+      "supports": "RunConfig.getArgs / mtlsEndpoint: native mTLS/Sentry enabled only for spec.mtls.enabled"
+    }
+  ],
+  "raw_source_copied_to_packet": false,
+  "local_sdk_sources": [
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogAspireExtensions.cs",
+      "content_sha256": "99de0d26ec89d57f11bc6d314d5a81e4e2f68cbccf0ee11682a1b2063b1a36f4",
+      "supports": "Compose preserves selected configuration, replacing accessControl only"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "deploy/dapr/route-catalog-development-fixture/README.md",
+      "content_sha256": "1ffe8ab1057d7c4f372ef99e24af86b2a1d079a3b6bc778a9436e842780222f4",
+      "supports": "Separate owned mTLS qualification scope"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.cs",
+      "content_sha256": "d565cd2021123114b6ba61538cfe2ee6a97af726e066845d514e388b9b4ef5ff",
+      "supports": "Owned Sentry/mTLS hosted witness"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Fixtures/RouteCatalogDevelopmentSentry.cs",
+      "content_sha256": "85b8b8e51ea9d63ee9d21018a608501cf999dfe9db871faab7d09a1276d98ebb",
+      "supports": "Pinned temporary issuer custody and exact cleanup"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Fixtures/RouteCatalogDevelopmentSidecar.cs",
+      "content_sha256": "a7d9afcd46ee7d06b20a22ebb5b0e8fb0f09764955dfb4d7e0a7ceba14b06fb2",
+      "supports": "ConfigureMutualTls explicitly injects native flags and owned credentials"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "src/Hexalith.EventStore.ServiceDefaults/Authentication/JwtWorkloadAssertionIssuer.cs",
+      "content_sha256": "29bfc88009277d233715da62bf8952e05868e380ef24ddc26642151b55042d26",
+      "supports": "Signed service surface requirement"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "src/Hexalith.EventStore.ServiceDefaults/Routing/RouteCatalogInvocationHandler.cs",
+      "content_sha256": "48a74c76230036a1d7fdb8c5e9840af12020c42daff3a8524c29023a76e4ddac",
+      "supports": "Authority-owned invocation context"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "src/Hexalith.EventStore.DomainService/DomainRouteCatalogGuard.cs",
+      "content_sha256": "5727c26eb6589389f483f51e8ee3895344d790676e0758941a436cd4381a238e",
+      "supports": "Receiver signed surface/context gate"
+    },
+    {
+      "repository": "Hexalith.EventStore",
+      "commit": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "path": "src/Hexalith.EventStore/Indexes/AdminOperationalIndexHostedService.cs",
+      "content_sha256": "0bfa0a66e3cf36c4baa225426576b65198cbb2354c76a59a17508a771a067fe5",
+      "supports": "Existing private LoadBindingAsync metadata producer"
+    }
+  ]
+}

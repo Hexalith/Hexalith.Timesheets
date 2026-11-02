@@ -1,0 +1,67 @@
+using System.Text.Json;
+using Hexalith.EventStore.Contracts.Routing;
+using Hexalith.EventStore.ServiceDefaults.Routing;
+string directory = Environment.GetEnvironmentVariable("TIMESHEETS_PRIVATE_PROBE_DIRECTORY")!;
+var allowed = new HashSet<string>(new string[] { "acl-grant-has-no-finite-authenticated-receiver", "ambiguous-acl-operation", "component-app-id-scope-drift", "default-open-or-unbound-access-control", "domain-auxiliary-owner-binding-drift", "missing-effective-finite-receiver-fence", "owner-bound-production-topology-required", "reachable-receiver-is-not-an-exact-authenticated-operation", "selected-acl-caller-lacks-catalog-enrollment", "sidecar-subscription-owner-binding-drift", "technical-receiver-method-evidence-drift", "unbound-native-actor-receiver", "unbound-sdk-dapr-callback-receiver", "unbound-technical-controller-code-or-policy", "unbounded-acl-http-verb", "undeclared-acl-app-id-or-default-grant", "undeclared-acl-operation", "unqualified-nontechnical-receiver-overlap", "unqualified-readiness-probe-grant", "unqualified-selected-application-inventory", "unqualified-shared-authority-component", "unqualified-technical-http-verb", "unqualified-technical-receiver-methods", "unsupported-or-incomplete-development-topology", "unsupported-technical-acl-pattern" }, StringComparer.Ordinal);
+var activation = JsonSerializer.Deserialize<RouteCatalogActivation>(File.ReadAllBytes(Path.Combine(directory, "activation.json")))!;
+var envelope = RouteCatalogCodec.Decode(activation.CanonicalCatalog, activation.RootDigest);
+foreach (string host in new[] { "eventstore", "timesheets" })
+{
+    var observation = JsonSerializer.Deserialize<RouteCatalogHostObservation>(File.ReadAllBytes(Path.Combine(directory, host + ".observation.json")))!;
+    try
+    {
+        RouteCatalogTopologyValidator.ValidateDevelopment(observation.TopologyDocuments[0], observation.TopologyDocuments[1],
+            envelope, activation.RequiredHosts, observation.AppId, activation.AuxiliaryOperations,
+            observation.ReceiverSurface, observation.SelectedAppIds, observation.DeclaredInvocations);
+        Console.WriteLine(JsonSerializer.Serialize(new { host, valid = true, codes = Array.Empty<string>() }));
+    }
+    catch (RouteCatalogValidationException failure)
+    {
+        var found = failure.Diagnostics.Select(diagnostic => allowed.Contains(diagnostic.Code) ? diagnostic.Code : "unknown-code-withheld")
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+        Console.WriteLine(JsonSerializer.Serialize(new { host, valid = false, codes = found }));
+    }
+}
+
+var gateway = JsonSerializer.Deserialize<RouteCatalogHostObservation>(File.ReadAllBytes(Path.Combine(directory, "eventstore.observation.json")))!;
+var originalConfiguration = System.Text.Json.Nodes.JsonNode.Parse(gateway.TopologyDocuments[1])!;
+string[] methods = { "api/v1/commands/bound/workload", "api/v1/commands/workload", "api/v1/commands/status/workload/*", "api/v1/streams/read/workload" };
+var policies = originalConfiguration["spec"]!["accessControl"]!["policies"]!.AsArray();
+foreach (var policy in policies)
+foreach (var grant in policy!["operations"]!.AsArray())
+{
+    string name = grant!["name"]!.GetValue<string>();
+    int index = Array.IndexOf(methods, name);
+    if (index < 0) { Console.WriteLine(JsonSerializer.Serialize(new { grant = "unknown-grant-withheld" })); continue; }
+    string caller = policy["appId"]!.GetValue<string>();
+    string[] verbs = grant["httpVerb"]!.AsArray().Select(value => value!.GetValue<string>()).ToArray();
+    bool declared = gateway.DeclaredInvocations!.Any(invocation => invocation.CallerAppId == caller && invocation.Method.TrimStart('/') == name.TrimStart('/') && invocation.HttpMethods.Order(StringComparer.Ordinal).SequenceEqual(verbs.Order(StringComparer.Ordinal)));
+    var single = originalConfiguration.DeepClone();
+    var singlePolicy = policy.DeepClone();
+    singlePolicy["operations"] = new System.Text.Json.Nodes.JsonArray(grant.DeepClone());
+    single["spec"]!["accessControl"]!["policies"] = new System.Text.Json.Nodes.JsonArray(singlePolicy);
+    string[] found = Array.Empty<string>();
+    try
+    {
+        RouteCatalogTopologyValidator.ValidateDevelopment(gateway.TopologyDocuments[0], JsonSerializer.SerializeToUtf8Bytes(single), envelope, activation.RequiredHosts, gateway.AppId, activation.AuxiliaryOperations, gateway.ReceiverSurface, gateway.SelectedAppIds, gateway.DeclaredInvocations);
+    }
+    catch (RouteCatalogValidationException failure)
+    {
+        found = failure.Diagnostics.Select(diagnostic => allowed.Contains(diagnostic.Code) ? diagnostic.Code : "unknown-code-withheld").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+    }
+    Console.WriteLine(JsonSerializer.Serialize(new { diagnosticOnlyGrantSubset = true, grantIndex = index, declaredInvocationMatches = declared,
+        finiteReceiverV2 = gateway.ReceiverSurface?.FenceVersion == "eventstore-finite-sdk-http-receiver-v2", technicalBindingPresent = gateway.ReceiverSurface?.TechnicalHttp is not null,
+        auxiliaryExactMethodCount = (activation.AuxiliaryOperations ?? []).Count(operation => operation.AppId == gateway.AppId && operation.Method == name.TrimStart('/')), codes = found }));
+}
+
+var statusEndpoints = gateway.ReceiverSurface!.Endpoints.Where(endpoint => endpoint.Pattern == "/api/v1/commands/status/workload/{tenant}/{messageId}").ToArray();
+Console.WriteLine(JsonSerializer.Serialize(new { actualReceiver = true,
+ finiteV1 = gateway.ReceiverSurface.FenceVersion == "eventstore-finite-dapr-receiver-v1",
+ finiteTechnicalV2 = gateway.ReceiverSurface.FenceVersion == "eventstore-finite-sdk-http-receiver-v2",
+ compositeV1 = gateway.ReceiverSurface.FenceVersion == RouteCatalogTechnicalHttpPolicy.FenceVersion,
+ statusEndpointCount = statusEndpoints.Length,
+ statusAllAdmitted = statusEndpoints.All(endpoint => endpoint.Admitted),
+ statusAnyAnonymous = statusEndpoints.Any(endpoint => endpoint.Anonymous),
+ statusAllPattern = statusEndpoints.All(endpoint => endpoint.IsPattern),
+ statusAllGet = statusEndpoints.All(endpoint => endpoint.Methods.SequenceEqual(new[] { "GET" })),
+ statusHttpTransportCount = statusEndpoints.Count(endpoint => endpoint.Http is not null) }));

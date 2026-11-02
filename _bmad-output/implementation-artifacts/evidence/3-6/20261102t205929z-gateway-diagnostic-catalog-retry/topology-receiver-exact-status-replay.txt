@@ -1,0 +1,7 @@
+{"host":"eventstore","valid":false,"codes":["undeclared-acl-operation"]}
+{"host":"timesheets","valid":true,"codes":[]}
+{"diagnosticOnlyGrantSubset":true,"grantIndex":0,"declaredInvocationMatches":true,"finiteReceiverV2":false,"technicalBindingPresent":false,"auxiliaryExactMethodCount":1,"codes":[]}
+{"diagnosticOnlyGrantSubset":true,"grantIndex":1,"declaredInvocationMatches":true,"finiteReceiverV2":false,"technicalBindingPresent":false,"auxiliaryExactMethodCount":1,"codes":[]}
+{"diagnosticOnlyGrantSubset":true,"grantIndex":2,"declaredInvocationMatches":true,"finiteReceiverV2":false,"technicalBindingPresent":false,"auxiliaryExactMethodCount":0,"codes":["undeclared-acl-operation"]}
+{"diagnosticOnlyGrantSubset":true,"grantIndex":3,"declaredInvocationMatches":true,"finiteReceiverV2":false,"technicalBindingPresent":false,"auxiliaryExactMethodCount":1,"codes":[]}
+{"actualReceiver":true,"finiteV1":true,"finiteTechnicalV2":false,"compositeV1":false,"statusEndpointCount":1,"statusAllAdmitted":false,"statusAnyAnonymous":false,"statusAllPattern":true,"statusAllGet":true,"statusHttpTransportCount":0}

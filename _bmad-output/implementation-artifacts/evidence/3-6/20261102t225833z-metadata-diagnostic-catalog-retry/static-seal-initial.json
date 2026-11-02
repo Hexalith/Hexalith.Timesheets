@@ -1,0 +1,6 @@
+{
+  "command": "python3 /tmp/timesheets_story36_seal.py",
+  "exit_code": 1,
+  "category": "planned_verification_link_checked_before_receipt_creation",
+  "resolution": "Correct generator ordering for its two planned seal artifacts; no source/runtime/evidence preservation failure."
+}

@@ -1,0 +1,96 @@
+{
+  "recorded_utc": "2026-11-02T21:15:33.068735+00:00",
+  "target": "seven exact previously recorded fixture-owned MSBuild workers",
+  "global_shutdown_used": false,
+  "processes": [
+    {
+      "pid": 3336236,
+      "start": "3702267",
+      "identity_reverified": true,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 3336237,
+      "start": "3702267",
+      "identity_reverified": true,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 3336268,
+      "start": "3702273",
+      "identity_reverified": true,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 3336269,
+      "start": "3702273",
+      "identity_reverified": true,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 3336322,
+      "start": "3702296",
+      "identity_reverified": true,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 3336323,
+      "start": "3702296",
+      "identity_reverified": true,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 3336354,
+      "start": "3702303",
+      "identity_reverified": true,
+      "signal": "SIGTERM"
+    }
+  ],
+  "exits": {
+    "all_gone": true,
+    "processes": [
+      {
+        "pid": 3336236,
+        "start": "3702267",
+        "state": "S",
+        "gone": true
+      },
+      {
+        "pid": 3336237,
+        "start": "3702267",
+        "state": "S",
+        "gone": true
+      },
+      {
+        "pid": 3336268,
+        "start": "3702273",
+        "state": "S",
+        "gone": true
+      },
+      {
+        "pid": 3336269,
+        "start": "3702273",
+        "state": "S",
+        "gone": true
+      },
+      {
+        "pid": 3336322,
+        "start": "3702296",
+        "state": "S",
+        "gone": true
+      },
+      {
+        "pid": 3336323,
+        "start": "3702296",
+        "state": "S",
+        "gone": true
+      },
+      {
+        "pid": 3336354,
+        "start": "3702303",
+        "state": "S",
+        "gone": true
+      }
+    ]
+  }
+}

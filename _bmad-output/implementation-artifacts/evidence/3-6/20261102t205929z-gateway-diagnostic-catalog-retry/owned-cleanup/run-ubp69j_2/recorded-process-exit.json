@@ -1,0 +1,47 @@
+{
+  "all_gone": true,
+  "processes": [
+    {
+      "pid": 3336236,
+      "start": "3702267",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 3336237,
+      "start": "3702267",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 3336268,
+      "start": "3702273",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 3336269,
+      "start": "3702273",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 3336322,
+      "start": "3702296",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 3336323,
+      "start": "3702296",
+      "state": "S",
+      "gone": true
+    },
+    {
+      "pid": 3336354,
+      "start": "3702303",
+      "state": "S",
+      "gone": true
+    }
+  ]
+}

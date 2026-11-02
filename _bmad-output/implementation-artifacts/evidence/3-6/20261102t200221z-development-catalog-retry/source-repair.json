@@ -1,0 +1,17 @@
+{
+  "scope": "Post-failure catalog-only build-capable Aspire launch; source consistency and guards unchanged",
+  "files": {
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "5970075d3fd60b882b1451ddec75e7820da18c9460a5c82974d827afda734971",
+      "repaired_sha256": "d817d8552c3ffdd4447ec81ea22b7f67682dadc76e79aedab1db6fade7fd8ec1"
+    },
+    "scripts/test_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "3919f91c4a0509f869fbd4ba6965a2de59ed19141a1a40e367334b02a2a0408b",
+      "repaired_sha256": "146e6c5cfe3637709dbd879d7e3cb58048ae94e3bdeaf2256af406822039d146"
+    }
+  },
+  "regression_red_exit": 1,
+  "regression_green_exit": 0,
+  "python_fixture_tests": 218,
+  "apphost_or_dependency_change": false
+}

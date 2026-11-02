@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+    "-class",
+    "*LaunchReadinessTests",
+    "-noColor"
+  ],
+  "started_utc": "2026-11-02T19:12:01.615994+00:00",
+  "finished_utc": "2026-11-02T19:12:02.135405+00:00",
+  "duration_seconds": 0.519375,
+  "exit_code": 0
+}

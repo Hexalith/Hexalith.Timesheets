@@ -1,0 +1,11 @@
+{
+  "complete": false,
+  "journey_descendants_gone": true,
+  "failure_reasons": [
+    "Fixture-bound resources remain; retaining infrastructure"
+  ],
+  "components_created": true,
+  "components_removed": false,
+  "catalog_profile_removed": false,
+  "containers_removed": null
+}

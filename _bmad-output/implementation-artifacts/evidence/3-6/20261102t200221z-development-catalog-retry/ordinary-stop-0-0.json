@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "aspire",
+    "stop",
+    "--non-interactive",
+    "--apphost",
+    "/home/administrator/projects/hexalith/projects/src/Hexalith.Projects.AppHost/Hexalith.Projects.AppHost.csproj"
+  ],
+  "started_utc": "2026-11-02T20:02:23.495885+00:00",
+  "finished_utc": "2026-11-02T20:02:24.787805+00:00",
+  "duration_seconds": 1.291928,
+  "exit_code": 0
+}

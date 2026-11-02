@@ -1,0 +1,33 @@
+{
+  "scope": "Configuration-only compiled validation exits before resource construction; no live rerun",
+  "cases": [
+    {
+      "case": "unset-environment",
+      "argv": [
+        "/home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost",
+        "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+        "--AppHost:Operation=run"
+      ],
+      "started_utc": "2026-11-02T18:48:30.858278+00:00",
+      "finished_utc": "2026-11-02T18:48:35.198737+00:00",
+      "exit_code": -6,
+      "development_selection_guard_refused": true,
+      "private_catalog_selection_validated": false,
+      "resources_created": false
+    },
+    {
+      "case": "explicit-development",
+      "argv": [
+        "/home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost",
+        "--TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY=1",
+        "--AppHost:Operation=run"
+      ],
+      "started_utc": "2026-11-02T18:48:35.198756+00:00",
+      "finished_utc": "2026-11-02T18:48:35.915081+00:00",
+      "exit_code": 0,
+      "development_selection_guard_refused": false,
+      "private_catalog_selection_validated": true,
+      "resources_created": false
+    }
+  ]
+}

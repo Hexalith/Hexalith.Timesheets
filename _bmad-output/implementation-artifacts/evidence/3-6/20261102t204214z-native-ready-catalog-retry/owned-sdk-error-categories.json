@@ -1,0 +1,11 @@
+{
+  "scope": "Verified-owned AppHost diagnostic constant matches only; original gateway resource console unavailable after stop",
+  "sdk_categories": [
+    "custody"
+  ],
+  "exception_types": [
+    "InvalidOperationException"
+  ],
+  "frames": [],
+  "all_raw_output_withheld": true
+}

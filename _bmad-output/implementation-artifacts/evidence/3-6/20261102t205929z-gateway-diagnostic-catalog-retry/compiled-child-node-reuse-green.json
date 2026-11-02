@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_compiled_owner_declaration_preserves_graph_and_supported_build_selection"
+  ],
+  "started_utc": "2026-11-02T21:23:46.407206+00:00",
+  "finished_utc": "2026-11-02T21:23:48.397124+00:00",
+  "duration_seconds": 1.989899,
+  "exit_code": 1
+}

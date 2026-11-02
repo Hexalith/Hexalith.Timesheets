@@ -1,0 +1,15 @@
+{
+  "root_private": true,
+  "manifest_private": true,
+  "owner_present": true,
+  "owner_private": true,
+  "owner_matches": false,
+  "generation_valid": true,
+  "retained_private": true,
+  "files_match_manifest": true,
+  "required_files_present": true,
+  "all_files_private": true,
+  "all_file_hashes_match": true,
+  "catalog_hash_matches": true,
+  "activation_root_matches": true
+}

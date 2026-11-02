@@ -1,0 +1,23 @@
+{
+  "original_catalog_error": "SDK catalog receivers did not commit one complete generation",
+  "gateway_category": "loaded_topology",
+  "pure_actual_topology_code": "undeclared-acl-operation",
+  "timesheets_topology_valid": true,
+  "failing_existing_grant": "api/v1/commands/status/workload/*",
+  "declared_invocation_matches": true,
+  "actual_gateway_fence": "eventstore-finite-dapr-receiver-v1",
+  "actual_status_endpoint": "/api/v1/commands/status/workload/{tenant}/{messageId}",
+  "actual_status_endpoint_count": 1,
+  "actual_status_admitted": false,
+  "actual_status_authenticated": true,
+  "actual_status_verb": "GET",
+  "actual_status_pattern": true,
+  "actual_status_http_owner_transport_present": false,
+  "finite_receiver_rejects_pattern_without_technical_owner": true,
+  "local_fixture_requires_empty_technical_membership": true,
+  "supported_composite_is_distinct_opt_in": true,
+  "grant_or_dependency_changes_made": false,
+  "raw_diagnostics_retained": false,
+  "private_inputs_copied": false,
+  "qualification_claimed": false
+}

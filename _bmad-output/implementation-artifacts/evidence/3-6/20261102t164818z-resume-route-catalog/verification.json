@@ -1,0 +1,28 @@
+{
+  "recorded_utc": "2026-11-02T16:53:12.763413+00:00",
+  "scope": "Static receipt, preservation, provenance and local-link checks only; no build, test or runtime qualification",
+  "result": "pass",
+  "checks": {
+    "unchanged_tracked_files": 6978,
+    "unchanged_historical_evidence_files": 3684,
+    "document_prefixes_preserved": 3,
+    "frozen_intent_preserved": true,
+    "completed_recording_tasks_marked": 2,
+    "runtime_tasks_unchanged_and_unchecked": true,
+    "story_and_spec_in_progress": true,
+    "repository_revisions_unchanged": 14,
+    "dependency_revisions_clean_and_matching_gitlinks": 13,
+    "selected_source_hashes_verified": 13,
+    "receipts_consistent": true,
+    "raw_inventory_not_retained": true,
+    "no_resource_finalization_distinguished_from_runtime_cleanup": true,
+    "acceptance_gates_unobserved": 12,
+    "git_diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    },
+    "new_local_markdown_links_verified": 13,
+    "packet_files_not_ignored": 10,
+    "packet_json_and_whitespace_valid": true
+  }
+}

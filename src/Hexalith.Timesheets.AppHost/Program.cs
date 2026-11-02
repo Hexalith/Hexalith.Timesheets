@@ -139,14 +139,24 @@ if (securitySmoke)
 // Both endpoints are declared explicitly. This project ships no launchSettings.json, so AddProject
 // contributes no endpoint of its own — declaring only the internal one would leave the magic-link
 // routes without a local public listener.
-IResourceBuilder<ProjectResource> timesheets = builder
-    .AddProject<Projects.Hexalith_Timesheets>("timesheets")
+// Catalog preparation builds its selected owner. Generated ProjectReference
+// metadata always suppresses that build, so use the supported path selection.
+IResourceBuilder<ProjectResource> timesheets = catalogEnabled
+    ? builder.AddProject("timesheets", new Projects.Hexalith_Timesheets().ProjectPath)
+    : builder.AddProject<Projects.Hexalith_Timesheets>("timesheets");
+_ = timesheets
     .WithHttpEndpoint(name: "public", port: publicPort, isProxied: false)
     .WithHttpEndpoint(name: "internal", port: InternalPort, isProxied: false)
     .WithEnvironment(
         "Timesheets__InternalSurface__Port",
         InternalPort.ToString(System.Globalization.CultureInfo.InvariantCulture))
     .WithEnvironment("Timesheets__LocalPublicPort", publicPort.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+if (catalogEnabled)
+{
+    // DCP launches this project through dotnet run, which must not retain fixture-bound build workers.
+    _ = timesheets.WithEnvironment("MSBUILDDISABLENODEREUSE", "1");
+}
 
 if (builder.ExecutionContext.IsRunMode)
 {
@@ -233,7 +243,7 @@ if (builder.ExecutionContext.IsRunMode)
             "Hexalith.Timesheets.Projections.dll", "Hexalith.Timesheets.Server.dll", TimeSpan.FromMinutes(5));
         routeCatalog = builder.AddEventStoreDevelopmentRouteCatalog(eventStore,
             [preparedOwner.Owner],
-            [eventStore.CaptureEventStoreDevelopmentReceiver(timesheets),
+            [eventStore.CaptureEventStoreDevelopmentReceiver(timesheets) with { TechnicalHttp = true },
              timesheets.CaptureEventStoreDevelopmentReceiver(eventStore)],
             actorStore, catalogOptions!);
     }

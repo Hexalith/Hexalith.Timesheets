@@ -1,0 +1,116 @@
+{
+  "recorded_utc": "2026-11-02T22:34:13.913925+00:00",
+  "scope": "Fresh exact-backend/custody representation retry; approved gateway-only composite/v2 and strict source consistency",
+  "repositories": {
+    "Hexalith.AI.Tools": {
+      "path": "references/Hexalith.AI.Tools",
+      "head": "1745b6663ad32bb1288167135ed0f979366c53a0",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "1745b6663ad32bb1288167135ed0f979366c53a0",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Builds": {
+      "path": "references/Hexalith.Builds",
+      "head": "6e7011fc754e74ac2a8864da1ce0b6d8f7178a48",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "6e7011fc754e74ac2a8864da1ce0b6d8f7178a48",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Commons": {
+      "path": "references/Hexalith.Commons",
+      "head": "11555ace9efcae2928a00122dcba91243e5a8a1a",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "11555ace9efcae2928a00122dcba91243e5a8a1a",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Conversations": {
+      "path": "references/Hexalith.Conversations",
+      "head": "bab14ae9e7c2b0739dd66cc24e4cc06c5e1aae2c",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "bab14ae9e7c2b0739dd66cc24e4cc06c5e1aae2c",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.EventStore": {
+      "path": "references/Hexalith.EventStore",
+      "head": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.FrontComposer": {
+      "path": "references/Hexalith.FrontComposer",
+      "head": "9cb085b926f45b5d494c67e3f57be48aa2644bcc",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "9cb085b926f45b5d494c67e3f57be48aa2644bcc",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.McpCli": {
+      "path": "references/Hexalith.McpCli",
+      "head": "829a98da7103b2124b2d95ee1d09db37620686a3",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "829a98da7103b2124b2d95ee1d09db37620686a3",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Parties": {
+      "path": "references/Hexalith.Parties",
+      "head": "d06c316fd57cbfaa0b80cf8622ec0b8ec571c6a0",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "d06c316fd57cbfaa0b80cf8622ec0b8ec571c6a0",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Platform": {
+      "path": "references/Hexalith.Platform",
+      "head": "8b5ef1d03e81efdbe3b894dfc9b82186fb095489",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "8b5ef1d03e81efdbe3b894dfc9b82186fb095489",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.PolymorphicSerializations": {
+      "path": "references/Hexalith.PolymorphicSerializations",
+      "head": "bce4eb9f45c6b131b960ab4fa39e50ff01e51960",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "bce4eb9f45c6b131b960ab4fa39e50ff01e51960",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Projects": {
+      "path": "references/Hexalith.Projects",
+      "head": "47a1ffd02cb3e1cde80bd7697ac1b46fdefda8cc",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "47a1ffd02cb3e1cde80bd7697ac1b46fdefda8cc",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Tenants": {
+      "path": "references/Hexalith.Tenants",
+      "head": "ba4639fa462341281f89aa7a08b7398477fc1ba9",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "ba4639fa462341281f89aa7a08b7398477fc1ba9",
+      "head_matches_root_gitlink": true
+    },
+    "Hexalith.Works": {
+      "path": "references/Hexalith.Works",
+      "head": "0fe60587ba48de74cd46f8f9d913a9d00c35abee",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tracked_clean": true,
+      "root_gitlink": "0fe60587ba48de74cd46f8f9d913a9d00c35abee",
+      "head_matches_root_gitlink": true
+    },
+    "timesheets": {
+      "path": ".",
+      "head": "2c25a83ef71d066c5ea124922ed251aad2dd8ddc",
+      "tracked_diff_sha256": "c5940a4405c654d4601b1afb4e021dee035d3aec24f8c377ce491549ac4c80fc",
+      "tracked_clean": false
+    }
+  }
+}

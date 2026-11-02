@@ -1,0 +1,17 @@
+E
+======================================================================
+ERROR: test_isolated_magic_link_dapr (unittest.loader._FailedTest.test_isolated_magic_link_dapr)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_isolated_magic_link_dapr
+Traceback (most recent call last):
+  File "/usr/lib/python3.14/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 23, in <module>
+    import local_runtime_admission as admission
+ModuleNotFoundError: No module named 'local_runtime_admission'
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

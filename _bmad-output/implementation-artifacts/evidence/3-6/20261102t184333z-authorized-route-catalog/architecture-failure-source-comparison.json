@@ -1,0 +1,13 @@
+{
+  "scope": "Unrelated Architecture failure source comparison",
+  "files": {
+    "src/Hexalith.Timesheets.AppHost/Program.cs": {
+      "baseline_sha256": "5b28d6062e438f678dbd98bcaba800ff66e48dcfcb5eb6719c87d9964871178f",
+      "current_sha256": "5b28d6062e438f678dbd98bcaba800ff66e48dcfcb5eb6719c87d9964871178f"
+    },
+    "tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DiagnosticsPrivacyTests.cs": {
+      "baseline_sha256": "6ccbc0e1b6f9545dfca5acab35e0976d87c9f50b4c1342163f728ec4a51f5948",
+      "current_sha256": "6ccbc0e1b6f9545dfca5acab35e0976d87c9f50b4c1342163f728ec4a51f5948"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "recorded_utc": "2026-11-02T18:50:18.516474+00:00",
+  "fixture_processes_observed_gone": true,
+  "owned_container_removals": 3,
+  "each_container_removal_exit_code": 0,
+  "separate_exact_name_absence_checks": true,
+  "private_profile_retained": true,
+  "private_profile_owner_identity_matches_fixture": true,
+  "private_profile_directory_mode": "0700",
+  "private_profile_input_modes": "0600",
+  "private_profile_path_sha256": "a0d0188d74adc804ab6e25c8962d05defc34a36ecc0a04bed345511748f08be0",
+  "sdk_custody_complete": false,
+  "cleanup_qualified": false,
+  "reason": "No committed SDK custody exists; existing cleanup safeguard retains protected owner inputs.",
+  "private_inputs_copied_to_evidence": false
+}

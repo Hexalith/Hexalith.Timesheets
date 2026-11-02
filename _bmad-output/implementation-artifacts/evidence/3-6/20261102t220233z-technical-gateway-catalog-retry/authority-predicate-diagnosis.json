@@ -1,0 +1,14 @@
+{
+  "unique_metadata": true,
+  "exact_four_metadata_keys": true,
+  "raw_metadata_match": false,
+  "normalized_db_metadata_match": true,
+  "db_is_integer_13": true,
+  "api_version_matches": true,
+  "kind_matches": true,
+  "name_matches": true,
+  "type_matches": true,
+  "version_matches": true,
+  "exact_unique_scopes": true,
+  "late_private_custody_complete": false
+}

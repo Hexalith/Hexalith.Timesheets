@@ -1,0 +1,32 @@
+{
+  "recorded_utc": "2026-11-02T19:13:51.422528+00:00",
+  "scope": "Static integrity/preservation/provenance/link checks; no live qualification",
+  "result": "pass",
+  "checks": {
+    "unchanged_tracked_files": 6976,
+    "unchanged_historical_evidence_files": 3684,
+    "earlier_refusal_packet_files_unchanged": 10,
+    "original_record_prefixes_preserved": 3,
+    "prior_spec_refusal_preserved": true,
+    "frozen_authorized_intent_preserved": true,
+    "first_two_execution_tasks_complete": true,
+    "live_and_broad_qualification_tasks_unfinished": true,
+    "repository_revisions_unchanged": 14,
+    "dependency_tracked_changes_absent": 13,
+    "dependency_heads_match_root_gitlinks": 13,
+    "repaired_source_hashes_verified": 2,
+    "losslessly_compressed_artifacts_verified": 64,
+    "receipts_and_test_summaries_consistent": true,
+    "failed_live_and_cleanup_receipts_retained": true,
+    "unobserved_acceptance_gates": 10,
+    "private_catalog_inputs_excluded": true,
+    "protected_profile_still_retained": true,
+    "new_local_markdown_links_verified": 24,
+    "packet_files_not_ignored": 112,
+    "packet_json_valid": true,
+    "git_diff_check": {
+      "command": "git diff --check",
+      "exit_code": 0
+    }
+  }
+}

@@ -1,0 +1,4 @@
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+Rendered catalog authority differs from the private owner backend
+Owned cleanup or evidence is incomplete; see available fixture diagnostics
+Sanitized fixture evidence: /home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261102t220233z-technical-gateway-catalog-retry/runner/run-7tetkdpn

@@ -1,0 +1,7 @@
+  Determining projects to restore...
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations.CodeGenerators/Hexalith.PolymorphicSerializations.CodeGenerators.csproj (in 632 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations/Hexalith.PolymorphicSerializations.csproj (in 543 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj (in 544 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj (in 656 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.csproj (in 598 ms).
+  25 of 30 projects are up-to-date for restore.

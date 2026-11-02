@@ -28,6 +28,7 @@ import time
 import urllib.request
 import urllib.parse
 import urllib.error
+import xml.etree.ElementTree as ET
 
 from local_runtime_admission import LocalRuntimeAdmission, RuntimeAdmissionError
 
@@ -56,6 +57,39 @@ CATALOG_RECEIVER_POLICIES = {
         ("project/rebuild/shared/v1", "POST"),
         ("admin/operational-index-metadata", "POST"))),
 }
+TECHNICAL_RECEIVER_PROFILE = "eventstore-sdk-technical-http-composite-v1"
+CATALOG_DIAGNOSTIC_CATEGORIES = {
+    "finite_operation_unenrolled": "finite-operation-unenrolled",
+    "finite_code_changed": "finite-code-changed",
+    "finite_endpoint_changed": "finite-endpoint-changed",
+    "finite_policy_changed": "finite-policy-changed",
+    "finite_operation_changed": "finite-operation-changed",
+    "finite_acl_path_ungranted": "finite-acl-path-ungranted",
+    "workload_credential_denied": "InternalAuthenticationDenied",
+    "workload_operation_not_granted": "operation-not-granted",
+    "local_inventory": "Local host inventory, topology, authentication or profile disagrees with the exact required host set.",
+    "independent_registration": "Configured host identity lacks matching independent registration, topology and authentication observations.",
+    "owner_operations": "The installed owner operation schemas or eligibility differ from the proposed generation.",
+    "loaded_topology": "Loaded topology disagrees with the candidate:",
+    "executable_targets": "The proposed declarations, executable targets or exact host inventory disagree with actual local registrations.",
+    "local_policy": "The proposed admission, named projection capability or auxiliary operation disagrees with installed local policy.",
+    "backend": "The catalog authority backend is unavailable.",
+    "backend_etag": "The Dapr authority component did not supply an ETag.",
+    "pending": "The activation attempt is not prepared.",
+    "draining": "Prior dispatch is still draining.",
+    "cas_conflicts": "Concurrent catalog authority updates could not be serialized.",
+    "digest_generations": "Available digest generations disagree with configured policy.",
+    "admission_adapter": "Installed admission adapter lacks a matching complete static declaration.",
+    "development_trust": "An activated owner-bound production catalog is required; Development fixtures supply no production authority.",
+    "custody": "Owner catalog custody is incomplete, changed or not private.",
+}
+CATALOG_DIAGNOSTIC_EXCEPTIONS = (
+    "RouteCatalogUnavailableException", "RouteCatalogValidationException", "InvalidOperationException",
+    "HttpRequestException", "OperationCanceledException", "TaskCanceledException", "DaprException")
+CATALOG_DIAGNOSTIC_FRAMES = (
+    "DevelopmentRouteCatalogBootstrap.ActivateAsync", "RouteCatalogAuthority.PrepareAsync", "RouteCatalogAuthority.ReadyAsync",
+    "RouteCatalogAuthority.CommitAsync", "ObservedRouteCatalogHost.ObserveAsync", "DaprRouteCatalogStateStore.ReadAsync",
+    "DaprRouteCatalogStateStore.CompareExchangeAsync", "RouteCatalogAdmissionObservation.CaptureAsync")
 REQUIRED_PORTS = (8080, 8081, 8082, 3501)
 SHARED_CONTROL_PORTS = (6050, 6060, 50005, 50006)
 REDIS_OBSERVATION_MAX_KEYS = 1024
@@ -1481,6 +1515,127 @@ return {{finished, rows}}
         observation["completed_unix_ns"] = time.time_ns()
 
 
+def safe_invocation_failure_category(body):
+    """Classify only fixed wire error identifiers, never an arbitrary response body."""
+    if body in (b"", ""):
+        return "empty_http_body"
+    if not isinstance(body, (bytes, str)) or len(body) > 65536:
+        return "unclassified_body_withheld"
+    try:
+        value = json.loads(body)
+    except (ValueError, TypeError, UnicodeError, RecursionError):
+        return "unclassified_body_withheld"
+    codes = {"ERR_PERMISSION_DENIED": "dapr_permission_denied", "ERR_DIRECT_INVOKE": "dapr_direct_invoke_failed"}
+    code = value.get("errorCode") if isinstance(value, dict) else None
+    return codes.get(code, "unclassified_body_withheld") if isinstance(code, str) else "unclassified_body_withheld"
+
+
+def catalog_metadata_receiver_facts(observation, captured_files):
+    """Retain only fixed endpoint facts and a verified SDK code digest for diagnosis."""
+    surface = observation.get("ReceiverSurface") or {}
+    endpoints = surface.get("Endpoints") or []
+    matches = [endpoint for endpoint in endpoints if endpoint.get("Pattern") == "/admin/operational-index-metadata"]
+    facts = {"endpoint_count": len(matches), "finite_profile_matches": surface.get("FenceVersion") == "eventstore-finite-dapr-receiver-v1"}
+    if len(matches) == 1:
+        endpoint = matches[0]
+        policies = endpoint.get("Policies") or []
+        facts.update(post_method_matches=endpoint.get("Methods") == ["POST"],
+            canonical_policy_present="EventStoreWorkload:domain-service:metadata" in policies,
+            canonical_operation_matches=endpoint.get("Operation") == "domain-service:metadata",
+            policy_count=len(policies), admitted=endpoint.get("Admitted") is True,
+            anonymous=endpoint.get("Anonymous") is True, patterned=endpoint.get("IsPattern") is True)
+    owners = [value for name, value in (observation.get("ExecutableOwners") or {}).items()
+              if name.split(",", 1)[0] == "Hexalith.EventStore.DomainService"]
+    matched = len(owners) == 1 and isinstance(owners[0], str) and re.fullmatch(r"[0-9a-f]{64}", owners[0]) is not None \
+        and captured_files.get("src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.EventStore.DomainService.dll") == owners[0]
+    facts["domain_sdk_code_matches"] = matched
+    facts["domain_sdk_sha256"] = owners[0] if matched else None
+    return facts
+
+
+def catalog_custody_owner_matches(profile, owner):
+    """Match the fixture's exact owner plus only the pinned SDK constructor defaults."""
+    defaults = {"SecretStore": "secretstore", "LogicalSecretName": "eventstore-idempotency-ring"}
+    required = {"CustodyDirectory", "AuthorityComponentName", "AuthorityStateKey", "ActiveDigestKeyGeneration", "DigestKeys", "SecretMapGeneration"}
+    if (not isinstance(profile, dict) or not isinstance(owner, dict)
+            or not required <= set(profile) <= required | set(defaults)
+            or set(owner) != required | set(defaults)
+            or any(name in profile and profile[name] != value for name, value in defaults.items())):
+        return False
+    return owner == {**profile, **defaults}
+
+
+def verify_rendered_catalog_authority(rendered, endpoint):
+    """Allow only the renderer's exact DB-13 scalar forms for this complete private backend."""
+    message = "Rendered catalog authority differs from the private owner backend"
+    rows = rendered["spec"]["metadata"]
+    require(isinstance(rows, list) and all(isinstance(item, dict)
+            and set(item) == {"name", "value"} and isinstance(item["name"], str) for item in rows), message)
+    metadata = {item["name"]: item["value"] for item in rows}
+    database = metadata.get("redisDB")
+    require(type(database) in (str, int) and database in ("13", 13), message)
+    metadata["redisDB"] = "13"
+    require(len(metadata) == len(rows)
+            and rendered["apiVersion"] == "dapr.io/v1alpha1" and rendered["kind"] == "Component"
+            and rendered["metadata"]["name"] == "timesheets-route-authority"
+            and rendered["spec"]["type"] == "state.redis" and rendered["spec"]["version"] == "v1"
+            and isinstance(rendered["scopes"], list) and len(rendered["scopes"]) == 2
+            and all(isinstance(scope, str) for scope in rendered["scopes"])
+            and set(rendered["scopes"]) == {"eventstore", "timesheets"}
+            and metadata == {"redisHost": endpoint, "redisPassword": "", "redisDB": "13", "keyPrefix": "name"}, message)
+
+
+def verify_catalog_technical_membership(activation, observations):
+    """Require the approved complete gateway-only composite and unchanged finite peer."""
+    message = "Catalog technical receiver membership or witnesses differ from the selected gateway"
+    receivers = activation.get("TechnicalHttpReceivers")
+    require(isinstance(receivers, list) and len(receivers) == 1, message)
+    receiver = receivers[0]
+    require(isinstance(receiver, dict) and receiver.get("AppId") == "eventstore"
+            and receiver.get("FenceVersion") == TECHNICAL_RECEIVER_PROFILE, message)
+    gateway = observations["eventstore"]
+    surface = gateway.get("ReceiverSurface")
+    finite = observations["timesheets"].get("ReceiverSurface")
+    require(isinstance(surface, dict) and surface.get("FenceVersion") == TECHNICAL_RECEIVER_PROFILE
+            and isinstance(finite, dict) and finite.get("FenceVersion") == "eventstore-finite-dapr-receiver-v1"
+            and finite.get("TechnicalHttp") is None, message)
+    actions = receiver.get("Endpoints")
+    canonical = lambda value: json.dumps(value, sort_keys=True, separators=(",", ":"))
+    require(isinstance(actions, list) and 0 < len(actions) <= 256
+            and isinstance(surface.get("TechnicalHttp"), list)
+            and sorted(map(canonical, actions)) == sorted(map(canonical, surface["TechnicalHttp"])), message)
+    keys = set()
+    for action in actions:
+        require(isinstance(action, dict) and isinstance(action.get("Pattern"), str)
+                and isinstance(action.get("Methods"), list) and len(action["Methods"]) == 1
+                and action["Methods"][0] in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS")
+                and isinstance(action.get("Policies"), list) and bool(action["Policies"])
+                and isinstance(action.get("ActionIdentity"), str) and bool(action["ActionIdentity"]), message)
+        key = (action["Pattern"].casefold(), tuple(action["Methods"]))
+        require(key not in keys, message)
+        keys.add(key)
+        require(all(isinstance(action.get(name), str) and re.fullmatch(r"[0-9a-f]{64}", action[name])
+                    for name in ("RequestDigest", "ResponseDigest", "PolicyDigest", "FilterDigest")), message)
+    require(sum(action["Pattern"] == "/api/v1/commands/status/workload/{tenant}/{messageId}"
+                and action["Methods"] == ["GET"] and action.get("CredentialKind") == "workload"
+                for action in actions) == 1, message)
+    actual = surface.get("Endpoints")
+    require(isinstance(actual, list), message)
+    technical = [endpoint for endpoint in actual if endpoint.get("Operation") == "sdk-technical-http"]
+    require(len(technical) == len(actions) and all(sum(endpoint.get("Pattern") == action["Pattern"]
+            and endpoint.get("Methods") == action["Methods"] and endpoint.get("Policies") == action["Policies"]
+            and endpoint.get("Admitted") is True and endpoint.get("Anonymous") is False
+            for endpoint in technical) == 1 for action in actions), message)
+    invocations = receiver.get("Invocations")
+    require(isinstance(invocations, list) and len(invocations) == 4
+            and sorted(map(canonical, invocations)) == sorted(map(canonical, gateway.get("DeclaredInvocations") or [])), message)
+    expected = {("timesheets", method, verb) for method, verb in CATALOG_RECEIVER_POLICIES["eventstore"][2]}
+    require(all(isinstance(item, dict) and isinstance(item.get("HttpMethods"), list)
+                and len(item["HttpMethods"]) == 1 for item in invocations)
+            and {(item.get("CallerAppId"), item.get("Method"), item["HttpMethods"][0]) for item in invocations} == expected, message)
+    return len(actions)
+
+
 class IsolatedFixture:
     """Own private infrastructure and one exact Aspire AppHost lifecycle."""
 
@@ -1521,6 +1676,10 @@ class IsolatedFixture:
                                                   "TIMESHEETS_LIVE_DAPR_MODEL_ONLY", "TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY",
                                                   "TIMESHEETS_LIVE_DAPR_CONSTRUCTION_ONLY",
                                                   *SDK_LAUNCH_OVERRIDES)}
+        if self.route_catalog:
+            controlled.update(name.casefold() for name in (
+                "Environment", "DOTNET_ENVIRONMENT", "ASPNETCORE_ENVIRONMENT", "ASPIRE_ENVIRONMENT",
+                "MSBUILDDISABLENODEREUSE"))
         self.environment = {}
         for name, value in os.environ.items():
             normalized = name.replace("__", ":").casefold()
@@ -1530,11 +1689,17 @@ class IsolatedFixture:
                     aliases.append(normalized[len(prefix):])
             if not any(alias in controlled for alias in aliases):
                 self.environment[name] = value
-        # Aspire resolves --no-build assets through MSBuild. Keep the owned
+        # Aspire evaluates launch and selected-child builds through MSBuild. Keep the owned
         # runtime on the Debug source graph built for this local journey even
         # when the repository or caller defaults to Release/package mode.
         self.environment.update({"Configuration": "Debug", "UseHexalithProjectReferences": "true",
                                  "UseNuGetDeps": "false", "Timesheets__LocalPublicPort": str(self.public_port)})
+        if self.route_catalog:
+            # The catalog owner APIs are Development-only. No launch profile
+            # supplies the AppHost environment during the CLI launch.
+            # SDK child builds must not leave reusable workers bound to this fixture.
+            self.environment.update({"DOTNET_ENVIRONMENT": "Development", "ASPNETCORE_ENVIRONMENT": "Development",
+                                     "ASPIRE_ENVIRONMENT": "Development", "MSBUILDDISABLENODEREUSE": "1"})
         self.ownership_check = ownership_check or self._owned_apphost
         self.resource_check = resource_check
         self.start_attempted = False
@@ -1552,6 +1717,9 @@ class IsolatedFixture:
         self.catalog_private = None
         self.catalog_before = None
         self.source_before = None
+        self.catalog_verifier_directory = None
+        self.catalog_verifier_configuration = "Debug"
+        self.catalog_verifier_identity = None
 
     def capture_source_identity(self):
         """Bind runtime receipts to exact source diffs, restored packages and built assets."""
@@ -1612,6 +1780,8 @@ class IsolatedFixture:
                          for project, record in self.dependency_graph["projects"].items())
             paths = [path.resolve() for path in paths]
         identities["files"] = {str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest() for path in paths}
+        if self.catalog_verifier_directory is not None:
+            identities["catalog_binding_verifier"] = self.catalog_verifier_manifest()
         return identities
 
     def evaluated_import_identity(self, arguments, project):
@@ -2076,38 +2246,167 @@ class IsolatedFixture:
             raise refusal
         require(written, "Runtime readiness evidence is incomplete")
 
+    def catalog_verifier_manifest(self):
+        directory = Path(self.catalog_verifier_directory)
+        relative_output = Path("bin") / self.catalog_verifier_configuration / "net10.0"
+        output = directory / relative_output
+        return {"source_sha256": hashlib.sha256((ROOT / "scripts/CatalogBindingVerifier.cs").read_bytes()).hexdigest(),
+                "compiler_inputs": {name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
+                                    for name in ("Program.cs", "CatalogBindingVerifier.csproj")},
+                "artifacts": {str(path.relative_to(directory)): hashlib.sha256(path.read_bytes()).hexdigest()
+                              for path in sorted(output.rglob("*")) if path.is_file()},
+                "sdk_assemblies": {name: hashlib.sha256((APPHOST.parent / relative_output / (name + ".dll")).read_bytes()).hexdigest()
+                                   for name in ("Hexalith.EventStore.Contracts", "Hexalith.EventStore.ServiceDefaults")}}
+
+    def prepare_catalog_binding_verifier(self, configuration="Debug"):
+        require(self.catalog_verifier_directory is None, "Catalog SDK verifier was already prepared")
+        require(configuration in ("Debug", "Release"), "Catalog SDK verifier configuration is invalid")
+        self.catalog_verifier_configuration = configuration
+        relative_output = Path("bin") / configuration / "net10.0"
+        directory = Path(tempfile.mkdtemp(prefix="timesheets-catalog-verifier-"))
+        directory.chmod(0o700)
+        self.catalog_verifier_directory = directory
+        shutil.copyfile(ROOT / "scripts/CatalogBindingVerifier.cs", directory / "Program.cs")
+        project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
+        properties = ET.SubElement(project, "PropertyGroup")
+        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net10.0"),
+                            ("ImplicitUsings", "enable"), ("Nullable", "enable")):
+            ET.SubElement(properties, name).text = value
+        items = ET.SubElement(project, "ItemGroup")
+        ET.SubElement(items, "FrameworkReference", Include="Microsoft.AspNetCore.App")
+        for name in ("Hexalith.EventStore.Contracts", "Hexalith.EventStore.ServiceDefaults"):
+            reference = ET.SubElement(items, "Reference", Include=name)
+            ET.SubElement(reference, "HintPath").text = str(APPHOST.parent / relative_output / (name + ".dll"))
+        (directory / "CatalogBindingVerifier.csproj").write_text(ET.tostring(project, encoding="unicode"))
+        self.run_command(["dotnet", "build", str(directory / "CatalogBindingVerifier.csproj"),
+                          "--configuration", configuration, "--disable-build-servers", "-warnaserror", "-m:1", "/nr:false"], timeout=60)
+        manifest = self.catalog_verifier_manifest()
+        require(bool(manifest["artifacts"]) and manifest["compiler_inputs"]["Program.cs"] == manifest["source_sha256"],
+                "Catalog SDK verifier artifact or source is unavailable")
+        for name, digest in manifest["sdk_assemblies"].items():
+            require(manifest["artifacts"].get(str(relative_output / (name + ".dll"))) == digest,
+                    "Catalog SDK verifier references different captured assemblies")
+        self.catalog_verifier_identity = manifest
+
+    def verify_catalog_sdk_binding(self, directory):
+        message = "Catalog SDK binding proof or captured verifier is invalid"
+        require(self.catalog_verifier_directory is not None and self.source_before is not None
+                and self.catalog_verifier_manifest() == self.catalog_verifier_identity
+                and self.source_before.get("catalog_binding_verifier") == self.catalog_verifier_identity, message)
+        gateway = Path(self.environment[GATEWAY_EXECUTABLE_SETTING])
+        result = self.command([str(self.catalog_verifier_directory / "bin" / self.catalog_verifier_configuration / "net10.0/CatalogBindingVerifier"),
+                               str(directory), str(gateway.parent)],
+                              cwd=ROOT, env=self.environment, timeout=10)
+        # The verifier withholds all parser/SDK diagnostics; never transcript unknown output here.
+        try:
+            proof = json.loads(result.stdout)
+        except (ValueError, TypeError):
+            raise FixtureError(message) from None
+        if isinstance(proof, dict) and proof.get("valid") is False and proof.get("stage") in (
+                "input", "catalog", "membership", "inventory", "invocations", "code", "status", "surface", "topology", "proof"):
+            self.write_evidence("catalog-binding-verifier-failure.json", json.dumps({"valid": False, "stage": proof["stage"]}) + "\n")
+        require(result.returncode == 0 and isinstance(proof, dict)
+                and set(proof) == {"valid", "binding_digest", "technical_action_count", "sdk_assemblies", "action_assemblies"}
+                and proof["valid"] is True and isinstance(proof["binding_digest"], str)
+                and re.fullmatch(r"[0-9a-f]{64}", proof["binding_digest"])
+                and type(proof["technical_action_count"]) is int and proof["technical_action_count"] > 0
+                and proof["sdk_assemblies"] == self.catalog_verifier_identity["sdk_assemblies"]
+                and isinstance(proof["action_assemblies"], dict) and bool(proof["action_assemblies"])
+                and all(name in ("Hexalith.EventStore.Gateway", "Hexalith.EventStore.Admin.Server")
+                        and self.source_before["files"].get(str((gateway.parent / (name + ".dll")).relative_to(ROOT))) == digest
+                        for name, digest in proof["action_assemblies"].items()), message)
+        return proof
+
     def capture_route_catalog(self, phase):
         try:
             return self._capture_route_catalog(phase)
+        except FixtureError:
+            self.capture_catalog_failure_diagnostics()
+            raise
         except (OSError, ValueError, TypeError, KeyError, IndexError, AttributeError, UnicodeError, RecursionError):
+            self.capture_catalog_failure_diagnostics()
             raise FixtureError("SDK catalog observation is malformed or incomplete") from None
+
+    def capture_catalog_failure_diagnostics(self, phase="catalog"):
+        """Retain only constant diagnostic matches from fixed resources under verified ownership."""
+        receipt = {"ownership_verified": False, "resources": {}, "raw_output_retained": False,
+                   "phase": "journey" if phase == "journey" else "catalog"}
+        try:
+            if not self.start_attempted or not self.ownership_check():
+                receipt["status"] = "ownership_unavailable"
+                return
+            receipt["ownership_verified"] = True
+            for resource in ("eventstore", "timesheets"):
+                row = {"status": "unavailable", "raw_output_withheld": True,
+                       "sdk_categories": [], "exception_types": [], "frames": []}
+                receipt["resources"][resource] = row
+                try:
+                    if not self.ownership_check():
+                        row["status"] = "ownership_unavailable"
+                        break
+                    result = self.command(["aspire", "logs", resource, "--apphost", str(APPHOST),
+                        "--format", "Json", "--tail", "100", "--non-interactive"],
+                        cwd=ROOT, env=self.environment, timeout=10)
+                    row.update(status="completed", exit_code=result.returncode if isinstance(result.returncode, int) else None)
+                    raw = (result.stdout or "") + (result.stderr or "")
+                    row["sdk_categories"] = sorted(name for name, message in CATALOG_DIAGNOSTIC_CATEGORIES.items() if message in raw)
+                    row["exception_types"] = sorted(name for name in CATALOG_DIAGNOSTIC_EXCEPTIONS if name in raw)
+                    row["frames"] = sorted(name for name in CATALOG_DIAGNOSTIC_FRAMES if name in raw)
+                except subprocess.TimeoutExpired:
+                    row["status"] = "timeout"
+                except KeyboardInterrupt:
+                    row["status"] = "interrupted"
+                    receipt["status"] = "interrupted"
+                    raise
+                except Exception:
+                    row["status"] = "unavailable"
+            receipt["status"] = "observed"
+        except KeyboardInterrupt:
+            receipt["status"] = "interrupted"
+            raise
+        except Exception:
+            receipt["status"] = "ownership_unavailable"
+        finally:
+            self.write_evidence("catalog-failure-diagnostics.json", json.dumps(receipt, indent=2) + "\n")
+
+    def wait_for_catalog_processes(self, until):
+        """Wait for actual owned native receivers and sidecars without accepting launchers."""
+        while True:
+            observed = {}
+            sidecar_directories = {}
+            for identity in self.resource_check(self.scratch, self.placement, self.scheduler):
+                pid = identity["pid"]
+                try:
+                    arguments = (Path("/proc") / str(pid) / "cmdline").read_bytes().decode().split("\0")
+                    values = dict(item.split("=", 1) for item in
+                                  (Path("/proc") / str(pid) / "environ").read_bytes().decode().split("\0") if "=" in item)
+                except (OSError, ValueError, UnicodeDecodeError):
+                    continue
+                if arguments and Path(arguments[0]).name == "daprd" and arguments.count("--app-id") == 1:
+                    app_index = arguments.index("--app-id") + 1
+                    app = arguments[app_index] if app_index < len(arguments) else None
+                    if app in CATALOG_RECEIVER_POLICIES:
+                        require(app not in sidecar_directories, "Catalog sidecar identity is not unique")
+                        sidecar_directories[app] = verify_catalog_sidecar_policy(app, arguments, self.catalog_private)
+                for app in ("eventstore", "timesheets"):
+                    executable = "Hexalith.EventStore" if app == "eventstore" else "Hexalith.Timesheets"
+                    if any(Path(value).name == executable for value in arguments if value):
+                        require(app not in observed and values.get("TIMESHEETS_LIVE_DAPR_COMPONENTS") == self.scratch,
+                                "Catalog host process identity is not uniquely owned")
+                        observed[app] = values
+            if (set(observed) == {"eventstore", "timesheets"}
+                    and set(sidecar_directories) == {"eventstore", "timesheets"}):
+                return observed, sidecar_directories
+            if time.monotonic() >= until:
+                require(set(observed) == {"eventstore", "timesheets"}, "Actual catalog host processes are unavailable")
+                raise FixtureError("Actual catalog sidecar processes are unavailable")
+            time.sleep(0.2)
 
     def _capture_route_catalog(self, phase):
         """Read the SDK's real receiver, policy and committed generation observations."""
         require(self.route_catalog and self.catalog_private is not None, "Catalog observation lacks its private owner")
-        observed = {}
-        sidecar_directories = {}
-        for identity in self.resource_check(self.scratch, self.placement, self.scheduler):
-            pid = identity["pid"]
-            try:
-                arguments = (Path("/proc") / str(pid) / "cmdline").read_bytes().decode().split("\0")
-                values = dict(item.split("=", 1) for item in
-                              (Path("/proc") / str(pid) / "environ").read_bytes().decode().split("\0") if "=" in item)
-            except (OSError, ValueError, UnicodeDecodeError):
-                continue
-            if arguments and Path(arguments[0]).name == "daprd" and arguments.count("--app-id") == 1:
-                app_index = arguments.index("--app-id") + 1
-                app = arguments[app_index] if app_index < len(arguments) else None
-                if app in CATALOG_RECEIVER_POLICIES:
-                    require(app not in sidecar_directories, "Catalog sidecar identity is not unique")
-                    sidecar_directories[app] = verify_catalog_sidecar_policy(app, arguments, self.catalog_private)
-            for app in ("eventstore", "timesheets"):
-                executable = "Hexalith.EventStore" if app == "eventstore" else "Hexalith.Timesheets"
-                if any(Path(value).name == executable for value in arguments if value):
-                    require(app not in observed and values.get("TIMESHEETS_LIVE_DAPR_COMPONENTS") == self.scratch,
-                            "Catalog host process identity is not uniquely owned")
-                    observed[app] = values
-        require(set(observed) == {"eventstore", "timesheets"}, "Actual catalog host processes are unavailable")
+        until = time.monotonic() + 60
+        observed, sidecar_directories = self.wait_for_catalog_processes(until)
         directory_values = {values.get("EventStore__RouteCatalog__DevelopmentBootstrap__Directory")
                             for values in observed.values()}
         require(len(directory_values) == 1 and None not in directory_values,
@@ -2121,7 +2420,6 @@ class IsolatedFixture:
         required = ["catalog.json", "activation.json", "eventstore.observation.json",
                     "timesheets.observation.json", "eventstore.committed.json",
                     "timesheets.committed.json", "authority.component.json"]
-        until = time.monotonic() + 60
         while not all((directory / name).is_file() for name in required) and time.monotonic() < until:
             time.sleep(0.2)
         require(all((directory / name).is_file() for name in required),
@@ -2149,11 +2447,15 @@ class IsolatedFixture:
         catalog_digest = hashlib.sha256((directory / "catalog.json").read_bytes()).hexdigest()
         activation = documents["activation.json"]
         technical_receivers = activation.get("TechnicalHttpReceivers")
-        require(activation["RootDigest"] == catalog_digest
-                and (technical_receivers is None or isinstance(technical_receivers, list))
-                and not technical_receivers
+        require(activation["RootDigest"] == catalog_digest and len(activation["RequiredHosts"]) == 2
                 and {host["HostId"] for host in activation["RequiredHosts"]} == {"eventstore", "timesheets"},
                 "Committed catalog activation differs from its selected owner")
+        technical_action_count = verify_catalog_technical_membership(activation,
+            {app: documents[app + ".observation.json"] for app in ("eventstore", "timesheets")})
+        proof = self.verify_catalog_sdk_binding(directory)
+        require(proof["binding_digest"] == activation.get("TrustProof")
+                and proof["technical_action_count"] == technical_action_count,
+                "Catalog SDK binding proof differs from the captured activation")
         require(self.source_before is not None, "Captured Debug/source binary identity is unavailable")
         captured_files = self.source_before["files"]
         observations = {}
@@ -2232,6 +2534,9 @@ class IsolatedFixture:
                    "generation": catalog["generation"], "root_digest": catalog_digest,
                    "route_ids": sorted(route_ids), "receivers": observations,
                    "authority_component": authority["metadata"]["name"],
+                   "technical_receiver_app_ids": ["eventstore"], "technical_action_count": technical_action_count,
+                   "metadata_receiver": catalog_metadata_receiver_facts(documents["timesheets.observation.json"], captured_files),
+                   "activation_binding_digest": proof["binding_digest"], "sdk_binding_verified": True,
                    "complete": True}
         require(self.write_evidence("route-catalog-" + phase + ".json", json.dumps(receipt, indent=2) + "\n"),
                 "Catalog observation evidence is incomplete")
@@ -2342,7 +2647,8 @@ class IsolatedFixture:
             if (not root.is_dir() or root.is_symlink() or root.stat().st_mode & 0o077
                 or not manifest.is_file() or manifest.is_symlink() or manifest.stat().st_mode & 0o077
                 or not owner.is_file() or owner.is_symlink() or owner.stat().st_mode & 0o077
-                or json.loads(owner.read_text()) != json.loads((self.catalog_private / "owner-profile.json").read_text())):
+                or not catalog_custody_owner_matches(json.loads((self.catalog_private / "owner-profile.json").read_text()),
+                                                    json.loads(owner.read_text()))):
                 return False
             inventory = json.loads(manifest.read_text())
             generation = inventory.get("generation")
@@ -2447,6 +2753,13 @@ class IsolatedFixture:
                 except OSError:
                     failed = True
                     reasons.append("Private catalog custody removal failed")
+        if self.catalog_verifier_directory is not None:
+            try:
+                shutil.rmtree(self.catalog_verifier_directory)
+                self.catalog_verifier_directory = None
+            except OSError:
+                failed = True
+                reasons.append("Owned catalog verifier removal failed")
         if self.evidence_write_failed:
             failed = True
             reasons.append("Fixture evidence write failed")
@@ -2594,9 +2907,11 @@ class IsolatedFixture:
             self.resolve_gateway_invocation()
             if self.security_smoke or self.route_catalog:
                 # Rebuild only after idle admission. This binds the selected source
-                # graph to the executable that the subsequent no-build launch uses.
+                # graph to the executable that the subsequent launch uses.
                 self.run_command(["dotnet", "build", str(ROOT / "Hexalith.Timesheets.slnx"), "--configuration", "Debug", "--no-restore",
                     "-p:UseHexalithProjectReferences=true", "-warnaserror", "-m:1", "/nr:false"], timeout=180)
+                if self.route_catalog and not self.injected_command:
+                    self.prepare_catalog_binding_verifier()
                 source_before = self.capture_source_identity()
                 self.source_before = source_before
                 require(self.write_evidence("source-before.json", json.dumps(source_before, indent=2) + "\n"),
@@ -2610,7 +2925,12 @@ class IsolatedFixture:
             if self.security_smoke:
                 self.environment[SECURITY_SMOKE_SETTING] = "1"
             self.start_attempted = True
-            self.run_command(["aspire", "start", "--no-build", "--non-interactive", "--apphost", str(APPHOST), "--format", "Json"], timeout=180)
+            launch = ["aspire", "start"]
+            if not self.route_catalog:
+                launch.append("--no-build")
+            # Selected owner preparation requires an ordinary build-capable launch.
+            # The pre-start snapshot still binds every asset across that build.
+            self.run_command([*launch, "--non-interactive", "--apphost", str(APPHOST), "--format", "Json"], timeout=180)
             require(self.ownership_check(), "The started AppHost is not owned by this fixture")
             if not self.injected_command:
                 for resource in ("eventstore", "timesheets"):
@@ -2644,6 +2964,8 @@ class IsolatedFixture:
             try:
                 result = self.run_command([str(executable), "-class", "*MagicLinkLiveDaprTests", "-noColor"], timeout=510, check=False, journey=True)
                 exit_code = result.returncode
+                if self.route_catalog and exit_code != 0:
+                    self.capture_catalog_failure_diagnostics("journey")
                 journey_outcome.update(command_completed=True, command_exit_code=exit_code,
                                        command_completed_unix_ns=time.time_ns())
                 print(sanitized((result.stdout or "") + (result.stderr or "")), end="", flush=True)
@@ -3032,21 +3354,7 @@ def verify_runtime_components(endpoint, directory, placement, scheduler, observa
             require(len(authority) == 1, "Catalog sidecar did not load one exact owned authority component")
             try:
                 rendered = json.loads(authority[0].read_text())
-                rows = rendered["spec"]["metadata"]
-                require(isinstance(rows, list) and all(isinstance(item, dict)
-                        and set(item) == {"name", "value"} for item in rows),
-                        "Rendered catalog authority differs from the private owner backend")
-                metadata = {item["name"]: item["value"] for item in rows}
-                require(len(metadata) == len(rows)
-                        and rendered["apiVersion"] == "dapr.io/v1alpha1"
-                        and rendered["kind"] == "Component"
-                        and rendered["metadata"]["name"] == "timesheets-route-authority"
-                        and rendered["spec"]["type"] == "state.redis"
-                        and rendered["spec"]["version"] == "v1"
-                        and set(rendered["scopes"]) == {"eventstore", "timesheets"}
-                        and metadata == {"redisHost": endpoint, "redisPassword": "",
-                                         "redisDB": "13", "keyPrefix": "name"},
-                        "Rendered catalog authority differs from the private owner backend")
+                verify_rendered_catalog_authority(rendered, endpoint)
             except (ValueError, KeyError, TypeError, AttributeError):
                 raise FixtureError("Rendered catalog authority is unavailable") from None
             expected.append(contents[files.index(authority[0])])

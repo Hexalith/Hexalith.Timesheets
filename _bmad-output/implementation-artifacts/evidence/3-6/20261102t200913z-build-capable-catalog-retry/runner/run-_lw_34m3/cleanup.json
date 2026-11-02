@@ -1,0 +1,11 @@
+{
+  "complete": false,
+  "journey_descendants_gone": true,
+  "failure_reasons": [
+    "Private catalog custody is incomplete; retaining protected profile"
+  ],
+  "components_created": true,
+  "components_removed": true,
+  "catalog_profile_removed": false,
+  "containers_removed": null
+}

@@ -1,0 +1,33 @@
+{
+  "scope": "Post-failure supported catalog-only owner path declaration; strict source snapshot and guards retained",
+  "files": {
+    "src/Hexalith.Timesheets.AppHost/Program.cs": {
+      "before_attempt_sha256": "5b28d6062e438f678dbd98bcaba800ff66e48dcfcb5eb6719c87d9964871178f",
+      "repaired_sha256": "bb906be2e2766fdbf58837775809233d46ba9cddbf3a81cd0e7504f3134088ab"
+    },
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "d817d8552c3ffdd4447ec81ea22b7f67682dadc76e79aedab1db6fade7fd8ec1",
+      "repaired_sha256": "d817d8552c3ffdd4447ec81ea22b7f67682dadc76e79aedab1db6fade7fd8ec1"
+    },
+    "scripts/test_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "146e6c5cfe3637709dbd879d7e3cb58048ae94e3bdeaf2256af406822039d146",
+      "repaired_sha256": "0237e9be9cb715255066d1f73923aef7a13e43d84c60fb75e34d5790d76ab900"
+    }
+  },
+  "compiled_actual_declaration_regression": "pass",
+  "debug_source_restore_build": "pass; zero warnings/errors",
+  "relevant_architecture_cases_passed": 47,
+  "python_first_run": {
+    "cases": 219,
+    "failures": 104,
+    "errors": 17,
+    "exit_code": 1,
+    "canonical_lock_contended": true
+  },
+  "python_after_contention": {
+    "cases": 219,
+    "exit_code": 0
+  },
+  "dependencies_changed": false,
+  "sdk_predicates_bypassed": false
+}

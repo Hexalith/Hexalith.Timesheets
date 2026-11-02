@@ -1,0 +1,38 @@
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+compiled eight-route SDK catalog and exact receivers committed
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.14)
+  Discovering: Hexalith.Timesheets.IntegrationTests
+  Discovered:  Hexalith.Timesheets.IntegrationTests
+  Starting:    Hexalith.Timesheets.IntegrationTests
+    Hexalith.Timesheets.IntegrationTests.MagicLinkLiveDaprTests.RecordedMagicLinksCommitOneUseAndSurviveActorRestart [FAIL]
+      Shouldly.ShouldAssertException : exitCode
+          should be
+      0
+          but was
+      1
+      
+      Additional Info:
+          Local Dapr journey failed. Output: isolated actor/read-model/pubsub and placement/scheduler endpoints verified
+      generated app-channel and signing credentials verified
+       Error: Traceback (most recent call last):
+        File "/home/administrator/projects/hexalith/timesheets/scripts/local_aspire_magic_link_journey.py", line 606, in <module>
+          require(metadata_status == 200, f"Projection metadata returned {metadata_status}")
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/administrator/projects/hexalith/timesheets/scripts/local_aspire_magic_link_journey.py", line 30, in require
+          raise RuntimeError(message)
+      RuntimeError: Projection metadata returned 403
+      
+      Stack Trace:
+        tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs(22,0): at Hexalith.Timesheets.IntegrationTests.MagicLinkLiveDaprTests.RecordedMagicLinksCommitOneUseAndSurviveActorRestart()
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+        --- End of stack trace from previous location ---
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Finished:    Hexalith.Timesheets.IntegrationTests (ID = '32f65c821a355e56a6b399a747027e8f06d6a6c65791661c7f82c5c5d8b8c422')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.IntegrationTests  Total: 1, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 0.421s
+Gateway native PID/start replacement could not be verified
+Sanitized fixture evidence: /home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261102t223413z-exact-backend-catalog-retry/runner/run-w2vxnm9e

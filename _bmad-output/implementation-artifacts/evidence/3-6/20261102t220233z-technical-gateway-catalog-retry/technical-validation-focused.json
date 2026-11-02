@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_technical_membership_requires_complete_exact_gateway_witnesses",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_capture_binds_sidecar_configs_to_one_receipt_directory_and_sanitizes_json",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_sdk_verifier_binds_artifacts_and_withholds_private_parser_diagnostics"
+  ],
+  "started_utc": "2026-11-02T22:11:07.431591+00:00",
+  "finished_utc": "2026-11-02T22:11:09.402901+00:00",
+  "duration_seconds": 1.971297,
+  "exit_code": 0
+}

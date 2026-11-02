@@ -1,0 +1,2 @@
+{"host":"eventstore","valid":false,"codes":["undeclared-acl-operation"]}
+{"host":"timesheets","valid":true,"codes":[]}

@@ -1,0 +1,22 @@
+  Determining projects to restore...
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Contracts/Hexalith.Timesheets.Contracts.csproj (in 256 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Admin.Abstractions/Hexalith.EventStore.Admin.Abstractions.csproj (in 215 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.ServiceDefaults/Hexalith.Timesheets.ServiceDefaults.csproj (in 256 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations.CodeGenerators/Hexalith.PolymorphicSerializations.CodeGenerators.csproj (in 215 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.ServiceDefaults/Hexalith.EventStore.ServiceDefaults.csproj (in 256 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.PolymorphicSerializations/src/libraries/Hexalith.PolymorphicSerializations/Hexalith.PolymorphicSerializations.csproj (in 256 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Client/Hexalith.EventStore.Client.csproj (in 215 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.Works/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj (in 256 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj (in 258 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj (in 256 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets/Hexalith.Timesheets.csproj (in 256 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Works/Hexalith.Timesheets.Works.csproj (in 258 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.Works.Tests/Hexalith.Timesheets.Works.Tests.csproj (in 264 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj (in 230 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.ReadModels/Hexalith.Timesheets.ReadModels.csproj (in 5 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.DomainService/Hexalith.EventStore.DomainService.csproj (in 7 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Server/Hexalith.EventStore.Server.csproj (in 8 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore/src/Hexalith.EventStore.Gateway/Hexalith.EventStore.Gateway.csproj (in 7 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj (in 7 ms).
+  Restored /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj (in 15 ms).
+  10 of 30 projects are up-to-date for restore.

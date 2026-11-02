@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_invocation_denial_and_metadata_facts_withhold_unknown_private_values",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_failure_diagnostics_withhold_raw_output_and_refuse_unknown_ownership",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources"
+  ],
+  "started_utc": "2026-11-02T22:54:54.076800+00:00",
+  "finished_utc": "2026-11-02T22:54:54.195863+00:00",
+  "duration_seconds": 0.119051,
+  "exit_code": 0
+}

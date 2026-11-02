@@ -1,0 +1,68 @@
+{
+  "runtime_version": "1.18.7",
+  "cli_version": "1.18.2",
+  "owned_launchers": [
+    {
+      "app": "eventstore",
+      "launcher_is_dapr_cli": true,
+      "argument_count": 25,
+      "private_sdk_config_selected": true,
+      "config_basename": "eventstore.configuration.json",
+      "selected_config_path_sha256": "583b4b1cdc5c249e63d927bbd8004c755906f179d22910a991266b681ebbd48b",
+      "explicit_mtls_override": false,
+      "explicit_sentry_override": false,
+      "matching_records": 2
+    },
+    {
+      "app": "timesheets",
+      "launcher_is_dapr_cli": true,
+      "argument_count": 24,
+      "private_sdk_config_selected": true,
+      "config_basename": "timesheets.configuration.json",
+      "selected_config_path_sha256": "98f45afa0273878ab3723434940ce56279434f6edad9b66a15cc3acf7c288fbf",
+      "explicit_mtls_override": false,
+      "explicit_sentry_override": false,
+      "matching_records": 2
+    }
+  ],
+  "source_generated_configuration_omits_mtls": true,
+  "cli_enables_mtls_only_if_spec_mtls_enabled": true,
+  "derived_effective_mtls_enabled": false,
+  "derived_authenticated_spiffe_caller_present": false,
+  "declared_namespace": "default",
+  "namespace_default_when_environment_absent": "default",
+  "declared_trust_domain": "public",
+  "no_authenticated_caller_trust_domain_without_mtls": true,
+  "leading_slash_normalized_both_sides": true,
+  "raw_response_classification": "ERR_DIRECT_INVOKE",
+  "http_status": 403,
+  "grpc_permission_denied_transport_branch": true,
+  "authorization_log_categories_are_resource_wide": true,
+  "foreign_credentials_accessed": false,
+  "new_identity_topology_added": false,
+  "mode_evidence": "Derived from recorded selected-config launch paths, immutable measured fixture/SDK configuration construction, and pinned CLI/runtime source; native process flags and private configs were disposed by successful cleanup.",
+  "environment_presence_only": {
+    "NAMESPACE": false,
+    "DAPR_TRUST_ANCHORS": false,
+    "DAPR_TRUST_ANCHORS_FILE": false,
+    "DAPR_CERT_CHAIN": false,
+    "DAPR_CERT_KEY": false,
+    "DAPR_RUNTIME_PATH": false
+  },
+  "generated_policy_mtls_field_absent": {
+    "eventstore": true,
+    "timesheets": true
+  },
+  "launch_evidence": {
+    "owned_cli_log_basename": "cli_20261102T225926342_detach-child_241984b51d3f4f01b2f109f29db9ace6.log",
+    "owned_cli_log_sha256": "b23bab5edbc52bd3979e88e28b9b33e75b74ae213ab5962721791bd21394c517",
+    "owned_apphost_pid_reference": 1673778,
+    "owned_apphost_pid_occurrences": 14,
+    "raw_log_copied": false,
+    "config_contents_retained": false,
+    "native_daprd_flags_retained": false
+  },
+  "environment_presence_scope": "diagnostic process inherited environment after cleanup; no secret values or native sidecar environment retained",
+  "existing_sdk_owned_mtls_fixture": "RouteCatalogHostedLiveTests / RouteCatalogDevelopmentSentry / RouteCatalogDevelopmentSidecar.ConfigureMutualTls; separate Sentry/trust topology outside approved graph",
+  "outside_repository_scope_stop": true
+}

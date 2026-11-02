@@ -1,0 +1,19 @@
+{
+  "scope": "Bounded constant-only owned-resource diagnostics at catalog observation failure",
+  "files": {
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "935a72c862b05b2c53b1960b9e1fabb7d013335939606f385304e86d32af4f6f",
+      "repaired_sha256": "c7b90120bc9ff66539d90260b9097812b9782d4dba9550ba7cc146965dbfe70b"
+    },
+    "scripts/test_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "510bd3ba97572d063d973cd7c3ad18b2c7afeaa8ac1465820ef841e557649bec",
+      "repaired_sha256": "8abe9dc4e6233cd7163cc7da3a879d01e1e776754381a2aff49787e29b9a14e6"
+    }
+  },
+  "catalog_deadline_changed": false,
+  "bootstrap_order_changed": false,
+  "authority_or_dependency_changed": false,
+  "raw_diagnostic_output_retained": false,
+  "ownership_timeout_redaction_original_failure_cleanup_tests": "pass",
+  "python_tests_passed": 222
+}

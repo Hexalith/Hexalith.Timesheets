@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_isolated_magic_link_dapr.py",
+    "-k",
+    "test_catalog_waits_for_native_child_and_refuses_launcher_at_deadline"
+  ],
+  "started_utc": "2026-11-02T20:38:59.284312+00:00",
+  "finished_utc": "2026-11-02T20:38:59.441926+00:00",
+  "duration_seconds": 0.157588,
+  "exit_code": 0
+}

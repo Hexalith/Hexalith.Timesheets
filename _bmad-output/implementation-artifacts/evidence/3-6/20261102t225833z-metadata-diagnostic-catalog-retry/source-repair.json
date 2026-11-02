@@ -1,0 +1,11 @@
+{
+  "recorded_utc": "2026-11-02T23:17:24.341738+00:00",
+  "files": {
+    "scripts/run_isolated_magic_link_dapr.py": "945aea3a7fcf2832e845de8d9b40d4d503dc217715599e9c8c03867fce7176fe",
+    "scripts/local_aspire_magic_link_journey.py": "1e1aee299bfb8129aa88ab01fe359d24de356701de98da6c3834690c71bbf818",
+    "scripts/test_isolated_magic_link_dapr.py": "d7e4f0d69a0ed2bc5ab0a41bb5c2c5d841f85d360ce69e9953c3a3d7ddf8163e",
+    "scripts/CatalogBindingVerifier.cs": "13e1025acbc9fbcecd876ba16fcb324dc125bdabbdea250e5738bab3e17dcb23",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "56e3da206f3e5f261d8d1143e0c6f0cdf99cb96d859a8b1dfd3fcabbd8fc768e"
+  },
+  "scope": "Carry forward verified local repairs; this diagnostic attempt changed no caller, credential, authority, ACL, topology or dependency."
+}

@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "python3",
+    "scripts/run_isolated_magic_link_dapr.py",
+    "--route-catalog",
+    "--public-port",
+    "18080",
+    "--log-directory",
+    "/home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261102t223413z-exact-backend-catalog-retry/runner"
+  ],
+  "started_utc": "2026-11-02T22:34:25.929508+00:00",
+  "finished_utc": "2026-11-02T22:35:52.898879+00:00",
+  "duration_seconds": 86.972545,
+  "exit_code": 1
+}

@@ -1,0 +1,29 @@
+.E
+======================================================================
+ERROR: test_catalog_capture_binds_sidecar_configs_to_one_receipt_directory_and_sanitizes_json (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_capture_binds_sidecar_configs_to_one_receipt_directory_and_sanitizes_json)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1469, in test_catalog_capture_binds_sidecar_configs_to_one_receipt_directory_and_sanitizes_json
+    self.assertEqual(digest, instance.capture_route_catalog("before")["root_digest"])
+                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2229, in capture_route_catalog
+    return self._capture_route_catalog(phase)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2389, in _capture_route_catalog
+    require(observation["HostId"] == app and observation["AppId"] == app
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            and set(observation["RequiredHostIds"]) == {"eventstore", "timesheets"}
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+            == sorted(json.dumps(host, sort_keys=True) for host in activation["RequiredHosts"]),
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            "Catalog receiver or persisted readback differs from the committed generation")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 122, in require
+    raise FixtureError(message)
+run_isolated_magic_link_dapr.FixtureError: Catalog receiver or persisted readback differs from the committed generation
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.005s
+
+FAILED (errors=1)

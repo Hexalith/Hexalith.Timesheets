@@ -1,0 +1,98 @@
+[2026-11-02 20:32:15.957] [DBUG] [ProcessExecutionFactory] dotnet env: [opaque-value]
+
+[2026-11-02 20:32:15.957] [DBUG] [ProcessExecutionFactory] dotnet env: [opaque-value]
+
+[2026-11-02 20:32:15.957] [DBUG] [ProcessExecutionFactory] dotnet(2150773) started in [opaque-value].Timesheets.AppHost
+
+[2026-11-02 20:32:16.495] [DBUG] [ProcessExecutionFactory] dotnet(2150773) exited with code: 0
+
+[2026-11-02 20:32:16.556] [WARN] [NativeCertificateToolRunner] Failed to trust the certificate in the NSS database in '/home/administrator/.pki/nssdb'. This will likely affect the Chromium family of browsers. This likely indicates that the database already contains an entry for the certificate under a different name. Please remove it and try again.
+
+[2026-11-02 20:32:16.921] [INFO] [Stdout] ⚠️ Developer certificates may not be fully trusted (trust exit code was: [opaque-value]).
+
+[2026-11-02 20:32:16.940] [DBUG] [ProcessExecutionFactory] dotnet env: [opaque-value]
+
+[2026-11-02 20:32:16.940] [DBUG] [ProcessExecutionFactory] dotnet env: [opaque-value]
+
+[2026-11-02 20:32:16.940] [DBUG] [ProcessExecutionFactory] dotnet(2151206) started in [opaque-value].Timesheets.AppHost
+
+[2026-11-02 20:32:37.041] [INFO] [Build]     0 Error(s)
+
+[2026-11-02 20:32:37.071] [DBUG] [ProcessExecutionFactory] dotnet(2151206) exited with code: 0
+
+[2026-11-02 20:32:37.072] [DBUG] [ProcessExecutionFactory] [opaque-value].Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost env: [opaque-value]
+
+[2026-11-02 20:32:37.072] [DBUG] [ProcessExecutionFactory] [opaque-value].Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost env: [opaque-value]
+
+[2026-11-02 20:32:37.072] [DBUG] [ProcessExecutionFactory] [opaque-value].Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost(2160554) started in [opaque-value].Timesheets.AppHost
+
+[2026-11-02 20:33:01.230] [INFO] [AppHost]       Watching over DCP Executable resources.
+
+[2026-11-02 20:33:01.229] [DBUG] [AppHost/DcpExecutor] Watching over DCP Executable resources.
+
+[2026-11-02 20:33:01.521] [INFO] [AppHost] dbug: Aspire.Hosting.Dcp.dcp.IdeExecutableRunner[0]
+
+[2026-11-02 20:33:01.521] [INFO] [AppHost]       Executables cannot be started via IDE: missing required environment variable 'DEBUG_SESSION_PORT'
+
+[2026-11-02 20:33:01.517] [DBUG] [AppHost/IdeExecutableRunner] Executables cannot be started via IDE: missing required environment variable 'DEBUG_SESSION_PORT'
+
+[2026-11-02 20:33:02.084] [INFO] [AppHost] dbug: Aspire.Hosting.Dcp.dcp.ExecutableReconciler[0]
+
+[2026-11-02 20:33:02.084] [INFO] [AppHost]       Starting process...	{"Executable": "/eventstore-dmazwxca", "Reconciliation": 4, "Cmd": "[opaque-value].EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore", "Args": []}
+
+[2026-11-02 20:33:02.085] [INFO] [AppHost] dbug: Aspire.Hosting.Dcp.dcp.ExecutableReconciler[0]
+
+[2026-11-02 20:33:02.085] [INFO] [AppHost]       Starting process...	{"Executable": "[opaque-value]", "Reconciliation": 5, "Cmd": "/usr/local/bin/dapr", "Args": ["run", "--app-id", "eventstore", "--config", "[opaque-value].configuration.json", "--placement-host-address", "127.0.0.1:25728", "--resources-path", "[opaque-value]", "--resources-path", "/tmp/aspire-dapr.[opaque-value]", "--scheduler-host-address", "127.0.0.1:26912", "--app-port", "8082", "--dapr-grpc-port", "22838", "--dapr-http-port", "22837", "--metrics-port", "22836", "--app-channel-address", "localhost", "--app-protocol", "http"]}
+
+[2026-11-02 20:33:02.085] [INFO] [AppHost] dbug: Aspire.Hosting.Dcp.dcp.ExecutableReconciler[0]
+
+[2026-11-02 20:33:02.085] [INFO] [AppHost]       Starting process...	{"Executable": "/aspire-dashboard-ndzppara", "Reconciliation": 6, "Cmd": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.4/tools/Aspire.Dashboard", "Args": []}
+
+[2026-11-02 20:33:02.151] [INFO] [AppHost] dbug: Aspire.Hosting.Dcp.dcp.ExecutableReconciler[0]
+
+[2026-11-02 20:33:02.151] [INFO] [AppHost]       Starting process...	{"Executable": "[opaque-value]", "Reconciliation": 14, "Cmd": "/usr/local/bin/dapr", "Args": ["run", "--app-port", "8081", "--app-health-check-path", "/alive", "--app-id", "timesheets", "--config", "[opaque-value].configuration.json", "--enable-app-health-check", "--placement-host-address", "127.0.0.1:25728", "--resources-path", "[opaque-value]", "--resources-path", "/tmp/aspire-dapr.[opaque-value]", "--scheduler-host-address", "127.0.0.1:26912", "--dapr-grpc-port", "22841", "--dapr-http-port", "22840", "--metrics-port", "22839"]}
+
+[2026-11-02 20:33:02.196] [INFO] [AppHost] dbug: Aspire.Hosting.Dcp.dcp.ExecutableReconciler[0]
+
+[2026-11-02 20:33:02.196] [INFO] [AppHost]       Starting process...	{"Executable": "/timesheets-hjjyveqt", "Reconciliation": 16, "Cmd": "/home/administrator/.dotnet/dotnet", "Args": ["run", "--project", "[opaque-value].Timesheets/Hexalith.Timesheets.csproj", "--configuration", "Debug", "--no-launch-profile"]}
+
+[2026-11-02 20:33:02.084] [DBUG] [[opaque-value]] Starting process...	{"Executable": "/eventstore-dmazwxca", "Reconciliation": 4, "Cmd": "[opaque-value].EventStore/src/Hexalith.EventStore/bin/Debug/net10.0/Hexalith.EventStore", "Args": []}
+
+[2026-11-02 20:33:02.084] [DBUG] [[opaque-value]] Starting process...	{"Executable": "[opaque-value]", "Reconciliation": 5, "Cmd": "/usr/local/bin/dapr", "Args": ["run", "--app-id", "eventstore", "--config", "[opaque-value].configuration.json", "--placement-host-address", "127.0.0.1:25728", "--resources-path", "[opaque-value]", "--resources-path", "/tmp/aspire-dapr.[opaque-value]", "--scheduler-host-address", "127.0.0.1:26912", "--app-port", "8082", "--dapr-grpc-port", "22838", "--dapr-http-port", "22837", "--metrics-port", "22836", "--app-channel-address", "localhost", "--app-protocol", "http"]}
+
+[2026-11-02 20:33:02.085] [DBUG] [[opaque-value]] Starting process...	{"Executable": "/aspire-dashboard-ndzppara", "Reconciliation": 6, "Cmd": "/tmp/dotnet-cli-home/.nuget/packages/aspire.dashboard.sdk.linux-x64/13.6.4/tools/Aspire.Dashboard", "Args": []}
+
+[2026-11-02 20:33:02.151] [DBUG] [[opaque-value]] Starting process...	{"Executable": "[opaque-value]", "Reconciliation": 14, "Cmd": "/usr/local/bin/dapr", "Args": ["run", "--app-port", "8081", "--app-health-check-path", "/alive", "--app-id", "timesheets", "--config", "[opaque-value].configuration.json", "--enable-app-health-check", "--placement-host-address", "127.0.0.1:25728", "--resources-path", "[opaque-value]", "--resources-path", "/tmp/aspire-dapr.[opaque-value]", "--scheduler-host-address", "127.0.0.1:26912", "--dapr-grpc-port", "22841", "--dapr-http-port", "22840", "--metrics-port", "22839"]}
+
+[2026-11-02 20:33:02.157] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171840, "PID": 2171472}
+
+[2026-11-02 20:33:02.157] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171840, "PID": 2171840}
+
+[2026-11-02 20:33:02.187] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171837, "PID": 2171472}
+
+[2026-11-02 20:33:02.187] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171837, "PID": 2171837}
+
+[2026-11-02 20:33:02.192] [DBUG] [[opaque-value]] Starting process...	{"Executable": "/timesheets-hjjyveqt", "Reconciliation": 16, "Cmd": "/home/administrator/.dotnet/dotnet", "Args": ["run", "--project", "[opaque-value].Timesheets/Hexalith.Timesheets.csproj", "--configuration", "Debug", "--no-launch-profile"]}
+
+[2026-11-02 20:33:02.286] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171838, "PID": 2171472}
+
+[2026-11-02 20:33:02.286] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171838, "PID": 2171838}
+
+[2026-11-02 20:33:02.317] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171952, "PID": 2171472}
+
+[2026-11-02 20:33:02.317] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171952, "PID": 2171952}
+
+[2026-11-02 20:33:02.340] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171920, "PID": 2171472}
+
+[2026-11-02 20:33:02.341] [DBUG] [AppHost/ProcessMonitor] Started monitoring process	{"MonitorPID": 2171472, "ChildPID": 2171920, "PID": 2171920}
+
+[2026-11-02 20:33:03.892] [INFO] [AppHost]       Cancellation received while watching Executable resources.
+
+[2026-11-02 20:33:03.892] [INFO] [AppHost]       Stopped watching Executable resources.
+
+[2026-11-02 20:33:03.892] [DBUG] [AppHost/DcpExecutor] Cancellation received while watching Executable resources.
+
+[2026-11-02 20:33:03.892] [DBUG] [AppHost/DcpExecutor] Stopped watching Executable resources.
+
+[2026-11-02 20:33:04.075] [DBUG] [ProcessExecutionFactory] [opaque-value].Timesheets.AppHost/bin/Debug/net10.0/Hexalith.Timesheets.AppHost(2160554) exited with code: 0
+

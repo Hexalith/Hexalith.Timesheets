@@ -1,0 +1,21 @@
+{
+  "scope": "Configuration-only pinned Aspire 13.6.4 public API/model probe; no resources started",
+  "typed_declaration": {
+    "metadata_suppressed": true,
+    "effective_suppressed": false,
+    "launch_argument_overrides": 0
+  },
+  "path_declaration": {
+    "metadata_suppressed": false,
+    "effective_suppressed": false,
+    "launch_argument_overrides": 0
+  },
+  "same_exact_generated_project_path": true,
+  "same_single_project_resource": true,
+  "same_two_endpoints": true,
+  "source_files_sha256": {
+    "generated-project-metadata.txt": "4fe2766ece407f85eeb90d38ee298d6e982dae3ad012658d922b45e997f456e9",
+    "OwnerSelectionProbe.csproj": "47cbec8ca695b63e8d1ed4d48cdcb28e71714de01e23da4cdd6395d43431bc07",
+    "Program.cs": "2081f409dab5816e49f8fe2531769acd78e78b50f04e8c6b931212b70d3aba9f"
+  }
+}

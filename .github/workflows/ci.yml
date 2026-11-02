@@ -105,4 +105,6 @@ jobs:
       - name: Build the AppHost executable exercised by fixture tests
         run: dotnet build src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --configuration Release -p:UseHexalithProjectReferences=false -m:1 /nr:false
       - name: Verify isolated fixture drivers and diagnostic redaction
+        env:
+          TIMESHEETS_TEST_CONFIGURATION: Release
         run: python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py -v

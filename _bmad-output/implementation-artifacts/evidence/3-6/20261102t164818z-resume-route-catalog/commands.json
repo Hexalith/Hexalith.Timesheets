@@ -1,0 +1,46 @@
+{
+  "executed_runtime_inspection": [
+    {
+      "argv": [
+        "dapr",
+        "list",
+        "--output",
+        "json"
+      ],
+      "started_utc": "2026-11-02T16:48:33.081696+00:00",
+      "finished_utc": "2026-11-02T16:48:33.184816+00:00",
+      "duration_seconds": 0.103137,
+      "exit_code": 0,
+      "inventory_shape": "array",
+      "entry_count": 8,
+      "raw_inventory_retained": false
+    }
+  ],
+  "entrypoint": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 -",
+    "api_sequence": [
+      "LocalRuntimeAdmission.__enter__",
+      "IsolatedFixture(log_directory=<fresh packet>/preflight, public_port=18080, route_catalog=True)",
+      "IsolatedFixture.preflight",
+      "IsolatedFixture.cleanup (no resources)",
+      "LocalRuntimeAdmission.__exit__"
+    ],
+    "exit_code": 1,
+    "started_utc": "2026-11-02T16:48:33.081481+00:00",
+    "finished_utc": "2026-11-02T16:48:33.187502+00:00"
+  },
+  "not_invoked": [
+    "aspire ps --non-interactive --format Json",
+    "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "DOTNET_CLI_HOME=/tmp/dotnet-cli-home python3 scripts/run_isolated_magic_link_dapr.py --route-catalog --public-port 18080 --log-directory _bmad-output/implementation-artifacts/evidence/3-6/20261102t164818z-resume-route-catalog",
+    "python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py",
+    "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests",
+    "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests",
+    "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests",
+    "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests",
+    "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests"
+  ],
+  "not_invoked_reason": "The spec requires stopping when safe idle admission is unavailable; there was no retry or fallback."
+}

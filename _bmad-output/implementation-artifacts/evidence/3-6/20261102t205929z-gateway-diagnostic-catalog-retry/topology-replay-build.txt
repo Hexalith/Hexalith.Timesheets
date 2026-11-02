@@ -1,0 +1,9 @@
+  Determining projects to restore...
+  Restored /tmp/timesheets-topology-replay-7o8ebnkh/TopologyReplay.csproj (in 42 ms).
+  TopologyReplay -> /tmp/timesheets-topology-replay-7o8ebnkh/bin/Debug/net10.0/TopologyReplay.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.65

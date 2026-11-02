@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_isolated_magic_link_dapr.py"
+  ],
+  "started_utc": "2026-11-02T22:29:34.719762+00:00",
+  "finished_utc": "2026-11-02T22:30:27.563083+00:00",
+  "duration_seconds": 52.845658,
+  "exit_code": 0
+}

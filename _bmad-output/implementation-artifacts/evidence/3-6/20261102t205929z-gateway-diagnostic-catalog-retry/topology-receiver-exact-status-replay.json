@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "dotnet",
+    "run",
+    "--project",
+    "/tmp/timesheets-topology-replay-7o8ebnkh/TopologyReplay.csproj",
+    "--no-restore"
+  ],
+  "started_utc": "2026-11-02T21:10:10.559886+00:00",
+  "finished_utc": "2026-11-02T21:10:11.484657+00:00",
+  "duration_seconds": 0.924766,
+  "exit_code": 0
+}

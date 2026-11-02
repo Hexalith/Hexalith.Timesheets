@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
 from magic_link_index_selection import legacy_index_diagnostics, selected_candidate, selected_index_snapshot
-from run_isolated_magic_link_dapr import owned_http_open, validate_public_port, verify_runtime_components, security_credential_handoff
+from run_isolated_magic_link_dapr import owned_http_open, validate_public_port, verify_runtime_components, security_credential_handoff, safe_invocation_failure_category
 
 
 def require(condition, message):
@@ -603,6 +603,8 @@ metadata_status, metadata_data = call(
     {"domains": ["timesheets"], "appId": "timesheets", "serviceVersion": "v1"},
     sign("timesheets", "eventstore", "domain-service:metadata"),
 )
+if metadata_status != 200:
+    print("projection metadata denial category=" + safe_invocation_failure_category(metadata_data), flush=True)
 require(metadata_status == 200, f"Projection metadata returned {metadata_status}")
 metadata = json.loads(metadata_data)
 require(metadata["dispatchVersion"] == 2, "Projection dispatch v2 is unavailable")

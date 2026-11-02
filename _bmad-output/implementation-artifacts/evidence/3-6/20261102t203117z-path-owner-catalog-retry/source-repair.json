@@ -1,0 +1,20 @@
+{
+  "scope": "Bounded native host/sidecar wait using the existing single catalog commitment deadline",
+  "files": {
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "d817d8552c3ffdd4447ec81ea22b7f67682dadc76e79aedab1db6fade7fd8ec1",
+      "repaired_sha256": "935a72c862b05b2c53b1960b9e1fabb7d013335939606f385304e86d32af4f6f"
+    },
+    "scripts/test_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "0237e9be9cb715255066d1f73923aef7a13e43d84c60fb75e34d5790d76ab900",
+      "repaired_sha256": "510bd3ba97572d063d973cd7c3ad18b2c7afeaa8ac1465820ef841e557649bec"
+    }
+  },
+  "native_matcher_changed": false,
+  "managed_launcher_accepted": false,
+  "duplicate_or_unsafe_identity_checks_weakened": false,
+  "source_consistency_baseline_reset": false,
+  "focused_regression_passed": true,
+  "python_tests_passed": 220,
+  "dotnet_results_carried_forward": true
+}

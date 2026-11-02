@@ -1,0 +1,17 @@
+{
+  "scope": "Post-failure runner repair; no second live invocation",
+  "files": {
+    "scripts/run_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "4f969b26ebfeb2c947924b4fab466f5fc56c6c5a33c08894386fe9a772a8d7e8",
+      "repaired_sha256": "5970075d3fd60b882b1451ddec75e7820da18c9460a5c82974d827afda734971"
+    },
+    "scripts/test_isolated_magic_link_dapr.py": {
+      "before_attempt_sha256": "e86d77c935eba9e49c94226abbd5bf53ca60c59c60da7d4df92a76b904a2baba",
+      "repaired_sha256": "3919f91c4a0509f869fbd4ba6965a2de59ed19141a1a40e367334b02a2a0408b"
+    }
+  },
+  "apphost_source_changed": false,
+  "custody_guard_changed": false,
+  "configuration_only_regression": "Python suite 217 passed; compiled AppHost selection and policy/owner mutation guards used runner-derived environment",
+  "live_requalification": "unobserved"
+}

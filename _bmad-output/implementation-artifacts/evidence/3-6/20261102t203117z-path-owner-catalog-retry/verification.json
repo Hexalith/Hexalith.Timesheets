@@ -1,0 +1,20 @@
+{
+  "recorded_utc": "2026-11-02T20:42:14.705245+00:00",
+  "result": "pass",
+  "scope": "Static/source/packet integrity; no live qualification",
+  "checks": {
+    "earlier_packet_files_unchanged": 333,
+    "frozen_retry_intent_preserved": true,
+    "prior_record_prefixes_preserved": 3,
+    "compressed_artifacts_verified": 68,
+    "private_inputs_excluded": true,
+    "failed_runtime_cleanup_preserved": true,
+    "python_tests_passed": 220,
+    "deterministic_wait_regression_passed": true,
+    "native_and_source_identity_checks_unchanged": true,
+    "single_observation_and_commitment_deadline_seconds": 60,
+    "packet_local_links_verified": 16,
+    "packet_files_not_ignored": 94,
+    "git_diff_check_exit_code": 0
+  }
+}

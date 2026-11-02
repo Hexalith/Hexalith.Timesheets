@@ -1,0 +1,2 @@
+{"byPath":false,"metadataSuppressBuild":true,"effectiveSuppressBuild":false,"launchArgumentOverrideCount":0,"exactGeneratedProjectPath":true,"projectResourceCount":1,"endpointCount":2,"resourceNameMatches":true}
+{"byPath":true,"metadataSuppressBuild":false,"effectiveSuppressBuild":false,"launchArgumentOverrideCount":0,"exactGeneratedProjectPath":true,"projectResourceCount":1,"endpointCount":2,"resourceNameMatches":true}

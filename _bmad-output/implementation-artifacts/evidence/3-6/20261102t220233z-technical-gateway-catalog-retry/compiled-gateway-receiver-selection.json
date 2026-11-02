@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_compiled_gateway_receiver_selection_retains_exact_existing_grants"
+  ],
+  "started_utc": "2026-11-02T22:12:28.319620+00:00",
+  "finished_utc": "2026-11-02T22:12:30.839673+00:00",
+  "duration_seconds": 2.520031,
+  "exit_code": 0
+}

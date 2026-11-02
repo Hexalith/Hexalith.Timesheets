@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build) (catalog=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 858, in test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build
+    self.assertEqual(27, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 27 != 2
+
+----------------------------------------------------------------------
+Ran 1 test in 0.036s
+
+FAILED (failures=1)

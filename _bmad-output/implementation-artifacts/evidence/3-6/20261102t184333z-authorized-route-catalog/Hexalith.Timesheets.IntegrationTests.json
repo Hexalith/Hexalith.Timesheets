@@ -1,0 +1,10 @@
+{
+  "argv": [
+    "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "-noColor"
+  ],
+  "started_utc": "2026-11-02T18:49:23.788281+00:00",
+  "finished_utc": "2026-11-02T19:09:49.745741+00:00",
+  "duration_seconds": 1226.023324,
+  "exit_code": 58
+}

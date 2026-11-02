@@ -1,0 +1,17 @@
+{
+  "recorded_utc": "2026-11-02T20:26:19.396286+00:00",
+  "canonical_lock_file_safety": {
+    "regular_file": true,
+    "owner_matches_current_user": true,
+    "single_link": true,
+    "mode_is_0600": true
+  },
+  "holder_details_inspected": false,
+  "capture_modes_are_separate_processes": true,
+  "preparation_build_finished_utc": "2026-11-02T20:21:35.229918+00:00",
+  "python_suite_started_utc": "2026-11-02T20:23:12.993781+00:00",
+  "preparation_command_observed_exit_code": 0,
+  "python_capture_mode_acquires_admission": false,
+  "admission_available_now": false,
+  "reason": "Local runtime admission is busy or unsafe; no resources started"
+}

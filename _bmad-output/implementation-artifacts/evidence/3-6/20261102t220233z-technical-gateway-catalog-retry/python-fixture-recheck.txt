@@ -1,0 +1,7 @@
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+...................................................................................................................................................................................................................................
+----------------------------------------------------------------------
+Ran 227 tests in 55.164s
+
+OK

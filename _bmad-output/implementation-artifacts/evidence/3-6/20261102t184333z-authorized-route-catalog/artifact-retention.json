@@ -1,0 +1,390 @@
+{
+  "format": "lossless-gzip-v1",
+  "purpose": "Retain full sanitized runner diagnostics and source identities compactly, including normally ignored .log files",
+  "files": [
+    {
+      "original": "preflight/run-prm_9pwb/01-dapr-list.log",
+      "retained": "preflight/run-prm_9pwb/01-dapr-list.log.gz",
+      "original_sha256": "b0b846a60949540f11addf4c01ee6b7551601bbfdb52023646b3bea4006823af",
+      "retained_sha256": "c47eb4b67090d05773113465d6b2141a353fa7058d08c0fb91e22fe78076bb39"
+    },
+    {
+      "original": "preflight/run-prm_9pwb/02-aspire-ps.log",
+      "retained": "preflight/run-prm_9pwb/02-aspire-ps.log.gz",
+      "original_sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108",
+      "retained_sha256": "bf0ff37df04e7178e248761176823aa4a6ae3c0f4bda3e8cf4e97b9155c47e2e"
+    },
+    {
+      "original": "runner/run-jsy1mlus/01-aspire---version.log",
+      "retained": "runner/run-jsy1mlus/01-aspire---version.log.gz",
+      "original_sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36",
+      "retained_sha256": "a8da931526ca694f67bbc4c265d3e4fc72a4f02d476e9bb4ecdb9de8020d22c1"
+    },
+    {
+      "original": "runner/run-jsy1mlus/02-dapr---version.log",
+      "retained": "runner/run-jsy1mlus/02-dapr---version.log.gz",
+      "original_sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1",
+      "retained_sha256": "4675dd0497e5ed7349e0519f5a907d778fdda69692b8cc8b97d1633695f1122c"
+    },
+    {
+      "original": "runner/run-jsy1mlus/03-docker-version.log",
+      "retained": "runner/run-jsy1mlus/03-docker-version.log.gz",
+      "original_sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416",
+      "retained_sha256": "94f3ea466efa064f83cebdd88f6393598af8ffaf77fd792f2e4af5c61b916dcd"
+    },
+    {
+      "original": "runner/run-jsy1mlus/04-dapr-list.log",
+      "retained": "runner/run-jsy1mlus/04-dapr-list.log.gz",
+      "original_sha256": "b0b846a60949540f11addf4c01ee6b7551601bbfdb52023646b3bea4006823af",
+      "retained_sha256": "c47eb4b67090d05773113465d6b2141a353fa7058d08c0fb91e22fe78076bb39"
+    },
+    {
+      "original": "runner/run-jsy1mlus/05-aspire-ps.log",
+      "retained": "runner/run-jsy1mlus/05-aspire-ps.log.gz",
+      "original_sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108",
+      "retained_sha256": "bf0ff37df04e7178e248761176823aa4a6ae3c0f4bda3e8cf4e97b9155c47e2e"
+    },
+    {
+      "original": "runner/run-jsy1mlus/06-dotnet-msbuild.log",
+      "retained": "runner/run-jsy1mlus/06-dotnet-msbuild.log.gz",
+      "original_sha256": "cd79e5a1cf9609c3da4b761cedc03e6cc41013187fb79dec8af62d7274665292",
+      "retained_sha256": "7eba82819489692ea004f3bdf3ad642b3770874d45d808c9fa8f6fbd0b0ce598"
+    },
+    {
+      "original": "runner/run-jsy1mlus/07-dotnet-build.log",
+      "retained": "runner/run-jsy1mlus/07-dotnet-build.log.gz",
+      "original_sha256": "77f5d0eea9e9cd1f805e90a97da27ea1b82b648743347d2adf35d7e42dbdc139",
+      "retained_sha256": "5bcf6940306ade6fa77b9cb2d28e326774573691853d53716151a0e35a7a1f76"
+    },
+    {
+      "original": "runner/run-jsy1mlus/08-git--C.log",
+      "retained": "runner/run-jsy1mlus/08-git--C.log.gz",
+      "original_sha256": "90531813dc22d9203cc50f59f8344134930a5b3d6b573feab6b0779e713fcbb5",
+      "retained_sha256": "4733ee4fdbcf2fd889935c66d67f6a03f37e9a64d489bfbb9846823b5095b839"
+    },
+    {
+      "original": "runner/run-jsy1mlus/09-git--C.log",
+      "retained": "runner/run-jsy1mlus/09-git--C.log.gz",
+      "original_sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956",
+      "retained_sha256": "3694d613089fdeea8cefc11d735d7673a664682d97cb38c7129adb168ddb663c"
+    },
+    {
+      "original": "runner/run-jsy1mlus/10-git--C.log",
+      "retained": "runner/run-jsy1mlus/10-git--C.log.gz",
+      "original_sha256": "1df57a499bb3a342f8954ceb39d219d35ceaf61e98a4a9bc1661b928f2a87820",
+      "retained_sha256": "71cc3d9f66ac9d3a22ce4a8c1b1c1a80a5f537c32b5e9929a8ff9cb2ff6c72e1"
+    },
+    {
+      "original": "runner/run-jsy1mlus/11-git--C.log",
+      "retained": "runner/run-jsy1mlus/11-git--C.log.gz",
+      "original_sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956",
+      "retained_sha256": "3694d613089fdeea8cefc11d735d7673a664682d97cb38c7129adb168ddb663c"
+    },
+    {
+      "original": "runner/run-jsy1mlus/12-git--C.log",
+      "retained": "runner/run-jsy1mlus/12-git--C.log.gz",
+      "original_sha256": "6fada9006298d617ed5b1cc229e40cbf2009d0165d59dfa22c1b7eb9d05a8307",
+      "retained_sha256": "79eb0ae2f8cbe456b113e4d3cbe04a7a072dd6f81a58038261fd24e8cbd75d97"
+    },
+    {
+      "original": "runner/run-jsy1mlus/13-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/13-docker-inspect.log.gz",
+      "original_sha256": "242fc509984c12e18a3d5d6be1203c00407f65729c25f5e3a1b19eeb3b5cd227",
+      "retained_sha256": "dd9dd9d4f75f94b2e45e82a2b554bd4a79b5685f03956c3e9c7326ffa3ce1494"
+    },
+    {
+      "original": "runner/run-jsy1mlus/14-docker-image.log",
+      "retained": "runner/run-jsy1mlus/14-docker-image.log.gz",
+      "original_sha256": "1602333ec955e6698d77da5593eb63bd35e0f638f6a89121a7807103cd09d1fc",
+      "retained_sha256": "d619d9fa41484efe256ec2f887137d111918ff99d431bf6450cfb5bb7911ec3c"
+    },
+    {
+      "original": "runner/run-jsy1mlus/15-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/15-docker-inspect.log.gz",
+      "original_sha256": "fac0e8ed6e6c44241909d92ad7805912e0199df1165ec81511b11bbd6e90c943",
+      "retained_sha256": "79a8f4fb4ed0bb45eaec684422952bf0449b52967230bf251c673ba3302dd206"
+    },
+    {
+      "original": "runner/run-jsy1mlus/16-docker-image.log",
+      "retained": "runner/run-jsy1mlus/16-docker-image.log.gz",
+      "original_sha256": "f13d59c090eb7a01a6e9277b2a2c521bbc39448dccea45f2aa891e8edaacc551",
+      "retained_sha256": "ac285f209737fa9743ffc13ef023117d36d6c29ffdd6409991c6254143b67dba"
+    },
+    {
+      "original": "runner/run-jsy1mlus/17-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/17-docker-inspect.log.gz",
+      "original_sha256": "b1552cb09ac226b83489e8b92281bbd68baf4a9bab7344d94d4922d9adb8b2e2",
+      "retained_sha256": "cdb42e6005ccd77a78dcf35975369a56c61c16994e9ecebd8ffca655e7a7ab1e"
+    },
+    {
+      "original": "runner/run-jsy1mlus/18-docker-image.log",
+      "retained": "runner/run-jsy1mlus/18-docker-image.log.gz",
+      "original_sha256": "f13d59c090eb7a01a6e9277b2a2c521bbc39448dccea45f2aa891e8edaacc551",
+      "retained_sha256": "ac285f209737fa9743ffc13ef023117d36d6c29ffdd6409991c6254143b67dba"
+    },
+    {
+      "original": "runner/run-jsy1mlus/19-docker-run.log",
+      "retained": "runner/run-jsy1mlus/19-docker-run.log.gz",
+      "original_sha256": "b0da7d14a6b9721c959b89a615fb8eef46c7c1def70e663f22c35227d7a18ebc",
+      "retained_sha256": "35ea80177559c7fce0d202bbc499c5fa6c11e5e57f7d0df21c6dfa714577a611"
+    },
+    {
+      "original": "runner/run-jsy1mlus/20-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/20-docker-inspect.log.gz",
+      "original_sha256": "a948f821d5f71df566749e8b00751ab54f3dfae8e42c063ef12894e4d35d1121",
+      "retained_sha256": "39f7351029aa43857c84e9d0b5c0adcd658bfaae228dece7411c6a69a57fff9b"
+    },
+    {
+      "original": "runner/run-jsy1mlus/21-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/21-docker-exec.log.gz",
+      "original_sha256": "5cf2bc98c37f821189ad348a607ed6209ba2474d2214e8c8f729915b9308e174",
+      "retained_sha256": "008b921a75db70c48744650e95e5b9766127dc063bf6190da00df7b57627d763"
+    },
+    {
+      "original": "runner/run-jsy1mlus/22-docker-run.log",
+      "retained": "runner/run-jsy1mlus/22-docker-run.log.gz",
+      "original_sha256": "2d57ba39e507cfb2bdb465a03f6ce030af892a420c93098d7620cc0f1a6545b9",
+      "retained_sha256": "e75576ab6adc76474421b3db8fb3fd17c9c48afecdbc86b0ec0f5d1ac8a68f03"
+    },
+    {
+      "original": "runner/run-jsy1mlus/23-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/23-docker-inspect.log.gz",
+      "original_sha256": "6a24ed5fe332c46ff7b2105fc2cbe7089c252d5c6f81b3053760598acffeed35",
+      "retained_sha256": "83e69df5cbb887765230aca9340d5800dde77321eff964ec0360d2cbf6be7590"
+    },
+    {
+      "original": "runner/run-jsy1mlus/24-docker-run.log",
+      "retained": "runner/run-jsy1mlus/24-docker-run.log.gz",
+      "original_sha256": "8884a500459d37e4ba75c2e607f62e9814905d990cc16cda5fc4ce70e78973ad",
+      "retained_sha256": "d50a4afe0a6d4a5d1aa897f852ed1ab4c3862a6bc4d0a963ad9f61f590c8397f"
+    },
+    {
+      "original": "runner/run-jsy1mlus/25-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/25-docker-inspect.log.gz",
+      "original_sha256": "6ba488cf8c6cc22fd5a25cd2ae1b08025dd886d2bbe1e971862006dda156dbfa",
+      "retained_sha256": "9bc9181cf262b1938f54fcea73d4524ffc691f485e83337835d8b6ff2d5b35fa"
+    },
+    {
+      "original": "runner/run-jsy1mlus/26-dapr-list.log",
+      "retained": "runner/run-jsy1mlus/26-dapr-list.log.gz",
+      "original_sha256": "b0b846a60949540f11addf4c01ee6b7551601bbfdb52023646b3bea4006823af",
+      "retained_sha256": "c47eb4b67090d05773113465d6b2141a353fa7058d08c0fb91e22fe78076bb39"
+    },
+    {
+      "original": "runner/run-jsy1mlus/27-aspire-ps.log",
+      "retained": "runner/run-jsy1mlus/27-aspire-ps.log.gz",
+      "original_sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108",
+      "retained_sha256": "bf0ff37df04e7178e248761176823aa4a6ae3c0f4bda3e8cf4e97b9155c47e2e"
+    },
+    {
+      "original": "runner/run-jsy1mlus/28-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/28-docker-inspect.log.gz",
+      "original_sha256": "1d1ef98243572615eae9ed5953de82f56fdfab37aeb6f9e334dd761a9262a7c7",
+      "retained_sha256": "77682182a334ea978cc10fd19fa1c17269ddf05fdb92bd3076276bfb6896b124"
+    },
+    {
+      "original": "runner/run-jsy1mlus/29-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/29-docker-exec.log.gz",
+      "original_sha256": "76018b04fe1a30ad81a3cd8915f0b9c49ed8017162183190c97b27b4e696d031",
+      "retained_sha256": "ff66344818419440cf6a4b79a312113cd7727eef73fcffe2f1f8b3f47b5e628a"
+    },
+    {
+      "original": "runner/run-jsy1mlus/30-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/30-docker-exec.log.gz",
+      "original_sha256": "54942ee0ec89e90db36718d89b25401e797939102fe2a65244c82f2db72af941",
+      "retained_sha256": "ec55104e20c569da5a85ac9e6d7b9b43d37ae3a17988dafe1fef231446461cb8"
+    },
+    {
+      "original": "runner/run-jsy1mlus/31-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/31-docker-exec.log.gz",
+      "original_sha256": "22c476d83d0eebea29ea42e773abaaa08520fbb74297726bbc316369f5f1d12a",
+      "retained_sha256": "cd9b979dada0c2343f2d68a86a76e0be93571a3d129b766f51b78e99e2df430c"
+    },
+    {
+      "original": "runner/run-jsy1mlus/32-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/32-docker-exec.log.gz",
+      "original_sha256": "841d8fe41f6ad7d57d964c5a3737094f44f442e2dca9289b08b015237ffd4dd0",
+      "retained_sha256": "483dc39854db5c742ce9c96f6c349d1f7af20341452041dc54cfbfe3578ca8de"
+    },
+    {
+      "original": "runner/run-jsy1mlus/33-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/33-docker-exec.log.gz",
+      "original_sha256": "4cc0deea11e281bb322594bebeb1f06f1dddea4bfff42c13285408a4c6a21975",
+      "retained_sha256": "df64c0a930cb062d09e89ccd8567b76c85c89c3cb8ce6abdec115742fb841375"
+    },
+    {
+      "original": "runner/run-jsy1mlus/34-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/34-docker-exec.log.gz",
+      "original_sha256": "32dec70f5694944b09e51075e2e8c1b78de5ca954b170192b4f24501eb6b5130",
+      "retained_sha256": "4fb6de1838fbef65d4f2f44309880e09b50f9d00671b31c5183598ee97b0a1e5"
+    },
+    {
+      "original": "runner/run-jsy1mlus/35-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/35-docker-exec.log.gz",
+      "original_sha256": "6bf091097ac88ec7b175804b0f960a90afe4bcbabf3f456ca636680ea1aa9f98",
+      "retained_sha256": "e157b4e8c7b47ed3312cf423fe1dbc1601fecba8c423146953087eb4f3f609ce"
+    },
+    {
+      "original": "runner/run-jsy1mlus/36-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/36-docker-exec.log.gz",
+      "original_sha256": "c93457094a0ea9db2eb0fac37f377f87ee5ca145e228cbb16f7d5c58fc2d4e7c",
+      "retained_sha256": "f767ef0562d7846f89f9ed267227b9ace4f49222318e82852a059695ddfc3486"
+    },
+    {
+      "original": "runner/run-jsy1mlus/37-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/37-docker-exec.log.gz",
+      "original_sha256": "6518ef2efa6d8599d3c1a677cf78870abd8491a362b69db402b4b2b64567f934",
+      "retained_sha256": "522b4e03e19e84c86097a1a76893ecb9ffc2f8eab9e726fceed4613c8d00b1b7"
+    },
+    {
+      "original": "runner/run-jsy1mlus/38-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/38-docker-exec.log.gz",
+      "original_sha256": "7b91ffbda3c829765822fa56d96be7b5857c1613dad6faab4e91e6019fcff3be",
+      "retained_sha256": "da9af5204ad8330d93c874e62cc0ab3d172b739d38e109ec3d5f77a2f85b689a"
+    },
+    {
+      "original": "runner/run-jsy1mlus/39-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/39-docker-exec.log.gz",
+      "original_sha256": "6fe1bf81126724a62878c03eb45447e922337abb9b6bab3ea6334f7178c06b13",
+      "retained_sha256": "7eab3d76cfc4959506c3cb5994cb18c3c1b7b5155916719263b6e686476ddfb4"
+    },
+    {
+      "original": "runner/run-jsy1mlus/40-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/40-docker-exec.log.gz",
+      "original_sha256": "c824fa822ecfdb007fecc4e80ca5e013a779e141c8e1a84dc5362972234a6b32",
+      "retained_sha256": "cad1eaac7ce6a740eef3133d049675bfb24a5d484f28b726731c75fc428b46ba"
+    },
+    {
+      "original": "runner/run-jsy1mlus/41-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/41-docker-exec.log.gz",
+      "original_sha256": "af9bc854fca712804545a9b3fc325ffafbacacafa749add9158f277cfb91f54c",
+      "retained_sha256": "cfe4f1d8c81cf28527c9c542ca077b319ba9e613cca72c2648590f9756c08280"
+    },
+    {
+      "original": "runner/run-jsy1mlus/42-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/42-docker-exec.log.gz",
+      "original_sha256": "190456f4619a5e3903cc88de130cf9ed50fa09ca7aa696e9cd1e8c0d3f35121e",
+      "retained_sha256": "0a131f3a307e73af6b5e43d39ef4070c6139329e36608e8cb90e723fffcaf7ce"
+    },
+    {
+      "original": "runner/run-jsy1mlus/43-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/43-docker-exec.log.gz",
+      "original_sha256": "01d728cda7721c5023b81f675affd2914e3aabb3f6a5e5dc2d6b72c2fd4673a7",
+      "retained_sha256": "cefb1aa87d0e500f3f6202363a9713c524a66def808324503b8616f26e5c1000"
+    },
+    {
+      "original": "runner/run-jsy1mlus/44-docker-exec.log",
+      "retained": "runner/run-jsy1mlus/44-docker-exec.log.gz",
+      "original_sha256": "652cccb765ce6e936b63d064945d9bf29eda00a5630de22cdcea0461419569fb",
+      "retained_sha256": "87e6f6db5fac08da7e5f775214d2e6672a4aafc5550668aec6ef58144b05e01a"
+    },
+    {
+      "original": "runner/run-jsy1mlus/45-git--C.log",
+      "retained": "runner/run-jsy1mlus/45-git--C.log.gz",
+      "original_sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956",
+      "retained_sha256": "3694d613089fdeea8cefc11d735d7673a664682d97cb38c7129adb168ddb663c"
+    },
+    {
+      "original": "runner/run-jsy1mlus/46-aspire-start.log",
+      "retained": "runner/run-jsy1mlus/46-aspire-start.log.gz",
+      "original_sha256": "1a35769b2cd2de2832d083da534b0f575c047b0637e17c569eb9773446379631",
+      "retained_sha256": "0ff3789de370ac1879a87a1c9b6efa51652e2b0e96a20b66c9fdc89ee2e928a2"
+    },
+    {
+      "original": "runner/run-jsy1mlus/47-aspire-ps.log",
+      "retained": "runner/run-jsy1mlus/47-aspire-ps.log.gz",
+      "original_sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108",
+      "retained_sha256": "bf0ff37df04e7178e248761176823aa4a6ae3c0f4bda3e8cf4e97b9155c47e2e"
+    },
+    {
+      "original": "runner/run-jsy1mlus/48-aspire-ps.log",
+      "retained": "runner/run-jsy1mlus/48-aspire-ps.log.gz",
+      "original_sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108",
+      "retained_sha256": "bf0ff37df04e7178e248761176823aa4a6ae3c0f4bda3e8cf4e97b9155c47e2e"
+    },
+    {
+      "original": "runner/run-jsy1mlus/49-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/49-docker-inspect.log.gz",
+      "original_sha256": "1d1ef98243572615eae9ed5953de82f56fdfab37aeb6f9e334dd761a9262a7c7",
+      "retained_sha256": "77682182a334ea978cc10fd19fa1c17269ddf05fdb92bd3076276bfb6896b124"
+    },
+    {
+      "original": "runner/run-jsy1mlus/50-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/50-docker-inspect.log.gz",
+      "original_sha256": "4ef00f077dbdaa98075b1b67d70f7fb9442c146b33d115263d64c4b706109f8c",
+      "retained_sha256": "10c8728c11024196dd7df971937fc181fac3700b4a5e9a81cf422e49208e7fd7"
+    },
+    {
+      "original": "runner/run-jsy1mlus/51-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/51-docker-inspect.log.gz",
+      "original_sha256": "a90600dd546a8b96be2e83dda95f74346f73191fa672d9445daa2ef8c3d422f2",
+      "retained_sha256": "d14226eb7560cb6f1d1f7d737ee4375b6909e9f4fdb6d2c996a04489f50eacfe"
+    },
+    {
+      "original": "runner/run-jsy1mlus/52-docker-rm.log",
+      "retained": "runner/run-jsy1mlus/52-docker-rm.log.gz",
+      "original_sha256": "474e95f3da89c7c10a2a46dbaf7c5bf024fcade1f1b38e2d130e20464e86a20f",
+      "retained_sha256": "c066cf9a5368f4130a6ec61c83fad977ae9c2d1eb49753a2f4e0536d27be37d3"
+    },
+    {
+      "original": "runner/run-jsy1mlus/53-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/53-docker-inspect.log.gz",
+      "original_sha256": "b1c15738fac9347ae673ea05b5d22f4c2ddda95819d41c1fbcb5b9f5eb9a789d",
+      "retained_sha256": "27d8b65df02c2b49da7a3d071eae38187a661ed2e94879833eff762701a3aef8"
+    },
+    {
+      "original": "runner/run-jsy1mlus/54-docker-container.log",
+      "retained": "runner/run-jsy1mlus/54-docker-container.log.gz",
+      "original_sha256": "69d360749f75f284b4ba218675ea984156fe0c79f9934f65d0a766cb6525606e",
+      "retained_sha256": "f818d60ce5785fb23ae0eb24524cea0550f0beaf07b27ea482c919f96cf99c39"
+    },
+    {
+      "original": "runner/run-jsy1mlus/55-docker-rm.log",
+      "retained": "runner/run-jsy1mlus/55-docker-rm.log.gz",
+      "original_sha256": "564c1ad7decca3b16f99e278bf6f11d8316dd3a123d2e5db33fbf3d63f4e5be0",
+      "retained_sha256": "4a84b19caaaf93d35712dbf9467d293bfd8f9682d447cea2740617328e4a54d5"
+    },
+    {
+      "original": "runner/run-jsy1mlus/56-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/56-docker-inspect.log.gz",
+      "original_sha256": "462ea8d18546ac944bc5436c67b57fa904a7d4ea3f55ed381967efd790f2c838",
+      "retained_sha256": "a7bb9152ac0a682dde9e49e8846465dd4812ffdf7767b8008284b59cba418fb2"
+    },
+    {
+      "original": "runner/run-jsy1mlus/57-docker-container.log",
+      "retained": "runner/run-jsy1mlus/57-docker-container.log.gz",
+      "original_sha256": "68adf6f52b052610be54ee19f3e4d0e23268a17f9bf072efc5237eafa36a89a9",
+      "retained_sha256": "66b8202ae3ffef513a286f453b42001c2660aca6bc7f24252ad5423c8fe7cb70"
+    },
+    {
+      "original": "runner/run-jsy1mlus/58-docker-rm.log",
+      "retained": "runner/run-jsy1mlus/58-docker-rm.log.gz",
+      "original_sha256": "7899278d893877ca3271680cff0a6937ca3ac0928779fbd01998d7fd5d1e958d",
+      "retained_sha256": "c145e11b6eae54b746639e3008ee4b49c3b051528a46ca6379eb84a9fb743d59"
+    },
+    {
+      "original": "runner/run-jsy1mlus/59-docker-inspect.log",
+      "retained": "runner/run-jsy1mlus/59-docker-inspect.log.gz",
+      "original_sha256": "0edae5241ac2cbb4d757b10159f48ec8fd466ae8e0810a6d0c3c8ab5532bb890",
+      "retained_sha256": "9455fb096a0f3ec2f093b6d76cbf1750cb02658f7ffdb962d3cf566283927d9f"
+    },
+    {
+      "original": "runner/run-jsy1mlus/60-docker-container.log",
+      "retained": "runner/run-jsy1mlus/60-docker-container.log.gz",
+      "original_sha256": "2619c9613b81d21f0491ecae2fc76f16cdcfa1dd05cf41e0bb2824c483ffa39d",
+      "retained_sha256": "a6285383f87fdcb1c66ff728a1a585ea8182999d5a250d7ffa6a48f52e80bf8c"
+    },
+    {
+      "original": "runner/run-jsy1mlus/dependency-graph.json",
+      "retained": "runner/run-jsy1mlus/dependency-graph.json.gz",
+      "original_sha256": "964899509566dd69502272fe71a41bf10289769802fd453e327dc820f798d55d",
+      "retained_sha256": "194105d8df47c3ab8d4acc2c1444fdb7dc141274d57dd3c355235c9464af62a4"
+    },
+    {
+      "original": "runner/run-jsy1mlus/source-before.json",
+      "retained": "runner/run-jsy1mlus/source-before.json.gz",
+      "original_sha256": "0d24df647d57686ed83187543cccda5ff177c66e534bb2423be86e1a479e0e44",
+      "retained_sha256": "b2582ee551332537fa3be8633f5f7dd80e5cb15edce004876574714f930282b8"
+    }
+  ]
+}

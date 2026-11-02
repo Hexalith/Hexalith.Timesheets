@@ -1,0 +1,12 @@
+{
+  "recorded_utc": "2026-11-02T22:32:32.889729+00:00",
+  "scope": "Approved gateway-only composite/v2 verification and exact DB13/SDK-default representation repairs",
+  "files_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "9d42394cb7c93d463e3ced7b889a32a77633fd45ba4e25ca507792c4bcd7a031",
+    "scripts/test_isolated_magic_link_dapr.py": "52d527f4944c18f68d7d9360c5df226c92d7afe433b5b1ca616540195fa63838",
+    "scripts/CatalogBindingVerifier.cs": "13e1025acbc9fbcecd876ba16fcb324dc125bdabbdea250e5738bab3e17dcb23",
+    "src/Hexalith.Timesheets.AppHost/Program.cs": "56e3da206f3e5f261d8d1143e0c6f0cdf99cb96d859a8b1dfd3fcabbd8fc768e"
+  },
+  "dependency_changes": false,
+  "topology_grants_deadlines_bootstrap_order_unchanged": true
+}

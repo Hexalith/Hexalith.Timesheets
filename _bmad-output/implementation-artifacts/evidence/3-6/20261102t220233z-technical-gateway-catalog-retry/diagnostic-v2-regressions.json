@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_capture_binds_sidecar_configs_to_one_receipt_directory_and_sanitizes_json"
+  ],
+  "started_utc": "2026-11-02T22:16:20.642856+00:00",
+  "finished_utc": "2026-11-02T22:16:20.812216+00:00",
+  "duration_seconds": 0.169342,
+  "exit_code": 0
+}

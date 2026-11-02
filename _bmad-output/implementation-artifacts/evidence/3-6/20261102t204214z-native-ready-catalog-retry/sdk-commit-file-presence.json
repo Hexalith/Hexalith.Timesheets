@@ -1,0 +1,22 @@
+{
+  "scope": "Owned SDK coordination file presence only; private contents excluded",
+  "sdk_directory_private": true,
+  "directory_sha256": "178f63fd249d40f838e695a30253e2117fcbfa5630ee0ecd353ce82788886db6",
+  "required_files": {
+    "catalog.json": true,
+    "activation.json": true,
+    "eventstore.observation.json": true,
+    "timesheets.observation.json": true,
+    "eventstore.committed.json": false,
+    "timesheets.committed.json": false,
+    "authority.component.json": true
+  },
+  "other_file_names": [
+    "authority.backend.json",
+    "authority.dependencies.json",
+    "eventstore.configuration.json",
+    "receipt.json",
+    "timesheets.configuration.json",
+    "timesheets.ready.json"
+  ]
+}

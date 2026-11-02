@@ -1,0 +1,4 @@
+# Sealed evidence hashes cover exact bytes, including tool-emitted whitespace.
+_bmad-output/implementation-artifacts/evidence/** -text
+_bmad-output/implementation-artifacts/evidence/**/*.txt -diff
+_bmad-output/implementation-artifacts/evidence/**/gateway-invocation.json -diff

@@ -1,0 +1,20 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.14)
+  Discovering: Hexalith.Timesheets.ArchitectureTests
+  Discovered:  Hexalith.Timesheets.ArchitectureTests
+  Starting:    Hexalith.Timesheets.ArchitectureTests
+    Hexalith.Timesheets.ArchitectureTests.FitnessTests.DiagnosticsPrivacyTests.SourceLoggingDoesNotIncludeSensitivePayloadOrIdentifierMaterial [FAIL]
+      Shouldly.ShouldAssertException : loggingLine
+          should not contain (case insensitive comparison)
+      "secret"
+          but was actually
+      "        || options.SecretStore != "secretstore" || options.LogicalSecretName != "eventstore-idempote..."
+      
+      Additional Info:
+          /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/Program.cs
+      Stack Trace:
+        tests/Hexalith.Timesheets.ArchitectureTests/FitnessTests/DiagnosticsPrivacyTests.cs(63,0): at Hexalith.Timesheets.ArchitectureTests.FitnessTests.DiagnosticsPrivacyTests.SourceLoggingDoesNotIncludeSensitivePayloadOrIdentifierMaterial()
+           at System.Reflection.MethodBaseInvoker.InterpretedInvoke_Method(Object obj, IntPtr* args)
+           at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)
+  Finished:    Hexalith.Timesheets.ArchitectureTests (ID = '388847c10d4588ad9adbd2f7d429b2f35dd0506c05e0b388b7efafe3d5bae84f')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.Timesheets.ArchitectureTests  Total: 118, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 41.892s

@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_commands_disable_msbuild_node_reuse_and_preserve_ordinary_environment"
+  ],
+  "started_utc": "2026-11-02T21:18:46.503653+00:00",
+  "finished_utc": "2026-11-02T21:18:46.684095+00:00",
+  "duration_seconds": 0.180428,
+  "exit_code": 0
+}

@@ -1,0 +1,14 @@
+{
+  "aspire_version": "13.6.4",
+  "assembly_sha256": "7ede5667cdfe3ae9fa91cc71ccd8ba1cbd4a96236c73706ba1562eab6549b06d",
+  "inspection": "Pinned local assembly with ilspycmd; no library mutation or resource start",
+  "resource_environment_resolver": "Aspire.Hosting.ApplicationModel.ResourceExtensions.ProcessEnvironmentVariableValuesAsync",
+  "launch_recipe": "Aspire.Hosting.ApplicationModel.ProjectExecutableLaunchRecipe.CreateLaunchPlanAsync",
+  "launch_environment_assignment": "new ExecutableLaunchPlan(..., context.ExecutionConfiguration.EnvironmentVariables, ...)",
+  "dcp_renderer": "Aspire.Hosting.Dcp.ExecutableCreator.Render",
+  "dcp_environment_assignment": "spec.Env = plan.EnvironmentVariables.Select(variable => new EnvVar { Name = variable.Key, Value = variable.Value }).ToList()",
+  "selected_owner_preparation_already_disables_reuse": true,
+  "explicit_child_pin_required_in_catalog_mode": true,
+  "ordinary_resource_pin_absent": true,
+  "scope": "Pure declaration/environment proof; no live process-prevention qualification"
+}

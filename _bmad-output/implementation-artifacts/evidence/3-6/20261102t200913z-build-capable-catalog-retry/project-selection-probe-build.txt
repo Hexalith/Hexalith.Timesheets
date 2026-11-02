@@ -1,0 +1,9 @@
+  Determining projects to restore...
+  Restored /tmp/timesheets-owner-selection-probe-gqtodxyc/OwnerSelectionProbe.csproj (in 63 ms).
+  OwnerSelectionProbe -> /tmp/timesheets-owner-selection-probe-gqtodxyc/bin/Debug/net10.0/OwnerSelectionProbe.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.47

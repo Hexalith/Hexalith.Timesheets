@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_compiled_owner_declaration_preserves_graph_and_supported_build_selection (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_compiled_owner_declaration_preserves_graph_and_supported_build_selection)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 961, in test_compiled_owner_declaration_preserves_graph_and_supported_build_selection
+    self.assertEqual("1" if row["catalogEnabled"] else None, row["childNodeReuseValue"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '1' != None
+
+----------------------------------------------------------------------
+Ran 1 test in 1.766s
+
+FAILED (failures=1)

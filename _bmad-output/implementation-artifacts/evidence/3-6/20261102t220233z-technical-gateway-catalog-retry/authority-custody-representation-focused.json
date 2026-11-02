@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_custody_owner_requires_exact_pinned_defaults_and_identity",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_profile_is_removed_only_after_complete_sdk_custody",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_rendered_catalog_authority_accepts_only_exact_private_db13_backend",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_runtime_component_call_site_checks_catalog_acl_and_authority"
+  ],
+  "started_utc": "2026-11-02T22:26:36.798420+00:00",
+  "finished_utc": "2026-11-02T22:26:36.946859+00:00",
+  "duration_seconds": 0.148424,
+  "exit_code": 0
+}

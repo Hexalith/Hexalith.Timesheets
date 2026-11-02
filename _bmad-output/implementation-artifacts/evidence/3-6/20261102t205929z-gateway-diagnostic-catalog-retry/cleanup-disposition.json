@@ -1,0 +1,12 @@
+{
+  "recorded_utc": "2026-11-02T21:20:29.587840+00:00",
+  "original_cleanup_complete": false,
+  "supplemental_cleanup_complete": false,
+  "supplemental_receipt": "owned-cleanup/run-ubp69j_2/cleanup.json",
+  "owned_containers_absent": true,
+  "component_directory_removed": true,
+  "protected_profile_retained": true,
+  "fixture_bound_processes_gone": true,
+  "private_custody_complete": false,
+  "private_inputs_excluded": true
+}

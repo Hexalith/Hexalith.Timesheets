@@ -1,0 +1,4 @@
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+46-aspire-start exited 2; see sanitized evidence
+Owned cleanup or evidence is incomplete; see available fixture diagnostics
+Sanitized fixture evidence: /home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261102t200913z-build-capable-catalog-retry/runner/run-_lw_34m3

@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "/home/administrator/projects/hexalith/timesheets/tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests",
+    "-method",
+    "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.FixtureCatalogActivationRejectsChangedOwnerInventoryWithoutStateWrite",
+    "-method",
+    "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ConfiguredHostEnrollsCompleteOwnerInSdkDevelopmentBootstrap",
+    "-method",
+    "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.ComposedCatalogRequiresEveryInstalledOwnerAndMatchingReceiver",
+    "-method",
+    "Hexalith.Timesheets.IntegrationTests.MagicLinkConfirmationHttpBoundaryTests.FixtureCatalogRefusesUnboundProjectionWithoutWritingState",
+    "-noColor"
+  ],
+  "started_utc": "2026-11-02T19:10:23.812365+00:00",
+  "finished_utc": "2026-11-02T19:10:34.668060+00:00",
+  "duration_seconds": 10.855677,
+  "exit_code": 0
+}

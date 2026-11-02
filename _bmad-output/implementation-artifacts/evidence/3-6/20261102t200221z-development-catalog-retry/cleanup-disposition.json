@@ -1,0 +1,18 @@
+{
+  "recorded_utc": "2026-11-02T20:07:11.332214+00:00",
+  "original_cleanup_complete": false,
+  "owned_containers_removed": 3,
+  "removal_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "separate_exact_name_absence_checks_retained": true,
+  "fixture_processes_gone": true,
+  "private_profile_retained": true,
+  "private_profile_fixture_identity_verified": true,
+  "private_profile_modes": "0700 directory; 0600 input files",
+  "private_profile_path_sha256": "6d90b1f662ffc904f74bda7f9e365285f95d7105b2ddac96b1f492586ea2aabe",
+  "private_inputs_copied_to_evidence": false,
+  "sdk_committed_custody_complete": false
+}

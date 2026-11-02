@@ -1,0 +1,13 @@
+{
+  "stage": "preconditions",
+  "activated": false,
+  "attempts": 0,
+  "http_status": null,
+  "category": "preconditions_failed",
+  "scope": "fresh-private-local-fixture-only",
+  "liveness": {
+    "attempts": 1,
+    "http_status": 200,
+    "category": "alive"
+  }
+}

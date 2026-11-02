@@ -1,0 +1,11 @@
+{
+  "recorded_utc": "2026-11-02T19:09:49.670653+00:00",
+  "scope": "Bounded cancellation of this invocation's owned Integration test child only",
+  "approved_cap_seconds": 1200,
+  "signal_requested": true,
+  "pid": 3733455,
+  "signal": "SIGINT",
+  "identity_verified": true,
+  "elapsed_native_process_seconds": 1225.95,
+  "signal_requested_utc": "2026-11-02T19:09:49.670857+00:00"
+}

@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "dotnet",
+    "build",
+    "Hexalith.Timesheets.slnx",
+    "--configuration",
+    "Debug",
+    "--no-restore",
+    "-p:UseHexalithProjectReferences=true",
+    "-warnaserror",
+    "-m:1",
+    "/nr:false"
+  ],
+  "started_utc": "2026-11-02T20:21:24.024578+00:00",
+  "finished_utc": "2026-11-02T20:21:35.229918+00:00",
+  "duration_seconds": 11.205349,
+  "exit_code": 0
+}

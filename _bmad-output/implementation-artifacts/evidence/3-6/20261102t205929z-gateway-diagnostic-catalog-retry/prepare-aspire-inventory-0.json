@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "aspire",
+    "ps",
+    "--non-interactive",
+    "--format",
+    "Json"
+  ],
+  "started_utc": "2026-11-02T20:59:29.476523+00:00",
+  "finished_utc": "2026-11-02T20:59:29.750706+00:00",
+  "duration_seconds": 0.274193,
+  "exit_code": 0,
+  "inventory_shape": "array",
+  "entry_count": 1,
+  "raw_inventory_retained": false
+}

@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "dotnet",
+    "restore",
+    "Hexalith.Timesheets.slnx",
+    "-p:Configuration=Debug",
+    "-p:UseHexalithProjectReferences=true",
+    "-m:1",
+    "/nr:false"
+  ],
+  "started_utc": "2026-11-02T22:13:38.895613+00:00",
+  "finished_utc": "2026-11-02T22:13:41.008531+00:00",
+  "duration_seconds": 2.112922,
+  "exit_code": 0
+}

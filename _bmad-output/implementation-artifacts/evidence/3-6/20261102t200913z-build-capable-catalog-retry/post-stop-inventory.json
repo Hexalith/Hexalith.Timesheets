@@ -1,0 +1,31 @@
+[
+  {
+    "argv": [
+      "aspire",
+      "ps",
+      "--non-interactive",
+      "--format",
+      "Json"
+    ],
+    "started_utc": "2026-11-02T20:21:06.838671+00:00",
+    "finished_utc": "2026-11-02T20:21:07.101239+00:00",
+    "exit_code": 0,
+    "inventory_shape": "array",
+    "entry_count": 0,
+    "raw_inventory_retained": false
+  },
+  {
+    "argv": [
+      "dapr",
+      "list",
+      "--output",
+      "json"
+    ],
+    "started_utc": "2026-11-02T20:21:07.101262+00:00",
+    "finished_utc": "2026-11-02T20:21:07.194133+00:00",
+    "exit_code": 0,
+    "inventory_shape": "array",
+    "entry_count": 0,
+    "raw_inventory_retained": false
+  }
+]

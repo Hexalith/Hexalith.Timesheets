@@ -1,0 +1,10 @@
+..E
+======================================================================
+ERROR: test_catalog_failure_diagnostics_require_ownership_and_withhold_arbitrary_output (unittest.loader._FailedTest.test_catalog_failure_diagnostics_require_ownership_and_withhold_arbitrary_output)
+----------------------------------------------------------------------
+AttributeError: type object 'IsolatedFixtureTests' has no attribute 'test_catalog_failure_diagnostics_require_ownership_and_withhold_arbitrary_output'
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.038s
+
+FAILED (errors=1)

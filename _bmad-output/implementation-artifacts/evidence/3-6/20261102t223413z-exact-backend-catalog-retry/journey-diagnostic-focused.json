@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_invocation_denial_and_metadata_facts_withhold_unknown_private_values",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_failure_diagnostics_require_ownership_and_withhold_arbitrary_output"
+  ],
+  "started_utc": "2026-11-02T22:54:34.806790+00:00",
+  "finished_utc": "2026-11-02T22:54:34.970602+00:00",
+  "duration_seconds": 0.163756,
+  "exit_code": 1
+}

@@ -1,0 +1,17 @@
+{
+  "recorded_utc": "2026-11-02T20:08:44.953192+00:00",
+  "result": "pass",
+  "scope": "Packet/static checks; no live qualification",
+  "checks": {
+    "prior_packet_files_unchanged": 122,
+    "frozen_retry_intent_unchanged": true,
+    "prior_record_prefixes_preserved": 3,
+    "lossless_artifact_hashes_verified": 64,
+    "private_inputs_excluded": true,
+    "failed_cleanup_retained": true,
+    "python_tests": 218,
+    "local_packet_links_verified": 15,
+    "packet_files_not_ignored": 92,
+    "git_diff_check_exit_code": 0
+  }
+}

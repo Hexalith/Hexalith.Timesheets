@@ -1,0 +1,18 @@
+{
+  "recorded_utc": "2026-11-02T20:59:10.337094+00:00",
+  "original_cleanup_complete": false,
+  "exact_aspire_stop_exit_code": 0,
+  "owned_containers_removed": 3,
+  "removal_exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "exact_name_absence_checks_retained": true,
+  "fixture_bound_processes_gone": true,
+  "protected_profile_retained": true,
+  "profile_fixture_identity_verified": true,
+  "private_profile_modes": "0700 directory; 0600 inputs",
+  "private_profile_path_sha256": "a8f53f8847a81ab210afe3cb9d4df573526e88b213b0cdc50c1ffa9e753bc609",
+  "private_inputs_excluded": true
+}

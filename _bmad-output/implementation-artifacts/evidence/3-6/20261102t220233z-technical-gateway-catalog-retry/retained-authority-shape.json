@@ -1,0 +1,61 @@
+{
+  "retained_component_present": true,
+  "metadata_rows": [
+    {
+      "keys": [
+        "name",
+        "value"
+      ],
+      "name": "redisHost",
+      "value_kind": "str",
+      "key_prefix_name": false,
+      "db_13": false,
+      "empty_password": false
+    },
+    {
+      "keys": [
+        "name",
+        "value"
+      ],
+      "name": "redisPassword",
+      "value_kind": "str",
+      "key_prefix_name": false,
+      "db_13": false,
+      "empty_password": true
+    },
+    {
+      "keys": [
+        "name",
+        "value"
+      ],
+      "name": "redisDB",
+      "value_kind": "int",
+      "key_prefix_name": false,
+      "db_13": true,
+      "empty_password": false
+    },
+    {
+      "keys": [
+        "name",
+        "value"
+      ],
+      "name": "keyPrefix",
+      "value_kind": "str",
+      "key_prefix_name": true,
+      "db_13": false,
+      "empty_password": false
+    }
+  ],
+  "top_keys": [
+    "apiVersion",
+    "kind",
+    "metadata",
+    "scopes",
+    "spec"
+  ],
+  "spec_keys": [
+    "metadata",
+    "type",
+    "version"
+  ]
+}

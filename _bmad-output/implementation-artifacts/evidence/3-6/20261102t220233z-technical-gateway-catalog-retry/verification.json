@@ -1,0 +1,29 @@
+{
+  "recorded_utc": "2026-11-02T22:33:51.504329+00:00",
+  "result": "pass",
+  "scope": "Partial catalog/v2 proof, exact representation repairs and static preservation; no journey qualification",
+  "checks": {
+    "earlier_packet_files_unchanged": 1125,
+    "frozen_approved_gateway_scope_preserved": true,
+    "approved_proposal_unchanged": true,
+    "prior_record_prefixes_preserved": 3,
+    "dependency_heads_and_tracked_sources_preserved": 13,
+    "compressed_artifacts_verified": 73,
+    "private_inputs_excluded": true,
+    "original_failed_run_and_cleanup_preserved": true,
+    "actual_eight_route_catalog_committed": true,
+    "actual_gateway_technical_actions": 33,
+    "actual_sdk_v2_proof_and_both_readbacks_verified": true,
+    "persisted_journey_not_invoked": true,
+    "owned_containers_removed": 3,
+    "fixture_processes_gone": true,
+    "historical_protected_profile_preserved": true,
+    "final_python_tests_passed": 229,
+    "focused_representation_tests_passed": 4,
+    "relevant_architecture_tests_passed": 47,
+    "initial_setup_and_canonical_contention_failures_retained": true,
+    "local_links_verified": 23,
+    "packet_files_not_ignored": 125,
+    "git_diff_check_exit_code": 0
+  }
+}
