@@ -862,14 +862,14 @@ class IsolatedFixtureTests(unittest.TestCase):
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         components = Path(self.temporary.name) / "catalog-components"
         fixture.write_components(components, "127.0.0.1:16379")
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Release/net10.0/Hexalith.Timesheets.AppHost"
         environment = {name: value for name, value in os.environ.items()
                        if not name.casefold().startswith("timesheets_live_dapr_")
                        and not name.casefold().startswith("dapr__")}
         environment.update({
             "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home", "DOTNET_ENVIRONMENT": "Development",
-            "ASPNETCORE_ENVIRONMENT": "Development", "Configuration": "Debug",
-            "UseHexalithProjectReferences": "true", "UseNuGetDeps": "false",
+            "ASPNETCORE_ENVIRONMENT": "Development", "Configuration": "Release",
+            "UseHexalithProjectReferences": "false", "UseNuGetDeps": "true",
             "TIMESHEETS_LIVE_DAPR_FIXTURE": "1", "TIMESHEETS_LIVE_DAPR_COMPONENTS": str(components),
             "TIMESHEETS_LIVE_DAPR_CATALOG_FIXTURE_ID": instance.fixture_id,
             "TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE": str(root / "owner-profile.json"),
