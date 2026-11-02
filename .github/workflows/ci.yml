@@ -100,5 +100,9 @@ jobs:
         run: python3 -m unittest discover -s scripts/tests -v
       - name: Verify selected magic-link index diagnostics
         run: python3 scripts/test_magic_link_index_selection.py -v
+      - name: Initialize AppHost metadata dependencies
+        run: git submodule update --init -- references/Hexalith.Builds references/Hexalith.EventStore
+      - name: Build the AppHost executable exercised by fixture tests
+        run: dotnet build src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --configuration Debug -p:UseHexalithProjectReferences=false -m:1 /nr:false
       - name: Verify isolated fixture drivers and diagnostic redaction
         run: python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py -v

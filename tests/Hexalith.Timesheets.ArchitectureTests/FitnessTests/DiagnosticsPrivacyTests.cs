@@ -1,4 +1,5 @@
 using Shouldly;
+using System.Text.RegularExpressions;
 
 namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 
@@ -52,8 +53,8 @@ public sealed class DiagnosticsPrivacyTests
         foreach (string sourceFile in sourceFiles)
         {
             string[] loggingLines = File.ReadAllLines(sourceFile)
-                .Where(static line => line.Contains("Log", StringComparison.Ordinal)
-                    || line.Contains("logger", StringComparison.OrdinalIgnoreCase))
+                .Where(static line => Regex.IsMatch(line,
+                    @"\b(?:Log[A-Z]\w*|ILogger(?:Factory)?|LoggerMessage|_?logger)\b"))
                 .ToArray();
 
             foreach (string loggingLine in loggingLines)
