@@ -457,8 +457,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         var readModels = new InMemoryReadModelStore(IndexWith(Hash()),
             indexException: operation == "index" ? failure : null,
             catalogException: operation == "catalog" ? failure : null);
-        ILogger logger = Substitute.For<ILogger>();
-        logger.IsEnabled(Arg.Any<LogLevel>()).Returns(true);
+        var logger = new EagerStructuredLogCapture();
         ILoggerFactory factory = Substitute.For<ILoggerFactory>();
         factory.CreateLogger(Arg.Any<string>()).Returns(logger);
         using var trace = new Activity("read-test").SetIdFormat(ActivityIdFormat.W3C).Start();
@@ -468,18 +467,17 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
 
         ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
 
-        object?[] arguments = logger.ReceivedCalls().Where(call => call.GetMethodInfo().Name == "Log")
-            .ShouldHaveSingleItem().GetArguments();
-        arguments[0].ShouldBe(LogLevel.Warning);
-        ((EventId)arguments[1]!).Id.ShouldBe(1301);
-        arguments[3].ShouldBeNull();
-        var state = ((IEnumerable<KeyValuePair<string, object?>>)arguments[2]!).ToDictionary();
+        var entry = logger.Entries.ShouldHaveSingleItem();
+        entry.Level.ShouldBe(LogLevel.Warning);
+        entry.EventId.Id.ShouldBe(1301);
+        entry.Exception.ShouldBeNull();
+        IReadOnlyDictionary<string, object?> state = entry.State;
         state.Keys.Order().ShouldBe(new[] { "Operation", "Outcome", "TraceId", "{OriginalFormat}" }.Order());
         state["Operation"].ShouldBe(operation + "-read");
         state["Outcome"].ShouldBe(category);
         state["TraceId"].ShouldBe(trace.TraceId.ToHexString());
         JsonSerializer.Serialize(state).ShouldNotContain(sensitive);
-        arguments[2]!.ToString()!.ShouldNotContain(sensitive);
+        entry.Text.ShouldNotContain(sensitive);
     }
 
     /// <summary>Exercises wrapped production-epoch outages and failure of diagnostic emission.</summary>
@@ -493,9 +491,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         var readModels = new InMemoryReadModelStore(null, epochException: new IOException(sensitive));
         var coordinator = new SharedProjectionEpochCoordinator(readModels,
             new Hexalith.EventStore.Testing.Fakes.InMemoryReadModelStore());
-        ILogger logger = Substitute.For<ILogger>();
-        logger.IsEnabled(Arg.Any<LogLevel>()).Returns(_ => providerFails
-            ? throw new IOException("Diagnostic provider unavailable.") : true);
+        var logger = new EagerStructuredLogCapture(providerFails);
         ILoggerFactory factory = Substitute.For<ILoggerFactory>();
         factory.CreateLogger(Arg.Any<string>()).Returns(logger);
         var gateway = new ScriptedGatewayClient();
@@ -508,14 +504,20 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         gateway.Requests.ShouldBeEmpty();
         if (!providerFails)
         {
-            object?[] arguments = logger.ReceivedCalls().Where(call => call.GetMethodInfo().Name == "Log")
-                .ShouldHaveSingleItem().GetArguments();
-            arguments[3].ShouldBeNull();
-            var state = ((IEnumerable<KeyValuePair<string, object?>>)arguments[2]!).ToDictionary();
+            var entry = logger.Entries.ShouldHaveSingleItem();
+            entry.Level.ShouldBe(LogLevel.Warning);
+            entry.EventId.Id.ShouldBe(1301);
+            entry.Exception.ShouldBeNull();
+            IReadOnlyDictionary<string, object?> state = entry.State;
             state.Keys.Order().ShouldBe(new[] { "Operation", "Outcome", "TraceId", "{OriginalFormat}" }.Order());
             state["Operation"].ShouldBe("index-read");
             state["Outcome"].ShouldBe("dependency-unavailable");
             JsonSerializer.Serialize(state).ShouldNotContain(sensitive);
+            entry.Text.ShouldNotContain(sensitive);
+        }
+        else
+        {
+            logger.Entries.ShouldBeEmpty();
         }
     }
 

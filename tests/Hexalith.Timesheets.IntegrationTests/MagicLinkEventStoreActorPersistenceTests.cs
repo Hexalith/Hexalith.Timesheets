@@ -593,8 +593,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     [Fact]
     public async Task ProtectedProcessRoutePreservesCatalogAdmissionAndKeyedProcessorRejection()
     {
-        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081);
+        using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, internalPort: 8081, localPort: 8081,
+            useMismatchedClaims: false);
         using HttpClient client = factory.CreateClient();
+        await factory.ProjectValidStateAsync(client, ValidConfirmToken(), MagicLinkAllowedAction.Confirm,
+            new MagicLinkCapabilityId("process-catalog-seed"), new TimeEntryId("process-catalog-seed-entry"));
         var entryId = new TimeEntryId("time-entry-process-dispatch");
         var intent = new CommitMagicLinkUse(
             new MagicLinkCapabilityId("capability-process-dispatch"), Tenant(), entryId,
@@ -610,10 +613,24 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         using HttpResponseMessage authenticated = await factory.PostProtectedManagementAsync(
             client, "/process", request);
-        // The fixture enrolls projection delivery. No owner-declared command/idempotency facet grants process admission.
-        authenticated.StatusCode.ShouldBe(HttpStatusCode.ServiceUnavailable);
+        authenticated.StatusCode.ShouldBe(HttpStatusCode.OK);
+        (await authenticated.Content.ReadFromJsonAsync<DomainServiceWireResult>(JsonOptions,
+            TestContext.Current.CancellationToken)).ShouldNotBeNull().IsRejection.ShouldBeTrue();
         factory.Gateway.SubmissionCount.ShouldBe(0);
         factory.Gateway.StoredEvents(Tenant().TenantId, entryId.Value).ShouldBeEmpty();
+        using HttpResponseMessage undeclared = await factory.PostProtectedManagementAsync(client, "/process",
+            request with { Command = command with { CommandType = "timesheets.undeclared" } });
+        undeclared.StatusCode.ShouldBe(HttpStatusCode.ServiceUnavailable);
+        CommitMagicLinkIssue validIntent = CreateIssueIntent(new("process-catalog-valid"), new("process-catalog-valid-entry"))
+            with { TokenHash = new MagicLinkTokenHash(Hash("process-catalog-valid-token")) };
+        CommandEnvelope valid = CreateIssueEnvelope(validIntent, "process-catalog-valid-command");
+        using HttpResponseMessage admitted = await factory.PostProtectedManagementAsync(client, "/process",
+            new DomainServiceRequest(valid, null));
+        admitted.StatusCode.ShouldBe(HttpStatusCode.OK);
+        DomainServiceWireResult wire = (await admitted.Content.ReadFromJsonAsync<DomainServiceWireResult>(JsonOptions,
+            TestContext.Current.CancellationToken)).ShouldNotBeNull();
+        wire.IsRejection.ShouldBeFalse();
+        wire.Events.ShouldHaveSingleItem().EventTypeName.ShouldBe(typeof(StoredMagicLinkIssued).FullName);
         using IServiceScope scope = factory.Services.CreateScope();
         var processor = scope.ServiceProvider.GetRequiredKeyedService<Hexalith.EventStore.Client.Handlers.IAsyncDomainProcessor>("timesheets");
         processor.ShouldBeOfType<MagicLinkEventStoreDomainProcessor>();

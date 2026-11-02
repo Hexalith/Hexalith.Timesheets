@@ -46,6 +46,10 @@ DEFAULT_COMPONENTS = APPHOST.parent / "DaprComponents"
 COMPONENT_FILES = (Path("statestore.yaml"), Path("Timesheets/timesheets-readmodels.yaml"), Path("pubsub.yaml"))
 REQUIRED_PORTS = (8080, 8081, 8082, 3501)
 SHARED_CONTROL_PORTS = (6050, 6060, 50005, 50006)
+REDIS_OBSERVATION_MAX_KEYS = 1024
+REDIS_OBSERVATION_MAX_VALUE_BYTES = 65536
+REDIS_OBSERVATION_MAX_MEMORY_BYTES = 32 * 1024 * 1024
+REDIS_OBSERVATION_MAX_SCRIPT_MS = 250
 PRIVATE_CONTROL_PORT_MIN = 20000
 PRIVATE_CONTROL_PORT_MAX = 29999
 CONTROL_PORT_ALLOCATION_ATTEMPTS = 20
@@ -1330,6 +1334,8 @@ def read_only_shared_snapshot(comparison):
             return value
         if prefix == b"*":
             return [read_resp(stream) for _ in range(int(line))]
+        if prefix == b"-":
+            raise FixtureError("Redis preservation observation exceeded its safety bound or failed")
         raise FixtureError("Redis preservation snapshot is unavailable")
 
     require(isinstance(comparison, SharedComparison), "An explicit shared comparison scope is required")
@@ -1354,25 +1360,56 @@ def read_only_shared_snapshot(comparison):
                 for database in (0, 13, 14):
                     observation.update(phase="redis_database", database=database)
                     require(command("SELECT", database) == b"OK", "Redis snapshot database selection failed")
+                    memory = command("INFO", "memory")
+                    require(isinstance(memory, bytes), "Redis preservation memory bound is unavailable")
+                    usage = re.findall(rb"(?m)^used_memory:([0-9]+)\r?$", memory)
+                    require(len(usage) == 1 and int(usage[0]) <= REDIS_OBSERVATION_MAX_MEMORY_BYTES,
+                            "Redis preservation observation exceeds its safety bound")
+                    # DBSIZE is constant-time. Refuse before invoking Lua on an
+                    # oversized shared database, including the observed large DB0.
+                    count = command("DBSIZE")
+                    require(type(count) is int and count <= REDIS_OBSERVATION_MAX_KEYS,
+                            "Redis preservation observation exceeds its safety bound")
                     # Script reads only and holds atomic access. Pair each PTTL
                     # with TIME so its absolute expiry remains comparable even
                     # while a large broker snapshot takes measurable time.
-                    script = """
+                    script = f"""
+local max_keys = {REDIS_OBSERVATION_MAX_KEYS}
+local max_value_bytes = {REDIS_OBSERVATION_MAX_VALUE_BYTES}
+local max_memory_bytes = {REDIS_OBSERVATION_MAX_MEMORY_BYTES}
+local max_script_ms = {REDIS_OBSERVATION_MAX_SCRIPT_MS}
+-- Repeat the cardinality check atomically before KEYS, closing the preflight race.
+local used_memory = tonumber(string.match(redis.call('INFO', 'memory'), 'used_memory:(%d+)'))
+if not used_memory or used_memory > max_memory_bytes or redis.call('DBSIZE') > max_keys then
+    return redis.error_reply('observation-bound')
+end
+local started = redis.call('TIME')
+local started_ms = tonumber(started[1]) * 1000 + math.floor(tonumber(started[2]) / 1000)
 local keys = redis.call('KEYS', '*')
-local rows = {}
+local rows = {{}}
 for _, key in ipairs(keys) do
+    local now = redis.call('TIME')
+    local key_bytes = redis.call('MEMORY', 'USAGE', key, 'SAMPLES', 0)
+    if tonumber(now[1]) * 1000 + math.floor(tonumber(now[2]) / 1000) - started_ms > max_script_ms
+        or not key_bytes or key_bytes > max_value_bytes then
+        return redis.error_reply('observation-bound')
+    end
     local value = redis.call('DUMP', key)
     if value then
-        local now = redis.call('TIME')
+        local expiry_now = redis.call('TIME')
         local ttl = redis.call('PTTL', key)
         local deadline = ttl
         if ttl >= 0 then
-            deadline = tonumber(now[1]) * 1000 + math.floor(tonumber(now[2]) / 1000) + ttl
+            deadline = tonumber(expiry_now[1]) * 1000 + math.floor(tonumber(expiry_now[2]) / 1000) + ttl
         end
-        table.insert(rows, {redis.sha1hex(key), redis.sha1hex(value), deadline})
+        table.insert(rows, {{redis.sha1hex(key), redis.sha1hex(value), deadline}})
     end
 end
-return {redis.call('TIME'), rows}
+local finished = redis.call('TIME')
+if tonumber(finished[1]) * 1000 + math.floor(tonumber(finished[2]) / 1000) - started_ms > max_script_ms then
+    return redis.error_reply('observation-bound')
+end
+return {{finished, rows}}
 """
                     now, rows = command("EVAL", script, 0)
                     timestamp = int(now[0]) * 1000 + int(now[1]) // 1000

@@ -3,12 +3,20 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 using Hexalith.EventStore.Contracts.Commands;
+using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.Contracts.Streams;
+using Hexalith.EventStore.DomainService;
+using Hexalith.EventStore.ServiceDefaults.Routing;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
+using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks;
+using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Server.Runtime;
+using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
 using Hexalith.Timesheets.Server.Authorization;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +31,64 @@ namespace Hexalith.Timesheets.IntegrationTests;
 
 public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 {
+    /// <summary>Matches every protected processor payload to an exact route and complete semantic intent.</summary>
+    [Fact]
+    public void InternalCommandCatalogUsesExactPayloadsAndRejectsChangedIntent()
+    {
+        using ServiceProvider provider = new ServiceCollection()
+            .AddTimesheetsMagicLinkEventStoreProcessing()
+            .AddTimesheetsMagicLinkEventStoreProcessing().BuildServiceProvider();
+        var declared = TimesheetsRouteCatalogDeclarations.Commands;
+        declared.Select(command => command.Route.Execution!.HandlerType)
+            .ShouldBe(TimesheetsRouteCatalogDeclarations.PayloadTypes.Select(type => type.FullName), ignoreOrder: true);
+        foreach (CommandIntentDeclaration policy in declared)
+        {
+            RouteCatalogValidator.ValidateDeclaration(policy.Route);
+            policy.Route.MessageType.ShouldBe(policy.Route.Execution!.HandlerType);
+            policy.Route.Execution.AliasPolicy.ShouldBe("exact");
+        }
+        provider.GetServices<IIdempotencyIntentAdapter>().Count().ShouldBe(declared.Count);
+        var assembly = typeof(TimesheetsRouteCatalogDeclarations).Assembly;
+        assembly.GetCustomAttributes(typeof(RouteCatalogAdapterSourceAttribute), false)
+            .Single().ShouldBeOfType<RouteCatalogAdapterSourceAttribute>().SourceType
+            .ShouldBe(typeof(TimesheetsRouteCatalogAdapters));
+        CompiledRouteCatalogDeclarations.Read([assembly]).Select(route => route.RouteId)
+            .ShouldBe(declared.Select(policy => policy.Route.RouteId), ignoreOrder: true);
+        IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations([assembly]);
+        operations.Select(operation => operation.RouteId)
+            .ShouldBe(declared.Select(policy => policy.Route.RouteId), ignoreOrder: true);
+        foreach (RouteOperationContract operation in operations)
+        {
+            RouteCatalogValidator.ValidateOperationContract(operation);
+            operation.Ingress.ShouldBe("internal");
+            operation.Eligibility.ShouldBe("UI-only");
+        }
+
+        IReadOnlyList<IDeclaredIdempotencyIntentAdapter> adapters = TimesheetsRouteCatalogAdapters.Create();
+        void AssertChanged<T>(T original, T changed, string aggregate)
+        {
+            IDeclaredIdempotencyIntentAdapter adapter = adapters.Single(candidate => candidate.CommandType == typeof(T).FullName);
+            IdempotencyIntentCommand input = new(typeof(T).FullName!, Tenant().TenantId, "timesheets", aggregate,
+                JsonSerializer.SerializeToUtf8Bytes(original, JsonOptions), null);
+            IdempotencyCanonicalIntent canonical = adapter.CreateIntent(input);
+            IdempotencyCanonicalIntent mutated = adapter.CreateIntent(input with
+            { Payload = JsonSerializer.SerializeToUtf8Bytes(changed, JsonOptions) });
+            canonical.SemanticPayload.SequenceEqual(mutated.SemanticPayload).ShouldBeFalse();
+            Should.Throw<InvalidOperationException>(() => adapter.CreateIntent(input with { CommandType = "forged" }));
+        }
+        CommitMagicLinkIssue issue = CreateIssueIntent(new("catalog-issue"), new("catalog-issue-entry"));
+        AssertChanged(issue, issue with { Issuer = new PartyReference("different-issuer") }, issue.Command.CapabilityId.Value);
+        var transition = new CommitMagicLinkTransition(new("catalog-transition"), Tenant(), new("catalog-transition-entry"),
+            Operator(), MagicLinkTransitionAction.Revoke, new MagicLinkAuditMetadata("timesheets", "catalog-transition"), ObservedAtUtc);
+        AssertChanged(transition, transition with { Actor = new PartyReference("different-actor") }, transition.TimeEntryId.Value);
+        var use = new CommitMagicLinkUse(new("catalog-capability"), Tenant(), new("catalog-entry"),
+            new("catalog-token-hash"), MagicLinkUseAction.Adjust, AdjustCommand(), ObservedAtUtc);
+        AssertChanged(use, use with { TokenHash = new("different-token-hash") }, use.TimeEntryId.Value);
+        var record = new CommitTimeEntryRecord(RecordingCommand(new("catalog-record"), "catalog-request"),
+            Tenant(), Contributor(), ObservedAtUtc);
+        AssertChanged(record, record with { Actor = new PartyReference("different-contributor") }, record.Command.TimeEntryId.Value);
+    }
+
     /// <summary>Rejects invalid retry keys without consuming the capability and accepts the documented maximum length.</summary>
     /// <param name="adjust">Whether to exercise adjustment instead of confirmation.</param>
     /// <param name="scenario">The invalid header boundary.</param>

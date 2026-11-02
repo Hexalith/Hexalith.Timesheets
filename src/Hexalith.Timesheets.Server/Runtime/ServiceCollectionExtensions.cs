@@ -14,6 +14,7 @@ using Hexalith.Timesheets.Server.TimesheetPeriods;
 using Hexalith.EventStore.Client.Registration;
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Handlers;
+using Hexalith.EventStore.DomainService;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -137,6 +138,10 @@ public static class ServiceCollectionExtensions
     public static IServiceCollection AddTimesheetsMagicLinkEventStoreProcessing(this IServiceCollection services)
     {
         ArgumentNullException.ThrowIfNull(services);
+        foreach (IDeclaredIdempotencyIntentAdapter adapter in TimesheetsRouteCatalogDeclarations.CreateAdapters())
+        {
+            services.TryAddEnumerable(ServiceDescriptor.Singleton<IIdempotencyIntentAdapter>(adapter));
+        }
         services.AddScoped<MagicLinkEventStoreDomainProcessor>();
         services.AddKeyedScoped<IDomainProcessor>(
             TimesheetsEventStoreIntegration.DomainName,

@@ -5,6 +5,7 @@ using Hexalith.EventStore.Client.Handlers;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Events;
 using Hexalith.EventStore.Contracts.Results;
+using Hexalith.EventStore.DomainService;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -27,9 +28,12 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     MagicLinkConfirmationCapabilityCommandService commandService,
     ExternalContributionCommandService externalContributionService,
     TimeProvider clock,
-    IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer) : IDomainProcessor, IAsyncDomainProcessor
+    IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer) : IDomainProcessor, IAsyncDomainProcessor, IDomainCommandPayloadInventory
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+
+    /// <inheritdoc/>
+    public IReadOnlyList<Type> CommandPayloadTypes => TimesheetsRouteCatalogDeclarations.PayloadTypes;
 
     /// <summary>Preserves the original constructor with system expiry denied by default.</summary>
     /// <param name="stateLoader">The authoritative state loader.</param>

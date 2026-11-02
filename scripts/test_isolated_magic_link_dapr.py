@@ -95,10 +95,13 @@ class Commands:
 class RedisSnapshotConnection:
     """RESP transport double; never connects to a service."""
 
-    def __init__(self, databases, server=b"# Server\r\nrun_id:" + b"a" * 40 + b"\r\n", digest_rows=True):
+    def __init__(self, databases, server=b"# Server\r\nrun_id:" + b"a" * 40 + b"\r\n", digest_rows=True,
+                 eval_bound_failure=False, used_memory=1024):
         self.databases = databases
         self.server = server
         self.digest_rows = digest_rows
+        self.eval_bound_failure = eval_bound_failure
+        self.used_memory = used_memory
         self.database = None
         self.arguments = []
         self.stream = io.BytesIO()
@@ -131,10 +134,15 @@ class RedisSnapshotConnection:
             request.read(2)
         self.arguments.append(arguments)
         if arguments[0] == b"INFO":
-            response = self.resp(self.server)
+            response = self.resp(self.server if arguments[1] == b"server"
+                                 else b"# Memory\r\nused_memory:" + str(self.used_memory).encode() + b"\r\n")
         elif arguments[0] == b"SELECT":
             self.database = int(arguments[1])
             response = b"+OK\r\n"
+        elif arguments[0] == b"DBSIZE":
+            response = self.resp(len(self.databases[self.database]))
+        elif arguments[0] == b"EVAL" and self.eval_bound_failure:
+            response = b"-ERR observation-bound\r\n"
         else:
             rows = self.databases[self.database]
             if self.digest_rows:
@@ -5185,7 +5193,7 @@ time.sleep(60)
         def read(database_rows):
             snapshot, connection = self.read_shared_rows(database_rows)
             self.assertEqual([0, 13, 14], [int(args[1]) for args in connection.arguments if args[0] == b"SELECT"])
-            self.assertEqual([b"INFO", b"SELECT", b"EVAL", b"SELECT", b"EVAL", b"SELECT", b"EVAL"],
+            self.assertEqual([b"INFO", b"SELECT", b"INFO", b"DBSIZE", b"EVAL", b"SELECT", b"INFO", b"DBSIZE", b"EVAL", b"SELECT", b"INFO", b"DBSIZE", b"EVAL"],
                              [args[0] for args in connection.arguments])
             self.assertEqual([b"INFO", b"server"], connection.arguments[0])
             self.assertEqual({"0", "13", "14"}, set(snapshot["redis"]))
@@ -5199,6 +5207,56 @@ time.sleep(60)
         changed = dict(databases)
         changed[0] = [["broker-key", "broker-v2", -1], ["broker-ttl", "ttl-value", 10000]]
         self.assertFalse(fixture.shared_preservation(before, read(changed))["matches"])
+
+    def test_oversized_shared_redis_refuses_before_lua_and_retains_sanitized_receipt(self):
+        private = "private-broker-payload"
+        rows = [(f"key-{index}", private, -1) for index in range(fixture.REDIS_OBSERVATION_MAX_KEYS + 1)]
+        connection = RedisSnapshotConnection({0: rows, 13: [], 14: []})
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=connection), \
+                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Scheduler must not be read")):
+            with self.assertRaises(fixture.SharedObservationError) as failure:
+                instance.capture_shared_snapshot()
+        self.assertNotIn(private, str(failure.exception))
+        self.assertNotIn(b"EVAL", [arguments[0] for arguments in connection.arguments])
+        self.assertEqual([b"INFO", b"SELECT", b"INFO", b"DBSIZE"], [arguments[0] for arguments in connection.arguments])
+        receipt = (instance.log_directory / "shared-observation-failure.json").read_text()
+        self.assertNotIn(private, receipt)
+        self.assertEqual("redis_database", json.loads(receipt)["phase"])
+        self.assertFalse(json.loads(receipt)["completed"])
+
+    def test_redis_growth_or_script_budget_refuses_atomically_without_success_receipt(self):
+        connection = RedisSnapshotConnection({0: [["private-key", "private-value", -1]], 13: [], 14: []},
+                                             eval_bound_failure=True)
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=connection), \
+                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Scheduler must not be read")):
+            with self.assertRaises(fixture.SharedObservationError):
+                instance.capture_shared_snapshot()
+        script = next(arguments[1] for arguments in connection.arguments if arguments[0] == b"EVAL")
+        for guard in (b"redis.call('DBSIZE') > max_keys", b"redis.call('MEMORY', 'USAGE', key, 'SAMPLES', 0)",
+                      b"used_memory > max_memory_bytes", b"local finished = redis.call('TIME')",
+                      b"local expiry_now = redis.call('TIME')\n        local ttl = redis.call('PTTL', key)"):
+            self.assertIn(guard, script)
+        receipt = (instance.log_directory / "shared-observation-failure.json").read_text()
+        self.assertNotIn("private-key", receipt)
+        self.assertNotIn("private-value", receipt)
+        self.assertEqual("redis_database", json.loads(receipt)["phase"])
+        self.assertFalse(json.loads(receipt)["completed"])
+
+    def test_large_key_name_memory_refuses_before_keys_even_at_small_cardinality(self):
+        private = "private-long-key-name"
+        connection = RedisSnapshotConnection({0: [[private, "value", -1]], 13: [], 14: []},
+                                             used_memory=fixture.REDIS_OBSERVATION_MAX_MEMORY_BYTES + 1)
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=connection), \
+                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Scheduler must not be read")):
+            with self.assertRaises(fixture.SharedObservationError):
+                instance.capture_shared_snapshot()
+        self.assertEqual([b"INFO", b"SELECT", b"INFO"], [arguments[0] for arguments in connection.arguments])
+        receipt = (instance.log_directory / "shared-observation-failure.json").read_text()
+        self.assertNotIn(private, receipt)
+        self.assertFalse(json.loads(receipt)["completed"])
 
 
 if __name__ == "__main__":
