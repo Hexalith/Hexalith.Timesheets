@@ -1,0 +1,20 @@
+[
+  {
+    "path": "tests/Hexalith.EventStore.Server.Tests/Routing/CatalogBackendHttpTests.cs",
+    "sha256": "912ccc065b10e2e436552bf793a3451602d3bc3ae26108e503fba8ac23d927d4",
+    "expected_inert_placeholder_found": true,
+    "line": 51
+  },
+  {
+    "path": "tests/Hexalith.EventStore.Server.Tests/Routing/CatalogRefusalDiagnosticsTests.cs",
+    "sha256": "7c8779d78809ed9ae0d130af9605de3076138292cd62e47ccf50eafdd923367f",
+    "expected_inert_placeholder_found": true,
+    "line": 16
+  },
+  {
+    "path": "tests/Hexalith.EventStore.Server.Tests/Routing/CatalogTransportIsolationTests.cs",
+    "sha256": "c92894a232b49d52aef2a56a5a548edd8c526ed64a6badd39c762cefc0d21b25",
+    "expected_inert_placeholder_found": true,
+    "line": 106
+  }
+]

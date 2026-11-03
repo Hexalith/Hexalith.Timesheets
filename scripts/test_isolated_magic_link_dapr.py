@@ -16,6 +16,7 @@ import shutil
 import subprocess
 import tempfile
 import time
+import traceback
 import unittest
 import xml.etree.ElementTree as ET
 from unittest.mock import MagicMock, patch
@@ -195,7 +196,7 @@ class IsolatedFixtureTests(unittest.TestCase):
         if scheduler is None:
             scheduler = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
         with patch.object(fixture.socket, "create_connection", return_value=connection) as connect, \
-                patch.object(fixture.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps(scheduler).encode())) as urlopen:
+                patch.object(fixture, "owned_http_open", return_value=io.BytesIO(json.dumps(scheduler).encode())) as urlopen:
             snapshot = fixture.read_only_shared_snapshot(comparison if comparison is not None else self.comparison)
         connect.assert_called_once_with(("127.0.0.1", 6379), timeout=20)
         self.assertEqual(20, urlopen.call_args.kwargs["timeout"])
@@ -5423,7 +5424,7 @@ sys.stdin.read()
             connection = RedisSnapshotConnection({}, server)
             with self.subTest(server=server), \
                     patch.object(fixture.socket, "create_connection", return_value=connection), \
-                    patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Unexpected scheduler read")), \
+                    patch.object(fixture, "owned_http_open", side_effect=AssertionError("Unexpected scheduler read")), \
                     self.assertRaises(fixture.FixtureError) as failure:
                 fixture.read_only_shared_snapshot(self.comparison)
             self.assertNotIn("PRIVATE", str(failure.exception))
@@ -5438,7 +5439,7 @@ sys.stdin.read()
 
     def test_snapshot_requires_explicit_scope_before_any_service_read(self):
         with patch.object(fixture.socket, "create_connection", side_effect=AssertionError("Unexpected Redis read")), \
-                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Unexpected scheduler read")):
+                patch.object(fixture, "owned_http_open", side_effect=AssertionError("Unexpected scheduler read")):
             with self.assertRaises(TypeError):
                 fixture.read_only_shared_snapshot()
             with self.assertRaises(fixture.FixtureError):
@@ -5473,7 +5474,7 @@ sys.stdin.read()
                 instance = fixture.IsolatedFixture(log_directory=self.logs)
                 with patch.object(fixture.socket, "create_connection", side_effect=TimeoutError("PRIVATE")
                                   if mode == "connection" else lambda *_args, **_kwargs: connection) as connect, \
-                        patch.object(fixture.urllib.request, "urlopen", side_effect=KeyboardInterrupt()
+                        patch.object(fixture, "owned_http_open", side_effect=KeyboardInterrupt()
                                      if mode == "interrupt" else TimeoutError("PRIVATE scheduler")) as urlopen:
                     with self.assertRaises(KeyboardInterrupt if mode == "interrupt" else fixture.SharedObservationError):
                         instance.capture_shared_snapshot()
@@ -5491,6 +5492,127 @@ sys.stdin.read()
                 self.assertFalse(instance.containers)
                 self.assertEqual(1, connect.call_count)
                 self.assertEqual(1 if mode in ("scheduler", "interrupt") else 0, urlopen.call_count)
+
+    def test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry(self):
+        for error_type, arguments in (
+                (fixture.http.client.BadStatusLine, ("PRIVATE status line",)),
+                (fixture.http.client.IncompleteRead, (b"PRIVATE response bytes", 50)),
+                (fixture.http.client.RemoteDisconnected, ("PRIVATE remote detail",)),
+                (fixture.http.client.LineTooLong, ("PRIVATE header",))):
+            for phase in ("open", "body"):
+                with self.subTest(error=error_type.__name__, phase=phase):
+                    connection = RedisSnapshotConnection({0: [], 13: [], 14: []})
+                    instance = fixture.IsolatedFixture(log_directory=self.logs)
+                    error = error_type(*arguments)
+                    response = MagicMock()
+                    response.__enter__.return_value.read.side_effect = error
+                    with patch.object(fixture.socket, "create_connection", return_value=connection), \
+                            patch.object(fixture, "owned_http_open", side_effect=error if phase == "open" else None,
+                                         return_value=response) as opener, \
+                            patch.object(fixture.urllib.request, "urlopen", side_effect=error if phase == "open" else None,
+                                         return_value=response), \
+                            self.assertRaises(fixture.SharedObservationError) as failure:
+                        instance.capture_shared_snapshot()
+                    receipt = json.loads((instance.log_directory / "shared-observation-failure.json").read_text())
+                    self.assertEqual({"started_unix_ns", "completed_unix_ns", "completed", "phase", "database",
+                                      "exception_category"}, set(receipt))
+                    self.assertEqual("scheduler_range", receipt["phase"])
+                    self.assertEqual(error_type.__name__, receipt["exception_category"])
+                    self.assertFalse(receipt["completed"])
+                    self.assertIsNone(receipt["database"])
+                    self.assertLessEqual(receipt["started_unix_ns"], receipt["completed_unix_ns"])
+                    self.assertNotIn("PRIVATE", json.dumps(receipt))
+                    self.assertNotIn("PRIVATE", "".join(traceback.format_exception(failure.exception)))
+                    opener.assert_called_once()
+                    self.assertEqual(20, opener.call_args.kwargs["timeout"])
+                    if phase == "body":
+                        response.__enter__.return_value.read.assert_called_once_with()
+                        response.__exit__.assert_called_once()
+                        self.assertIs(error, response.__exit__.call_args.args[1])
+                    else:
+                        response.__exit__.assert_not_called()
+                    self.assertIsNone(instance.shared_before)
+                    self.assertFalse(instance.start_attempted)
+                    self.assertFalse(instance.containers)
+
+    def test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations(self):
+        sink_hits, proxy_hits = [], []
+        scheduler = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        def sink(handler):
+            sink_hits.append(handler.path)
+            handler.send_response(200)
+            handler.end_headers()
+            handler.wfile.write(json.dumps(scheduler).encode())
+        def proxy(handler):
+            proxy_hits.append(handler.path)
+            handler.send_response(502)
+            handler.end_headers()
+        original_request = fixture.urllib.request.Request
+        original_connection = fixture.socket.create_connection
+        cases = [(status, None, "HTTPError") for status in (200, 301, 302, 303, 307, 308)]
+        cases.extend(((None, b"PRIVATE invalid status\r\n\r\n", "BadStatusLine"),
+                      (None, b"HTTP/1.0 200 OK\r\nContent-Length: 1000\r\n\r\nPRIVATE partial body", "IncompleteRead")))
+        with self.owned_http_server(sink) as destination, self.owned_http_server(proxy) as proxy_origin:
+            for status, wire, category in cases:
+                origin_hits = []
+                def respond(handler):
+                    origin_hits.append((handler.command, handler.path,
+                                        handler.rfile.read(int(handler.headers.get("Content-Length", 0)))))
+                    if wire is not None:
+                        handler.wfile.write(wire)
+                        return
+                    handler.send_response(status)
+                    handler.send_header("Location", destination + "/PRIVATE-redirect")
+                    handler.end_headers()
+                    handler.wfile.write(json.dumps(scheduler).encode())
+                with self.subTest(status=status, category=category), self.owned_http_server(respond) as origin:
+                    connection = RedisSnapshotConnection({0: [], 13: [], 14: []})
+                    instance = fixture.IsolatedFixture(log_directory=self.logs)
+                    def connect(address, *args, **kwargs):
+                        if address == ("127.0.0.1", 6379):
+                            return connection
+                        return original_connection(address, *args, **kwargs)
+                    def request(url, **kwargs):
+                        self.assertEqual("http://127.0.0.1:2379/v3/kv/range", url)
+                        self.assertEqual({"Content-Type": "application/json"}, kwargs["headers"])
+                        return original_request(origin + "/v3/kv/range", **kwargs)
+                    poison = {name: proxy_origin for name in
+                              ("HTTP_PROXY", "http_proxy", "HTTPS_PROXY", "https_proxy", "ALL_PROXY", "all_proxy")}
+                    with patch.dict(os.environ, dict(poison, NO_PROXY="", no_proxy="")), \
+                            patch.object(fixture.socket, "create_connection", side_effect=connect), \
+                            patch.object(fixture.urllib.request, "Request", side_effect=request), \
+                            patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Default opener forbidden")):
+                        if status == 200:
+                            snapshot = instance.capture_shared_snapshot()
+                            self.assertTrue(snapshot["observation"]["completed"])
+                            self.assertEqual({"revision": "3", "keys": 0}, snapshot["scheduler"])
+                        else:
+                            with self.assertRaises(fixture.SharedObservationError):
+                                instance.capture_shared_snapshot()
+                            receipt = json.loads((instance.log_directory / "shared-observation-failure.json").read_text())
+                            self.assertFalse(receipt["completed"])
+                            self.assertEqual(category, receipt["exception_category"])
+                            self.assertEqual("scheduler_range", receipt["phase"])
+                            self.assertNotIn("PRIVATE", json.dumps(receipt))
+                    self.assertEqual([("POST", "/v3/kv/range", b'{"key":"AA==","range_end":"AA=="}')], origin_hits)
+        self.assertEqual([], sink_hits)
+        self.assertEqual([], proxy_hits)
+
+    def test_scheduler_http_error_closes_response_and_withholds_private_details(self):
+        body = io.BytesIO(b"PRIVATE response body")
+        error = fixture.urllib.error.HTTPError("http://PRIVATE/path", 503, "PRIVATE reason", {}, body)
+        connection = RedisSnapshotConnection({0: [], 13: [], 14: []})
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=connection), \
+                patch.object(fixture, "owned_http_open", side_effect=error) as opener, \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance.capture_shared_snapshot()
+        self.assertTrue(body.closed)
+        opener.assert_called_once()
+        receipt = (instance.log_directory / "shared-observation-failure.json").read_text()
+        self.assertEqual("HTTPError", json.loads(receipt)["exception_category"])
+        self.assertNotIn("PRIVATE", receipt)
+        self.assertNotIn("PRIVATE", "".join(traceback.format_exception(failure.exception)))
 
     def test_private_fingerprints_are_run_scoped_domain_separated_and_never_serialized(self):
         rows = {0: [["PRIVATE-key", "PRIVATE-value", -1], ["PRIVATE-ttl", "PRIVATE-expiring", 10000]], 13: [], 14: []}
@@ -6030,11 +6152,11 @@ time.sleep(60)
                          b'{"count":"0","kvs":[]}', b'not-json'):
             with self.subTest(response=response), \
                     patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
-                    patch.object(fixture.urllib.request, "urlopen", return_value=io.BytesIO(response)):
+                    patch.object(fixture, "owned_http_open", return_value=io.BytesIO(response)):
                 with self.assertRaises(fixture.FixtureError):
                     fixture.read_only_shared_snapshot(self.comparison)
         with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
-                patch.object(fixture.urllib.request, "urlopen", return_value=io.BytesIO(json.dumps({"header": header}).encode())):
+                patch.object(fixture, "owned_http_open", return_value=io.BytesIO(json.dumps({"header": header}).encode())):
             snapshot = fixture.read_only_shared_snapshot(self.comparison)
             self.assertEqual(0, snapshot["scheduler"]["keys"])
 
@@ -6185,7 +6307,7 @@ time.sleep(60)
         connection = RedisSnapshotConnection({0: rows, 13: [], 14: []})
         instance = fixture.IsolatedFixture(log_directory=self.logs)
         with patch.object(fixture.socket, "create_connection", return_value=connection), \
-                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Scheduler must not be read")):
+                patch.object(fixture, "owned_http_open", side_effect=AssertionError("Scheduler must not be read")):
             with self.assertRaises(fixture.SharedObservationError) as failure:
                 instance.capture_shared_snapshot()
         self.assertNotIn(private, str(failure.exception))
@@ -6201,7 +6323,7 @@ time.sleep(60)
                                              eval_bound_failure=True)
         instance = fixture.IsolatedFixture(log_directory=self.logs)
         with patch.object(fixture.socket, "create_connection", return_value=connection), \
-                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Scheduler must not be read")):
+                patch.object(fixture, "owned_http_open", side_effect=AssertionError("Scheduler must not be read")):
             with self.assertRaises(fixture.SharedObservationError):
                 instance.capture_shared_snapshot()
         script = next(arguments[1] for arguments in connection.arguments if arguments[0] == b"EVAL")
@@ -6221,7 +6343,7 @@ time.sleep(60)
                                              used_memory=fixture.REDIS_OBSERVATION_MAX_MEMORY_BYTES + 1)
         instance = fixture.IsolatedFixture(log_directory=self.logs)
         with patch.object(fixture.socket, "create_connection", return_value=connection), \
-                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Scheduler must not be read")):
+                patch.object(fixture, "owned_http_open", side_effect=AssertionError("Scheduler must not be read")):
             with self.assertRaises(fixture.SharedObservationError):
                 instance.capture_shared_snapshot()
         self.assertEqual([b"INFO", b"SELECT", b"INFO"], [arguments[0] for arguments in connection.arguments])

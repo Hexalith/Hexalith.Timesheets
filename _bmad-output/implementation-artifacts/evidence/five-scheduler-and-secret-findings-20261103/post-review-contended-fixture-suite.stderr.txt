@@ -1,0 +1,1223 @@
+.F......EE.......FF......FF.....F..FE...FFF.............................FFFF..EFFFFFFEFFEEFEEF..FFFFFF......FF..FFFFF....F.FFFFEFFF..........FFFF.....FFFFFFFFF.........FFFFFFF............EFFFFF...............E.............FEFF..F...................FFEE...E..........E.........F.FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF...
+======================================================================
+ERROR: test_both_runtime_drivers_refuse_contention_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_both_runtime_drivers_refuse_contention_before_creating_infrastructure)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 681, in test_both_runtime_drivers_refuse_contention_before_creating_infrastructure
+    with admission.LocalRuntimeAdmission(), contextlib.redirect_stdout(io.StringIO()):
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/local_runtime_admission.py", line 54, in __enter__
+    raise RuntimeAdmissionError("Local runtime admission is busy or unsafe; no resources started") from None
+local_runtime_admission.RuntimeAdmissionError: Local runtime admission is busy or unsafe; no resources started
+
+======================================================================
+ERROR: test_captured_live_identity_blocks_deletion_even_when_current_scanner_cannot_find_it (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_captured_live_identity_blocks_deletion_even_when_current_scanner_cannot_find_it)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6251, in test_captured_live_identity_blocks_deletion_even_when_current_scanner_cannot_find_it
+    evidence = json.loads((instance.log_directory / "recorded-process-exit.json").read_text())
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 788, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpw9mjyibi/logs/run-ql2n_igp/recorded-process-exit.json'
+
+======================================================================
+ERROR: test_component_removal_failure_preserves_failure_or_marks_success_incomplete (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_component_removal_failure_preserves_failure_or_marks_success_incomplete)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5265, in test_component_removal_failure_preserves_failure_or_marks_success_incomplete
+    self.assertTrue(Path(instance.scratch).exists())
+                    ~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 149, in __init__
+    raise TypeError(
+    ...<2 lines>...
+        f"not {type(path).__name__!r}")
+TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+
+======================================================================
+ERROR: test_evidence_write_failure_preserves_original_exit_and_reports_incomplete (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_evidence_write_failure_preserves_original_exit_and_reports_incomplete) (filename='cleanup.json', original_exit=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6013, in test_evidence_write_failure_preserves_original_exit_and_reports_incomplete
+    self.assertFalse(Path(instance.scratch).exists())
+                     ~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 149, in __init__
+    raise TypeError(
+    ...<2 lines>...
+        f"not {type(path).__name__!r}")
+TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+
+======================================================================
+ERROR: test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup) (status=0, capture_fails=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4012, in test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup
+    proof = json.loads((instance.log_directory / filename).read_text())
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 788, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors, newline=newline) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmp575j8zsq/logs/run-e83t14y_/dashboard-listener-lifecycle-failure.json'
+
+======================================================================
+ERROR: test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes) (mode='share', phase='initial', status=0)
+Real synthetic sockets, injected infrastructure; no native Dashboard transfer claim.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4078, in test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes
+    receipt_bytes = receipt_path.read_bytes()
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpqwbdukrb/logs/run-70u6tpy6/dashboard-listener-initial-failure.json'
+
+======================================================================
+ERROR: test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes) (mode='share', phase='post-journey', status=0)
+Real synthetic sockets, injected infrastructure; no native Dashboard transfer claim.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4078, in test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes
+    receipt_bytes = receipt_path.read_bytes()
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpqwbdukrb/logs/run-cppuay9u/dashboard-listener-post-journey-failure.json'
+
+======================================================================
+ERROR: test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes) (mode='transfer', phase='initial', status=0)
+Real synthetic sockets, injected infrastructure; no native Dashboard transfer claim.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4078, in test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes
+    receipt_bytes = receipt_path.read_bytes()
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpqwbdukrb/logs/run-bdkuxg1e/dashboard-listener-initial-failure.json'
+
+======================================================================
+ERROR: test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes) (mode='transfer', phase='post-journey', status=0)
+Real synthetic sockets, injected infrastructure; no native Dashboard transfer claim.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4078, in test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes
+    receipt_bytes = receipt_path.read_bytes()
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpqwbdukrb/logs/run-h5wkos2q/dashboard-listener-post-journey-failure.json'
+
+======================================================================
+ERROR: test_guard_final_preservation_cancellation_keeps_existing_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_final_preservation_cancellation_keeps_existing_failure) (failed=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6219, in test_guard_final_preservation_cancellation_keeps_existing_failure
+    self.assertFalse(Path(instance.scratch).exists())
+                     ~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 149, in __init__
+    raise TypeError(
+    ...<2 lines>...
+        f"not {type(path).__name__!r}")
+TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+
+======================================================================
+ERROR: test_post_removal_inspect_failure_checks_the_exact_owned_name (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_post_removal_inspect_failure_checks_the_exact_owned_name)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5230, in test_post_removal_inspect_failure_checks_the_exact_owned_name
+    self.assertTrue(Path(instance.scratch).exists())
+                    ~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 149, in __init__
+    raise TypeError(
+    ...<2 lines>...
+        f"not {type(path).__name__!r}")
+TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+
+======================================================================
+ERROR: test_real_bound_surviving_process_blocks_dependency_deletion (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_real_bound_surviving_process_blocks_dependency_deletion)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6119, in test_real_bound_surviving_process_blocks_dependency_deletion
+    self.assertIsNone(processes[0].poll())
+                      ~~~~~~~~~^^^
+IndexError: list index out of range
+
+======================================================================
+ERROR: test_runtime_admission_contends_across_process_checkout_and_tmpdir_and_releases (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_runtime_admission_contends_across_process_checkout_and_tmpdir_and_releases)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 590, in test_runtime_admission_contends_across_process_checkout_and_tmpdir_and_releases
+    with admission.LocalRuntimeAdmission():
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/local_runtime_admission.py", line 54, in __enter__
+    raise RuntimeAdmissionError("Local runtime admission is busy or unsafe; no resources started") from None
+local_runtime_admission.RuntimeAdmissionError: Local runtime admission is busy or unsafe; no resources started
+
+======================================================================
+ERROR: test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness) (defect='credential-handoff')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1828, in test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness
+    start = next(index for index, (args, _) in enumerate(commands.calls) if args[:2] == ["aspire", "start"])
+StopIteration
+
+======================================================================
+ERROR: test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness) (defect='source-changed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1828, in test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness
+    start = next(index for index, (args, _) in enumerate(commands.calls) if args[:2] == ["aspire", "start"])
+StopIteration
+
+======================================================================
+ERROR: test_shutdown_failure_retains_fixture_artifacts (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_shutdown_failure_retains_fixture_artifacts)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4472, in test_shutdown_failure_retains_fixture_artifacts
+    self.assertTrue(Path(instance.scratch).exists())
+                    ~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 149, in __init__
+    raise TypeError(
+    ...<2 lines>...
+        f"not {type(path).__name__!r}")
+TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+
+======================================================================
+ERROR: test_surviving_bound_resource_preserves_dependencies (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_surviving_bound_resource_preserves_dependencies)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5254, in test_surviving_bound_resource_preserves_dependencies
+    self.assertTrue(Path(instance.scratch).exists())
+                    ~~~~^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 149, in __init__
+    raise TypeError(
+    ...<2 lines>...
+        f"not {type(path).__name__!r}")
+TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
+
+======================================================================
+FAIL: test_admission_is_held_through_failure_cleanup_and_preservation (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_admission_is_held_through_failure_cleanup_and_preservation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 705, in test_admission_is_held_through_failure_cleanup_and_preservation
+    self.assertEqual(42, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1412, in test_catalog_diagnostic_cancellation_returns_130_and_cleans_owned_resources
+    self.assertEqual(130, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 130 != 1
+
+======================================================================
+FAIL: test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1388, in test_catalog_diagnostic_timeouts_preserve_original_failure_and_owned_cleanup
+    self.assertEqual(29, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 29 != 1
+
+======================================================================
+FAIL: test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build) (catalog=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 892, in test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build
+    self.assertEqual(27, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 27 != 1
+
+======================================================================
+FAIL: test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build) (catalog=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 892, in test_catalog_start_allows_required_owner_build_and_ordinary_start_remains_no_build
+    self.assertEqual(27, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 27 != 1
+
+======================================================================
+FAIL: test_compiled_guard_driver_covers_incomplete_fixture_settings_with_harmless_probes (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_compiled_guard_driver_covers_incomplete_fixture_settings_with_harmless_probes)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4173, in test_compiled_guard_driver_covers_incomplete_fixture_settings_with_harmless_probes
+    self.assertEqual(0, guards.run_guards())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_completed_journey_shutdown_failure_retains_status_streams_and_dependencies (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_completed_journey_shutdown_failure_retains_status_streams_and_dependencies)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6077, in test_completed_journey_shutdown_failure_retains_status_streams_and_dependencies
+    self.assertEqual(42, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_confirmed_docker_absence_can_complete_recovery (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_confirmed_docker_absence_can_complete_recovery)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5243, in test_confirmed_docker_absence_can_complete_recovery
+    self.assertEqual(27, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 27 != 1
+
+======================================================================
+FAIL: test_container_creation_interruption_recovers_only_owned_identity (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_container_creation_interruption_recovers_only_owned_identity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4505, in test_container_creation_interruption_recovers_only_owned_identity
+    self.assertEqual(130, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 130 != 1
+
+======================================================================
+FAIL: test_control_services_use_immutable_images_and_private_advertisement (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_control_services_use_immutable_images_and_private_advertisement)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5138, in test_control_services_use_immutable_images_and_private_advertisement
+    self.assertEqual(0, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_disposable_image_port_and_no_shared_volume_configuration (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_disposable_image_port_and_no_shared_volume_configuration)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4479, in test_disposable_image_port_and_no_shared_volume_configuration
+    self.assertEqual(0, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup) (inventory='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3207, in test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup
+    self.assertEqual(18, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 18 != 1
+
+======================================================================
+FAIL: test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup) (inventory='ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3207, in test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup
+    self.assertEqual(18, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 18 != 1
+
+======================================================================
+FAIL: test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup) (inventory=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3207, in test_early_security_readiness_failure_requires_label_bound_container_absence_before_cleanup
+    self.assertEqual(18, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 18 != 1
+
+======================================================================
+FAIL: test_evidence_write_failure_preserves_original_exit_and_reports_incomplete (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_evidence_write_failure_preserves_original_exit_and_reports_incomplete) (filename='cleanup.json', original_exit=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6011, in test_evidence_write_failure_preserves_original_exit_and_reports_incomplete
+    self.assertEqual(original_exit or 1, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_evidence_write_failure_preserves_original_exit_and_reports_incomplete (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_evidence_write_failure_preserves_original_exit_and_reports_incomplete) (filename='.log', original_exit=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6012, in test_evidence_write_failure_preserves_original_exit_and_reports_incomplete
+    self.assertTrue(instance.evidence_write_failed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_evidence_write_failure_preserves_original_exit_and_reports_incomplete (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_evidence_write_failure_preserves_original_exit_and_reports_incomplete) (filename='.log', original_exit=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6011, in test_evidence_write_failure_preserves_original_exit_and_reports_incomplete
+    self.assertEqual(original_exit or 1, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_evidence_write_failure_preserves_original_exit_and_reports_incomplete (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_evidence_write_failure_preserves_original_exit_and_reports_incomplete) (filename='resource-exit.json', original_exit=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6012, in test_evidence_write_failure_preserves_original_exit_and_reports_incomplete
+    self.assertTrue(instance.evidence_write_failed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_evidence_write_failure_preserves_original_exit_and_reports_incomplete (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_evidence_write_failure_preserves_original_exit_and_reports_incomplete) (filename='resource-exit.json', original_exit=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6011, in test_evidence_write_failure_preserves_original_exit_and_reports_incomplete
+    self.assertEqual(original_exit or 1, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup) (status=0, capture_fails=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4010, in test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup
+    self.assertEqual(status or int(capture_fails), instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup) (status=42, capture_fails=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4010, in test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup
+    self.assertEqual(status or int(capture_fails), instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup) (status=42, capture_fails=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4010, in test_execute_captures_post_journey_dashboard_outcome_and_failure_preserves_owned_cleanup
+    self.assertEqual(status or int(capture_fails), instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes) (mode='share', phase='post-journey', status=42)
+Real synthetic sockets, injected infrastructure; no native Dashboard transfer claim.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4076, in test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes
+    self.assertEqual(status or 1, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes) (mode='transfer', phase='post-journey', status=42)
+Real synthetic sockets, injected infrastructure; no native Dashboard transfer claim.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4076, in test_execute_retains_real_ownership_failure_evidence_and_reaps_owned_processes
+    self.assertEqual(status or 1, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_failed_or_interrupted_journey_preserves_exit_and_cleans_owned_storage (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_failed_or_interrupted_journey_preserves_exit_and_cleans_owned_storage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4455, in test_failed_or_interrupted_journey_preserves_exit_and_cleans_owned_storage
+    self.assertEqual(130 if interruption else 42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_failed_start_and_interruption_stop_only_exact_owned_apphost (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_failed_start_and_interruption_stop_only_exact_owned_apphost)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4437, in test_failed_start_and_interruption_stop_only_exact_owned_apphost
+    self.assertEqual(130 if interruption else 27, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 27 != 1
+
+======================================================================
+FAIL: test_final_mutation_diagnostics_keep_original_journey_result (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_final_mutation_diagnostics_keep_original_journey_result) (original_exit=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5854, in test_final_mutation_diagnostics_keep_original_journey_result
+    self.assertIn("Scheduler contents changed", output.getvalue())
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Scheduler contents changed' not found in 'Local runtime admission is busy or unsafe; no resources started\n'
+
+======================================================================
+FAIL: test_final_mutation_diagnostics_keep_original_journey_result (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_final_mutation_diagnostics_keep_original_journey_result) (original_exit=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5853, in test_final_mutation_diagnostics_keep_original_journey_result
+    self.assertEqual(original_exit or 1, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_final_preservation_cancellation_keeps_completed_journey_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_final_preservation_cancellation_keeps_completed_journey_failure) (original_exit=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6202, in test_final_preservation_cancellation_keeps_completed_journey_failure
+    self.assertEqual(original_exit or 130, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 130 != 1
+
+======================================================================
+FAIL: test_final_preservation_cancellation_keeps_completed_journey_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_final_preservation_cancellation_keeps_completed_journey_failure) (original_exit=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6202, in test_final_preservation_cancellation_keeps_completed_journey_failure
+    self.assertEqual(original_exit or 130, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_gateway_before_proof_refuses_journey_and_after_cancellation_preserves_existing_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_before_proof_refuses_journey_and_after_cancellation_preserves_existing_failure) (original_status=0, before_failure=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4150, in test_gateway_before_proof_refuses_journey_and_after_cancellation_preserves_existing_failure
+    self.assertEqual(1 if before_failure else original_status or 130, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 130 != 1
+
+======================================================================
+FAIL: test_gateway_before_proof_refuses_journey_and_after_cancellation_preserves_existing_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_before_proof_refuses_journey_and_after_cancellation_preserves_existing_failure) (original_status=42, before_failure=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 4150, in test_gateway_before_proof_refuses_journey_and_after_cancellation_preserves_existing_failure
+    self.assertEqual(1 if before_failure else original_status or 130, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup) (status=0, proof_failure=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3978, in test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup
+    self.assertEqual(status or int(proof_failure), instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup) (status=0, proof_failure=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3979, in test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup
+    self.assertEqual([("before",), ("after",)], [call.args for call in capture.call_args_list])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: [('before',), ('after',)] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+('before',)
+
+- [('before',), ('after',)]
++ []
+
+======================================================================
+FAIL: test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup) (status=42, proof_failure=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3978, in test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup
+    self.assertEqual(status or int(proof_failure), instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup) (status=42, proof_failure=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3978, in test_gateway_proof_is_repeatable_and_preserves_primary_failure_and_owned_cleanup
+    self.assertEqual(status or int(proof_failure), instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_gateway_query_failure_retains_sanitized_original_status_without_creating_resources (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_query_failure_retains_sanitized_original_status_without_creating_resources)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3698, in test_gateway_query_failure_retains_sanitized_original_status_without_creating_resources
+    self.assertEqual(27, status)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 27 != 1
+
+======================================================================
+FAIL: test_gateway_resolution_uses_the_pinned_workspace_query_and_discards_inherited_aliases (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_gateway_resolution_uses_the_pinned_workspace_query_and_discards_inherited_aliases)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3490, in test_gateway_resolution_uses_the_pinned_workspace_query_and_discards_inherited_aliases
+    self.assertEqual(0, status)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_guard_admission_is_held_through_failure_cleanup_and_preservation (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_admission_is_held_through_failure_cleanup_and_preservation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 730, in test_guard_admission_is_held_through_failure_cleanup_and_preservation
+    self.assertEqual([((instance.shared_comparison,), {})] * 3, reader.call_args_list)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: [((<run_isolated_magic_link_dapr.SharedCom[202 chars] {})] != []
+
+======================================================================
+FAIL: test_guard_final_mutation_is_reported_after_success_or_existing_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_final_mutation_is_reported_after_success_or_existing_failure) (failed=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5830, in test_guard_final_mutation_is_reported_after_success_or_existing_failure
+    self.assertIn("Scheduler contents changed", output.getvalue())
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Scheduler contents changed' not found in 'Local runtime admission is busy or unsafe; no resources started\n'
+
+======================================================================
+FAIL: test_guard_final_mutation_is_reported_after_success_or_existing_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_final_mutation_is_reported_after_success_or_existing_failure) (failed=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5830, in test_guard_final_mutation_is_reported_after_success_or_existing_failure
+    self.assertIn("Scheduler contents changed", output.getvalue())
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'Scheduler contents changed' not found in 'Local runtime admission is busy or unsafe; no resources started\n'
+
+======================================================================
+FAIL: test_guard_final_preservation_cancellation_keeps_existing_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_final_preservation_cancellation_keeps_existing_failure) (failed=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6218, in test_guard_final_preservation_cancellation_keeps_existing_failure
+    self.assertEqual(1 if failed else 130, guards.run_guards())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 130 != 1
+
+======================================================================
+FAIL: test_guard_late_preservation_write_failure_cannot_return_success (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_late_preservation_write_failure_cannot_return_success) (filename='shared-after.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6062, in test_guard_late_preservation_write_failure_cannot_return_success
+    self.assertTrue(instance.evidence_write_failed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_guard_late_preservation_write_failure_cannot_return_success (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_late_preservation_write_failure_cannot_return_success) (filename='shared-preservation.json')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6062, in test_guard_late_preservation_write_failure_cannot_return_success
+    self.assertTrue(instance.evidence_write_failed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_guard_refuses_a_new_foreign_apphost_without_blame_or_foreign_stop (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_guard_refuses_a_new_foreign_apphost_without_blame_or_foreign_stop)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5726, in test_guard_refuses_a_new_foreign_apphost_without_blame_or_foreign_stop
+    self.assertIn("An AppHost appeared during guard checks", output.getvalue())
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'An AppHost appeared during guard checks' not found in 'Local runtime admission is busy or unsafe; no resources started\n'
+
+======================================================================
+FAIL: test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup) (diagnostic='finite')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1328, in test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup
+    self.assertEqual(130 if diagnostic == "cancel" else 29, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 29 != 1
+
+======================================================================
+FAIL: test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup) (diagnostic='timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1328, in test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup
+    self.assertEqual(130 if diagnostic == "cancel" else 29, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 29 != 1
+
+======================================================================
+FAIL: test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup) (diagnostic='unavailable')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1328, in test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup
+    self.assertEqual(130 if diagnostic == "cancel" else 29, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 29 != 1
+
+======================================================================
+FAIL: test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup) (diagnostic='cancel')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1328, in test_journey_failure_diagnostics_preserve_exit_redaction_cancellation_and_cleanup
+    self.assertEqual(130 if diagnostic == "cancel" else 29, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 130 != 1
+
+======================================================================
+FAIL: test_late_preflight_refusal_records_started_infrastructure_and_no_apphost_attempt (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_late_preflight_refusal_records_started_infrastructure_and_no_apphost_attempt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3231, in test_late_preflight_refusal_records_started_infrastructure_and_no_apphost_attempt
+    self.assertTrue(commands.redis_attempted)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_late_preservation_evidence_write_failure_cannot_return_success (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_late_preservation_evidence_write_failure_cannot_return_success) (filename='shared-after.json', original_exit=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6038, in test_late_preservation_evidence_write_failure_cannot_return_success
+    self.assertTrue(instance.evidence_write_failed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_late_preservation_evidence_write_failure_cannot_return_success (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_late_preservation_evidence_write_failure_cannot_return_success) (filename='shared-after.json', original_exit=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6037, in test_late_preservation_evidence_write_failure_cannot_return_success
+    self.assertEqual(original_exit or 1, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_late_preservation_evidence_write_failure_cannot_return_success (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_late_preservation_evidence_write_failure_cannot_return_success) (filename='shared-preservation.json', original_exit=0)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6038, in test_late_preservation_evidence_write_failure_cannot_return_success
+    self.assertTrue(instance.evidence_write_failed)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_late_preservation_evidence_write_failure_cannot_return_success (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_late_preservation_evidence_write_failure_cannot_return_success) (filename='shared-preservation.json', original_exit=42)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6037, in test_late_preservation_evidence_write_failure_cannot_return_success
+    self.assertEqual(original_exit or 1, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_live_commands_use_debug_sources_without_mutating_the_caller_environment (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_live_commands_use_debug_sources_without_mutating_the_caller_environment) (inherited={})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 816, in test_live_commands_use_debug_sources_without_mutating_the_caller_environment
+    self.assertEqual(0, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_live_commands_use_debug_sources_without_mutating_the_caller_environment (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_live_commands_use_debug_sources_without_mutating_the_caller_environment) (inherited={'Configuration': 'Release', 'UseHexalithProjectReferences': 'false', 'UseNuGetDeps': 'true'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 816, in test_live_commands_use_debug_sources_without_mutating_the_caller_environment
+    self.assertEqual(0, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_live_commands_use_debug_sources_without_mutating_the_caller_environment (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_live_commands_use_debug_sources_without_mutating_the_caller_environment) (inherited={'configuration': 'Release', 'CONFIGURATION': 'Release', 'usehexalithprojectreferences': 'false', 'USEHEXALITHPROJECTREFERENCES': 'false', 'usenugetdeps': 'true', 'USENUGETDEPS': 'true'})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 816, in test_live_commands_use_debug_sources_without_mutating_the_caller_environment
+    self.assertEqual(0, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_log_parent_reuse_creates_unique_evidence_and_keeps_previous_logs (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_log_parent_reuse_creates_unique_evidence_and_keeps_previous_logs)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5271, in test_log_parent_reuse_creates_unique_evidence_and_keeps_previous_logs
+    self.assertEqual(0, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_nullable_and_malformed_docker_ownership_retains_original_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_nullable_and_malformed_docker_ownership_retains_original_failure) (value=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5980, in test_nullable_and_malformed_docker_ownership_retains_original_failure
+    self.assertEqual(42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_nullable_and_malformed_docker_ownership_retains_original_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_nullable_and_malformed_docker_ownership_retains_original_failure) (value=[])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5980, in test_nullable_and_malformed_docker_ownership_retains_original_failure
+    self.assertEqual(42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_nullable_and_malformed_docker_ownership_retains_original_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_nullable_and_malformed_docker_ownership_retains_original_failure) (value={'Config': None})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5980, in test_nullable_and_malformed_docker_ownership_retains_original_failure
+    self.assertEqual(42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_nullable_and_malformed_docker_ownership_retains_original_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_nullable_and_malformed_docker_ownership_retains_original_failure) (value={'Config': {}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5980, in test_nullable_and_malformed_docker_ownership_retains_original_failure
+    self.assertEqual(42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_nullable_and_malformed_docker_ownership_retains_original_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_nullable_and_malformed_docker_ownership_retains_original_failure) (value={'Config': {'Labels': None}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5980, in test_nullable_and_malformed_docker_ownership_retains_original_failure
+    self.assertEqual(42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_nullable_and_malformed_docker_ownership_retains_original_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_nullable_and_malformed_docker_ownership_retains_original_failure) (value={'Config': {'Labels': []}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5980, in test_nullable_and_malformed_docker_ownership_retains_original_failure
+    self.assertEqual(42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_nullable_and_malformed_docker_ownership_retains_original_failure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_nullable_and_malformed_docker_ownership_retains_original_failure) (value={'Config': {'Labels': 'invalid'}})
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5980, in test_nullable_and_malformed_docker_ownership_retains_original_failure
+    self.assertEqual(42, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 42 != 1
+
+======================================================================
+FAIL: test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json) (output='[{"appId":"standalone-other"}]')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5648, in test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json
+    self.assertIn(["dapr", "list", "--output", "json"], [args for args, _ in commands.calls])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['dapr', 'list', '--output', 'json'] not found in []
+
+======================================================================
+FAIL: test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json) (output='{}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5648, in test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json
+    self.assertIn(["dapr", "list", "--output", "json"], [args for args, _ in commands.calls])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['dapr', 'list', '--output', 'json'] not found in []
+
+======================================================================
+FAIL: test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json) (output='null')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5648, in test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json
+    self.assertIn(["dapr", "list", "--output", "json"], [args for args, _ in commands.calls])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['dapr', 'list', '--output', 'json'] not found in []
+
+======================================================================
+FAIL: test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json) (output='')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5648, in test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json
+    self.assertIn(["dapr", "list", "--output", "json"], [args for args, _ in commands.calls])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['dapr', 'list', '--output', 'json'] not found in []
+
+======================================================================
+FAIL: test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json) (output='not-json []')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5648, in test_preflight_refuses_standalone_dapr_apps_and_unverifiable_json
+    self.assertIn(["dapr", "list", "--output", "json"], [args for args, _ in commands.calls])
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ['dapr', 'list', '--output', 'json'] not found in []
+
+======================================================================
+FAIL: test_runner_retains_captured_identities_and_generates_exit_evidence (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_runner_retains_captured_identities_and_generates_exit_evidence)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 6277, in test_runner_retains_captured_identities_and_generates_exit_evidence
+    self.assertEqual(0, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_runtime_admission_releases_after_graceful_and_abrupt_process_exit (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_runtime_admission_releases_after_graceful_and_abrupt_process_exit) (abrupt=False)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 610, in test_runtime_admission_releases_after_graceful_and_abrupt_process_exit
+    self.assertEqual("held", process.stdout.readline().strip())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'held' != ''
+- held
+
+
+======================================================================
+FAIL: test_runtime_admission_releases_after_graceful_and_abrupt_process_exit (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_runtime_admission_releases_after_graceful_and_abrupt_process_exit) (abrupt=True)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 610, in test_runtime_admission_releases_after_graceful_and_abrupt_process_exit
+    self.assertEqual("held", process.stdout.readline().strip())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'held' != ''
+- held
+
+
+======================================================================
+FAIL: test_runtime_children_discard_probe_only_settings_and_provider_aliases (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_runtime_children_discard_probe_only_settings_and_provider_aliases)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 571, in test_runtime_children_discard_probe_only_settings_and_provider_aliases
+    self.assertEqual(0, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness) (defect=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1820, in test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness
+    self.assertEqual(0 if defect is None else 1 if defect != "readiness" else 18, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+======================================================================
+FAIL: test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness) (defect='readiness')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 1820, in test_security_smoke_runs_only_after_admission_and_requires_current_source_and_readiness
+    self.assertEqual(0 if defect is None else 1 if defect != "readiness" else 18, instance.execute())
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 18 != 1
+
+======================================================================
+FAIL: test_unknown_docker_recovery_retains_artifacts_and_original_exit (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unknown_docker_recovery_retains_artifacts_and_original_exit)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5209, in test_unknown_docker_recovery_retains_artifacts_and_original_exit
+    self.assertEqual(27, result)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+AssertionError: 27 != 1
+
+======================================================================
+FAIL: test_unstable_baseline_refuses_live_and_guard_resources_before_creation (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unstable_baseline_refuses_live_and_guard_resources_before_creation) (mode='live')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5672, in test_unstable_baseline_refuses_live_and_guard_resources_before_creation
+    self.assertIn("before fixture startup", output.getvalue())
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'before fixture startup' not found in 'Local runtime admission is busy or unsafe; no resources started\n'
+
+======================================================================
+FAIL: test_unstable_baseline_refuses_live_and_guard_resources_before_creation (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unstable_baseline_refuses_live_and_guard_resources_before_creation) (mode='guards')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5672, in test_unstable_baseline_refuses_live_and_guard_resources_before_creation
+    self.assertIn("before fixture startup", output.getvalue())
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'before fixture startup' not found in 'Local runtime admission is busy or unsafe; no resources started\n'
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='not JSON')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='null')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='[]')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties":null}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": []}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": null, "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": 123, "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": [], "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": null, "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": 123, "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": [], "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": ""}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "", "RunWorkingDirectory": null}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "", "RunWorkingDirectory": 123}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "", "RunWorkingDirectory": []}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "", "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "relative-command", "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/tmp/tmp0mqnsma9/non-executable", "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/tmp/tmp0mqnsma9/logs", "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/missing/gateway", "RunArguments": "", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": " ", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "--argument", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "gateway.dll", "RunWorkingDirectory": "/home/administrator/projects/hexalith/timesheets"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "", "RunWorkingDirectory": ""}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "", "RunWorkingDirectory": "relative-directory"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "", "RunWorkingDirectory": "/tmp/tmp0mqnsma9/non-executable"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_unsupported_gateway_metadata_refuses_before_creating_infrastructure (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_unsupported_gateway_metadata_refuses_before_creating_infrastructure) (payload='{"Properties": {"RunCommand": "/usr/bin/python3", "RunArguments": "", "RunWorkingDirectory": "/missing/directory"}}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 3691, in test_unsupported_gateway_metadata_refuses_before_creating_infrastructure
+    self.assertTrue(any("-target:ComputeRunArguments" in args for args, _ in commands.calls))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+======================================================================
+FAIL: test_zero_skipped_failed_errors_or_duplicate_live_summaries_are_rejected (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_zero_skipped_failed_errors_or_duplicate_live_summaries_are_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5289, in test_zero_skipped_failed_errors_or_duplicate_live_summaries_are_rejected
+    self.assertTrue(commands.stopped)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 237 tests in 49.587s
+
+FAILED (failures=110, errors=17)

@@ -1,0 +1,36 @@
+{
+  "verified_utc": "2026-11-03T18:27:53.223496+00:00",
+  "baseline_commit": "34a521e9daa263612663ca5b70628d2f106d3b9a",
+  "scope": "five findings across three deferred-work entries",
+  "five_findings_resolved": true,
+  "initial_full_fixture_suite": {
+    "tests": 237,
+    "exit_code": 0,
+    "scope": "final production fix; before review assertions"
+  },
+  "final_affected_scheduler_lane": {
+    "tests": 3,
+    "exit_code": 0,
+    "current_source_hashes_match": true
+  },
+  "post_review_full_fixture_suite": {
+    "tests": 237,
+    "exit_code": 1,
+    "failure_records": 110,
+    "error_records": 17,
+    "blocker": "canonical runtime-admission busy or unsafe",
+    "scope": "not passing evidence; foreign holder unchanged"
+  },
+  "upstream_scanner": {
+    "tests": 1,
+    "exit_code": 0,
+    "eventstore_revision": "0e5ecebc13e8d11afe6d46b6e6de5c877c58acc7"
+  },
+  "review": {
+    "findings": 9,
+    "verification_improvements_applied": 6,
+    "preexisting_followups": 2
+  },
+  "launch_verdict": "FAIL",
+  "runtime_or_deployed_acceptance": false
+}

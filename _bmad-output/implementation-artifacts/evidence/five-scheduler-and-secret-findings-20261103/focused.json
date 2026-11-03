@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations",
+    "test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_http_error_closes_response_and_withholds_private_details"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "environment": {
+    "PYTHONPATH": "scripts"
+  },
+  "python": {
+    "executable": "/usr/bin/python3",
+    "implementation": "CPython",
+    "version": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]"
+  },
+  "start_utc": "2026-11-03T18:25:42.734202+00:00",
+  "end_utc": "2026-11-03T18:25:43.159659+00:00",
+  "seconds": 0.4254570769990096,
+  "exit_code": 0,
+  "inputs": {
+    "scripts/run_isolated_magic_link_dapr.py": "cb42a4b04c8d516bf577ae41d31d077a5d17f1036ca39bed70ee6ea2a6a09c32",
+    "scripts/test_isolated_magic_link_dapr.py": "d2e15dade94086fe9c8336e4cc2e94ca7455b60c662e61ecd30786e28c4e948a"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "baseline_commit": "34a521e9daa263612663ca5b70628d2f106d3b9a",
+  "baseline_runner_sha256": "2c5257a8590f162977c19a3c233d3402edf7576025d06ad22def7cbaf2388fc1",
+  "body_shape": "100000 nested arrays around integer zero",
+  "body_bytes": 200001,
+  "shared_services_read": false,
+  "observations": [
+    {
+      "source": "baseline",
+      "exception_category": "RecursionError",
+      "has_safe_observation": false
+    },
+    {
+      "source": "worktree",
+      "exception_category": "RecursionError",
+      "has_safe_observation": false
+    }
+  ]
+}

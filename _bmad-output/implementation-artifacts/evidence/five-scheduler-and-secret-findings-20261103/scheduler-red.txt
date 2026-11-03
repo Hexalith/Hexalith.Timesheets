@@ -1,0 +1,308 @@
+EEEEFFEEFFFFFF
+======================================================================
+ERROR: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='BadStatusLine', phase='open')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5515, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+http.client.BadStatusLine: PRIVATE status line
+
+======================================================================
+ERROR: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='BadStatusLine', phase='body')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5515, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1502, in read_only_shared_snapshot
+    scheduler = json.load(response)
+  File "/usr/lib/python3.14/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+                 ~~~~~~~^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+http.client.BadStatusLine: PRIVATE status line
+
+======================================================================
+ERROR: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='IncompleteRead', phase='open')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5515, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+http.client.IncompleteRead: IncompleteRead(22 bytes read, 50 more expected)
+
+======================================================================
+ERROR: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='IncompleteRead', phase='body')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5515, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1502, in read_only_shared_snapshot
+    scheduler = json.load(response)
+  File "/usr/lib/python3.14/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+                 ~~~~~~~^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+http.client.IncompleteRead: IncompleteRead(22 bytes read, 50 more expected)
+
+======================================================================
+ERROR: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='LineTooLong', phase='open')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5515, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+http.client.LineTooLong: got more than 65536 bytes when reading PRIVATE header
+
+======================================================================
+ERROR: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='LineTooLong', phase='body')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5515, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1502, in read_only_shared_snapshot
+    scheduler = json.load(response)
+  File "/usr/lib/python3.14/json/__init__.py", line 298, in load
+    return loads(fp.read(),
+                 ~~~~~~~^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+http.client.LineTooLong: got more than 65536 bytes when reading PRIVATE header
+
+======================================================================
+FAIL: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='RemoteDisconnected', phase='open')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5524, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    opener.assert_called_once()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 965, in assert_called_once
+    raise AssertionError(msg)
+AssertionError: Expected 'owned_http_open' to have been called once. Called 0 times.
+
+======================================================================
+FAIL: test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry) (error='RemoteDisconnected', phase='body')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5524, in test_scheduler_protocol_failures_retain_sanitized_receipts_without_retry
+    opener.assert_called_once()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 965, in assert_called_once
+    raise AssertionError(msg)
+AssertionError: Expected 'owned_http_open' to have been called once. Called 0 times.
+
+======================================================================
+FAIL: test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations) (status=200)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5574, in test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations
+    snapshot = instance.capture_shared_snapshot()
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: Default opener forbidden
+
+======================================================================
+FAIL: test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations) (status=301)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5579, in test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: Default opener forbidden
+
+======================================================================
+FAIL: test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations) (status=302)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5579, in test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: Default opener forbidden
+
+======================================================================
+FAIL: test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations) (status=303)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5579, in test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: Default opener forbidden
+
+======================================================================
+FAIL: test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations) (status=307)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5579, in test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: Default opener forbidden
+
+======================================================================
+FAIL: test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations (test_isolated_magic_link_dapr.IsolatedFixtureTests.test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations) (status=308)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/administrator/projects/hexalith/timesheets/scripts/test_isolated_magic_link_dapr.py", line 5579, in test_scheduler_snapshot_bypasses_proxies_and_refuses_redirect_destinations
+    instance.capture_shared_snapshot()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 2103, in capture_shared_snapshot
+    return (reader or read_only_shared_snapshot)(self.shared_comparison)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/administrator/projects/hexalith/timesheets/scripts/run_isolated_magic_link_dapr.py", line 1500, in read_only_shared_snapshot
+    with urllib.request.urlopen(request, timeout=20) as response:
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1176, in __call__
+    return self._mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1180, in _mock_call
+    return self._execute_mock_call(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/unittest/mock.py", line 1241, in _execute_mock_call
+    raise effect
+AssertionError: Default opener forbidden
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.098s
+
+FAILED (failures=8, errors=6)

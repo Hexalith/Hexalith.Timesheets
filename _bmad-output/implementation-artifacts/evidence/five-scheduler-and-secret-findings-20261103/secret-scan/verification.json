@@ -1,0 +1,23 @@
+{
+  "head_unchanged": true,
+  "repository_clean_before_and_after": true,
+  "scanner_inputs_unchanged": true,
+  "dependency_repositories_unchanged": true,
+  "restore_pass": true,
+  "build_pass": true,
+  "scan_pass": true,
+  "tests": [
+    {
+      "type": "Hexalith.EventStore.Server.Tests.Security.SecretsProtectionTests",
+      "method": "TrackedReusableContent_DoesNotContainUsableSecrets",
+      "result": "Pass"
+    }
+  ],
+  "counts": {
+    "total": "1",
+    "passed": "1",
+    "failed": "0",
+    "skipped": "0",
+    "errors": "0"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_isolated_magic_link_dapr.py"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "environment": {
+    "DOTNET_CLI_HOME": "/tmp/dotnet-cli-home"
+  },
+  "start_utc": "2026-11-03T18:17:13.612025+00:00",
+  "end_utc": "2026-11-03T18:18:23.121773+00:00",
+  "seconds": 69.51418245400419,
+  "exit_code": 0,
+  "inputs": {
+    "scripts/run_isolated_magic_link_dapr.py": "cb42a4b04c8d516bf577ae41d31d077a5d17f1036ca39bed70ee6ea2a6a09c32",
+    "scripts/test_isolated_magic_link_dapr.py": "f60e12834508db61eb522722ff01508c59281a1fe6a15935d94edb9f82b85d67"
+  }
+}

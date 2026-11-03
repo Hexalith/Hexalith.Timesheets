@@ -1497,16 +1497,21 @@ return {{finished, rows}}
         observation.update(phase="scheduler_range", database=None)
         request = urllib.request.Request("http://127.0.0.1:2379/v3/kv/range", data=b'{"key":"AA==","range_end":"AA=="}',
                                          headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(request, timeout=20) as response:
+        try:
+            response = owned_http_open(request, timeout=20)
+        except urllib.error.HTTPError as error:
+            with error:
+                raise
+        with response as scheduler_response:
             try:
-                scheduler = json.load(response)
+                scheduler = json.load(scheduler_response)
             except ValueError:
                 raise FixtureError("Scheduler preservation range did not return valid JSON") from None
         result["scheduler"] = scheduler_fingerprint(scheduler, result)
         observation.update(completed=True, phase="complete")
         result["observation"] = observation
         return result
-    except (FixtureError, OSError, ValueError, KeyError, TypeError, IndexError, KeyboardInterrupt) as error:
+    except (FixtureError, OSError, http.client.HTTPException, ValueError, KeyError, TypeError, IndexError, KeyboardInterrupt) as error:
         observation["exception_category"] = type(error).__name__
         if isinstance(error, KeyboardInterrupt):
             error.shared_observation = observation
