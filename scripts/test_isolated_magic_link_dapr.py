@@ -2,6 +2,7 @@
 
 import ast
 import contextlib
+import email.message
 import http.server
 import io
 import os
@@ -11,6 +12,7 @@ import socket
 import sys
 import threading
 import json
+import linecache
 from pathlib import Path
 import shutil
 import subprocess
@@ -204,6 +206,8 @@ class IsolatedFixtureTests(unittest.TestCase):
 
     @contextlib.contextmanager
     def owned_http_server(self, respond):
+        requests = []
+
         class Handler(http.server.BaseHTTPRequestHandler):
             def do_GET(self):
                 respond(self)
@@ -213,7 +217,16 @@ class IsolatedFixtureTests(unittest.TestCase):
             def log_message(self, *_arguments):
                 pass
 
-        server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        class Server(http.server.ThreadingHTTPServer):
+            # Track the actual request workers. ThreadingHTTPServer's default
+            # daemon workers are not joined by server_close().
+            def process_request(self, request, address):
+                request.settimeout(2)
+                thread = threading.Thread(target=self.process_request_thread, args=(request, address), daemon=True)
+                requests.append((thread, request))
+                thread.start()
+
+        server = Server(("127.0.0.1", 0), Handler)
         worker = threading.Thread(target=lambda: server.serve_forever(poll_interval=0.01), daemon=True)
         worker.start()
         try:
@@ -222,6 +235,64 @@ class IsolatedFixtureTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             worker.join(timeout=2)
+            self.assertFalse(worker.is_alive(), "Owned HTTP server observer survived cleanup")
+            deadline = time.monotonic() + 2
+            for thread, _connection in requests:
+                thread.join(timeout=max(0, deadline - time.monotonic()))
+            surviving = [(thread, connection) for thread, connection in requests if thread.is_alive()]
+            for _thread, connection in surviving:
+                try:
+                    connection.shutdown(socket.SHUT_RDWR)
+                except OSError:
+                    pass
+                connection.close()
+            deadline = time.monotonic() + 1
+            for thread, _connection in surviving:
+                thread.join(timeout=max(0, deadline - time.monotonic()))
+            self.assertFalse(any(thread.is_alive() for thread, _connection in requests),
+                             "Owned HTTP request handler survived bounded cleanup")
+
+    @contextlib.contextmanager
+    def scheduler_loopback_transport(self, origin):
+        """Redirect only the exact scheduler request to an owned loopback server."""
+        original_connection = fixture.socket.create_connection
+        original_request = fixture.urllib.request.Request
+        connections = []
+
+        def connect(address, *args, **kwargs):
+            if address == ("127.0.0.1", 6379):
+                connection = RedisSnapshotConnection({0: [], 13: [], 14: []})
+                connections.append(connection)
+                return connection
+            return original_connection(address, *args, **kwargs)
+
+        def request(url, **kwargs):
+            self.assertEqual("http://127.0.0.1:2379/v3/kv/range", url)
+            self.assertEqual(b'{"key":"AA==","range_end":"AA=="}', kwargs["data"])
+            self.assertEqual({"Content-Type": "application/json"}, kwargs["headers"])
+            return original_request(origin + "/v3/kv/range", **kwargs)
+
+        with patch.object(fixture.socket, "create_connection", side_effect=connect), \
+                patch.object(fixture.urllib.request, "Request", side_effect=request), \
+                patch.object(fixture.urllib.request, "urlopen", side_effect=AssertionError("Default opener forbidden")):
+            yield connections
+
+    def assert_scheduler_refusal(self, instance, failure, category=None):
+        receipt = json.loads((instance.log_directory / "shared-observation-failure.json").read_text())
+        self.assertEqual({"started_unix_ns", "completed_unix_ns", "completed", "phase", "database",
+                          "exception_category"}, set(receipt))
+        self.assertEqual("scheduler_range", receipt["phase"])
+        self.assertFalse(receipt["completed"])
+        self.assertIsNone(receipt["database"])
+        self.assertLessEqual(receipt["started_unix_ns"], receipt["completed_unix_ns"])
+        if category is not None:
+            self.assertEqual(category, receipt["exception_category"])
+        self.assertNotIn("PRIVATE", json.dumps(receipt))
+        self.assertNotIn("PRIVATE", "".join(traceback.format_exception(failure)))
+        self.assertIsNone(instance.shared_before)
+        self.assertFalse(instance.start_attempted)
+        self.assertFalse(instance.containers)
+        return receipt
 
     @staticmethod
     def dashboard_socket_fixture(process, port, *, inode="123", address="0100007F", owner="1"):
@@ -5505,6 +5576,7 @@ sys.stdin.read()
                     instance = fixture.IsolatedFixture(log_directory=self.logs)
                     error = error_type(*arguments)
                     response = MagicMock()
+                    response.__enter__.return_value.headers = None
                     response.__enter__.return_value.read.side_effect = error
                     with patch.object(fixture.socket, "create_connection", return_value=connection), \
                             patch.object(fixture, "owned_http_open", side_effect=error if phase == "open" else None,
@@ -5526,7 +5598,7 @@ sys.stdin.read()
                     opener.assert_called_once()
                     self.assertEqual(20, opener.call_args.kwargs["timeout"])
                     if phase == "body":
-                        response.__enter__.return_value.read.assert_called_once_with()
+                        response.__enter__.return_value.read.assert_called_once_with(fixture.SCHEDULER_OBSERVATION_READ_BYTES)
                         response.__exit__.assert_called_once()
                         self.assertIs(error, response.__exit__.call_args.args[1])
                     else:
@@ -5613,6 +5685,949 @@ sys.stdin.read()
         self.assertEqual("HTTPError", json.loads(receipt)["exception_category"])
         self.assertNotIn("PRIVATE", receipt)
         self.assertNotIn("PRIVATE", "".join(traceback.format_exception(failure.exception)))
+
+    def test_scheduler_parser_resource_and_interrupt_refusals_close_responses_and_restore_deadline(self):
+        header = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        nested = b'{"PRIVATE":' + b'[' * 100000 + b'0' + b']' * 100000 + b'}'
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        for mode in ("depth", "memory", "interrupt"):
+            with self.subTest(mode=mode):
+                response = io.BytesIO(nested if mode == "depth" else json.dumps(header).encode())
+                instance = fixture.IsolatedFixture(log_directory=self.logs)
+                original_loads = fixture.json.loads
+                error = MemoryError("PRIVATE parser detail") if mode == "memory" else KeyboardInterrupt()
+                with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                        patch.object(fixture, "owned_http_open", return_value=response), \
+                        patch.object(fixture.json, "loads", side_effect=original_loads if mode == "depth" else error), \
+                        self.assertRaises(KeyboardInterrupt if mode == "interrupt" else fixture.SharedObservationError) as failure:
+                    instance.capture_shared_snapshot()
+                self.assertTrue(response.closed)
+                self.assert_scheduler_refusal(instance, failure.exception,
+                    {"depth": "RecursionError", "memory": "MemoryError", "interrupt": "KeyboardInterrupt"}[mode])
+                if mode == "interrupt":
+                    self.assertIs(error, failure.exception)
+                self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+
+    def test_scheduler_declared_oversize_and_ambiguous_framing_refuse_before_body_read(self):
+        limit = fixture.SCHEDULER_OBSERVATION_MAX_BYTES
+        for fields in ((('Content-Length', str(limit + 1)),),
+                       (('Content-Length', '2'), ('Content-Length', '2')),
+                       (('Content-Length', '2'), ('Transfer-Encoding', 'chunked')),
+                       (('Content-Length', 'PRIVATE'),),
+                       (('Transfer-Encoding', 'PRIVATE'),)):
+            with self.subTest(fields=fields):
+                headers = email.message.Message()
+                for name, value in fields:
+                    headers[name] = value
+                response = MagicMock()
+                response.__enter__.return_value.headers = headers
+                instance = fixture.IsolatedFixture(log_directory=self.logs)
+                with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                        patch.object(fixture, "owned_http_open", return_value=response), \
+                        self.assertRaises(fixture.SharedObservationError) as failure:
+                    instance.capture_shared_snapshot()
+                response.__enter__.return_value.read.assert_not_called()
+                response.__exit__.assert_called_once()
+                self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+
+    def test_scheduler_real_complete_ranges_and_exact_wire_byte_boundaries(self):
+        empty = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        row = {"key": "UFJJVkFURS1rZXk=", "value": "UFJJVkFURS12YWx1ZQ==",
+               "create_revision": "1", "mod_revision": "3", "version": "1"}
+        nonempty = dict(empty, kvs=[row], count="1")
+        limit = fixture.SCHEDULER_OBSERVATION_MAX_BYTES
+        for declared in (False, True, "chunked"):
+            for content, size in ((empty, limit - 1), (empty, limit), (nonempty, limit), (nonempty, limit + 1)):
+                with self.subTest(declared=declared, keys=len(content.get("kvs", [])), size=size):
+                    encoded = json.dumps(content).encode()
+                    body = encoded + b' ' * (size - len(encoded))
+                    closed = threading.Event()
+                    observations = []
+                    def respond(handler):
+                        observations.append((handler.command, handler.path, handler.rfile.read(int(handler.headers["Content-Length"]))))
+                        handler.connection.settimeout(2)
+                        try:
+                            handler.send_response(200)
+                            if declared == "chunked":
+                                handler.send_header("Transfer-Encoding", "chunked")
+                            elif declared:
+                                handler.send_header("Content-Length", str(size))
+                            handler.end_headers()
+                            if declared == "chunked":
+                                handler.wfile.write(format(len(body), 'x').encode() + b'\r\n' + body + b'\r\n0\r\n\r\n')
+                                handler.wfile.flush()
+                            elif not declared or size <= limit:
+                                handler.wfile.write(body)
+                                handler.wfile.flush()
+                            handler.connection.shutdown(socket.SHUT_WR)
+                            if handler.connection.recv(1) == b'':
+                                closed.set()
+                        except (BrokenPipeError, ConnectionResetError):
+                            closed.set()
+                    with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin):
+                        instance = fixture.IsolatedFixture(log_directory=self.logs)
+                        if size > limit:
+                            with self.assertRaises(fixture.SharedObservationError) as failure:
+                                instance.capture_shared_snapshot()
+                            self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+                        else:
+                            snapshot = instance.capture_shared_snapshot()
+                            expected = fixture.SharedSnapshot(instance.shared_comparison)
+                            self.assertEqual(fixture.scheduler_fingerprint(content, expected), snapshot["scheduler"])
+                            self.assertEqual(expected.scheduler_identity, snapshot.scheduler_identity)
+                            self.assertEqual(expected.scheduler_content, snapshot.scheduler_content)
+                            self.assertTrue(snapshot["observation"]["completed"])
+                            after = instance.capture_shared_snapshot()
+                            self.assertTrue(fixture.shared_preservation(snapshot, after)["matches"])
+                        self.assertTrue(closed.wait(2), "Scheduler response connection remained open")
+                    self.assertTrue(observations)
+                    self.assertTrue(all(row == ("POST", "/v3/kv/range", b'{"key":"AA==","range_end":"AA=="}')
+                                        for row in observations))
+
+    def test_scheduler_reads_at_most_the_byte_limit_plus_one_without_an_unbounded_read(self):
+        limit = fixture.SCHEDULER_OBSERVATION_MAX_BYTES
+        class BoundedResponse(io.BytesIO):
+            def __init__(self):
+                super().__init__(b' ' * (limit + 1000))
+                self.requests = []
+                self.delivered = 0
+
+            def read(self, amount=-1):
+                self.requests.append(amount)
+                self_test.assertGreater(amount, 0)
+                result = super().read(amount)
+                self.delivered += len(result)
+                return result
+        self_test = self
+        response = BoundedResponse()
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open", return_value=response), \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance.capture_shared_snapshot()
+        self.assertEqual(limit + 1, response.delivered)
+        self.assertEqual(1, response.requests[-1])
+        self.assertTrue(response.closed)
+        self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+
+    def test_scheduler_native_negative_chunk_is_rejected_before_any_raw_body_read(self):
+        class GuardedStream(io.BytesIO):
+            def read(self, amount=-1):
+                self_test.assertGreater(amount, 0, "Native chunk decoding attempted an unbounded raw read")
+                self.read_amounts.append(amount)
+                return super().read(amount)
+
+        self_test = self
+        stream = GuardedStream(b'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n-1\r\n'
+                               + b'PRIVATE' * (2 * fixture.SCHEDULER_OBSERVATION_MAX_BYTES // 7))
+        stream.read_amounts = []
+        transport = MagicMock()
+        transport.makefile.return_value = stream
+        response = fixture.http.client.HTTPResponse(transport)
+        response.begin()
+        self.assertTrue(response.chunked)
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open", return_value=response), \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance.capture_shared_snapshot()
+        self.assertEqual([], stream.read_amounts, "Negative size must refuse before consuming body bytes")
+        self.assertTrue(stream.closed)
+        self.assertTrue(response.isclosed())
+        self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+
+    def test_scheduler_native_header_defect_cannot_hide_declared_framing(self):
+        encoded = b'{"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}}'
+        stream = io.BytesIO(b'HTTP/1.1 200 OK\r\nPRIVATE malformed header\r\nContent-Length: 1000\r\n\r\n' + encoded)
+        transport = MagicMock()
+        transport.makefile.return_value = stream
+        response = fixture.http.client.HTTPResponse(transport)
+        response.begin()
+        self.assertTrue(response.headers.defects)
+        self.assertIsNone(response.headers.get("Content-Length"))
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open", return_value=response), \
+                patch.object(response, "read", side_effect=AssertionError("Defective headers must refuse before body read")) as reader, \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance.capture_shared_snapshot()
+        reader.assert_not_called()
+        self.assertTrue(stream.closed)
+        self.assertTrue(response.isclosed())
+        self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+
+    def test_scheduler_alarm_after_response_acquisition_closes_it_before_context_entry(self):
+        closed = threading.Event()
+        acquired, fired = [], []
+        previous_trace = sys.gettrace()
+        original_open = fixture.owned_http_open
+        def respond(handler):
+            handler.rfile.read(int(handler.headers["Content-Length"]))
+            handler.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Length: 10000\r\n\r\nPRIVATE')
+            handler.wfile.flush()
+            if handler.connection.recv(1) == b'':
+                closed.set()
+        def open_response(*args, **kwargs):
+            response = original_open(*args, **kwargs)
+            acquired.append((response, response.fp))
+            return response
+        def trace(frame, event, _arg):
+            if frame.f_code is fixture.read_only_shared_snapshot.__code__ and event == "line" and not fired:
+                if linecache.getline(frame.f_code.co_filename, frame.f_lineno).strip() == "with response as scheduler_response:":
+                    fired.append(True)
+                    time.sleep(1)
+            return trace
+        with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin), \
+                patch.object(fixture, "owned_http_open", side_effect=open_response), \
+                patch.object(fixture, "SCHEDULER_OBSERVATION_DEADLINE_SECONDS", 0.1):
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            try:
+                with self.assertRaises(fixture.SharedObservationError) as failure:
+                    sys.settrace(trace)
+                    instance.capture_shared_snapshot()
+            finally:
+                sys.settrace(previous_trace)
+            self.assertEqual([True], fired)
+            self.assertEqual(1, len(acquired))
+            self.assertTrue(acquired[0][0].isclosed())
+            self.assertTrue(acquired[0][1].closed)
+            self.assertTrue(closed.wait(1), "Acquired response was not released by the observation")
+            self.assert_scheduler_refusal(instance, failure.exception, "TimeoutError")
+
+    def test_scheduler_real_cumulative_chunk_framing_byte_boundaries(self):
+        content = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        encoded = json.dumps(content).encode()
+        size_line = format(len(encoded), 'x').encode() + b'\r\n'
+        base_framing = len(size_line) + len(b'\r\n0\r\n\r\n')
+        limit = fixture.SCHEDULER_OBSERVATION_MAX_FRAMING_BYTES
+        for target in (limit - 1, limit, limit + 1):
+            with self.subTest(framing_bytes=target):
+                count, extra = divmod(target - base_framing - len(b'X: \r\n'), len(b'X: y\r\n'))
+                trailers = b'X: y\r\n' * count + b'X: ' + b'a' * extra + b'\r\n'
+                self.assertEqual(target, base_framing + len(trailers))
+                self.assertLess(max(map(len, trailers.splitlines(keepends=True))), 12)
+                closed = threading.Event()
+                def respond(handler):
+                    handler.rfile.read(int(handler.headers["Content-Length"]))
+                    try:
+                        handler.wfile.write(b'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
+                                           + size_line + encoded + b'\r\n0\r\n' + trailers + b'\r\n')
+                        handler.wfile.flush()
+                        handler.connection.shutdown(socket.SHUT_WR)
+                        if handler.connection.recv(1) == b'':
+                            closed.set()
+                    except (BrokenPipeError, ConnectionResetError):
+                        closed.set()
+                with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin):
+                    instance = fixture.IsolatedFixture(log_directory=self.logs)
+                    if target > limit:
+                        with self.assertRaises(fixture.SharedObservationError) as failure:
+                            instance.capture_shared_snapshot()
+                        self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+                    else:
+                        snapshot = instance.capture_shared_snapshot()
+                        self.assertEqual(fixture.scheduler_fingerprint(content), snapshot["scheduler"])
+                        self.assertTrue(snapshot["observation"]["completed"])
+                    self.assertTrue(closed.wait(1), "Framing boundary response connection remained open")
+
+    def test_scheduler_real_chunk_decoder_waits_obey_total_deadline(self):
+        encoded = b'{"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}}'
+        chunk = format(len(encoded), 'x').encode() + b'\r\n' + encoded
+        for phase, prefix in (("size-line", b'1'), ("data", b'100\r\nPRIVATE'),
+                              ("separator", chunk + b'\r'),
+                              ("terminal-trailer", chunk + b'\r\n0\r\nX-Private: PRIVATE\r\n')):
+            with self.subTest(phase=phase):
+                entered, closed = threading.Event(), threading.Event()
+                def respond(handler):
+                    handler.rfile.read(int(handler.headers["Content-Length"]))
+                    handler.wfile.write(b'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n' + prefix)
+                    handler.wfile.flush()
+                    entered.set()
+                    try:
+                        if handler.connection.recv(1) == b'':
+                            closed.set()
+                    except ConnectionResetError:
+                        closed.set()
+                previous_handler = signal.getsignal(signal.SIGALRM)
+                with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin), \
+                        patch.object(fixture, "SCHEDULER_OBSERVATION_DEADLINE_SECONDS", 0.1):
+                    instance = fixture.IsolatedFixture(log_directory=self.logs)
+                    started = time.monotonic()
+                    with self.assertRaises(fixture.SharedObservationError) as failure:
+                        instance.capture_shared_snapshot()
+                    self.assertLess(time.monotonic() - started, 0.8)
+                    self.assertTrue(entered.is_set())
+                    self.assert_scheduler_refusal(instance, failure.exception, "TimeoutError")
+                    self.assertTrue(closed.wait(1), "Chunk decoder deadline left its peer open")
+                self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+
+    def test_scheduler_real_chunk_framing_requires_complete_sizes_separators_and_trailers(self):
+        content = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        encoded = json.dumps(content).encode()
+        chunk = format(len(encoded), 'x').encode() + b'\r\n' + encoded
+        cases = ((b'-1\r\nPRIVATE', "FixtureError"), (b'+1\r\nPRIVATE', "FixtureError"),
+                 (chunk + b'XX0\r\n\r\n', "FixtureError"),
+                 (chunk + b'\r\n0\r\n', "IncompleteRead"),
+                 (chunk + b'\r\n0\r\nX-Private: PRIVATE\r\n', "IncompleteRead"),
+                 (chunk + b'\r\n0\r\nPRIVATE invalid trailer\r\n\r\n', "FixtureError"),
+                 (b'f' * 100 + b'\r\nPRIVATE', "FixtureError"),
+                 (b'1;PRIVATE=' + b'a' * fixture.SCHEDULER_OBSERVATION_MAX_FRAMING_BYTES + b'\r\n', "FixtureError"),
+                 (b'1;x="ok"\r\n' + encoded[:1] + b'\r\n'
+                  + format(len(encoded) - 1, 'x').encode() + b';flag\r\n' + encoded[1:]
+                  + b'\r\n0\r\nX-Private: PRIVATE\r\n\r\n', None))
+        for body, category in cases:
+            with self.subTest(category=category, prefix=body[:12]):
+                closed = threading.Event()
+                def respond(handler):
+                    handler.rfile.read(int(handler.headers["Content-Length"]))
+                    try:
+                        handler.wfile.write(b'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n' + body)
+                        handler.wfile.flush()
+                        handler.connection.shutdown(socket.SHUT_WR)
+                        if handler.connection.recv(1) == b'':
+                            closed.set()
+                    except (BrokenPipeError, ConnectionResetError):
+                        closed.set()
+                with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin):
+                    instance = fixture.IsolatedFixture(log_directory=self.logs)
+                    if category:
+                        with self.assertRaises(fixture.SharedObservationError) as failure:
+                            instance.capture_shared_snapshot()
+                        self.assert_scheduler_refusal(instance, failure.exception, category)
+                    else:
+                        snapshot = instance.capture_shared_snapshot()
+                        self.assertEqual(fixture.scheduler_fingerprint(content), snapshot["scheduler"])
+                        self.assertTrue(snapshot["observation"]["completed"])
+                    self.assertTrue(closed.wait(1), "Chunk-framing observation left its connection open")
+
+    def test_scheduler_real_near_limit_value_decodes_fingerprints_and_compares_complete_range(self):
+        content = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"},
+                   "kvs": [{"key": "UFJJVkFURS1rZXk=", "value": "", "create_revision": "1",
+                            "mod_revision": "3", "version": "1"}], "count": "1"}
+        overhead = len(json.dumps(content).encode())
+        value_bytes = (fixture.SCHEDULER_OBSERVATION_MAX_BYTES - overhead) // 4 * 3
+        content["kvs"][0]["value"] = fixture.base64.b64encode(b'V' * value_bytes).decode()
+        encoded = json.dumps(content).encode()
+        self.assertGreater(len(encoded), fixture.SCHEDULER_OBSERVATION_MAX_BYTES - 4)
+        self.assertLessEqual(len(encoded), fixture.SCHEDULER_OBSERVATION_MAX_BYTES)
+        closed = []
+        def respond(handler):
+            handler.rfile.read(int(handler.headers["Content-Length"]))
+            handler.wfile.write(b'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n'
+                               + format(len(encoded), 'x').encode() + b'\r\n' + encoded + b'\r\n0\r\n\r\n')
+            handler.wfile.flush()
+            handler.connection.shutdown(socket.SHUT_WR)
+            closed.append(handler.connection.recv(1) == b'')
+        with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin):
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            before, after = instance.capture_shared_snapshot(), instance.capture_shared_snapshot()
+            expected = fixture.SharedSnapshot(instance.shared_comparison)
+            self.assertEqual(fixture.scheduler_fingerprint(content, expected), before["scheduler"])
+            self.assertEqual(expected.scheduler_content, before.scheduler_content)
+            self.assertTrue(fixture.shared_preservation(before, after)["matches"])
+        self.assertEqual([True, True], closed)
+
+    def test_scheduler_real_trickled_headers_body_and_stalls_obey_total_deadline(self):
+        for phase in ("headers", "body", "stall"):
+            with self.subTest(phase=phase):
+                closed = threading.Event()
+                entered = threading.Event()
+                def respond(handler):
+                    handler.rfile.read(int(handler.headers["Content-Length"]))
+                    handler.connection.settimeout(1)
+                    entered.set()
+                    try:
+                        if phase == "body":
+                            handler.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Length: 10000\r\n\r\n')
+                        if phase == "stall":
+                            if handler.connection.recv(1) == b'':
+                                closed.set()
+                            return
+                        wire = b'HTTP/1.1 200 OK\r\nX-Private: PRIVATE\r\n\r\n' if phase == "headers" else b'PRIVATE' * 100
+                        for value in wire:
+                            handler.wfile.write(bytes([value]))
+                            handler.wfile.flush()
+                            time.sleep(0.02)
+                    except (BrokenPipeError, ConnectionResetError):
+                        closed.set()
+                previous_handler = signal.getsignal(signal.SIGALRM)
+                with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin), \
+                        patch.object(fixture, "SCHEDULER_OBSERVATION_DEADLINE_SECONDS", 0.2):
+                    instance = fixture.IsolatedFixture(log_directory=self.logs)
+                    started = time.monotonic()
+                    with self.assertRaises(fixture.SharedObservationError) as failure:
+                        instance.capture_shared_snapshot()
+                    self.assertLess(time.monotonic() - started, 0.9)
+                    self.assertTrue(entered.is_set())
+                    receipt = self.assert_scheduler_refusal(instance, failure.exception)
+                    self.assertIn(receipt["exception_category"], ("TimeoutError", "URLError"))
+                    self.assertTrue(closed.wait(1), "Deadline did not release the scheduler connection")
+                self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+
+    def test_scheduler_real_interruption_releases_active_body_and_retains_keyboard_interrupt(self):
+        entered = threading.Event()
+        closed = threading.Event()
+        sent = threading.Event()
+        def respond(handler):
+            handler.rfile.read(int(handler.headers["Content-Length"]))
+            handler.connection.settimeout(1)
+            handler.wfile.write(b'HTTP/1.1 200 OK\r\nContent-Length: 10000\r\n\r\nPRIVATE')
+            handler.wfile.flush()
+            entered.set()
+            try:
+                if handler.connection.recv(1) == b'':
+                    closed.set()
+            except ConnectionResetError:
+                closed.set()
+        def interrupt():
+            if entered.wait(1):
+                time.sleep(0.02)
+                sent.set()
+                os.kill(os.getpid(), signal.SIGINT)
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin):
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            interrupter = threading.Thread(target=interrupt)
+            interrupter.start()
+            try:
+                with self.assertRaises(KeyboardInterrupt) as failure:
+                    instance.capture_shared_snapshot()
+            finally:
+                interrupter.join(timeout=2)
+            self.assertFalse(interrupter.is_alive())
+            self.assertTrue(sent.is_set())
+            self.assert_scheduler_refusal(instance, failure.exception, "KeyboardInterrupt")
+            self.assertTrue(closed.wait(1), "Interruption did not release the scheduler connection")
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+        self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+
+    def test_scheduler_real_truncated_chunked_body_refuses_with_safe_receipt(self):
+        closed = threading.Event()
+        def respond(handler):
+            handler.rfile.read(int(handler.headers["Content-Length"]))
+            handler.connection.settimeout(1)
+            handler.wfile.write(b'HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n100\r\nPRIVATE')
+            handler.wfile.flush()
+            handler.connection.shutdown(socket.SHUT_WR)
+            try:
+                if handler.connection.recv(1) == b'':
+                    closed.set()
+            except ConnectionResetError:
+                closed.set()
+        with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin):
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            with self.assertRaises(fixture.SharedObservationError) as failure:
+                instance.capture_shared_snapshot()
+            self.assert_scheduler_refusal(instance, failure.exception, "IncompleteRead")
+            self.assertTrue(closed.wait(1))
+
+    def test_scheduler_total_deadline_covers_connection_parse_and_fingerprint(self):
+        original_loads = fixture.json.loads
+        original_fingerprint = fixture.scheduler_fingerprint
+        header = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        for phase in ("connection", "parse", "fingerprint"):
+            with self.subTest(phase=phase):
+                response = io.BytesIO(json.dumps(header).encode())
+                instance = fixture.IsolatedFixture(log_directory=self.logs)
+                def delayed(value):
+                    time.sleep(2)
+                    return value
+                with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                        patch.object(fixture, "owned_http_open", side_effect=lambda *_args, **_kwargs:
+                                     delayed(response) if phase == "connection" else response), \
+                        patch.object(fixture.json, "loads", side_effect=lambda *args:
+                                     delayed(original_loads(*args)) if phase == "parse" else original_loads(*args)), \
+                        patch.object(fixture, "scheduler_fingerprint", side_effect=lambda *args:
+                                     delayed(original_fingerprint(*args)) if phase == "fingerprint" else original_fingerprint(*args)), \
+                        patch.object(fixture, "SCHEDULER_OBSERVATION_DEADLINE_SECONDS", 0.1):
+                    started = time.monotonic()
+                    with self.assertRaises(fixture.SharedObservationError) as failure:
+                        instance.capture_shared_snapshot()
+                    self.assertLess(time.monotonic() - started, 0.8)
+                self.assert_scheduler_refusal(instance, failure.exception, "TimeoutError")
+                if phase != "connection":
+                    self.assertTrue(response.closed)
+                response.close()
+                self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+
+    def test_scheduler_deadline_refuses_a_late_result_even_if_alarm_delivery_was_delayed(self):
+        header = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        response = io.BytesIO(json.dumps(header).encode())
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open", return_value=response), \
+                patch.object(fixture.time, "monotonic", side_effect=(0, 21)), \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance.capture_shared_snapshot()
+        self.assertTrue(response.closed)
+        self.assert_scheduler_refusal(instance, failure.exception, "TimeoutError")
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+
+    def test_scheduler_deadline_refuses_existing_timer_and_non_main_thread_without_scheduler_io(self):
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        def foreign_handler(*_args):
+            self.fail("Foreign deadline must not fire during this test")
+        signal.signal(signal.SIGALRM, foreign_handler)
+        try:
+            signal.setitimer(signal.ITIMER_REAL, 30, 7)
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                    patch.object(fixture, "owned_http_open") as opener, \
+                    self.assertRaises(fixture.SharedObservationError) as failure:
+                instance.capture_shared_snapshot()
+            opener.assert_not_called()
+            remaining, interval = signal.getitimer(signal.ITIMER_REAL)
+            self.assertGreater(remaining, 29)
+            self.assertEqual(7, interval)
+            self.assertIs(foreign_handler, signal.getsignal(signal.SIGALRM))
+            self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            failures = []
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            def observe():
+                try:
+                    instance.capture_shared_snapshot()
+                except fixture.SharedObservationError as error:
+                    failures.append(error)
+            with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                    patch.object(fixture, "owned_http_open") as opener:
+                worker = threading.Thread(target=observe)
+                worker.start()
+                worker.join(timeout=1)
+            self.assertFalse(worker.is_alive())
+            opener.assert_not_called()
+            self.assertEqual(1, len(failures))
+            self.assert_scheduler_refusal(instance, failures[0], "FixtureError")
+            self.assertIs(foreign_handler, signal.getsignal(signal.SIGALRM))
+            with fixture.scheduler_observation_deadline():
+                self.assertIsNot(foreign_handler, signal.getsignal(signal.SIGALRM))
+            self.assertIs(foreign_handler, signal.getsignal(signal.SIGALRM))
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            signal.signal(signal.SIGALRM, previous_handler)
+
+    def test_scheduler_deadline_refuses_blocked_alarm_and_missing_signal_support_without_scheduler_io(self):
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGALRM})
+        try:
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                    patch.object(fixture, "owned_http_open") as opener, \
+                    self.assertRaises(fixture.SharedObservationError) as failure:
+                instance.capture_shared_snapshot()
+            opener.assert_not_called()
+            self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+            self.assertEqual(previous_mask | {signal.SIGALRM}, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+            self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+        finally:
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+        with patch.object(fixture.signal, "setitimer"):
+            del fixture.signal.setitimer
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                    patch.object(fixture, "owned_http_open") as opener, \
+                    self.assertRaises(fixture.SharedObservationError) as failure:
+                instance.capture_shared_snapshot()
+            opener.assert_not_called()
+            self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+        # A native handler unknown to Python cannot be restored with signal.signal.
+        with patch.object(fixture.signal, "getsignal", return_value=None), \
+                patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open") as opener, \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance = fixture.IsolatedFixture(log_directory=self.logs)
+            instance.capture_shared_snapshot()
+        opener.assert_not_called()
+        self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+        self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+
+    def test_scheduler_deadline_restores_handler_when_timeout_interrupts_timer_disarm(self):
+        original_setitimer = signal.setitimer
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        def setitimer(kind, seconds):
+            result = original_setitimer(kind, seconds)
+            if seconds == 0:
+                raise TimeoutError("PRIVATE injected late deadline")
+            return result
+        header = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
+        response = io.BytesIO(json.dumps(header).encode())
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open", return_value=response), \
+                patch.object(fixture.signal, "setitimer", side_effect=setitimer), \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance.capture_shared_snapshot()
+        self.assertTrue(response.closed)
+        self.assert_scheduler_refusal(instance, failure.exception, "TimeoutError")
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+        self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+
+    def test_scheduler_deadline_finishes_interrupted_install_disarm_and_handler_restore(self):
+        original_signal, original_timer = signal.signal, signal.setitimer
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        for phase in ("installed", "armed", "before_disarm", "before_restore"):
+            with self.subTest(phase=phase):
+                interruption = KeyboardInterrupt()
+                injected = []
+                response = io.BytesIO(b'{"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}}')
+                def change_handler(kind, handler):
+                    if kind == signal.SIGALRM and phase == "before_restore" and handler == previous_handler and not injected:
+                        injected.append(True)
+                        raise interruption
+                    result = original_signal(kind, handler)
+                    if kind == signal.SIGALRM and phase == "installed" and handler != previous_handler and not injected:
+                        injected.append(True)
+                        raise interruption
+                    return result
+                def change_timer(kind, seconds):
+                    if phase == "before_disarm" and seconds == 0 and not injected:
+                        injected.append(True)
+                        raise interruption
+                    result = original_timer(kind, seconds)
+                    if phase == "armed" and seconds > 0 and not injected:
+                        injected.append(True)
+                        raise interruption
+                    return result
+                instance = fixture.IsolatedFixture(log_directory=self.logs)
+                with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                        patch.object(fixture, "owned_http_open", return_value=response) as opener, \
+                        patch.object(fixture.signal, "signal", side_effect=change_handler), \
+                        patch.object(fixture.signal, "setitimer", side_effect=change_timer), \
+                        self.assertRaises(KeyboardInterrupt) as failure:
+                    instance.capture_shared_snapshot()
+                self.assertEqual([True], injected)
+                self.assertIs(interruption, failure.exception)
+                self.assert_scheduler_refusal(instance, failure.exception, "KeyboardInterrupt")
+                self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+                self.assertEqual(previous_mask, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+                if phase in ("installed", "armed"):
+                    opener.assert_not_called()
+                    response.close()
+                else:
+                    self.assertTrue(response.closed)
+
+    def test_scheduler_deadline_cleanup_timeout_preserves_the_original_caller_interruption(self):
+        original_timer = signal.setitimer
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        interruption = KeyboardInterrupt()
+        injected = []
+        def change_timer(kind, seconds):
+            if seconds == 0 and not injected:
+                injected.append(True)
+                raise TimeoutError("PRIVATE cleanup detail")
+            return original_timer(kind, seconds)
+        response = io.BytesIO(b'{"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}}')
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open", return_value=response), \
+                patch.object(fixture, "scheduler_fingerprint", side_effect=interruption), \
+                patch.object(fixture.signal, "setitimer", side_effect=change_timer), \
+                self.assertRaises(KeyboardInterrupt) as failure:
+            instance.capture_shared_snapshot()
+        self.assertIs(interruption, failure.exception)
+        self.assertTrue(response.closed)
+        self.assert_scheduler_refusal(instance, failure.exception, "KeyboardInterrupt")
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+        self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+        self.assertEqual(previous_mask, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+
+    def test_scheduler_deadline_real_pending_sigint_and_sigterm_protect_signal_transitions(self):
+        original_signal, original_timer = signal.signal, signal.setitimer
+        protected = {signal.SIGALRM, signal.SIGINT, signal.SIGTERM}
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        previous_term = signal.getsignal(signal.SIGTERM)
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGUSR1})
+        try:
+            for phase in ("installed", "before_disarm"):
+                for interrupt_signal in (signal.SIGINT, signal.SIGTERM):
+                    with self.subTest(phase=phase, signal=interrupt_signal):
+                        sent = []
+                        interruption = KeyboardInterrupt()
+                        def interrupted(_signal, _frame):
+                            raise interruption
+                        original_signal(signal.SIGTERM, interrupted)
+                        def send():
+                            mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+                            self.assertTrue(protected <= mask)
+                            sent.append(True)
+                            os.kill(os.getpid(), interrupt_signal)
+                        def change_handler(kind, handler):
+                            result = original_signal(kind, handler)
+                            if kind == signal.SIGALRM and phase == "installed" and handler != previous_handler and not sent:
+                                send()
+                            return result
+                        def change_timer(kind, seconds):
+                            if phase == "before_disarm" and seconds == 0 and not sent:
+                                send()
+                            return original_timer(kind, seconds)
+                        response = io.BytesIO(b'{"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}}')
+                        instance = fixture.IsolatedFixture(log_directory=self.logs)
+                        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                                patch.object(fixture, "owned_http_open", return_value=response) as opener, \
+                                patch.object(fixture.signal, "signal", side_effect=change_handler), \
+                                patch.object(fixture.signal, "setitimer", side_effect=change_timer), \
+                                self.assertRaises(KeyboardInterrupt) as failure:
+                            instance.capture_shared_snapshot()
+                        self.assertEqual([True], sent)
+                        if interrupt_signal == signal.SIGTERM:
+                            self.assertIs(interruption, failure.exception)
+                        self.assert_scheduler_refusal(instance, failure.exception, "KeyboardInterrupt")
+                        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                        self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+                        self.assertIs(interrupted, signal.getsignal(signal.SIGTERM))
+                        self.assertEqual(previous_mask | {signal.SIGUSR1}, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+                        if phase == "installed":
+                            opener.assert_not_called()
+                            response.close()
+                        else:
+                            self.assertTrue(response.closed)
+        finally:
+            original_signal(signal.SIGTERM, previous_term)
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+
+    def test_scheduler_deadline_drains_only_owned_pending_alarm_before_restoring_caller_handler(self):
+        original_timer = signal.setitimer
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        sent = []
+        def change_timer(kind, seconds):
+            if seconds == 0 and not sent:
+                self.assertIn(signal.SIGALRM, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+                sent.append(True)
+                os.kill(os.getpid(), signal.SIGALRM)
+            return original_timer(kind, seconds)
+        with patch.object(fixture.signal, "setitimer", side_effect=change_timer):
+            with fixture.scheduler_observation_deadline():
+                pass
+        self.assertEqual([True], sent)
+        self.assertNotIn(signal.SIGALRM, signal.sigpending())
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+        self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+        self.assertEqual(previous_mask, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+
+    def test_scheduler_deadline_worker_delivered_callbacks_cannot_interrupt_critical_cleanup(self):
+        previous_handlers = {kind: signal.getsignal(kind) for kind in (signal.SIGALRM, signal.SIGINT, signal.SIGTERM)}
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        deadline_code = fixture.scheduler_observation_deadline.__wrapped__.__code__
+        previous_trace = sys.gettrace()
+        try:
+            for interrupt_signal in (signal.SIGINT, signal.SIGTERM):
+                for phase in ("setup", "entry", "cleanup", "restoring"):
+                    for already_interrupted in (False, True) if phase in ("entry", "cleanup") else (False,):
+                        with self.subTest(signal=interrupt_signal, phase=phase, already_interrupted=already_interrupted):
+                            release, sent, cancelled = threading.Event(), threading.Event(), threading.Event()
+                            fired, calls, worker_masks = [], [], []
+                            interruption = KeyboardInterrupt()
+                            original_interruption = KeyboardInterrupt()
+                            def interrupted(kind, _frame):
+                                calls.append(kind)
+                                raise interruption
+                            signal.signal(interrupt_signal, interrupted)
+                            def deliver():
+                                worker_masks.append(signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+                                if release.wait(2) and not cancelled.is_set():
+                                    signal.raise_signal(interrupt_signal)
+                                    sent.set()
+                            def trace(frame, event, _arg):
+                                if frame.f_code is deadline_code and event == "line" and not fired:
+                                    source = linecache.getline(frame.f_code.co_filename, frame.f_lineno).strip()
+                                    matches = ((phase == "setup" and source == "signal.signal(signal.SIGALRM, expired)")
+                                               or (phase == "entry" and source == "critical = True"
+                                                   and frame.f_locals.get("wrapping"))
+                                               or (phase == "cleanup" and source == "if claimed:")
+                                               or (phase == "restoring" and frame.f_locals.get("kind") == signal.SIGINT
+                                                   and source.startswith("transition(lambda: signal.signal(kind, handlers[kind])")))
+                                    if matches:
+                                        fired.append(True)
+                                        release.set()
+                                        self.assertTrue(sent.wait(1))
+                                        # The worker is unblocked, so its native delivery
+                                        # schedules a Python callback despite the main mask.
+                                        time.sleep(0.02)
+                                return trace
+                            response = io.BytesIO(b'{"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}}')
+                            instance = fixture.IsolatedFixture(log_directory=self.logs)
+                            worker = threading.Thread(target=deliver)
+                            worker.start()
+                            try:
+                                with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                                        patch.object(fixture, "owned_http_open", return_value=response) as opener, \
+                                        patch.object(fixture, "scheduler_fingerprint", side_effect=original_interruption if already_interrupted
+                                                     else fixture.scheduler_fingerprint), \
+                                        self.assertRaises(KeyboardInterrupt) as failure:
+                                    sys.settrace(trace)
+                                    instance.capture_shared_snapshot()
+                            finally:
+                                sys.settrace(previous_trace)
+                                cancelled.set()
+                                release.set()
+                                worker.join(timeout=2)
+                            self.assertFalse(worker.is_alive())
+                            self.assertEqual([True], fired)
+                            self.assertTrue(sent.is_set())
+                            self.assertNotIn(interrupt_signal, worker_masks[0])
+                            self.assertEqual([interrupt_signal], calls)
+                            self.assertIs(original_interruption if already_interrupted else interruption, failure.exception)
+                            self.assert_scheduler_refusal(instance, failure.exception, "KeyboardInterrupt")
+                            self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                            self.assertIs(previous_handlers[signal.SIGALRM], signal.getsignal(signal.SIGALRM))
+                            self.assertIs(interrupted, signal.getsignal(interrupt_signal))
+                            self.assertEqual(previous_mask, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+                            if phase == "setup":
+                                opener.assert_not_called()
+                                response.close()
+                            else:
+                                self.assertTrue(response.closed)
+                            signal.signal(interrupt_signal, previous_handlers[interrupt_signal])
+        finally:
+            sys.settrace(previous_trace)
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            for kind, handler in previous_handlers.items():
+                signal.signal(kind, handler)
+            signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+
+    def test_scheduler_deadline_worker_alarm_during_setup_refuses_before_scheduler_io(self):
+        original_timer = signal.setitimer
+        previous_handler = signal.getsignal(signal.SIGALRM)
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        release, sent, cancelled = threading.Event(), threading.Event(), threading.Event()
+        worker_masks = []
+        def deliver():
+            worker_masks.append(signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+            if release.wait(1) and not cancelled.is_set():
+                signal.raise_signal(signal.SIGALRM)
+                sent.set()
+        def change_timer(kind, seconds):
+            result = original_timer(kind, seconds)
+            if seconds > 0:
+                release.set()
+                self.assertTrue(sent.wait(1))
+                time.sleep(0.02)
+            return result
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        worker = threading.Thread(target=deliver)
+        worker.start()
+        try:
+            with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                    patch.object(fixture, "owned_http_open") as opener, \
+                    patch.object(fixture.signal, "setitimer", side_effect=change_timer), \
+                    self.assertRaises(fixture.SharedObservationError) as failure:
+                instance.capture_shared_snapshot()
+        finally:
+            cancelled.set()
+            release.set()
+            worker.join(timeout=2)
+        self.assertFalse(worker.is_alive())
+        self.assertNotIn(signal.SIGALRM, worker_masks[0])
+        self.assertTrue(sent.is_set())
+        opener.assert_not_called()
+        self.assert_scheduler_refusal(instance, failure.exception, "TimeoutError")
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+        self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+        self.assertEqual(previous_mask, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+
+    def test_scheduler_deferred_system_exit_precedes_operation_failure_and_preserves_original_interrupt(self):
+        original_timer = signal.setitimer
+        previous_term = signal.getsignal(signal.SIGTERM)
+        previous_alarm = signal.getsignal(signal.SIGALRM)
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        try:
+            for earlier in (TimeoutError("PRIVATE operation detail"), KeyboardInterrupt(), SystemExit(19)):
+                with self.subTest(earlier=type(earlier).__name__):
+                    termination = SystemExit(37)
+                    sent, calls = [], []
+                    def terminate(kind, _frame):
+                        calls.append(kind)
+                        raise termination
+                    signal.signal(signal.SIGTERM, terminate)
+                    def change_timer(kind, seconds):
+                        if seconds == 0 and not sent:
+                            sent.append(True)
+                            signal.raise_signal(signal.SIGTERM)
+                        return original_timer(kind, seconds)
+                    expected = earlier if isinstance(earlier, (KeyboardInterrupt, SystemExit)) else termination
+                    with patch.object(fixture.signal, "setitimer", side_effect=change_timer), \
+                            self.assertRaises(type(expected)) as failure:
+                        with fixture.scheduler_observation_deadline():
+                            raise earlier
+                    self.assertIs(expected, failure.exception)
+                    self.assertEqual([signal.SIGTERM], calls)
+                    self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                    self.assertIs(previous_alarm, signal.getsignal(signal.SIGALRM))
+                    self.assertIs(terminate, signal.getsignal(signal.SIGTERM))
+                    self.assertEqual(previous_mask, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+        finally:
+            signal.signal(signal.SIGTERM, previous_term)
+
+    def test_scheduler_deferred_native_default_and_ignored_signals_in_owned_subprocesses(self):
+        script = r'''
+import signal, sys
+from unittest.mock import patch
+import run_isolated_magic_link_dapr as fixture
+phase, disposition, name = sys.argv[1:]
+kind = getattr(signal, name)
+selected = getattr(signal, disposition)
+signal.signal(kind, selected)
+previous_alarm = signal.getsignal(signal.SIGALRM)
+previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+original_signal, original_timer = signal.signal, signal.setitimer
+sent = False
+def enqueue():
+    global sent
+    assert kind in signal.pthread_sigmask(signal.SIG_BLOCK, set())
+    sent = True
+    signal.raise_signal(kind)
+    print('queued', flush=True)
+def install(number, handler):
+    result = original_signal(number, handler)
+    if phase == 'setup' and number == signal.SIGALRM and not sent:
+        enqueue()
+    return result
+def timer(number, seconds):
+    if phase == 'cleanup' and seconds == 0 and not sent:
+        enqueue()
+    return original_timer(number, seconds)
+def trace(frame, event, _arg):
+    if event == 'call' and frame.f_code.co_name == 'dispatch' and frame.f_code.co_filename == fixture.__file__:
+        print('dispatch', flush=True)
+    return trace
+sys.settrace(trace)
+with patch.object(fixture.signal, 'signal', side_effect=install), patch.object(fixture.signal, 'setitimer', side_effect=timer):
+    with fixture.scheduler_observation_deadline():
+        print('body', flush=True)
+sys.settrace(None)
+assert sent
+assert disposition == 'SIG_IGN'
+assert signal.getsignal(kind) == selected
+assert signal.getsignal(signal.SIGALRM) == previous_alarm
+assert signal.getitimer(signal.ITIMER_REAL) == (0.0, 0.0)
+assert signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous_mask
+print('complete', flush=True)
+'''
+        for phase in ("setup", "cleanup"):
+            for disposition in ("SIG_DFL", "SIG_IGN"):
+                for name in ("SIGINT", "SIGTERM"):
+                    with self.subTest(phase=phase, disposition=disposition, signal=name):
+                        result = subprocess.run([sys.executable, "-c", script, phase, disposition, name],
+                                                cwd=fixture.ROOT / "scripts", capture_output=True, text=True, timeout=5)
+                        expected = -int(getattr(signal, name)) if disposition == "SIG_DFL" else 0
+                        self.assertEqual(expected, result.returncode, result.stderr)
+                        self.assertEqual("", result.stderr)
+                        self.assertEqual(1, result.stdout.splitlines().count("queued"))
+                        self.assertEqual(1, result.stdout.splitlines().count("dispatch"))
+                        if disposition == "SIG_IGN":
+                            self.assertIn("body\n", result.stdout)
+                            self.assertTrue(result.stdout.endswith("complete\n"))
+                        else:
+                            self.assertNotIn("complete", result.stdout)
+                            self.assertEqual(phase == "cleanup", "body\n" in result.stdout)
 
     def test_private_fingerprints_are_run_scoped_domain_separated_and_never_serialized(self):
         rows = {0: [["PRIVATE-key", "PRIVATE-value", -1], ["PRIVATE-ttl", "PRIVATE-expiring", 10000]], 13: [], 14: []}

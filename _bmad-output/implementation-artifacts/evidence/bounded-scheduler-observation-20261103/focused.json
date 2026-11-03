@@ -1,0 +1,35 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_isolated_magic_link_dapr.py",
+    "-k",
+    "scheduler",
+    "-v"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "environment_overrides": {},
+  "baseline_commit": "53d112c59a3827cf14e2c4565f048832de88467e",
+  "source_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "06e194de7590c6510967c016c450be807286f1cdde56a03c9821510b8bb8b03c",
+    "scripts/test_isolated_magic_link_dapr.py": "9be6c19919612d76c92630e7f32eae40050f5b9ae3ebbe033dd11917cd6a41b6"
+  },
+  "started_utc": "2026-11-03T20:12:07.668547+00:00",
+  "elapsed_seconds": 1.706832009003847,
+  "returncode": 0,
+  "tests": 18,
+  "test_seconds": 1.549,
+  "result": "OK",
+  "python": {
+    "implementation": "CPython",
+    "version": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+    "executable": "/usr/bin/python3"
+  },
+  "combined_output": "focused.log.gz",
+  "combined_output_sha256": "fc0a24064959a5565f83533e4c9449c5b52ac744bf2345567b9741660da4adef"
+}

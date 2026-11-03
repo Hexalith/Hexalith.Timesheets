@@ -8,6 +8,7 @@ in a unique child of --log-directory, including failed and interrupted commands.
 import argparse
 import base64
 import binascii
+import contextlib
 import ctypes
 import errno
 import hashlib
@@ -24,6 +25,7 @@ import socket
 import ssl
 import subprocess
 import tempfile
+import threading
 import time
 import urllib.request
 import urllib.parse
@@ -97,6 +99,15 @@ REDIS_OBSERVATION_MAX_KEYS = 1024
 REDIS_OBSERVATION_MAX_VALUE_BYTES = 65536
 REDIS_OBSERVATION_MAX_MEMORY_BYTES = 32 * 1024 * 1024
 REDIS_OBSERVATION_MAX_SCRIPT_MS = 250
+# Conservative local refusal ceilings, not qualified deployed inventory sizes.
+# Require the entire scheduler range within 4 MiB and 20 seconds, including
+# connection, headers, body, JSON parsing and complete-range fingerprinting.
+SCHEDULER_OBSERVATION_MAX_BYTES = 4 * 1024 * 1024
+SCHEDULER_OBSERVATION_DEADLINE_SECONDS = 20
+SCHEDULER_OBSERVATION_READ_BYTES = 65536
+# Bound chunk metadata as well as decoded body bytes; never delegate chunk
+# lengths to HTTPResponse.read, which accepts negative native chunk sizes.
+SCHEDULER_OBSERVATION_MAX_FRAMING_BYTES = 65536
 PRIVATE_CONTROL_PORT_MIN = 20000
 PRIVATE_CONTROL_PORT_MAX = 29999
 CONTROL_PORT_ALLOCATION_ATTEMPTS = 20
@@ -1377,6 +1388,217 @@ def scheduler_fingerprint(response, snapshot=None):
     return {"revision": str(int(header["revision"])), "keys": len(rows)}
 
 
+@contextlib.contextmanager
+def scheduler_observation_deadline():
+    """Own a synchronous deadline, deferring callbacks during signal changes.
+
+    Signal masks alone do not protect Python callbacks: another unblocked thread
+    can receive the signal and schedule its handler on the main Python thread.
+    Temporary wrappers therefore defer caller interruption throughout setup and
+    teardown, then replay it only after restoring caller state. No observer
+    thread or process is created.
+    """
+    message = "Scheduler preservation total deadline is unavailable"
+    require(threading.current_thread() is threading.main_thread()
+            and all(hasattr(signal, name) for name in
+                    ("setitimer", "getitimer", "ITIMER_REAL", "SIGALRM", "SIGINT", "SIGTERM",
+                     "pthread_sigmask", "sigpending", "sigwait")), message)
+    protected = {signal.SIGALRM, signal.SIGINT, signal.SIGTERM}
+    previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+    handlers = {kind: signal.getsignal(kind) for kind in protected}
+    require(all(handler in (signal.SIG_DFL, signal.SIG_IGN) or callable(handler)
+                for handler in handlers.values()), message)
+    claimed = False
+    wrapping = False
+    critical = True
+    deadline_expired = False
+    deferred = {}
+    failure = None
+
+    def retain(error):
+        nonlocal failure
+        if failure is None or (isinstance(error, KeyboardInterrupt) and not isinstance(failure, KeyboardInterrupt)):
+            failure = error
+        elif isinstance(error, SystemExit) and not isinstance(failure, (KeyboardInterrupt, SystemExit)):
+            failure = error
+
+    def dispatch(kind, frame):
+        handler = handlers[kind]
+        if callable(handler):
+            handler(kind, frame)
+        elif handler == signal.SIG_DFL:
+            # Preserve native termination semantics for callers without the
+            # runner's SIGTERM -> KeyboardInterrupt handler.
+            signal.signal(kind, handler)
+            os.kill(os.getpid(), kind)
+
+    def interrupted(kind, frame):
+        if critical:
+            # At most the two interruption signals are retained. Standard
+            # pending signals coalesce; no unbounded callback queue is needed.
+            deferred.setdefault(kind, frame)
+        else:
+            dispatch(kind, frame)
+
+    def expired(_signal, _frame):
+        nonlocal deadline_expired
+        deadline_expired = True
+        if not critical:
+            raise TimeoutError("Scheduler preservation observation exceeded its total deadline")
+
+    def transition(action, complete):
+        # Finish syscalls interrupted before or after their effect. The wrappers
+        # defer real callbacks, including those scheduled by another thread.
+        while True:
+            try:
+                action()
+                return
+            except BaseException as error:
+                retain(error)
+                if complete():
+                    return
+
+    try:
+        signal.pthread_sigmask(signal.SIG_BLOCK, protected)
+        require(signal.SIGALRM not in previous_mask and signal.SIGALRM not in signal.sigpending(), message)
+        require(not any(signal.getitimer(signal.ITIMER_REAL)), message)
+        deadline = time.monotonic() + SCHEDULER_OBSERVATION_DEADLINE_SECONDS
+        # Claim wrapper cleanup before the first installation, for an exception
+        # immediately after signal.signal changes the real handler.
+        wrapping = True
+        signal.signal(signal.SIGINT, interrupted)
+        signal.signal(signal.SIGTERM, interrupted)
+        claimed = True
+        signal.signal(signal.SIGALRM, expired)
+        signal.setitimer(signal.ITIMER_REAL, SCHEDULER_OBSERVATION_DEADLINE_SECONDS)
+        critical = False
+        signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask)
+        while deferred:
+            kind = next(iter(deferred))
+            dispatch(kind, deferred.pop(kind))
+        if deadline_expired:
+            expired(None, None)
+        yield
+        if time.monotonic() >= deadline:
+            expired(None, None)
+    except BaseException as error:
+        retain(error)
+    finally:
+        # A callback can interrupt installation/restoration of the wrappers
+        # themselves. Retry the entire critical section in that case, with all
+        # ownership facts already saved. Every operation is idempotent.
+        while True:
+            try:
+                critical = True
+                transition(lambda: signal.pthread_sigmask(signal.SIG_BLOCK, protected),
+                           lambda: protected <= signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+                if wrapping:
+                    for kind in (signal.SIGINT, signal.SIGTERM):
+                        transition(lambda: signal.signal(kind, interrupted),
+                                   lambda: signal.getsignal(kind) is interrupted)
+                if claimed:
+                    transition(lambda: signal.setitimer(signal.ITIMER_REAL, 0),
+                               lambda: not any(signal.getitimer(signal.ITIMER_REAL)))
+                    # Never deliver a pending owned alarm to the restored caller
+                    # handler, possibly SIG_DFL. Foreign alarms were refused.
+                    if signal.SIGALRM in signal.sigpending():
+                        transition(lambda: signal.sigwait({signal.SIGALRM}),
+                                   lambda: signal.SIGALRM not in signal.sigpending())
+                    transition(lambda: signal.signal(signal.SIGALRM, handlers[signal.SIGALRM]),
+                               lambda: signal.getsignal(signal.SIGALRM) == handlers[signal.SIGALRM])
+                transition(lambda: signal.pthread_sigmask(signal.SIG_SETMASK, previous_mask),
+                           lambda: signal.pthread_sigmask(signal.SIG_BLOCK, set()) == previous_mask)
+                if wrapping:
+                    for kind in (signal.SIGTERM, signal.SIGINT):
+                        transition(lambda: signal.signal(kind, handlers[kind]),
+                                   lambda: signal.getsignal(kind) == handlers[kind])
+                break
+            except BaseException as error:
+                retain(error)
+                continue
+    for kind, frame in deferred.items():
+        try:
+            dispatch(kind, frame)
+        except BaseException as error:
+            retain(error)
+    if failure is not None:
+        raise failure
+
+
+def read_bounded_scheduler_body(response):
+    """Collect only a complete, strictly framed range within local byte limits."""
+    message = "Scheduler preservation response exceeds its safety bound or is malformed"
+    headers = getattr(response, "headers", None)
+    declared = None
+    transfers = []
+    if headers is not None:
+        require(not headers.defects, message)
+        lengths = headers.get_all("Content-Length", [])
+        transfers = headers.get_all("Transfer-Encoding", [])
+        require(len(lengths) <= 1 and len(transfers) <= 1 and not (lengths and transfers), message)
+        require(not transfers or transfers[0].lower() == "chunked", message)
+        if lengths:
+            require(re.fullmatch(r"[0-9]+", lengths[0]) is not None, message)
+            declared = int(lengths[0])
+            require(declared <= SCHEDULER_OBSERVATION_MAX_BYTES, message)
+    body = bytearray()
+    if transfers:
+        # HTTPResponse.read(n) is not a body bound for chunked transfers: its
+        # native negative chunk path can invoke raw read(-1). Parse the bounded
+        # framing on fp directly and check each size before consuming its data.
+        raw = response.fp
+        framing_bytes = 0
+
+        def line():
+            nonlocal framing_bytes
+            value = raw.readline(SCHEDULER_OBSERVATION_MAX_FRAMING_BYTES - framing_bytes + 1)
+            framing_bytes += len(value)
+            require(framing_bytes <= SCHEDULER_OBSERVATION_MAX_FRAMING_BYTES, message)
+            if not value:
+                raise http.client.IncompleteRead(b"")
+            require(value.endswith(b"\r\n"), message)
+            return value
+
+        def exact(amount):
+            data = bytearray()
+            while len(data) < amount:
+                chunk = raw.read(min(SCHEDULER_OBSERVATION_READ_BYTES, amount - len(data)))
+                if not chunk:
+                    raise http.client.IncompleteRead(b"", amount - len(data))
+                data.extend(chunk)
+            return data
+
+        token = rb"[!#$%&'*+\-.^_`|~0-9A-Za-z]+"
+        quoted = rb'"(?:[\t !#-\[\]-~]|\\[\t -~])*"'
+        extension = rb"(?:[ \t]*;[ \t]*" + token + rb"(?:[ \t]*=[ \t]*(?:" + token + b"|" + quoted + rb"))?)*"
+        while True:
+            size_line = line()
+            require(re.fullmatch(rb"[0-9a-fA-F]+" + extension + rb"[ \t]*\r\n", size_line) is not None, message)
+            size = int(size_line.split(b";", 1)[0], 16)
+            require(size <= SCHEDULER_OBSERVATION_MAX_BYTES - len(body), message)
+            if size == 0:
+                while True:
+                    trailer = line()
+                    if trailer == b"\r\n":
+                        return body
+                    require(re.fullmatch(token + rb":[\t\x20-\x7e\x80-\xff]*\r\n", trailer) is not None, message)
+                    require(trailer.split(b":", 1)[0].lower() not in (b"content-length", b"transfer-encoding"), message)
+            body.extend(exact(size))
+            require(exact(2) == b"\r\n", message)
+            framing_bytes += 2
+            require(framing_bytes <= SCHEDULER_OBSERVATION_MAX_FRAMING_BYTES, message)
+    while True:
+        chunk = response.read(min(SCHEDULER_OBSERVATION_READ_BYTES,
+                                  SCHEDULER_OBSERVATION_MAX_BYTES + 1 - len(body)))
+        if not chunk:
+            break
+        body.extend(chunk)
+        require(len(body) <= SCHEDULER_OBSERVATION_MAX_BYTES, message)
+    if declared is not None and len(body) != declared:
+        raise http.client.IncompleteRead(b"", declared - len(body))
+    return body
+
+
 def read_only_shared_snapshot(comparison):
     """Fingerprint retained broker/state and scheduler KV without exposing data."""
     def read_resp(stream):
@@ -1497,21 +1719,29 @@ return {{finished, rows}}
         observation.update(phase="scheduler_range", database=None)
         request = urllib.request.Request("http://127.0.0.1:2379/v3/kv/range", data=b'{"key":"AA==","range_end":"AA=="}',
                                          headers={"Content-Type": "application/json"})
-        try:
-            response = owned_http_open(request, timeout=20)
-        except urllib.error.HTTPError as error:
-            with error:
-                raise
-        with response as scheduler_response:
+        with scheduler_observation_deadline():
+            response = None
             try:
-                scheduler = json.load(scheduler_response)
-            except ValueError:
-                raise FixtureError("Scheduler preservation range did not return valid JSON") from None
-        result["scheduler"] = scheduler_fingerprint(scheduler, result)
+                try:
+                    response = owned_http_open(request, timeout=SCHEDULER_OBSERVATION_DEADLINE_SECONDS)
+                except urllib.error.HTTPError as error:
+                    with error:
+                        raise
+                with response as scheduler_response:
+                    body = read_bounded_scheduler_body(scheduler_response)
+                    try:
+                        scheduler = json.loads(body)
+                    except ValueError:
+                        raise FixtureError("Scheduler preservation range did not return valid JSON") from None
+            finally:
+                if response is not None:
+                    response.close()
+            result["scheduler"] = scheduler_fingerprint(scheduler, result)
         observation.update(completed=True, phase="complete")
         result["observation"] = observation
         return result
-    except (FixtureError, OSError, http.client.HTTPException, ValueError, KeyError, TypeError, IndexError, KeyboardInterrupt) as error:
+    except (FixtureError, OSError, http.client.HTTPException, ValueError, KeyError, TypeError, IndexError,
+            RecursionError, MemoryError, KeyboardInterrupt) as error:
         observation["exception_category"] = type(error).__name__
         if isinstance(error, KeyboardInterrupt):
             error.shared_observation = observation
