@@ -3480,3 +3480,22 @@ The [bounded attempt](../evidence/3-6/20261102t225833z-metadata-diagnostic-catal
 Live xUnit fails **1/1** at the first metadata POST, **403 / ERR_DIRECT_INVOKE**. Pinned CLI/runtime and recorded selected-config evidence establish missing authenticated Dapr peer transport under global default-deny; slash normalization and the admitted finite metadata endpoint do not grant peer identity. Resource-wide workload logs are not attributed to this request. The [owning-module handoff](../handoff-3-6-isolated-dapr-peer-identity.md) identifies the SDK's separate owned Sentry/mTLS witness and the trust/enrollment scope required beyond this graph. No further live attempt or topology/credential/ACL change follows. Supported signed-service/catalog-context production is separate unqualified follow-on work, not the proven first denial.
 
 Verified diagnostics remain **5/5 focused**, **231/231 Python**; prior matching restore/build and **47/47** relevant Architecture checks carry forward. Original broad Architecture, Projections and Integration failures remain recorded; no new broad suite was run. Persisted allowed/denied/retried/single-use effects and restart/rebuild remain unqualified. Story/spec stay **in-progress**, deployed gates unfinished, launch **FAIL**.
+
+## Approved owned transport qualification — 2026-11-03
+
+The [owner packet](../evidence/3-6/20261103-owned-transport/README.md) binds the exact commands, source IDs, failures, matrix and cleanup under the user's new approved scope. EventStore's focused public transport cases pass **4/4** (21.257s), including real persisted actors/native restart/reminders and actual Aspire-rendered CLI launch. Final Python regressions pass **234/234** (59.060s); the prescribed Debug/source restore/build pass with zero warnings/errors.
+
+| Individual default executable | Observed result | Gate disposition |
+| --- | --- | --- |
+| Architecture | 118/118 pass | Pass |
+| Contracts | 108/108 pass | Pass |
+| Server | 746/746 pass | Pass |
+| Works | 76/76 pass | Pass |
+| Integration | 780 total, 4 failures, 5 skips, exit 58 | Three baseline syntax-check failures; long 10,000-candidate case canceled; incomplete |
+| Projections | 760 total, 1 failure, exit 58 | Long 10,000-owner case canceled; incomplete |
+
+The [consumer retry](../evidence/3-6/20261103-owned-peer-consumer/run-tvhk9h3o/README.md) independently verifies actual mTLS/control identity, unchanged catalog/readbacks, writer bootstrap, source equality and complete owned cleanup. Its live journey fails 1/1 at first metadata: **503/empty HTTP response**, versus the historical **403/ERR_DIRECT_INVOKE** transport envelope. Receiver-boundary attribution follows pinned Dapr forwarding semantics; the exact application predicate is unisolated. SDK producer/signed-service/catalog-context qualification, persisted effects, retry/single-use, gateway replacement, restart/rebuild and deployed acceptance remain open. Failed/canceled original runs remain retained; none is promoted to a pass. Story/spec remain **in-progress** and launch remains **FAIL**.
+
+## Independent review fixes and final parent check — 2026-11-03
+
+The [review-fix packet](../evidence/3-6/20261103-owned-transport-review-fixes/README.md) passes the owner build, six native transport cases, six CI tooling checks and one metadata/privacy check. [Parent verification](../evidence/3-6/20261103-owned-transport-final-verification/README.md) independently checks the packet manifests/XML and passes 234/234 Python tests in 65.600s. Final supported consumer verification is admission-refused before root restore/build or runtime creation; the no-resource finalizer is not owned-runtime cleanup qualification. Earlier consumer metadata-503/source/cleanup proof remains dated. No broad suite was rerun; original Integration/Projections limits remain incomplete. Story stays in-progress, transport spec in-review, launch FAIL.

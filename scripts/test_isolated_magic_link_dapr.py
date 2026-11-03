@@ -1152,7 +1152,7 @@ foreach (bool catalogEnabled in new[] { false, true })
         return {
             "apiVersion": "dapr.io/v1alpha1", "kind": "Configuration",
             "metadata": {"name": "timesheets-catalog-" + receiver},
-            "spec": {"accessControl": {
+            "spec": {"mtls": {"enabled": True, "workloadCertTTL": "1h", "allowedClockSkew": "15s"}, "accessControl": {
                 "defaultAction": "deny", "trustDomain": "public",
                 "policies": [{"appId": caller, "defaultAction": "deny", "trustDomain": "public",
                               "namespace": "default",
@@ -1249,7 +1249,8 @@ foreach (bool catalogEnabled in new[] { false, true })
             return fixture.verify_runtime_components("127.0.0.1:49152", components,
                 "127.0.0.1:49153", "127.0.0.1:49154", process_directory=processes,
                 catalog_profile=profile)
-        with patch.object(fixture.subprocess, "check_output", return_value="123\n456\n"):
+        with patch.object(fixture.subprocess, "check_output", return_value="123\n456\n"), \
+                patch.object(fixture, "verify_catalog_transport", return_value={}):
             self.assertEqual({"eventstore", "timesheets"}, set(verify()))
             selected = generated / "timesheets.configuration.json"
             config = json.loads(selected.read_text())
@@ -1338,6 +1339,15 @@ foreach (bool catalogEnabled in new[] { false, true })
 
     def test_invocation_denial_and_metadata_facts_withhold_unknown_private_values(self):
         secret = "private-body-policy-never-retained"
+        for status, body, boundary in (
+                (503, b"", "receiver-http"), (401, b"", "receiver-http"), (403, b"", "receiver-http"),
+                (403, b'{"errorCode":"ERR_DIRECT_INVOKE"}', "dapr-peer-transport"),
+                (503, secret.encode(), "unqualified"), (500, b"", "unqualified"),
+                ("503", b"", "unqualified")):
+            self.assertEqual(boundary, fixture.metadata_invocation_boundary(status, body))
+        journey = (fixture.ROOT / "scripts/local_aspire_magic_link_journey.py").read_text()
+        self.assertIn("metadata_invocation_boundary(metadata_status, metadata_data)", journey)
+        self.assertIn("receiver_predicate=unqualified", journey)
         for body, expected in ((b"", "empty_http_body"),
             (json.dumps({"errorCode": "ERR_DIRECT_INVOKE", "message": secret}), "dapr_direct_invoke_failed"),
             (json.dumps({"errorCode": "ERR_PERMISSION_DENIED", "message": secret}), "dapr_permission_denied"),
@@ -6218,6 +6228,134 @@ time.sleep(60)
         receipt = (instance.log_directory / "shared-observation-failure.json").read_text()
         self.assertNotIn(private, receipt)
         self.assertFalse(json.loads(receipt)["completed"])
+
+
+class TransportVerificationTests(unittest.TestCase):
+    """Exercise trust, native identity and failed cleanup without launching infrastructure."""
+
+    def transport_files(self):
+        temporary = tempfile.TemporaryDirectory(prefix="timesheets-transport-verifier-")
+        self.addCleanup(temporary.cleanup)
+        work = Path(temporary.name)
+        profile = work / "profile"
+        custody = profile / "transport-custody"
+        custody.mkdir(parents=True, mode=0o700)
+        root = Path(tempfile.mkdtemp(prefix="eventstore-development-transport-"))
+        self.addCleanup(shutil.rmtree, root, True)
+        root.chmod(0o700)
+        (root / "credentials").mkdir(mode=0o700)
+        (root / "runtime/.dapr/bin").mkdir(parents=True, mode=0o700)
+        credential = b"private-certificate-sentinel-do-not-retain"
+        for name in ("ca.crt", "issuer.crt", "issuer.key"):
+            path = root / "credentials" / name
+            path.write_bytes(credential + name.encode())
+            path.chmod(0o600)
+        adapter = root / "runtime/.dapr/bin/daprd"
+        adapter.write_text("owned-adapter")
+        runtime = work / "native-daprd"
+        runtime.write_bytes(b"pinned-runtime-model")
+        digest = fixture.hashlib.sha256(runtime.read_bytes()).hexdigest()
+        receipt = {"schemaVersion": 1, "ready": True, "environment": "Development", "trustDomain": "public",
+            "namespace": "default", "runtimeSha256": digest, "directory": str(root),
+            "sentryAddress": "127.0.0.1:24001", "placementAddress": "127.0.0.1:24002",
+            "schedulerAddress": "127.0.0.1:24003", "trustAnchorSha256": fixture.hashlib.sha256((root / "credentials/ca.crt").read_bytes()).hexdigest(),
+            "adapterSha256": fixture.hashlib.sha256(adapter.read_bytes()).hexdigest(), "processes": [], "binaries": {}}
+        lock = json.loads((fixture.GATEWAY_PROJECT.parents[2] / "deploy/dapr/qualification/runtime-lock.json").read_bytes())
+        receipt["images"] = {name: lock["images"][name]["reference"] for name in ("sentry", "placement", "scheduler")}
+        processes = work / "proc"
+
+        def process(pid, executable, arguments, environment):
+            process = processes / str(pid)
+            process.mkdir(parents=True)
+            (process / "stat").write_text(f"{pid} (owned fixture) S 1 " + " ".join(["0"] * 17 + [str(pid + 100)]))
+            (process / "exe").symlink_to(executable)
+            (process / "cmdline").write_bytes(b"\0".join(value.encode() for value in [str(executable), *arguments]))
+            (process / "environ").write_bytes(b"\0".join(key.encode() + b"=" + value for key, value in environment.items()))
+
+        for pid, name in enumerate(("sentry", "placement", "scheduler"), 902000):
+            binary = root / name
+            binary.write_bytes(name.encode())
+            receipt["binaries"][name] = fixture.hashlib.sha256(binary.read_bytes()).hexdigest()
+            receipt["processes"].append({"pid": pid, "start": str(pid + 100)})
+            arguments = ["--trust-domain", "public", "--listen-address", "127.0.0.1", "--port",
+                         receipt[{"sentry": "sentryAddress", "placement": "placementAddress", "scheduler": "schedulerAddress"}[name]].split(":")[1]]
+            if name == "sentry":
+                arguments += ["--issuer-credentials", str(root / "credentials")]
+            else:
+                arguments += ["--tls-enabled=true", "--trust-anchors-file", str(root / "credentials/ca.crt"),
+                              "--sentry-address", receipt["sentryAddress"]]
+            process(pid, binary, arguments, {"NAMESPACE": b"default"})
+        sidecars = {}
+        for pid, app in enumerate(("eventstore", "timesheets"), 901000):
+            sidecars[app] = {"pid": pid}
+            environment = {"NAMESPACE": b"default"}
+            for variable, name in (("DAPR_TRUST_ANCHORS", "ca.crt"), ("DAPR_CERT_CHAIN", "issuer.crt"), ("DAPR_CERT_KEY", "issuer.key")):
+                environment[variable] = (root / "credentials" / name).read_bytes()
+            process(pid, runtime, ["--app-id", app, "--enable-mtls", "--sentry-address", receipt["sentryAddress"],
+                "--control-plane-trust-domain", "public", "--control-plane-namespace", "default",
+                "--placement-host-address", receipt["placementAddress"], "--scheduler-host-address", receipt["schedulerAddress"]], environment)
+        ready = custody / "ready.json"
+        ready.write_text(json.dumps(receipt))
+        ready.chmod(0o600)
+        return profile, root, processes, sidecars, receipt, digest
+
+    def verify(self, values):
+        profile, root, processes, sidecars, receipt, digest = values
+        with patch.object(fixture, "TRANSPORT_RUNTIME_SHA256", digest):
+            return fixture.verify_catalog_transport(sidecars, profile, receipt["placementAddress"], receipt["schedulerAddress"], processes)
+
+    def test_exact_native_trust_and_control_plane_evidence_withholds_credentials(self):
+        values = self.transport_files()
+        proof = self.verify(values)
+        self.assertTrue(proof["configured_authenticated_transport"])
+        self.assertTrue(proof["peer_delivery_requires_request_evidence"])
+        self.assertEqual({"eventstore", "timesheets"}, set(proof["sidecars"]))
+        self.assertEqual({"sentry", "placement", "scheduler"}, set(proof["control_plane"]))
+        self.assertNotIn("private-certificate-sentinel", json.dumps(proof))
+
+    def test_missing_changed_foreign_or_incomplete_native_identity_refuses(self):
+        for defect in ("missing-trust", "changed-trust", "wrong-app", "wrong-namespace", "foreign-certificate",
+                       "mtls-disabled", "duplicate-sentry", "foreign-sentry", "plaintext-placement", "missing-scheduler"):
+            with self.subTest(defect=defect):
+                values = self.transport_files()
+                profile, root, processes, sidecars, receipt, digest = values
+                native = processes / str(sidecars["eventstore"]["pid"])
+                if defect == "missing-trust": (root / "credentials/issuer.key").unlink()
+                elif defect == "changed-trust": (root / "credentials/ca.crt").write_bytes(b"foreign")
+                elif defect in ("wrong-namespace", "foreign-certificate"):
+                    data = (native / "environ").read_bytes()
+                    (native / "environ").write_bytes(data.replace(b"NAMESPACE=default", b"NAMESPACE=foreign") if defect == "wrong-namespace"
+                        else data.replace(b"DAPR_CERT_KEY=private-certificate-sentinel-do-not-retainissuer.key", b"DAPR_CERT_KEY=foreign"))
+                elif defect == "plaintext-placement":
+                    path = processes / "902001/cmdline"
+                    path.write_bytes(path.read_bytes().replace(b"--tls-enabled=true", b"--tls-enabled=false"))
+                elif defect == "missing-scheduler": shutil.rmtree(processes / "902002")
+                else:
+                    path = native / "cmdline"
+                    data = path.read_bytes()
+                    if defect == "wrong-app": data = data.replace(b"eventstore", b"foreign")
+                    if defect == "mtls-disabled": data = data.replace(b"--enable-mtls", b"--enable-mtls=false")
+                    if defect == "duplicate-sentry": data += b"\0--sentry-address\0" + receipt["sentryAddress"].encode()
+                    if defect == "foreign-sentry": data = data.replace(receipt["sentryAddress"].encode(), b"127.0.0.1:24999")
+                    path.write_bytes(data)
+                with self.assertRaises(fixture.FixtureError): self.verify(values)
+
+    def test_cleanup_refuses_claimed_success_until_trust_and_recorded_processes_are_gone(self):
+        profile, root, processes, sidecars, ready, digest = self.transport_files()
+        cleanup = profile / "transport-custody/cleanup.json"
+        cleanup.write_text(json.dumps({"schemaVersion": 1, "complete": True, "startupQualified": True,
+            "ownedProcessesExited": True, "temporaryDirectoryRemoved": True, "trustAnchorSha256": ready["trustAnchorSha256"]}))
+        cleanup.chmod(0o600)
+        with self.assertRaises(fixture.FixtureError): fixture.verify_catalog_transport_cleanup(profile)
+        shutil.rmtree(root)
+        with patch.object(fixture, "recorded_process_exits", return_value={"all_gone": False}):
+            with self.assertRaises(fixture.FixtureError): fixture.verify_catalog_transport_cleanup(profile)
+        with patch.object(fixture, "recorded_process_exits", return_value={"all_gone": True}):
+            self.assertTrue(fixture.verify_catalog_transport_cleanup(profile)["complete"])
+        data = json.loads(cleanup.read_text())
+        data["complete"] = False
+        cleanup.write_text(json.dumps(data))
+        with self.assertRaises(fixture.FixtureError): fixture.verify_catalog_transport_cleanup(profile)
 
 
 if __name__ == "__main__":

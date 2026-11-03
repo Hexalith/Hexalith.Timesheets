@@ -958,3 +958,13 @@ and blocked proposal keep future values paths in Platform. Earlier Timesheets
 packet/proposal bytes remain unchanged as historical preparation; no environment
 fact, recovery time, authorization or acceptance result changed. No live action
 occurred. Story 3.6 remains in progress pending deployed acceptance.
+
+## Owned Development transport checkpoint — 2026-11-03
+
+The user's approved [transport spec](spec-3-6-unblock-isolated-peer-transport.md) permits the owning EventStore Development trust/control-plane capability and consumption in the existing fixture. The [owner packet](evidence/3-6/20261103-owned-transport/README.md) qualifies real actor persistence/restart, reminder delivery, peer/refusal/custody cases and the actual public Aspire/CLI bridge (4/4); Python fixture regressions pass 234/234. This scope supersedes the historical local peer-identity stop only. Platform production/deployment ownership and all retained recovery approvals/expiry limits remain unchanged.
+
+The [consumer retry](evidence/3-6/20261103-owned-peer-consumer/run-tvhk9h3o/README.md) verifies actual owned mTLS/control services, the unchanged committed catalog/readbacks, writer bootstrap and matching source snapshots. First metadata now reaches an empty HTTP 503 receiver response; SDK-supported producer/signed-service/catalog-context qualification is the next gate. No persisted effects or gateway restart were reached. Exact cleanup removed the retry's owners, trust, Redis, components and profile; earlier protected failures remain retained. Broad Integration/Projections limits are preserved separately. Story 3.6 remains **in-progress** and release remains **FAIL**.
+
+## Post-review checkpoint — 2026-11-03
+
+[Review fixes](evidence/3-6/20261103-owned-transport-review-fixes/README.md) pass six native cases and six CI tooling checks; [parent verification](evidence/3-6/20261103-owned-transport-final-verification/README.md) passes all 234 Python tests and independently verifies retained manifests. Canonical admission refused the final supported consumer invocation before build/startup/resources and remained busy at 10:33:05 UTC. All recorded task wrappers exited; no lock bypass or holder inspection occurred. Resume current-source consumer verification only after ordinary admission becomes available. Earlier metadata-503 proof remains dated; producer/context, persisted/restart/deployed and broad gates remain open. Story in-progress, transport spec in-review, launch FAIL.

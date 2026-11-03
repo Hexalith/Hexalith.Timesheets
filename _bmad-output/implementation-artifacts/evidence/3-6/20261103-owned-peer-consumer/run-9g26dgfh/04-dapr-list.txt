@@ -1,0 +1,6 @@
+Command: dapr list --output json
+Exit: 0
+Stdout:
+{"inventory_shape": "array", "entry_count": 0}
+Stderr:
+Inventory diagnostics withheld.

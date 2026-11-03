@@ -1,0 +1,35 @@
+{
+  "repositories": {
+    "timesheets": {
+      "head": "53786d00b31459b41f620b5b15f085ec03c6204f",
+      "working_changes_uncommitted": true
+    },
+    "eventstore": {
+      "head": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+      "working_changes_uncommitted": true
+    }
+  },
+  "changed_code_sha256": {
+    "timesheets/scripts/local_aspire_magic_link_journey.py": "77f6b36ab9870e88ba95164c5bb8842fe3db9bf4a18997a7591911c98917a4d0",
+    "timesheets/scripts/run_isolated_magic_link_dapr.py": "2c5257a8590f162977c19a3c233d3402edf7576025d06ad22def7cbaf2388fc1",
+    "timesheets/scripts/test_isolated_magic_link_dapr.py": "dd48133ba65df0dc47b91d855fa591dde94b12d0cd36c054ab55a670cfbe48a8",
+    "timesheets/src/Hexalith.Timesheets.AppHost/IsolatedCatalogTransport.cs": "5ad02dff8241ddc3ece6225bc86eef47f3682a5b5a7bf3506713cb21a6812dd6",
+    "timesheets/src/Hexalith.Timesheets.AppHost/Program.cs": "5f259a99b13a25e8680361db9b9690c9d00c6dced7601384e83690b8bc7cb070",
+    "eventstore/.github/workflows/integration.yml": "b42f43bc4b4a041c445f2a887922c138c2c567dfdc18914dcd2dcfd33e832eee",
+    "eventstore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransport.cs": "b79fec9ecc33f40738d042a0016c1e27938f72a405842d48dcd56c92e345eeaf",
+    "eventstore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportDocker.cs": "c2611efe750c197110e7156772a8ebcbc9200bd89e04e69ef5a6363956f4b998",
+    "eventstore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportExtensions.cs": "d5d4ac0c32ae0754614d21a45c202eb7c819209e7951ea6bfad0c799dbd840e1",
+    "eventstore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportOptions.cs": "93ffe9faffd81a3b0d7f26fc3c86959d4c0746ae01123adb30148383de8c47ab",
+    "eventstore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportProcess.cs": "4a4d4bf38faa5a54a2aff4e437990232270eae2a8bdf17e6e170ec9fc6fa03db",
+    "eventstore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj": "931461c40ae75f04ebe892637b2a180ebf0203c9e0be4101231534150ef9828d",
+    "eventstore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Fixtures/DevelopmentTransportActor.cs": "6d1b4ea23dcc35efef25e5904e6da548fa0ef361e2b1cb89d2e3f6e9f9105609",
+    "eventstore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Fixtures/IDevelopmentTransportActor.cs": "e45cf94a88e5f4f800c8bb8d0c466bb40228a58571cf84445d22bb7621818954",
+    "eventstore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Fixtures/RouteCatalogDevelopmentSidecar.cs": "1311c850bbc36c24dc4ab873674fa628c9278c273617feddad5f440dfea15f7e",
+    "eventstore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Hexalith.EventStore.Server.LiveSidecar.Tests.csproj": "63acd3178360a8aebef4cfa5369e70de9355b53b3fcb8e93aa59d1e375a0bde4",
+    "eventstore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs": "5e03bf4875ab1dd2cc7238f9a90560ad8c52b68ce94a8635f80a3c0ae33ee2b6",
+    "eventstore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.TransportCli.cs": "b27f6657c85f18d7fc38d733803a1c1cfbf7866aa93112beb63f44ea84e9db1f",
+    "eventstore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.cs": "dfa3df344ffd5f7a16db560e10d951f71bdb322346d8cf9d9579702cafbcf5f6",
+    "eventstore/tools/tests/test_route_catalog_ci_tools.py": "361ed1051be6ae77f6343776a67f205c0a3557629749e40bdc1491090c77a69b"
+  },
+  "current_source_consumer_revalidated": false
+}

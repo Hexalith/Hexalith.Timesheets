@@ -1,0 +1,78 @@
+{
+  "checks": [
+    {
+      "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Hexalith.EventStore.Server.LiveSidecar.Tests.csproj -c Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+      "cwd": "references/Hexalith.EventStore",
+      "exit_code": 0,
+      "evidence": "owner-focused-build.txt"
+    },
+    {
+      "command": "EVENTSTORE_ROUTE_CATALOG_DAPR_CLI=/usr/local/bin/dapr tests/Hexalith.EventStore.Server.LiveSidecar.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.LiveSidecar.Tests -method *PublicDevelopmentTransport* -noColor -result-xml /tmp/timesheets-transport-review-live.xml",
+      "cwd": "references/Hexalith.EventStore",
+      "exit_code": 0,
+      "total": 6,
+      "failed": 0,
+      "seconds": 25.538,
+      "admission": "LocalRuntimeAdmission held through cleanup",
+      "evidence": "owner-focused-live.xml"
+    },
+    {
+      "command": "python3 -m unittest discover -s tools/tests -p test_route_catalog_ci_tools.py",
+      "cwd": "references/Hexalith.EventStore",
+      "exit_code": 0,
+      "total": 6,
+      "failed": 0,
+      "seconds": 0.212,
+      "result_source": "recorded tool response"
+    },
+    {
+      "command": "PYTHONPATH=scripts python3 -m unittest test_isolated_magic_link_dapr.IsolatedFixtureTests.test_invocation_denial_and_metadata_facts_withhold_unknown_private_values",
+      "cwd": ".",
+      "exit_code": 0,
+      "total": 1,
+      "failed": 0,
+      "seconds": 0.001,
+      "result_source": "recorded tool response"
+    }
+  ],
+  "live_cases": [
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportRefusesIncompleteIdentityWithoutFallback",
+      "result": "Pass",
+      "seconds": "5.507"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart",
+      "result": "Pass",
+      "seconds": "10.939"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportRetainsPrivateCustodyAfterPartialStartupFailure",
+      "result": "Pass",
+      "seconds": "2.269"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportRetainsTrustWhenFinalReadyPublicationFails",
+      "result": "Pass",
+      "seconds": "2.24"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAspireCliLaunchUsesOwnedSecretInputs",
+      "result": "Pass",
+      "seconds": "4.087"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportValidatesExecutablePrerequisitesBeforeResources",
+      "result": "Pass",
+      "seconds": "0.395"
+    }
+  ],
+  "broader_verification": "not run; parent owns final full verification",
+  "original_packet_manifests_modified": false,
+  "initial_selector_error": {
+    "command": "PYTHONPATH=scripts python3 -m unittest test_isolated_magic_link_dapr.FixtureTests.test_invocation_denial_and_metadata_facts_withhold_unknown_private_values",
+    "exit_code": 1,
+    "actual_tests_run": 0,
+    "reason": "mistyped test class; corrected command passed"
+  }
+}

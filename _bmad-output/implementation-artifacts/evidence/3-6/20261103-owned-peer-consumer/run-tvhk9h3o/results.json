@@ -1,0 +1,20 @@
+{
+  "exit_code": 1,
+  "transport_qualified": true,
+  "catalog_committed": true,
+  "writer_bootstrap_activated": true,
+  "metadata_http_status": 503,
+  "metadata_body_category": "empty_http_body",
+  "source_snapshots_match": true,
+  "transport_controls_cleaned": true,
+  "fixture_cleanup_complete": true,
+  "protected_catalog_profile_retained": false,
+  "persisted_journey_qualified": false,
+  "retry_single_use_qualified": false,
+  "gateway_replacement_qualified": false,
+  "restart_rebuild_qualified": false,
+  "signed_service_catalog_context_producer_qualified": false,
+  "deployed_acceptance": false,
+  "story_status": "in-progress",
+  "launch": "FAIL"
+}

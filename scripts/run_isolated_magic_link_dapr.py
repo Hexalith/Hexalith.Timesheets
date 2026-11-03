@@ -58,6 +58,7 @@ CATALOG_RECEIVER_POLICIES = {
         ("admin/operational-index-metadata", "POST"))),
 }
 TECHNICAL_RECEIVER_PROFILE = "eventstore-sdk-technical-http-composite-v1"
+TRANSPORT_RUNTIME_SHA256 = "e988a6f53abec017fc9ebcb4f89de9bed11bce005eb49bd8e85e8d3d6adbf488"
 CATALOG_DIAGNOSTIC_CATEGORIES = {
     "finite_operation_unenrolled": "finite-operation-unenrolled",
     "finite_code_changed": "finite-code-changed",
@@ -482,7 +483,7 @@ def bound_resource_processes(directory, placement, scheduler):
                 continue
             arguments = (process / "cmdline").read_bytes().split(b"\0")
             executable = Path(os.fsdecode(arguments[0])).name if arguments else ""
-            if executable not in ("daprd", "dotnet", "aspire", "Aspire.Dashboard", "Hexalith.Timesheets", "Hexalith.EventStore", "Hexalith.Timesheets.AppHost") \
+            if executable not in ("daprd", "sentry", "placement", "scheduler", "dotnet", "aspire", "Aspire.Dashboard", "Hexalith.Timesheets", "Hexalith.EventStore", "Hexalith.Timesheets.AppHost") \
                     and not executable.startswith("dcp"):
                 continue
             environment = (process / "environ").read_bytes().split(b"\0")
@@ -1530,6 +1531,18 @@ def safe_invocation_failure_category(body):
     return codes.get(code, "unclassified_body_withheld") if isinstance(code, str) else "unclassified_body_withheld"
 
 
+def metadata_invocation_boundary(status, body):
+    """Classify the pinned metadata wire boundary without attributing an exact receiver predicate."""
+    category = safe_invocation_failure_category(body)
+    if category in ("dapr_direct_invoke_failed", "dapr_permission_denied"):
+        return "dapr-peer-transport"
+    # Pinned Dapr serializes transport failures as JSON and forwards empty receiver
+    # HTTP failures separately. This is source-derived boundary evidence only.
+    if type(status) is int and status in (401, 403, 503) and category == "empty_http_body":
+        return "receiver-http"
+    return "unqualified"
+
+
 def catalog_metadata_receiver_facts(observation, captured_files):
     """Retain only fixed endpoint facts and a verified SDK code digest for diagnosis."""
     surface = observation.get("ReceiverSurface") or {}
@@ -1688,6 +1701,9 @@ class IsolatedFixture:
                 if normalized.startswith(prefix):
                     aliases.append(normalized[len(prefix):])
             if not any(alias in controlled for alias in aliases):
+                if self.route_catalog and (name.startswith("DAPR_") or name == "APP_API_TOKEN"
+                        or name == "TIMESHEETS_LIVE_DAPR_TRANSPORT_RUNTIME"):
+                    continue
                 self.environment[name] = value
         # Aspire evaluates launch and selected-child builds through MSBuild. Keep the owned
         # runtime on the Debug source graph built for this local journey even
@@ -2209,6 +2225,10 @@ class IsolatedFixture:
                     "runtime-dapr-identity-failure.json", json.dumps(result, indent=2) + "\n"))
             require({row["pid"] for row in running_dapr_processes()} == {row["pid"] for row in sidecars.values()},
                     "Fixture bootstrap found a sidecar outside the admitted private topology")
+            if self.catalog_private is not None:
+                proof = verify_catalog_transport(sidecars, self.catalog_private, self.placement, self.scheduler)
+                require(self.write_evidence("route-transport-before.json", json.dumps(proof, indent=2) + "\n"),
+                        "Owned transport evidence is incomplete before writer activation")
             gateway = gateway_process_identity(self.environment[GATEWAY_EXECUTABLE_SETTING],
                 self.resource_check(self.scratch, self.placement, self.scheduler))
             signing_key = fixture_gateway_signing_key(gateway, self.scratch)
@@ -2717,6 +2737,14 @@ class IsolatedFixture:
         # Resolve every identity before removing any dependency. Preserve all
         # fixture artifacts if Docker ownership cannot be established.
         recovered = []
+        if not failed and self.catalog_private is not None and (self.catalog_private / "transport-custody").exists():
+            try:
+                proof = verify_catalog_transport_cleanup(self.catalog_private)
+                require(self.write_evidence("route-transport-cleanup.json", json.dumps(proof, indent=2) + "\n"),
+                        "Owned transport cleanup evidence is incomplete")
+            except (FixtureError, OSError, ValueError):
+                failed = True
+                reasons.append("Owned transport cleanup or custody is incomplete; retaining protected profile")
         if not failed:
             try:
                 for name, expected in self.containers.items():
@@ -2803,7 +2831,8 @@ class IsolatedFixture:
         return endpoint
 
     def start_infrastructure(self):
-        images = {service: self.installed_image("dapr_" + service) for service in ("redis", "placement", "scheduler")}
+        images = {service: self.installed_image("dapr_" + service) for service in
+                  (("redis",) if self.route_catalog else ("redis", "placement", "scheduler"))}
         self.redis_image = images["redis"]
         redis_port = available_control_port((self.public_port,))
         self.container_id = self.create_container("redis", images["redis"],
@@ -2819,20 +2848,23 @@ class IsolatedFixture:
                 time.sleep(0.2)
         require(ready.returncode == 0 and ready.stdout.strip() == "PONG", "Disposable Redis did not become ready")
         placement_port = available_control_port((self.public_port, redis_port))
-        placement_id = self.create_container("placement", images["placement"],
-            ["--entrypoint", "/placement", "--publish", f"127.0.0.1:{placement_port}:50005"],
-            ["--mode=standalone", "--inmem-store-enabled=true"])
-        self.placement = self.container_endpoint(placement_id, 50005)
+        self.placement = "127.0.0.1:" + str(placement_port)
+        if not self.route_catalog:
+            placement_id = self.create_container("placement", images["placement"],
+                ["--entrypoint", "/placement", "--publish", f"127.0.0.1:{placement_port}:50005"],
+                ["--mode=standalone", "--inmem-store-enabled=true"])
+            self.placement = self.container_endpoint(placement_id, 50005)
         require(self.placement == "127.0.0.1:" + str(placement_port), "Placement publication does not match its selected private endpoint")
         # Scheduler advertises the host endpoint; select it before launch. A
         # competing bind fails Docker startup rather than selecting a shared port.
         scheduler_port = available_control_port((self.public_port, redis_port, placement_port))
         self.scheduler = "127.0.0.1:" + str(scheduler_port)
-        scheduler_id = self.create_container("scheduler", images["scheduler"],
-            ["--entrypoint", "/scheduler", "--publish", f"127.0.0.1:{scheduler_port}:50006", "--tmpfs", "/data"],
-            ["--mode=standalone", "--etcd-data-dir=/data", "--etcd-client-listen-address=127.0.0.1",
-             "--override-broadcast-host-port=" + self.scheduler])
-        require(self.container_endpoint(scheduler_id, 50006) == self.scheduler, "Scheduler advertisement does not match its private endpoint")
+        if not self.route_catalog:
+            scheduler_id = self.create_container("scheduler", images["scheduler"],
+                ["--entrypoint", "/scheduler", "--publish", f"127.0.0.1:{scheduler_port}:50006", "--tmpfs", "/data"],
+                ["--mode=standalone", "--etcd-data-dir=/data", "--etcd-client-listen-address=127.0.0.1",
+                 "--override-broadcast-host-port=" + self.scheduler])
+            require(self.container_endpoint(scheduler_id, 50006) == self.scheduler, "Scheduler advertisement does not match its private endpoint")
         validate_control_plane(self.placement, self.scheduler)
         self.scratch = tempfile.mkdtemp(prefix="timesheets-live-dapr-components-")
         write_components(self.scratch, endpoint)
@@ -2874,6 +2906,9 @@ class IsolatedFixture:
             "TIMESHEETS_LIVE_DAPR_CATALOG_GATEWAY_POLICY": private_file("gateway-policy.yaml", catalog_receiver_policy("eventstore")),
             "TIMESHEETS_LIVE_DAPR_CATALOG_TIMESHEETS_POLICY": private_file("timesheets-policy.yaml", catalog_receiver_policy("timesheets")),
         })
+        runtime = Path.home() / ".dapr/bin/daprd"
+        # The owner capability validates these bytes before creating transport resources.
+        self.environment["TIMESHEETS_LIVE_DAPR_TRANSPORT_RUNTIME"] = str(runtime)
         require(self.write_evidence("catalog-selection.json", json.dumps({
             "mode": "isolated-development", "owner_profile_private": True,
             "authority_component": profile["AuthorityComponentName"],
@@ -3294,7 +3329,7 @@ def verify_catalog_sidecar_policy(app_id, arguments, catalog_profile):
         expected = {
             "apiVersion": "dapr.io/v1alpha1", "kind": "Configuration",
             "metadata": {"name": "timesheets-catalog-" + receiver},
-            "spec": {"accessControl": {
+            "spec": {"mtls": {"enabled": True, "workloadCertTTL": "1h", "allowedClockSkew": "15s"}, "accessControl": {
                 "defaultAction": "deny", "trustDomain": "public",
                 "policies": [{"appId": caller, "defaultAction": "deny", "trustDomain": "public",
                               "namespace": "default",
@@ -3305,6 +3340,129 @@ def verify_catalog_sidecar_policy(app_id, arguments, catalog_profile):
         require(rendered == expected, failure)
         return directory
     except (OSError, UnicodeError, ValueError, TypeError, RecursionError):
+        raise FixtureError(failure) from None
+
+
+def private_transport_document(path):
+    """Read a bounded owner-only receipt, withholding parser diagnostics and arbitrary values."""
+    path = Path(path)
+    require(path.is_file() and not path.is_symlink() and path.stat().st_uid == os.getuid()
+            and path.stat().st_mode & 0o077 == 0 and path.stat().st_nlink == 1
+            and path.stat().st_size <= 1024 * 1024, "Owned transport receipt is absent or unsafe")
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            require(key not in result, "Owned transport receipt is ambiguous")
+            result[key] = value
+        return result
+    try:
+        return json.loads(path.read_bytes(), object_pairs_hook=unique)
+    except (ValueError, UnicodeError, RecursionError):
+        raise FixtureError("Owned transport receipt is invalid") from None
+
+
+def verify_catalog_transport(sidecars, profile, placement, scheduler, process_directory=Path("/proc")):
+    """Bind actual native peers and TLS control services to the owner's private trust, without emitting credentials."""
+    failure = "Owned authenticated Development transport is incomplete"
+    try:
+        receipt = private_transport_document(Path(profile) / "transport-custody/ready.json")
+        root = Path(receipt["directory"])
+        require(receipt["schemaVersion"] == 1 and receipt["ready"] is True
+                and receipt["environment"] == "Development" and receipt["trustDomain"] == "public"
+                and receipt["namespace"] == "default" and receipt["runtimeSha256"] == TRANSPORT_RUNTIME_SHA256
+                and receipt["placementAddress"] == placement and receipt["schedulerAddress"] == scheduler, failure)
+        lock = json.loads((GATEWAY_PROJECT.parents[2] / "deploy/dapr/qualification/runtime-lock.json").read_bytes())
+        require(receipt["images"] == {name: lock["images"][name]["reference"]
+                                      for name in ("sentry", "placement", "scheduler")}, failure)
+        require(root.is_absolute() and root.resolve() == root and root.parent == Path(tempfile.gettempdir()).resolve()
+                and root.name.startswith("eventstore-development-transport-") and root.is_dir()
+                and root.stat().st_uid == os.getuid() and root.stat().st_mode & 0o077 == 0, failure)
+        private_endpoint(receipt["sentryAddress"])
+        require(len({placement, scheduler, receipt["sentryAddress"]}) == 3, failure)
+        credentials = {}
+        for name in ("ca.crt", "issuer.crt", "issuer.key"):
+            path = root / "credentials" / name
+            require(path.is_file() and not path.is_symlink() and path.stat().st_mode & 0o077 == 0
+                    and path.stat().st_size <= 65536 and path.stat().st_uid == os.getuid(), failure)
+            credentials[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        require(receipt["trustAnchorSha256"] == credentials["ca.crt"]
+                and hashlib.sha256((root / "runtime/.dapr/bin/daprd").read_bytes()).hexdigest() == receipt["adapterSha256"], failure)
+
+        def flag(arguments, name):
+            positions = [i for i, value in enumerate(arguments) if value == name or value.startswith(name + "=")]
+            require(len(positions) == 1, failure)
+            index = positions[0]
+            if arguments[index] != name:
+                return arguments[index].split("=", 1)[1]
+            require(index + 1 < len(arguments) and not arguments[index + 1].startswith("--"), failure)
+            return arguments[index + 1]
+
+        def observed(pid):
+            process = Path(process_directory) / str(pid)
+            fields = (process / "stat").read_text().rsplit(")", 1)[1].split()
+            require(fields[0] != "Z" and fields[19].isdigit(), failure)
+            arguments = [value.decode() for value in (process / "cmdline").read_bytes().split(b"\0") if value]
+            environment = dict(value.split(b"=", 1) for value in (process / "environ").read_bytes().split(b"\0") if b"=" in value)
+            executable = (process / "exe").resolve(strict=True)
+            return fields[19], arguments, environment, executable
+
+        require(set(sidecars) == {"eventstore", "timesheets"}, failure)
+        native = {}
+        for app, selected in sidecars.items():
+            start, arguments, environment, executable = observed(selected["pid"])
+            require(hashlib.sha256(executable.read_bytes()).hexdigest() == TRANSPORT_RUNTIME_SHA256
+                    and arguments.count("--enable-mtls") == 1
+                    and not any(value.startswith("--enable-mtls=") for value in arguments)
+                    and flag(arguments, "--sentry-address") == receipt["sentryAddress"]
+                    and flag(arguments, "--control-plane-trust-domain") == "public"
+                    and flag(arguments, "--control-plane-namespace") == "default"
+                    and flag(arguments, "--placement-host-address") == placement
+                    and flag(arguments, "--scheduler-host-address") == scheduler
+                    and flag(arguments, "--app-id") == app and environment.get(b"NAMESPACE") == b"default", failure)
+            for variable, name in ((b"DAPR_TRUST_ANCHORS", "ca.crt"), (b"DAPR_CERT_CHAIN", "issuer.crt"), (b"DAPR_CERT_KEY", "issuer.key")):
+                require(hashlib.sha256(environment.get(variable, b"")).hexdigest() == credentials[name], failure)
+            native[app] = {"pid": selected["pid"], "start": start, "owned_trust_matches": True}
+        controls = {}
+        require(len(receipt["processes"]) == 3, failure)
+        for service, identity in zip(("sentry", "placement", "scheduler"), receipt["processes"]):
+            start, arguments, environment, executable = observed(identity["pid"])
+            require(start == identity["start"] and executable == root / service
+                    and hashlib.sha256(executable.read_bytes()).hexdigest() == receipt["binaries"][service]
+                    and environment.get(b"NAMESPACE") == b"default" and flag(arguments, "--trust-domain") == "public", failure)
+            if service == "sentry":
+                require(flag(arguments, "--issuer-credentials") == str(root / "credentials")
+                        and flag(arguments, "--port") == receipt["sentryAddress"].split(":")[1], failure)
+            else:
+                require(flag(arguments, "--tls-enabled") == "true"
+                        and flag(arguments, "--trust-anchors-file") == str(root / "credentials/ca.crt")
+                        and flag(arguments, "--sentry-address") == receipt["sentryAddress"]
+                        and flag(arguments, "--port") == {"placement": placement, "scheduler": scheduler}[service].split(":")[1], failure)
+            require(flag(arguments, "--listen-address") == "127.0.0.1", failure)
+            controls[service] = {"pid": identity["pid"], "start": start, "owned_trust_matches": True}
+        return {"configured_authenticated_transport": True, "peer_delivery_requires_request_evidence": True,
+                "trust_anchor_sha256": credentials["ca.crt"], "runtime_sha256": TRANSPORT_RUNTIME_SHA256,
+                "sidecars": native, "control_plane": controls,
+                "ready_receipt_sha256": hashlib.sha256((Path(profile) / "transport-custody/ready.json").read_bytes()).hexdigest()}
+    except (OSError, KeyError, ValueError, TypeError, IndexError, UnicodeError, RecursionError):
+        raise FixtureError(failure) from None
+
+
+def verify_catalog_transport_cleanup(profile):
+    """Require actual trust removal and exact recorded control-process exit before removing the profile."""
+    failure = "Owned transport cleanup is incomplete"
+    try:
+        ready = private_transport_document(Path(profile) / "transport-custody/ready.json")
+        cleanup = private_transport_document(Path(profile) / "transport-custody/cleanup.json")
+        require(cleanup["schemaVersion"] == 1 and cleanup["complete"] is True
+                and cleanup["startupQualified"] is True and cleanup["ownedProcessesExited"] is True
+                and cleanup["temporaryDirectoryRemoved"] is True
+                and cleanup["trustAnchorSha256"] == ready["trustAnchorSha256"]
+                and not Path(ready["directory"]).exists(), failure)
+        identities = [{"pid": identity["pid"], "start": identity["start"]} for identity in ready["processes"]]
+        require(recorded_process_exits(identities)["all_gone"], failure)
+        return {"complete": True, "owned_processes_exited": True, "temporary_trust_removed": True,
+                "trust_anchor_sha256": ready["trustAnchorSha256"]}
+    except (OSError, KeyError, ValueError, TypeError, RecursionError):
         raise FixtureError(failure) from None
 
 
@@ -3362,6 +3520,7 @@ def verify_runtime_components(endpoint, directory, placement, scheduler, observa
                 "Dapr did not load exactly the intended isolated components")
     if catalog_profile is not None:
         require(len(catalog_directories) == 1, "Catalog sidecars did not select one SDK owner directory")
+        verify_catalog_transport(sidecars, catalog_profile, placement, scheduler, process_directory)
     return sidecars
 
 

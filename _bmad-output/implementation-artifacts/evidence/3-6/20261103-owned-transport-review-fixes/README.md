@@ -1,0 +1,9 @@
+# Focused transport review fixes — 2026-11-03
+
+This packet supplements the original sealed qualification; its historical manifests and results are unchanged. [Results and exact commands](results.json), [source IDs](source-ids.json), [focused build](owner-focused-build.txt), and [six live cases](owner-focused-live.xml) record this patch. [Manifest](manifest.json) hashes retained artifacts.
+
+The focused owning build passes with zero warnings/errors. The six transport cases pass in 25.538s under runtime admission, with explicit isolated CLI selection. Existing CI preparation/tooling tests pass 6/6; the metadata-boundary/privacy test passes 1/1. No broad suite or persisted consumer journey was rerun; the parent owns subsequent full verification.
+
+Repairs cover isolated checksum-pinned CLI 1.18.2 and all locked control images without changing ordinary CI pins, enrollment ordering, vanished native identity refusal, canonical runtime/Python prerequisites, durable directory/launch/PID/kernel identity before readiness, immediate disposable ownership, publication failure without qualified cleanup, and unchanged-byte certificate validity through an internal clock. Denied-write proof now uses a technical test service-write positive control and rejected wrong-app/namespace/foreign-trust writes followed by independent stored readback. This strengthens the older non-writing negative probes and hash-drift-only expiry witness; it does not rewrite their recorded outcomes.
+
+Empty metadata 503 now classifies narrowly as a source-derived receiver HTTP response while explicitly retaining `receiver_predicate=unqualified`. Production routes/grants, producer authority and all persisted/restart/deployed acceptance gates remain unchanged. Story 3.6 stays in progress and launch stays **FAIL**. Partial-startup and failed-publication witnesses intentionally retain private incomplete custody; no credential/config bytes are included here.

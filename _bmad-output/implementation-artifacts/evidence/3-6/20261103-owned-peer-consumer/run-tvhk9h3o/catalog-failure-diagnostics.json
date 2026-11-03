@@ -1,0 +1,27 @@
+{
+  "ownership_verified": true,
+  "resources": {
+    "eventstore": {
+      "status": "completed",
+      "raw_output_withheld": true,
+      "sdk_categories": [],
+      "exception_types": [],
+      "frames": [],
+      "exit_code": 0
+    },
+    "timesheets": {
+      "status": "completed",
+      "raw_output_withheld": true,
+      "sdk_categories": [
+        "workload_credential_denied",
+        "workload_operation_not_granted"
+      ],
+      "exception_types": [],
+      "frames": [],
+      "exit_code": 0
+    }
+  },
+  "raw_output_retained": false,
+  "phase": "journey",
+  "status": "observed"
+}

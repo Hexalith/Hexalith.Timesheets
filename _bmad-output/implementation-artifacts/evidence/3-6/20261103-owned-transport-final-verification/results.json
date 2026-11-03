@@ -1,0 +1,56 @@
+{
+  "python_fixture": {
+    "command": "PYTHONPATH=scripts python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "total": 234,
+    "seconds": 65.6,
+    "evidence": "python-fixture.txt"
+  },
+  "review_fix_checks": {
+    "owner_build": "pass, zero warnings/errors",
+    "native_cases": {
+      "passed": 6,
+      "failed": 0,
+      "seconds": 25.538
+    },
+    "ci_tooling_passed": 6,
+    "metadata_privacy_passed": 1,
+    "evidence": "../20261103-owned-transport-review-fixes/README.md",
+    "parent_manifest_and_xml_verification": true
+  },
+  "supported_consumer": {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home PYTHONPATH=scripts python3 scripts/run_isolated_magic_link_dapr.py --route-catalog --public-port 18080 --log-directory _bmad-output/implementation-artifacts/evidence/3-6/20261103-owned-transport-final-verification/consumer",
+    "started_utc": "2026-11-03T10:28:36Z",
+    "exit_code": 1,
+    "admitted": false,
+    "resources_started": false,
+    "evidence": "consumer/run-3oilg6ys/admission.json"
+  },
+  "last_admission_only_probe": {
+    "observed_utc": "2026-11-03T10:33:05Z",
+    "exit_code": 7,
+    "resources_started": false,
+    "reason": "Local runtime admission is busy or unsafe; no resources started"
+  },
+  "lock_metadata_safe": true,
+  "dapr_and_aspire_inventory_empty": true,
+  "own_recorded_wrappers_exited": true,
+  "holder_details_inspected": false,
+  "lock_changed_or_bypassed": false,
+  "post_review_root_restore_build": "not run: admission refused",
+  "post_review_consumer_runtime": "not run: admission refused",
+  "earlier_consumer_metadata_status": 503,
+  "earlier_consumer_is_current_source_proof": false,
+  "story_status": "in-progress",
+  "transport_spec_status": "in-review",
+  "launch": "FAIL",
+  "remaining": [
+    "current-source consumer revalidation",
+    "SDK-supported signed-service/catalog-context producer",
+    "persisted effects/retry/single-use",
+    "gateway replacement/restart/rebuild",
+    "passing broad gates",
+    "deployed acceptance"
+  ]
+}

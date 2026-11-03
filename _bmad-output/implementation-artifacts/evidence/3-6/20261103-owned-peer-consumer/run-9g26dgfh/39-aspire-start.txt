@@ -1,0 +1,12 @@
+Command: aspire start --non-interactive --apphost /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --format Json
+Exit: 0
+Stdout:
+{
+  "appHostPath": "/home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj",
+  "appHostPid": 2908735,
+  "cliPid": 2904605,
+  "dashboardUrl": "https://localhost:36261/login",
+  "logFile": "/home/administrator/.aspire/logs/cli_20261103T092537233_detach-child_ac919b6f174d4d93bba5b3a153d274f2.log"
+}
+Stderr:
+Starting Aspire AppHost in the background...

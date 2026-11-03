@@ -1,0 +1,6 @@
+Command: docker run --detach --pull=never --name timesheets-live-dapr-d88c77db62514d70b821cdf61dc116bd-redis --label hexalith.timesheets.fixture=d88c77db62514d70b821cdf61dc116bd --publish 127.0.0.1:22844:6379 --tmpfs /data sha256:c35b83ce044bb6d148c484d36e059ad28e02d5714ba6731fb55b6421e2ed0ccf redis-server --save  --appendonly no
+Exit: 0
+Stdout:
+1acb8e0889c802953905fe24b80633eb06b6ded13ec09129ecdf6d9763facd94
+Stderr:
+

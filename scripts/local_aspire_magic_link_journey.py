@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 
 from magic_link_evidence_lineage import complete_evidence_lineage, effective_evidence_values_match
 from magic_link_index_selection import legacy_index_diagnostics, selected_candidate, selected_index_snapshot
-from run_isolated_magic_link_dapr import owned_http_open, validate_public_port, verify_runtime_components, security_credential_handoff, safe_invocation_failure_category
+from run_isolated_magic_link_dapr import owned_http_open, validate_public_port, verify_runtime_components, security_credential_handoff, safe_invocation_failure_category, metadata_invocation_boundary
 
 
 def require(condition, message):
@@ -604,7 +604,13 @@ metadata_status, metadata_data = call(
     sign("timesheets", "eventstore", "domain-service:metadata"),
 )
 if metadata_status != 200:
-    print("projection metadata denial category=" + safe_invocation_failure_category(metadata_data), flush=True)
+    category = safe_invocation_failure_category(metadata_data)
+    boundary = metadata_invocation_boundary(metadata_status, metadata_data)
+    print("projection metadata denial category=" + category + " boundary=" + boundary
+          + " receiver_predicate=unqualified", flush=True)
+    if os.environ.get("TIMESHEETS_LIVE_DAPR_CATALOG_PROFILE"):
+        print("catalog producer/signed-service context remains unqualified; persisted effects, retry/single-use, "
+              "restart/rebuild and deployed acceptance remain unverified", flush=True)
 require(metadata_status == 200, f"Projection metadata returned {metadata_status}")
 metadata = json.loads(metadata_data)
 require(metadata["dispatchVersion"] == 2, "Projection dispatch v2 is unavailable")

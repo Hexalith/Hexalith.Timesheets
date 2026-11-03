@@ -1,0 +1,47 @@
+[
+  {
+    "original_ignored_log": "01-scheduler-startup-failure.log",
+    "retained_file": "01-scheduler-startup-failure.txt",
+    "sha256": "5251616c4bec86f1f865cc3a195f693c9bc5ef40fed41ecf6709cba413b23664"
+  },
+  {
+    "original_ignored_log": "02-placement-readiness-failure.log",
+    "retained_file": "02-placement-readiness-failure.txt",
+    "sha256": "be7a5302ab884eee4c304e10a32fba0c78434244b01a0561b1d53d940ace833a"
+  },
+  {
+    "original_ignored_log": "03-actor-timeout-failure.log",
+    "retained_file": "03-actor-timeout-failure.txt",
+    "sha256": "82bccdb24f8186d44ac7d9758f3b12485d8435763de580231ab4ef0bb644e0b5"
+  },
+  {
+    "original_ignored_log": "04-nonyaml-component-failure.log",
+    "retained_file": "04-nonyaml-component-failure.txt",
+    "sha256": "6f9488f30d2dacfc4ac32203455b18aa38caa903702df6cdca5002cd86eb390d"
+  },
+  {
+    "original_ignored_log": "05-namespace-target-failure.log",
+    "retained_file": "05-namespace-target-failure.txt",
+    "sha256": "f3f4456593551c17cb96d4aebcd3ac60dd5c6ebb09cffc90c13e928153c9241e"
+  },
+  {
+    "original_ignored_log": "owner-build.log",
+    "retained_file": "owner-build.txt",
+    "sha256": "502def743dc7c7b763b3a9e6bb15dae4632be4a5ee8b6c90c0c088b521a8ec61"
+  },
+  {
+    "original_ignored_log": "owner-transport-live.log",
+    "retained_file": "owner-transport-live.txt",
+    "sha256": "74a7cbf1058e93a35fe827068d015d703bbf5c276138b8bb62809072f138fe90"
+  },
+  {
+    "original_ignored_log": "python-fixture-regression.log",
+    "retained_file": "python-fixture-regression.txt",
+    "sha256": "34060a544879a8b51f856cfab1bb67d0d9cde3067c56313bee1704a763ac4bcf"
+  },
+  {
+    "original_ignored_log": "root-restore.log",
+    "retained_file": "root-restore.txt",
+    "sha256": "31af8c2f002190e24a7dd61c3fab5afd2d559efe8a9e3c6827d88b1bbe120649"
+  }
+]

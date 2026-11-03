@@ -103,8 +103,22 @@ if (builder.Configuration["TIMESHEETS_LIVE_DAPR_VALIDATE_ONLY"] == "1")
 // bind tenant, domain, and actor claims. Retain the shared security helper for publish mode.
 DevelopmentRouteCatalogPreparedOwner? preparedOwner = null;
 DevelopmentRouteCatalogComposition? routeCatalog = null;
+IsolatedCatalogTransport? routeCatalogTransport = null;
 try
 {
+if (catalogEnabled)
+{
+    if (!OperatingSystem.IsLinux())
+    {
+        throw new InvalidOperationException("Owned Development transport requires Linux.");
+    }
+    string runtime = builder.Configuration["TIMESHEETS_LIVE_DAPR_TRANSPORT_RUNTIME"]
+        ?? throw new InvalidOperationException("Owned Development transport requires the explicitly selected pinned runtime.");
+    routeCatalogTransport = await IsolatedCatalogTransport.StartAsync(builder,
+        Path.Combine(Path.GetDirectoryName(catalogProfile!)!, "transport-custody"), runtime,
+        builder.Configuration[AspireDaprLocalServiceEndpoints.PlacementHostAddressKey],
+        builder.Configuration[AspireDaprLocalServiceEndpoints.SchedulerHostAddressKey]);
+}
 if (builder.ExecutionContext.IsRunMode)
 {
     builder.Configuration["EnableKeycloak"] = securitySmoke ? "true" : "false";
@@ -239,6 +253,9 @@ if (builder.ExecutionContext.IsRunMode)
 
     if (catalogEnabled)
     {
+        if (!OperatingSystem.IsLinux()) throw new InvalidOperationException("Owned Development transport requires Linux.");
+        routeCatalogTransport!.Enroll(eventStore);
+        routeCatalogTransport.Enroll(timesheets);
         preparedOwner = await timesheets.PrepareEventStoreDevelopmentOwnerAsync(
             "Hexalith.Timesheets.Projections.dll", "Hexalith.Timesheets.Server.dll", TimeSpan.FromMinutes(5));
         routeCatalog = builder.AddEventStoreDevelopmentRouteCatalog(eventStore,
@@ -305,9 +322,19 @@ finally
     }
     finally
     {
-        if (preparedOwner is not null)
+        try
         {
-            await preparedOwner.DisposeAsync();
+            if (preparedOwner is not null)
+            {
+                await preparedOwner.DisposeAsync();
+            }
+        }
+        finally
+        {
+            if (routeCatalogTransport is not null && OperatingSystem.IsLinux())
+            {
+                await routeCatalogTransport.DisposeAsync();
+            }
         }
     }
 }

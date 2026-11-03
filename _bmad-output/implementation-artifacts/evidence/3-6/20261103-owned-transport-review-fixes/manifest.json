@@ -1,0 +1,10 @@
+{
+  "sha256": {
+    "README.md": "ca9190bfb0934e15c92b8e3673fb09b4bf01c9e8a2002578435e9c736f0369e8",
+    "owner-focused-build.txt": "f273d54a626b06dda5143ebf051294bf7e5b2bf0c407304d04c5e067a99dcc8e",
+    "owner-focused-live.txt": "fa28abd9730320d406ff0e58e8bc46501fc65069f727adc1a93dadf254af3c8c",
+    "owner-focused-live.xml": "3a78d39763779c27f00251e2c23ae8afb522bab58f44d2ae5584f5a84e65b963",
+    "results.json": "3d47f41d5f3ad998847a2bc5cea84317eaf78f0b368f49ed17230e801a61b9fc",
+    "source-ids.json": "b8d500ce532ee2988efbbf261c01dc11d05106062001ec1325546592a4f1812d"
+  }
+}

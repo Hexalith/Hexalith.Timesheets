@@ -1,0 +1,6 @@
+Command: docker rm --force --volumes 5397693cb7eb57c41c02e5bf044da67ec979f9997a9e57a865fdcbfa47820dae
+Exit: 0
+Stdout:
+5397693cb7eb57c41c02e5bf044da67ec979f9997a9e57a865fdcbfa47820dae
+Stderr:
+

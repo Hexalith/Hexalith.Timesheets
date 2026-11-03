@@ -1,0 +1,36 @@
+{
+  "configured_authenticated_transport": true,
+  "peer_delivery_requires_request_evidence": true,
+  "trust_anchor_sha256": "d482efb8998e05790b0654c670142c0bdf595f6d4b1543604fbc379590e1bdeb",
+  "runtime_sha256": "e988a6f53abec017fc9ebcb4f89de9bed11bce005eb49bd8e85e8d3d6adbf488",
+  "sidecars": {
+    "eventstore": {
+      "pid": 3170843,
+      "start": "8240694",
+      "owned_trust_matches": true
+    },
+    "timesheets": {
+      "pid": 3170914,
+      "start": "8240699",
+      "owned_trust_matches": true
+    }
+  },
+  "control_plane": {
+    "sentry": {
+      "pid": 3167571,
+      "start": "8239934",
+      "owned_trust_matches": true
+    },
+    "placement": {
+      "pid": 3167630,
+      "start": "8239937",
+      "owned_trust_matches": true
+    },
+    "scheduler": {
+      "pid": 3167692,
+      "start": "8239948",
+      "owned_trust_matches": true
+    }
+  },
+  "ready_receipt_sha256": "d8b1445fadc1efd8e8c874d9c024ccdf861cfcb6d36b3d86b4de2b8b62391810"
+}

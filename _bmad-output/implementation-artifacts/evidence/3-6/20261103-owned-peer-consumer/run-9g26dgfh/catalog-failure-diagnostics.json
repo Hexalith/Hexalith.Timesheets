@@ -1,0 +1,28 @@
+{
+  "ownership_verified": true,
+  "resources": {
+    "eventstore": {
+      "status": "completed",
+      "raw_output_withheld": true,
+      "sdk_categories": [],
+      "exception_types": [
+        "OperationCanceledException",
+        "RouteCatalogUnavailableException",
+        "TaskCanceledException"
+      ],
+      "frames": [],
+      "exit_code": 0
+    },
+    "timesheets": {
+      "status": "completed",
+      "raw_output_withheld": true,
+      "sdk_categories": [],
+      "exception_types": [],
+      "frames": [],
+      "exit_code": 0
+    }
+  },
+  "raw_output_retained": false,
+  "phase": "catalog",
+  "status": "observed"
+}

@@ -1,0 +1,15 @@
+{
+  "aspire": {
+    "exit_code": 0,
+    "json_observation_empty": true,
+    "prior_literal_string_comparison": "inconclusive; not used as an application inventory"
+  },
+  "dapr": {
+    "exit_code": 0,
+    "empty": true
+  },
+  "native": {
+    "exit_code": 1,
+    "empty": true
+  }
+}

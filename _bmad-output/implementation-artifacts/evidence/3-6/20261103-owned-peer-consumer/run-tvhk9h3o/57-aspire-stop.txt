@@ -1,0 +1,11 @@
+Command: aspire stop --non-interactive --apphost /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+Exit: 0
+Stdout:
+Scanning for running AppHosts...
+📦 Found running AppHost: src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj
+🛑 Sending stop signal to src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj...
+Stopping src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj...
+
+✅ src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj stopped successfully.
+Stderr:
+

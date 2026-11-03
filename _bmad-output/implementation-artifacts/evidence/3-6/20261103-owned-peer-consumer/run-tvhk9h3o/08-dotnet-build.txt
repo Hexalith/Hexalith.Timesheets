@@ -1,0 +1,14 @@
+Command: dotnet build /tmp/timesheets-catalog-verifier-fdl8d17s/CatalogBindingVerifier.csproj --configuration Debug --disable-build-servers -warnaserror -m:1 /nr:false
+Exit: 0
+Stdout:
+  Determining projects to restore...
+  Restored /tmp/timesheets-catalog-verifier-fdl8d17s/CatalogBindingVerifier.csproj (in 52 ms).
+  CatalogBindingVerifier -> /tmp/timesheets-catalog-verifier-fdl8d17s/bin/Debug/net10.0/CatalogBindingVerifier.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:02.07
+Stderr:
+

@@ -1,0 +1,5 @@
+{
+  "admitted": false,
+  "resources_started": false,
+  "reason": "Local runtime admission is busy or unsafe; no resources started"
+}

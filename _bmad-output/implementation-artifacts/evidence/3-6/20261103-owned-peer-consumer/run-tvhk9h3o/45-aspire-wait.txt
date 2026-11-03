@@ -1,0 +1,8 @@
+Command: aspire wait eventstore --timeout 60 --apphost /home/administrator/projects/hexalith/timesheets/src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj --non-interactive
+Exit: 0
+Stdout:
+Waiting for resource 'eventstore' to be healthy...
+
+✅ Resource 'eventstore' is healthy. (2.8s)
+Stderr:
+

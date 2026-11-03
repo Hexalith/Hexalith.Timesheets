@@ -1,0 +1,6 @@
+Command: git -C /home/administrator/projects/hexalith/timesheets rev-parse HEAD
+Exit: 0
+Stdout:
+53786d00b31459b41f620b5b15f085ec03c6204f
+Stderr:
+

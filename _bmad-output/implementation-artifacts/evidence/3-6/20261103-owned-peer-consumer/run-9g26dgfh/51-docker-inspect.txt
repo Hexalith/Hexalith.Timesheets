@@ -1,0 +1,6 @@
+Command: docker inspect timesheets-live-dapr-d88c77db62514d70b821cdf61dc116bd-redis --format {{json .}}
+Exit: 1
+Stdout:
+
+Stderr:
+error: no such object: timesheets-live-dapr-d88c77db62514d70b821cdf61dc116bd-redis

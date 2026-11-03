@@ -1,0 +1,312 @@
+[
+  {
+    "original_ignored_log": "01-aspire---version.log",
+    "retained_file": "01-aspire---version.txt",
+    "sha256": "7b50f1d9e21fa130cf64f167b4190fdac3b9bec9cffcbaff82957b5144589c36"
+  },
+  {
+    "original_ignored_log": "02-dapr---version.log",
+    "retained_file": "02-dapr---version.txt",
+    "sha256": "2dd9c8f13ab792562bea4a2ad34b001aa7ec23840c854ab035930e421e813cb1"
+  },
+  {
+    "original_ignored_log": "03-docker-version.log",
+    "retained_file": "03-docker-version.txt",
+    "sha256": "8b20cb03b65b18bbdcaad6835699fcc3b87214772ee8eb98739e5a3fb6c07416"
+  },
+  {
+    "original_ignored_log": "04-dapr-list.log",
+    "retained_file": "04-dapr-list.txt",
+    "sha256": "b0b846a60949540f11addf4c01ee6b7551601bbfdb52023646b3bea4006823af"
+  },
+  {
+    "original_ignored_log": "05-aspire-ps.log",
+    "retained_file": "05-aspire-ps.txt",
+    "sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108"
+  },
+  {
+    "original_ignored_log": "06-dotnet-msbuild.log",
+    "retained_file": "06-dotnet-msbuild.txt",
+    "sha256": "cd79e5a1cf9609c3da4b761cedc03e6cc41013187fb79dec8af62d7274665292"
+  },
+  {
+    "original_ignored_log": "07-dotnet-build.log",
+    "retained_file": "07-dotnet-build.txt",
+    "sha256": "c9072ef6d199e8ad7241679f8b56ab525e06d7126b3d1b94dfb457888973905d"
+  },
+  {
+    "original_ignored_log": "08-dotnet-build.log",
+    "retained_file": "08-dotnet-build.txt",
+    "sha256": "1535bd6074a865bdf6c82871e853275029a88a271963dc91b2d611f7950dab36"
+  },
+  {
+    "original_ignored_log": "09-git--C.log",
+    "retained_file": "09-git--C.txt",
+    "sha256": "b0058f6870e2a4077ea3d53f22c204abaa3f10123f8dafeeccf09c08ae9e2e84"
+  },
+  {
+    "original_ignored_log": "10-git--C.log",
+    "retained_file": "10-git--C.txt",
+    "sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956"
+  },
+  {
+    "original_ignored_log": "11-git--C.log",
+    "retained_file": "11-git--C.txt",
+    "sha256": "1df57a499bb3a342f8954ceb39d219d35ceaf61e98a4a9bc1661b928f2a87820"
+  },
+  {
+    "original_ignored_log": "12-git--C.log",
+    "retained_file": "12-git--C.txt",
+    "sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956"
+  },
+  {
+    "original_ignored_log": "13-git--C.log",
+    "retained_file": "13-git--C.txt",
+    "sha256": "6fada9006298d617ed5b1cc229e40cbf2009d0165d59dfa22c1b7eb9d05a8307"
+  },
+  {
+    "original_ignored_log": "14-docker-inspect.log",
+    "retained_file": "14-docker-inspect.txt",
+    "sha256": "242fc509984c12e18a3d5d6be1203c00407f65729c25f5e3a1b19eeb3b5cd227"
+  },
+  {
+    "original_ignored_log": "15-docker-image.log",
+    "retained_file": "15-docker-image.txt",
+    "sha256": "1602333ec955e6698d77da5593eb63bd35e0f638f6a89121a7807103cd09d1fc"
+  },
+  {
+    "original_ignored_log": "16-docker-run.log",
+    "retained_file": "16-docker-run.txt",
+    "sha256": "7580c4b36879a4dadc0e18d5e485a127a154541d6b766af316acec9b026e97bb"
+  },
+  {
+    "original_ignored_log": "17-docker-inspect.log",
+    "retained_file": "17-docker-inspect.txt",
+    "sha256": "f6d2243021cde10812c249ef665a8b9cb722fb312eff8d9f62cb97256109cef7"
+  },
+  {
+    "original_ignored_log": "18-docker-exec.log",
+    "retained_file": "18-docker-exec.txt",
+    "sha256": "1926b63707085235820324f2ef32be418cbe5a7d8d53fd81b620558497e28b48"
+  },
+  {
+    "original_ignored_log": "19-dapr-list.log",
+    "retained_file": "19-dapr-list.txt",
+    "sha256": "b0b846a60949540f11addf4c01ee6b7551601bbfdb52023646b3bea4006823af"
+  },
+  {
+    "original_ignored_log": "20-aspire-ps.log",
+    "retained_file": "20-aspire-ps.txt",
+    "sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108"
+  },
+  {
+    "original_ignored_log": "21-docker-inspect.log",
+    "retained_file": "21-docker-inspect.txt",
+    "sha256": "25e1895727333d7f5ae8eb6964e1cd1c3069c63e50ec38102b7572537cc0f2f8"
+  },
+  {
+    "original_ignored_log": "22-docker-exec.log",
+    "retained_file": "22-docker-exec.txt",
+    "sha256": "39f5689fd1b1013bdcc2c1ccd8de9d126b5d9619d2575c1fb6c01050482ca584"
+  },
+  {
+    "original_ignored_log": "23-docker-exec.log",
+    "retained_file": "23-docker-exec.txt",
+    "sha256": "100aaf34df2286c5afe068f884f0646890d5e6179b5c2a54d3c073be7bf0e56e"
+  },
+  {
+    "original_ignored_log": "24-docker-exec.log",
+    "retained_file": "24-docker-exec.txt",
+    "sha256": "37186b062aa822f9afa0d5c2df3edab8cc76141efb8a809ab446107ce6d87be1"
+  },
+  {
+    "original_ignored_log": "25-docker-exec.log",
+    "retained_file": "25-docker-exec.txt",
+    "sha256": "4475af89400d26f60b8ec418f50f28afd0e326ec9fa17f2d7c5f517754a81c1e"
+  },
+  {
+    "original_ignored_log": "26-docker-exec.log",
+    "retained_file": "26-docker-exec.txt",
+    "sha256": "8f60cd94eb1f891519e01ec683d2e686b079a5acfa6dc8477e8a86e137d68626"
+  },
+  {
+    "original_ignored_log": "27-docker-exec.log",
+    "retained_file": "27-docker-exec.txt",
+    "sha256": "9fc9ea826e21df2a58dd39f1618f0fb0d82782f889a884fdb128c2c03d815d3d"
+  },
+  {
+    "original_ignored_log": "28-docker-exec.log",
+    "retained_file": "28-docker-exec.txt",
+    "sha256": "46c27b25b986e9de3ccfb9c4f8c5417907d107238021ebaaebc668786a0c3bfe"
+  },
+  {
+    "original_ignored_log": "29-docker-exec.log",
+    "retained_file": "29-docker-exec.txt",
+    "sha256": "50b815b72f6176a5040d02a88d5854b85898dcbcba75c1e1da88914a0b209b34"
+  },
+  {
+    "original_ignored_log": "30-docker-exec.log",
+    "retained_file": "30-docker-exec.txt",
+    "sha256": "b428d6258c0b2a0a6f7a814a39aa55e4366c08bdcb9985faa9441117e09bdca7"
+  },
+  {
+    "original_ignored_log": "31-docker-exec.log",
+    "retained_file": "31-docker-exec.txt",
+    "sha256": "6c594727bbb99fcf0728079db0af6c4b3d8ebce9ddfe5f4a30d62d12706da1dc"
+  },
+  {
+    "original_ignored_log": "32-docker-exec.log",
+    "retained_file": "32-docker-exec.txt",
+    "sha256": "bdc95119ee52f36b8f86b2a9560b8e7abef235acfa7d5d81abcd017836066958"
+  },
+  {
+    "original_ignored_log": "33-docker-exec.log",
+    "retained_file": "33-docker-exec.txt",
+    "sha256": "c0fc921d7905db3b63e03cda3400ad4b4efb2df4b1350f1f4c02ea47a7466c4d"
+  },
+  {
+    "original_ignored_log": "34-docker-exec.log",
+    "retained_file": "34-docker-exec.txt",
+    "sha256": "875b56e332c2aabcdba65c6ef41c65720b01ce3b081327348ae64ad1772cc2b3"
+  },
+  {
+    "original_ignored_log": "35-docker-exec.log",
+    "retained_file": "35-docker-exec.txt",
+    "sha256": "ee4ffe54927cc745af568305e31e7f4eb711b7eb1df0fbdf4188acc8c0c9df84"
+  },
+  {
+    "original_ignored_log": "36-docker-exec.log",
+    "retained_file": "36-docker-exec.txt",
+    "sha256": "3e29fc7c6ebe6c7dfaeb9ed5b58b98bb3780f33b102adb38e104f08b6ad32a4a"
+  },
+  {
+    "original_ignored_log": "37-docker-exec.log",
+    "retained_file": "37-docker-exec.txt",
+    "sha256": "a8c834e6bbc0e18fd9fb86812521fcfc8385b11fe61a23771eb3ac84faf9628e"
+  },
+  {
+    "original_ignored_log": "38-git--C.log",
+    "retained_file": "38-git--C.txt",
+    "sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956"
+  },
+  {
+    "original_ignored_log": "39-aspire-start.log",
+    "retained_file": "39-aspire-start.txt",
+    "sha256": "bb764d36a12050e1cde338822819d22359e4b4b97ee558683aa2ad83f44cecf9"
+  },
+  {
+    "original_ignored_log": "40-aspire-ps.log",
+    "retained_file": "40-aspire-ps.txt",
+    "sha256": "e664ea2c86d137ee7286ac0c010d4952570528f772b7366f938518f0e24dd8a9"
+  },
+  {
+    "original_ignored_log": "41-aspire-wait.log",
+    "retained_file": "41-aspire-wait.txt",
+    "sha256": "4352c6b77852340b0b8d3513dc3bb87aa2d286754f78a413b1b09f7c7aa26094"
+  },
+  {
+    "original_ignored_log": "42-aspire-wait.log",
+    "retained_file": "42-aspire-wait.txt",
+    "sha256": "45cb6af20777719916fc636e301dbaef62948afd34884ea58ca9a6dee55d1e5d"
+  },
+  {
+    "original_ignored_log": "43-docker-inspect.log",
+    "retained_file": "43-docker-inspect.txt",
+    "sha256": "25e1895727333d7f5ae8eb6964e1cd1c3069c63e50ec38102b7572537cc0f2f8"
+  },
+  {
+    "original_ignored_log": "44-git--C.log",
+    "retained_file": "44-git--C.txt",
+    "sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956"
+  },
+  {
+    "original_ignored_log": "45-aspire-wait.log",
+    "retained_file": "45-aspire-wait.txt",
+    "sha256": "19e7ff12515ccf6b0e0718f3ad84e882339f91df597dea022f79ad139cc20d90"
+  },
+  {
+    "original_ignored_log": "46-aspire-wait.log",
+    "retained_file": "46-aspire-wait.txt",
+    "sha256": "b0499af8c74ceff19e4a863d0c3117e76d96f32719ee1b6fe5461ca61977aac4"
+  },
+  {
+    "original_ignored_log": "47-Hexalith.Timesheets.IntegrationTests--class.log",
+    "retained_file": "47-Hexalith.Timesheets.IntegrationTests--class.txt",
+    "sha256": "b6a1729adf8779030c3938ac0a828e77778d4bd139c04f4d49bd3a8d66a112ef"
+  },
+  {
+    "original_ignored_log": "48-aspire-ps.log",
+    "retained_file": "48-aspire-ps.txt",
+    "sha256": "e664ea2c86d137ee7286ac0c010d4952570528f772b7366f938518f0e24dd8a9"
+  },
+  {
+    "original_ignored_log": "49-aspire-ps.log",
+    "retained_file": "49-aspire-ps.txt",
+    "sha256": "e664ea2c86d137ee7286ac0c010d4952570528f772b7366f938518f0e24dd8a9"
+  },
+  {
+    "original_ignored_log": "50-aspire-ps.log",
+    "retained_file": "50-aspire-ps.txt",
+    "sha256": "e664ea2c86d137ee7286ac0c010d4952570528f772b7366f938518f0e24dd8a9"
+  },
+  {
+    "original_ignored_log": "51-git--C.log",
+    "retained_file": "51-git--C.txt",
+    "sha256": "b0058f6870e2a4077ea3d53f22c204abaa3f10123f8dafeeccf09c08ae9e2e84"
+  },
+  {
+    "original_ignored_log": "52-git--C.log",
+    "retained_file": "52-git--C.txt",
+    "sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956"
+  },
+  {
+    "original_ignored_log": "53-git--C.log",
+    "retained_file": "53-git--C.txt",
+    "sha256": "1df57a499bb3a342f8954ceb39d219d35ceaf61e98a4a9bc1661b928f2a87820"
+  },
+  {
+    "original_ignored_log": "54-git--C.log",
+    "retained_file": "54-git--C.txt",
+    "sha256": "93d1293431b9adfa001caaa9be527685ec83e5df3e0f8f2a8d6bdb3506254956"
+  },
+  {
+    "original_ignored_log": "55-git--C.log",
+    "retained_file": "55-git--C.txt",
+    "sha256": "6fada9006298d617ed5b1cc229e40cbf2009d0165d59dfa22c1b7eb9d05a8307"
+  },
+  {
+    "original_ignored_log": "56-aspire-ps.log",
+    "retained_file": "56-aspire-ps.txt",
+    "sha256": "e664ea2c86d137ee7286ac0c010d4952570528f772b7366f938518f0e24dd8a9"
+  },
+  {
+    "original_ignored_log": "57-aspire-stop.log",
+    "retained_file": "57-aspire-stop.txt",
+    "sha256": "ccf5e849b1d9fd92a1b385051a9179409a2c5492a8a37b842368ea9e20bdd037"
+  },
+  {
+    "original_ignored_log": "58-aspire-ps.log",
+    "retained_file": "58-aspire-ps.txt",
+    "sha256": "7eb16934a3cd585934d723b9a61f9e1b5c6c5c41b92bbad6296805a0cbe83108"
+  },
+  {
+    "original_ignored_log": "59-docker-inspect.log",
+    "retained_file": "59-docker-inspect.txt",
+    "sha256": "25e1895727333d7f5ae8eb6964e1cd1c3069c63e50ec38102b7572537cc0f2f8"
+  },
+  {
+    "original_ignored_log": "60-docker-rm.log",
+    "retained_file": "60-docker-rm.txt",
+    "sha256": "378f03fb6bf2447ee3b544eb964f7e9444a611af6a1c0c6229cbd1c76be18f2b"
+  },
+  {
+    "original_ignored_log": "61-docker-inspect.log",
+    "retained_file": "61-docker-inspect.txt",
+    "sha256": "6682c2331670433d37c6645d17577cc40a60a68a1278a72790f57f0987d8d708"
+  },
+  {
+    "original_ignored_log": "62-docker-container.log",
+    "retained_file": "62-docker-container.txt",
+    "sha256": "07fda42989db19f4f171da37fcc18b0426df5a9f1f6727d1e348d56d46c2f53a"
+  }
+]

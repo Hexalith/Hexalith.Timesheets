@@ -1,0 +1,16 @@
+{
+  "http_status": 503,
+  "body_bytes": 0,
+  "body_category": "empty_http_body",
+  "dapr_error_envelope_present": false,
+  "runtime_trust_verified": true,
+  "receiver_http_boundary": "source-derived inference from pinned Dapr transport-error JSON versus HTTP error forwarding branches",
+  "exact_receiver_predicate": "unqualified",
+  "signed_service_and_catalog_context_producer": "unqualified",
+  "resource_wide_workload_categories_attributed_to_this_request": false,
+  "persisted_effects_retry_single_use_restart_rebuild": "not reached",
+  "gateway_replacement_verified": false,
+  "source_snapshots_match": true,
+  "cleanup_complete": true,
+  "source": "https://github.com/dapr/dapr/blob/b32a815fa2260983e181b95272ea555fe17d3895/pkg/api/http/directmessaging.go"
+}

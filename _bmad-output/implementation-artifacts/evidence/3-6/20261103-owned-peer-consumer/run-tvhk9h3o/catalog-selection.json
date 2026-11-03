@@ -1,0 +1,21 @@
+{
+  "mode": "isolated-development",
+  "owner_profile_private": true,
+  "authority_component": "timesheets-route-authority",
+  "authority_state_key_sha256": "8f67b56ecf419c51e72e3e9469db323ebb07295e89577cf00ba3ff78f4bf0022",
+  "gateway_methods": [
+    "api/v1/commands/bound/workload",
+    "api/v1/commands/workload",
+    "api/v1/commands/status/workload/*",
+    "api/v1/streams/read/workload"
+  ],
+  "timesheets_methods": [
+    "process",
+    "replay-state",
+    "query",
+    "project/v2",
+    "project/rebuild/v1",
+    "project/rebuild/shared/v1",
+    "admin/operational-index-metadata"
+  ]
+}

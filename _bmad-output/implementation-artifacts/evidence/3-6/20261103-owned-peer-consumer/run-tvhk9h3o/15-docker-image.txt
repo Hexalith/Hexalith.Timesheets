@@ -1,0 +1,6 @@
+Command: docker image inspect sha256:c35b83ce044bb6d148c484d36e059ad28e02d5714ba6731fb55b6421e2ed0ccf --format {{.Id}}
+Exit: 0
+Stdout:
+sha256:c35b83ce044bb6d148c484d36e059ad28e02d5714ba6731fb55b6421e2ed0ccf
+Stderr:
+

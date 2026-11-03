@@ -1,0 +1,6 @@
+Command: docker exec 5397693cb7eb57c41c02e5bf044da67ec979f9997a9e57a865fdcbfa47820dae redis-cli --raw -n 3 DBSIZE
+Exit: 0
+Stdout:
+0
+Stderr:
+

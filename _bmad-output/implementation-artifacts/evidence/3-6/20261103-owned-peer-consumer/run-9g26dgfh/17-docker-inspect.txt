@@ -1,0 +1,6 @@
+Command: docker inspect 1acb8e0889c802953905fe24b80633eb06b6ded13ec09129ecdf6d9763facd94 --format {{json .NetworkSettings.Ports}}
+Exit: 0
+Stdout:
+{"6379/tcp":[{"HostIp":"127.0.0.1","HostPort":"22844"}]}
+Stderr:
+

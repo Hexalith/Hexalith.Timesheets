@@ -1,0 +1,18 @@
+{
+  "eventstore_baseline": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3",
+  "timesheets_baseline": "53786d00b31459b41f620b5b15f085ec03c6204f",
+  "files": {
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransport.cs": "b79fec9ecc33f40738d042a0016c1e27938f72a405842d48dcd56c92e345eeaf",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportProcess.cs": "4a4d4bf38faa5a54a2aff4e437990232270eae2a8bdf17e6e170ec9fc6fa03db",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportExtensions.cs": "d5d4ac0c32ae0754614d21a45c202eb7c819209e7951ea6bfad0c799dbd840e1",
+    "references/Hexalith.EventStore/src/Hexalith.EventStore.Aspire/Hexalith.EventStore.Aspire.csproj": "931461c40ae75f04ebe892637b2a180ebf0203c9e0be4101231534150ef9828d",
+    "references/Hexalith.EventStore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs": "5e03bf4875ab1dd2cc7238f9a90560ad8c52b68ce94a8635f80a3c0ae33ee2b6",
+    "references/Hexalith.EventStore/tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.TransportCli.cs": "b27f6657c85f18d7fc38d733803a1c1cfbf7866aa93112beb63f44ea84e9db1f",
+    "references/Hexalith.EventStore/.github/workflows/integration.yml": "b42f43bc4b4a041c445f2a887922c138c2c567dfdc18914dcd2dcfd33e832eee",
+    "references/Hexalith.EventStore/tools/tests/test_route_catalog_ci_tools.py": "361ed1051be6ae77f6343776a67f205c0a3557629749e40bdc1491090c77a69b",
+    "references/Hexalith.EventStore/deploy/dapr/route-catalog-development-fixture/README.md": "da2682c58809adfe24d78dc165bd79dfc5db9b29dd2dd68deff975ffc5dae877",
+    "scripts/local_aspire_magic_link_journey.py": "77f6b36ab9870e88ba95164c5bb8842fe3db9bf4a18997a7591911c98917a4d0",
+    "scripts/run_isolated_magic_link_dapr.py": "2c5257a8590f162977c19a3c233d3402edf7576025d06ad22def7cbaf2388fc1",
+    "scripts/test_isolated_magic_link_dapr.py": "dd48133ba65df0dc47b91d855fa591dde94b12d0cd36c054ab55a670cfbe48a8"
+  }
+}

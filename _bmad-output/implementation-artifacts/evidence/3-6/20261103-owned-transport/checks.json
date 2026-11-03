@@ -1,0 +1,105 @@
+[
+  {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "evidence": "root-restore.txt"
+  },
+  {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "evidence": "../20261103-owned-peer-consumer/run-tvhk9h3o/07-dotnet-build.txt"
+  },
+  {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Hexalith.EventStore.Server.LiveSidecar.Tests.csproj -c Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false",
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "exit_code": 0,
+    "evidence": "owner-build.txt"
+  },
+  {
+    "command": "tests/Hexalith.EventStore.Server.LiveSidecar.Tests/bin/Debug/net10.0/Hexalith.EventStore.Server.LiveSidecar.Tests -method *PublicDevelopmentTransport* -noColor -result-xml /tmp/timesheets-owner-transport-complete.xml",
+    "cwd": "/home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore",
+    "admission": "LocalRuntimeAdmission held until exact cleanup",
+    "exit_code": 0,
+    "total": 4,
+    "failed": 0,
+    "evidence": "owner-transport-live.xml"
+  },
+  {
+    "command": "PYTHONPATH=scripts python3 -m unittest discover -s scripts -p test_isolated_magic_link_dapr.py",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "total": 234,
+    "failed": 0,
+    "seconds": 59.06,
+    "evidence": "python-fixture-regression.txt"
+  },
+  {
+    "command": "DOTNET_CLI_HOME=/tmp/dotnet-cli-home PYTHONPATH=scripts python3 scripts/run_isolated_magic_link_dapr.py --route-catalog --public-port 18080 --log-directory _bmad-output/implementation-artifacts/evidence/3-6/20261103-owned-peer-consumer",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 1,
+    "boundary": "metadata HTTP 503 empty response; persisted journey unqualified",
+    "evidence": "../20261103-owned-peer-consumer/run-tvhk9h3o/README.md"
+  },
+  {
+    "command": "tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests -noColor",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "total": 118,
+    "failed": 0,
+    "skipped": 0,
+    "gate": "pass",
+    "original_log": "/tmp/timesheets-peer-transport-Hexalith.Timesheets.ArchitectureTests.log"
+  },
+  {
+    "command": "tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests -noColor",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "total": 108,
+    "failed": 0,
+    "skipped": 0,
+    "gate": "pass",
+    "original_log": "/tmp/timesheets-peer-transport-Hexalith.Timesheets.Contracts.Tests.log"
+  },
+  {
+    "command": "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -noColor",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 58,
+    "total": 780,
+    "failed": 4,
+    "skipped": 5,
+    "gate": "incomplete/baseline failures retained",
+    "original_log": "/tmp/timesheets-peer-transport-Hexalith.Timesheets.IntegrationTests.log"
+  },
+  {
+    "command": "tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests -noColor",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 58,
+    "total": 760,
+    "failed": 1,
+    "skipped": 0,
+    "gate": "incomplete/baseline failures retained",
+    "original_log": "/tmp/timesheets-peer-transport-Hexalith.Timesheets.Projections.Tests.log"
+  },
+  {
+    "command": "tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests -noColor",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "total": 746,
+    "failed": 0,
+    "skipped": 0,
+    "gate": "pass",
+    "original_log": "/tmp/timesheets-peer-transport-Hexalith.Timesheets.Server.Tests.log"
+  },
+  {
+    "command": "tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests -noColor",
+    "cwd": "/home/administrator/projects/hexalith/timesheets",
+    "exit_code": 0,
+    "total": 76,
+    "failed": 0,
+    "skipped": 0,
+    "gate": "pass",
+    "original_log": "/tmp/timesheets-peer-transport-Hexalith.Timesheets.Works.Tests.log"
+  }
+]

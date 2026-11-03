@@ -1,0 +1,304 @@
+{
+  "exit_code": 0,
+  "total": 4,
+  "failed": 0,
+  "skipped": 0,
+  "cases": [
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportRefusesIncompleteIdentityWithoutFallback",
+      "result": "Pass",
+      "seconds": "3.413"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart",
+      "result": "Pass",
+      "seconds": "12.78"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportRetainsPrivateCustodyAfterPartialStartupFailure",
+      "result": "Pass",
+      "seconds": "1.981"
+    },
+    {
+      "name": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAspireCliLaunchUsesOwnedSecretInputs",
+      "result": "Pass",
+      "seconds": "2.994"
+    }
+  ],
+  "custody": [
+    {
+      "test": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart",
+      "custody_directory": "/tmp/eventstore-transport-qualification-2EaO3a/custody",
+      "ready": {
+        "schemaVersion": 1,
+        "ready": true,
+        "environment": "Development",
+        "trustDomain": "public",
+        "namespace": "default",
+        "directory": "/tmp/eventstore-development-transport-CeySar",
+        "runtimeSha256": "e988a6f53abec017fc9ebcb4f89de9bed11bce005eb49bd8e85e8d3d6adbf488",
+        "trustAnchorSha256": "a88f4d30ef589d496121d8b060066645cfdafe91d27566481416761d9745f756",
+        "sentryAddress": "127.0.0.1:37755",
+        "placementAddress": "127.0.0.1:39383",
+        "schedulerAddress": "127.0.0.1:37139",
+        "images": {
+          "sentry": "ghcr.io/dapr/sentry@sha256:b9fc166085289661f516150dc1c47ac3495b9e6d1e666079cb71cd2374ca7256",
+          "placement": "ghcr.io/dapr/placement@sha256:c9da106eddcbb625c94baea31af4ed576d32750741b442c99f51518c420e76cc",
+          "scheduler": "ghcr.io/dapr/scheduler@sha256:2cc2da2f7c4ece604041e6a420de04a297afb24cea8b3c9394bd0e126a334444"
+        },
+        "processes": [
+          {
+            "pid": 3123836,
+            "startTimeUtc": "2026-11-03T09:34:56.5511384Z",
+            "start": "8229398"
+          },
+          {
+            "pid": 3123847,
+            "startTimeUtc": "2026-11-03T09:34:56.6511384Z",
+            "start": "8229408"
+          },
+          {
+            "pid": 3123872,
+            "startTimeUtc": "2026-11-03T09:34:56.7511383Z",
+            "start": "8229418"
+          }
+        ],
+        "binaries": {
+          "sentry": "6f9a569c5e476bbe25f661cc13ab6df6e0cd38a87c3928fd8792726b6a78a703",
+          "placement": "323907a7321bdce7f87652c7665708a7e897a5bcc87c050fbf29e693f4e834b5",
+          "scheduler": "7ef9285180a3073e70f711ff030fb0b56f04df18a830aa61aadedbdec2c9ade5"
+        },
+        "adapterSha256": "a44d633b9fde8d74cd3a3acd19d98d2775d828f022a74b24c8cbafdc5115bcd8"
+      },
+      "cleanup": {
+        "schemaVersion": 1,
+        "complete": true,
+        "startupQualified": true,
+        "ownedProcessesExited": true,
+        "trustAnchorSha256": "a88f4d30ef589d496121d8b060066645cfdafe91d27566481416761d9745f756",
+        "temporaryDirectoryRemoved": true,
+        "directory": "/tmp/eventstore-development-transport-CeySar",
+        "processes": [
+          {
+            "pid": 3123836,
+            "start": "8229398"
+          },
+          {
+            "pid": 3123847,
+            "start": "8229408"
+          },
+          {
+            "pid": 3123872,
+            "start": "8229418"
+          }
+        ]
+      },
+      "failed_attempt_receipts": [
+        {
+          "name": "cleanup-attempt-68215b3cec604021a1c2900449a95fb4.json",
+          "receipt": {
+            "schemaVersion": 1,
+            "complete": true,
+            "startupQualified": true,
+            "ownedProcessesExited": true,
+            "trustAnchorSha256": "a88f4d30ef589d496121d8b060066645cfdafe91d27566481416761d9745f756",
+            "temporaryDirectoryRemoved": true,
+            "directory": "/tmp/eventstore-development-transport-CeySar",
+            "processes": [
+              {
+                "pid": 3123836,
+                "start": "8229398"
+              },
+              {
+                "pid": 3123847,
+                "start": "8229408"
+              },
+              {
+                "pid": 3123872,
+                "start": "8229418"
+              }
+            ]
+          }
+        },
+        {
+          "name": "cleanup-attempt-bd13fd1bf32148909378ba24193a138e.json",
+          "receipt": {
+            "schemaVersion": 1,
+            "complete": false,
+            "startupQualified": true,
+            "ownedProcessesExited": false,
+            "trustAnchorSha256": "a88f4d30ef589d496121d8b060066645cfdafe91d27566481416761d9745f756",
+            "temporaryDirectoryRemoved": false,
+            "directory": "/tmp/eventstore-development-transport-CeySar",
+            "processes": [
+              {
+                "pid": 3123836,
+                "start": "8229398"
+              },
+              {
+                "pid": 3123847,
+                "start": "8229408"
+              },
+              {
+                "pid": 3123872,
+                "start": "8229418"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportRetainsPrivateCustodyAfterPartialStartupFailure",
+      "custody_directory": "/tmp/eventstore-transport-partial-wv1UDs/custody",
+      "ready": null,
+      "cleanup": {
+        "schemaVersion": 1,
+        "complete": false,
+        "startupQualified": false,
+        "ownedProcessesExited": true,
+        "trustAnchorSha256": "f1ae38e118e54ac87a65b2f6d82c20fe6ac088899155147eff08c8ff0d790239",
+        "temporaryDirectoryRemoved": false,
+        "directory": "/tmp/eventstore-development-transport-kruy6w",
+        "processes": [
+          {
+            "pid": 3129004,
+            "start": "8230627"
+          },
+          {
+            "pid": 3129019,
+            "start": "8230638"
+          },
+          {
+            "pid": 3129031,
+            "start": "8230648"
+          }
+        ]
+      },
+      "failed_attempt_receipts": [
+        {
+          "name": "cleanup-attempt-235f501e52c2445bbfd795137cc8c7ac.json",
+          "receipt": {
+            "schemaVersion": 1,
+            "complete": false,
+            "startupQualified": false,
+            "ownedProcessesExited": true,
+            "trustAnchorSha256": "f1ae38e118e54ac87a65b2f6d82c20fe6ac088899155147eff08c8ff0d790239",
+            "temporaryDirectoryRemoved": false,
+            "directory": "/tmp/eventstore-development-transport-kruy6w",
+            "processes": [
+              {
+                "pid": 3129004,
+                "start": "8230627"
+              },
+              {
+                "pid": 3129019,
+                "start": "8230638"
+              },
+              {
+                "pid": 3129031,
+                "start": "8230648"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "test": "Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAspireCliLaunchUsesOwnedSecretInputs",
+      "custody_directory": "/tmp/eventstore-transport-cli-M9H0w1/custody",
+      "ready": {
+        "schemaVersion": 1,
+        "ready": true,
+        "environment": "Development",
+        "trustDomain": "public",
+        "namespace": "default",
+        "directory": "/tmp/eventstore-development-transport-aiYdh4",
+        "runtimeSha256": "e988a6f53abec017fc9ebcb4f89de9bed11bce005eb49bd8e85e8d3d6adbf488",
+        "trustAnchorSha256": "7d9e4ba61f27b21a832609529a1b1586ac2cb4f5650ec732e071aab2f93b09cb",
+        "sentryAddress": "127.0.0.1:41655",
+        "placementAddress": "127.0.0.1:36803",
+        "schedulerAddress": "127.0.0.1:45965",
+        "images": {
+          "sentry": "ghcr.io/dapr/sentry@sha256:b9fc166085289661f516150dc1c47ac3495b9e6d1e666079cb71cd2374ca7256",
+          "placement": "ghcr.io/dapr/placement@sha256:c9da106eddcbb625c94baea31af4ed576d32750741b442c99f51518c420e76cc",
+          "scheduler": "ghcr.io/dapr/scheduler@sha256:2cc2da2f7c4ece604041e6a420de04a297afb24cea8b3c9394bd0e126a334444"
+        },
+        "processes": [
+          {
+            "pid": 3129956,
+            "startTimeUtc": "2026-11-03T09:35:10.9311384Z",
+            "start": "8230836"
+          },
+          {
+            "pid": 3130138,
+            "startTimeUtc": "2026-11-03T09:35:11.0311384Z",
+            "start": "8230846"
+          },
+          {
+            "pid": 3130334,
+            "startTimeUtc": "2026-11-03T09:35:11.1311384Z",
+            "start": "8230856"
+          }
+        ],
+        "binaries": {
+          "sentry": "6f9a569c5e476bbe25f661cc13ab6df6e0cd38a87c3928fd8792726b6a78a703",
+          "placement": "323907a7321bdce7f87652c7665708a7e897a5bcc87c050fbf29e693f4e834b5",
+          "scheduler": "7ef9285180a3073e70f711ff030fb0b56f04df18a830aa61aadedbdec2c9ade5"
+        },
+        "adapterSha256": "eace6e74bf10fdbc9b4a587779d86fa2b292fe52eb3992c04ee24e4881b0b42d"
+      },
+      "cleanup": {
+        "schemaVersion": 1,
+        "complete": true,
+        "startupQualified": true,
+        "ownedProcessesExited": true,
+        "trustAnchorSha256": "7d9e4ba61f27b21a832609529a1b1586ac2cb4f5650ec732e071aab2f93b09cb",
+        "temporaryDirectoryRemoved": true,
+        "directory": "/tmp/eventstore-development-transport-aiYdh4",
+        "processes": [
+          {
+            "pid": 3129956,
+            "start": "8230836"
+          },
+          {
+            "pid": 3130138,
+            "start": "8230846"
+          },
+          {
+            "pid": 3130334,
+            "start": "8230856"
+          }
+        ]
+      },
+      "failed_attempt_receipts": [
+        {
+          "name": "cleanup-attempt-3afec6e027ef4cd0adf0aed632730ffb.json",
+          "receipt": {
+            "schemaVersion": 1,
+            "complete": true,
+            "startupQualified": true,
+            "ownedProcessesExited": true,
+            "trustAnchorSha256": "7d9e4ba61f27b21a832609529a1b1586ac2cb4f5650ec732e071aab2f93b09cb",
+            "temporaryDirectoryRemoved": true,
+            "directory": "/tmp/eventstore-development-transport-aiYdh4",
+            "processes": [
+              {
+                "pid": 3129956,
+                "start": "8230836"
+              },
+              {
+                "pid": 3130138,
+                "start": "8230846"
+              },
+              {
+                "pid": 3130334,
+                "start": "8230856"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

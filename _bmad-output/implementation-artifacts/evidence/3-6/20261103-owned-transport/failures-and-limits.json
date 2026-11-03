@@ -1,0 +1,79 @@
+{
+  "historical_owner_attempts": [
+    {
+      "attempt": "01",
+      "outcome": "scheduler TLS DNS identity incompatibility; startup refused; exact owners stopped; protected material retained",
+      "evidence": "01-scheduler-startup-failure.txt",
+      "receipt_limit": "pre-repair cleanup format; startupQualified=false; not a qualification pass"
+    },
+    {
+      "attempt": "02",
+      "outcome": "actor lookup not ready; no native actor end-state proof",
+      "evidence": "02-placement-readiness-failure.txt"
+    },
+    {
+      "attempt": "03",
+      "outcome": "180-second xUnit timeout; original attempt failed; no surviving native process in post-exit inventory",
+      "evidence": "03-actor-timeout-failure.txt"
+    },
+    {
+      "attempt": "04",
+      "outcome": "fixture component used .json suffix; pinned loader ignored actor state component",
+      "evidence": "04-nonyaml-component-failure.txt"
+    },
+    {
+      "attempt": "05",
+      "outcome": "wrong-namespace target initially tested DNS absence; corrected explicit receiver namespace before qualified run",
+      "evidence": "05-namespace-target-failure.txt"
+    },
+    {
+      "attempt": "old-full-hosted-class",
+      "command": "-class *RouteCatalogHostedLiveTests -noColor -result-xml /tmp/timesheets-owner-transport-final.xml",
+      "exit_code": 58,
+      "reported_tests_passed": 5,
+      "disposition": "Controlled SIGINT. Older plaintext case uses machine-default control addresses; excluded from isolated qualification. All spawned native processes exited. No shared-state preservation claim.",
+      "private_original_log_sha256": "3a81bc16f39231ee0826309fe4f39bc3faf21daa68603ea9e620b99a8110fc99"
+    },
+    {
+      "attempt": "cli-model-1",
+      "outcome": "model-only DCP/dashboard paths required; test corrected before actual CLI launch"
+    },
+    {
+      "attempt": "cli-model-2",
+      "outcome": "modeled endpoint target-port expressions required; test corrected before actual CLI launch"
+    },
+    {
+      "attempt": "cli-model-3",
+      "outcome": "actual pinned CLI reproduced missing owned executable under runtime-root/.dapr/bin/daprd; owner layout repaired",
+      "private_original_log_sha256": "32070c905666bb7e8ad35bf5cf7750134a36987e8348d27034a3829a72a5273c"
+    }
+  ],
+  "first_consumer": {
+    "exit_code": 1,
+    "evidence": "../20261103-owned-peer-consumer/run-9g26dgfh",
+    "boundary": "no native sidecars; CLI installation-root layout",
+    "transport_controls_cleanup": true,
+    "catalog_cleanup_complete": false,
+    "protected_profile_retained": true
+  },
+  "broad_baseline_failures": [
+    "MagicLinkConfirmationCapabilityEndpointTests.AppHostExportsTheInternalListenerPortToTheHostOptionsSection",
+    "InternalSurfaceConfigurationSyntaxTests.HarmlessCommentsAndConstantArgumentsPass",
+    "InternalSurfaceConfigurationSyntaxTests.HealthyProductionWiringPasses"
+  ],
+  "canceled_unrelated_measurements": [
+    {
+      "project": "IntegrationTests",
+      "test": "MagicLinkConfirmationHttpBoundaryTests.GlobalIndexNormalDeliverySelectsTenThousandHighEntropyCandidates",
+      "exit_code": 58,
+      "seconds": 306.352
+    },
+    {
+      "project": "Projections.Tests",
+      "test": "MagicLinkConfirmationCapabilityProjectionHandlerTests.TenThousandValidHighEntropyOwnersProduceBoundedIndependentPartitions",
+      "exit_code": 58,
+      "seconds": 135.007
+    }
+  ],
+  "broad_pass_claimed": false
+}

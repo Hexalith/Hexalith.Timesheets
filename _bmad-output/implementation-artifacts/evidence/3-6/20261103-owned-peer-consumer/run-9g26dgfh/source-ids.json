@@ -1,0 +1,28 @@
+{
+  "baselines": {
+    "timesheets": "53786d00b31459b41f620b5b15f085ec03c6204f",
+    "eventstore": "7c93a1234d14c66f5ee85ed48caaee1d30a671f3"
+  },
+  "runtime_diffs_sha256": {
+    "timesheets": "56e592bb7ac075f9c7d352d916556923ff2c3c6eef73be09dd9657344dbb6f9d",
+    "eventstore": "f340a3f302172922411f462f7178836d6bd4fde02e72d46dc3dac08cadfa2ba6"
+  },
+  "new_build_input_sha256": {
+    "timesheets": {
+      "src/Hexalith.Timesheets.AppHost/IsolatedCatalogTransport.cs": "2dee10a9ad01d08c87c221a3daaff112b5980f99e0570f0a602d8bf2bee12702"
+    },
+    "eventstore": {
+      "src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransport.cs": "d58378c323b9582e186b904a62a6d38c2923efdff0dd691bac6424faf48bc0ed",
+      "src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportDocker.cs": "fe39b5aca4da7839e9e5657ee08756a60cc7eb97b1f68ce16f66b2472a408d72",
+      "src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportExtensions.cs": "1076d6cafa71f1d34829976b5ebac3748467dfd24ea445faa5db9116736bbeb2",
+      "src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportOptions.cs": "93ffe9faffd81a3b0d7f26fc3c86959d4c0746ae01123adb30148383de8c47ab",
+      "src/Hexalith.EventStore.Aspire/DevelopmentRouteCatalogTransportProcess.cs": "3bb9911174d193d7ee760db47a7e72082e2a252bff3082f0378a7311172373e9",
+      "tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Fixtures/DevelopmentTransportActor.cs": "755de6e90d42bf7f5e52e34050a33d6d8689b864c71d069b23211ecf956f565c",
+      "tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Fixtures/IDevelopmentTransportActor.cs": "e45cf94a88e5f4f800c8bb8d0c466bb40228a58571cf84445d22bb7621818954",
+      "tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs": "882356023efdfa5748469e9cee90fb95798f7b2d1143ce5fd54cefba0e579d61"
+    }
+  },
+  "source_before": "source-before.json",
+  "source_after": null,
+  "runtime_snapshots_match": null
+}

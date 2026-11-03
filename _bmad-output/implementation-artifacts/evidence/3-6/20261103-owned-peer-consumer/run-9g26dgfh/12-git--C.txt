@@ -1,0 +1,6 @@
+Command: git -C /home/administrator/projects/hexalith/timesheets/references/Hexalith.EventStore rev-parse HEAD
+Exit: 0
+Stdout:
+7c93a1234d14c66f5ee85ed48caaee1d30a671f3
+Stderr:
+

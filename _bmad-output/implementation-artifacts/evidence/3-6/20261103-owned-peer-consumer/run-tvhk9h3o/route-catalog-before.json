@@ -1,0 +1,221 @@
+{
+  "phase": "before",
+  "schema_version": 3,
+  "generation": 1,
+  "root_digest": "a953b173dcfa5369428c016297d12c76f785b18e19e23a9b62365a4d14cc8a70",
+  "route_ids": [
+    "timesheets-commit-magic-link-issue",
+    "timesheets-commit-magic-link-transition",
+    "timesheets-commit-magic-link-use",
+    "timesheets-commit-time-entry-record",
+    "timesheets-magic-link-confirmation-capabilities",
+    "timesheets-magic-link-token-hash-capability-index",
+    "timesheets-tenant-activity-type-catalog",
+    "timesheets-time-entry-evidence"
+  ],
+  "receivers": {
+    "eventstore": {
+      "host_id": "eventstore",
+      "app_id": "eventstore",
+      "declared_invocations": [
+        {
+          "CallerAppId": "timesheets",
+          "Method": "api/v1/commands/bound/workload",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "timesheets",
+          "Method": "api/v1/commands/workload",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "timesheets",
+          "Method": "api/v1/commands/status/workload/*",
+          "HttpMethods": [
+            "GET"
+          ]
+        },
+        {
+          "CallerAppId": "timesheets",
+          "Method": "api/v1/streams/read/workload",
+          "HttpMethods": [
+            "POST"
+          ]
+        }
+      ],
+      "declaration_route_ids": [
+        "timesheets-commit-magic-link-issue",
+        "timesheets-commit-magic-link-transition",
+        "timesheets-commit-magic-link-use",
+        "timesheets-commit-time-entry-record",
+        "timesheets-magic-link-confirmation-capabilities",
+        "timesheets-magic-link-token-hash-capability-index",
+        "timesheets-tenant-activity-type-catalog",
+        "timesheets-time-entry-evidence"
+      ],
+      "target_route_ids": [],
+      "operation_route_ids": [
+        "timesheets-commit-magic-link-issue",
+        "timesheets-commit-magic-link-transition",
+        "timesheets-commit-magic-link-use",
+        "timesheets-commit-time-entry-record",
+        "timesheets-magic-link-confirmation-capabilities",
+        "timesheets-magic-link-token-hash-capability-index",
+        "timesheets-tenant-activity-type-catalog",
+        "timesheets-time-entry-evidence"
+      ],
+      "admission_route_ids": [
+        "timesheets-commit-magic-link-issue",
+        "timesheets-commit-magic-link-transition",
+        "timesheets-commit-magic-link-use",
+        "timesheets-commit-time-entry-record"
+      ],
+      "executable_owners": null,
+      "serving": true,
+      "epoch": 1
+    },
+    "timesheets": {
+      "host_id": "timesheets",
+      "app_id": "timesheets",
+      "declared_invocations": [
+        {
+          "CallerAppId": "eventstore",
+          "Method": "process",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "eventstore",
+          "Method": "replay-state",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "eventstore",
+          "Method": "query",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "eventstore",
+          "Method": "project/v2",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "eventstore",
+          "Method": "project/rebuild/v1",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "eventstore",
+          "Method": "project/rebuild/shared/v1",
+          "HttpMethods": [
+            "POST"
+          ]
+        },
+        {
+          "CallerAppId": "eventstore",
+          "Method": "admin/operational-index-metadata",
+          "HttpMethods": [
+            "POST"
+          ]
+        }
+      ],
+      "declaration_route_ids": [
+        "timesheets-commit-magic-link-issue",
+        "timesheets-commit-magic-link-transition",
+        "timesheets-commit-magic-link-use",
+        "timesheets-commit-time-entry-record",
+        "timesheets-magic-link-confirmation-capabilities",
+        "timesheets-magic-link-token-hash-capability-index",
+        "timesheets-tenant-activity-type-catalog",
+        "timesheets-time-entry-evidence"
+      ],
+      "target_route_ids": [
+        "timesheets-commit-magic-link-issue",
+        "timesheets-commit-magic-link-transition",
+        "timesheets-commit-magic-link-use",
+        "timesheets-commit-time-entry-record",
+        "timesheets-magic-link-confirmation-capabilities",
+        "timesheets-magic-link-token-hash-capability-index",
+        "timesheets-tenant-activity-type-catalog",
+        "timesheets-time-entry-evidence"
+      ],
+      "operation_route_ids": [
+        "timesheets-commit-magic-link-issue",
+        "timesheets-commit-magic-link-transition",
+        "timesheets-commit-magic-link-use",
+        "timesheets-commit-time-entry-record",
+        "timesheets-magic-link-confirmation-capabilities",
+        "timesheets-magic-link-token-hash-capability-index",
+        "timesheets-tenant-activity-type-catalog",
+        "timesheets-time-entry-evidence"
+      ],
+      "admission_route_ids": [],
+      "executable_owners": {
+        "Dapr.Common, Version=1.0.0.0, Culture=neutral, PublicKeyToken=a686d5d635c0f0e6": "a17129663d6fa08f2d8117343fc6a859a86fc3c60743215633813ebdb0d2bf6f",
+        "Hexalith.EventStore.Client, Version=3.132.2.0, Culture=neutral, PublicKeyToken=null": "ed2a7201f3960100cb76ffe554d33ca96c6cb3d7ba2691004e0ec1b1c3963e68",
+        "Hexalith.EventStore.Contracts, Version=3.132.2.0, Culture=neutral, PublicKeyToken=null": "04633af100c58801a44f81b92823bdf9fe3a3e6c4b50908fa8e54e3cd398d97e",
+        "Hexalith.EventStore.DomainService, Version=3.132.2.0, Culture=neutral, PublicKeyToken=null": "8a55da4d9c035611deffa43d0a2f7fe353e5cc46e7554111cdc8fdb6c84d8672",
+        "Hexalith.Timesheets.Contracts, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null": "c97a7cd4c1389f6fd048b3fcd45a7f2805828113a1251d33c9d5dac9c15b25df",
+        "Hexalith.Timesheets.Projections, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null": "b45a0644815aabba0e77a7e42c9c43d7497ef0c7329ba5e2322b4da93f55d936",
+        "Hexalith.Timesheets.ReadModels, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null": "319342c13103fbf5a0200df6b5d26b32318c9fd30143d593b555408848b17559",
+        "Hexalith.Timesheets.Server, Version=2.0.0.0, Culture=neutral, PublicKeyToken=null": "e76437a8dcb727ccabe98c53f9ace7186e82220134290165ad59537df9214d78",
+        "Microsoft.Extensions.Configuration, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "42266324999bfa3575d71099927c6ce19a6a7fe290885acfbbaab3a663eacb7d",
+        "Microsoft.Extensions.Configuration.Abstractions, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "cf0436bd3fee01dacd00160d92d2c495629346f10f297ea3437a3ca144829c5a",
+        "Microsoft.Extensions.Configuration.Binder, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "65e598a9c1e91fb29ecf921440f5f6f2d9c001e53536d02ab7ac9af051d25b82",
+        "Microsoft.Extensions.DependencyInjection.Abstractions, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "8bc15b2a240737a54c253711054d140db8995055d0209d98f9148e04daec27f4",
+        "Microsoft.Extensions.Http, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "d375a80e2b8ccca66d3843c030e8eb786f142191e3765da9789ff5c4eef987b2",
+        "Microsoft.Extensions.Logging.Abstractions, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "c014eba79da8764b050bee1f1f70db623dd5026e855b5bc7bf463b10913643b2",
+        "Microsoft.Extensions.Options, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "d2ffbe5032ca0192ffd87ea5fed0f025282742c2530e7e0424c7bed5f488a3b7",
+        "Microsoft.Extensions.Options.ConfigurationExtensions, Version=10.0.0.0, Culture=neutral, PublicKeyToken=adb9793829ddae60": "3bfcf85ed7371f33aa3eae236227ec3357b550fad063b1a87b1548662ab9f017",
+        "Microsoft.Extensions.Telemetry.Abstractions, Version=10.11.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35": "57af8ce079eb3bcec63fd176f1034012f8199c44d38f10168438cc78364a9030",
+        "System.Collections, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "db3059eca80ea3e42a09d7a9ac5ab9769b1897ee671b954aca403e06f6ea1c11",
+        "System.ComponentModel, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "5f3001f276c9c8f9e8a7f0fc85fac66ffddfe16e1ae1f496bb4e2083527f928a",
+        "System.Diagnostics.DiagnosticSource, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51": "8ed6e3480e56950bbd3e2d38f87e2e080d5640b8501c5ca5cc5967979baaad8e",
+        "System.Linq, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "4879905671860d2038ac2b52f2e81eabd917719a186cc00f7abaca6b1dd8bd0b",
+        "System.Memory, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51": "749db3af71950e1549660bfa81c1e1a8f2858b81b6aedae7789a01b2bc740899",
+        "System.Net.Http, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "d5e6a71649c671b1c5ef3cc0e4a459ba5bd6498725bca9a437e9d7c985f32b1a",
+        "System.Runtime, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "839cdd56c557d7845ca950ebdca65d1f159643c400e6a0af9a6d25dd64565602",
+        "System.Runtime.Loader, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "85d7467d043ad6f5b16bd18ede2008b7c2435a651898f73ee7d42500f2cfd09d",
+        "System.Runtime.Numerics, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "036ff16ac5b1b8c811f957d8e831aa95cd680944dad479f2dc42f344835d5a5e",
+        "System.Security.Cryptography, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a": "db81d873a163907c95fc75d77f7209fa48dbe9effa30f9b7662f5f495b511ef8",
+        "System.Text.Json, Version=10.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51": "407fed3d662b4a6dbdc27e722ba61014f4be350059115fe9213af8570c884973"
+      },
+      "serving": true,
+      "epoch": 1
+    }
+  },
+  "authority_component": "timesheets-route-authority",
+  "technical_receiver_app_ids": [
+    "eventstore"
+  ],
+  "technical_action_count": 33,
+  "metadata_receiver": {
+    "endpoint_count": 1,
+    "finite_profile_matches": true,
+    "post_method_matches": true,
+    "canonical_policy_present": true,
+    "canonical_operation_matches": true,
+    "policy_count": 1,
+    "admitted": true,
+    "anonymous": false,
+    "patterned": false,
+    "domain_sdk_code_matches": true,
+    "domain_sdk_sha256": "8a55da4d9c035611deffa43d0a2f7fe353e5cc46e7554111cdc8fdb6c84d8672"
+  },
+  "activation_binding_digest": "c11c7f1b67746eff164edd390d470d6125979383f3d3f74cbca7efd013a4d3f3",
+  "sdk_binding_verified": true,
+  "complete": true
+}

@@ -1,0 +1,4 @@
+isolated fixture mode: actor/read-model/pubsub Redis and private placement/scheduler
+Actual catalog sidecar processes are unavailable
+Owned cleanup or evidence is incomplete; see available fixture diagnostics
+Sanitized fixture evidence: /home/administrator/projects/hexalith/timesheets/_bmad-output/implementation-artifacts/evidence/3-6/20261103-owned-peer-consumer/run-9g26dgfh

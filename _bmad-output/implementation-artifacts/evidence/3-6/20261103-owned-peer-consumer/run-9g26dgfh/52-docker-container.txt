@@ -1,0 +1,6 @@
+Command: docker container ls --all --filter name=^/timesheets-live-dapr-d88c77db62514d70b821cdf61dc116bd-redis$ --format {{.ID}}
+Exit: 0
+Stdout:
+
+Stderr:
+

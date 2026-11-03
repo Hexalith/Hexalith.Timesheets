@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "README.md": "56506adc0c2e8ea728dcddb21f6cf14389cf6ebc0c6d7ff6dfefdaa8896eebcd",
+    "consumer/run-3oilg6ys/admission.json": "fecf63f49102dc7cede5218b0d1239c64560942cf1776eb22b9c16014f34a2ed",
+    "consumer/run-3oilg6ys/cleanup.json": "aaca30447f85981af4053492f9869349d1e11587aee4491e16156d9bf24366ad",
+    "python-fixture.txt": "da6dcefabc500f78521fe9f4f412f8a1b9acb9bbf2e155db3b3aa19156681d09",
+    "results.json": "cd99d84bf0509686123ce0cf6082b62a8d2b3f568db344732318841abc3151e0",
+    "source-ids.json": "282d0defb0473c5612396bcdc67cbf116fc0a91a8667e312c8d4122bde6fa4e3",
+    "supported-runner.txt": "b4c05cdaaa8a9d065c13c885a0ed3adf1bae10be2fb00a6c89e57b0fb0d155fc"
+  }
+}

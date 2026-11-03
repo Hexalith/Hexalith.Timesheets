@@ -1,0 +1,20 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.14)
+  Discovering: Hexalith.EventStore.Server.LiveSidecar.Tests
+  Discovered:  Hexalith.EventStore.Server.LiveSidecar.Tests
+  Starting:    Hexalith.EventStore.Server.LiveSidecar.Tests
+    Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart [FAIL]
+      Dapr.DaprApiException : error invoke actor method: failed to lookup actor: api error: code = FailedPrecondition desc = did not find address for actor 'DevelopmentTransportActor/1330dead430a4598ab00f47cd7e7de1d'
+      Stack Trace:
+           at Dapr.Actors.DaprHttpInteractor.SendAsyncHandleUnsuccessfulResponse(Func`1 requestFunc, String relativeUri, CancellationToken cancellationToken)
+           at Dapr.Actors.DaprHttpInteractor.SendAsync(Func`1 requestFunc, String relativeUri, CancellationToken cancellationToken)
+           at Dapr.Actors.DaprHttpInteractor.InvokeActorMethodWithRemotingAsync(ActorMessageSerializersManager serializersManager, IActorRequestMessage remotingRequestRequestMessage, CancellationToken cancellationToken)
+           at Dapr.Actors.Communication.Client.ActorRemotingClient.InvokeAsync(IActorRequestMessage remotingRequestMessage, CancellationToken cancellationToken)
+           at Dapr.Actors.Client.ActorProxy.InvokeMethodAsync(Int32 interfaceId, Int32 methodId, String methodName, IActorRequestMessageBody requestMsgBodyValue, CancellationToken cancellationToken)
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(93,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(133,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(138,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(138,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+        --- End of stack trace from previous location ---
+  Finished:    Hexalith.EventStore.Server.LiveSidecar.Tests (ID = '4f3ab606a68fce6076960a3847952a4d84dde29019eb4cf654bad0b38b967949')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.EventStore.Server.LiveSidecar.Tests  Total: 1, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 10.452s

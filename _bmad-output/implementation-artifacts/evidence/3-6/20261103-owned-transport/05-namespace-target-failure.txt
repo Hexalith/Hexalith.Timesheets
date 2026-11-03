@@ -1,0 +1,28 @@
+xUnit.net v3 In-Process Runner v4.0.2+0c7aa4991f (64-bit .NET 10.0.14)
+  Discovering: Hexalith.EventStore.Server.LiveSidecar.Tests
+  Discovered:  Hexalith.EventStore.Server.LiveSidecar.Tests
+  Starting:    Hexalith.EventStore.Server.LiveSidecar.Tests
+    Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart [FAIL]
+      Shouldly.ShouldAssertException : denied.StatusCode
+          should be
+      HttpStatusCode.Forbidden
+          but was
+      HttpStatusCode.InternalServerError
+      Stack Trace:
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(108,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(141,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(146,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+        tests/Hexalith.EventStore.Server.LiveSidecar.Tests/Integration/RouteCatalogHostedLiveTests.Transport.cs(146,0): at Hexalith.EventStore.Server.LiveSidecar.Tests.Integration.RouteCatalogHostedLiveTests.PublicDevelopmentTransportAuthenticatesPeersAndPersistsActorsAcrossNativeRestart()
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+        --- End of stack trace from previous location ---
+           at System.Runtime.ExceptionServices.ExceptionDispatchInfo.Throw()
+           at System.Runtime.CompilerServices.TaskAwaiter.ThrowForNonSuccess(Task task)
+           at System.Runtime.CompilerServices.TaskAwaiter.HandleNonSuccessAndDebuggerNotification(Task task, ConfigureAwaitOptions options)
+  Finished:    Hexalith.EventStore.Server.LiveSidecar.Tests (ID = '4f3ab606a68fce6076960a3847952a4d84dde29019eb4cf654bad0b38b967949')
+=== TEST EXECUTION SUMMARY ===
+   Hexalith.EventStore.Server.LiveSidecar.Tests  Total: 1, Errors: 0, Failed: 1, Skipped: 0, Not Run: 0, Time: 8.322s

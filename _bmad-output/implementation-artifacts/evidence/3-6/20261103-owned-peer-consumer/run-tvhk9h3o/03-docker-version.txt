@@ -1,0 +1,6 @@
+Command: docker version --format {{.Server.Version}}
+Exit: 0
+Stdout:
+29.8.2
+Stderr:
+
