@@ -5686,6 +5686,82 @@ sys.stdin.read()
         self.assertNotIn("PRIVATE", receipt)
         self.assertNotIn("PRIVATE", "".join(traceback.format_exception(failure.exception)))
 
+    def test_scheduler_duplicate_json_names_refuse_before_fingerprinting(self):
+        header = b'"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}'
+        row = b'{"key":"UFJJVkFURS1rZXk=","value":"UFJJVkFURS12YWx1ZQ==","create_revision":"1","mod_revision":"3","version":"1"}'
+        cases = {
+            "range": b'{' + header + b',"kvs":[' + row + b'],"count":"1","kvs":[],"count":"0"}',
+            "count": b'{' + header + b',"kvs":[' + row + b'],"count":"0","count":"1"}',
+            "header": b'{' + header + b',' + header + b'}',
+            "identity": b'{' + header.replace(b'"cluster_id":"1"', b'"cluster_id":"9","cluster_id":"1"') + b'}',
+            "row": b'{' + header + b',"kvs":[' + row.replace(b'"version":"1"', b'"version":"2","version":"1"') + b'],"count":"1"}',
+            "escaped": b'{' + header + b',"kvs":[' + row + b'],"k\\u0076s":[],"count":"0"}',
+            "private_name": b'{' + header + b',"PRIVATE-name":1,"PRIVATE-name":2}',
+        }
+        previous_handlers = {kind: signal.getsignal(kind) for kind in (signal.SIGALRM, signal.SIGINT, signal.SIGTERM)}
+        previous_mask = signal.pthread_sigmask(signal.SIG_BLOCK, set())
+        for name, body in cases.items():
+            with self.subTest(name=name):
+                response = io.BytesIO(body)
+                instance = fixture.IsolatedFixture(log_directory=self.logs)
+                with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                        patch.object(fixture, "owned_http_open", return_value=response) as opener, \
+                        patch.object(fixture, "scheduler_fingerprint", wraps=fixture.scheduler_fingerprint) as fingerprint, \
+                        self.assertRaises(fixture.SharedObservationError) as failure:
+                    instance.capture_shared_snapshot()
+                fingerprint.assert_not_called()
+                opener.assert_called_once()
+                self.assertTrue(response.closed)
+                self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+                self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
+                self.assertEqual(previous_mask, signal.pthread_sigmask(signal.SIG_BLOCK, set()))
+                for kind, handler in previous_handlers.items():
+                    self.assertIs(handler, signal.getsignal(kind))
+
+    def test_scheduler_duplicate_names_over_http_refuse_but_distinct_objects_remain_valid(self):
+        header = b'"header":{"cluster_id":"1","member_id":"2","revision":"3","raft_term":"1"}'
+        row = b'{"key":"UFJJVkFURS1rZXk=","value":"UFJJVkFURS12YWx1ZQ==","create_revision":"1","mod_revision":"3","version":"1"}'
+        second_row = row.replace(b'UFJJVkFURS1rZXk=', b'UFJJVkFURS10d28=')
+        valid = b'{' + header + b',"kvs":[' + row + b',' + second_row + b'],"count":"2"}'
+        reordered = json.dumps(json.loads(valid), sort_keys=True, indent=2).encode()
+        prefix = valid.replace(b',"count":"2"', b'')[:-1]
+        cases = {
+            "range": (prefix + b',"kvs":[],"count":"0"}', None),
+            "escaped_alias": (prefix + b',"k\\u0076s":[],"count":"0"}', None),
+            "header": (valid.replace(b'"cluster_id":"1"', b'"cluster_id":"9","cluster_id":"1"'), None),
+            "row": (valid.replace(b'"version":"1"', b'"version":"2","version":"1"', 1), None),
+            "valid": (valid, 2),
+            "reordered": (reordered, 2),
+            "unique_escaped": (valid.replace(b'"kvs"', b'"k\\u0076s"'), 2),
+        }
+        for framing in ("length", "close", "chunked"):
+            for name, (body, expected_keys) in cases.items():
+                with self.subTest(framing=framing, name=name):
+
+                    def respond(handler):
+                        handler.send_response(200)
+                        if framing == "length":
+                            handler.send_header("Content-Length", str(len(body)))
+                        elif framing == "chunked":
+                            handler.send_header("Transfer-Encoding", "chunked")
+                        handler.end_headers()
+                        handler.wfile.write((f"{len(body):x}\r\n".encode() + body + b"\r\n0\r\n\r\n")
+                                            if framing == "chunked" else body)
+
+                    instance = fixture.IsolatedFixture(log_directory=self.logs)
+                    with self.owned_http_server(respond) as origin, self.scheduler_loopback_transport(origin):
+                        if expected_keys is None:
+                            with self.assertRaises(fixture.SharedObservationError) as failure:
+                                instance.capture_shared_snapshot()
+                            self.assert_scheduler_refusal(instance, failure.exception, "FixtureError")
+                        else:
+                            snapshot = instance.capture_shared_snapshot()
+                            self.assertEqual({"revision": "3", "keys": 2}, snapshot["scheduler"])
+                            expected = fixture.SharedSnapshot(instance.shared_comparison)
+                            fixture.scheduler_fingerprint(json.loads(reordered), expected)
+                            self.assertEqual(expected.scheduler_identity, snapshot.scheduler_identity)
+                            self.assertEqual(expected.scheduler_content, snapshot.scheduler_content)
+
     def test_scheduler_parser_resource_and_interrupt_refusals_close_responses_and_restore_deadline(self):
         header = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
         nested = b'{"PRIVATE":' + b'[' * 100000 + b'0' + b']' * 100000 + b'}'
@@ -6138,8 +6214,8 @@ sys.stdin.read()
                 with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
                         patch.object(fixture, "owned_http_open", side_effect=lambda *_args, **_kwargs:
                                      delayed(response) if phase == "connection" else response), \
-                        patch.object(fixture.json, "loads", side_effect=lambda *args:
-                                     delayed(original_loads(*args)) if phase == "parse" else original_loads(*args)), \
+                        patch.object(fixture.json, "loads", side_effect=lambda *args, **kwargs:
+                                     delayed(original_loads(*args, **kwargs)) if phase == "parse" else original_loads(*args, **kwargs)), \
                         patch.object(fixture, "scheduler_fingerprint", side_effect=lambda *args:
                                      delayed(original_fingerprint(*args)) if phase == "fingerprint" else original_fingerprint(*args)), \
                         patch.object(fixture, "SCHEDULER_OBSERVATION_DEADLINE_SECONDS", 0.1):

@@ -1,0 +1,21 @@
+{
+  "command": [
+    "/usr/bin/python3",
+    "-c",
+    "import pathlib, subprocess, sys, unittest\nsys.path.insert(0, 'scripts')\nimport test_isolated_magic_link_dapr as tests\nsource = subprocess.check_output(['git', 'show', 'd91d22e3409858d7c156428c55fdb05a5b8f15a0:scripts/run_isolated_magic_link_dapr.py'])\nexec(compile(source, str(pathlib.Path(tests.fixture.__file__).resolve()), 'exec'), tests.fixture.__dict__)\nsuite = unittest.TestSuite([tests.IsolatedFixtureTests('test_scheduler_duplicate_json_names_refuse_before_fingerprinting')])\nresult = unittest.TextTestRunner(verbosity=2).run(suite)\nsys.exit(not result.wasSuccessful())\n"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "started_at": "2026-11-04T04:43:22.715904+00:00",
+  "runner_revision": "d91d22e3409858d7c156428c55fdb05a5b8f15a0",
+  "runner_sha256": "61b3545af43c660a54d05f9a03761235887df5d5147612231cfaf818b76ae4ac",
+  "test_sha256_before": "93dee9c82745f8bf4926aff39b69fc5fcb83e82d15d8307e27af04ae43dfae43",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "expected_exit_code": 1,
+  "exit_code": 1,
+  "elapsed_seconds": 0.11703348899027333,
+  "completed_at": "2026-11-04T04:43:22.832927+00:00",
+  "test_sha256_after": "93dee9c82745f8bf4926aff39b69fc5fcb83e82d15d8307e27af04ae43dfae43",
+  "output_sha256": "616720480e9cc50cf427bc32e3411423c87bb34d73f735865c5c5d967fe4529e",
+  "source_hashes_match": true,
+  "compressed_output_sha256": "04a20bee2c0e9464fe98b680bfe31032510c8c05cee731696abf0ae2f4ca1aa2"
+}

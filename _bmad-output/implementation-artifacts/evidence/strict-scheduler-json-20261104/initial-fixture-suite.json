@@ -1,0 +1,27 @@
+{
+  "command": [
+    "/usr/bin/python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "scripts",
+    "-p",
+    "test_isolated_magic_link_dapr.py",
+    "-v"
+  ],
+  "cwd": "/home/administrator/projects/hexalith/timesheets",
+  "python": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+  "implementation": "CPython",
+  "started_at": "2026-11-04T04:33:55.979545+00:00",
+  "source_sha256": {
+    "scripts/run_isolated_magic_link_dapr.py": "0d4fd7557cee2468184a26abcb00e8e00bb7fe0b96a3275ee356c35dbb918f35",
+    "scripts/test_isolated_magic_link_dapr.py": "2f504cf806e3b227fb7709bd49d0a0fbe2c571fa7568d39d21335ff7826bc52d"
+  },
+  "exit_code": 1,
+  "elapsed_seconds": 60.71185276799952,
+  "completed_at": "2026-11-04T04:34:56.690044+00:00",
+  "output_sha256": "248b88514f9fc86ef33a36bf35c4a5ee1ada2a2089d53c78931ba84adc1c1787",
+  "compressed_output_sha256": "f73acddd0d302296d2686fb160709cf98b5a4cb2f94fb7c3fe06c657aaf6ce8c",
+  "output_digests_observed_at": "2026-11-04T04:42:03.861299+00:00"
+}

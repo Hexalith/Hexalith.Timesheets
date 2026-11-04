@@ -1729,8 +1729,16 @@ return {{finished, rows}}
                         raise
                 with response as scheduler_response:
                     body = read_bounded_scheduler_body(scheduler_response)
+
+                    def unique_scheduler_pairs(pairs):
+                        values = {}
+                        for name, value in pairs:
+                            require(name not in values, "Scheduler preservation range contains duplicate JSON names")
+                            values[name] = value
+                        return values
+
                     try:
-                        scheduler = json.loads(body)
+                        scheduler = json.loads(body, object_pairs_hook=unique_scheduler_pairs)
                     except ValueError:
                         raise FixtureError("Scheduler preservation range did not return valid JSON") from None
             finally:
