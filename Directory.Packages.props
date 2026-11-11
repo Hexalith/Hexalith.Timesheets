@@ -9,20 +9,7 @@
   <Import Project="$(Hexalith1BuildPackageProps)" Condition="Exists('$(Hexalith1BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith2BuildPackageProps)" Condition="Exists('$(Hexalith2BuildPackageProps)') And '$(HexalithVersionsLoaded)' != 'true'" />
   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
-  <!-- Keep consumer dependency floors aligned with the published EventStore graph. -->
-  <ItemGroup>
-    <PackageVersion Update="Aspire.Hosting" Version="13.6.4" />
-    <PackageVersion Update="Aspire.Hosting.Keycloak" Version="13.6.4-preview.1.26523.11" />
-    <PackageVersion Update="Aspire.Hosting.Redis" Version="13.6.4" />
-    <PackageVersion Update="Aspire.Hosting.Testing" Version="13.6.4" />
-    <PackageVersion Update="ModelContextProtocol" Version="2.3.0" />
-    <PackageVersion Update="OpenTelemetry" Version="1.20.1" />
-    <PackageVersion Update="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.20.1" />
-    <PackageVersion Update="OpenTelemetry.Extensions.Hosting" Version="1.20.1" />
-    <PackageVersion Update="OpenTelemetry.Instrumentation.AspNetCore" Version="1.20.1" />
-    <PackageVersion Update="OpenTelemetry.Instrumentation.Http" Version="1.20.1" />
-    <PackageVersion Update="OpenTelemetry.Instrumentation.Runtime" Version="1.20.1" />
-  </ItemGroup>
+  <!-- Compatible dependency versions are supplied by the current shared Builds catalog. -->
   <!-- Older standalone Builds catalogs omit this consumer contract. Supply its
        published 1.0.2 pin only when the imported catalog has no exact entry. -->
   <ItemGroup>

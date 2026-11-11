@@ -5764,17 +5764,17 @@ sys.stdin.read()
 
     def test_scheduler_parser_resource_and_interrupt_refusals_close_responses_and_restore_deadline(self):
         header = {"header": {"cluster_id": "1", "member_id": "2", "revision": "3", "raft_term": "1"}}
-        nested = b'{"PRIVATE":' + b'[' * 100000 + b'0' + b']' * 100000 + b'}'
         previous_handler = signal.getsignal(signal.SIGALRM)
         for mode in ("depth", "memory", "interrupt"):
             with self.subTest(mode=mode):
-                response = io.BytesIO(nested if mode == "depth" else json.dumps(header).encode())
+                response = io.BytesIO(json.dumps(header).encode())
                 instance = fixture.IsolatedFixture(log_directory=self.logs)
-                original_loads = fixture.json.loads
-                error = MemoryError("PRIVATE parser detail") if mode == "memory" else KeyboardInterrupt()
+                error = {"depth": RecursionError("PRIVATE parser detail"),
+                         "memory": MemoryError("PRIVATE parser detail"),
+                         "interrupt": KeyboardInterrupt()}[mode]
                 with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
                         patch.object(fixture, "owned_http_open", return_value=response), \
-                        patch.object(fixture.json, "loads", side_effect=original_loads if mode == "depth" else error), \
+                        patch.object(fixture.json, "loads", side_effect=error), \
                         self.assertRaises(KeyboardInterrupt if mode == "interrupt" else fixture.SharedObservationError) as failure:
                     instance.capture_shared_snapshot()
                 self.assertTrue(response.closed)
@@ -5784,6 +5784,28 @@ sys.stdin.read()
                     self.assertIs(error, failure.exception)
                 self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
                 self.assertIs(previous_handler, signal.getsignal(signal.SIGALRM))
+
+    def test_scheduler_real_nested_json_refuses_with_the_interpreter_parser_category(self):
+        nested = b'{"PRIVATE":' + b'[' * 100000 + b'0' + b']' * 100000 + b'}'
+        # Python versions can report the nesting limit as RecursionError or ValueError.
+        # Keep the real hostile input alongside the deterministic resource-failure injections.
+        try:
+            json.loads(nested)
+        except RecursionError:
+            category = "RecursionError"
+        except ValueError:
+            category = "FixtureError"
+        else:
+            self.fail("The interpreter must reject the excessive JSON nesting")
+        response = io.BytesIO(nested)
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
+                patch.object(fixture, "owned_http_open", return_value=response), \
+                self.assertRaises(fixture.SharedObservationError) as failure:
+            instance.capture_shared_snapshot()
+        self.assertTrue(response.closed)
+        self.assert_scheduler_refusal(instance, failure.exception, category)
+        self.assertEqual((0.0, 0.0), signal.getitimer(signal.ITIMER_REAL))
 
     def test_scheduler_declared_oversize_and_ambiguous_framing_refuse_before_body_read(self):
         limit = fixture.SCHEDULER_OBSERVATION_MAX_BYTES
