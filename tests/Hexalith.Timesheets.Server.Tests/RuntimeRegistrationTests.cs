@@ -93,7 +93,7 @@ public sealed class RuntimeRegistrationTests
     [InlineData("MaxPayloadBytes", "134217729")]
     [InlineData("Timeout", "00:00:00")]
     [InlineData("Timeout", "00:00:31")]
-    public void StateLoadingOptionsBindAndRejectUnboundedValues(string key, string value)
+    public async Task StateLoadingOptionsBindAndRejectUnboundedValues(string key, string value)
     {
         var values = new Dictionary<string, string?>
         {
@@ -107,22 +107,22 @@ public sealed class RuntimeRegistrationTests
             .AddTimesheetsServerKernel().BuildServiceProvider();
         using (ServiceProvider valid = Provider())
         {
-            valid.GetRequiredService<IStartupValidator>().Validate();
+            await valid.GetRequiredService<IAsyncStartupValidator>().ValidateAsync(TestContext.Current.CancellationToken);
             MagicLinkStateLoadingOptions options = valid.GetRequiredService<IOptions<MagicLinkStateLoadingOptions>>().Value;
             options.MaxPages.ShouldBe(256); options.MaxEvents.ShouldBe(100000);
             options.MaxPayloadBytes.ShouldBe(134217728); options.Timeout.ShouldBe(TimeSpan.FromSeconds(30));
         }
         values["Timesheets:MagicLinks:StateLoading:" + key] = value;
         using ServiceProvider invalid = Provider();
-        Should.Throw<OptionsValidationException>(() => invalid.GetRequiredService<IStartupValidator>().Validate());
+        await Should.ThrowAsync<OptionsValidationException>(() => invalid.GetRequiredService<IAsyncStartupValidator>().ValidateAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
-    public void PollingOptionsBindFromConfigurationAndInvalidValuesFailStartupValidation()
+    public async Task PollingOptionsBindFromConfigurationAndInvalidValuesFailStartupValidation()
     {
         using (ServiceProvider valid = BuildPollingProvider("00:00:02", "00:00:00.025"))
         {
-            valid.GetRequiredService<IStartupValidator>().Validate();
+            await valid.GetRequiredService<IAsyncStartupValidator>().ValidateAsync(TestContext.Current.CancellationToken);
             MagicLinkSubmissionPollingOptions options = valid
                 .GetRequiredService<IOptions<MagicLinkSubmissionPollingOptions>>().Value;
             options.Timeout.ShouldBe(TimeSpan.FromSeconds(2));
@@ -131,9 +131,9 @@ public sealed class RuntimeRegistrationTests
         }
 
         using ServiceProvider invalid = BuildPollingProvider("00:00:02", "00:00:00.001");
-        Should.Throw<OptionsValidationException>(() => invalid.GetRequiredService<IStartupValidator>().Validate());
+        await Should.ThrowAsync<OptionsValidationException>(() => invalid.GetRequiredService<IAsyncStartupValidator>().ValidateAsync(TestContext.Current.CancellationToken));
         using ServiceProvider invalidReadback = BuildPollingProvider("00:00:02", "00:00:00.025", "00:00:00");
-        Should.Throw<OptionsValidationException>(() => invalidReadback.GetRequiredService<IStartupValidator>().Validate());
+        await Should.ThrowAsync<OptionsValidationException>(() => invalidReadback.GetRequiredService<IAsyncStartupValidator>().ValidateAsync(TestContext.Current.CancellationToken));
     }
 
     private static ServiceProvider BuildPollingProvider(string timeout, string interval, string readback = "00:00:00.075")

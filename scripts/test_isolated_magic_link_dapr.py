@@ -5787,8 +5787,9 @@ sys.stdin.read()
 
     def test_scheduler_real_nested_json_refuses_with_the_interpreter_parser_category(self):
         nested = b'{"PRIVATE":' + b'[' * 100000 + b'0' + b']' * 100000 + b'}'
-        # Python versions can report the nesting limit as RecursionError or ValueError.
-        # Keep the real hostile input alongside the deterministic resource-failure injections.
+        # Recursive parsers report their limit; iterative parsers can accept this input.
+        # The scheduler shape guard must still refuse it, alongside the deterministic
+        # parser resource-failure injections exercised above.
         try:
             json.loads(nested)
         except RecursionError:
@@ -5796,7 +5797,7 @@ sys.stdin.read()
         except ValueError:
             category = "FixtureError"
         else:
-            self.fail("The interpreter must reject the excessive JSON nesting")
+            category = "FixtureError"
         response = io.BytesIO(nested)
         instance = fixture.IsolatedFixture(log_directory=self.logs)
         with patch.object(fixture.socket, "create_connection", return_value=RedisSnapshotConnection({0: [], 13: [], 14: []})), \
