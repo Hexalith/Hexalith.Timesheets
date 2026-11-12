@@ -9,7 +9,7 @@ namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 
 public sealed class ScaffoldGovernanceTests
 {
-    private const string ApprovedAspireAppHostSdkVersion = "13.6.4";
+    private const string ApprovedAspireAppHostSdkVersion = "13.6.5";
 
     private static readonly Regex AspireDiagnosticCode = new(
         @"\bASPIRE[A-Z]*\d{3}\b",
@@ -146,7 +146,7 @@ public sealed class ScaffoldGovernanceTests
         using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
         JsonElement sdk = globalJson.RootElement.GetProperty("sdk");
 
-        sdk.GetProperty("version").GetString().ShouldBe("10.0.403");
+        sdk.GetProperty("version").GetString().ShouldBe("11.0.100");
         sdk.GetProperty("rollForward").GetString().ShouldBe("latestPatch");
     }
 

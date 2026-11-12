@@ -54,24 +54,53 @@ internal static class InternalSurfaceConfigurationSyntax
             }
             VariableDeclaratorSyntax[] resources = root.DescendantNodes().OfType<VariableDeclaratorSyntax>()
                 .Where(static variable => variable.Identifier.ValueText == "timesheets").ToArray();
-            ExpressionSyntax? chain = resources.Length == 1 ? resources[0].Initializer?.Value : null;
-            bool projectFound = false;
+            ExpressionSyntax expectedProject = SyntaxFactory.ParseExpression("""
+                catalogEnabled
+                    ? builder.AddProject("timesheets", new Projects.Hexalith_Timesheets().ProjectPath)
+                    : builder.AddProject<Projects.Hexalith_Timesheets>("timesheets")
+                """);
+            if (resources.Length != 1 || resources[0].Initializer?.Value is not ExpressionSyntax project
+                || !SyntaxFactory.AreEquivalent(project, expectedProject))
+            {
+                failures.Add("The checked Timesheets project declaration must use the supported catalog selection.");
+            }
+
+            // The production declaration selects the project path before configuring the same
+            // resource in one discard assignment in the declaration's block. Do not follow aliases,
+            // nested control flow, or other receivers.
+            static ExpressionSyntax Receiver(ExpressionSyntax expression)
+            {
+                while (expression is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax member })
+                {
+                    expression = member.Expression;
+                }
+                return expression;
+            }
+            BlockSyntax? resourceBlock = resources.Length == 1
+                ? resources[0].Ancestors().OfType<LocalDeclarationStatementSyntax>().FirstOrDefault()?.Parent as BlockSyntax
+                : null;
+            ExpressionSyntax[] configurations = (resourceBlock?.Statements.OfType<ExpressionStatementSyntax>() ?? [])
+                .Select(static statement => statement.Expression is AssignmentExpressionSyntax
+                    { Left: IdentifierNameSyntax { Identifier.ValueText: "_" } } assignment
+                        ? assignment.Right : null)
+                .OfType<ExpressionSyntax>()
+                .Where(expression => Receiver(expression) is IdentifierNameSyntax { Identifier.ValueText: "timesheets" })
+                .ToArray();
+            ExpressionSyntax? chain = configurations.Length == 1 ? configurations[0] : null;
             while (chain is InvocationExpressionSyntax call && call.Expression is MemberAccessExpressionSyntax member)
             {
                 timesheetsCalls.Add(call);
                 string method = member.Name.Identifier.ValueText;
-                if (method == "AddProject")
-                {
-                    projectFound = true;
-                    break;
-                }
                 if (method is not ("WithHttpEndpoint" or "WithEnvironment" or "WithArgs"))
                 {
                     failures.Add("The checked Timesheets configuration chain contains an unsupported call.");
                 }
                 chain = member.Expression;
             }
-            if (!projectFound) failures.Add("The checked Timesheets project chain is missing.");
+            if (chain is not IdentifierNameSyntax { Identifier.ValueText: "timesheets" })
+            {
+                failures.Add("Exactly one checked Timesheets configuration chain is required.");
+            }
         }
 
         if (root.DescendantTokens().Any(static token => token.IsKind(SyntaxKind.IdentifierToken)

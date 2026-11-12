@@ -11,6 +11,31 @@ public sealed class InternalSurfaceConfigurationSyntaxTests
     }
 
     [Theory]
+    [InlineData("catalogEnabled\n    ? builder.AddProject", "fixtureEnabled\n    ? builder.AddProject")]
+    [InlineData("new Projects.Hexalith_Timesheets().ProjectPath", "new Projects.Foreign().ProjectPath")]
+    [InlineData("builder.AddProject<Projects.Hexalith_Timesheets>(\"timesheets\")", "builder.AddProject<Projects.Foreign>(\"timesheets\")")]
+    [InlineData("builder.AddProject(\"timesheets\",", "builder.AddProject(\"foreign\",")]
+    [InlineData("_ = timesheets\n    .WithHttpEndpoint", "_ = eventStore\n    .WithHttpEndpoint")]
+    public void ProjectSelectionAndConfigurationReceiverRemainBounded(string original, string replacement)
+    {
+        string appHost = AppHost();
+        appHost.ShouldContain(original);
+        InternalSurfaceConfigurationSyntax.Validate(
+            appHost.Replace(original, replacement, StringComparison.Ordinal), Host()).ShouldNotBeEmpty();
+    }
+
+    [Fact]
+    public void AdditionalResourceConfigurationInTheDeclarationBlockIsRejected()
+    {
+        string appHost = AppHost();
+        int start = appHost.IndexOf("_ = timesheets\n    .WithHttpEndpoint", StringComparison.Ordinal);
+        start.ShouldBeGreaterThan(0);
+        appHost = appHost.Insert(appHost.IndexOf(';', start) + 1,
+            "\n_ = timesheets.WithHttpEndpoint(name: \"extra\", port: 8090);\n");
+        InternalSurfaceConfigurationSyntax.Validate(appHost, Host()).ShouldNotBeEmpty();
+    }
+
+    [Theory]
     [InlineData(""".WithArgs("--Timesheets:InternalSurface:Port=8080")""")]
     [InlineData(""".WithArgs("--Timesheets:Internal\u0053urface:Port=8080")""")]
     [InlineData(""".WithArgs("--Timesheets:Internal" + "Surface:Port=8080")""")]
@@ -84,7 +109,7 @@ public sealed class InternalSurfaceConfigurationSyntaxTests
                 context.EnvironmentVariables[string.Concat("Timesheets__Internal", "Surface__Port")] = "8080"));
             """;
         string appHost = AppHost();
-        int start = appHost.IndexOf(".AddProject<Projects.Hexalith_Timesheets>", StringComparison.Ordinal);
+        int start = appHost.IndexOf("_ = timesheets\n    .WithHttpEndpoint", StringComparison.Ordinal);
         appHost = appHost.Insert(appHost.IndexOf(';', start) + 1, "\n" + mutation);
         InternalSurfaceConfigurationSyntax.Validate(appHost, Host()).ShouldNotBeEmpty();
     }
@@ -122,7 +147,7 @@ public sealed class InternalSurfaceConfigurationSyntaxTests
     private static string AppendToResource(string mutation)
     {
         string appHost = AppHost();
-        int start = appHost.IndexOf(".AddProject<Projects.Hexalith_Timesheets>", StringComparison.Ordinal);
+        int start = appHost.IndexOf("_ = timesheets\n    .WithHttpEndpoint", StringComparison.Ordinal);
         start.ShouldBeGreaterThan(0);
         return appHost.Insert(appHost.IndexOf(';', start), mutation);
     }

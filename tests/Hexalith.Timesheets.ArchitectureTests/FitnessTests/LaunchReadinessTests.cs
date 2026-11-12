@@ -424,9 +424,10 @@ public sealed class LaunchReadinessTests
         string keycloakVersion = GetPackageVersion(centralCatalog, "Aspire.Hosting.Keycloak");
         string communityToolkitDaprVersion = GetPackageVersion(centralCatalog, "CommunityToolkit.Aspire.Hosting.Dapr");
         string fluentUiVersion = GetPackageVersion(centralCatalog, "Microsoft.FluentUI.AspNetCore.Components");
-        XDocument rootOverrides = XDocument.Load(RepositoryRoot.PathTo("Directory.Packages.props"));
-        string effectiveAspireVersion = GetPackageVersion(rootOverrides, "Aspire.Hosting");
-        string effectiveKeycloakVersion = GetPackageVersion(rootOverrides, "Aspire.Hosting.Keycloak");
+        XDocument rootPackages = XDocument.Load(RepositoryRoot.PathTo("Directory.Packages.props"));
+        rootPackages.Descendants("PackageVersion").Where(element =>
+            (element.Attribute("Include")?.Value ?? element.Attribute("Update")?.Value)
+                is "Aspire.Hosting" or "Aspire.Hosting.Keycloak").ShouldBeEmpty();
 
         // Anchored to the baseline sentence: the approval-evidence sentence also names both versions.
         currentVerdict.ShouldContain(
@@ -474,7 +475,7 @@ public sealed class LaunchReadinessTests
         platform[2].ShouldContain($"SDK `{sdkVersion}`");
         platform[2].ShouldContain($"AppHost SDK `{appHostVersion}`");
         platform[2].ShouldContain($"imported catalog defaults to Aspire.Hosting `{aspireVersion}`");
-        platform[2].ShouldContain($"root overrides select Aspire.Hosting `{effectiveAspireVersion}` and `Aspire.Hosting.Keycloak` `{effectiveKeycloakVersion}`");
+        platform[2].ShouldContain($"root inherits Aspire.Hosting `{aspireVersion}` and `Aspire.Hosting.Keycloak` `{keycloakVersion}`");
         platform[2].ShouldContain($"Dapr family at stable `{daprVersion}`");
         platform[2].ShouldContain($"`Aspire.Hosting.Keycloak` `{keycloakVersion}`");
         platform[2].ShouldContain($"`CommunityToolkit.Aspire.Hosting.Dapr` `{communityToolkitDaprVersion}`");
@@ -491,7 +492,7 @@ public sealed class LaunchReadinessTests
         prerelease[1].ShouldContain($"Keycloak `{keycloakVersion}`");
         prerelease[1].ShouldContain($"CommunityToolkit Aspire Dapr `{communityToolkitDaprVersion}`");
         prerelease[1].ShouldContain($"Fluent UI V5 policy-surface catalog entry is `{fluentUiVersion}`");
-        prerelease[1].ShouldContain($"effective root graph selects Aspire.Hosting `{effectiveAspireVersion}` and Keycloak `{effectiveKeycloakVersion}`");
+        prerelease[1].ShouldContain($"current root graph inherits Aspire.Hosting `{aspireVersion}` and Keycloak `{keycloakVersion}`");
         prerelease[2].ShouldBe("waived");
 
         string[] packageGate = ReadReleaseGateRow(readiness, "Package currency");
