@@ -56,7 +56,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: Hexalith/Hexalith.Builds
-          ref: 544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9
+          ref: 6ad5854aa14a9950e1fbfc32d7e27953a1c4b82b
           path: .hexalith/builds-execution
           persist-credentials: false
       - name: Initialize root-declared submodules
@@ -115,7 +115,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
-          HEXALITH_BUILDS_EXECUTION_SHA: 544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9
+          HEXALITH_BUILDS_EXECUTION_SHA: 6ad5854aa14a9950e1fbfc32d7e27953a1c4b82b
           HEXALITH_RELEASE_ENVIRONMENT: production
           HEXALITH_RELEASE_SOURCE_BRANCH: main
           HEXALITH_RELEASE_SOURCE_CI_WORKFLOW: ci.yml

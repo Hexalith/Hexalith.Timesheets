@@ -11,7 +11,7 @@ from xml.etree import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "tools/release-packages.json"
-BUILDS_SHA = "544fd2e907d62ccdc4b8f24168b8ab5dfcc13eb9"
+BUILDS_SHA = "6ad5854aa14a9950e1fbfc32d7e27953a1c4b82b"
 EXPECTED_IDS = frozenset("Hexalith.Timesheets." + area for area in
                          ("Contracts", "Client", "ReadModels", "Server", "Projections", "Testing"))
 VERSION = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?")
