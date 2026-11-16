@@ -616,15 +616,35 @@ public sealed class MagicLinkTokenHashCapabilityIndexProjectionHandler(
                 throw new SharedProjectionReadUnavailableException(
                     new InvalidOperationException("A legacy single-root index requires a certified full migration."));
             await EnsureNoDirectLegacyIndexAsync(cancellationToken).ConfigureAwait(false);
-            for (int shard = 0; shard < MagicLinkTokenHashCapabilityIndexProjection.ShardCount; shard++)
+            try
             {
-                SharedProjectionReadResult<MagicLinkTokenHashCapabilityIndexReadModel> legacy = await coordinator
-                    .ReadAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
-                        MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard), cancellationToken)
+                // The reserved rebuild journals ordinary writes instead of changing the
+                // active generation. Pin its inventory and retain sequential selected
+                // reads, avoiding two epoch-state reads around every legacy shard.
+                for (int shard = 0; shard < MagicLinkTokenHashCapabilityIndexProjection.ShardCount; shard++)
+                {
+                    ReadModelEntry<MagicLinkTokenHashCapabilityIndexReadModel> legacy = await coordinator
+                        .ReadGenerationAsync<MagicLinkTokenHashCapabilityIndexReadModel>(scope,
+                            status.ActiveGeneration, MagicLinkTokenHashCapabilityIndexProjection.ShardKey(shard),
+                            cancellationToken).ConfigureAwait(false);
+                    if (legacy.Value is not null)
+                        throw new SharedProjectionReadUnavailableException(
+                            new InvalidOperationException("An existing index requires a certified full migration."));
+                }
+
+                SharedProjectionEpochStatus after = await coordinator.GetStatusAsync(scope, cancellationToken)
                     .ConfigureAwait(false);
-                if (!legacy.IsAvailable || legacy.Value is not null)
+                if (!after.IsBuilding || after.IsAborting || after.IsOffboarded
+                    || after.Epoch != status.Epoch || after.ActiveGeneration != status.ActiveGeneration
+                    || !string.Equals(after.OperationId, identity.OperationId, StringComparison.Ordinal))
                     throw new SharedProjectionReadUnavailableException(
-                        new InvalidOperationException("An existing index requires a certified full migration."));
+                        new InvalidOperationException("The reserved index generation changed during legacy inventory."));
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception exception) when (exception is DaprException or IOException or HttpRequestException
+                or TimeoutException or TaskCanceledException)
+            {
+                throw new SharedProjectionReadUnavailableException(exception);
             }
             root = new MagicLinkTokenHashCapabilityIndexTreeRoot(7, 0, null, null);
         }
