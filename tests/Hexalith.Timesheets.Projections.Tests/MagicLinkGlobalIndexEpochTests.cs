@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Projections;
@@ -1156,6 +1157,66 @@ public sealed class MagicLinkGlobalIndexEpochTests
         (await coordinator.ReadAsync<MagicLinkTokenHashCapabilityIndexTreeRoot>(scope,
             MagicLinkTokenHashCapabilityIndexTreeReader.RootKey, TestContext.Current.CancellationToken))
             .Value.ShouldNotBeNull().StorageVersion.ShouldBe(7);
+    }
+
+    /// <summary>Never emits bootstrap writes after the pinned inventory loses its rebuild reservation.</summary>
+    /// <param name="changedField">The concurrent durable reservation change.</param>
+    [Theory]
+    [InlineData("epoch")]
+    [InlineData("activeGeneration")]
+    [InlineData("operationId")]
+    [InlineData("offboardingAuditId")]
+    [InlineData("phase")]
+    public async Task StreamedBootstrapRefusesReservationChangesDuringSelectedInventory(string changedField)
+    {
+        var inner = new InMemoryReadModelStore();
+        var store = new DirectShardObservingReadModelStore(inner);
+        var coordinator = new SharedProjectionEpochCoordinator(store, inner);
+        var handler = new MagicLinkTokenHashCapabilityIndexProjectionHandler(store, epochCoordinator: coordinator);
+        SharedProjectionScope scope = handler.CreateScope("tenant-1");
+        await PrepareBootstrapAttemptAsync(true, handler, coordinator, scope);
+        SharedProjectionEpochStatus before = await coordinator.GetStatusAsync(scope, TestContext.Current.CancellationToken);
+        string epochKey = "shared-epoch:" + scope.ComputeHash();
+        string generationPrefix = "shared-generation:" + scope.ComputeHash() + ":" + before.ActiveGeneration + ":";
+        string lastShard = generationPrefix + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(
+            MagicLinkTokenHashCapabilityIndexProjection.ShardKey(255))));
+        bool changed = false;
+        store.BeforeGet = key =>
+        {
+            if (changed || key != lastShard) return;
+            JsonNode state = JsonNode.Parse(inner.SnapshotRaw(scope.StoreName, epochKey).ShouldNotBeNull())
+                .ShouldNotBeNull();
+            state[changedField] = changedField switch
+            {
+                "epoch" => JsonValue.Create(before.Epoch + 1),
+                "activeGeneration" => JsonValue.Create(before.ActiveGeneration + 1),
+                // Zero is the persisted open phase, after a reservation has ended.
+                "phase" => JsonValue.Create(0),
+                _ => JsonValue.Create("concurrent-reservation-change")
+            };
+            using JsonDocument persisted = JsonDocument.Parse(state.ToJsonString());
+            inner.SeedRaw(scope.StoreName, epochKey, persisted);
+            changed = true;
+        };
+        var identity = new DomainSharedProjectionRebuildIdentity("tenant-1", "timesheets", handler.ProjectionType,
+            "direct-shard-bootstrap", "catalog");
+        var operations = new List<ReadModelBatchOperation>();
+
+        Exception? failure = await Record.ExceptionAsync(async () =>
+        {
+            await foreach (ReadModelBatchOperation operation in handler.StreamFinalizedOperationsAsync(
+                identity, new FixedCursor([]), TestContext.Current.CancellationToken))
+                operations.Add(operation);
+        });
+
+        changed.ShouldBeTrue();
+        failure.ShouldNotBeNull();
+        (failure is InvalidOperationException or SharedProjectionReadUnavailableException).ShouldBeTrue();
+        operations.ShouldBeEmpty();
+        foreach (string logicalKey in new[] { MagicLinkTokenHashCapabilityIndexTreeReader.RootKey,
+                     MagicLinkTokenHashCapabilityIndexTreeReader.FormatKey })
+            inner.SnapshotRaw(scope.StoreName, generationPrefix + Convert.ToHexString(
+                SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(logicalKey)))).ShouldBeNull();
     }
 
     private static async Task PrepareBootstrapAttemptAsync(bool streamed,

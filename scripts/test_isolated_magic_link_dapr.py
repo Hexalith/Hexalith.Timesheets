@@ -7034,6 +7034,50 @@ time.sleep(60)
         self.assertIn("journey progress", log)
         self.assertIn("journey failure details", log)
 
+    def test_process_group_scan_ignores_only_disappearing_processes(self):
+        with patch.object(Path, "iterdir", return_value=iter([Path("/proc/11"), Path("/proc/12")])), \
+                patch.object(Path, "read_text", side_effect=[ProcessLookupError(3, "Process vanished"),
+                                                           "12 (journey) S 1 99 0"]):
+            self.assertEqual([(12, "S")], fixture.process_group_members(99))
+
+    def test_process_group_scan_preserves_permission_and_malformed_stat_refusals(self):
+        for failure in (PermissionError(13, "Permission denied"), OSError(5, "Read failed")):
+            with self.subTest(failure=type(failure).__name__), \
+                    patch.object(Path, "iterdir", return_value=iter([Path("/proc/11")])), \
+                    patch.object(Path, "read_text", side_effect=failure):
+                with self.assertRaises(type(failure)):
+                    fixture.process_group_members(99)
+        with patch.object(Path, "iterdir", return_value=iter([Path("/proc/11")])), \
+                patch.object(Path, "read_text", return_value="11 (journey) S 1 malformed 0"):
+            with self.assertRaises(ValueError):
+                fixture.process_group_members(99)
+
+    def test_vanished_proc_entry_during_timeout_still_kills_and_reaps_descendants(self):
+        arguments, pid_file = self._process_tree_command()
+        instance = fixture.IsolatedFixture(log_directory=self.logs)
+        read_text = Path.read_text
+        injected = False
+
+        def read_with_vanishing_process(path, *args, **kwargs):
+            nonlocal injected
+            if not injected and path.name == "stat" and path.parent.parent == Path("/proc"):
+                injected = True
+                raise ProcessLookupError(3, "Process vanished between enumeration and stat read")
+            return read_text(path, *args, **kwargs)
+
+        with patch.object(Path, "read_text", read_with_vanishing_process):
+            with self.assertRaises(fixture.FixtureError):
+                instance.run_command(arguments, timeout=0.4, journey=True)
+
+        self.assertTrue(injected)
+        self.assertTrue(instance.journey_shutdown_confirmed)
+        pids = [int(value) for value in pid_file.read_text().splitlines()]
+        self.assertEqual(2, len(pids))
+        for pid in pids:
+            self.assertFalse(Path(f"/proc/{pid}").exists())
+            with self.assertRaises(ChildProcessError):
+                os.waitpid(pid, os.WNOHANG)
+
     def test_dapr_loaded_manifest_extensions_and_case_are_all_examined(self):
         expected = Path(self.temporary.name) / "expected"
         fixture.write_components(expected, "127.0.0.1:49152")

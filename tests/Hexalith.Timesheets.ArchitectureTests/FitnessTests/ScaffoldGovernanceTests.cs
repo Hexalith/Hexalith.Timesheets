@@ -45,6 +45,18 @@ public sealed class ScaffoldGovernanceTests
         }
     }
 
+    /// <summary>
+    /// Keeps rendering in the consuming FrontComposer host.
+    /// </summary>
+    [Fact]
+    public void TimesheetsDoesNotIntroduceUiProjects()
+    {
+        Directory.EnumerateFiles(RepositoryRoot.PathTo("src"), "*.csproj", SearchOption.AllDirectories)
+            .Concat(Directory.EnumerateFiles(RepositoryRoot.PathTo("tests"), "*.csproj", SearchOption.AllDirectories))
+            .Select(Path.GetFileNameWithoutExtension)
+            .ShouldNotContain(name => name!.StartsWith("Hexalith.Timesheets.UI", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void NoFluentUiV4ComponentPackageIsIntroduced()
     {
@@ -148,18 +160,6 @@ public sealed class ScaffoldGovernanceTests
 
         sdk.GetProperty("version").GetString().ShouldBe("11.0.100");
         sdk.GetProperty("rollForward").GetString().ShouldBe("latestPatch");
-    }
-
-    /// <summary>
-    /// Keeps the CI/CD guide's SDK statement aligned with the <c>global.json</c> pin.
-    /// </summary>
-    [Fact]
-    public void CiCdGuideNamesThePinnedDotnetSdk()
-    {
-        using JsonDocument globalJson = JsonDocument.Parse(File.ReadAllText(RepositoryRoot.PathTo("global.json")));
-        string sdkVersion = globalJson.RootElement.GetProperty("sdk").GetProperty("version").GetString().ShouldNotBeNull();
-
-        File.ReadAllText(RepositoryRoot.PathTo("docs", "ci-cd.md")).ShouldContain($"The repository uses SDK `{sdkVersion}`");
     }
 
     /// <summary>

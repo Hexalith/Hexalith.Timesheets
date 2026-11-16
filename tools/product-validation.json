@@ -1,0 +1,14 @@
+{
+  "schema": "hexalith.product-validation.v1",
+  "manifest": "tools/release-packages.json",
+  "archiveValidator": "scripts/validate-nuget-packages.py",
+  "targetFramework": "net10.0",
+  "consumers": {
+    "Hexalith.Timesheets.Contracts": "tools/package-consumers/Contracts.cs",
+    "Hexalith.Timesheets.Client": "tools/package-consumers/Client.cs",
+    "Hexalith.Timesheets.ReadModels": "tools/package-consumers/ReadModels.cs",
+    "Hexalith.Timesheets.Server": "tools/package-consumers/Server.cs",
+    "Hexalith.Timesheets.Projections": "tools/package-consumers/Projections.cs",
+    "Hexalith.Timesheets.Testing": "tools/package-consumers/Testing.cs"
+  }
+}

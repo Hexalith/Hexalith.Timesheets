@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
@@ -30,12 +29,25 @@ public sealed class MagicLinkDurableSubmissionService(
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
     private readonly TimeEntryCommentPublicationIssuer _commentIssuer = commentIssuer
         ?? new TimeEntryCommentPublicationIssuer();
+    private readonly TimeProvider _clock = TimeProvider.System;
     private readonly MagicLinkSubmissionPollingOptions _polling = pollingOptions.Value.IsValid()
         ? pollingOptions.Value
         : throw new OptionsValidationException(
             nameof(MagicLinkSubmissionPollingOptions),
             typeof(MagicLinkSubmissionPollingOptions),
             ["Timeout and ReadbackTimeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
+
+    /// <summary>Creates a polling service with an explicit clock for deterministic deadline verification.</summary>
+    internal MagicLinkDurableSubmissionService(
+        IEventStoreGatewayClient gateway,
+        IOptions<MagicLinkSubmissionPollingOptions> pollingOptions,
+        TimeEntryCommentPublicationIssuer? commentIssuer,
+        TimeProvider clock)
+        : this(gateway, pollingOptions, commentIssuer)
+    {
+        ArgumentNullException.ThrowIfNull(clock);
+        _clock = clock;
+    }
 
     /// <summary>
     /// Builds an internal commit intent from the server's resolved capability state.
@@ -92,8 +104,8 @@ public sealed class MagicLinkDurableSubmissionService(
             $"issue\n{intent.Tenant.TenantId}\n{intent.Command.CapabilityId.Value}\n{requestId}");
         try
         {
-            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            deadline.CancelAfter(_polling.Timeout);
+            using CancellationTokenSource timeout = new(_polling.Timeout, _clock);
+            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
             try
             {
                 CommandStatusQueryResponse? status = await SubmitAndObserveStatusAsync(
@@ -126,7 +138,7 @@ public sealed class MagicLinkDurableSubmissionService(
                         // A completed command can become visible in the stream after its status.
                     }
 
-                    await Task.Delay(_polling.PollInterval, deadline.Token).ConfigureAwait(false);
+                    await Task.Delay(_polling.PollInterval, _clock, deadline.Token).ConfigureAwait(false);
                 }
                 MagicLinkConfirmationCapabilityIssued? issued = page.Events.Count == 1
                     && page.Events[0].SequenceNumber == status.CommittedEventSequence
@@ -172,8 +184,8 @@ public sealed class MagicLinkDurableSubmissionService(
             $"transition\n{intent.Tenant.TenantId}\n{intent.CapabilityId.Value}\n{intent.Action}\n{requestId}");
         try
         {
-            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            deadline.CancelAfter(_polling.Timeout);
+            using CancellationTokenSource timeout = new(_polling.Timeout, _clock);
+            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
             CommandStatusQueryResponse? status = await SubmitAndReadStatusAsync(
                 messageId, intent.Tenant.TenantId, intent.TimeEntryId.Value, intent,
                 typeof(CommitMagicLinkTransition), deadline.Token).ConfigureAwait(false);
@@ -259,8 +271,8 @@ public sealed class MagicLinkDurableSubmissionService(
                     MagicLinkExternalRequestContext.FromResolvedCapability(capability, messageId),
                     intent.Adjustment?.Comment)
                 : null;
-            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            deadline.CancelAfter(_polling.Timeout);
+            using CancellationTokenSource timeout = new(_polling.Timeout, _clock);
+            using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
             try
             {
                 CommandStatusQueryResponse? status = await SubmitAndObserveStatusAsync(
@@ -287,7 +299,7 @@ public sealed class MagicLinkDurableSubmissionService(
                         // Retry transient reads within the same bounded command deadline.
                     }
 
-                    await Task.Delay(_polling.PollInterval, deadline.Token).ConfigureAwait(false);
+                    await Task.Delay(_polling.PollInterval, _clock, deadline.Token).ConfigureAwait(false);
                 }
             }
             finally
@@ -385,14 +397,16 @@ public sealed class MagicLinkDurableSubmissionService(
                 return status;
             }
 
-            await Task.Delay(_polling.PollInterval, deadlineToken).ConfigureAwait(false);
+            await Task.Delay(_polling.PollInterval, _clock, deadlineToken).ConfigureAwait(false);
         }
     }
 
     private async Task<CommandStatusQueryResponse?> ProbeStatusAsync(
         string tenant, string messageId, CancellationToken deadlineToken)
     {
-        using CancellationTokenSource probe = CreateProbeDeadline(deadlineToken);
+        using CancellationTokenSource timeout = new(
+            TimeSpan.FromMilliseconds(Math.Min(2_000, _polling.Timeout.TotalMilliseconds / 3)), _clock);
+        using CancellationTokenSource probe = CancellationTokenSource.CreateLinkedTokenSource(deadlineToken, timeout.Token);
         return await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, probe.Token)
             .WaitAsync(probe.Token).ConfigureAwait(false);
     }
@@ -400,17 +414,10 @@ public sealed class MagicLinkDurableSubmissionService(
     private async Task<StreamReadPage> ReadStoredEventsAsync(StreamReadRequest request,
         CancellationToken cancellationToken)
     {
-        using CancellationTokenSource readback = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        readback.CancelAfter(_polling.ReadbackTimeout);
+        using CancellationTokenSource timeout = new(_polling.ReadbackTimeout, _clock);
+        using CancellationTokenSource readback = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
         return await gateway.ReadWorkloadStreamAsync(request, readback.Token)
             .WaitAsync(readback.Token).ConfigureAwait(false);
-    }
-
-    private CancellationTokenSource CreateProbeDeadline(CancellationToken deadlineToken)
-    {
-        CancellationTokenSource probe = CancellationTokenSource.CreateLinkedTokenSource(deadlineToken);
-        probe.CancelAfter(TimeSpan.FromMilliseconds(Math.Min(2_000, _polling.Timeout.TotalMilliseconds / 3)));
-        return probe;
     }
 
     private static bool IsRetryableGatewayFailure(Exception exception, CancellationToken callerCancellationToken)
@@ -593,9 +600,9 @@ public sealed class MagicLinkDurableSubmissionService(
         Type commandType,
         CancellationToken cancellationToken)
     {
-        Stopwatch elapsed = Stopwatch.StartNew();
-        using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        deadline.CancelAfter(_polling.Timeout);
+        long started = _clock.GetTimestamp();
+        using CancellationTokenSource timeout = new(_polling.Timeout, _clock);
+        using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
         CancellationToken deadlineToken = deadline.Token;
         CommandStatusQueryResponse? status = await gateway.GetWorkloadCommandStatusAsync(
             tenant, messageId, deadlineToken)
@@ -603,7 +610,7 @@ public sealed class MagicLinkDurableSubmissionService(
         bool wasPresentAtPreflight = status is not null;
         if (status is null)
         {
-            TimeSpan submitRemaining = _polling.Timeout - elapsed.Elapsed;
+            TimeSpan submitRemaining = _polling.Timeout - _clock.GetElapsedTime(started);
             if (submitRemaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
@@ -633,7 +640,7 @@ public sealed class MagicLinkDurableSubmissionService(
 
         while (true)
         {
-            TimeSpan remaining = _polling.Timeout - elapsed.Elapsed;
+            TimeSpan remaining = _polling.Timeout - _clock.GetElapsedTime(started);
             if (remaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
@@ -657,7 +664,7 @@ public sealed class MagicLinkDurableSubmissionService(
                 return (status, wasPresentAtPreflight);
             }
 
-            remaining = _polling.Timeout - elapsed.Elapsed;
+            remaining = _polling.Timeout - _clock.GetElapsedTime(started);
             if (remaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
@@ -667,7 +674,7 @@ public sealed class MagicLinkDurableSubmissionService(
             status = null;
             await Task.Delay(
                 remaining < _polling.PollInterval ? remaining : _polling.PollInterval,
-                deadlineToken).ConfigureAwait(false);
+                _clock, deadlineToken).ConfigureAwait(false);
         }
     }
 

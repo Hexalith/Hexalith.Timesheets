@@ -449,7 +449,7 @@ def process_group_members(group):
             fields = (directory / "stat").read_text().rsplit(")", 1)[1].split()
             if int(fields[2]) == group:
                 members.append((int(directory.name), fields[0]))
-        except FileNotFoundError:
+        except (FileNotFoundError, ProcessLookupError):
             continue
     return members
 

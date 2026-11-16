@@ -73,13 +73,28 @@ public sealed class MagicLinkDurableSubmissionServiceTests
             .Returns(_ => Task.FromResult<CommandStatusQueryResponse?>(Interlocked.Increment(ref reads) == 1
                 ? null
                 : Status(CommandStatus.Processing)));
-        var service = Service(gateway, 80, 10);
-        Stopwatch elapsed = Stopwatch.StartNew();
+        var clock = new PollingTestTimeProvider();
+        var service = new MagicLinkDurableSubmissionService(gateway,
+            Options.Create(new MagicLinkSubmissionPollingOptions
+            {
+                Timeout = TimeSpan.FromMilliseconds(80), PollInterval = TimeSpan.FromMilliseconds(10),
+            }), null, clock);
+        long started = clock.GetTimestamp();
+        Task<bool> submitted = service.SubmitUseAsync(Intent(), "request-1", TestContext.Current.CancellationToken);
 
-        (await service.SubmitUseAsync(Intent(), "request-1", TestContext.Current.CancellationToken)).ShouldBeFalse();
+        for (int poll = 0; poll < 7; poll++)
+        {
+            await clock.WaitForPollAsync(TestContext.Current.CancellationToken);
+            submitted.IsCompleted.ShouldBeFalse();
+            clock.Advance(TimeSpan.FromMilliseconds(10));
+        }
 
-        elapsed.Elapsed.ShouldBeGreaterThanOrEqualTo(TimeSpan.FromMilliseconds(70));
-        elapsed.Elapsed.ShouldBeLessThan(TimeSpan.FromSeconds(2));
+        await clock.WaitForPollAsync(TestContext.Current.CancellationToken);
+        submitted.IsCompleted.ShouldBeFalse();
+        clock.GetElapsedTime(started).ShouldBe(TimeSpan.FromMilliseconds(70));
+        clock.Advance(TimeSpan.FromMilliseconds(10));
+        (await submitted.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeFalse();
+        clock.GetElapsedTime(started).ShouldBe(TimeSpan.FromMilliseconds(80));
         reads.ShouldBeGreaterThan(5);
         await gateway.Received(1).SubmitWorkloadCommandAsync(
             Arg.Is<SubmitCommandRequest>(request => request.IdempotencyKey == null),
