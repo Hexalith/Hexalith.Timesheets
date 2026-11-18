@@ -1,7 +1,7 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.6.5">
+<Project Sdk="Aspire.AppHost.Sdk/17.0.0">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <AspireUseCliBundle>false</AspireUseCliBundle>
+    <AspireUseCliBundle>true</AspireUseCliBundle>
     <IsPackable>false</IsPackable>
     <IsPublishable>true</IsPublishable>
     <NoWarn>$(NoWarn);ASPIRE010</NoWarn>

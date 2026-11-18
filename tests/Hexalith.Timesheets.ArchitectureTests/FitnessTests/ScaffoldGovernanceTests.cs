@@ -9,7 +9,7 @@ namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 
 public sealed class ScaffoldGovernanceTests
 {
-    private const string ApprovedAspireAppHostSdkVersion = "13.6.5";
+    private const string ApprovedAspireAppHostSdkVersion = "17.0.0";
 
     private static readonly Regex AspireDiagnosticCode = new(
         @"\bASPIRE[A-Z]*\d{3}\b",
@@ -112,7 +112,7 @@ public sealed class ScaffoldGovernanceTests
             .Where(static element => element.Name.LocalName == "NoWarn")
             .ShouldHaveSingleItem("The AppHost must declare one unambiguous diagnostic suppression.");
 
-        cliBundle.Value.Trim().ShouldBe("false");
+        cliBundle.Value.Trim().ShouldBe("true");
         ConditionsOf(cliBundle).ShouldBeEmpty("The NuGet-orchestration setting must be unconditional.");
         noWarn.Value.Trim().ShouldBe("$(NoWarn);ASPIRE010");
         ConditionsOf(noWarn).ShouldBeEmpty("The ASPIRE010 suppression must be unconditional.");
