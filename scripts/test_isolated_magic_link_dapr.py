@@ -716,7 +716,7 @@ class IsolatedFixtureTests(unittest.TestCase):
             unsafe.unlink(missing_ok=True)
 
     def test_configuration_guards_need_no_runtime_lock_and_refuse_endpoint_model_changes(self):
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         for changed in (None, "isExternal", "isExplicitlyProxied"):
             with self.subTest(changed=changed):
@@ -790,7 +790,7 @@ class IsolatedFixtureTests(unittest.TestCase):
         def while_preservation(comparison):
             self.assertEqual(7, self.admission_probe(self.temporary.name, self.temporary.name).returncode)
             return snapshot
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
                 patch.object(guards, "read_only_shared_snapshot", side_effect=while_preservation) as reader, \
@@ -975,10 +975,10 @@ class IsolatedFixtureTests(unittest.TestCase):
                                           source.index("IResourceBuilder<ProjectResource> timesheets ="))]
         directory = Path(self.temporary.name) / "owner-selection-probe"
         directory.mkdir()
-        output = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0"
+        output = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net11.0"
         project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
         properties = ET.SubElement(project, "PropertyGroup")
-        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net10.0"), ("ImplicitUsings", "enable")):
+        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net11.0"), ("ImplicitUsings", "enable")):
             ET.SubElement(properties, name).text = value
         items = ET.SubElement(project, "ItemGroup")
         ET.SubElement(items, "FrameworkReference", Include="Microsoft.AspNetCore.App")
@@ -1028,7 +1028,7 @@ foreach (bool catalogEnabled in new[] { false, true })
             "--configuration", COMPILED_CONFIGURATION, "-m:1", "/nr:false"], cwd=fixture.ROOT, env=environment,
             capture_output=True, text=True, timeout=60)
         self.assertEqual(0, built.returncode, fixture.sanitized(built.stdout + built.stderr))
-        result = subprocess.run([str(directory / f"bin/{COMPILED_CONFIGURATION}/net10.0/OwnerSelectionProbe")],
+        result = subprocess.run([str(directory / f"bin/{COMPILED_CONFIGURATION}/net11.0/OwnerSelectionProbe")],
             cwd=fixture.ROOT, env=environment, capture_output=True, text=True, timeout=30)
         self.assertEqual(0, result.returncode, fixture.sanitized(result.stdout + result.stderr))
         rows = [json.loads(line) for line in result.stdout.splitlines() if line.startswith("{")]
@@ -1086,7 +1086,7 @@ foreach (bool catalogEnabled in new[] { false, true })
         self.addCleanup(lambda: shutil.rmtree(root, ignore_errors=True))
         components = Path(self.temporary.name) / "catalog-components"
         fixture.write_components(components, "127.0.0.1:16379")
-        executable = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net11.0/Hexalith.Timesheets.AppHost"
         environment = {name: value for name, value in instance.environment.items()
                        if not name.casefold().startswith("timesheets_live_dapr_")
                        and not name.casefold().startswith("dapr__")}
@@ -1432,7 +1432,7 @@ foreach (bool catalogEnabled in new[] { false, true })
             "Admitted": True, "Anonymous": False, "IsPattern": False}
         observation = {"ReceiverSurface": {"FenceVersion": "eventstore-finite-dapr-receiver-v1", "Endpoints": [endpoint]},
             "ExecutableOwners": {"Hexalith.EventStore.DomainService, Version=1": "a" * 64}}
-        files = {"src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.EventStore.DomainService.dll": "a" * 64}
+        files = {"src/Hexalith.Timesheets/bin/Debug/net11.0/Hexalith.EventStore.DomainService.dll": "a" * 64}
         facts = fixture.catalog_metadata_receiver_facts(observation, files)
         self.assertTrue(facts["admitted"] and facts["canonical_policy_present"] and facts["domain_sdk_code_matches"])
         endpoint["Policies"] = [secret]
@@ -1560,11 +1560,11 @@ foreach (bool catalogEnabled in new[] { false, true })
             (directory / (app + ".yaml")).write_text(fixture.catalog_receiver_policy(app))
         project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
         properties = ET.SubElement(project, "PropertyGroup")
-        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net10.0"), ("ImplicitUsings", "enable")):
+        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net11.0"), ("ImplicitUsings", "enable")):
             ET.SubElement(properties, name).text = value
         items = ET.SubElement(project, "ItemGroup")
         ET.SubElement(items, "FrameworkReference", Include="Microsoft.AspNetCore.App")
-        output = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0"
+        output = fixture.APPHOST.parent / f"bin/{COMPILED_CONFIGURATION}/net11.0"
         for library in sorted(output.glob("*.dll")):
             reference = ET.SubElement(items, "Reference", Include=library.stem)
             ET.SubElement(reference, "HintPath").text = str(library)
@@ -1593,7 +1593,7 @@ foreach (var receiver in new[] { gateway, module })
             "--configuration", COMPILED_CONFIGURATION, "--disable-build-servers", "-m:1", "/nr:false"], cwd=fixture.ROOT,
             env=environment, capture_output=True, text=True, timeout=60)
         self.assertEqual(0, built.returncode, fixture.sanitized(built.stdout + built.stderr))
-        result = subprocess.run([str(directory / f"bin/{COMPILED_CONFIGURATION}/net10.0/ReceiverSelection"),
+        result = subprocess.run([str(directory / f"bin/{COMPILED_CONFIGURATION}/net11.0/ReceiverSelection"),
             str(directory / "eventstore.yaml"), str(directory / "timesheets.yaml")], cwd=fixture.ROOT,
             env=environment, capture_output=True, text=True, timeout=30)
         self.assertEqual(0, result.returncode, fixture.sanitized(result.stdout + result.stderr))
@@ -1608,7 +1608,7 @@ foreach (var receiver in new[] { gateway, module })
     def test_catalog_sdk_verifier_binds_artifacts_and_withholds_private_parser_diagnostics(self):
         instance = fixture.IsolatedFixture(route_catalog=True, log_directory=self.logs)
         instance.environment["DOTNET_CLI_HOME"] = "/tmp/dotnet-cli-home"
-        instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = str(fixture.GATEWAY_PROJECT.parent / f"bin/{COMPILED_CONFIGURATION}/net10.0/Hexalith.EventStore")
+        instance.environment[fixture.GATEWAY_EXECUTABLE_SETTING] = str(fixture.GATEWAY_PROJECT.parent / f"bin/{COMPILED_CONFIGURATION}/net11.0/Hexalith.EventStore")
         try:
             instance.prepare_catalog_binding_verifier(configuration=COMPILED_CONFIGURATION)
             owned = instance.catalog_verifier_directory
@@ -1622,7 +1622,7 @@ foreach (var receiver in new[] { gateway, module })
             refusal = json.loads((instance.log_directory / "catalog-binding-verifier-failure.json").read_text())
             self.assertEqual({"valid": False, "stage": "input"}, refusal)
             self.assertFalse(any(sensitive in path.read_text() for path in instance.log_directory.iterdir() if path.is_file()))
-            artifact = owned / f"bin/{COMPILED_CONFIGURATION}/net10.0/CatalogBindingVerifier.dll"
+            artifact = owned / f"bin/{COMPILED_CONFIGURATION}/net11.0/CatalogBindingVerifier.dll"
             artifact.write_bytes(artifact.read_bytes() + b"changed")
             with patch.object(instance, "command") as command:
                 with self.assertRaisesRegex(fixture.FixtureError, "captured verifier is invalid"):
@@ -1721,7 +1721,7 @@ foreach (var receiver in new[] { gateway, module })
             owner_hashes = {"Hexalith.Timesheets.Server, Version=1.0.0.0": "a" * 64,
                             "Hexalith.Timesheets.Projections, Version=1.0.0.0": "b" * 64}
             instance.source_before = {"files": {
-                "src/Hexalith.Timesheets/bin/Debug/net10.0/" + name.split(",", 1)[0] + ".dll": value
+                "src/Hexalith.Timesheets/bin/Debug/net11.0/" + name.split(",", 1)[0] + ".dll": value
                 for name, value in owner_hashes.items()}}
             def observation(app):
                 receiver, caller, operations = fixture.CATALOG_RECEIVER_POLICIES[app]
@@ -1841,7 +1841,7 @@ foreach (var receiver in new[] { gateway, module })
         self.assertIs(user["credentials"][0]["temporary"], False)
 
     def test_security_reference_driver_refuses_missing_duplicate_non_secret_and_wrong_bindings(self):
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         for defect in ("missing", "duplicate", "non-secret", "wrong-resource", "wrong-parameter", "not-generated"):
             with self.subTest(defect=defect):
@@ -3587,11 +3587,11 @@ sys.stdin.read()
         workspace = Path(self.temporary.name) / "source capture workspace"
         apphost = workspace / "src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj"
         gateway_project = workspace / "references/Hexalith.EventStore/src/Hexalith.EventStore/Hexalith.EventStore.csproj"
-        gateway = gateway_project.parent / "bin/Debug/net10.0/Hexalith.EventStore"
+        gateway = gateway_project.parent / "bin/Debug/net11.0/Hexalith.EventStore"
         companion = gateway.parent / "Hexalith.EventStore.dll"
         decoy = gateway.parent / "Hexalith.dll"
-        module = workspace / "src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets"
-        integration = workspace / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+        module = workspace / "src/Hexalith.Timesheets/bin/Debug/net11.0/Hexalith.Timesheets"
+        integration = workspace / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net11.0/Hexalith.Timesheets.IntegrationTests"
         module_assembly = module.with_name(module.name + ".dll")
         integration_assembly = integration.with_name(integration.name + ".dll")
         files = {
@@ -3599,7 +3599,7 @@ sys.stdin.read()
             apphost.parent / "SecurityConstructionProbe.cs": b"construction probe",
             apphost.parent / "KeycloakRealms/hexalith-realm.json": b"realm",
             apphost.parent / "obj/project.assets.json": b"restored assets",
-            apphost.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll": b"apphost assembly",
+            apphost.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost.dll": b"apphost assembly",
             gateway: b"native gateway", companion: b"gateway assembly", decoy: b"wrong assembly",
             module: b"native module", module_assembly: b"module assembly",
             integration: b"native test", integration_assembly: b"test assembly",
@@ -3681,7 +3681,7 @@ sys.stdin.read()
             extra = commons / "src/extra.cs"
             extra.parent.mkdir()
             extra.write_bytes(private)
-            apphost_native = apphost.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+            apphost_native = apphost.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
             apphost_native.write_bytes(b"native apphost")
             gateway_assets = gateway_project.parent / "obj/project.assets.json"
             gateway_assets.parent.mkdir()
@@ -4235,7 +4235,7 @@ sys.stdin.read()
         instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
         snapshot = self.new_shared_snapshot()
         snapshot["scheduler"] = {"revision": "1", "keys": 0}
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
                 patch.object(guards, "read_only_shared_snapshot", return_value=snapshot), \
@@ -4282,7 +4282,7 @@ sys.stdin.read()
                     "DOTNET_TIMESHEETS_LIVE_DAPR_COMPONENTS": "/legacy/components",
                     "AppHost__Operation": "publish", "Publishing__Publisher": "manifest"}
         instance.environment.update(polluted)
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
                 patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
@@ -4305,7 +4305,7 @@ sys.stdin.read()
                          json.loads((instance.log_directory / "guards-mode.json").read_text()))
 
     def test_full_construction_probe_refuses_duplicate_missing_or_failed_credentials_without_starting(self):
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         for changed, exit_code in (("gatewayCredentials", 0), ("timesheetsCredentials", 0), (None, -6)):
             with self.subTest(changed=changed, exit_code=exit_code):
@@ -4329,7 +4329,7 @@ sys.stdin.read()
                 self.assertFalse(commands.containers)
 
     def test_compiled_guard_requires_actual_gateway_readiness_result_in_both_construction_models(self):
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         for probe in ("full-construction", "security-construction"):
             for field, value in (("endpoint", "https"), ("path", "/alive"), ("port", 8080),
@@ -4357,7 +4357,7 @@ sys.stdin.read()
     def test_release_configuration_guards_select_package_assets_and_require_adapter_refusal(self):
         commands = self.guard_commands(package=True)
         instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
-        executable = fixture.APPHOST.parent / "bin/Release/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Release/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         caller = dict(os.environ)
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
@@ -4385,7 +4385,7 @@ sys.stdin.read()
     def test_release_guards_refuse_debug_adapter_success(self):
         commands = self.guard_commands()
         instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
-        executable = fixture.APPHOST.parent / "bin/Release/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Release/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
                 patch.object(Path, "is_file", lambda path: path == executable or original_is_file(path)), \
@@ -4397,7 +4397,7 @@ sys.stdin.read()
     def test_release_guards_require_matching_binary_without_debug_fallback(self):
         commands = self.guard_commands(package=True)
         instance = fixture.IsolatedFixture(command=commands, log_directory=self.logs)
-        debug = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        debug = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
                 patch.object(Path, "is_file", lambda path: path == debug), \
                 contextlib.redirect_stdout(io.StringIO()) as output:
@@ -6829,7 +6829,7 @@ print('complete', flush=True)
             return probe(arguments)
         commands.failure = appear
         instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         with patch.object(guards, "IsolatedFixture", return_value=instance), \
                 patch.object(guards, "read_only_shared_snapshot", return_value=self.shared_snapshot()), \
@@ -6933,7 +6933,7 @@ print('complete', flush=True)
                 after.scheduler_content = self.comparison.fingerprint(b"scheduler-content", b"changed")
                 commands = self.guard_commands(failed)
                 instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
-                executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+                executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
                 original_is_file = Path.is_file
                 with patch.object(guards, "IsolatedFixture", return_value=instance), \
                         patch.object(guards, "read_only_shared_snapshot", side_effect=(before, before, after)), \
@@ -7206,7 +7206,7 @@ time.sleep(60)
                 instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs)
                 original_write = Path.write_text
                 original_is_file = Path.is_file
-                executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+                executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
                 def write(path, *args, **kwargs):
                     if path.name == filename:
                         raise PermissionError("late guard evidence write blocked")
@@ -7363,7 +7363,7 @@ time.sleep(60)
     def test_guard_final_preservation_cancellation_keeps_existing_failure(self):
         snapshot = self.new_shared_snapshot()
         snapshot["scheduler"] = {"revision": "1", "keys": 0}
-        executable = fixture.APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost"
+        executable = fixture.APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost"
         original_is_file = Path.is_file
         for failed in (False, True):
             with self.subTest(failed=failed):

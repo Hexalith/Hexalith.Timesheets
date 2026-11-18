@@ -2,7 +2,7 @@
   "schema": "hexalith.product-validation.v1",
   "manifest": "tools/release-packages.json",
   "archiveValidator": "scripts/validate-nuget-packages.py",
-  "targetFramework": "net10.0",
+  "targetFramework": "net11.0",
   "consumers": {
     "Hexalith.Timesheets.Contracts": "tools/package-consumers/Contracts.cs",
     "Hexalith.Timesheets.Client": "tools/package-consumers/Client.cs",

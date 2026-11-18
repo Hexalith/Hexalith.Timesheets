@@ -17,11 +17,11 @@ def validate(directory: Path) -> tuple[str, dict]:
         project = assets["project"]
         if Path(project["restore"]["projectPath"]).resolve() != (ROOT / row["project"]).resolve():
             raise ValueError(f"Restore assets belong to another project: {row['id']}")
-        framework = project["frameworks"]["net10.0"]
+        framework = project["frameworks"]["net11.0"]
         private = {name for name, dep in framework.get("dependencies", {}).items()
                    if dep.get("suppressParent", "").casefold() == "all"}
-        expected = {item.split()[0] for item in assets["projectFileDependencyGroups"]["net10.0"]} - private
-        expected.update(assets.get("centralTransitiveDependencyGroups", {}).get("net10.0", {}))
+        expected = {item.split()[0] for item in assets["projectFileDependencyGroups"]["net11.0"]} - private
+        expected.update(assets.get("centralTransitiveDependencyGroups", {}).get("net11.0", {}))
         if package["dependencies"].keys() != expected:
             raise ValueError(f"Dependency inventory mismatch for {row['id']}: expected {sorted(expected)}, got {sorted(package['dependencies'])}")
         for name, details in assets["libraries"].items():
@@ -35,7 +35,7 @@ def validate(directory: Path) -> tuple[str, dict]:
             if dependency in EXPECTED_IDS:
                 minimum = version
             else:
-                target = assets["targets"]["net10.0"]
+                target = assets["targets"]["net11.0"]
                 matches = [key.split('/', 1)[1] for key in target if key.split('/')[0] == dependency]
                 if len(matches) != 1:
                     raise ValueError(f"Dependency version is unproven: {dependency}")

@@ -51,11 +51,11 @@ class InventoryTests(unittest.TestCase):
                 with zipfile.ZipFile(directory / f"{row['id']}.{version}.{suffix}", "w") as archive:
                     archive.writestr(row["id"] + ".nuspec", f'''<package><metadata>
 <id>{row['id']}</id><version>{version}</version><readme>README.md</readme>
-<license type="expression">MIT</license><dependencies><group targetFramework="net10.0" /></dependencies>
+<license type="expression">MIT</license><dependencies><group targetFramework="net11.0" /></dependencies>
 </metadata></package>''')
                     archive.writestr("README.md", "readme")
                     extension = "dll" if suffix == "nupkg" else "pdb"
-                    archive.writestr(f"lib/net10.0/{row['id']}.{extension}", "payload fixture")
+                    archive.writestr(f"lib/net11.0/{row['id']}.{extension}", "payload fixture")
         return directory
 
     def test_exact_inventory_passes(self):
@@ -150,7 +150,7 @@ class InventoryTests(unittest.TestCase):
 
     def test_unknown_dependency_xml_refuses(self):
         directory = self.archives()
-        self.mutate_spec(next(directory.glob("*.nupkg")), lambda text: text.replace('<group targetFramework="net10.0" />', '<group targetFramework="net10.0"><hidden id="Leak" /></group>'))
+        self.mutate_spec(next(directory.glob("*.nupkg")), lambda text: text.replace('<group targetFramework="net11.0" />', '<group targetFramework="net11.0"><hidden id="Leak" /></group>'))
         with self.assertRaisesRegex(ValueError, "Malformed dependency XML"):
             common.inventory(directory, self.rows)
 
@@ -162,19 +162,19 @@ class InventoryTests(unittest.TestCase):
 
     def test_case_insensitive_duplicate_dependencies_refuse(self):
         directory = self.archives()
-        self.mutate_spec(next(directory.glob("*.nupkg")), lambda text: text.replace('<group targetFramework="net10.0" />', '<group targetFramework="net10.0"><dependency id="Example" version="1.0.0" /><dependency id="example" version="1.0.0" /></group>'))
+        self.mutate_spec(next(directory.glob("*.nupkg")), lambda text: text.replace('<group targetFramework="net11.0" />', '<group targetFramework="net11.0"><dependency id="Example" version="1.0.0" /><dependency id="example" version="1.0.0" /></group>'))
         with self.assertRaisesRegex(ValueError, "duplicate dependency"):
             common.inventory(directory, self.rows)
 
     def test_injected_assembly_or_framework_payload_refuses(self):
         directory = self.archives()
-        for suffix, payload in (("nupkg", "lib/net10.0/Hexalith.Timesheets.AppHost.dll"),
-                                ("nupkg", "lib/net10.0/Other.dll"),
+        for suffix, payload in (("nupkg", "lib/net11.0/Hexalith.Timesheets.AppHost.dll"),
+                                ("nupkg", "lib/net11.0/Other.dll"),
                                 ("nupkg", "lib/net9.0/{id}.dll"),
-                                ("nupkg", "ref/net10.0/{id}.dll"),
-                                ("nupkg", "runtimes/linux/lib/net10.0/{id}.dll"),
+                                ("nupkg", "ref/net11.0/{id}.dll"),
+                                ("nupkg", "runtimes/linux/lib/net11.0/{id}.dll"),
                                 ("snupkg", "lib/net9.0/{id}.pdb"),
-                                ("snupkg", "lib/net10.0/Other.pdb")):
+                                ("snupkg", "lib/net11.0/Other.pdb")):
             with self.subTest(suffix=suffix, payload=payload):
                 path = next(directory.glob("*." + suffix))
                 with zipfile.ZipFile(path, "a") as archive:
@@ -190,16 +190,16 @@ class InventoryTests(unittest.TestCase):
             with self.subTest(attributes=attributes):
                 directory = self.archives()
                 self.mutate_spec(next(directory.glob("*.nupkg")), lambda text: text.replace(
-                    '<group targetFramework="net10.0" />',
-                    f'<group targetFramework="net10.0"><dependency id="Example" version="1.0.0" {attributes} /></group>'))
+                    '<group targetFramework="net11.0" />',
+                    f'<group targetFramework="net11.0"><dependency id="Example" version="1.0.0" {attributes} /></group>'))
                 with self.assertRaisesRegex(ValueError, "Restricted dependency assets"):
                     common.inventory(directory, self.rows)
 
     def test_generated_build_analyzers_exclusion_passes(self):
         directory = self.archives()
         self.mutate_spec(next(directory.glob("*.nupkg")), lambda text: text.replace(
-            '<group targetFramework="net10.0" />',
-            '<group targetFramework="net10.0"><dependency id="Example" version="1.0.0" exclude="Build,Analyzers" /></group>'))
+            '<group targetFramework="net11.0" />',
+            '<group targetFramework="net11.0"><dependency id="Example" version="1.0.0" exclude="Build,Analyzers" /></group>'))
         common.inventory(directory, self.rows)
 
 
@@ -264,14 +264,14 @@ class RestoreBackedValidatorTests(unittest.TestCase):
             assets = project.parent / "obj/project.assets.json"
             assets.parent.mkdir()
             assets.write_text(json.dumps({
-                "project": {"restore": {"projectPath": str(project)}, "frameworks": {"net10.0": {"dependencies": {}}}},
-                "projectFileDependencyGroups": {"net10.0": ["Example.Runtime >= 1.3.0"]},
+                "project": {"restore": {"projectPath": str(project)}, "frameworks": {"net11.0": {"dependencies": {}}}},
+                "projectFileDependencyGroups": {"net11.0": ["Example.Runtime >= 1.3.0"]},
                 "libraries": {"Example.Runtime/1.3.0": {"type": "package"}},
-                "targets": {"net10.0": {"Example.Runtime/1.3.0": {}}},
+                "targets": {"net11.0": {"Example.Runtime/1.3.0": {}}},
             }))
             self.fixture.mutate_spec(self.directory / (row["id"] + ".1.2.3.nupkg"), lambda text: text.replace(
-                '<group targetFramework="net10.0" />',
-                '<group targetFramework="net10.0"><dependency id="Example.Runtime" version="1.3.0" exclude="Build,Analyzers" /></group>'))
+                '<group targetFramework="net11.0" />',
+                '<group targetFramework="net11.0"><dependency id="Example.Runtime" version="1.3.0" exclude="Build,Analyzers" /></group>'))
         self.ledger()
 
     def ledger(self):
@@ -288,7 +288,7 @@ class RestoreBackedValidatorTests(unittest.TestCase):
         row = next(row for row in self.fixture.rows if row["id"] == "Hexalith.Timesheets.Server")
         assets_path = (self.fixture.root / row["project"]).parent / "obj/project.assets.json"
         assets = json.loads(assets_path.read_text())
-        assets["projectFileDependencyGroups"]["net10.0"].append("Hexalith.Timesheets.ReadModels >= 1.2.3")
+        assets["projectFileDependencyGroups"]["net11.0"].append("Hexalith.Timesheets.ReadModels >= 1.2.3")
         assets["libraries"]["Hexalith.Timesheets.ReadModels/1.2.3"] = {"type": "project"}
         assets_path.write_text(json.dumps(assets))
         self.fixture.mutate_spec(self.directory / "Hexalith.Timesheets.Server.1.2.3.nupkg",

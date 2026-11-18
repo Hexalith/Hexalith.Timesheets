@@ -99,27 +99,31 @@ public sealed class ScaffoldGovernanceTests
     }
 
     [Fact]
-    public void AppHostRetainsNugetOrchestrationAndSuppressesOnlyAspire010()
+    public void AppHostRequiresCliBundleAndSuppressesObsoleteSdkWarning()
     {
-        // Decided 2026-09-13 (Option 2): keep the SDK-added Aspire.Hosting.Orchestration and
-        // Aspire.Dashboard.Sdk packages so restore/build stay self-contained, and suppress only the
-        // ASPIRE010 notice that the CLI bundle is disabled.
+        // Aspire 17 requires the CLI bundle for C# AppHosts (ASPIRE013 cannot be suppressed).
+        // Aspire.AppHost.Sdk is obsolete (ASPIRE012); silence that with the documented property,
+        // not NoWarn. AddProject remains required while EventStore.Aspire helpers take
+        // ProjectResource, so CS0618 is the only allowed AppHost suppression.
         XElement project = LoadAppHostProject();
         XElement cliBundle = project.Descendants()
             .Where(static element => element.Name.LocalName == "AspireUseCliBundle")
             .ShouldHaveSingleItem("The AppHost must declare one unambiguous CLI-bundle setting.");
+        XElement sdkObsolete = project.Descendants()
+            .Where(static element => element.Name.LocalName == "SuppressAspireAppHostSdkObsoleteWarning")
+            .ShouldHaveSingleItem("The AppHost must declare one unambiguous AppHost SDK obsolete-warning setting.");
         XElement noWarn = project.Descendants()
             .Where(static element => element.Name.LocalName == "NoWarn")
             .ShouldHaveSingleItem("The AppHost must declare one unambiguous diagnostic suppression.");
 
         cliBundle.Value.Trim().ShouldBe("true");
-        ConditionsOf(cliBundle).ShouldBeEmpty("The NuGet-orchestration setting must be unconditional.");
-        noWarn.Value.Trim().ShouldBe("$(NoWarn);ASPIRE010");
-        ConditionsOf(noWarn).ShouldBeEmpty("The ASPIRE010 suppression must be unconditional.");
-        AspireDiagnosticCode.Matches(File.ReadAllText(AppHostProjectPath()))
-            .Select(static match => match.Value)
-            .ShouldHaveSingleItem("The AppHost project may name only the ASPIRE010 suppression.")
-            .ShouldBe("ASPIRE010");
+        ConditionsOf(cliBundle).ShouldBeEmpty("The CLI-bundle setting must be unconditional.");
+        sdkObsolete.Value.Trim().ShouldBe("true");
+        ConditionsOf(sdkObsolete).ShouldBeEmpty("The AppHost SDK obsolete-warning setting must be unconditional.");
+        noWarn.Value.Trim().ShouldBe("$(NoWarn);CS0618");
+        ConditionsOf(noWarn).ShouldBeEmpty("The CS0618 suppression must be unconditional.");
+        AspireDiagnosticCode.IsMatch(File.ReadAllText(AppHostProjectPath()))
+            .ShouldBeFalse("The AppHost project must not name an Aspire diagnostic code.");
 
         // Other Timesheets-owned surfaces may not suppress or downgrade any Aspire diagnostic.
         foreach (string buildFile in new[] { "Directory.Build.props", "Directory.Build.targets" }

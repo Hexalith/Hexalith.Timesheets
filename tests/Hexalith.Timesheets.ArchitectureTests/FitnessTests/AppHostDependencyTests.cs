@@ -8,23 +8,25 @@ namespace Hexalith.Timesheets.ArchitectureTests.FitnessTests;
 public sealed class AppHostDependencyTests
 {
     /// <summary>
-    /// Verifies the documented invariant that the Timesheets-owned AppHost SDK follows the imported catalog's
-    /// canonical AppHost SDK contract and, per the platform's consumer rule, its <c>Aspire.Hosting</c> version, so
+    /// Verifies that the Timesheets-owned AppHost SDK follows the local Aspire.Hosting override, so
     /// the SDK-added AppHost, orchestration, and dashboard packages cannot mix with a second Aspire hosting line.
     /// </summary>
     [Fact]
-    public void AppHostSdkTracksTheImportedStableAspireCatalogLine()
+    public void AppHostSdkTracksTheLocalAspireHostingOverride()
     {
+        const string approvedAspireVersion = "17.0.0";
         string appHostVersion = ReadAppHostSdkVersion();
-        XDocument centralCatalog = LoadImportedPackageCatalog();
-        string catalogAppHostSdkVersion = GetCatalogProperty(centralCatalog, "HexalithAspireAppHostSdkVersion");
+        string hostingVersion = ReadLocalPackageVersionOverride("Aspire.Hosting");
 
         appHostVersion.ShouldBe(
-            catalogAppHostSdkVersion,
-            "Align Aspire.AppHost.Sdk with the imported catalog's HexalithAspireAppHostSdkVersion in the same change.");
+            approvedAspireVersion,
+            "Align Aspire.AppHost.Sdk with the Timesheets-owned Aspire 17 consumer line.");
+        hostingVersion.ShouldBe(
+            approvedAspireVersion,
+            "Directory.Packages.props must override Aspire.Hosting to the same Aspire 17 line as the AppHost SDK.");
         appHostVersion.ShouldBe(
-            GetPackageVersion(centralCatalog, "Aspire.Hosting"),
-            "Aspire.AppHost.Sdk must equal the imported Aspire.Hosting version, or the restored AppHost graph mixes two Aspire lines.");
+            hostingVersion,
+            "Aspire.AppHost.Sdk must equal the local Aspire.Hosting override, or the restored AppHost graph mixes two Aspire lines.");
     }
 
     /// <summary>
@@ -78,34 +80,15 @@ public sealed class AppHostDependencyTests
             .Value
             .Trim();
 
-    /// <summary>
-    /// Loads the first existing catalog among the root <c>Directory.Packages.props</c> import candidates, in
-    /// document order, after substituting that file's <c>PropertyGroup</c> values (last assignment wins) and the
-    /// repository directory for <c>$(MSBuildThisFileDirectory)</c>. Import and property conditions and global properties are
-    /// not evaluated; this approximates, rather than proves, the catalog MSBuild imports.
-    /// </summary>
-    private static XDocument LoadImportedPackageCatalog()
+    private static string ReadLocalPackageVersionOverride(string packageId)
     {
         XElement rootProps = XDocument.Load(RepositoryRoot.PathTo("Directory.Packages.props")).Root.ShouldNotBeNull();
-        string repositoryDirectory = RepositoryRoot.Find().FullName + Path.DirectorySeparatorChar;
-        Dictionary<string, string> properties = rootProps.Elements("PropertyGroup")
-            .Elements()
-            .GroupBy(static element => element.Name.LocalName, StringComparer.Ordinal)
-            .ToDictionary(static group => group.Key, static group => group.Last().Value.Trim(), StringComparer.Ordinal);
-
-        string[] candidates = rootProps.Elements("Import")
-            .Select(static import => import.Attribute("Project")?.Value ?? string.Empty)
-            .Select(project => Regex.Replace(
-                project,
-                @"\$\((?<name>[^)]+)\)",
-                match => properties.TryGetValue(match.Groups["name"].Value, out string? value) ? value : match.Value))
-            .Select(path => path.Replace("$(MSBuildThisFileDirectory)", repositoryDirectory, StringComparison.Ordinal))
-            .ToArray();
-        candidates.ShouldNotBeEmpty("Directory.Packages.props must import the shared central package catalog.");
-
-        string catalogPath = candidates.FirstOrDefault(File.Exists)
-            .ShouldNotBeNull($"None of the imported catalog candidates exists: {string.Join(", ", candidates)}");
-        return XDocument.Load(catalogPath);
+        return rootProps.Elements("ItemGroup")
+            .Elements("PackageVersion")
+            .Where(element => string.Equals(element.Attribute("Update")?.Value, packageId, StringComparison.Ordinal))
+            .Select(element => element.Attribute("Version")?.Value)
+            .LastOrDefault(static version => !string.IsNullOrWhiteSpace(version))
+            .ShouldNotBeNull($"Directory.Packages.props must override {packageId} after importing the shared catalog.");
     }
 
     private static string ReadAppHostSdkVersion()

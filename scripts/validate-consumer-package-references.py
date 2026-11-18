@@ -100,7 +100,7 @@ def main(directory: Path) -> None:
             consumer.mkdir()
             (consumer / "Consumer.csproj").write_text(f'''<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors><NuGetAudit>true</NuGetAudit><NuGetAuditMode>all</NuGetAuditMode>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -129,7 +129,7 @@ Console.WriteLine("{package_id} {version}: consumer surface and assembly version
             verify_restored_candidates(assets, Path(env["NUGET_PACKAGES"]), directory, version, package_id)
             subprocess.run(["dotnet", "build", "--configuration", "Release", "--no-restore", "-warnaserror", "-m:1", "/nr:false"],
                            cwd=consumer, env=env, check=True)
-            subprocess.run(["dotnet", str(consumer / "bin/Release/net10.0/Consumer.dll")],
+            subprocess.run(["dotnet", str(consumer / "bin/Release/net11.0/Consumer.dll")],
                            cwd=consumer, env=env, check=True)
 
 

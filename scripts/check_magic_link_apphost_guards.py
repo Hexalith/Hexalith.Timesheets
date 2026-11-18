@@ -99,7 +99,7 @@ def _run_guards(log_directory, configuration_only, configuration):
         fixture.write_evidence("guards-mode.json", json.dumps({"configuration": configuration,
             "configuration_only": configuration_only,
             "resources_enabled": False}, indent=2) + "\n")
-        executable = APPHOST.parent / "bin" / configuration / "net10.0/Hexalith.Timesheets.AppHost"
+        executable = APPHOST.parent / "bin" / configuration / "net11.0/Hexalith.Timesheets.AppHost"
         require(executable.is_file(), "Build the " + configuration + " AppHost before running guard checks")
         baseline = dict(fixture.environment)
         cases = ("valid-isolated", "ordinary-defaults", "bare-fixture-flag", "missing-components",

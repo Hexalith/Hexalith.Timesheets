@@ -1803,7 +1803,7 @@ def catalog_metadata_receiver_facts(observation, captured_files):
     owners = [value for name, value in (observation.get("ExecutableOwners") or {}).items()
               if name.split(",", 1)[0] == "Hexalith.EventStore.DomainService"]
     matched = len(owners) == 1 and isinstance(owners[0], str) and re.fullmatch(r"[0-9a-f]{64}", owners[0]) is not None \
-        and captured_files.get("src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.EventStore.DomainService.dll") == owners[0]
+        and captured_files.get("src/Hexalith.Timesheets/bin/Debug/net11.0/Hexalith.EventStore.DomainService.dll") == owners[0]
     facts["domain_sdk_code_matches"] = matched
     facts["domain_sdk_sha256"] = owners[0] if matched else None
     return facts
@@ -2021,18 +2021,18 @@ class IsolatedFixture:
         # The Linux apphost's dotted assembly name is its complete native file
         # name, so append .dll instead of replacing the apparent final suffix.
         gateway_assembly = gateway.with_name(gateway.name + ".dll")
-        module = ROOT / "src/Hexalith.Timesheets/bin/Debug/net10.0/Hexalith.Timesheets"
-        integration = ROOT / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+        module = ROOT / "src/Hexalith.Timesheets/bin/Debug/net11.0/Hexalith.Timesheets"
+        integration = ROOT / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net11.0/Hexalith.Timesheets.IntegrationTests"
         paths = [APPHOST, APPHOST.parent / "Program.cs", APPHOST.parent / "SecurityConstructionProbe.cs",
                  APPHOST.parent / "KeycloakRealms/hexalith-realm.json", APPHOST.parent / "obj/project.assets.json",
-                 APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost.dll",
+                 APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost.dll",
                  gateway, gateway_assembly, module, module.with_name(module.name + ".dll"),
                  integration, integration.with_name(integration.name + ".dll")]
         if self.dependency_graph is not None:
             # Fingerprint complete static output trees: configuration, native
             # runtime assets, satellite assemblies and nested content all affect
             # execution. Retain only paths and content digests, never contents.
-            for executable in (APPHOST.parent / "bin/Debug/net10.0/Hexalith.Timesheets.AppHost", gateway, module, integration):
+            for executable in (APPHOST.parent / "bin/Debug/net11.0/Hexalith.Timesheets.AppHost", gateway, module, integration):
                 paths.append(executable)
                 paths.extend(path for path in executable.parent.rglob("*") if path.is_file())
             paths.extend((ROOT / record.get("project", project.split("|", 1)[0])).parent / "obj/project.assets.json"
@@ -2511,7 +2511,7 @@ class IsolatedFixture:
 
     def catalog_verifier_manifest(self):
         directory = Path(self.catalog_verifier_directory)
-        relative_output = Path("bin") / self.catalog_verifier_configuration / "net10.0"
+        relative_output = Path("bin") / self.catalog_verifier_configuration / "net11.0"
         output = directory / relative_output
         return {"source_sha256": hashlib.sha256((ROOT / "scripts/CatalogBindingVerifier.cs").read_bytes()).hexdigest(),
                 "compiler_inputs": {name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
@@ -2525,14 +2525,14 @@ class IsolatedFixture:
         require(self.catalog_verifier_directory is None, "Catalog SDK verifier was already prepared")
         require(configuration in ("Debug", "Release"), "Catalog SDK verifier configuration is invalid")
         self.catalog_verifier_configuration = configuration
-        relative_output = Path("bin") / configuration / "net10.0"
+        relative_output = Path("bin") / configuration / "net11.0"
         directory = Path(tempfile.mkdtemp(prefix="timesheets-catalog-verifier-"))
         directory.chmod(0o700)
         self.catalog_verifier_directory = directory
         shutil.copyfile(ROOT / "scripts/CatalogBindingVerifier.cs", directory / "Program.cs")
         project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
         properties = ET.SubElement(project, "PropertyGroup")
-        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net10.0"),
+        for name, value in (("OutputType", "Exe"), ("TargetFramework", "net11.0"),
                             ("ImplicitUsings", "enable"), ("Nullable", "enable")):
             ET.SubElement(properties, name).text = value
         items = ET.SubElement(project, "ItemGroup")
@@ -2560,7 +2560,7 @@ class IsolatedFixture:
                 and self.catalog_verifier_manifest() == self.catalog_verifier_identity
                 and self.source_before.get("catalog_binding_verifier") == self.catalog_verifier_identity, message)
         gateway = Path(self.environment[GATEWAY_EXECUTABLE_SETTING])
-        result = self.command([str(self.catalog_verifier_directory / "bin" / self.catalog_verifier_configuration / "net10.0/CatalogBindingVerifier"),
+        result = self.command([str(self.catalog_verifier_directory / "bin" / self.catalog_verifier_configuration / "net11.0/CatalogBindingVerifier"),
                                str(directory), str(gateway.parent)],
                               cwd=ROOT, env=self.environment, timeout=10)
         # The verifier withholds all parser/SDK diagnostics; never transcript unknown output here.
@@ -2769,7 +2769,7 @@ class IsolatedFixture:
                         "Catalog executable owners differ from captured Debug/source binaries")
                 for name, digest in owners.items():
                     if name.startswith("Hexalith."):
-                        binary = "src/Hexalith.Timesheets/bin/Debug/net10.0/" + name.split(",", 1)[0] + ".dll"
+                        binary = "src/Hexalith.Timesheets/bin/Debug/net11.0/" + name.split(",", 1)[0] + ".dll"
                         require(re.fullmatch(r"[0-9a-f]{64}", digest) is not None
                                 and captured_files.get(binary) == digest,
                                 "Catalog executable owners differ from captured Debug/source binaries")
@@ -3238,7 +3238,7 @@ class IsolatedFixture:
                     "placement": self.placement, "scheduler": self.scheduler,
                     "components": str(self.scratch), "bound_processes": self.captured_processes}, indent=2) + "\n")
             before = self.capture_gateway_process("before") if not self.injected_command else None
-            executable = ROOT / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests"
+            executable = ROOT / "tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net11.0/Hexalith.Timesheets.IntegrationTests"
             journey_outcome = {"command_completed": False, "command_exit_code": None,
                                "validation_completed": False, "journey_succeeded": False,
                                "command_started_unix_ns": time.time_ns()}

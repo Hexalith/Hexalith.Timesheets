@@ -103,7 +103,7 @@ def archive_metadata(path: Path) -> dict:
         if any(node.tag != "group" for node in groups) or len(groups) > 1:
             raise ValueError(f"Malformed dependency groups: {path.name}")
         for group in groups:
-            if group.get("targetFramework") != "net10.0":
+            if group.get("targetFramework") != "net11.0":
                 raise ValueError(f"Unexpected dependency framework: {path.name}")
             for dependency in group:
                 if dependency.tag != "dependency" or list(dependency) or set(dependency.attrib) - {"id", "version", "include", "exclude"}:
@@ -127,7 +127,7 @@ def validate_payload(metadata: dict, path: Path) -> None:
     """Allow only this package's one-framework payload and ordinary NuGet metadata."""
     package_id = metadata["id"]
     extensions = ("pdb",) if path.suffix == ".snupkg" else ("dll", "xml", "pdb")
-    allowed = {f"lib/net10.0/{package_id}.{extension}" for extension in extensions}
+    allowed = {f"lib/net11.0/{package_id}.{extension}" for extension in extensions}
     allowed.update({f"{package_id}.nuspec", "README.md", "_rels/.rels", "[Content_Types].xml",
                     "package/services/metadata/core-properties/nuget.psmdcp"})
     unexpected = set(metadata["files"]) - allowed
@@ -152,8 +152,8 @@ def inventory(directory: Path, rows: list[dict], version: str | None = None) -> 
             version = metadata["version"]
         if metadata["version"] != version or path.name != f"{package_id}.{version}.nupkg":
             raise ValueError(f"Package filename/version mismatch: {path.name}")
-        if f"lib/net10.0/{package_id}.dll" not in metadata["files"]:
-            raise ValueError(f"Missing net10.0 assembly: {path.name}")
+        if f"lib/net11.0/{package_id}.dll" not in metadata["files"]:
+            raise ValueError(f"Missing net11.0 assembly: {path.name}")
         packages[package_id] = metadata
     expected_symbols = {f"{row['id']}.{version}.snupkg" for row in rows}
     if {p.name for p in directory.glob("*.snupkg")} != expected_symbols:
@@ -161,7 +161,7 @@ def inventory(directory: Path, rows: list[dict], version: str | None = None) -> 
     for path in directory.glob("*.snupkg"):
         metadata = archive_metadata(path)
         if (metadata["version"] != version or path.name != f"{metadata['id']}.{version}.snupkg"
-            or f"lib/net10.0/{metadata['id']}.pdb" not in metadata["files"]):
+            or f"lib/net11.0/{metadata['id']}.pdb" not in metadata["files"]):
             raise ValueError(f"Invalid symbol package: {path.name}")
         validate_payload(metadata, path)
     if packages.keys() != {row["id"] for row in rows}:

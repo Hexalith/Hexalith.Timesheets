@@ -16,4 +16,65 @@
     <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.2"
                     Condition="'@(PackageVersion->WithMetadataValue('Identity', 'Hexalith.Works.Contracts'))' == ''" />
   </ItemGroup>
+  <!-- Leave the Builds net10 Timesheets catalog view. This consumer is net11 and
+       uses the current EventStore/ASP.NET Core line with Aspire 17. -->
+  <PropertyGroup>
+    <HexalithTimesheetsNet10CatalogView>false</HexalithTimesheetsNet10CatalogView>
+    <HexalithAspNetCoreJwtBearerVersion>11.0.0</HexalithAspNetCoreJwtBearerVersion>
+    <HexalithAspNetCoreMvcTestingVersion>11.0.0</HexalithAspNetCoreMvcTestingVersion>
+    <HexalithAspNetCoreTestHostVersion>11.0.0</HexalithAspNetCoreTestHostVersion>
+    <HexalithEventStoreVersion Condition="'$(HexalithEventStoreVersion)' == '4.2.0'">5.2.0</HexalithEventStoreVersion>
+    <HexalithCommonsVersion>3.0.0</HexalithCommonsVersion>
+    <HexalithPolymorphicSerializationsVersion>2.0.0</HexalithPolymorphicSerializationsVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Update="Microsoft.AspNetCore.Authentication.JwtBearer" Version="11.0.0" />
+    <PackageVersion Update="Microsoft.AspNetCore.Mvc.Testing" Version="11.0.0" />
+    <PackageVersion Update="Microsoft.AspNetCore.TestHost" Version="11.0.0" />
+    <PackageVersion Update="Hexalith.Commons" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.Configurations" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.Diagnostics" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.Aspire" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.Http" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.Metadatas" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.Publication" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.Serialization" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.ServiceDefaults" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.TenantAccess" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.UniqueIds" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.Commons.StringEncoders" Version="$(HexalithCommonsVersion)" />
+    <PackageVersion Update="Hexalith.PolymorphicSerializations" Version="$(HexalithPolymorphicSerializationsVersion)" />
+    <PackageVersion Update="Hexalith.PolymorphicSerializations.CodeGenerators" Version="$(HexalithPolymorphicSerializationsVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Admin.Abstractions" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Admin.Server" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Aspire" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Client" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Contracts" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.DomainService" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Gateway" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.RestApi.Generators" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Server" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.ServiceDefaults" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.SignalR" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Testing" Version="$(HexalithEventStoreVersion)" />
+    <PackageVersion Update="Hexalith.EventStore.Testing.Integration" Version="$(HexalithEventStoreVersion)" />
+  </ItemGroup>
+  <!-- Timesheets-owned Aspire 17 consumer line. The imported Builds catalog still
+       selects 13.6.5; keep every Aspire family pin on one restored line. -->
+  <ItemGroup>
+    <PackageVersion Update="Aspire.Azure.Messaging.ServiceBus" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Azure.Security.KeyVault" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Azure.Storage.Blobs" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Azure.Storage.Queues" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting.Azure.AppContainers" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting.Azure.CosmosDB" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting.Docker" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting.Keycloak" Version="17.0.0-preview.1.26567.5" />
+    <PackageVersion Update="Aspire.Hosting.Kubernetes" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting.Redis" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting.Testing" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Microsoft.Azure.Cosmos" Version="17.0.0" />
+    <PackageVersion Update="CommunityToolkit.Aspire.Hosting.Dapr" Version="17.0.0-beta.1052" />
+  </ItemGroup>
 </Project>

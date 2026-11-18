@@ -90,10 +90,10 @@ Hexalith Timesheets is a tenant-scoped effort-evidence module: time capture, app
 
 ## Running and verifying
 
-- Use the SDK in `global.json` (`11.0.100`, `rollForward: latestPatch`). The AppHost SDK is `13.6.5`; compatible package pins come from the imported Builds catalog.
+- Use the SDK in `global.json` (`11.0.100`, `rollForward: latestPatch`). The AppHost SDK is `17.0.0`; Timesheets overrides the imported Builds catalog's Aspire 13.6.5 family to the matching 17.0.0 line. C# AppHosts require `AspireUseCliBundle=true` and Aspire CLI `17.0.0`.
 - Restore/build `Hexalith.Timesheets.slnx` with matching local Debug/source-reference mode: `dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false`, then `dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false`.
 - CI workflows exist under `.github/workflows/`; CI/CD uses Release/published packages. Never mix these restore/build graphs. Works source edges receive the evaluated consuming EventStore version, including explicit caller overrides; the documented Debug/source commands require no version workaround.
-- Prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home` in restricted environments. Run all six built xUnit v3 executables individually under `tests/<Project>/bin/Debug/net10.0/<Project>`, including `Hexalith.Timesheets.Works.Tests`. `global.json` selects Microsoft.Testing.Platform; alternatively use `dotnet test --project <project.csproj> --configuration Debug --no-build -p:UseHexalithProjectReferences=true` for each project. See README commands.
+- Prefix `DOTNET_CLI_HOME=/tmp/dotnet-cli-home` in restricted environments. Run all six built xUnit v3 executables individually under `tests/<Project>/bin/Debug/net11.0/<Project>`, including `Hexalith.Timesheets.Works.Tests`. `global.json` selects Microsoft.Testing.Platform; alternatively use `dotnet test --project <project.csproj> --configuration Debug --no-build -p:UseHexalithProjectReferences=true` for each project. See README commands.
 - Performance lanes require `TIMESHEETS_PERF=1`; the local Dapr journey requires `TIMESHEETS_LIVE_DAPR=1` and its isolated fixture. Default skips are not runtime acceptance.
 
 ## Conventions that differ from defaults

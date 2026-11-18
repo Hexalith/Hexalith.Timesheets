@@ -119,7 +119,7 @@ output directory, and emits six primary archives, six symbol archives, and a
 checksum ledger. Validation checks framework assemblies, identity/version,
 README, MIT expression, dependency XML, restore-backed dependency IDs/versions,
 unpublished/source leaks and unchanged archive bytes. Payloads are restricted to
-the named package's net10.0 DLL/XML/PDB shape and ordinary NuGet metadata; extra
+the named package's net11.0 DLL/XML/PDB shape and ordinary NuGet metadata; extra
 assemblies, reference/runtime payloads and other frameworks fail validation.
 Dependency asset restrictions fail closed; the generated Build,Analyzers exclusion
 is allowed. Legitimate platform
