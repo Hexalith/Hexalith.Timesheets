@@ -44,13 +44,13 @@ public sealed class MagicLinkCandidateDaprBatchTests
             }
             catch (SharedProjectionWriteUnavailableException)
             {
+                // EventStore 5.3.1 classifies a refused CAS/prepared identity as
+                // write-unavailable so callers retry the original journal.
                 return (0, ProjectionDispatchStatus.Retryable);
             }
             catch (InvalidOperationException exception) when (
                 exception.Message == "Shared projection catch-up is incomplete: Conflict")
             {
-                // Match the actual dispatcher's Indeterminate classification for
-                // this precise observed SDK failure, not arbitrary exceptions.
                 return (0, ProjectionDispatchStatus.Indeterminate);
             }
         }
@@ -71,7 +71,7 @@ public sealed class MagicLinkCandidateDaprBatchTests
                 // of scheduler timing, before concurrent same-journal recovery.
                 backend.ForceNextOptimisticConflict = true;
                 contended = await AttemptAsync();
-                contended.Value.Status.ShouldBe(ProjectionDispatchStatus.Indeterminate);
+                contended.Value.Status.ShouldBe(ProjectionDispatchStatus.Retryable);
                 backend.ForcedOptimisticConflicts.ShouldBe(1);
                 batches.Results.ShouldContain(result => result.Status == ReadModelBatchStatus.Conflict
                     && result.ConflictKind == ReadModelBatchConflictKind.Optimistic);

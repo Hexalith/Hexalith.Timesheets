@@ -23,8 +23,8 @@
     <HexalithAspNetCoreJwtBearerVersion>11.0.0</HexalithAspNetCoreJwtBearerVersion>
     <HexalithAspNetCoreMvcTestingVersion>11.0.0</HexalithAspNetCoreMvcTestingVersion>
     <HexalithAspNetCoreTestHostVersion>11.0.0</HexalithAspNetCoreTestHostVersion>
-    <HexalithEventStoreVersion Condition="'$(HexalithEventStoreVersion)' == '4.2.0'">5.2.0</HexalithEventStoreVersion>
-    <HexalithCommonsVersion>3.0.0</HexalithCommonsVersion>
+    <HexalithEventStoreVersion>5.3.1</HexalithEventStoreVersion>
+    <HexalithCommonsVersion>3.0.1</HexalithCommonsVersion>
     <HexalithPolymorphicSerializationsVersion>2.0.0</HexalithPolymorphicSerializationsVersion>
   </PropertyGroup>
   <ItemGroup>
@@ -67,6 +67,7 @@
     <PackageVersion Update="Aspire.Azure.Storage.Blobs" Version="17.0.0" />
     <PackageVersion Update="Aspire.Azure.Storage.Queues" Version="17.0.0" />
     <PackageVersion Update="Aspire.Hosting" Version="17.0.0" />
+    <PackageVersion Update="Aspire.Hosting.AppHost" Version="17.0.0" />
     <PackageVersion Update="Aspire.Hosting.Azure.AppContainers" Version="17.0.0" />
     <PackageVersion Update="Aspire.Hosting.Azure.CosmosDB" Version="17.0.0" />
     <PackageVersion Update="Aspire.Hosting.Docker" Version="17.0.0" />

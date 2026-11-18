@@ -2,10 +2,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <AspireUseCliBundle>true</AspireUseCliBundle>
+    <SkipAddAspireDefaultReferences>true</SkipAddAspireDefaultReferences>
     <SuppressAspireAppHostSdkObsoleteWarning>true</SuppressAspireAppHostSdkObsoleteWarning>
     <IsPackable>false</IsPackable>
     <IsPublishable>true</IsPublishable>
-    <NoWarn>$(NoWarn);CS0618;ASPIRE012</NoWarn>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(UseHexalithProjectReferences)' == 'true'">
@@ -22,6 +23,9 @@
     <Content Include="KeycloakRealms/**/*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" />
   </ItemGroup>
   <ItemGroup Condition="'$(UseHexalithProjectReferences)' != 'true'">
     <PackageReference Include="Hexalith.EventStore.Aspire" />
