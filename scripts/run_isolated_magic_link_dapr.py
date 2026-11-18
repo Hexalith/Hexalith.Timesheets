@@ -2537,12 +2537,16 @@ class IsolatedFixture:
             ET.SubElement(properties, name).text = value
         items = ET.SubElement(project, "ItemGroup")
         ET.SubElement(items, "FrameworkReference", Include="Microsoft.AspNetCore.App")
-        # Compile against the exact DiagnosticSource selected by the captured SDK graph.
-        # Its net10 consumer can legitimately carry the catalog's newer package assembly.
+        # Compile against captured AppHost assemblies. DiagnosticSource is inbox on
+        # net11 and is omitted from that output; keep a HintPath only when copied.
+        output_directory = APPHOST.parent / relative_output
         for name in ("Hexalith.EventStore.Contracts", "Hexalith.EventStore.ServiceDefaults",
                      "System.Diagnostics.DiagnosticSource"):
+            assembly = output_directory / (name + ".dll")
+            if name == "System.Diagnostics.DiagnosticSource" and not assembly.is_file():
+                continue
             reference = ET.SubElement(items, "Reference", Include=name)
-            ET.SubElement(reference, "HintPath").text = str(APPHOST.parent / relative_output / (name + ".dll"))
+            ET.SubElement(reference, "HintPath").text = str(assembly)
         (directory / "CatalogBindingVerifier.csproj").write_text(ET.tostring(project, encoding="unicode"))
         self.run_command(["dotnet", "build", str(directory / "CatalogBindingVerifier.csproj"),
                           "--configuration", configuration, "--disable-build-servers", "-warnaserror", "-m:1", "/nr:false"], timeout=60)
