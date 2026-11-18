@@ -51,6 +51,23 @@ internal sealed class BootstrapObservingReadModelStore(IReadModelStore inner) : 
         }
     }
 
+    /// <summary>Waits until a Stopwatch has actually reached <paramref name="delay"/>.</summary>
+    /// <remarks>
+    /// <see cref="Task.Delay(TimeSpan, CancellationToken)"/> can complete a few hundred
+    /// microseconds early, which made the 20ms setup snapshot flake on CI.
+    /// </remarks>
+    private static async Task DelayAtLeastAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        if (delay <= TimeSpan.Zero)
+            return;
+        var clock = Stopwatch.StartNew();
+        TimeSpan remaining = delay - clock.Elapsed;
+        if (remaining > TimeSpan.Zero)
+            await Task.Delay(remaining, cancellationToken);
+        while (clock.Elapsed < delay)
+            await Task.Delay(TimeSpan.FromMilliseconds(1), cancellationToken);
+    }
+
     /// <inheritdoc />
     public async Task<ReadModelEntry<TValue>> GetAsync<TValue>(string storeName, string key,
         CancellationToken cancellationToken = default) where TValue : class
@@ -82,7 +99,13 @@ internal sealed class BootstrapObservingReadModelStore(IReadModelStore inner) : 
         }
         try
         {
-            if (measured) await Task.Delay(block ? TimeSpan.FromSeconds(30) : ReadDelay, cancellationToken);
+            if (measured)
+            {
+                if (block)
+                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationToken);
+                else
+                    await DelayAtLeastAsync(ReadDelay, cancellationToken);
+            }
             return await inner.GetAsync<TValue>(storeName, key, cancellationToken);
         }
         finally
