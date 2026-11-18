@@ -5,7 +5,7 @@
     <SuppressAspireAppHostSdkObsoleteWarning>true</SuppressAspireAppHostSdkObsoleteWarning>
     <IsPackable>false</IsPackable>
     <IsPublishable>true</IsPublishable>
-    <NoWarn>$(NoWarn);CS0618</NoWarn>
+    <NoWarn>$(NoWarn);CS0618;ASPIRE012</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Debug' and '$(UseHexalithProjectReferences)' == 'true'">
