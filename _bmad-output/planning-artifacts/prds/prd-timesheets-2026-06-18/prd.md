@@ -1,6 +1,6 @@
 ---
 title: "Hexalith.Timesheets — Product Requirements Document"
-status: draft
+status: final
 created: 2026-06-18
 updated: 2026-11-20
 ---
@@ -9,7 +9,7 @@ updated: 2026-11-20
 
 ## 0. Document Purpose
 
-This PRD specifies v1 of **Hexalith.Timesheets**, the launch-grade Hexalith module for recording, approving, correcting, and reporting time spent against **Project** and **Work** references. It is written for product stakeholders, the architect who will turn it into a solution design, the developers who will implement the module, and the owners of dependent Hexalith modules. It builds on the product brief (`../../briefs/brief-timesheets-2026-06-18/brief.md`) and brief addendum (`../../briefs/brief-timesheets-2026-06-18/addendum.md`). Vocabulary is anchored in §3 Glossary, Functional Requirements are numbered globally, and inferred choices are tagged inline with `[ASSUMPTION]` and collected in §15.
+This PRD specifies v1 of **Hexalith.Timesheets**, the Hexalith module for recording, approving, correcting, and reporting time spent against **Project** and **Work** references. It builds on the product brief and its addendum. The glossary is in §4, the numbered functional requirements are in §5, and §16 records current acceptance. [Product brief](../../briefs/brief-timesheets-2026-06-18/brief.md) · [Brief addendum](../../briefs/brief-timesheets-2026-06-18/addendum.md)
 
 ## 1. Vision
 
@@ -47,15 +47,15 @@ Primary sources used for the landscape check are captured in `addendum.md`.
 
 ### 3.3 Key User Journeys
 
-- **UJ-1. Camille records her project time before submitting the week.** Camille is an internal consultant working across two client projects. From a Project or Work context, she records a Time Entry with date, duration, Activity Type, comment, and Billable Flag. On Friday, she reviews her weekly Timesheet Period and submits it. The value lands when the period shows submitted with all entries traceable back to the Project or Work references. **Edge case:** if one entry is missing a required Activity Type, submission blocks only that entry and shows the correction needed.
+- **UJ-1. Camille records her project time before submitting the week.** Camille is an internal consultant working across two client projects. From a Project or Work context, she records a Time Entry with its date, duration, Activity Type, comment, and Billable Flag. On Friday she submits her weekly Timesheet Period. If an included Activity Type has been deactivated, the whole period stays unsubmitted. Camille sees which entry to correct, keeps her valid selections, and retries. The submitted period lists the entries she reviewed.
 
 - **UJ-2. Nadia approves the week and rejects one entry.** Nadia is a project manager reviewing submitted time for a client project. She filters pending Time Entries by Project, opens Camille's weekly Timesheet Period, approves valid entries, and rejects one vague billable entry with a reason. The value lands when approved entries are locked into the Approved-Time Ledger and the rejected entry returns to Camille for correction. **Edge case:** if Camille corrects the rejected entry after period submission, the period shows a pending correction instead of silently changing the approved record.
 
-- **UJ-3. Simon confirms supplier time through Magic-Link Confirmation.** Simon is an external supplier who is not a tenant user. He receives a scoped magic link for a Work item, reviews the proposed date, duration, Activity Type, Billable Flag, minimal target context, and comment only when external-confirmation policy explicitly allows it; otherwise comment text is omitted. He then confirms or adjusts the entry. The value lands when the tenant sees a Party-attributed Time Entry that can enter approval without granting Simon broader access. **Edge case:** if the link expired or was already used, Simon sees no data and must request a new confirmation link.
+- **UJ-3. Simon confirms supplier time through Magic-Link Confirmation.** Simon receives a scoped link for a Work item. He reviews the proposed date, duration, recorded tenant Activity Type, Billable Flag, and minimal target context. He sees a comment only when external-confirmation policy permits it. He can confirm the recorded type even if it was later deactivated. If he adjusts the entry, the selected type must be eligible now. The tenant receives Party-attributed evidence for approval. An expired or used link reveals no entry details.
 
 - **UJ-4. Ada the AI agent records execution evidence.** Ada is an AI agent assigned through Hexalith.Works. After completing a Work item step, Ada records wall-clock execution time, model/tool runtime, billable effort, and token consumption against the Work reference. The value lands when the Work item report shows AI effort beside human effort without treating tokens as human hours. **Edge case:** if token metrics are unavailable from the provider, the entry records the missing metrics explicitly rather than fabricating values.
 
-- **UJ-5. Marc exports approved billable evidence.** Marc is a finance consumer preparing billing evidence. He filters approved billable time by tenant, Project, period, and Activity Type, then exports the Approved-Time Ledger with entry IDs, Contributor Party references, Approval State and correction lineage, with comments excluded from CSV by default. The value lands when downstream billing can consume trusted time without needing Timesheets to generate invoices.
+- **UJ-5. Marc exports approved billable evidence.** Marc filters the Approved-Time Ledger by tenant, Project, period, and Activity Type. Before requesting the CSV, he checks the preview for readiness, row count, and the comment policy for his selected scope. After Timesheets verifies the complete ledger snapshot and its matching audit receipt, Marc can download the file and reconcile entry IDs, Contributor Party references, approvals, and corrections in downstream billing. If verification is uncertain, the download stays unavailable and Marc can retry the same request.
 
 ## 4. Glossary
 
@@ -67,7 +67,10 @@ Primary sources used for the landscape check are captured in `addendum.md`.
 - **Work Reference** — a stable ID from `Hexalith.Works`; Timesheets references it but does not own work lifecycle.
 - **Activity Type** — tenant- or project-scoped category describing the nature of recorded time.
 - **Billable Flag** — the Timesheets-owned classification of whether a Time Entry is billable evidence. It is not a rate, invoice line, or revenue-recognition decision.
-- **Approval State** — the current review state of a Time Entry or Timesheet Period: Draft, Submitted, Approved, Rejected, Corrected, or Superseded. `[ASSUMPTION: these state names are the v1 vocabulary; architecture may map them to exact event names.]`
+- **Approval State** — a Time Entry can be Draft, Submitted, Approved, or Rejected. A Timesheet Period has its own approval record with values Submitted, Approved, or Rejected.
+- **Correction State** — None, Corrected, or Superseded. An entry can remain Approved as an additive correction supersedes its earlier values.
+- **Lock State** — Unlocked, LockedFromDirectEdit, or SupersededLocked. This determines whether an entry accepts a direct edit.
+- **Ledger row state** — Current or Superseded. The row state identifies which version of the approved evidence a reader is viewing. [Published state vocabulary](../../../../src/Hexalith.Timesheets.Contracts/ValueObjects/TimesheetsEnums.cs)
 - **Timesheet Period** — a weekly or monthly review artifact grouping a Contributor's Time Entries for submission and approval.
 - **Approver** — an authorized Party that can approve or reject Time Entries or Timesheet Periods.
 - **Correction** — an additive, auditable change that fixes or supersedes a prior Time Entry without silently rewriting history.
@@ -89,18 +92,18 @@ A Contributor can create a Time Entry with date, positive duration, Target Refer
 
 **Consequences (testable):**
 - Creating a Time Entry emits a durable domain event and produces a queryable Time Entry projection.
-- Duration must be positive and recorded in whole minutes for human/external entries. `[ASSUMPTION: v1 records human and external durations in whole minutes; finer-grained AI runtime can be captured in AI Effort Metrics.]`
+- Human and external entries record a positive duration in whole minutes. AI Effort Metrics can also capture finer-grained runtime.
 - A Time Entry must target exactly one Project Reference or one Work Reference.
 - Comment requirements can be policy-driven; when required, missing comments block submission rather than creation.
 
 #### FR-2: Validate Target References without owning them
 
-Timesheets verifies Target References through module boundaries before accepting submitted or approved time.
+Timesheets verifies the Project or Work reference before recording a Draft and again at submission and approval.
 
 **Consequences (testable):**
 - Project Reference validation uses a Projects-owned API/projection/adapter; Work Reference validation uses a Works-owned API/projection/adapter.
 - Timesheets stores stable IDs and minimal correlation metadata only; it does not copy Project, Work, or Party display state.
-- Writes fail closed when a required Target Reference cannot be verified. `[ASSUMPTION: Project/Work reference validation fails closed for submitted/approved writes when reference status cannot be verified; Draft creation may be allowed with a stale-warning state.]`
+- A protected write, including Draft capture, requires fresh evidence that the target is valid and authorized for this tenant. Missing, stale, or denied target authority blocks the write before an entry event is recorded. Tenant policy may permit showing a stale display label after the target check succeeds. [Draft capture criteria](../../../implementation-artifacts/1-7-record-draft-time-entry-against-project-or-work.md)
 
 #### FR-3: Preserve entry history and correction lineage
 
@@ -122,16 +125,17 @@ A Contributor can submit Draft Time Entries for review individually or as part o
 **Consequences (testable):**
 - Submission changes Approval State from Draft to Submitted and records submitter, timestamp, and submission scope.
 - Submission validates required fields, Target Reference status, Activity Type validity, and policy-required comments.
+- When a contributor submits selected entries and policy permits partial submission, valid entries can proceed. Each blocked entry returns its ID and field-specific guidance. Submitting a whole Timesheet Period follows FR-7. [Selected-entry submission](../../../implementation-artifacts/2-1-submit-draft-time-entries-for-approval.md)
 - A rejected entry can be corrected and resubmitted without losing rejection reason history.
 
 #### FR-5: Approve or reject individual Time Entries
 
-An Approver can approve or reject submitted Time Entries with an optional or required reason according to tenant/project policy.
+An Approver can approve a submitted Time Entry without giving a reason. Rejection requires a nonblank reason.
 
 **Consequences (testable):**
 - Approval changes the entry to Approved and makes it eligible for the Approved-Time Ledger.
-- Rejection changes the entry to Rejected and records approver, timestamp, and reason.
-- An Approver cannot approve their own Time Entry unless policy explicitly allows it. `[ASSUMPTION: self-approval is denied by default.]`
+- Rejection changes the entry to Rejected and records the approver, timestamp, and reason. A missing or blank rejection reason leaves the entry Submitted and emits no rejection event. [Entry approval and rejection](../../../implementation-artifacts/2-3-approve-or-reject-submitted-time-entries.md)
+- An Approver cannot approve their own Time Entry unless policy explicitly allows it (§14.2).
 
 #### FR-6: Lock approved entries against direct edits
 
@@ -139,7 +143,7 @@ Approved Time Entries are locked from direct mutation and can only be corrected 
 
 **Consequences (testable):**
 - Direct edit commands against Approved entries are rejected with a domain rejection.
-- Corrections can supersede or offset approved entries while keeping original approval evidence visible.
+- Additive corrections supersede the affected values and keep the original approval evidence visible.
 - Reporting can include or exclude superseded entries according to query options.
 
 #### FR-7: Submit and approve Timesheet Periods
@@ -147,8 +151,9 @@ Approved Time Entries are locked from direct mutation and can only be corrected 
 A Contributor can submit a weekly or monthly Timesheet Period containing their Time Entries, and an Approver can approve or reject that period.
 
 **Consequences (testable):**
-- A Timesheet Period is scoped to one Contributor, one Tenant, and one weekly or monthly period. `[ASSUMPTION: v1 does not support multi-contributor period submissions.]`
+- A Timesheet Period is scoped to one Contributor, one Tenant, and one weekly or monthly period.
 - Period submission records the included Time Entry IDs and the period boundary.
+- On whole-period submission, if any included entry fails validation, Timesheets emits neither a period-submission event nor an entry-submission event for that request. It returns the valid entry IDs and identifies the fields that need correction on each blocked entry so the contributor can retry the whole period. [Period submission criteria](../../../implementation-artifacts/2-7-submit-timesheet-periods.md)
 - Period approval does not erase entry-level states; it records grouped review evidence and locks approved included entries from direct edit.
 
 #### FR-8: Reconcile entry-level and period-level approval
@@ -156,8 +161,8 @@ A Contributor can submit a weekly or monthly Timesheet Period containing their T
 Timesheets must distinguish entry Approval State from period Approval State.
 
 **Consequences (testable):**
-- A Timesheet Period can show mixed entry states (Approved, Rejected, Corrected, Superseded) without losing period history.
-- Period approval locks included approved entries from direct edit but does not prevent additive corrections. `[ASSUMPTION: period approval is not an irreversible freeze; corrections remain possible with audit evidence.]`
+- Period detail shows its own decision and each entry’s Approval State, Correction State, and Lock State. One period can contain both Approved and Rejected entries, with corrections visible against the affected entries.
+- Period approval locks included approved entries against direct edits. Additive corrections retain the original approval evidence.
 - A rejected entry inside a submitted period can be corrected and resubmitted without reconstructing the whole period from scratch.
 
 #### FR-9: Resolve approver authority
@@ -167,7 +172,8 @@ Timesheets authorizes Approvers using tenant and project/work context.
 **Consequences (testable):**
 - Entry and period approval fail closed when approver authority cannot be resolved.
 - The approval check can use Tenants membership/roles and Project/Work-specific approver projections.
-- Default approvers are tenant admins and project managers/project approvers from Projects/Works projections. `[ASSUMPTION: exact role names and precedence are architecture decisions.]`
+- Tenant admins and Project or Work approvers act under server-resolved policy. Providers have explicit precedence, and contradictory decisions at the same precedence deny approval. The provider owns the role names (§14.2).
+- If the highest-precedence applicable provider group is unavailable, approval is denied even when a lower-priority tenant or finance provider would allow it. [Authority policy and follow-up](../../../implementation-artifacts/2-2-enforce-timesheet-approval-authority-policy.md)
 
 ### 5.3 Activity Type Catalogs
 
@@ -188,8 +194,9 @@ Authorized users can define project-level Activity Types for project-specific ca
 
 **Consequences (testable):**
 - Project-level Activity Types are scoped to a Project Reference and tenant.
-- Tenant-level Activity Types remain available unless the project explicitly restricts the catalog. `[ASSUMPTION: project-level catalog restrictions are opt-in; the default is tenant plus project types.]`
+- The default catalog includes active tenant types and active types for the selected Project. An explicit Project restriction can narrow that selection. Changing it requires both tenant and Project authority (§14.6).
 - Reports can group by tenant-level and project-level Activity Types without merging IDs by display label.
+- Magic-link selection is limited to tenant-owned Activity Types under FR-14.
 
 ### 5.4 Actor-Neutral Contributors, External Parties, and AI Agents
 
@@ -211,7 +218,8 @@ External contributors can submit or confirm Time Entries through an API surface 
 **Consequences (testable):**
 - External API submission requires tenant-scoped authorization and a valid Party reference.
 - API-created entries enter the same Draft/Submitted/Approved workflow as internal entries.
-- A workload-authenticated confirmation resolves the recorded entry in its tenant and contributor scope. An accepted retry produces one durable confirmation. Confirmation preserves the entry’s approval state.
+- Workload-authenticated confirmation verifies the tenant, Contributor, and target of the entry recorded through the API. Acknowledgement requires a matching committed confirmation. Retrying the same request, including after restart, leaves exactly one confirmation and preserves the Approval State. A different tenant or Contributor receives an opaque refusal and the entry keeps its prior state.
+- External recording respects caller cancellation and a configured deadline for verifying the write. If verification times out after commit, retrying the same request identity yields one recording. Operators can distinguish an uncertain outcome from a policy refusal while public responses and telemetry protect sensitive entry and identity details.
 - External API calls cannot bypass approval, correction, Target Reference validation, tenant isolation, or audit requirements.
 
 #### FR-14: Support Magic-Link Confirmation
@@ -219,7 +227,9 @@ External contributors can submit or confirm Time Entries through an API surface 
 External contributors can confirm or adjust a specific Time Entry through Magic-Link Confirmation.
 
 **Consequences (testable):**
-- Magic links are single-use, scoped to one contribution confirmation, expire by policy, and require no full account login. `[ASSUMPTION: single-use scoped links are v1 security baseline, not a later hardening item.]`
+- Magic links are single-use, apply to one contribution confirmation, expire by policy, and require no full account login (§14.4).
+- Issuance, display, confirmation, and adjustment support tenant-owned Activity Types for both Project and Work targets. New issuance and adjustment require an active, selectable tenant type. A Project target applies its catalog restrictions. A Work target uses its own scope without inferring a Project.
+- A valid link may display and confirm the entry’s recorded tenant type after deactivation or exclusion by its Project. The usual capability, scope, and authorization checks still apply. [Magic-link selection and historical confirmation](../../../implementation-artifacts/tests/five-magic-link-consistency-deferrals.md)
 - Expired, invalid, or already-used links reveal no tenant, Project, Work, Party, or Time Entry details.
 - Valid-link details include comment text only when explicit external-confirmation policy allows it with the required redaction; otherwise it is omitted, including when policy is missing.
 - Confirmed Magic-Link Confirmation entries are attributed to the external Contributor Party and retain link-use audit metadata.
@@ -230,7 +240,7 @@ AI-agent Contributors can attach AI Effort Metrics to Time Entries.
 
 **Consequences (testable):**
 - AI Effort Metrics support wall-clock execution time, model/tool runtime, billable effort, and token consumption as distinct fields.
-- Token consumption is recorded as provider-reported input/output/total counts when available; missing provider metrics do not block Time Entry creation. `[ASSUMPTION: provider metric gaps are represented explicitly as unavailable/unknown, not zero.]`
+- Record provider-reported input, output, and total token counts when available. If the provider omits a count, keep its availability status and leave the numeric value absent. A reported zero is a measured value. The Contributor can record the Time Entry even when counts are missing.
 - AI Effort Metrics are reportable beside human/external durations without converting tokens into hours by default.
 
 ### 5.5 Reporting, Approved-Time Ledger, and Exports
@@ -243,7 +253,7 @@ Authorized users can query Time Entries by Contributor, Project Reference, Work 
 
 **Consequences (testable):**
 - Queries enforce tenant isolation and result-level authorization.
-- Queries can include or exclude Draft, Rejected, Corrected, Superseded, and Approved entries.
+- Queries can filter by entry Approval State and independently include or exclude corrected or superseded evidence. An Approved entry still matches the approval filter after a correction.
 - Queries expose projection freshness so consumers can distinguish fresh, stale, rebuilding, or unavailable read models.
 
 #### FR-17: Produce Project and Work actual-time reports
@@ -252,7 +262,8 @@ Timesheets reports actual time by Project and Work item, including planned-vs-ac
 
 **Consequences (testable):**
 - Project reports roll up Time Entries by Project Reference and period.
-- Work reports roll up Time Entries by Work Reference and can compare actual time with Works-provided planned/estimated effort.
+- Work reports roll up Time Entries by Work Reference. The default host reports planned effort as unavailable. An activated Works adapter can supply an estimate for comparison (§8).
+- If the planned value is missing or cannot be trusted or disclosed, show authorized actuals with their own freshness and mark the plan unavailable, or deny the read when policy requires it. Calculate a variance only when Works supplies an authorized estimate with a compatible unit. [Planned-effort reporting criteria](../../../implementation-artifacts/4-8-implement-works-planned-effort-reporting-adapter.md)
 - Reports do not require Timesheets to copy Project hierarchy or Work lifecycle state.
 
 #### FR-18: Maintain the Approved-Time Ledger
@@ -260,7 +271,7 @@ Timesheets reports actual time by Project and Work item, including planned-vs-ac
 Timesheets maintains a projection of approved time suitable for downstream finance, billing, and audit consumers.
 
 **Consequences (testable):**
-- The Approved-Time Ledger includes Time Entry ID, Contributor Party ID, Target Reference, date, duration, Activity Type, Billable Flag, approval metadata, correction lineage, and comment.
+- An authorized ledger row includes Time Entry ID, Contributor Party ID, Target Reference, date, duration, Activity Type, Billable Flag, approval metadata, and correction lineage. A direct ledger read includes comment text only when the row’s projection policy explicitly permits it. A denied or missing inclusion decision omits text from the row and its original and corrected values while preserving authorized identifiers and lineage. [Ledger disclosure criteria](../../../implementation-artifacts/4-2-project-approved-time-ledger-from-domain-events.md)
 - Superseded or corrected approved entries remain visible with lineage.
 - The ledger can be rebuilt from events and does not become authoritative storage.
 
@@ -271,9 +282,10 @@ Authorized finance/accounting consumers can export approved billable time.
 **Consequences (testable):**
 - Export filters include tenant, Project Reference, Work Reference, Contributor, Activity Type, period, and Billable Flag.
 - Export output includes stable IDs and correction lineage sufficient for downstream reconciliation.
-- A full export covers the whole authorized filter scope at one ledger version. A changing or incomplete read yields no file.
-- Preview and generation apply the same trusted tenant and row comment policy. CSV and returned rows, including correction history, omit text unless both permit disclosure.
-- Delivery requires a durable export audit record matching the requester, scope, row count and content hash. Retrying the same request after an uncertain acknowledgement yields one matching record.
+- Preview and generation evaluate the same trusted tenant export policy and each row’s export permission. Both must allow a comment before it can appear in generated CSV or returned rows, including original and corrected values. Redaction preserves IDs and correction lineage. Missing required export policy blocks the action.
+- The v1 preview service returns readiness, freshness, row count, and effective disclosure policy for the authorized scope. Its response contains no evidence rows or comment text. Preview creates neither a file nor an export audit event. [Preview contract](../../../../src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportPreviewReadModel.cs)
+- If a caller requests a full export while browsing a later page, Timesheets starts at the first page of the authorized scope or explicitly rejects the request. Each matching row appears once in deterministic order at one ledger version, including requested superseded rows. If the service cannot verify completeness or a single version, it withholds both the CSV and returned rows.
+- Before delivery, Timesheets verifies a durable receipt for the request identity, requester, filter scope, row count, format version, and hash of the CSV bytes. Rejection or uncertainty withholds both bytes and rows. Retrying after a lost acknowledgement, including after restart, yields one matching receipt. Reusing the identity for different scope or content cannot authorize delivery.
 - Export does not calculate rates, invoice totals, taxes, payroll values, or revenue recognition.
 
 #### FR-20: Surface AI-agent effort reporting
@@ -306,6 +318,7 @@ Timesheets exposes command and query contracts usable by internal UI, API client
 - v1 ships REST/SDK command/query contracts plus FrontComposer-compatible metadata for admin/internal surfaces. This repository does not ship or add a Timesheets UI project; rendered internal and external experiences are composed and verified by a consuming FrontComposer host using Fluent UI V5. It does not ship a bespoke mobile app.
 - API contracts do not accept server-controlled tenant/user/authorization context from callers.
 - Public contracts hide EventStore envelope mechanics, aggregate internals, and projection rebuild mechanics.
+- A consumer that installs only the published Projections package can enumerate its supported projections using its declared dependencies. A composed host can discover every installed command and projection exactly once.
 
 #### FR-23: Keep sibling module responsibilities out of Timesheets
 
@@ -352,6 +365,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - AI interpretation of natural-language time notes.
 - Full external-party portal UX.
 - Native mobile app.
+- A dedicated HTTP endpoint for export preview. V1 exposes the side-effect-free preview through the service query described in FR-19.
 - Structured API/webhook export and richer tenant comment classification/redaction schemes.
 - Timesheets-owned rendering projects; consuming FrontComposer hosts own rendered UI/accessibility.
 - Replacing Project or Work ownership of their own state.
@@ -362,7 +376,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Hexalith.Tenants** — tenant lifecycle, membership, roles, access projections, and fail-closed tenant isolation.
 - **Hexalith.Parties** — Contributor identity and display hydration. Timesheets stores Party IDs, not personal data.
 - **Hexalith.Projects** — Project Reference validation, project-level Activity Type scope, project manager/approver context, and project reporting roll-up context.
-- **Hexalith.Works** — Work Reference validation, planned/estimated effort for planned-vs-actual reporting, AI-agent/work execution context.
+- **Hexalith.Works** owns Work Reference validation, planned effort, and AI-agent execution context. In the default host, Work capture is denied and planned effort is unavailable. Live activation is waived until Platform supplies a live Works query channel and enables the relevant validation or reporting adapter (Stories 1.10 and 4.8). A separate waiver covers detection of stale Works state until Works supplies sufficient freshness evidence. [Launch-scope classification](../../../../docs/launch-readiness.md#launch-scope-classification)
 - **Hexalith.FrontComposer** — generated/admin UI metadata and internal operational surfaces where suitable.
 
 ## 9. Data Governance and Audit Requirements
@@ -371,7 +385,7 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Append-only evidence.** Approval, rejection, correction, and export-relevant changes are events. Approved evidence is never silently overwritten.
 - **Personal data minimization.** Durable Timesheets events store Party IDs and contribution evidence, not Party display names, contact details, profile fields, or personal-data objects.
 - **Correction provenance.** Corrections preserve original values, corrected values, actor, timestamp, reason where required, and lineage to the affected entry.
-- **Export accountability.** Approved-time exports are auditable actions with requester, filters, timestamp, and output scope recorded where required by policy.
+- **Export accountability.** Every delivered approved-time CSV has the durable receipt required by FR-19. It records the request and generation times and identifies the delivered contents by hash. Comments and exported row data stay out of the receipt.
 - **Magic-link secrecy.** Invalid or expired magic links reveal no tenant, Project, Work, Party, or Time Entry details.
 - **Retention policy.** **[RESOLVED 2026-06-19]** v1 default: Time Entry and approval/correction events are retained as indefinite audit evidence; export records and Magic-Link Confirmation audit metadata follow a documented tenant default. A **legal-hold override remains an explicit launch-readiness gate** requiring tenant/legal sign-off (owned by Story 1.4).
 
@@ -379,7 +393,8 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 
 - **Security and authorization.** All command, query, API, Magic-Link Confirmation, export, and admin paths enforce tenant and resource gates. JWT tenant claims are not sufficient by themselves; local tenant/resource authorization decides access.
 - **Reliability.** Projections tolerate at-least-once delivery, duplicate events, replay, and rebuild. Reads expose stale/rebuilding/unavailable states instead of pretending data is fresh.
-- **Performance.** Common command acknowledgements should complete within 500 ms p95 in a warmed local service, and common report queries should return within 2 seconds p95 for tenant/project/period filters. `[ASSUMPTION: these are v1 launch targets subject to architecture sizing.]`
+- **Performance.** NFR10 targets 500 ms p95 for common command acknowledgements in a warmed local service. NFR11 targets 2 seconds p95 for common Project and Work reports filtered by tenant, Project, and period. Historical in-process measurements passed for the command pipeline and reads over seeded projections. The release owner tracks the waiver for the EventStore/Dapr persistence and transport path with the owners of Stories 1.11 and 4.10. Revisit it when representative persisted fixtures can measure end-to-end latency. [Measured scenarios and waiver](../../../../docs/performance-evidence.md)
+- **Ledger performance qualification.** The reporting owner agrees on a representative tenant volume and budgets for elapsed time and memory allocation. At that volume, compare the existing and revised ledger reads under the same load and verify identical effective rows, superseded lineage, and CSV bytes. [Story 6.9](../../epics.md#story-69-reduce-repeated-ledger-folds-while-preserving-evidence)
 - **Observability.** Logs and traces use structured metadata and correlation IDs without logging event payloads, comments, personal data, tokens, secrets, or full command bodies.
 - **Accessibility.** Any rendered Timesheets surface in a consuming FrontComposer host follows Hexalith/FrontComposer/Fluent UI V5 rules and targets WCAG 2.2 AA (NFR13). Timesheets contracts and metadata express accessible semantics; component and browser conformance require consumer-host evidence.
 - **Compatibility.** Event and contract evolution is additive and serialization-tolerant. Do not remove or rename previously emitted event fields.
@@ -397,11 +412,11 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 
 ### Primary
 
-- **SM-1 — Trusted capture coverage.** Internal, external-party, and AI-agent Contributors can create Time Entries through the same domain model. Target: all three contributor paths covered by automated tests and demo data. Validates FR-1, FR-12, FR-13, FR-14, FR-15.
+- **SM-1 — Trusted capture coverage.** Automated tests and demo data must cover internal, external-party, and AI-agent capture through the same domain model (FR-1 and FR-12–FR-15). `[ASSUMPTION: starting from the existing Project or Work context lets the contributor record time without reconstructing the target.]` In product UAT, the product owner observes a contributor record and submit time from that context, checks the Target Reference on the submitted entry, and records any re-entry or other friction in the launch register.
 - **SM-2 — Approval evidence completeness.** Every approved Time Entry has approver, timestamp, Approval State lineage, Target Reference, Contributor, Billable Flag, and correction lineage where applicable. Target: 100% of approved ledger records satisfy evidence schema. Validates FR-3, FR-5, FR-6, FR-18.
 - **SM-3 — Period approval readiness.** Weekly and monthly Timesheet Periods can be submitted, approved/rejected, and reconciled with entry states. Target: end-to-end tests for clean, rejected, corrected, and mixed-state periods. Validates FR-7, FR-8, FR-9.
 - **SM-4 — Operational reporting usefulness.** Project and Work reports show actual time by Contributor, period, Activity Type, Billable Flag, and Approval State. Target: seeded report scenarios answer the brief's questions: "where did the time go?", "what can we bill?", and "what did this work cost in effort?" Validates FR-16, FR-17, FR-20.
-- **SM-5 — Billing evidence export.** Approved billable-time export includes stable IDs, filters, approval metadata, and correction lineage without rates or invoice totals. Target: finance export contract test passes. Validates FR-18, FR-19.
+- **SM-5 — Billing evidence export.** Every delivered file reconciles to one complete authorized ledger version and one durable receipt. Finance acceptance covers comment disclosure in every representation, retry after a lost audit acknowledgement, and a correction between pages. A failed verification releases zero rows or bytes. Finance delivery requires passing evidence for every acceptance criterion in Stories 6.1–6.3 (FR-18 and FR-19).
 
 ### Secondary
 
@@ -424,38 +439,31 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 
 Launch readiness requires: passing tenant-isolation tests, approval/correction evidence tests, projection rebuild tests, export contract tests, privacy/logging scans, a documented owns-vs-references boundary decision, concrete launch-scope integration adapters implemented in their owning feature phases, and performance evidence for the stated command/report targets. Story-complete evidence is not the same as launch-complete evidence: unresolved host wiring, runtime fixtures, consumer-host rendering/accessibility, deployment, stakeholder acceptance, legal-hold sign-off, or formally accepted waivers must remain visible in the launch-readiness record.
 
-The first deployed qualification slice follows one authorized Project entry through capture, submission, approval, additive correction and ledger readback. Repeat the read after restart and projection rebuild, and verify denial from a second tenant. The launch register tracks deployed magic-link acceptance, tenant policy, legal hold and product acceptance separately. [Launch register](../../../../docs/launch-readiness.md)
+Story 6.7 requires a Project approver and contributor to be able to complete capture, submission, approval, additive correction, and ledger readback through supported release entry points. To qualify that workflow under Story 6.8, the release owner must repeat it with production-equivalent providers in an authorized tenant. After restart and again after rebuilding projections, the ledger must return the same row identities, effective values, and correction lineage. A caller from a second tenant must be denied access to read or change the first tenant’s entry. The release owner records the deployed evidence in the launch register. [Epic 6](../../epics.md#epic-6-qualify-project-time-and-finance-evidence) · [Launch register](../../../../docs/launch-readiness.md)
 
 ## 14. Open Questions
 
-1. **Time-zone and period policy** — **[RESOLVED 2026-06-19]** v1 uses **tenant time zone** as the canonical policy (UTC audit instants + tenant-local period keys). Owned by Stories 2.7/4.6.
-2. **Approver precedence** — **[RESOLVED 2026-06-19]** v1 uses explicit authority-provider precedence. Same-precedence contradictions fail closed as ambiguous, self-approval is denied by default for entry and period approval unless explicitly allowed, and unavailable higher-precedence provider fall-through remains a policy follow-up for real provider/export stories.
+1. **Time-zone and period policy** — **[RESOLVED 2026-06-19]** v1 uses UTC audit instants and tenant-local period keys (Stories 2.7 and 4.6).
+2. **Approver precedence** — **[RESOLVED 2026-06-19]** FR-9 defines the current rule for an unavailable deciding group or a contradiction within that group. Self-approval of an entry or period is denied unless policy explicitly allows it. The authority-policy owner must decide whether to allow lower-priority fallback when real providers or finance-review workflows are integrated. Any such change requires a separate policy decision.
 3. **Correction model detail** — **[RESOLVED 2026-06-19]** v1 uses additive correction events with superseding correction lineage for rejected-entry and approved-entry correction. Offset-entry correction remains deferred unless finance/export decisions require it at launch.
-4. **Magic-Link Confirmation issuance** — Story 3.2 owns issuance authority. **[RESOLVED 2026-06-19]** v1 baseline = single-use scoped expiring links (FR-14); **secondary identity verification for high-value/billable entries is deferred to post-v1** (explicit assumption, not silently closed).
+4. **Magic-Link Confirmation issuance** — **[RESOLVED 2026-06-19]** Story 3.2 owns issuance authority for the single-use, scoped, expiring links defined in FR-14. Secondary identity verification for high-value or billable entries is deferred to post-v1.
 5. **Retention and legal hold** — **[RESOLVED 2026-06-19]** v1 default retention per §9; **legal-hold override is a launch-readiness gate** pending tenant/legal sign-off (owned by Story 1.4).
 6. **Activity Type governance (Q6)** — **[RESOLVED 2026-09-12]** Tenant Activity Types require tenant-authorized command access. Project Activity Types and catalog restrictions require both tenant and Project authority resolved through server-side gates; role names remain provider policy, not caller input. Projects may explicitly restrict selectable tenant/project IDs. The default is unrestricted active tenant types plus active types for the selected Project. Implemented by Stories 1.5/1.6.
-7. **Export format (Q7)** — **[RESOLVED 2026-09-12]** Deterministic approved-time CSV v1 is the launch export, implemented by Stories 4.5/4.6. Structured API/webhook export is post-v1 and needs a named downstream consumer and contract story.
+7. **Export format (Q7)** — **[RESOLVED 2026-09-12]** Deterministic approved-time CSV v1 is the launch export. Stories 4.5/4.6 supplied the original CSV and reconciliation evidence. Stories 6.1–6.3 own the outstanding finance delivery criteria in FR-19. Structured API/webhook export is post-v1 and needs a named downstream consumer and contract story.
 8. **Comment sensitivity (Q8)** — **[RESOLVED 2026-09-12]** Comments are sensitive unstructured evidence. Authorized internal display is policy-controlled; external confirmation display, diagnostics, and export are excluded by default. External disclosure requires explicit policy/redaction; missing comment policy fails trust-bearing actions closed. Richer tenant classification/redaction schemes are post-v1. Story 1.4 implements the baseline; legal-hold and tenant-policy configuration remain separate launch concerns.
+
+9. **Carrying previously approved entries into another period** — Deferred to post-v1. The product owner will decide whether a later period may include previously approved entries when revisiting period approval policy. [Launch register](../../../../docs/launch-readiness.md#launch-scope-classification)
 
 ## 15. Assumptions Index
 
-- §4 — Approval State vocabulary is Draft, Submitted, Approved, Rejected, Corrected, Superseded; architecture may map to exact event names.
-- §5.1 FR-1 — Human and external durations are recorded in whole minutes; finer-grained AI runtime belongs in AI Effort Metrics.
-- §5.1 FR-2 — Project/Work reference validation fails closed for submitted/approved writes; Draft creation may be allowed with stale-warning state.
-- §5.2 FR-5 — Self-approval is denied by default.
-- §5.2 FR-7 — A Timesheet Period is scoped to one Contributor, one Tenant, and one weekly or monthly period.
-- §5.2 FR-8 — Period approval is not an irreversible freeze; corrections remain possible with audit evidence.
-- §5.2 FR-9 — Exact approver role names remain provider/policy decisions; v1 precedence behavior is resolved in §14.
-- §5.3 FR-11 / Q6 — [RESOLVED 2026-09-12] Project-level catalog restrictions are explicit and opt-in; default is active tenant plus selected-Project Activity Types, with server-resolved tenant and Project authority.
-- §5.4 FR-14 — Single-use scoped magic links are v1 security baseline.
-- §5.5 FR-19 / Q7 — [RESOLVED 2026-09-12] Deterministic CSV v1 is the launch export; structured API/webhook export is post-v1.
-- §9 / Q8 — [RESOLVED 2026-09-12] Comments are sensitive; external disclosure requires explicit policy/redaction; diagnostics/export exclude them by default.
-- §5.4 FR-15 — Provider metric gaps are represented as unavailable/unknown, not zero.
-- §5.6 FR-22 — Timesheets supplies contracts/metadata; a consuming FrontComposer host owns rendered Fluent UI V5 and accessibility verification (approved 2026-09-12).
-- §10 — Performance targets are v1 launch targets subject to architecture sizing.
+- **SM-1, in-context capture.** The product owner will test the assumption that a contributor can use the existing Project or Work context without reconstructing its target. The observation and acceptance evidence are due at product UAT (§12).
 
-## 16. Decision History and Current Acceptance — 2026-10-20
+Section 14 records settled policy and deferred decisions. The reporting owner still needs to agree on the representative tenant volume and ledger performance budgets in §10. Section 16 records the outstanding release gates.
 
-The approved [2026-09-12 course correction](../../sprint-change-proposal-2026-09-12.md) §4.6 resolves Q6–Q8 and consumer-host UI ownership as recorded above. CSV is the v1 contract; richer comment classification and structured API/webhook export are post-v1. These are decisions, not open assumptions.
+## 16. Decision History and Current Acceptance — 2026-11-20
 
-FR14 remains unfinished at the deployed acceptance boundary. Projection handlers and EventStore processing are registered; in-process and historical isolated local persisted journeys pass. The latest local pass (2026-10-18) predates the current NuGet-orchestration AppHost graph, and does not certify deployed authority, legacy inventory/continuity, or shared rebuild. The overall release verdict remains **FAIL**; [launch readiness](../../../../docs/launch-readiness.md) owns the dated gates and waivers. Story 5.2's later approved SDK/package baseline remains in force.
+**Release decision: FAIL.** The November 20 audit of v2.1.1 found gaps in finance delivery, workload-authenticated confirmation, and the production Project approval-to-ledger path. All nine Epic 6 stories are in backlog. The onboarding instructions were corrected. Finance delivery requires Stories 6.1–6.3, external API confirmation and recording reliability are tracked in 6.4–6.5, and production composition and deployed Project qualification are tracked separately in 6.7 and 6.8. [November 20 change proposal](../../sprint-change-proposal-2026-11-20.md) · [Sprint status](../../../implementation-artifacts/sprint-status.yaml)
+
+The October 26 isolated magic-link journey demonstrated persistence and restart locally. Deployed authority, legacy inventory and continuity, shared rebuild, and ingress privacy remain open under Stories 3.6 and 3.7 (FR-14). Tenant policy configuration, legal-hold sign-off, and product UAT also await their owners. Stories 5.1 and 5.2 closed their scoped reconciliations. Package currency remains **CONCERNS**. The release owner maintains the dated evidence and waivers in the [launch register](../../../../docs/launch-readiness.md).
+
+The September 12 decisions on catalog governance, CSV v1, comment sensitivity, and consumer-host UI ownership still apply. Richer comment classification and structured API/webhook export remain post-v1. [September 12 change proposal, §4.6](../../sprint-change-proposal-2026-09-12.md)

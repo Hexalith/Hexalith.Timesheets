@@ -4,8 +4,8 @@ This addendum preserves context that is useful for architecture, UX, and story c
 
 ## Source Inputs
 
-- Product brief: `D:\Hexalith.Timesheets\_bmad-output\planning-artifacts\briefs\brief-timesheets-2026-06-18\brief.md`
-- Product brief addendum: `D:\Hexalith.Timesheets\_bmad-output\planning-artifacts\briefs\brief-timesheets-2026-06-18\addendum.md`
+- [Product brief](../../briefs/brief-timesheets-2026-06-18/brief.md)
+- [Product brief addendum](../../briefs/brief-timesheets-2026-06-18/addendum.md)
 
 ## Current Landscape Notes
 
@@ -55,7 +55,7 @@ Architecture should align naming with the module's C# contract rules and existin
 ## Architecture Handoff Notes
 
 - Define the aggregate boundary explicitly. A launch-grade design likely needs at least Time Entry, Timesheet Period, and Activity Type aggregate or state boundaries, but the PRD deliberately leaves exact aggregate partitioning to architecture.
-- Decide whether a correction is represented as a new Time Entry linked to the original, a correction event on the original aggregate, or both.
+- Use additive correction events with superseding lineage for rejected and approved entries. Keep original and effective values available for reconciliation. Offset entries remain deferred pending a finance requirement. [PRD decision on corrections](prd.md#14-open-questions)
 - Avoid a direct dependency from contracts to Projects/Works/Parties infrastructure. Public contracts should carry stable IDs and validation should sit behind server-side adapters/projections.
 - Treat magic-link confirmation as a security-sensitive capability, not just a UX shortcut.
 - Treat AI Effort Metrics as multi-unit evidence. Do not collapse token counts, model runtime, wall-clock time, and billable effort into one duration field.
