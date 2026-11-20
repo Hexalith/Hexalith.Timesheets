@@ -17,7 +17,6 @@ jobs:
   ci:
     uses: Hexalith/Hexalith.Builds/.github/workflows/domain-ci.yml@6ad5854aa14a9950e1fbfc32d7e27953a1c4b82b
     with:
-      additional-sdk-version: '10.0.404'
       solution: Hexalith.Timesheets.slnx
       test-platform: microsoft-testing-platform
       run-consumer-validation: true
@@ -48,7 +47,6 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
-          dotnet-version: '10.0.404'
       - name: Restore the AppHost package graph
         run: dotnet restore src/Hexalith.Timesheets.AppHost/Hexalith.Timesheets.AppHost.csproj -p:Configuration=Release -p:UseHexalithProjectReferences=false -m:1 /nr:false
       - name: Build the AppHost package graph
@@ -96,7 +94,6 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
-          dotnet-version: '10.0.404'
       - name: Require Python 3.11 or newer for developer tooling
         run: python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else "Python 3.11+ is required")'
       - name: Exercise release and installed BMAD tooling
