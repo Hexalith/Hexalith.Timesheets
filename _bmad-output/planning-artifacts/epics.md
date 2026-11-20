@@ -34,7 +34,7 @@ This document provides the complete epic and story breakdown for timesheets, dec
 
 All UI/UX criteria below describe downstream consumer-host rendering requirements. Timesheets owns contracts, FrontComposer-compatible metadata, authorization/freshness semantics, and in-process service evidence. A consuming FrontComposer host owns rendered Fluent UI V5 composition, browser/keyboard/focus/responsive tests, and WCAG 2.2 AA evidence (NFR13). Do not add Timesheets UI or UI.Tests projects. Story 4.7 remains done for contracts, metadata, server composition, and in-process tests; rendered conformance is not claimed here.
 
-FR14 deployed acceptance remains unfinished under Story 3.6. Projection-host registration and historical local persisted journeys now exist; current-graph runtime qualification and deployed authority/inventory/shared-rebuild acceptance remain open. Stories 3.6/3.7 remain in progress and Story 5.2 remains review. The user accepted and signed off Story 5.1’s completed reconciliation on 2026-10-20; that story is done without closing these release prerequisites. Launch remains **FAIL**. Launch classifications are `implemented`, `unfinished`, `waived`, and `post-v1`; waivers require approval evidence, owner, risk, and revisit condition.
+FR14 deployed acceptance remains unfinished under Story 3.6. Projection-host registration and historical local persisted journeys now exist; current-graph runtime qualification and deployed authority/inventory/shared-rebuild acceptance remain open. Stories 3.6/3.7 remain in progress. Story 5.2 subsequently received scoped sign-off as recorded in the [launch register](../../docs/launch-readiness.md). The user accepted and signed off Story 5.1’s completed reconciliation on 2026-10-20; that story is done without closing these release prerequisites. Launch remains **FAIL**. Launch classifications are `implemented`, `unfinished`, `waived`, and `post-v1`; waivers require approval evidence, owner, risk, and revisit condition.
 
 ## Requirements Inventory
 
@@ -353,6 +353,12 @@ Authorized users can query time entries, report actual time by Project and Work,
 The release owner verifies launch evidence, waivers, documentation consistency, and final gate status after feature-completion work has been implemented in the owning epics.
 
 **FRs covered:** FR23 boundary verification only. Epic 5 otherwise verifies evidence for FR/NFR coverage already delivered by Epics 1-4.
+
+### Epic 6: Qualify Project Time and Finance Evidence (audit follow-up)
+
+Contributors, approvers and finance consumers can rely on the recorded state, authorization and audit evidence of one composed Project workflow. This follow-up covers defects identified in released packages and the host, with separate acceptance for deployed behavior. [Sprint change proposal](sprint-change-proposal-2026-11-20.md)
+
+**FRs revisited:** FR1, FR4, FR5, FR6, FR9, FR12, FR13, FR18, FR19, FR23. Deployed FR14 acceptance stays with Stories 3.6 and 3.7.
 
 ## Epic 1: Trusted Time Capture & Activity Governance
 
@@ -1787,3 +1793,95 @@ So that one workspace-pinned Works source supplies validation and reporting cont
 **When** Works setup guidance is read
 **Then** it identifies `<workspace>/references/Hexalith.Works` as the sole default checkout
 **And** it does not instruct users or agents to initialize `Hexalith.Timesheets/Hexalith.Works`.
+
+## Epic 6: Qualify Project Time and Finance Evidence
+
+Follow-up to the v2.1.1 audit. Each story below needs new evidence from its stated boundary. The [change proposal](sprint-change-proposal-2026-11-20.md) records priority, dependencies and owners.
+
+### Story 6.1: Enforce export comment policy on every representation
+
+As a tenant policy owner, I want sensitive comments disclosed only when the tenant and the individual row both allow finance export.
+
+**Acceptance criteria**
+
+- Resolve the tenant’s export policy from a trusted source. For a tenant permitting internal display but denying export, preview reports exclusion and generation omits text from CSV, serialized rows and nested original/corrected values. Preserve IDs and correction lineage.
+- Exercise all four tenant/row allow and deny combinations, a missing policy and a mixed-policy result. A synthetic marker appears only in explicitly permitted values. Block the action when a required trust-bearing policy is unavailable. Preview produces no file or audit event.
+
+### Story 6.2: Require a durable audit before delivering finance output
+
+As a finance operator, I want each delivered CSV to match a durable receipt identifying its requester, scope and contents.
+
+**Acceptance criteria**
+
+- On a recorder rejection, timeout or uncertain commit, the result reports no generated export and exposes neither CSV bytes nor rows. The default service also fails closed if durable recording is unavailable.
+- Use a stable request identity and verify a matching EventStore audit before releasing output. Read back the requester, scope, row count, format version and hash of the delivered bytes.
+- Inject a lost acknowledgement after commit and retry, including after restart. Exactly one matching audit exists. Reusing an identity for different scope or content cannot release an unaudited file.
+
+### Story 6.3: Read one complete ledger snapshot per export
+
+As a finance analyst, I want the full authorized filter scope at one ledger version so corrections cannot silently omit or duplicate entries.
+
+**Acceptance criteria**
+
+- Begin a full export at the scope’s first page even when the caller is browsing a later page, or reject that partial request explicitly. Bind all pages and the recorded scope to a consistent snapshot, or stop with a retryable outcome if stability cannot be established.
+- Insert or correct an entry between two reads. Verify exact membership and deterministic ordering against a single-version result, or zero deliverable on failure. Retain requested current and superseded lineage for one entry.
+- Cover a repeated, cycling or nonadvancing cursor, an empty authorized page with a continuation, loss of disclosure on a subsequent page, and a wholly empty result. Terminate without releasing partial data.
+
+### Story 6.4: Persist workload-authenticated external confirmation
+
+As an external contributor integration, I want confirmation to apply once to the entry I recorded through the API.
+
+**Acceptance criteria**
+
+- Exercise the actual record route followed by `POST /api/timesheets/external-contributions/{timeEntryId}/confirm`. Load the tenant-scoped owner through EventStore, verify the recorded contributor and target, then acknowledge only a matching committed effect.
+- Send the same confirmation twice and read the stream after restart. Exactly one contributor confirmation exists and approval state is preserved. A different tenant or contributor receives an opaque refusal with no effect on the stream.
+- Use composed HTTP authentication, the enrolled command receiver and EventStore readback. The success case creates its entry through the API without inserting aggregate state into the test.
+
+### Story 6.5: Bound external recording readback and expose uncertain outcomes
+
+As an operator, I want to distinguish policy refusal from an uncertain post-commit read while callers retain a safe retry path.
+
+**Acceptance criteria**
+
+- Apply a configured readback deadline and caller cancellation to external recording. Reuse the deadline behavior already used by magic-link submissions. A delayed gateway read returns within the configured bound plus a documented test tolerance.
+- Force a post-commit timeout, then retry the same command identity. Read back one recording effect. Distinguish refusal and indeterminate commit in low-cardinality internal outcomes. Verify the public response and telemetry disclose no token, comment, identity or payload.
+
+### Story 6.6: Support independent and composed route discovery
+
+As a package consumer, I want the published Projections inventory to work in an application that installs only its declared dependencies.
+
+**Acceptance criteria**
+
+- In an isolated NuGet consumer, install the candidate Projections package alone. Enumerate its supported discovery surface without loading Server. Specify migration and versioning for the existing public combined members and assembly discovery attribute.
+- Place complete discovery with the composition that installs both inventories. In a second clean consumer, compare routes, operations and receiver methods against all installed commands and named projections, including additions from this epic. For the v2.1.1 baseline the comparison is four plus four. Fail on missing or duplicate declarations.
+- Run both consumers against packed artifacts in the existing package-validation lane. Preserve complete owner admission in the composed host.
+
+### Story 6.7: Wire one Project capture-to-ledger workflow
+
+As a Project approver, I want to review a contributor’s recorded time and see the effective approved evidence after a correction through supported host entry points.
+
+**Acceptance criteria**
+
+- Timesheets and Platform identify the owning release composition and inventory the tenant, Party, Project, activity, approval, evidence-policy and ledger-reader bindings for one tenant. Reuse an existing deployment binding if its owner can show equivalent evidence.
+- Bind the real providers in their owning composition. Register the command receivers for capture, submission, approval and additive correction and a ledger reader backed by delivered projections. Keep deny/unavailable defaults in the reusable kernel and keep the existing AppHost topology.
+- In the composed workflow verify the stored events, original and effective values and approval lineage. A different tenant or an unavailable required provider fails closed before protected data or an accepted write is returned. Document supported entry points and the dependency versions tested.
+
+### Story 6.8: Qualify the deployed Project workflow
+
+As the release owner, I need repeatable evidence that approval and correction survive a deployed restart and rebuild.
+
+**Acceptance criteria**
+
+- With the Platform owner’s production-equivalent providers and authorized tenant configuration, run Story 6.7 through the deployed entry points. Repeat the ledger read after process restart and after rebuilding projections from the owner events. Compare row identities, effective values and correction lineage.
+- Repeat negative read/write cases from a second tenant. Record the graph, environment, exercised entry points and sanitized outcomes in the launch register. Leave any unavailable evidence with a named owner.
+- Track the separate FR14 deployed authority, continuity, shared rebuild and ingress/sidecar privacy work under 3.6/3.7. Record tenant/legal disposition and product UAT independently. Only the owning release decision can close those gates.
+
+### Story 6.9: Reduce repeated ledger folds while preserving evidence
+
+As a reporting operator, I want a ledger page to avoid repeatedly processing unrelated entries’ histories.
+
+**Acceptance criteria**
+
+- Normalize the supplied history once and fold canonical events by owner. Preserve tenant checks, invalid sequence handling, duplicates, replay ordering, effective rows and superseded correction lineage. Compare rows and exported CSV bytes with golden cases.
+- Run the 60, 240 and 960 entry series with three lifecycle events per entry, a 50-row page and five warmed measurements per size. Record configuration, median elapsed time and calling-thread allocations before and after under comparable load.
+- Agree a representative tenant size and budget with the reporting owner and evaluate it. Consider materialization only if the measured fold still misses that budget.

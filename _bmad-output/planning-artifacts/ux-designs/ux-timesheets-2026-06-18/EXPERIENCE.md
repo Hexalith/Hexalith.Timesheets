@@ -4,7 +4,7 @@ project: timesheets
 document: EXPERIENCE.md
 status: draft
 created: 2026-06-18
-updated: 2026-10-20
+updated: 2026-11-20
 sources:
   - ../../prds/prd-timesheets-2026-06-18/prd.md
   - ../../prds/prd-timesheets-2026-06-18/addendum.md
@@ -127,7 +127,7 @@ Visual specs live in `DESIGN.md.Components`.
 | Permission denied | Any internal surface | No raw identifiers in error copy. Route to safe empty/denied state. |
 | Approver authority unresolved | Approval surfaces | Block approval and explain authority cannot be resolved. Do not allow optimistic approval. |
 | Export no results | Approved-Time Ledger | Show filters and `No approved entries match these filters.` No export action. |
-| Export requested | Export Review Dialog, Ledger | Confirm requested scope, then toast for request accepted; export audit remains visible if surfaced. |
+| Export requested | Export Review Dialog, Ledger | Acknowledge the request as pending. Offer the file only after the service confirms a consistent export and matching durable audit. If it cannot confirm, keep download unavailable and show a neutral retry message. |
 | Magic link valid | Magic-Link Confirmation | Show only the scoped proposed entry details needed to confirm or adjust. Comment text appears only when explicit external-confirmation policy allows it; otherwise it is omitted. |
 | Magic link expired/used/invalid | Magic-Link Invalid State | No tenant, Project, Work, Party, Time Entry, or duration details. Provide one safe recovery path. |
 | AI token metrics unavailable | AI Effort Report, Time Entry Detail | Show `Unavailable` or `Not reported by provider`; never show zero unless provider reported zero. |
@@ -255,7 +255,7 @@ Failure path: provider token metrics are unavailable. The entry shows `Unavailab
 3. `FluentDataGrid` shows approved entries with stable IDs, approval metadata, and correction lineage.
 4. Marc selects `Export approved ledger`.
 5. `Export Review Dialog` summarizes filters, output scope, included evidence fields, and what Timesheets will not calculate.
-6. Marc confirms export.
+6. Marc confirms export. The review shows which comments policy permits. Download becomes available after the service verifies one ledger version and the durable audit record for the file.
 7. **Climax:** downstream finance receives approved billable evidence with entry IDs, Contributor Party references, Approval State and correction lineage, with comments excluded by default, without Timesheets becoming an invoicing system.
 
 Failure path: no approved entries match the filters. Export is disabled and the ledger shows `No approved entries match these filters.`

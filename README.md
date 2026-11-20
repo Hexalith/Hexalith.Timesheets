@@ -27,16 +27,19 @@ Existing checkouts upgrading from the tracked hook file should run setup again; 
 
 ## Build and Test
 
-Use the pinned .NET SDK `10.0.403` (`rollForward: latestPatch`), with a writable CLI home in restricted environments:
+Install the .NET SDK selected by `global.json` (currently `11.0.100`, latest patch allowed) and the Aspire CLI matching the AppHost SDK (currently `17.0.0`). The AppHost uses the CLI bundle. From a fresh checkout, run the following in the repository root. The commands use a writable .NET CLI home.
 
 ```bash
+git -c submodule.recurse=false submodule update --init
+dotnet --version
+aspire --version
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false
 ```
 
-Use the same source-reference mode for restore and build. CI/CD uses Release/published packages; configuration-free restore defaults to that graph. Do not reuse assets between dependency modes. Timesheets takes its published EventStore version from the imported Builds catalog for its gateway and certified abort-repair APIs. Root package overrides honor the published source graph's Aspire hosting, OpenTelemetry and MCP dependency floors; the AppHost SDK and Aspire overrides align with the imported catalog at `13.6.4`. Works source references receive the evaluated consuming EventStore version, including explicit caller overrides, on direct and SDK-added transitive edges. No version workaround is required. [Build and hosting verification](_bmad-output/implementation-artifacts/tests/five-build-and-hosting-deferrals.md) records differing-default and explicit-override regressions.
+Keep restore and build in the same dependency mode. The local commands above use Debug with source references. CI/CD uses Release with published packages and needs its own restore. The root `Directory.Packages.props` sets the EventStore consumer version and overrides the imported Aspire packages to match the AppHost. Works source references receive the evaluated EventStore version, including explicit caller overrides. [Build and hosting verification](_bmad-output/implementation-artifacts/tests/five-build-and-hosting-deferrals.md)
 
-After building, run each test project individually. `global.json` selects Microsoft.Testing.Platform; use `--project` and the same configuration and dependency mode as the build:
+For a checkout smoke test, run ArchitectureTests with the Microsoft.Testing.Platform runner selected by `global.json`.
 
 ```bash
 DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesheets.ArchitectureTests/Hexalith.Timesheets.ArchitectureTests.csproj --configuration Debug --no-build -p:UseHexalithProjectReferences=true
@@ -45,12 +48,12 @@ DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet test --project tests/Hexalith.Timesh
 Repeat for Contracts.Tests, Server.Tests, Projections.Tests, IntegrationTests, and Works.Tests using their respective project paths. The built xUnit v3 executables are also supported and run the same suites directly:
 
 ```bash
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net10.0/Hexalith.Timesheets.ArchitectureTests
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Contracts.Tests
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Server.Tests
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Projections.Tests
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests
-DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net10.0/Hexalith.Timesheets.Works.Tests
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.ArchitectureTests/bin/Debug/net11.0/Hexalith.Timesheets.ArchitectureTests
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Contracts.Tests/bin/Debug/net11.0/Hexalith.Timesheets.Contracts.Tests
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Server.Tests/bin/Debug/net11.0/Hexalith.Timesheets.Server.Tests
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Projections.Tests/bin/Debug/net11.0/Hexalith.Timesheets.Projections.Tests
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net11.0/Hexalith.Timesheets.IntegrationTests
+DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.Works.Tests/bin/Debug/net11.0/Hexalith.Timesheets.Works.Tests
 ```
 
 After the Debug/source build, run the compiled AppHost configuration probes as part of local verification:
@@ -85,7 +88,7 @@ The test-only Roslyn fitness check decodes identifiers and constant strings in t
 The capture and governance command performance lane (NFR10 command-acknowledgement evidence) is **skipped by default** and opted in with `TIMESHEETS_PERF=1`, so it never enters the fast baseline. Set the variable on the same executable invocation:
 
 ```bash
-TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class "Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests"
+TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net11.0/Hexalith.Timesheets.IntegrationTests -class "Hexalith.Timesheets.IntegrationTests.CaptureAndGovernanceCommandPerformanceLaneTests"
 ```
 
 See `docs/performance-evidence.md` for the measured p95 numbers and the NFR10 verdict.
@@ -93,12 +96,12 @@ See `docs/performance-evidence.md` for the measured p95 numbers and the NFR10 ve
 The report, export, and dashboard query performance lane (NFR11 evidence) shares the same `TIMESHEETS_PERF=1` opt-in and is **skipped by default**. It records p95 over seeded in-process report, ledger, export, preview, dashboard, and Works planned-effort paths:
 
 ```bash
-TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net10.0/Hexalith.Timesheets.IntegrationTests -class "Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests"
+TIMESHEETS_PERF=1 DOTNET_CLI_HOME=/tmp/dotnet-cli-home tests/Hexalith.Timesheets.IntegrationTests/bin/Debug/net11.0/Hexalith.Timesheets.IntegrationTests -class "Hexalith.Timesheets.IntegrationTests.ReportExportDashboardQueryPerformanceLaneTests"
 ```
 
 See `docs/performance-evidence.md` for the measured p95 numbers, the NFR11 verdict, and the EventStore-backed wire-path waiver.
 
-See `docs/launch-readiness.md` for the final story-complete versus launch-complete classification record and release-gate decision. The current overall release decision is `FAIL`: deployed magic-link authority, inventory/continuity, and shared-rebuild acceptance remain unfinished. The isolated local persisted journey passed on 2026-10-18 on the earlier AppHost graph; current NuGet-orchestration runtime qualification remains open. Package currency separately remains `CONCERNS`; other integrations retain explicit waivers or post-v1 decisions.
+See `docs/launch-readiness.md` for the final story-complete versus launch-complete classification record and release-gate decision. The current overall release decision is `FAIL`: deployed magic-link authority, inventory/continuity, and shared-rebuild acceptance remain unfinished. The isolated local persisted journey passed on 2026-10-18 on the earlier AppHost graph; qualification of the current AppHost and CLI bundle remains open. Package currency separately remains `CONCERNS`; other integrations retain explicit waivers or post-v1 decisions.
 
 The default gateway binds `Timesheets:EventStoreGateway` through host configuration. `Endpoint` must be an HTTP/HTTPS origin without credentials, a path, query, or fragment; invalid endpoints fall back to `HttpPort`, then `http://localhost:3500`. `AppId` defaults to `eventstore`; `ApiToken` is optional. `DAPR_HTTP_ENDPOINT`, `DAPR_HTTP_PORT`, and `DAPR_API_TOKEN` configuration keys supply fallbacks (the composed host's normal environment provider includes Dapr sidecar settings). Configuration reload changes the endpoint for newly resolved clients and changes the target and credential on the next send by existing clients. Set `ApiToken` to an empty string to remove a configured fallback credential. Caller-provided gateways and transports retain their own configuration.
 

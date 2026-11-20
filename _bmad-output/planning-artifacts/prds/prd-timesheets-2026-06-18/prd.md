@@ -2,7 +2,7 @@
 title: "Hexalith.Timesheets — Product Requirements Document"
 status: draft
 created: 2026-06-18
-updated: 2026-10-20
+updated: 2026-11-20
 ---
 
 # PRD: Hexalith.Timesheets
@@ -211,6 +211,7 @@ External contributors can submit or confirm Time Entries through an API surface 
 **Consequences (testable):**
 - External API submission requires tenant-scoped authorization and a valid Party reference.
 - API-created entries enter the same Draft/Submitted/Approved workflow as internal entries.
+- A workload-authenticated confirmation resolves the recorded entry in its tenant and contributor scope. An accepted retry produces one durable confirmation. Confirmation preserves the entry’s approval state.
 - External API calls cannot bypass approval, correction, Target Reference validation, tenant isolation, or audit requirements.
 
 #### FR-14: Support Magic-Link Confirmation
@@ -270,6 +271,9 @@ Authorized finance/accounting consumers can export approved billable time.
 **Consequences (testable):**
 - Export filters include tenant, Project Reference, Work Reference, Contributor, Activity Type, period, and Billable Flag.
 - Export output includes stable IDs and correction lineage sufficient for downstream reconciliation.
+- A full export covers the whole authorized filter scope at one ledger version. A changing or incomplete read yields no file.
+- Preview and generation apply the same trusted tenant and row comment policy. CSV and returned rows, including correction history, omit text unless both permit disclosure.
+- Delivery requires a durable export audit record matching the requester, scope, row count and content hash. Retrying the same request after an uncertain acknowledgement yields one matching record.
 - Export does not calculate rates, invoice totals, taxes, payroll values, or revenue recognition.
 
 #### FR-20: Surface AI-agent effort reporting
@@ -419,6 +423,8 @@ Timesheets references Projects, Works, Parties, Tenants, and EventStore instead 
 - **Phase 5 — Release-readiness verification.** Aggregate evidence, waivers, documentation sync, and launch decision records after feature behavior has already been implemented in the phase that introduced it. Phase 5 must not be the first implementation location for Magic-Link state loading, Work-reference validation, planned-effort reporting, export preview behavior, or performance evidence required by earlier phases.
 
 Launch readiness requires: passing tenant-isolation tests, approval/correction evidence tests, projection rebuild tests, export contract tests, privacy/logging scans, a documented owns-vs-references boundary decision, concrete launch-scope integration adapters implemented in their owning feature phases, and performance evidence for the stated command/report targets. Story-complete evidence is not the same as launch-complete evidence: unresolved host wiring, runtime fixtures, consumer-host rendering/accessibility, deployment, stakeholder acceptance, legal-hold sign-off, or formally accepted waivers must remain visible in the launch-readiness record.
+
+The first deployed qualification slice follows one authorized Project entry through capture, submission, approval, additive correction and ledger readback. Repeat the read after restart and projection rebuild, and verify denial from a second tenant. The launch register tracks deployed magic-link acceptance, tenant policy, legal hold and product acceptance separately. [Launch register](../../../../docs/launch-readiness.md)
 
 ## 14. Open Questions
 

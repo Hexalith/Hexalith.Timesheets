@@ -34,6 +34,15 @@ date: '2026-06-18'
 
 _This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
 
+## Qualification of the Project and finance workflows
+
+The v2.1.1 audit identified the following implementation work for the existing HTTP host, Server and Projections packages. The observable acceptance cases and owners are in [Epic 6](epics.md#epic-6-qualify-project-time-and-finance-evidence).
+
+- **Project capture to ledger.** The composing host supplies tenant, contributor, Project, approval and evidence-policy providers. The command processor loads the authorized owner stream and commits each transition through EventStore. The ledger reader returns the effective approved row and its superseding lineage. Bind through the existing ports and catalogue the installed receivers. Keep the server kernel’s deny and unavailable defaults.
+- **Workload-authenticated confirmation.** Gate access before reading tenant-scoped state, then check the command against the recorded contributor and target. Acknowledge after readback of the exact committed effect. Bound readback for both external recording and confirmation. Preserve the command identity across retries and expose policy refusal and uncertain commit separately to operators through low-cardinality outcomes.
+- **Finance export.** Start at the beginning of the authorized filter scope. Every page must belong to the same identifiable snapshot. A changed or unavailable snapshot or a cursor that fails to advance blocks delivery. Apply the same tenant and per-row comment rules to preview, CSV and returned correction evidence. Hash the final bytes and verify the durable audit for that request before releasing them. The EventStore and finance owners must agree how a retry recovers an earlier commit.
+- **Package discovery and projection cost.** Keep the projection inventory callable from a Projections-only installation. The host that installs both packages owns complete catalogue composition. Fold validated events once per entry, preserving stream identity, ordering, duplicate handling and historical corrections. Compare results and allocations before considering a separately materialized ledger.
+
 ## Project Context Analysis
 
 ### Requirements Overview
@@ -84,7 +93,7 @@ Timesheets is constrained by existing Hexalith module rules:
 - Works owns Work lifecycle and planned/estimated effort; Timesheets stores stable Work references only.
 - FrontComposer and Blazor Fluent UI are the primary internal UI system.
 - External contributor UX is limited to API-only integration and scoped Magic-Link Confirmation; no full external portal in v1.
-- The module must follow Hexalith conventions: .NET 10, centralized package versions, warnings as errors, no recursive submodules, no copied sibling module state, no direct infrastructure persistence bypassing EventStore, and additive contract evolution.
+- The module must follow Hexalith conventions: the repository-pinned .NET toolchain, centralized package versions, warnings as errors, no recursive submodules, no copied sibling module state, no direct infrastructure persistence bypassing EventStore, and additive contract evolution.
 - This Timesheets repository owns the root-declared `references/Hexalith.Works` checkout as the sole default Works source. `HexalithWorksRoot` preserves a caller-supplied path; otherwise it resolves `references/Hexalith.Works` first and sibling `../Hexalith.Works` second. A Timesheets-root `Hexalith.Works` checkout, gitlink, or path probe is forbidden.
 
 No epics or stories were loaded, so this architecture is PRD/UX-driven. Implementation slicing should not be inferred yet; the architecture should first settle domain boundaries, event contracts, projection ownership, and cross-module adapters.
@@ -147,13 +156,13 @@ Because epics and stories are not loaded, this analysis remains PRD/UX-derived a
 
 ### Primary Technology Domain
 
-Hexalith.Timesheets is a .NET 10 Hexalith domain module with full-stack supporting surfaces: event-sourced backend, command/query contracts, projections, Aspire AppHost topology, generated/admin UI through FrontComposer, and a scoped external magic-link web surface.
+Hexalith.Timesheets is a .NET Hexalith domain module with full-stack supporting surfaces: event-sourced backend, command/query contracts, projections, Aspire AppHost topology, generated/admin UI through FrontComposer, and a scoped external magic-link web surface.
 
 This is not a generic web application starter problem. The right foundation is an internal Hexalith module scaffold aligned with the existing `Hexalith.Conversations`, `Hexalith.Works`, `Hexalith.Projects`, `Hexalith.Tenants`, and `Hexalith.Parties` module shapes.
 
 ### Version Research Notes
 
-Current starter/tooling checks performed during this step:
+The following observations describe the original scaffold evaluation. See the version notes under Data Architecture for the current build.
 
 - Historical SDK observations: the 2026-06-18 architecture step observed `10.0.301`; the 2026-07-17 commit `937be13` raised the repository pin to `10.0.302`; the 2026-09-12 Story 5.3 review patch raised it to `10.0.400`, the 2026-09-12 Story 5.2 reopening raised it to `10.0.401`, and the 2026-10-18 CI/CD commit `c4695a5` raised it to `10.0.403`. The current pin is recorded separately below.
 - Local templates include `aspire-apphost`, `aspire-servicedefaults`, `aspire-starter`, `webapi`, `blazor`, `classlib`, `xunit`, and solution templates.
@@ -182,7 +191,7 @@ The project context requires Timesheets to behave like a Hexalith domain module:
 
 ### Initialization Command
 
-There is no single public starter command selected. The first implementation story should scaffold the module using .NET 10 templates and sibling-module structure, roughly:
+Story 1.1 used the .NET 10 generation of the templates. This historical scaffold example records the original project layout. For a current checkout, follow the [build instructions](../../README.md#build-and-test).
 
 ```powershell
 dotnet new sln --name Hexalith.Timesheets
@@ -330,7 +339,7 @@ Use public templates only for empty project shells. Use Hexalith sibling modules
 - Magic-Link Confirmation: scoped opaque capability, single-use/expiry-bound, audited, no-disclosure on invalid states.
 - API model: EventStore command/query pipeline, typed domain outcomes, ProblemDetails for HTTP transport errors.
 - Frontend component policy: Blazor Fluent UI V5 components only; V4 icons only if V5 icon source is unavailable.
-- Infrastructure: Aspire AppHost `13.6.5` for local topology/orchestration, Dapr SDK policy target `1.19.1`, no direct DB/broker bypass.
+- Infrastructure: the AppHost SDK and matching Aspire CLI bundle for local topology/orchestration, Dapr SDK policy target `1.19.1`, no direct DB/broker bypass.
 
 **Important Decisions (Shape Architecture):**
 
@@ -359,11 +368,11 @@ Timesheets domain state changes will persist through `Hexalith.EventStore`. The 
 
 **Version notes:**
 
-- .NET SDK: local target is .NET 10, built with SDK pinned to `11.0.100` with `rollForward: latestPatch`.
-- Aspire: the Timesheets-owned AppHost SDK and the imported `Aspire.Hosting`, Docker, and Redis catalog entries are aligned at stable `13.6.5`. The AppHost keeps NuGet-backed orchestration with `AspireUseCliBundle=false` and suppresses only `ASPIRE010`, the 2026-09-13 Option 2 decision already used by `Hexalith.EventStore`. Restore therefore adds `Aspire.Hosting.Orchestration` and `Aspire.Dashboard.Sdk`, the build stays self-contained without an Aspire CLI bundle, and the declared topology is unchanged. The CLI-bundle opt-in recorded by the 2026-09-12 `13.5.3` iteration is historical and was reversed.
+- The SDK is selected by `global.json` and the target framework by `Directory.Build.props`. The audited release uses SDK `11.0.100` and targets `net11.0`.
+- The AppHost selects `Aspire.AppHost.Sdk/17.0.0` with `AspireUseCliBundle=true`. The root `Directory.Packages.props` overrides the imported Aspire family and sets the EventStore consumer version. The matching Aspire CLI supplies the build bundle.
 - Dapr SDK packages: the imported `Hexalith.Builds` catalog pins the Dapr Client, ASP.NET Core, Actors, AI, and Workflow package family at stable `1.19.1`. Timesheets has no direct Dapr `PackageReference`; Dapr reaches its restored graphs through sibling EventStore references.
 - Fluent UI: Timesheets has no direct Fluent UI package because this repository ships no UI project. The imported catalog carries the V5 package family at `5.0.1`, a stable line; it is a platform policy surface, not a Timesheets direct-package pin.
-- Platform prerelease exception: the imported catalog also carries `Aspire.Hosting.Keycloak` `13.6.5-preview.1.26559.7` and `CommunityToolkit.Aspire.Hosting.Dapr` `13.6.2-beta.959`, both consumed through `Hexalith.EventStore.Aspire`. Ownership, risk, and revisit conditions remain recorded in `docs/launch-readiness.md`; The Timesheets root inherits the Keycloak dependency floor from the imported catalog; CommunityToolkit Dapr remains catalog-owned.
+- The root package overrides include prerelease Keycloak and CommunityToolkit Dapr hosting integrations. Record the resolved versions when qualifying a deployment. [Current pins](../../Directory.Packages.props)
 - Historical version observations: the 2026-09-12 Story 5.2 iteration recorded SDK `10.0.401`, Aspire/AppHost `13.5.3`, Dapr `1.18.7`, and Fluent UI V5 `5.0.0-rc.5-26219.1`; those are dated values, not current pins. Dated package audits remain in the launch-readiness package-currency verdict. The 2026-10-28 Debug/source alignment follows the published catalog; it does not refresh those audits or qualify runtime/deployed behavior.
 - Historical Aspire template observation: the 2026-06-18 architecture check found `Aspire.ProjectTemplates` `13.4.5`; this is not the current AppHost package baseline above.
 
@@ -401,7 +410,7 @@ Internal API/UI paths use ASP.NET Core authentication with JWT bearer/OIDC integ
 
 **Version notes:**
 
-- ASP.NET Core auth/data-protection package line should align with the imported Hexalith/.NET 10 catalog, currently `10.0.15`.
+- Resolve ASP.NET Core authentication dependencies from the effective root package graph. Timesheets overrides the imported JWT bearer package for its target framework.
 - Dapr SDK target remains the imported stable `1.19.1` family.
 
 **Authorization model:**
@@ -1077,7 +1086,7 @@ Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, 
 ### Coherence Validation ✅
 
 **Decision Compatibility:**
-The technology choices work together: .NET SDK `11.0.100`, Hexalith.EventStore, the imported Dapr SDK `1.19.1` family, Aspire AppHost SDK `13.6.5` with NuGet-backed orchestration, JWT/OIDC authentication, FrontComposer, and the Fluent UI V5 policy each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual stable and prerelease package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
+The technology choices work together: .NET SDK `11.0.100`, Hexalith.EventStore, the imported Dapr SDK `1.19.1` family, the AppHost SDK with its matched CLI bundle, JWT/OIDC authentication, FrontComposer, and the Fluent UI V5 policy each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual stable and prerelease package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
 
 **Pattern Consistency:**
 Implementation patterns support the decisions. Commands, events, queries, projections, magic links, exports, and UI all have consistent naming, structure, error, freshness, and enforcement rules.
@@ -1099,7 +1108,7 @@ Security, tenant isolation, auditability, data minimization, projection reliabil
 ### Implementation Readiness Validation ✅
 
 **Decision Completeness:**
-Critical decisions are documented with versions where version-sensitive: SDK `11.0.100`, Dapr SDK family `1.19.1`, Aspire AppHost SDK `13.6.5`, Blazor Fluent UI V5 component policy, V4 icons-only fallback, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current stable/prerelease platform package state is intentionally recorded as launch-readiness package-currency evidence.
+Critical decisions are documented with versions where version-sensitive: SDK `11.0.100`, Dapr SDK family `1.19.1`, the AppHost SDK in its project manifest, Blazor Fluent UI V5 component policy, V4 icons-only fallback, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current stable/prerelease platform package state is intentionally recorded as launch-readiness package-currency evidence.
 
 **Structure Completeness:**
 The project tree is specific enough for implementation agents to scaffold consistently and maps requirements to concrete projects, folders, and tests.
