@@ -14,7 +14,9 @@ requirementsExtraction:
   uxDesignRequirements: 37
 ---
 
-# timesheets - Epic Breakdown
+<a id="timesheets---epic-breakdown"></a>
+
+# Hexalith.Timesheets epics and stories
 
 ## Overview
 
@@ -238,8 +240,8 @@ FR3: Epic 1 - Trusted Time Capture & Activity Governance
 FR4: Epic 2 - Submission, Approval, Period Review & Corrections
 FR5: Epic 2 - Submission, Approval, Period Review & Corrections
 FR6: Epic 2 - Submission, Approval, Period Review & Corrections
-FR7: Epic 2 - Submission, Approval, Period Review & Corrections
-FR8: Epic 2 - Submission, Approval, Period Review & Corrections
+FR7: Epic 2 - Submission, Approval, Period Review & Corrections. Story 6.10 qualifies recovery after interruption.
+FR8: Epic 2 - Submission, Approval, Period Review & Corrections. Story 6.10 verifies when callers can rely on a complete period decision.
 FR9: Epic 2 - Submission, Approval, Period Review & Corrections
 FR10: Epic 1 - Trusted Time Capture & Activity Governance
 FR11: Epic 1 - Trusted Time Capture & Activity Governance
@@ -253,7 +255,7 @@ FR18: Epic 4 - Approved Time Ledger, Reporting & Finance Export
 FR19: Epic 4 - Approved Time Ledger, Reporting & Finance Export
 FR20: Epic 4 - Approved Time Ledger, Reporting & Finance Export
 FR21: Epic 1 - Trusted Time Capture & Activity Governance
-FR22: Epic 1 - Trusted Time Capture & Activity Governance
+FR22: Epic 1 - Trusted Time Capture & Activity Governance. Story 6.6 qualifies discovery for standalone and composed package consumers.
 FR23: Epic 1 - Trusted Time Capture & Activity Governance; Epic 5 verifies dependency-checkout ownership
 
 ### NFR Coverage Map
@@ -322,7 +324,9 @@ _Added 2026-06-19. All 37 UX-DRs trace to ≥1 story._
 | UX-DR36 | Duration/AI units; missing tokens "Unavailable" | 1.9 | 1.7, 4.4 |
 | UX-DR37 | Responsive desktop/tablet/phone | 3.3 | 1.7, 3.4 |
 
-## Epic List
+<a id="epic-list"></a>
+
+## Delivery sequence
 
 ### Epic 1: Trusted Time Capture & Activity Governance
 
@@ -358,7 +362,7 @@ The release owner verifies launch evidence, waivers, documentation consistency, 
 
 Contributors, approvers and finance consumers can rely on the recorded state, authorization and audit evidence of one composed Project workflow. This follow-up covers defects identified in released packages and the host, with separate acceptance for deployed behavior. [Sprint change proposal](sprint-change-proposal-2026-11-20.md)
 
-**FRs revisited:** FR1, FR4, FR5, FR6, FR9, FR12, FR13, FR18, FR19, FR23. Deployed FR14 acceptance stays with Stories 3.6 and 3.7.
+**FRs revisited:** FR1, FR4, FR5, FR6, FR7, FR8, FR9, FR12, FR13, FR18, FR19, FR22, FR23. Deployed FR14 acceptance stays with Stories 3.6 and 3.7.
 
 ## Epic 1: Trusted Time Capture & Activity Governance
 
@@ -1293,7 +1297,7 @@ So that confirmation and adjustment work outside service-only tests without weak
 
 **Given** local persistence proof has passed
 **When** release acceptance is assessed
-**Then** current-graph runtime qualification and deployed authority, complete inventory/continuity, and shared-rebuild proof remain separately required under Story 3.6.
+**Then** current-graph runtime qualification and deployed authority, complete inventory/continuity, and shared-rebuild proof remain separately required under Story 3.6. Record the tested graph and deployment, the authorized providers and the observed subscriber, restart and shared rebuild results in the [launch register](../../docs/launch-readiness.md). Verify issuance in the capability stream and the matching terminal decision in the Time Entry stream. Include supported legacy terminal history and deny conflicting histories as specified by AD-5.
 
 ### Story 3.7: Prove Magic-Link No-Disclosure at the HTTP Boundary
 
@@ -1319,6 +1323,8 @@ So that service-level no-disclosure behavior is proven at the routes external co
 **When** repeated invalid attempts occur
 **Then** rate-limited responses remain externally indistinguishable from other invalid-link responses
 **And** operational diagnostics remain privacy-safe.
+
+For deployed acceptance, the Platform and Timesheets owners exercise the four external routes through the designated ingress and sidecar with synthetic links. Compare the public refusals and check the corresponding ingress, sidecar and application diagnostics for disclosure. Retain sanitized outcomes and the identity of each observed boundary in the [launch register](../../docs/launch-readiness.md). Any unobserved boundary stays open.
 
 ## Epic 4: Approved Time Ledger, Reporting & Finance Export
 
@@ -1796,7 +1802,9 @@ So that one workspace-pinned Works source supplies validation and reporting cont
 
 ## Epic 6: Qualify Project Time and Finance Evidence
 
-Follow-up to the v2.1.1 audit. Each story below needs new evidence from its stated boundary. The [change proposal](sprint-change-proposal-2026-11-20.md) records priority, dependencies and owners.
+Follow-up to the v2.1.1 audit. Stories 6.1–6.9 need new evidence from their stated boundaries. Story 6.10 covers the period recovery decision adopted on November 21. [November 21 correction](sprint-change-proposal-2026-11-21.md)
+
+The [November 20 change proposal](sprint-change-proposal-2026-11-20.md) records priority, dependencies and owners.
 
 ### Story 6.1: Enforce export comment policy on every representation
 
@@ -1806,6 +1814,8 @@ As a tenant policy owner, I want sensitive comments disclosed only when the tena
 
 - Resolve the tenant’s export policy from a trusted source. For a tenant permitting internal display but denying export, preview reports exclusion and generation omits text from CSV, serialized rows and nested original/corrected values. Preserve IDs and correction lineage.
 - Exercise all four tenant/row allow and deny combinations, a missing policy and a mixed-policy result. A synthetic marker appears only in explicitly permitted values. Block the action when a required trust-bearing policy is unavailable. Preview produces no file or audit event.
+- Compare direct and rebuilt ledger results for current, original and corrected comments with opposite permissions. Exercise host publication on and off and supported, missing and unknown server publication versions. Retain IDs and lineage. Export permission cannot restore withheld text.
+- On a ready scope, report `Allowed` only if at least one published comment exists and every published value permits export. For mixed permissions report `Excluded` with “Comments are permitted for some values only.” The export stays ready. Check an empty set of comments and universal exclusion separately. Verify a missing required policy yields `PolicyRequired` for an authorized preview and an access denial yields no preview. [AD-7](architecture.md#ad-7--release-finance-output-only-after-snapshot-and-receipt-verification-adopted)
 
 ### Story 6.2: Require a durable audit before delivering finance output
 
@@ -1814,7 +1824,7 @@ As a finance operator, I want each delivered CSV to match a durable receipt iden
 **Acceptance criteria**
 
 - On a recorder rejection, timeout or uncertain commit, the result reports no generated export and exposes neither CSV bytes nor rows. The default service also fails closed if durable recording is unavailable.
-- Use a stable request identity and verify a matching EventStore audit before releasing output. Read back the requester, scope, row count, format version and hash of the delivered bytes.
+- Use a stable request identity and verify a matching EventStore audit before releasing output. Match the requester, tenant, filters, row count, format version and SHA-256 of the delivered bytes against the stored receipt. Check its UTC request and generation times, correlation and freshness. Inspect the persisted receipt to verify that it contains only audit metadata and excludes comments and row bodies.
 - Inject a lost acknowledgement after commit and retry, including after restart. Exactly one matching audit exists. Reusing an identity for different scope or content cannot release an unaudited file.
 
 ### Story 6.3: Read one complete ledger snapshot per export
@@ -1825,7 +1835,7 @@ As a finance analyst, I want the full authorized filter scope at one ledger vers
 
 - Begin a full export at the scope’s first page even when the caller is browsing a later page, or reject that partial request explicitly. Bind all pages and the recorded scope to a consistent snapshot, or stop with a retryable outcome if stability cannot be established.
 - Insert or correct an entry between two reads. Verify exact membership and deterministic ordering against a single-version result, or zero deliverable on failure. Retain requested current and superseded lineage for one entry.
-- Cover a repeated, cycling or nonadvancing cursor, an empty authorized page with a continuation, loss of disclosure on a subsequent page, and a wholly empty result. Terminate without releasing partial data.
+- Traverse an empty authorized page when its cursor advances and verify that later eligible rows appear exactly once. A repeated, cycling or nonadvancing cursor, loss of disclosure or loss of freshness on any page withholds all bytes and rows. Test a wholly empty scope and a filter that permits nonbillable rows. Both preview and generation require a fresh, nonempty, billable-only scope.
 
 ### Story 6.4: Persist workload-authenticated external confirmation
 
@@ -1837,14 +1847,16 @@ As an external contributor integration, I want confirmation to apply once to the
 - Send the same confirmation twice and read the stream after restart. Exactly one contributor confirmation exists and approval state is preserved. A different tenant or contributor receives an opaque refusal with no effect on the stream.
 - Use composed HTTP authentication, the enrolled command receiver and EventStore readback. The success case creates its entry through the API without inserting aggregate state into the test.
 
-### Story 6.5: Bound external recording readback and expose uncertain outcomes
+<a id="story-65-bound-external-recording-readback-and-expose-uncertain-outcomes"></a>
+
+### Story 6.5: Bound external recording readback and report uncertainty
 
 As an operator, I want to distinguish policy refusal from an uncertain post-commit read while callers retain a safe retry path.
 
 **Acceptance criteria**
 
 - Apply a configured readback deadline and caller cancellation to external recording. Reuse the deadline behavior already used by magic-link submissions. A delayed gateway read returns within the configured bound plus a documented test tolerance.
-- Force a post-commit timeout, then retry the same command identity. Read back one recording effect. Distinguish refusal and indeterminate commit in low-cardinality internal outcomes. Verify the public response and telemetry disclose no token, comment, identity or payload.
+- Force a post-commit timeout, restart the host, then retry the same command identity. Read back one recording effect. Distinguish refusal and indeterminate commit in low-cardinality internal outcomes. Verify the public response and telemetry disclose no token, comment, identity or payload.
 
 ### Story 6.6: Support independent and composed route discovery
 
@@ -1885,3 +1897,14 @@ As a reporting operator, I want a ledger page to avoid repeatedly processing unr
 - Normalize the supplied history once and fold canonical events by owner. Preserve tenant checks, invalid sequence handling, duplicates, replay ordering, effective rows and superseded correction lineage. Compare rows and exported CSV bytes with golden cases.
 - Run the 60, 240 and 960 entry series with three lifecycle events per entry, a 50-row page and five warmed measurements per size. Record configuration, median elapsed time and calling-thread allocations before and after under comparable load.
 - Agree a representative tenant size and budget with the reporting owner and evaluate it. Consider materialization only if the measured fold still misses that budget.
+
+### Story 6.10: Recover interrupted period submissions and reviews
+
+As a contributor or approver, I want to retry an interrupted whole-period operation and see which entry decisions have committed before I rely on the period as complete. This follows up Stories 2.7 and 2.8 under FR7, FR8 and AD-3. [Period decision](architecture.md#ad-3--preserve-entry-and-period-decisions-independently-adopted)
+
+**Acceptance criteria**
+
+- For a new review, compare the fresh period and entry summaries with the period owner's full membership. Exercise a missing or stale member outside a selected rejection. Withhold the new decision and every entry effect. A whole-period submission that fails validation also writes zero effects and returns field-specific guidance.
+- Before the first owner effect, persist the admitted intent and expected effects through EventStore. Bind submission to tenant and period, and review also to decision ID. Preserve the original actor, contributor, authority, UTC instant, membership, period boundary, action and reasons by entry. An authorized retry with reordered members recovers the same operation. Conflicting intent under that identity fails closed.
+- Interrupt a two-entry operation between owner writes. Exercise submission, approval and selected rejection. Restart and retry, including after a period no-op and with concurrent matching retries. Verify one durable period decision and exactly one of each required entry transition. Preserve already-submitted entries, unaffected members and original attribution.
+- Until durable owner histories account for every required effect, callers and dependent actions see the period operation as pending. A reader may show individually verified entry states. Prove completion after recovery from the persisted histories and verify that conflicting evidence keeps the operation incomplete.

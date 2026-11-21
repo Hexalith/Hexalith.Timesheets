@@ -4,7 +4,7 @@ project: timesheets
 document: EXPERIENCE.md
 status: draft
 created: 2026-06-18
-updated: 2026-11-20
+updated: 2026-11-21
 sources:
   - ../../prds/prd-timesheets-2026-06-18/prd.md
   - ../../prds/prd-timesheets-2026-06-18/addendum.md
@@ -118,6 +118,7 @@ Visual specs live in `DESIGN.md.Components`.
 | Cold load | All internal grid/report surfaces | Use Fluent/FrontComposer loading skeleton or progress pattern sized to expected layout. |
 | Empty current period | My Timesheet Period | Show the period boundary and a single action: `Record time`. |
 | Invalid entry at submission | My Timesheet Period | Keep valid entries selectable/submittable where policy allows; mark only blocking entries with field-level correction needed. |
+| Period operation awaiting recovery | My Timesheet Period, Period Approval Detail | Show the operation as pending and expose only verified individual entry states. Enable actions that require whole-period completion after all required effects are verified. |
 | Submitted period with mixed entries | My Timesheet Period, Period Approval Detail | Show period state separately from entry states. Do not flatten mixed entry states into one badge. |
 | Rejected entry | My Timesheet Period, Time Entry Detail | Show rejection reason and `Correct entry`; preserve original values and rejection metadata. |
 | Approved entry | Time Entry Detail, Ledger | Direct edit disabled. Show `Add correction` as the mutation path. |
@@ -255,7 +256,7 @@ Failure path: provider token metrics are unavailable. The entry shows `Unavailab
 3. `FluentDataGrid` shows approved entries with stable IDs, approval metadata, and correction lineage.
 4. Marc selects `Export approved ledger`.
 5. `Export Review Dialog` summarizes filters, output scope, included evidence fields, and what Timesheets will not calculate.
-6. Marc confirms export. The review shows which comments policy permits. Download becomes available after the service verifies one ledger version and the durable audit record for the file.
+6. Before confirming, Marc sees the disclosure summary. When only some published values permit export, the dialog shows “Comments are permitted for some values only.” A mixed result can proceed when the other readiness conditions pass. The preview contains no comment text. Marc confirms export. Download becomes available after the service verifies one ledger version and the durable audit record for the file.
 7. **Climax:** downstream finance receives approved billable evidence with entry IDs, Contributor Party references, Approval State and correction lineage, with comments excluded by default, without Timesheets becoming an invoicing system.
 
 Failure path: no approved entries match the filters. Export is disabled and the ledger shows `No approved entries match these filters.`

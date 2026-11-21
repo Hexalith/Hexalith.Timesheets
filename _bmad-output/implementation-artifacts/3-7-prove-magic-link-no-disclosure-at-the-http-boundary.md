@@ -6,6 +6,8 @@ baseline_commit: 740cc54
 
 Status: in-progress
 
+**November 21 handoff.** Timesheets and Platform still need deployed evidence for the four external routes. Compare public refusals through the designated ingress and check corresponding ingress, sidecar and application diagnostics using synthetic links. Record sanitized observations for each boundary in the launch register. [Current story criteria](../planning-artifacts/epics.md#story-37-prove-magic-link-no-disclosure-at-the-http-boundary)
+
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
 ## Story

@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 11-20-2026 15:21 (v2.1.1 audit follow-up added to backlog)
+# last_updated: 11-21-2026 17:09 (course correction)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 11-20-2026 15:21
+last_updated: 11-21-2026 17:09
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -76,10 +76,9 @@ development_status:
   3-3-confirm-time-through-magic-link: done
   3-4-adjust-time-through-magic-link: done
   3-5-reject-invalid-confirmation-links-without-resource-disclosur: done
+  # 3.6 awaits deployed authority, inventory, continuity and shared rebuild evidence.
   3-6-implement-eventstore-backed-magic-link-state-loading: in-progress
-  # wait for platform 4.14
-  # needs Platform epics 1 to 5
-  # Platform Development/source host binding exists; staging namespaces, production providers and deployed acceptance remain absent
+  # 3.7 awaits ingress, sidecar and application privacy evidence from the deployed routes.
   3-7-prove-magic-link-no-disclosure-at-the-http-boundary: in-progress
   epic-3-retrospective: done
 
@@ -110,9 +109,10 @@ development_status:
   6-2-require-a-durable-audit-before-delivering-finance-output: backlog
   6-3-read-one-complete-ledger-snapshot-per-export: backlog
   6-4-persist-workload-authenticated-external-confirmation: backlog
-  6-5-bound-external-recording-readback-and-expose-uncertain-outcomes: backlog
+  6-5-bound-external-recording-readback-and-report-uncertainty: backlog
   6-6-support-independent-and-composed-route-discovery: backlog
   6-7-wire-one-project-capture-to-ledger-workflow: backlog
   6-8-qualify-the-deployed-project-workflow: backlog
   6-9-reduce-repeated-ledger-folds-while-preserving-evidence: backlog
+  6-10-recover-interrupted-period-submissions-and-reviews: backlog
   epic-6-retrospective: optional

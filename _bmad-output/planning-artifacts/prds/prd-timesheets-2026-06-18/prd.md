@@ -2,7 +2,7 @@
 title: "Hexalith.Timesheets — Product Requirements Document"
 status: final
 created: 2026-06-18
-updated: 2026-11-20
+updated: 2026-11-21
 ---
 
 # PRD: Hexalith.Timesheets
@@ -154,6 +154,7 @@ A Contributor can submit a weekly or monthly Timesheet Period containing their T
 - A Timesheet Period is scoped to one Contributor, one Tenant, and one weekly or monthly period.
 - Period submission records the included Time Entry IDs and the period boundary.
 - On whole-period submission, if any included entry fails validation, Timesheets emits neither a period-submission event nor an entry-submission event for that request. It returns the valid entry IDs and identifies the fields that need correction on each blocked entry so the contributor can retry the whole period. [Period submission criteria](../../../implementation-artifacts/2-7-submit-timesheet-periods.md)
+- An interrupted whole-period operation stays pending until the period decision and each required entry transition can be verified. An authorized retry after restart completes outstanding effects once. [Recovery criteria](../../epics.md#story-610-recover-interrupted-period-submissions-and-reviews)
 - Period approval does not erase entry-level states; it records grouped review evidence and locks approved included entries from direct edit.
 
 #### FR-8: Reconcile entry-level and period-level approval
@@ -462,7 +463,7 @@ Section 14 records settled policy and deferred decisions. The reporting owner st
 
 ## 16. Decision History and Current Acceptance — 2026-11-20
 
-**Release decision: FAIL.** The November 20 audit of v2.1.1 found gaps in finance delivery, workload-authenticated confirmation, and the production Project approval-to-ledger path. All nine Epic 6 stories are in backlog. The onboarding instructions were corrected. Finance delivery requires Stories 6.1–6.3, external API confirmation and recording reliability are tracked in 6.4–6.5, and production composition and deployed Project qualification are tracked separately in 6.7 and 6.8. [November 20 change proposal](../../sprint-change-proposal-2026-11-20.md) · [Sprint status](../../../implementation-artifacts/sprint-status.yaml)
+**Release decision: FAIL.** The November 20 audit of v2.1.1 found gaps in finance delivery, workload-authenticated confirmation, and the production Project approval-to-ledger path. The nine audit follow-ups entered the backlog on November 20. Story 6.10 tracks the subsequent period recovery decision. The onboarding instructions were corrected. Finance delivery requires Stories 6.1–6.3, external API confirmation and recording reliability are tracked in 6.4–6.5, and production composition and deployed Project qualification are tracked separately in 6.7 and 6.8. [November 20 change proposal](../../sprint-change-proposal-2026-11-20.md) · [Sprint status](../../../implementation-artifacts/sprint-status.yaml)
 
 The October 26 isolated magic-link journey demonstrated persistence and restart locally. Deployed authority, legacy inventory and continuity, shared rebuild, and ingress privacy remain open under Stories 3.6 and 3.7 (FR-14). Tenant policy configuration, legal-hold sign-off, and product UAT also await their owners. Stories 5.1 and 5.2 closed their scoped reconciliations. Package currency remains **CONCERNS**. The release owner maintains the dated evidence and waivers in the [launch register](../../../../docs/launch-readiness.md).
 

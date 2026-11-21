@@ -6,6 +6,8 @@ baseline_commit: 24a37c1c50c9c3b3504a03a7a939caf2720b45b0
 
 Status: in-progress
 
+**November 21 handoff.** The remaining work requires current runtime evidence and a designated deployment with authorized providers. Timesheets verifies issuance and terminal owner histories, restart and shared rebuild. Platform supplies the deployment, authority, inventory and continuity evidence. Record the exercised graph and results in the launch register. [Current story criteria](../planning-artifacts/epics.md#story-36-implement-eventstore-backed-magic-link-state-loading)
+
 <!-- Note: Validation is optional. Run validate-create-story for quality check before dev-story. -->
 
 ## Story
