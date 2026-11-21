@@ -1,1199 +1,194 @@
 ---
-stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8]
-inputDocuments:
-  - _bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/prd.md
-  - _bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/addendum.md
-  - _bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/.decision-log.md
-  - _bmad-output/planning-artifacts/briefs/brief-timesheets-2026-06-18/brief.md
-  - _bmad-output/planning-artifacts/briefs/brief-timesheets-2026-06-18/addendum.md
-  - _bmad-output/planning-artifacts/briefs/brief-timesheets-2026-06-18/.decision-log.md
-  - _bmad-output/planning-artifacts/ux-designs/ux-timesheets-2026-06-18/EXPERIENCE.md
-  - _bmad-output/planning-artifacts/ux-designs/ux-timesheets-2026-06-18/DESIGN.md
-  - _bmad-output/planning-artifacts/ux-designs/ux-timesheets-2026-06-18/.decision-log.md
-  - Hexalith.EventStore/_bmad-output/project-context.md
-  - Hexalith.Parties/_bmad-output/project-context.md
-  - Hexalith.Projects/_bmad-output/project-context.md
-  - Hexalith.Conversations/_bmad-output/project-context.md
-  - Hexalith.Tenants/_bmad-output/project-context.md
-  - Hexalith.FrontComposer/_bmad-output/project-context.md
-workflowType: 'architecture'
-lastStep: 8
-status: 'complete'
-completedAt: '2026-06-18'
-project_name: 'timesheets'
-user_name: 'Jerome'
-date: '2026-06-18'
+name: Hexalith.Timesheets
+type: architecture-spine
+workflowType: architecture
+purpose: build-substrate
+altitude: feature
+paradigm: Event sourcing and CQRS
+scope: Tenant-scoped time capture, review, confirmation, reporting and finance evidence
+created: 2026-06-18
+updated: 2026-11-21
+status: final
+sources:
+  - prds/prd-timesheets-2026-06-18/prd.md
+  - epics.md
+  - ../../docs/boundary-decision-record.md
+  - ../../docs/launch-readiness.md
+memlog: architecture/architecture-timesheets-2026-11-21/.memlog.md
 ---
 
-# Architecture Decision Document
+# Hexalith.Timesheets architecture
 
-**Current acceptance boundary (2026-10-20):** Timesheets publishes contracts and FrontComposer-compatible metadata. A consuming FrontComposer host owns rendered Fluent UI V5 components and browser/WCAG evidence; no Timesheets UI project may be added. The architecture design is complete, but FR14 deployed acceptance, current-graph runtime qualification, legal-hold sign-off, and final release acceptance remain unfinished. The launch verdict is **FAIL**; dated implementation and performance receipts retain their original scopes.
+Timesheets records effort against one Project or Work item, attributes it to a Party, and preserves the approval and correction history that finance can reconcile. The module uses event sourcing and CQRS. Commands commit facts to the tenant-scoped owner stream. Queries read rebuildable projections. Operational views, the Approved-Time Ledger and CSV each have a different disclosure boundary.
 
-**Approved McpCli course correction (2026-09-27):** `Hexalith.McpCli` is the target Hexalith-owned CLI/MCP surface for Timesheets operations that pass contract enrollment and authorization. Any proprietary module CLI, MCP host, plug-in, or planned adapter described below is an obsolete migration source or historical design, not a new target. The module retains its domain, UI, and security semantics; replacement or approved withdrawal and parity evidence precede retirement. External development CLIs are unaffected.
-
-
-_This document builds collaboratively through step-by-step discovery. Sections are appended as we work through each architectural decision together._
-
-## Qualification of the Project and finance workflows
-
-The v2.1.1 audit identified the following implementation work for the existing HTTP host, Server and Projections packages. The observable acceptance cases and owners are in [Epic 6](epics.md#epic-6-qualify-project-time-and-finance-evidence).
-
-- **Project capture to ledger.** The composing host supplies tenant, contributor, Project, approval and evidence-policy providers. The command processor loads the authorized owner stream and commits each transition through EventStore. The ledger reader returns the effective approved row and its superseding lineage. Bind through the existing ports and catalogue the installed receivers. Keep the server kernel’s deny and unavailable defaults.
-- **Workload-authenticated confirmation.** Gate access before reading tenant-scoped state, then check the command against the recorded contributor and target. Acknowledge after readback of the exact committed effect. Bound readback for both external recording and confirmation. Preserve the command identity across retries and expose policy refusal and uncertain commit separately to operators through low-cardinality outcomes.
-- **Finance export.** Start at the beginning of the authorized filter scope. Every page must belong to the same identifiable snapshot. A changed or unavailable snapshot or a cursor that fails to advance blocks delivery. Apply the same tenant and per-row comment rules to preview, CSV and returned correction evidence. Hash the final bytes and verify the durable audit for that request before releasing them. The EventStore and finance owners must agree how a retry recovers an earlier commit.
-- **Package discovery and projection cost.** Keep the projection inventory callable from a Projections-only installation. The host that installs both packages owns complete catalogue composition. Fold validated events once per entry, preserving stream identity, ordering, duplicate handling and historical corrections. Compare results and allocations before considering a separately materialized ledger.
-
-## Project Context Analysis
-
-### Requirements Overview
-
-**Functional Requirements:**
-
-Hexalith.Timesheets is a tenant-scoped, actor-neutral effort evidence module. The functional scope covers 23 requirements across six major areas:
-
-- Time Entry Ledger: record auditable Time Entries against exactly one Project or Work reference; validate references through sibling module boundaries; preserve correction lineage.
-- Submission, Approval, Rejection, and Locking: support entry-level and period-level submission/approval, rejection with reason, approved-entry locking, additive corrections, and distinct entry vs period state.
-- Activity Type Catalogs: manage tenant-level and project-level Activity Types with active/inactive state, stable IDs, and historical reportability.
-- Actor-Neutral Contributors: attribute every entry to a Party; support internal contributors, external-party API submission, scoped magic-link confirmation, and AI-agent effort evidence.
-- Reporting, Ledger, and Exports: query by operational dimensions, report actual time by Project and Work, maintain an Approved-Time Ledger, export approved billable evidence, and surface AI effort separately from human/external duration.
-- Platform Boundary: persist through Hexalith.EventStore; expose command/query contracts; integrate with FrontComposer/Fluent UI; reference Projects, Works, Parties, Tenants, and EventStore without copying their owned state.
-
-Architecturally, the module must treat Time Entry evidence as append-only domain state, not mutable rows. Approval, rejection, correction, export-relevant changes, activity catalog changes, and magic-link confirmation all need explicit command/event/query semantics.
-
-**Non-Functional Requirements:**
-
-The main architecture-driving NFRs are:
-
-- Security and authorization: every command, query, API, magic-link, export, and admin path must enforce tenant and resource gates and fail closed.
-- Tenant isolation: all entries, periods, catalogs, projections, exports, and links are tenant-scoped; cross-tenant access must be impossible and tested.
-- Auditability: approvals, rejections, corrections, exports, and magic-link usage must preserve provenance.
-- Data minimization: Timesheets stores Party, Project, and Work references, not copied personal or owned domain data.
-- Projection reliability: read models must tolerate at-least-once delivery, duplicates, replay, rebuild, stale, degraded, and unavailable states.
-- Observability privacy: logs/traces must use structured metadata without payloads, comments, personal data, tokens, secrets, or command bodies.
-- Compatibility: event and contract evolution must be additive and serialization-tolerant.
-- Accessibility: internal and external web surfaces target WCAG 2.2 AA through FrontComposer/Fluent UI patterns.
-- Performance targets: common command acknowledgements target 500 ms p95 in warmed local service; common report queries target 2 seconds p95 for tenant/project/period filters.
-
-**Scale & Complexity:**
-
-- Primary domain: full-stack Hexalith domain module with event-sourced backend, command/query contracts, projections, generated/admin UI, external confirmation surface, and export/reporting paths.
-- Complexity level: enterprise.
-- Estimated architectural components: 12 component families.
-
-The component families implied by the requirements are: Time Entry write model, Timesheet Period write model, Activity Type catalog, approval policy/state model, correction lineage model, Project/Work reference validation adapters, Party contributor validation/display hydration adapters, Magic-Link Confirmation capability, AI effort metrics model, operational projections, Approved-Time Ledger/export projection, and FrontComposer/Fluent UI surfaces.
-
-### Technical Constraints & Dependencies
-
-Timesheets is constrained by existing Hexalith module rules:
-
-- EventStore is the authoritative persistence path for domain state changes.
-- Tenants owns tenant lifecycle, membership, roles, access projections, and tenant isolation.
-- Parties owns Contributor identity and personal data; Timesheets persists Party IDs only.
-- Projects owns Project state and project-level context; Timesheets stores stable Project references only.
-- Works owns Work lifecycle and planned/estimated effort; Timesheets stores stable Work references only.
-- FrontComposer and Blazor Fluent UI are the primary internal UI system.
-- External contributor UX is limited to API-only integration and scoped Magic-Link Confirmation; no full external portal in v1.
-- The module must follow Hexalith conventions: the repository-pinned .NET toolchain, centralized package versions, warnings as errors, no recursive submodules, no copied sibling module state, no direct infrastructure persistence bypassing EventStore, and additive contract evolution.
-- This Timesheets repository owns the root-declared `references/Hexalith.Works` checkout as the sole default Works source. `HexalithWorksRoot` preserves a caller-supplied path; otherwise it resolves `references/Hexalith.Works` first and sibling `../Hexalith.Works` second. A Timesheets-root `Hexalith.Works` checkout, gitlink, or path probe is forbidden.
-
-No epics or stories were loaded, so this architecture is PRD/UX-driven. Implementation slicing should not be inferred yet; the architecture should first settle domain boundaries, event contracts, projection ownership, and cross-module adapters.
-
-### Cross-Cutting Concerns Identified
-
-- Tenant/resource authorization and fail-closed access checks across commands, queries, exports, magic links, and UI.
-- Event-sourced correction and approval lineage across Time Entry, period, ledger, and reports.
-- Distinct entry-level and period-level approval state without flattening mixed states.
-- Projection freshness and rebuild semantics for approvals, reports, and ledger exports.
-- Reference validation and display hydration through Projects, Works, and Parties without denormalizing owned state.
-- AI effort metrics as multi-unit evidence, not a conversion into human hours.
-- External magic-link no-disclosure behavior for invalid, expired, or used links.
-- Activity Type governance across tenant and project scopes.
-- Export accountability without crossing into invoicing, rates, payroll, taxes, or revenue recognition.
-- Privacy-safe logging, tracing, comments, audit metadata, and support diagnostics.
-- Responsive, accessible FrontComposer/Fluent UI surfaces with dense operational grids and explicit evidence-changing commands.
-
-### Architectural Pressure Points
-
-Several requirements are coupled and need explicit decisions before implementation stories begin:
-
-- Aggregate boundaries: Time Entry, Timesheet Period, Activity Type, Magic-Link Confirmation, export audit, and approval/correction state could be modeled together or separately. The wrong split will create consistency and replay problems.
-- Approval reconciliation: entry state and period state are intentionally distinct. Architecture must prevent period approval from silently flattening rejected, corrected, or superseded entry states.
-- Correction semantics: the PRD allows additive correction after approval, but architecture must decide whether corrections are superseding events, linked replacement entries, offset entries, or a supported combination.
-- Reference validation freshness: Project, Work, and Party validation must fail closed at approval/submission boundaries, but Draft creation may tolerate stale references. That distinction must be encoded in command policy.
-- Magic-link security: Magic-Link Confirmation is not just an external UX. It needs a scoped capability model, single-use/expiry enforcement, no-disclosure failure behavior, and audit metadata.
-- AI effort evidence: human/external duration, AI wall-clock time, model/tool runtime, billable effort, and tokens are different units. Projections and exports must preserve those units instead of normalizing them too early.
-- Approved-Time Ledger authority: the ledger is a rebuildable projection, not source-of-truth storage. Export evidence must reference ledger projection state while preserving event lineage.
-- Comment sensitivity: comments are useful evidence but may contain sensitive customer/private data. Architecture needs a policy for storage, logging, exports, and redaction posture.
-- Period/time-zone policy: weekly/monthly boundaries depend on tenant policy unless superseded. This affects identity, validation, queries, and approval cutoffs.
-
-### Risk-Bearing Architecture Implications
-
-Timesheets is a Hexalith domain module, not a standalone CRUD time-entry product. The authoritative record is the append-only event stream; ledgers, reports, approval queues, exports, and UI lists are rebuildable projections over that event history.
-
-The main unresolved architecture risk is aggregate and consistency boundary design. Time Entry, Timesheet Period, Activity Type policy, approval/locking, correction lineage, external confirmation, and AI effort evidence may not share the same transaction boundary. Architecture must decide which invariants require serialized aggregate handling and which can be handled through asynchronous projection-side reconciliation.
-
-Approval and locking are not simple status transitions. The design must define how submission, approval, rejection, lock windows, late corrections, external confirmations, AI-assisted entries, and projection lag reconcile without mutating history or flattening mixed entry/period states.
-
-Corrections must be first-class compensating facts with actor, reason, timestamp, affected entry/period references, and lineage. The UX and exports should expose current effective state plus history, not imply that approved evidence was edited in place.
-
-Project, Work, Party, and Tenant data remain externally owned. Timesheets stores stable references and hydrates display metadata at read time or through approved projections. The architecture must expose stale, missing, deleted, unauthorized, or unavailable reference states to commands, UI, reports, and exports.
-
-Magic-Link Confirmation is a security boundary, not only a UX flow. It must be scoped, expiring, tenant-bound, entry-bound, replay-resistant, revocable where needed, auditable, and unable to browse internal Timesheets context. Tokens and decoded claims must not appear in logs, projections, comments, or exports.
-
-AI and external entries require provenance. Multi-unit AI effort evidence needs source attribution, unit basis, confidence or validation status, and correction path. AI input must not bypass tenant, reference, approval, lock, or audit checks.
-
-Period and time-zone policy is architecture-critical. Tenant-local dates, UTC instants, DST behavior, weekly/monthly boundaries, lock windows, approval cutoffs, external confirmations, reports, and exports must use one canonical policy.
-
-Comments are sensitive unstructured data by default. Architecture must define visibility, retention, logging, tracing, redaction, export exposure, and external-confirmation treatment.
-
-Exports are consistency contracts. Export design must state tenant scope, filters, snapshot/projection freshness, correlation ID, included lineage, and whether exported totals are final, pending, stale, or rebuilt.
-
-Testability is an architecture implication now: pure aggregate command/rejection tests, projection replay/idempotency tests, tenant isolation negative tests, period/time-zone matrix tests, magic-link abuse tests, export golden-file tests, and reference-staleness tests should be expected proof points.
-
-Because epics and stories are not loaded, this analysis remains PRD/UX-derived and provisional. Implementation sequencing should not be inferred yet; architecture decisions must preserve room for clarification around period policy, aggregate boundaries, correction semantics, and external confirmation security.
-
-## Starter Template Evaluation
-
-### Primary Technology Domain
-
-Hexalith.Timesheets is a .NET Hexalith domain module with full-stack supporting surfaces: event-sourced backend, command/query contracts, projections, Aspire AppHost topology, generated/admin UI through FrontComposer, and a scoped external magic-link web surface.
-
-This is not a generic web application starter problem. The right foundation is an internal Hexalith module scaffold aligned with the existing `Hexalith.Conversations`, `Hexalith.Works`, `Hexalith.Projects`, `Hexalith.Tenants`, and `Hexalith.Parties` module shapes.
-
-### Version Research Notes
-
-The following observations describe the original scaffold evaluation. See the version notes under Data Architecture for the current build.
-
-- Historical SDK observations: the 2026-06-18 architecture step observed `10.0.301`; the 2026-07-17 commit `937be13` raised the repository pin to `10.0.302`; the 2026-09-12 Story 5.3 review patch raised it to `10.0.400`, the 2026-09-12 Story 5.2 reopening raised it to `10.0.401`, and the 2026-10-18 CI/CD commit `c4695a5` raised it to `10.0.403`. The current pin is recorded separately below.
-- Local templates include `aspire-apphost`, `aspire-servicedefaults`, `aspire-starter`, `webapi`, `blazor`, `classlib`, `xunit`, and solution templates.
-- `dotnet new sln --name Hexalith.Timesheets` on the local .NET 10 SDK creates `Hexalith.Timesheets.slnx`.
-- NuGet lists `Aspire.ProjectTemplates` `13.4.5` as the current package version on 2026-06-18.
-- NuGet lists `xunit.v3` `3.2.2` as the current package version on 2026-06-18.
-- Microsoft Learn documents `aspire-starter`, `aspire-apphost`, AppHost, and ServiceDefaults usage for Aspire starter projects and deployments.
-
-### Starter Options Considered
-
-| Option | Fit | Strength | Risk | Decision |
-|---|---:|---|---|---|
-| Official Aspire Starter Application | Low-Medium | Current, maintained, creates AppHost, ServiceDefaults, API, and web sample quickly | Imports generic sample structure and does not encode Hexalith EventStore/module boundaries | Do not use as primary starter |
-| Official .NET SDK Templates | Medium | Correct primitives for `.slnx`, class libraries, Web API, Aspire AppHost, ServiceDefaults, and tests | Template defaults still require Hexalith cleanup and package centralization | Use as low-level scaffolding commands |
-| Internal Hexalith Domain Module Scaffold | High | Preserves EventStore, tenant isolation, project/package boundaries, test style, and sibling-module conventions | Requires deliberate scaffold story because no single public command exists | Select |
-
-The official Aspire Starter Application is rejected as the architectural template because Timesheets must follow Hexalith module boundaries, event-sourced domain conventions, tenant isolation rules, and sibling-module structure. Aspire primitives are approved only for empty project shells and local orchestration support.
-
-### Selected Starter: Internal Hexalith Domain Module Scaffold
-
-**Rationale for Selection:**
-
-The project context requires Timesheets to behave like a Hexalith domain module: EventStore-backed, tenant-isolated, reference-based, projection-driven, centrally packaged, warnings-as-errors, and tested with Hexalith conventions. A public starter cannot safely encode those rules. The starter should therefore be the internal Hexalith module shape, closest to `Hexalith.Conversations` for greenfield domain-module structure and `Hexalith.Works` / `Hexalith.Projects` for Project/Work-adjacent integration patterns.
-
-**Decision:** Timesheets will use an internal Hexalith domain-module scaffold as its starter template. Public .NET and Aspire templates may be used only to create empty project shells such as `.slnx`, class library, Web API, ServiceDefaults, AppHost, and xUnit projects. Architectural structure, package boundaries, dependency direction, EventStore integration, tenant isolation, and UI conventions must come from established Hexalith sibling modules, not from the official Aspire Starter Application.
-
-### Initialization Command
-
-Story 1.1 used the .NET 10 generation of the templates. This historical scaffold example records the original project layout. For a current checkout, follow the [build instructions](../../README.md#build-and-test).
-
-```powershell
-dotnet new sln --name Hexalith.Timesheets
-
-dotnet new classlib -n Hexalith.Timesheets.Contracts -o src/Hexalith.Timesheets.Contracts --framework net10.0 --no-restore
-dotnet new classlib -n Hexalith.Timesheets.Client -o src/Hexalith.Timesheets.Client --framework net10.0 --no-restore
-dotnet new classlib -n Hexalith.Timesheets.Server -o src/Hexalith.Timesheets.Server --framework net10.0 --no-restore
-dotnet new classlib -n Hexalith.Timesheets.Projections -o src/Hexalith.Timesheets.Projections --framework net10.0 --no-restore
-dotnet new webapi -n Hexalith.Timesheets -o src/Hexalith.Timesheets --framework net10.0 --no-restore
-dotnet new aspire-servicedefaults -n Hexalith.Timesheets.ServiceDefaults -o src/Hexalith.Timesheets.ServiceDefaults --no-restore
-dotnet new aspire-apphost -n Hexalith.Timesheets.AppHost -o src/Hexalith.Timesheets.AppHost --no-restore
-dotnet new classlib -n Hexalith.Timesheets.Testing -o src/Hexalith.Timesheets.Testing --framework net10.0 --no-restore
-
-dotnet new xunit -n Hexalith.Timesheets.Contracts.Tests -o tests/Hexalith.Timesheets.Contracts.Tests --framework net10.0 --no-restore
-dotnet new xunit -n Hexalith.Timesheets.Server.Tests -o tests/Hexalith.Timesheets.Server.Tests --framework net10.0 --no-restore
-dotnet new xunit -n Hexalith.Timesheets.Projections.Tests -o tests/Hexalith.Timesheets.Projections.Tests --framework net10.0 --no-restore
-dotnet new xunit -n Hexalith.Timesheets.IntegrationTests -o tests/Hexalith.Timesheets.IntegrationTests --framework net10.0 --no-restore
-```
-
-The scaffold story must then apply Hexalith-specific files and conventions: `Directory.Packages.props`, `Directory.Build.props`, `.editorconfig`, project references, package metadata, test lane conventions, EventStore/Tenants/Parties/Projects/Works references, and `.slnx` membership.
-
-The command sequence is illustrative and must be verified in the scaffold story before execution. Public templates create empty shells; they do not define the architecture.
-
-### Architectural Decisions Provided by Starter
-
-**Language & Runtime:**
-
-C# on .NET 10, nullable enabled, implicit usings, warnings as errors, file-scoped namespaces, centralized package versions, `.slnx` solution format.
-
-**Styling Solution:**
-
-No custom Timesheets styling starter. Internal UI uses FrontComposer and Blazor Fluent UI through existing Hexalith patterns. External Magic-Link Confirmation should use the same component family and no-disclosure behavior. FrontComposer/Fluent UI and Magic-Link Confirmation are presentation concerns, not starter-template drivers.
-
-**Build Tooling:**
-
-MSBuild/.NET SDK projects, Central Package Management, module-local `.slnx`, no `.sln`, no inline package versions, .NET SDK container support where host packaging is needed.
-
-**Testing Framework:**
-
-xUnit v3, Shouldly, NSubstitute, bUnit for UI surfaces, Testcontainers/Aspire testing only for integration boundaries. The xUnit template creates only a shell until it is normalized to Hexalith test conventions. Expected proof points include aggregate command/rejection tests, projection replay/idempotency tests, tenant-isolation negative tests, time-zone matrix tests, magic-link abuse tests, export golden-file tests, and reference-staleness tests.
-
-**Code Organization:**
-
-Initial project families should include `Contracts`, `Client`, host/domain service, `Server`, `Projections`, `ServiceDefaults`, `AppHost`, `Testing`, and focused test projects. Timesheets does not add a UI project; contracts and metadata feed a consuming FrontComposer host. Any MCP migration follows the approved McpCli boundary.
-
-**Development Experience:**
-
-Use Aspire AppHost for local topology and observability. Use only root-declared submodules under `references/`; never initialize nested submodules. Restore/build module `.slnx`; run tests by affected project or module lane according to the final Timesheets convention. AppHost changes require restarting `aspire run`.
-
-### Starter Guardrails
-
-The starter decision is not anti-Aspire. Aspire remains the local topology, orchestration, observability, AppHost, and ServiceDefaults foundation. The rejected part is using the official Aspire Starter Application as the application architecture.
-
-Public .NET/Aspire templates are approved only for empty project shells: `.slnx`, `classlib`, `webapi`, `aspire-servicedefaults`, `aspire-apphost`, and `xunit`.
-
-Architectural structure, package boundaries, dependency direction, EventStore integration, tenant isolation, testing shape, and UI conventions must come from established Hexalith sibling modules.
-
-The scaffold defines structure only, not product behavior. No new Timesheets scope should be inferred from Aspire Starter Application sample features.
-
-### Canonical Sibling References
-
-Use sibling modules as architectural exemplars by concern, not as copy/paste sources:
-
-- `Hexalith.EventStore`: event-sourced aggregate/write path, command status, persistence and replay expectations.
-- `Hexalith.Tenants`: tenant isolation, fail-closed access, tenant projection behavior.
-- `Hexalith.Parties`: stable Party references, personal-data minimization, external contributor identity patterns.
-- `Hexalith.Projects` and `Hexalith.Works`: stable Project/Work references and Project/Work-adjacent integration patterns.
-- `Hexalith.FrontComposer`: internal UI composition, generated command/projection surfaces, Fluent UI conventions.
-- Aspire/AppHost patterns: local topology, service defaults, observability, and orchestration only.
-
-### Assumptions To Verify During Scaffold Story
-
-- `dotnet new sln` on the active .NET 10 SDK emits the expected `.slnx` format in local and CI environments.
-- `dotnet new xunit` output must be normalized to Hexalith test conventions, including xUnit v3, Shouldly, NSubstitute, Central Package Management, and no inline package versions.
-- Aspire template output must be aligned to the currently pinned Aspire version in `Directory.Packages.props` / AppHost SDK, not accepted blindly.
-- The chosen sibling-module baseline should be explicit: `Hexalith.Conversations` for greenfield shape, with `Hexalith.Works` / `Hexalith.Projects` consulted for Project/Work integration patterns.
-- Do not scaffold Timesheets UI packages. Contracts/Client/Server provide UI-neutral semantics and FrontComposer metadata; the consuming host owns rendering.
-- Root-declared `references/` submodule rules are preserved; no recursive initialization or repository-root Works checkout is introduced.
-- EventStore remains the only authoritative persistence path for domain state.
-- The API host does not become the place where domain logic or direct CRUD persistence lives.
-
-### Workspace Dependency Ownership
-
-This Timesheets repository is the umbrella pin for Works. It owns
-`references/Hexalith.Works` (`<workspace>/references/Hexalith.Works`) as the sole default checkout. A repository-root
-`Hexalith.Works` path, gitlink, or `$(MSBuildThisFileDirectory)Hexalith.Works`
-probe is forbidden. Do not initialize `Hexalith.Timesheets/Hexalith.Works`.
-
-`Hexalith.Timesheets.Works` references
-`$(HexalithWorksRoot)/src/Hexalith.Works.Contracts/Hexalith.Works.Contracts.csproj`.
-`Directory.Build.props` preserves a caller-supplied `HexalithWorksRoot` as
-read-only input. When that property is unset, it resolves
-`references/Hexalith.Works` first and sibling `../Hexalith.Works` second.
-Restore fails closed if no approved checkout exists; Timesheets does not
-create, initialize, or mutate a Works checkout.
-
-Build governance tests must allow the `references/Hexalith.Works` pin and
-fail if a repository-root Works declaration, gitlink, or root-local path
-probe returns.
-
-### Failure Paths This Avoids
-
-- Creating a generic Aspire sample and then fighting its API/frontend assumptions.
-- Letting test template defaults drift from xUnit v3 and Hexalith assertion/mocking standards.
-- Introducing inline package versions or `.sln` files.
-- Scaffolding UI before deciding the FrontComposer contract surface.
-- Treating AppHost topology as the domain architecture.
-- Introducing direct database-backed CRUD or EventStore bypass.
-- Treating tenant isolation as middleware only.
-- Reimplementing sibling module contracts instead of referencing stable IDs and adapters.
-- Hand-building an internal admin portal outside FrontComposer conventions.
-- Inferring new Timesheets product behavior from starter-template sample features.
-
-### Decision Record Summary
-
-**Context:** Timesheets is an event-sourced Hexalith domain module with tenant isolation, external stable references, projection-heavy reporting, FrontComposer/Fluent UI internal surfaces, and a scoped external confirmation path.
-
-**Decision:** Use an internal Hexalith domain-module scaffold assembled from .NET 10 SDK/Aspire primitives and sibling-module conventions. Reject the official Aspire Starter Application as the structural application template.
-
-**Consequences:**
-
-- The first implementation story must create the module shell and normalize all generated projects to Hexalith conventions.
-- Public starter commands may create project files, but they do not define architecture.
-- The architecture should treat `aspire-starter` as a reference sample only, not a codebase seed.
-- Consistency improves and sample-code drift is reduced, but the scaffold source and validation checklist must be documented explicitly.
-
-### Simplified Starter Rule
-
-Use public templates only for empty project shells. Use Hexalith sibling modules for architecture.
-
-**Note:** Project initialization using this scaffold should be the first implementation story. The implementation story should not run `aspire-starter` directly because it would introduce generic sample structure that conflicts with Hexalith module boundaries.
+**Release remains FAIL.** The v2.1.1 audit found that the production Project journey, workload confirmation and finance delivery still need implementation and deployed evidence. The adopted decisions below specify the behavior that work must deliver. The release owner records acceptance in the launch register. [November 20 audit](sprint-change-proposal-2026-11-20.md) · [Launch register](../../docs/launch-readiness.md)
 
 ## Core Architectural Decisions
 
-### Decision Priority Analysis
+<a id="data-architecture"></a>
+<a id="communication-patterns"></a>
 
-**Critical Decisions (Block Implementation):**
+### AD-1 — Give each fact one owner [ADOPTED]
 
-- EventStore-first persistence: Timesheets domain state persists through Hexalith.EventStore only.
-- Aggregate boundaries: baseline `TimeEntry`, `TimesheetPeriod`, and `ActivityType` boundaries.
-- Correction model: approved-entry changes use additive compensating events with superseding lineage by default.
-- Projection model: operational views, approval queues, reports, and Approved-Time Ledger are rebuildable projections with freshness metadata.
-- Reference validation: submission, approval, export, and magic-link confirmation fail closed when required references or authority cannot be resolved.
-- Authentication/security: JWT/OIDC authentication with fail-closed tenant/resource authorization; JWT claims are evidence, not authority.
-- Magic-Link Confirmation: scoped opaque capability, single-use/expiry-bound, audited, no-disclosure on invalid states.
-- API model: EventStore command/query pipeline, typed domain outcomes, ProblemDetails for HTTP transport errors.
-- Frontend component policy: Blazor Fluent UI V5 components only; V4 icons only if V5 icon source is unavailable.
-- Infrastructure: the AppHost SDK and matching Aspire CLI bundle for local topology/orchestration, Dapr SDK policy target `1.19.1`, no direct DB/broker bypass.
+- **Binds** command handlers, event contracts, projections and integrations (FR-1–3, FR-12, FR-21, FR-23).
+- **Prevents** conflicting copies of a contributor, target, or approved entry from becoming authoritative.
+- **Rule** Timesheets owns entry evidence, the Billable Flag, period review, Activity Types, confirmation, corrections and export audit. Tenants owns membership, Parties owns identity, Projects owns project state, and Works owns work lifecycle and estimates. Persist their stable IDs only. Hydrate permitted display data at read time. Keep aggregate decisions and event application pure. Services perform I/O and commit domain events through EventStore. During normal delivery, the registered projection handler writes its read model through the SDK. Certified index migrations and shared rebuilds use the SDK’s fenced recovery paths and preserve prior evidence. [Index migration and rebuild](../implementation-artifacts/tests/five-magic-link-consistency-deferrals.md)
 
-**Important Decisions (Shape Architecture):**
+<a id="authentication--security"></a>
+<a id="process-patterns"></a>
 
-- `Contracts`, `Client`, host/domain service, `Server`, `Projections`, `ServiceDefaults`, `AppHost`, `Testing`, and focused tests form the initial module shape.
-- FrontComposer is the primary internal UI composition model.
-- External Magic-Link Confirmation is a minimal responsive web surface, not a full external portal.
-- Exports are consistency contracts with tenant scope, filters, freshness/snapshot metadata, lineage, and audit metadata.
-- Comments are sensitive unstructured data by default.
-- OpenAPI/docs follow Hexalith conventions for public HTTP surfaces.
-- Observability uses OpenTelemetry/Aspire conventions without payload/personal-data leakage.
+### AD-2 — Resolve authority at the operation boundary [ADOPTED]
 
-**Deferred Decisions (Post-MVP or Later Architecture Category):**
+- **Binds** draft capture, submission, approval, query, export and capability operations (FR-2, FR-9, FR-12–14, FR-16).
+- **Prevents** a claim, a stale label or a lower-priority provider from authorizing a protected action.
+- **Rule** Derive request context from authenticated sources. Gate tenant and resource access before loading protected state, dispatching a command or disclosing a result. Validate the contributor and exactly one target for draft capture. Submission and approval revalidate required authority. Only display hydration may tolerate staleness after the target check succeeds. For entry and period review, use the highest-precedence applicable provider group. A contradiction or unavailable deciding group denies the action. Self-approval requires explicit action-specific permission. [Approval policy](../../src/Hexalith.Timesheets.Server/ApprovalAuthority/TimesheetsApprovalAuthorityPolicyOptions.cs)
 
-- Offset-entry correction support beyond superseding lineage.
-- Export-specific packaging and approved McpCli enrollment remain separate decisions. UI composition belongs to a consuming FrontComposer host; no Timesheets UI project is permitted.
-- Full external-party portal.
-- Invoice/rate/payroll/revenue integrations.
-- Native mobile app.
-- MCP Timesheets surface unless later requirements select it.
+### AD-3 — Preserve entry and period decisions independently [ADOPTED]
 
-### Data Architecture
+- **Binds** contributors, approvers, projection builders and finance consumers (FR-3–9, FR-16, FR-18).
+- **Prevents** a period decision from rewriting its entries or a correction from erasing earlier approved evidence.
+- **Rule** An entry carries separate approval, correction and lock states. A weekly or monthly period identifies one tenant, contributor, tenant-local period key and included entry IDs. Record audit instants in UTC. Selected entries may submit partially when policy allows. If any included entry fails whole-period validation, return valid IDs and field-specific failures and emit zero submission events for that request. The period records grouped evidence. Each affected entry records its own approval or rejection linked to that period decision, while unaffected entries retain their state. Approval needs no reason. Rejection requires a nonblank reason. Lock approved entries against direct edit. Corrections append superseding evidence with actor, time and lineage. A corrected approved entry still matches an Approved filter. [State vocabulary](../../src/Hexalith.Timesheets.Contracts/ValueObjects/TimesheetsEnums.cs) · [PRD §5.2](prds/prd-timesheets-2026-06-18/prd.md#52-submission-approval-rejection-and-locking)
 
-**Decision: EventStore-first event-sourced persistence**
+### AD-4 — Apply catalog rules at selection time [ADOPTED]
 
-Timesheets domain state changes will persist through `Hexalith.EventStore`. The module will not introduce a direct database-backed CRUD store for authoritative Time Entry, Timesheet Period, Activity Type, approval, correction, export, or magic-link state.
+- **Binds** catalog administration, capture, capability processing and historical readers (FR-10–11, FR-14).
+- **Prevents** readers from merging types by label or invalidating an earlier confirmation when a catalog changes.
+- **Rule** Identify types by ID and tenant or Project scope. Ordinary Project capture can select active tenant types plus active types for the selected Project, narrowed by explicit Project restrictions. Project catalog writes and restrictions require tenant and Project authority. For magic-link issuance or adjustment, use an active, selectable **tenant-owned** type with fresh scoped catalog evidence. At processing time, require a complete tenant-bound snapshot covering the relevant restrictions. Only a verified absence of restrictions permits unrestricted selection. The snapshot can precede a concurrent catalog change. Apply Project restrictions only to a Project target. An otherwise valid link can display and confirm its recorded tenant type after deactivation or exclusion. Preserve historical identities when types are renamed or deactivated. [PRD §5.3](prds/prd-timesheets-2026-06-18/prd.md#53-activity-type-catalogs)
 
-**Version notes:**
+<a id="api--communication-patterns"></a>
 
-- The SDK is selected by `global.json` and the target framework by `Directory.Build.props`. The audited release uses SDK `11.0.100` and targets `net11.0`.
-- The AppHost selects `Aspire.AppHost.Sdk/17.0.0` with `AspireUseCliBundle=true`. The root `Directory.Packages.props` overrides the imported Aspire family and sets the EventStore consumer version. The matching Aspire CLI supplies the build bundle.
-- Dapr SDK packages: the imported `Hexalith.Builds` catalog pins the Dapr Client, ASP.NET Core, Actors, AI, and Workflow package family at stable `1.19.1`. Timesheets has no direct Dapr `PackageReference`; Dapr reaches its restored graphs through sibling EventStore references.
-- Fluent UI: Timesheets has no direct Fluent UI package because this repository ships no UI project. The imported catalog carries the V5 package family at `5.0.1`, a stable line; it is a platform policy surface, not a Timesheets direct-package pin.
-- The root package overrides include prerelease Keycloak and CommunityToolkit Dapr hosting integrations. Record the resolved versions when qualifying a deployment. [Current pins](../../Directory.Packages.props)
-- Historical version observations: the 2026-09-12 Story 5.2 iteration recorded SDK `10.0.401`, Aspire/AppHost `13.5.3`, Dapr `1.18.7`, and Fluent UI V5 `5.0.0-rc.5-26219.1`; those are dated values, not current pins. Dated package audits remain in the launch-readiness package-currency verdict. The 2026-10-28 Debug/source alignment follows the published catalog; it does not refresh those audits or qualify runtime/deployed behavior.
-- Historical Aspire template observation: the 2026-06-18 architecture check found `Aspire.ProjectTemplates` `13.4.5`; this is not the current AppHost package baseline above.
+### AD-5 — Confirm the recorded contribution exactly once [ADOPTED]
 
-**Aggregate boundaries:**
+- **Binds** the external workload API, magic-link endpoints, owner command handlers and operators (FR-13–14).
+- **Prevents** an accepted HTTP response without a recorded effect, a retry that adds a second effect, or a link that grants browsing rights.
+- **Rule** On the workload path, authorize the caller, load the recorded entry in its tenant, check contributor and target, commit through the owner and verify the exact effect before acknowledgement. Preserve approval state. Bound verification by a configured deadline and caller cancellation. A retry with the same command identity, including after restart, resolves to one matching effect. Return opaque refusals to other tenants or contributors. Distinguish policy refusal from indeterminate commit in low-cardinality operator outcomes.
+- **Capability path** Bind an opaque token to one tenant, contributor, entry, allowed action and expiry. Store only its hash and safe capability metadata. Use the index to locate a candidate, then verify owner state, scope, freshness and single-use status before disclosure. At processing time the Time Entry owner rechecks persisted terminal history, serializes competing use, revocation and expiry, and commits consumption and its contribution effect in one owner decision. Invalid, expired, revoked and used links share the same public refusal. Disclose a comment only under explicit external-display policy with the required redaction. Acknowledge a mutation only after completed command status and exact event readback. [Host endpoints](../../src/Hexalith.Timesheets/Endpoints) · [Capability consistency decisions](../implementation-artifacts/tests/five-magic-link-consistency-deferrals.md)
 
-Baseline aggregate boundaries are:
+### AD-6 — Rebuild reports from attributable evidence [ADOPTED]
 
-- `TimeEntry` for individual entry lifecycle, submission, approval/rejection state, lock state, correction lineage, target reference, Contributor Party ID, billable flag, activity type, comments, and AI effort evidence attached to that entry.
-- `TimesheetPeriod` for contributor/tenant/period submission and grouped review evidence.
-- `ActivityType` or Activity Type catalog boundary for tenant-scoped and project-scoped activity type governance.
+- **Binds** projections, operational reports, dashboards, the Approved-Time Ledger and the Works adapter (FR-15–18, FR-20–21).
+- **Prevents** replay duplicates, double-counted corrections, and comparisons between incompatible units.
+- **Rule** Scope replay to tenant and owner stream. Validate sequence and duplicate delivery, preserve canonical order and expose projection freshness. The ledger contains approved billable and non-billable evidence. A ledger row identifies its entry, contributor, target, approval and correction lineage. Distinguish current from superseded rows and retain both when requested. Report human/external duration in whole minutes. Report AI wall-clock time, model/tool runtime, billable effort and tokens independently. Missing provider counts stay unknown and a reported zero stays zero.
+- **Works comparison** Use the authorized estimate and unit from the Works query contract. Timesheets derives actuals from its own entries. Compute variance only for compatible units. If the plan is absent, stale or undisclosable, mark it unavailable and return authorized actuals with their own freshness when policy permits. Platform must supply an `IWorksQueryChannel` and opt into validation and planned-effort reporting separately. The default host denies Work capture and reports the plan unavailable. [Works boundary and activation](../../docs/boundary-decision-record.md#current-scaffold-note)
 
-Magic-Link Confirmation, export audit, reference validation, and read-side reporting are capabilities around these domain events unless later decisions prove they require separate aggregates.
+### AD-7 — Release finance output only after snapshot and receipt verification [ADOPTED]
 
-**Correction model:**
+- **Binds** direct ledger queries, export preview, CSV generation, audit recording and downstream finance (FR-18–19).
+- **Prevents** sensitive text leaking through correction history and delivery of partial, mixed-version or unaudited evidence.
+- **Rule** Apply the following contract to every representation, including nested original and corrected values. A missing required export policy blocks the operation. Preview and generation both require the CSV v1 billable-only filter, fresh evidence on every page, and a nonempty eligible scope to report readiness. Preserve permitted IDs and lineage when omitting text.
 
-Approved-entry changes are additive compensating events. The default v1 semantic is superseding correction lineage: reports and UI expose current effective state plus prior evidence. Offset entries are deferred unless finance/export decisions require them at launch.
+| Boundary | Required evidence and response |
+| --- | --- |
+| Direct ledger read | Result-level authorization plus explicit row projection permission for comment text. A missing or denied inclusion decision omits the text throughout the row. |
+| Preview | Evaluate the trusted tenant export policy and each row’s export permission. Return readiness, freshness, scope count and effective disclosure policy. Keep evidence rows and text out of the response. Preview generates neither a file nor an audit event. V1 exposes the service query. |
+| Generation | Require both tenant and per-row export permission for text. Start at the first page of the authorized filter scope or explicitly reject a partial request. Read one identifiable ledger version in deterministic order. Include every matching current or requested superseded row exactly once. Traverse an empty authorized page when its continuation advances. A wholly empty scope blocks delivery. If scope, disclosure, version, progress or completeness cannot be verified, withhold all bytes and rows. |
+| Delivery and retry | Hash the final deterministic CSV bytes with SHA-256 and read back one durable EventStore receipt matching the stable request identity, requester, tenant, filters, count, format version and hash. Record UTC request and generation instants, correlation, output scope and freshness. Keep comments and row bodies out of the receipt. Rejection or an uncertain commit releases zero bytes and rows. After a lost acknowledgement or restart, the same request must recover its matching receipt. Reusing an identity for different scope or content fails closed. |
 
-**Projection model:**
+Finance consumers own rates, invoices, payroll and financial calculations. Finance delivery requires passing every acceptance criterion in Stories 6.1–6.3. Today the default recorder returns an in-memory domain result, and the audit reproduced both mixed-checkpoint output and delivery following rejection. [Export service](../../src/Hexalith.Timesheets.Server/Exports/ApprovedTimeExportService.cs) · [Default recorder](../../src/Hexalith.Timesheets.Server/Exports/DomainEventApprovedTimeExportAuditRecorder.cs) · [Preview contract](../../src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportPreviewReadModel.cs)
 
-Operational views, approval queues, Time Entry detail, Timesheet Period views, reports, AI effort reports, and the Approved-Time Ledger are rebuildable projections. Projections must be idempotent, replay-safe, duplicate-tolerant, and expose freshness/degraded/rebuilding states.
+<a id="structure-patterns"></a>
 
-**Reference validation model:**
+### AD-8 — Enroll only receivers installed by the host [ADOPTED]
 
-Timesheets stores stable references to Tenant, Party, Project, and Work identities. Draft creation may tolerate stale display hydration, but submission, approval, export, and magic-link confirmation fail closed when required references or authority cannot be resolved.
+- **Binds** Server, Projections, ReadModels, package consumers, the HTTP host and FrontComposer (FR-21–23).
+- **Prevents** standalone package discovery from requiring an undeclared assembly or a composed host from enrolling a route twice.
+- **Rule** Contracts owns public DTOs, scope identities and metadata. ReadModels owns shared SDK index helpers and stored wrappers. Server and Projections consume it independently. Preserve public CLR identities, type forwarding and stored JSON shapes. Keep the canonical tenant catalog address and its single projection writer. A Projections-only consumer must enumerate its supported inventory from declared dependencies. The composition that installs both assemblies must enroll every installed command and named projection exactly once, including operation schemas and receiver methods. Version or migrate the existing public combined members and discovery attribute when moving ownership. [Shared read-model ownership](../../docs/boundary-decision-record.md#shared-read-model-ownership--2026-10-25) · [Projection inventory](../../src/Hexalith.Timesheets.Projections/TimesheetsProjectionRouteCatalogDeclarations.cs)
 
-**Rationale:**
+### AD-9 — Put release bindings and qualification in the owning composition [ADOPTED]
 
-This matches Hexalith module constraints: EventStore owns persistence, sibling modules own their domain state, Timesheets owns time evidence and approval/correction facts, and read models remain rebuildable from append-only events.
+- **Binds** Timesheets, Platform, EventStore, the release owner and consumer hosts (Epic 6, FR-14, FR-22).
+- **Prevents** a permissive reusable kernel or a Development fixture from standing in for a deployed Project workflow.
+- **Rule** Retain the existing HTTP host, AppHost and ServiceDefaults. Keep the reusable authorization, required policy and reader defaults closed. The release composition supplies trusted tenant, Party, Project, activity, approver, evidence-policy and ledger providers. Enroll capture, submission, approval and additive correction through supported entry points. Qualify that workflow with one authorized tenant and verify a second tenant cannot read or change the entry. After restart and again after rebuilding from owner events, compare ledger row IDs, effective values and correction lineage. Record the graph, environment, entry points and sanitized outcomes. [Kernel registration](../../src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs) · [Platform binding](../../references/Hexalith.Platform/src/Hexalith.Platform.Composition/PlatformTimesheetsBinding.cs)
 
-### Authentication & Security
+<a id="gap-analysis-results"></a>
+<a id="enforcement-guidelines"></a>
 
-**Authentication model:**
+## Qualification of the Project and finance workflows
 
-Internal API/UI paths use ASP.NET Core authentication with JWT bearer/OIDC integration consistent with sibling Hexalith modules. Keycloak remains the production/local-topology identity provider when enabled, with the existing symmetric-key JWT development fallback preserved where the AppHost supports it.
+The November 20 backlog assigns implementation and acceptance separately. The four currently declared commands cover recording and magic-link operations. The host registers both owner assemblies, including four named projection handlers and the concrete EventStore-backed capability loader. Platform’s inspected Timesheets binding is Development/source-only. [HTTP composition](../../src/Hexalith.Timesheets/Program.cs) · [Command inventory](../../src/Hexalith.Timesheets.Server/Runtime/TimesheetsRouteCatalogDeclarations.cs) · [Epic 6](epics.md#epic-6-qualify-project-time-and-finance-evidence)
 
-**Version notes:**
-
-- Resolve ASP.NET Core authentication dependencies from the effective root package graph. Timesheets overrides the imported JWT bearer package for its target framework.
-- Dapr SDK target remains the imported stable `1.19.1` family.
-
-**Authorization model:**
-
-JWT tenant/user claims are request evidence, not the authority. Timesheets must authorize through fail-closed tenant/resource gates before aggregate load, command dispatch, projection read, export, or magic-link disclosure.
-
-Authorization decisions combine:
-
-- Tenants projection for tenant lifecycle, membership, and role/access checks.
-- Project/Work authority adapters for approver/project/work-specific permissions.
-- Timesheets policy for self-approval, approval windows, correction rights, export permission, and magic-link issuance.
-
-**Magic-Link Confirmation model:**
-
-Magic links are scoped capabilities, not login sessions. Baseline design:
-
-- Server-generated opaque token.
-- Store only token hash and capability metadata.
-- Bind capability to tenant, contributor Party, target entry/proposed entry, allowed action, expiry, and single-use state.
-- Persist issue/use/revoke/expire outcomes through EventStore-backed audit events.
-- Invalid, expired, used, or revoked links return the same no-disclosure response.
-- Token values and decoded capability material are never logged, projected, exported, or stored in comments.
-
-**Implementation status note (2026-06-19):** Epic 3 implemented the contracts, domain services, capability state, projection, endpoint routes, and service/workflow no-disclosure tests. The default registered `IMagicLinkConfirmationCapabilityStateLoader` is still `UnavailableMagicLinkConfirmationCapabilityStateLoader`, which fails closed by returning no capability, no Time Entry state, and an unavailable Activity Type catalog. Production-ready live host display/confirm/adjust requires a concrete EventStore-backed loader/token-hash lookup that folds capability state, folds the scoped Time Entry state, and loads a fresh Activity Type catalog without exposing token, tenant, contributor, target, or failure-reason material.
-
-**Readiness repair (approved 2026-06-20):** the concrete `IMagicLinkConfirmationCapabilityStateLoader` is owned by Epic 3 follow-up Story 3.6, not by a final hardening bucket. The loader must resolve token hashes without token disclosure, fold capability state from EventStore-backed events, fold the scoped Time Entry state, load a fresh Activity Type catalog, and preserve the same no-disclosure response for malformed, unknown, expired, used, revoked, unauthorized, wrong-recipient, wrong-action, and replayed links. Epic 5 verifies the evidence only after the owning feature work is complete.
-
-**Current magic-link acceptance (2026-10-20):** Story 3.6 remains unfinished for deployed FR14 acceptance. The host registers the projection assembly, canonical token-hash index and tenant Activity Type catalog projection handlers, Time Entry evidence handlers, and EventStore processing. Valid in-process routes and historical isolated persisted local journeys pass; no test-injected index is required in those mapped-delivery journeys. The latest local pass on 2026-10-18 used the earlier AppHost graph; current-graph runtime qualification and deployed authority, certified inventory/continuity, and shared-rebuild acceptance remain open. The candidate index is rebuildable and non-authoritative; use-time EventStore folds and server gates enforce authority. Invalid-link no-disclosure evidence remains independently valid. See `docs/launch-readiness.md`; release remains **FAIL**.
-
-**Data protection and secrets:**
-
-Use ASP.NET Core Data Protection only for purpose-bound protection where useful, not as the only source of revocation or single-use truth. Production deployments must use a shared persisted key ring where protected tokens/cursors need to survive restarts or multiple replicas.
-
-**Security posture:**
-
-- No browser-owned backend access tokens for internal UI; use server-side/BFF-style integration where FrontComposer patterns require it.
-- No direct trust in caller-supplied tenant/user IDs, correlation IDs, or server-controlled fields.
-- Comments are sensitive unstructured data by default and must be excluded from logs/traces.
-- Exports require explicit authorization and audit metadata.
-- Denied/unknown/stale/unavailable authorization outcomes fail closed and avoid existence disclosure.
-
-**Rationale:**
-
-This matches the PRD's security requirements and Hexalith module patterns: identity is external, tenant/resource authorization is local and fail-closed, magic links are narrow audited capabilities, and Timesheets does not weaken EventStore/Tenants/Parties boundaries.
-
-### API & Communication Patterns
-
-**Command API model:**
-
-Timesheets writes use the Hexalith.EventStore command pipeline. Public/internal consumers submit Timesheets commands through the established command gateway shape rather than calling aggregate hosts directly.
-
-Baseline:
-
-- Command contracts live in `Hexalith.Timesheets.Contracts`.
-- The domain host processes commands through EventStore domain-service integration.
-- Command outcomes include accepted/completed/rejected status through EventStore command status patterns.
-- Domain business failures are rejection events or typed domain outcomes, not transport exceptions.
-
-**Query API model:**
-
-Timesheets exposes query contracts and read models for operational views, approval queues, reports, AI effort reporting, Approved-Time Ledger reads, export readiness, and dashboard overview composition.
-
-Baseline:
-
-- Query contracts hide EventStore envelope mechanics.
-- Query results include projection freshness/trust metadata.
-- Stale, rebuilding, unavailable, forbidden, and degraded states are explicit outcomes.
-- Trust-bearing decisions such as approval/export must require current/fresh enough projections or fall back to command-side validation.
-- Epic 4 implementation note: `QueryTimeEntries`, `QueryApprovedTimeLedger`, `QueryProjectActualTimeReport`, `QueryWorkActualTimeReport`, and `QueryTimesheetsDashboardOverview` are typed contract surfaces. Dashboard overview is read-only composition over existing query services and action-policy outcomes; it must not become write authority or a dashboard-specific state store.
-
-**External submission API:**
-
-External-party API submission uses the same command/query boundary as internal flows. It cannot bypass tenant gates, reference validation, approval, correction, locking, or audit rules.
-
-**Magic-link communication:**
-
-Magic-Link Confirmation uses a narrow web/API surface for a single scoped capability. It must not expose generic Timesheets browsing APIs or internal module navigation.
-
-**Service-to-service communication:**
-
-Use Dapr service invocation/pub-sub through existing Hexalith/EventStore patterns. Timesheets should not call databases, brokers, or sibling infrastructure directly. Cross-module checks go through adapters/projections/clients for Tenants, Parties, Projects, and Works.
-
-**API documentation:**
-
-Use the existing Hexalith documentation/OpenAPI conventions for public HTTP surfaces. Do not create a separate OpenAPI contract for internal aggregate mechanics.
-
-Epic 4 implementation note: `PreviewApprovedTimeExport` is a contract shape; the dedicated server preview handler was resolved in Story 4.9 (see the readiness-repair status note below) and is now served by `ApprovedTimeExportService.PreviewAsync` alongside Approved-Time Ledger query output and `GenerateApprovedTimeExport` results.
-
-**Readiness repair (approved 2026-06-20; Story 4.9 completed 2026-06-22):** export preview behavior is owned by Epic 4 follow-up Story 4.9. _Status (2026-06-22):_ Story 4.9 is complete - `ApprovedTimeExportService.PreviewAsync` is a concrete, side-effect-free server preview path covered by service and integration tests; the resolved decision is a ledger/service-driven preview with **no dedicated HTTP route** - the `timesheets.query.approved-ledger-export-preview` capability is advertised in metadata only. Mapping a preview HTTP endpoint is recorded as **post-v1** in `docs/launch-readiness.md`. Epic 5 verifies this evidence and documentation only.
-
-**Version notes:**
-
-- The imported catalog pins `Microsoft.AspNetCore.OpenApi` at `10.0.15` and `Swashbuckle.AspNetCore` at `10.3.1`; neither is a direct Timesheets package today.
-- The imported catalog pins `ModelContextProtocol.AspNetCore` at `2.4.0`; MCP is not selected for v1 unless a later architecture decision adds a Timesheets MCP surface.
-
-**Error handling:**
-
-Transport errors use ProblemDetails/RFC-style responses where HTTP surfaces are exposed. Domain rejections remain typed domain outcomes/events and should be visible through command status or query result shapes without leaking protected identifiers.
-
-**Rationale:**
-
-This keeps Timesheets consistent with Hexalith: command/query contracts are the integration surface, EventStore owns persistence and command routing, Dapr is the distributed-app abstraction, and public APIs do not expose aggregate internals.
-
-### Frontend Architecture
-
-**Internal UI model:**
-
-Internal Timesheets surfaces use Hexalith.FrontComposer first, with Blazor Fluent UI V5 components where generated surfaces need explicit composition.
-
-Baseline internal surfaces:
-
-- Time Entry capture.
-- My Timesheet Period.
-- Approvals Queue.
-- Time Entry Detail.
-- Period Approval Detail.
-- Activity Type Catalog.
-- Operational Reports.
-- AI Effort Report.
-- Approved-Time Ledger.
-- Export Review Dialog.
-
-**Fluent UI decision:**
-
-All Blazor UI components must use `Microsoft.FluentUI.AspNetCore.Components` V5 only. Do not use V4 components for Timesheets UI.
-
-Icons may use the V4 Fluent UI icons package only when a V5 icon source is unavailable. This exception applies to icons only, not components.
-
-**Version note:**
-
-The intended Timesheets UI policy is Fluent UI V5 components only. Current Timesheets root package files do not directly pin Fluent UI because no Timesheets UI project exists. The submodule-owned `Hexalith.Builds` catalog carries `Microsoft.FluentUI.AspNetCore.Components` and its Icons package at stable `5.0.1`; the earlier `5.0.0-rc.5-26219.1` prerelease exception is historical. The catalog entry is not authorization to add a Timesheets UI project or a root transitive pin.
-
-**Component architecture:**
-
-Use generated command/projection surfaces for standard create, submit, approve, reject, correct, catalog, report, and export workflows. Any hand-authored Blazor components belong to the consuming FrontComposer host and require its rendering and accessibility verification.
-
-**State and data freshness:**
-
-Frontend state must represent projection freshness explicitly. Approval/export decisions must not present stale/rebuilding/unavailable projections as fresh evidence.
-
-Required visible states include:
-
-- Draft, Submitted, Approved, Rejected, Corrected, Superseded/Locked.
-- Stale reference, missing reference, unauthorized reference.
-- External confirmed/expired/used/revoked link.
-- AI-assisted / AI metrics unavailable.
-- Exportable / non-exportable / stale export scope.
-
-**External Magic-Link Confirmation UI:**
-
-The external magic-link surface is a minimal responsive web page, not a full portal. It may live outside full internal shell navigation but must use Fluent UI V5 components and no-disclosure security behavior.
-
-Invalid/expired/used/revoked links must show the same safe failure state and no tenant, Project, Work, Party, Time Entry, duration, or comment details.
-
-**Routing and navigation:**
-
-Use FrontComposer shell/module navigation for internal surfaces. Project and Work modules may deep-link into record-time, detail, or filtered report surfaces through stable IDs. Timesheets must not expose EventStore, raw stream, Party profile, Project lifecycle, Work lifecycle, invoicing, payroll, or rate-card UI as its own surfaces.
-
-**Accessibility and responsiveness:**
-
-Target WCAG 2.2 AA for internal and external web surfaces. Use Fluent UI V5 keyboard/focus/dialog/grid patterns. The magic-link page must be fully usable on phone viewports. Internal surfaces are desktop/laptop-first but responsive.
-
-**Rationale:**
-
-This follows the accepted UX spine and Hexalith FrontComposer rules: Timesheets is an operational evidence UI, not a decorative dashboard or generic timer app. UI must make evidence state, projection freshness, approval/correction lineage, and no-disclosure behavior visible.
-
-### Infrastructure & Deployment
-
-**Local topology:**
-
-Retain the existing run-only Timesheets AppHost and ServiceDefaults projects. The AppHost provides local development orchestration; deployed composition and production bindings belong to the platform owner. This documentation does not authorize added topology, a second host, or a Timesheets UI host.
-
-Aspire owns orchestration and observability wiring only; it does not define domain architecture.
-
-**Dapr runtime and SDK:**
-
-Use Dapr for service invocation, pub/sub, actors/state abstractions, and EventStore integration according to Hexalith patterns.
-
-The imported catalog's Dapr package family is stable `1.19.1`. Current root package files do not directly pin Dapr SDK packages; restored Timesheets host/test graphs consume `Dapr.Client` `1.19.1` through sibling EventStore references. See the launch-readiness package-currency verdict for the remaining platform-owned prerelease Aspire integration entries.
-
-**Deployment shape:**
-
-The Timesheets host is the deployable domain service. Library packages such as `Contracts`, `Client`, `Server`, `Projections`, and `Testing` ship as NuGet/package artifacts according to Hexalith conventions.
-
-Use .NET SDK container support where containers are needed; do not introduce Dockerfiles unless a later deployment decision explicitly requires one.
-
-**Environment configuration:**
-
-Use `.NET` configuration conventions with `__` environment nesting. Secrets and identity provider settings come from environment/secret stores, not source-controlled config.
-
-AppHost changes require restarting `aspire run`.
-
-**CI/CD and validation:**
-
-Use module-local `.slnx`, Central Package Management, warnings-as-errors, and targeted test lanes. CI should validate:
-
-- restore/build
-- package references and no inline versions
-- architecture/fitness tests
-- unit tests
-- projection replay/idempotency tests
-- security/tenant-isolation tests
-- integration tests where Docker/Dapr/Aspire are required
-
-**Observability:**
-
-Use OpenTelemetry and Aspire dashboard conventions inherited from sibling modules. Logs and traces must never include comments, tokens, secrets, command bodies, event payloads, magic-link values, or personal data.
-
-**Scaling and reliability:**
-
-Design projections and event handlers for at-least-once delivery, duplicate events, replay, and rebuild. Trust-bearing reads must surface freshness and degradation rather than pretending data is current.
-
-**Rationale:**
-
-This keeps Timesheets aligned with Hexalith deployment patterns while preserving EventStore as the persistence authority and Dapr/Aspire as platform abstractions.
-
-### Decision Impact Analysis
-
-**Implementation Sequence:**
-
-1. Scaffold Hexalith.Timesheets module shell and normalize package/build/test conventions.
-2. Define contracts for Time Entry, Timesheet Period, Activity Type, correction, AI effort metrics, projection freshness, and typed rejections.
-3. Implement pure aggregate/state logic and domain tests.
-4. Wire EventStore domain-service command handling and command status integration.
-5. Implement projections and replay/idempotency tests.
-6. Add tenant/resource authorization gates and reference validation adapters.
-7. Add Magic-Link Confirmation capability and abuse/no-disclosure tests.
-8. Publish FrontComposer-compatible metadata; the consuming host composes and verifies Fluent UI V5 surfaces.
-9. Add exports, audit metadata, and export golden-file tests.
-10. Wire Aspire AppHost topology and integration tests.
-
-**Cross-Component Dependencies:**
-
-- Approval, export, and magic-link confirmation depend on tenant/resource authorization and reference validation.
-- UI evidence states depend on projection freshness and typed reference-state outcomes.
-- Export correctness depends on Approved-Time Ledger replay behavior and correction lineage.
-- AI effort reporting depends on preserving multiple effort units in contracts and projections.
-- Infrastructure validation depends on Dapr/Aspire compatibility and EventStore domain-service wiring.
-
-## Implementation Patterns & Consistency Rules
-
-### Pattern Categories Defined
-
-**Critical Conflict Points Identified:** 34 areas where AI agents could otherwise make incompatible choices across naming, structure, formats, communication, process, and enforcement.
-
-### Naming Patterns
-
-**Persistence Naming Conventions:**
-
-- Timesheets does not define module-owned database tables or direct persistence schemas.
-- Domain state changes are persisted only through Hexalith.EventStore.
-- Dapr state keys, stream names, checkpoints, and projection offsets must use existing Hexalith/EventStore naming helpers or conventions; agents must not invent ad hoc key formats.
-- If a projection later requires a physical schema, table/container/index names must be documented in this architecture before implementation.
-
-**API Naming Conventions:**
-
-- Public HTTP routes, when needed, use lowercase plural resource names under a Timesheets-owned route prefix, for example `/api/timesheets/time-entries`.
-- Route parameters use ASP.NET Core route-token syntax, for example `{tenantId}`, `{timeEntryId}`, `{periodId}`.
-- Query parameters use camelCase, for example `projectId`, `workId`, `fromDate`, `toDate`, `includeFreshness`.
-- Magic-link routes are capability-specific and must not expose browse/query surfaces. Use action-specific names such as `confirm`, `reject`, or `acknowledge`; never expose a general token inspection endpoint.
-- Headers use standard headers where possible. Custom headers use the existing Hexalith convention or `X-Hexalith-*` only when no convention exists.
-
-**Code Naming Conventions:**
-
-- Namespaces start with `Hexalith.Timesheets`.
-- Project names follow `Hexalith.Timesheets.{Area}`, for example `Hexalith.Timesheets.Contracts`, `Hexalith.Timesheets.Server`, `Hexalith.Timesheets.Projections`.
-- Commands use imperative names, for example `RecordTimeEntry`, `SubmitTimesheetPeriod`, `ApproveTimeEntry`.
-- Events use past-tense domain names, for example `TimeEntryRecorded`, `TimesheetPeriodSubmitted`, `TimeEntryCorrected`.
-- Queries use result-oriented names, for example `GetTimeEntries`, `GetApprovedTimeLedger`, `GetTimesheetPeriodSummary`.
-- Projection/read-model types end with `Projection`, `View`, `Summary`, or `ReadModel` according to the surrounding package convention.
-- Private fields use `_camelCase`; public members use PascalCase; asynchronous methods use the `Async` suffix.
-
-### Structure Patterns
-
-**Project Organization:**
-
-- Contracts live in `src/Hexalith.Timesheets.Contracts` and must not reference infrastructure packages.
-- Client abstractions live in `src/Hexalith.Timesheets.Client`.
-- Server command handling, policies, and application services live in `src/Hexalith.Timesheets.Server`.
-- Projection handlers live in `src/Hexalith.Timesheets.Projections`. Pure shared read-model DTOs and addresses live in `Contracts`; SDK-dependent index helpers and stored payload wrappers live in `src/Hexalith.Timesheets.ReadModels`, consumed independently by Server and Projections. Relocated public types retain their CLR namespaces with Server assembly forwarding for compatibility.
-- Test helpers live in `src/Hexalith.Timesheets.Testing`.
-- Aspire composition lives in `src/Hexalith.Timesheets.AppHost`.
-- Timesheets owns contracts and FrontComposer metadata in Contracts/Client/Server. A consuming FrontComposer host owns rendered Fluent UI V5 behavior and browser/accessibility evidence; do not add Timesheets UI projects.
-- Tests live under `tests/Hexalith.Timesheets.*.Tests`; test files use `{Subject}Tests.cs`.
-
-**File Structure Patterns:**
-
-- Commands, events, queries, value objects, policies, projections, and test fixtures are grouped by domain capability first: Time Entries, Periods, Activity Types, Magic Links, Reporting, Exports.
-- Shared helpers are allowed only when used by at least two capabilities and must live in an explicit `Common` or `Abstractions` area.
-- Configuration uses .NET configuration binding with `__` environment variable nesting.
-- Package versions are centralized only; no inline `PackageReference` versions.
-
-### Format Patterns
-
-**API Response Formats:**
-
-- Query APIs return typed DTOs/read models, not raw EventStore envelopes.
-- Query results that depend on projections include freshness or trust metadata.
-- Transport errors use ASP.NET Core ProblemDetails.
-- Domain rejections remain domain outcomes/events and must not be collapsed into ambiguous transport errors.
-
-**Data Exchange Formats:**
-
-- JSON uses camelCase through `System.Text.Json`.
-- Dates and instants use ISO-8601 strings. Store UTC instants for audit and tenant-local dates/period keys where business rules require them.
-- Durations are represented in whole minutes unless a specific AI metric requires a documented unit.
-- AI effort metrics must carry explicit units and source metadata; unavailable metrics are null/absent, never `0`.
-- IDs are stable strings at module boundaries. Do not parse sibling-owned IDs as GUIDs unless that owner's contract requires it.
-- Comments, token values, personal data, and command payloads are never logged, exported by default, or included in diagnostic metadata.
-
-### Communication Patterns
-
-**Event System Patterns:**
-
-- Events are additive and immutable. Do not rename or remove existing event fields once published.
-- Prefer new event types or optional fields for evolution.
-- Event handlers and projections must tolerate at-least-once delivery, duplicate messages, out-of-order rebuilds where applicable, and replay.
-- Projection updates must be idempotent and checkpointed.
-- Event payloads store sibling references, not copied Project, Work, Party, or Tenant state.
-
-**State Management Patterns:**
-
-- EventStore aggregate state is authority for commands.
-- Projections are read-optimized views and must expose stale, degraded, rebuilding, or unavailable states rather than pretending to be authoritative.
-- UI state must distinguish draft, validating, submitted, approved, rejected, locked, corrected, stale, and unavailable states where relevant.
-- Blazor UI components use Fluent UI V5 only; V4 is permitted only for icons when a V5 icon source is unavailable.
-
-### Process Patterns
-
-**Validation Patterns:**
-
-- Tenant and resource gates run before aggregate load, command dispatch, projection read, export, or magic-link disclosure.
-- Reference validation against Projects, Works, Parties, and Tenants happens before trust-bearing writes.
-- Aggregates enforce invariant consistency; adapters enforce external authority checks.
-- Draft display may tolerate stale hydration; approval, export, submission, correction, and magic-link confirmation fail closed on missing authority.
-
-**Error Handling Patterns:**
-
-- User-facing errors are specific enough to guide action but must not disclose unauthorized tenant, entry, token, Project, Work, or Party existence.
-- Magic-link invalid, expired, consumed, unauthorized, or unknown states use the same non-disclosing response pattern.
-- Retries belong around infrastructure adapters and projection consumers, not inside aggregate decision logic.
-
-**Loading State Patterns:**
-
-- Loading states are explicit in UI and read models: loading, ready, stale, degraded, rebuilding, unavailable.
-- Stale data cannot be used for approval, export, or confirmation decisions unless the architecture is explicitly amended.
-
-### Enforcement Guidelines
-
-**All AI Agents MUST:**
-
-- Persist domain changes only through Hexalith.EventStore.
-- Keep contracts infrastructure-free.
-- Use the imported Dapr SDK `1.19.1` family unless a later architecture update replaces it.
-- Use Blazor Fluent UI V5 components only; V4 icon package is an icons-only fallback.
-- Keep package versions centralized.
-- Treat projections as rebuildable, idempotent, and non-authoritative for writes.
-- Avoid logging payloads, comments, personal data, secrets, magic-link tokens, or command bodies.
-- Preserve additive event and contract evolution.
-
-**Pattern Enforcement:**
-
-- Add architecture/fitness tests for forbidden package references, inline package versions, `.sln` files, direct persistence bypass, and Contracts infrastructure references.
-- Add projection replay/idempotency tests for every projection.
-- Add security tests for tenant isolation, magic-link no-disclosure behavior, and fail-closed authorization.
-- Keep contract metadata free of UI runtime dependencies; the consuming host checks Fluent UI V5 components and any V4 icons-only fallback.
-- Document any pattern exception in this architecture before implementation.
-
-### Pattern Examples
-
-**Good Examples:**
-
-- `RecordTimeEntry` command emits `TimeEntryRecorded`.
-- `ApproveTimeEntry` fails closed when Project or Tenant authority cannot be verified.
-- `GetApprovedTimeLedger` returns read data plus projection freshness metadata.
-- A projection handler safely ignores a duplicate `TimeEntryRecorded` message.
-- A magic-link failure returns a neutral response and logs only correlation ID, tenant scope hash/reference, and outcome category.
-
-**Anti-Patterns:**
-
-- Writing Time Entry rows directly to SQL, Redis, or Dapr state outside EventStore.
-- Treating a projection as authority for approval or export.
-- Copying Project, Work, Party, or Tenant owned data into Timesheets events.
-- Logging comments, tokens, command payloads, or personal names.
-- Using Fluent UI V4 components in Timesheets UI.
-- Inventing custom event naming such as `time_entry.created` beside `TimeEntryRecorded`.
-- Returning raw EventStore envelopes from query APIs.
+| Work | What the implementation team must prove |
+| --- | --- |
+| 6.1–6.3 · Finance | Run mixed tenant/row disclosure cases, inject audit rejection or lost acknowledgement, and change a row between pages. Compare delivered bytes and receipt, or observe zero output under AD-7. |
+| 6.4–6.5 · External API | Record then confirm through workload-authenticated HTTP. The current confirmation handler passes an empty owner state. Exercise bounded readback, retry and restart against EventStore under AD-5. |
+| 6.6 · Package discovery | Test two clean packed consumers, Projections alone and a host with Server and Projections. The combined inventory currently loads Server by name. Compare supported routes, operations and methods against the installed receivers under AD-8. |
+| 6.7–6.8 · Project | Timesheets and Platform wire the Project workflow, then the release owner runs the deployed restart, rebuild and cross-tenant checks under AD-9. |
+| 6.9 · Ledger cost | Fold validated history once per owner and check golden rows and CSV bytes. Compare elapsed time and allocations at 60, 240 and 960 entries. The reporting owner sets a representative tenant volume and budget before considering separate materialization. |
 
 ## Project Structure & Boundaries
 
-### Complete Project Directory Structure
+Arrows show compile-time dependencies for the domain packages. The HTTP host composes the command and projection inventories. Its registration of the EventStore SDK supplies the processing and read-model infrastructure.
 
-```text
-Hexalith.Timesheets/
-|-- Hexalith.Timesheets.slnx
-|-- global.json
-|-- Directory.Packages.props
-|-- Directory.Build.props
-|-- .editorconfig
-|-- README.md
-|-- docs/
-|   |-- architecture/
-|   |-- api/
-|   `-- operations/
-|-- src/
-|   |-- Hexalith.Timesheets/
-|   |   |-- Program.cs
-|   |   |-- appsettings.json
-|   |   |-- appsettings.Development.json
-|   |   |-- Authentication/
-|   |   |-- Authorization/
-|   |   |-- Configuration/
-|   |   |-- Endpoints/
-|   |   |   |-- Commands/
-|   |   |   |-- Queries/
-|   |   |   `-- MagicLinks/
-|   |   |-- HealthChecks/
-|   |   `-- OpenApi/
-|   |-- Hexalith.Timesheets.Contracts/
-|   |   |-- Commands/
-|   |   |   |-- TimeEntries/
-|   |   |   |-- TimesheetPeriods/
-|   |   |   |-- ActivityTypes/
-|   |   |   |-- MagicLinks/
-|   |   |   `-- Exports/
-|   |   |-- Events/
-|   |   |   |-- TimeEntries/
-|   |   |   |-- TimesheetPeriods/
-|   |   |   |-- ActivityTypes/
-|   |   |   |-- MagicLinks/
-|   |   |   `-- Rejections/
-|   |   |-- Queries/
-|   |   |   |-- TimeEntries/
-|   |   |   |-- TimesheetPeriods/
-|   |   |   |-- Reporting/
-|   |   |   `-- Exports/
-|   |   |-- Models/
-|   |   |-- Identifiers/
-|   |   |-- State/
-|   |   |-- Ui/
-|   |   |-- ValueObjects/
-|   |   `-- openapi/
-|   |-- Hexalith.Timesheets.Client/
-|   |   |-- Abstractions/
-|   |   |-- Commands/
-|   |   |-- Queries/
-|   |   |-- MagicLinks/
-|   |   `-- Extensions/
-|   |-- Hexalith.Timesheets.Server/
-|   |   |-- Aggregates/
-|   |   |   |-- TimeEntries/
-|   |   |   |-- TimesheetPeriods/
-|   |   |   `-- ActivityTypes/
-|   |   |-- Authorization/
-|   |   |-- CommandHandlers/
-|   |   |-- Exports/
-|   |   |-- MagicLinks/
-|   |   |-- Policies/
-|   |   |-- ReferenceValidation/
-|   |   `-- Registration/
-|   |-- Hexalith.Timesheets.Projections/
-|   |   |-- ApprovedTimeLedger/
-|   |   |-- Freshness/
-|   |   |-- Handlers/
-|   |   |-- Models/
-|   |   |-- OperationalReports/
-|   |   |-- Replay/
-|   |   `-- Strategies/
-|   |-- Hexalith.Timesheets.Works/
-|   |   |-- PlannedEffort/
-|   |   |-- ReferenceValidation/
-|   |   `-- Runtime/
-|   |-- Hexalith.Timesheets.Testing/
-|   |   |-- Builders/
-|   |   |-- Fakes/
-|   |   |-- MagicLinks/
-|   |   |-- ReferenceValidation/
-|   |   |-- Replay/
-|   |   `-- TenantIsolation/
-|   |-- Hexalith.Timesheets.ServiceDefaults/
-|   `-- Hexalith.Timesheets.AppHost/
-|       |-- Program.cs
-|       |-- appsettings.json
-|       |-- DaprComponents/
-|       |-- KeycloakRealms/
-|       `-- Properties/
-`-- tests/
-    |-- Hexalith.Timesheets.ArchitectureTests/
-    |-- Hexalith.Timesheets.Contracts.Tests/
-    |-- Hexalith.Timesheets.Server.Tests/
-    |-- Hexalith.Timesheets.Projections.Tests/
-    |-- Hexalith.Timesheets.IntegrationTests/
-    |   |-- SchemaEvolution/Golden/
-    |   `-- Exports/Golden/
-    `-- Hexalith.Timesheets.Works.Tests/
+```mermaid
+flowchart LR
+    Host[Timesheets HTTP host] --> Server
+    Host --> Projections
+    Server --> ReadModels
+    Projections --> ReadModels
+    ReadModels --> Contracts
+    Works[Timesheets.Works integration] --> Server
+    Works --> WorksContracts[Works.Contracts]
+    Client --> Contracts
 ```
 
-Checkout ownership note: this repository owns `references/Hexalith.Works` as
-the sole default checkout. The tree must not contain a repository-root
-`Hexalith.Works/` gitlink or path probe. Works contracts resolve from that
-`references/` pin, the sibling `../Hexalith.Works` fallback, or an explicit
-`HexalithWorksRoot` supplied by a controlled build.
+<a id="selected-starter-internal-hexalith-domain-module-scaffold"></a>
+<a id="starter-guardrails"></a>
 
-Status note (2026-06-22): no `Hexalith.Timesheets.UI`, `UI.Tests`, `UnitTests`, `Security.Tests`, or `PropertyTests` project exists on disk. Security, tenant-isolation, property-like invariants, and architecture fitness coverage currently live in `ArchitectureTests`, `Server.Tests`, `IntegrationTests`, `Projections.Tests`, and `Works.Tests`. Do not add Timesheets UI projects; the consuming FrontComposer host owns component/browser accessibility evidence.
+### Complete Project Directory Structure
 
-### Architectural Boundaries
+The solution manifest owns the project list. The ten source projects comprise the HTTP host, AppHost, ServiceDefaults, Contracts, Client, Server, ReadModels, Projections, Works and Testing. The six test projects are ArchitectureTests, Contracts.Tests, Server.Tests, Projections.Tests, IntegrationTests and Works.Tests. Earlier stories cite the original scaffold decision and historical package observations. [Solution](../../Hexalith.Timesheets.slnx) · [Historical architecture](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/_bmad-output/planning-artifacts/architecture.md)
 
-**API Boundaries:**
+### Frontend Architecture
 
-- `Hexalith.Timesheets` is the deployable HTTP/service host.
-- Command endpoints submit through the EventStore-backed command pipeline.
-- Query endpoints return typed Timesheets read models with projection freshness metadata.
-- Magic-link endpoints are isolated under `Endpoints/MagicLinks` and expose only token-scoped actions.
-- No API endpoint may bypass tenant/resource gates, reference validation, approval state, locking, or audit behavior.
+Timesheets publishes UI-neutral contracts and FrontComposer metadata. The consuming host renders Fluent UI V5 components and owns keyboard, focus, responsive behavior and WCAG 2.2 AA browser evidence. It distinguishes command acceptance from verified results, especially an export ready to download. The consumer may use V4 icons only where a V5 icon source is unavailable. The module owns no rendering project. Eligible agent-facing operations enroll through the shared Hexalith.McpCli contract and authorization process. [UX experience](ux-designs/ux-timesheets-2026-06-18/EXPERIENCE.md) · [Module boundaries](../../docs/boundary-decision-record.md)
 
-**Component Boundaries:**
+### Workspace Dependency Ownership
 
-- `Contracts` contains infrastructure-free commands, events, queries, IDs, value objects, shared read-model DTOs/addresses, policy options, UI descriptors, and OpenAPI artifacts.
-- `Client` wraps command/query/magic-link interaction for consumers and UI.
-- `Server` owns aggregate decisions, command handlers, policies, validation orchestration, export orchestration, and magic-link capability logic.
-- `Projections` owns read-model handlers, replay behavior, freshness, Approved-Time Ledger, and operational report models.
-- `ReadModels` owns Timesheets-specific SDK index helpers and persisted payload wrappers. It depends on Contracts and EventStore Client/Contracts; neither ReadModels nor Projections may depend on Timesheets Server. Projections explicitly consumes EventStore DomainService to implement SDK handler interfaces. The [boundary decision record](../../docs/boundary-decision-record.md#shared-read-model-ownership--2026-10-25) records address and type compatibility.
-- `Contracts`/`Client`/`Server` own UI-neutral contracts, action/status semantics, and FrontComposer metadata. A consuming FrontComposer host owns rendered Fluent UI V5 composition and WCAG evidence.
-- `AppHost` owns local topology and observability wiring, not domain rules.
+Use the repository’s declared direct references. For Works source builds, preserve an explicit `HexalithWorksRoot`. When it is unset, resolve `references/Hexalith.Works` first and the sibling `../Hexalith.Works` second. Restore treats the selected checkout as read-only. Pass the evaluated `HexalithEventStoreVersion`, including an explicit caller override, through Works restore and build edges. [Source resolution](../../Directory.Build.props) · [Version forwarding](../../Directory.Build.targets)
 
-**Service Boundaries:**
+<a id="version-research-notes"></a>
 
-- Timesheets integrates with EventStore for persistence and command processing.
-- Timesheets uses Tenants for tenant access authority, Parties for contributor identity references, Projects for Project authority, and Works for Work authority.
-- Sibling modules are accessed through contracts/adapters, never through copied state or direct infrastructure calls.
+## Stack and build modes
 
-**Data Boundaries:**
+The following values were checked after the November 21 pull. Timesheets `271442d` records Builds `f9f0c76e`. The refreshed direct Builds checkout was `e1380b81`. Values attributed to that checkout describe the evaluated workspace. Reproduce a release with its recorded gitlinks and package graph.
 
-- EventStore is the only authoritative persistence boundary.
-- Projections are rebuildable, idempotent, and non-authoritative for writes.
-- Timesheets stores sibling references, not owned sibling data.
-- Export data is produced from approved ledger projections plus authoritative audit state.
+| Name | Version | Owner or use |
+| --- | --- | --- |
+| .NET SDK / target | 11.0.100 / net11.0 | `global.json` allows latest patch. Microsoft.Testing.Platform runs the individual test projects. |
+| Aspire AppHost SDK / CLI | 17.0.0 / 17.0.0 | Existing local AppHost requires the matching CLI bundle and `AspireUseCliBundle=true`. |
+| Hexalith.EventStore | 5.4.0 | Default evaluated in both Debug/source and Release/package with the refreshed Builds catalog. Explicit consumer selection takes precedence. |
+| Dapr SDK | 1.19.1 | Shared SDK package family used through EventStore. |
+| Dapr self-hosted runtime / CLI | 1.19.2 / 1.19.1 | Selections in the refreshed Builds catalog. Deployed qualification records the versions actually exercised. |
+| Aspire Keycloak / CommunityToolkit Dapr hosting | 17.0.0-preview.1.26567.5 / 17.0.0-beta.1052 | Timesheets retains these root package updates. |
+| Fluent UI components | 5.1.0 | Shared catalog observation. Rendering and its package graph belong to the consuming host. |
 
-### Requirements To Structure Mapping
+Restore and build Debug with `UseHexalithProjectReferences=true` for local source work. CI restores and builds Release with published packages. In both cases use the same mode for restore and build. Timesheets imports the shared Builds catalog, applies its Aspire updates, and supplies the Works.Contracts 1.0.2 fallback only when the catalog omits that package. [SDK](../../global.json) · [Shared package catalog](../../references/Hexalith.Builds/Props/Directory.Packages.props) · [Root package policy](../../Directory.Packages.props) · [Build commands](../../README.md#build-and-test)
 
-**Time Entry Ledger:**
+<a id="format-patterns"></a>
 
-- Contracts: `Contracts/Commands/TimeEntries`, `Contracts/Events/TimeEntries`, `Contracts/Queries/TimeEntries`
-- Domain: `Server/Aggregates/TimeEntries`
-- Reads: `Projections/OperationalReports`, `Projections/Models`
-- Tests: `Server.Tests`, `Projections.Tests`, `IntegrationTests`
+## Implementation Patterns & Consistency Rules
 
-**Submission, Approval, Rejection, And Locking:**
-
-- Contracts: `Contracts/Commands/TimesheetPeriods`, `Contracts/Events/TimesheetPeriods`, `Contracts/Events/Rejections`
-- Domain: `Server/Aggregates/TimesheetPeriods`, `Server/Policies`
-- Tests: `Server.Tests`, `ArchitectureTests`, `IntegrationTests`
-
-**Activity Type Catalogs:**
-
-- Contracts: `Contracts/Commands/ActivityTypes`, `Contracts/Events/ActivityTypes`
-- Domain: `Server/Aggregates/ActivityTypes`
-- Reads: `Projections/Models`
-- Tests: `Server.Tests`, `IntegrationTests`
-
-**Actor-Neutral Contributors And Magic Links:**
-
-- Contracts: `Contracts/Commands/MagicLinks`, `Contracts/Events/MagicLinks`
-- Domain: `Server/MagicLinks`, `Server/ReferenceValidation`
-- Host: `Endpoints/MagicLinks`
-- Tests: `Server.Tests`, `IntegrationTests`, `ArchitectureTests`
-
-**Reporting, Approved-Time Ledger, And Exports:**
-
-- Contracts: `Contracts/Queries/Reporting`, `Contracts/Queries/Exports`, `Contracts/Commands/Exports`
-- Reads: `Projections/ApprovedTimeLedger`, `Projections/OperationalReports`
-- Domain: `Server/Exports`
-- Tests: `Projections.Tests`, `IntegrationTests/Exports/Golden`
-
-**Platform Boundary:**
-
-- Host: `src/Hexalith.Timesheets`
-- App topology: `src/Hexalith.Timesheets.AppHost`
-- Shared defaults: `src/Hexalith.Timesheets.ServiceDefaults`
-- Enforcement: `tests/Hexalith.Timesheets.ArchitectureTests`
+| Concern | Rule |
+| --- | --- |
+| Contracts and transport | Keep public DTOs independent of EventStore envelopes. Use additive event fields or new event types, stable string identifiers, camelCase JSON, ISO-8601 dates and UTC audit instants. Return typed domain outcomes and projection freshness. Use ProblemDetails for transport failures and opaque responses where disclosure would identify protected data. |
+| Data protection and diagnostics | Use OpenTelemetry with safe correlation IDs and structured, low-cardinality outcomes. Exclude raw links, credentials, identities, comments, command bodies and export rows from telemetry. Enforce privacy at ingress, host and sidecar. Scope protected cursors and share protected key material across replicas when continuity requires it. |
+| Retention and historical reads | Retain entry, approval and correction history indefinitely by default. Tenant policy governs retention of export and capability audit metadata and authorized comment use. Missing required retention, legal-hold or comment-sensitivity configuration denies dependent commands, confirmation, export and action visibility. Tenant configuration and legal-hold approval require evidence from the owning parties. |
+| Deployment and operation | Aspire orchestrates the local topology. EventStore owns domain service processing and projection infrastructure. Protect internal SDK routes on the internal listener and authenticate workloads. Use the configured JWT/OIDC authority for the deployment and keep the symmetric Development fixture isolated. Platform owns production-equivalent provider bindings and deployment configuration. Maintain authorized, tenant-bound replay and recovery. |
 
 ### Integration Points
 
-**Internal Communication:**
-
-- UI and clients call typed client abstractions.
-- Client abstractions call Timesheets command/query/magic-link endpoints.
-- Host endpoints call Server application services.
-- Server submits authoritative changes through EventStore.
-- Projections consume events and publish read models/freshness state.
-
-**External Integrations:**
-
-- EventStore: authoritative event persistence and command processing.
-- Tenants: tenant membership, role, and access checks.
-- Parties: contributor identity and display hydration.
-- Projects: Project reference validation and authority checks.
-- Works: Work reference validation and effort context.
-- Dapr: service invocation, pub/sub, and state abstractions where required by established EventStore/Aspire patterns.
-- Keycloak/JWT: production identity provider when enabled.
-
-**Reference-validation adapter maturity (added 2026-06-19; corrected 2026-06-22):** `Hexalith.Projects` exposes a consumer query (`GetProjectAsync`) suitable for FR-2 Project validation. `Hexalith.Works` exposes a consumer-facing `get-work-item` query (`GetWorkItemQueryHandler`, domain `work`) returning a stable `WorkItemView`/`WorkItemStatus` from `Hexalith.Works.Contracts`, suitable for FR-2 Work validation; its `WorkItemEffort` (FR-17) and `ExecutorBinding` (FR-15/FR-20) Contracts are also stable. The Works reference-validation adapter therefore consumes that `get-work-item` query (or, as an alternative, a Works EventStore projection via a Timesheets adapter). Epic 4 implemented planned-effort access behind `IWorkPlannedEffortProvider` with `UnavailableWorkPlannedEffortProvider` as the fail-closed default, so Work reports can disclose actuals while marking planned-effort state unavailable until the Works adapter is made concrete. _Correction (2026-06-22, verified during Story 1.10):_ the original 2026-06-19 statement that "`Hexalith.Works` currently exposes no consumer-facing read/validate query" was stale — `GetWorkItemQueryHandler` (`get-work-item`) and `WorkItemView` ship today and are consumed by Story 1.10's `WorksQueryWorkReferenceValidator`.
-
-**Readiness repair (approved 2026-06-20; Stories 1.10 and 4.8 completed 2026-06-22):** Work-reference validation is owned by Epic 1 follow-up Story 1.10, and planned-effort reporting is owned by Epic 4 follow-up Story 4.8. Launch claims that include Work validation or planned-vs-actual comparison require either a Works-owned consumer query or a Timesheets adapter over a Works EventStore projection, with fail-closed behavior when the adapter is unavailable, stale, cross-tenant, or unauthorized. Epic 5 verifies the evidence only after those owning stories are complete. _Status (2026-06-22):_ Story 1.10 is complete - the concrete `WorksQueryWorkReferenceValidator` (in `src/Hexalith.Timesheets.Works`) consumes the Works `get-work-item` query through the Timesheets-owned `IWorksQueryChannel` port, fails closed on unavailable/missing/cross-tenant/ambiguous/disabled states, and copies no Works-owned data. Story 4.8 is also complete - `WorksQueryWorkPlannedEffortProvider` reads Works effort context through the same port and keeps the host on `UnavailableWorkPlannedEffortProvider` unless the opt-in is called. (Note: the adapter cannot detect Works projection staleness from `WorkItemView` alone - see the Story 1.10 behavior note.)
-
-**Export audit implementation note (added 2026-06-19):** accepted approved-time exports emit safe `ApprovedTimeExported` domain-event evidence through `IApprovedTimeExportAuditRecorder`. The audit evidence stores requester, tenant, filter snapshot, UTC request/generation instants, correlation ID, output scope, CSV format/version, projection freshness state, row count, and output content hash. It does not store CSV rows, comments, display labels, credential material, caller bodies, raw EventStore envelopes, or sibling-owned state.
-
-**Readiness repair (approved 2026-06-20; Stories 1.11 and 4.10 completed 2026-06-22):** realistic end-to-end performance evidence remains reserved until EventStore-backed persisted fixtures exist, but ownership moves to the feature paths that create the measured behavior. Epic 1 follow-up Story 1.11 covers capture/governance command evidence, Epic 4 follow-up Story 4.10 covers report/export/dashboard evidence, and Epic 5 only aggregates the final evidence or waivers. _Status (2026-06-22):_ Story 1.11 is complete - the opt-in `TIMESHEETS_PERF=1` lane measures the in-process composed capture/governance command path (11 scenarios, worst-case p95 about 0.0056 ms vs the NFR10 500 ms target), **verdict pass** for the in-process command-decision path. Story 4.10 is complete - the same opt-in lane measures report/export/dashboard query paths (9 scenarios, worst-case p95 about 6.09 ms vs the NFR11 2s target), **verdict pass** for measured in-process reads. The full EventStore-backed wire path is recorded **waived/deferred** (needs runtime fixtures) so Epic 5 aggregates rather than re-measures. See `docs/performance-evidence.md`.
-
-**Data Flow:**
-
-1. Request enters host endpoint.
-2. Tenant/resource authorization runs.
-3. Reference validation adapters check sibling authority.
-4. Command is dispatched to EventStore/domain handling.
-5. Domain event is persisted.
-6. Projection handlers update read models idempotently.
-7. Query/UI/export surfaces read projection state with freshness metadata.
-
-### File Organization Patterns
-
-**Configuration Files:**
-
-- Root build/package config stays at repository root.
-- Host runtime config stays in `src/Hexalith.Timesheets`.
-- Local orchestration config stays in `src/Hexalith.Timesheets.AppHost`.
-- Dapr component files stay in `AppHost/DaprComponents`.
-- Secrets are never committed.
-
-**Source Organization:**
-
-- Source is organized by package first, then capability.
-- Capability folders use domain names: `TimeEntries`, `TimesheetPeriods`, `ActivityTypes`, `MagicLinks`, `Reporting`, `Exports`.
-- Cross-cutting server behavior lives in `Authorization`, `Policies`, `ReferenceValidation`, and `Registration`.
-
-**Test Organization:**
-
-- Architecture tests enforce package boundaries and version/package rules.
-- Unit/property tests cover aggregate invariants and correction/locking semantics.
-- Projection tests cover replay, duplicates, idempotency, freshness, and rebuilds.
-- Security tests cover tenant isolation, fail-closed behavior, and magic-link no-disclosure responses.
-- Integration tests cover EventStore/Dapr/Aspire paths and export golden files.
-
-**Asset Organization:**
-
-- Rendered UI assets and component tests live in the consuming FrontComposer host, outside this repository.
-- FrontComposer descriptors stay in Contracts; any rendered registration belongs to the consuming FrontComposer host.
-- No static assets are required for backend-only packages.
-
-### Development Workflow Integration
-
-**Development Server Structure:**
-
-- Run local topology from `src/Hexalith.Timesheets.AppHost`.
-- Run the deployable Timesheets host from `src/Hexalith.Timesheets`.
-- Restart `aspire run` after AppHost topology changes.
-
-**Build Process Structure:**
-
-- Build through `Hexalith.Timesheets.slnx`.
-- Restore package versions from `Directory.Packages.props`.
-- Treat warnings as errors through shared build props.
-- Do not generate or maintain `.sln`.
-
-**Deployment Structure:**
-
-- `Hexalith.Timesheets` is the deployable service.
-- Library packages ship from `Contracts`, `Client`, `Server`, `Projections`, and `Testing`; rendered UI packaging belongs to the consuming FrontComposer host.
-- Containers use .NET SDK container support unless a later decision explicitly requires Dockerfiles.
-
-## Architecture Validation Results
-
-### Coherence Validation ✅
-
-**Decision Compatibility:**
-The technology choices work together: .NET SDK `11.0.100`, Hexalith.EventStore, the imported Dapr SDK `1.19.1` family, the AppHost SDK with its matched CLI bundle, JWT/OIDC authentication, FrontComposer, and the Fluent UI V5 policy each have clear boundaries. Aspire owns local topology; EventStore owns persistence; Dapr supports platform communication patterns. Actual stable and prerelease package pins are tracked in the launch-readiness package-currency verdict so policy targets are not mistaken for every root/submodule package state.
-
-**Pattern Consistency:**
-Implementation patterns support the decisions. Commands, events, queries, projections, magic links, exports, and UI all have consistent naming, structure, error, freshness, and enforcement rules.
-
-**Structure Alignment:**
-The project structure supports all architecture decisions with distinct host, contracts, client, server, projections, testing, service defaults, and AppHost packages, with rendering owned by the consuming FrontComposer host.
-
-### Requirements Coverage Validation ✅
-
-**Feature Coverage:**
-All six requirement areas are mapped to components: Time Entry Ledger, Submission/Approval/Rejection/Locking, Activity Types, Actor-Neutral Contributors, Reporting/Exports, and Platform Boundary.
-
-**Functional Requirements Coverage:**
-All 23 functional requirements are architecturally supported through EventStore-backed commands/events, projections, authorization gates, reference validation, magic-link capability boundaries, and export/reporting structures.
-
-**Non-Functional Requirements Coverage:**
-Security, tenant isolation, auditability, data minimization, projection reliability, observability privacy, compatibility, accessibility, and performance targets are mapped to explicit decisions and owned verification. This repository proves contracts/metadata and in-process behavior; consumer-host rendering/accessibility, full wire-path performance, deployed privacy/authority, and stakeholder/legal acceptance retain the classifications in launch readiness.
-
-### Implementation Readiness Validation ✅
-
-**Decision Completeness:**
-Critical decisions are documented with versions where version-sensitive: SDK `11.0.100`, Dapr SDK family `1.19.1`, the AppHost SDK in its project manifest, Blazor Fluent UI V5 component policy, V4 icons-only fallback, EventStore, OpenAPI, JWT/OIDC, and Keycloak usage. Current stable/prerelease platform package state is intentionally recorded as launch-readiness package-currency evidence.
-
-**Structure Completeness:**
-The project tree is specific enough for implementation agents to scaffold consistently and maps requirements to concrete projects, folders, and tests.
-
-**Pattern Completeness:**
-Naming, structure, API format, data format, event communication, projection behavior, validation, error handling, loading states, UI package rules, and enforcement checks are defined.
-
-### Gap Analysis Results
-
-**Critical Gaps:** None.
-
-**Important Gaps:** None.
-
-**Nice-To-Have Gaps:**
-
-- Exact Dapr component manifest names can be refined during AppHost implementation.
-- No Timesheets-owned MCP/CLI helper package is planned. A future concrete machine-access requirement enrolls eligible Timesheets Contracts in `Hexalith.McpCli`.
-- **Consumer-host rendering ownership (approved 2026-09-12):** Timesheets does not own or add `Hexalith.Timesheets.UI` or `Hexalith.Timesheets.UI.Tests`. FrontComposer-compatible metadata remains here; rendered components, assets, responsive behavior, and WCAG 2.2 AA evidence belong to a consuming FrontComposer host.
-
-### Validation Issues Addressed
-
-- Dapr version policy ambiguity is resolved against the imported stable SDK package family `1.19.1`; actual root/submodule and prerelease platform pins are separately tracked by launch-readiness package-currency evidence.
-- Fluent UI generation ambiguity resolved as a Timesheets policy: V5 components only and V4 allowed only for icons when V5 icons are unavailable; current package pins remain separate under the consuming FrontComposer host and platform-owned build policy.
-- Persistence ambiguity resolved: EventStore is the sole authoritative persistence path.
-- Projection trust ambiguity resolved: projections are rebuildable read models and cannot authorize trust-bearing writes.
-
-### Architecture Completeness Checklist
-
-**Requirements Analysis**
-
-- [x] Project context thoroughly analyzed
-- [x] Scale and complexity assessed
-- [x] Technical constraints identified
-- [x] Cross-cutting concerns mapped
-
-**Architectural Decisions**
-
-- [x] Critical decisions documented with versions
-- [x] Technology stack fully specified
-- [x] Integration patterns defined
-- [x] Performance considerations addressed
-
-**Implementation Patterns**
-
-- [x] Naming conventions established
-- [x] Structure patterns defined
-- [x] Communication patterns specified
-- [x] Process patterns documented
-
-**Project Structure**
-
-- [x] Complete directory structure defined
-- [x] Component boundaries established
-- [x] Integration points mapped
-- [x] Requirements to structure mapping complete
-
-### Architecture Readiness Assessment
-
-**Overall Status:** READY FOR IMPLEMENTATION
-
-**Confidence Level:** High
-
-**Key Strengths:**
-
-- Strong EventStore-first persistence boundary.
-- Explicit tenant/resource fail-closed authorization model.
-- Clear projection freshness and replay/idempotency rules.
-- Concrete project structure aligned with sibling Hexalith modules.
-- Strong AI-agent consistency rules for names, packages, boundaries, and tests.
-
-**Areas for Future Enhancement:**
-
-- Use `Hexalith.McpCli` for future Hexalith-owned MCP/CLI access if product requirements demand it; do not add a Timesheets-owned MCP/CLI package.
-- Deterministic CSV v1 is implemented; any structured API/webhook export needs a named post-v1 consumer and contract story.
-- Add deployment-specific manifests after the target deployment environment is selected.
-
-### Implementation Handoff
-
-**AI Agent Guidelines:**
-
-- Follow all architectural decisions exactly as documented.
-- Use implementation patterns consistently across all components.
-- Respect project structure and package boundaries.
-- Do not bypass EventStore, tenant/resource gates, or sibling-module contracts.
-- Keep Fluent UI component usage on V5 only.
-
-**First Implementation Priority:**
-Scaffold the Hexalith.Timesheets module shell with `.slnx`, Central Package Management, Contracts, Client, Server, Projections, Testing, ServiceDefaults, AppHost, and the initial architecture tests enforcing package boundaries.
+| Capability | Owning implementation | Decisions |
+| --- | --- | --- |
+| Capture, submit, approve, correct and lock | Server TimeEntries and TimesheetPeriods. Contracts defines requests, states and linked decisions. | AD-1–3 |
+| Activity Type catalog | Server ActivityTypes handles tenant and Project governance. Projections supplies the canonical catalog read model. | AD-2, AD-4, AD-8 |
+| External workload and magic links | HTTP endpoints call Server command services. Named projection handlers supply candidate indexes and evidence. The owner decides each transition. | AD-2, AD-4–5 |
+| Reports, dashboard and ledger | Projections derives rows from events. Server gates and shapes reads. Timesheets.Works provides opt-in estimates. | AD-1, AD-3, AD-6–7 |
+| Finance delivery | Server Exports orchestrates the authorized ledger read, disclosure, CSV and durable receipt. | AD-6–7 |
+| Public surfaces and deployment | Contracts and Client serve consumers. The HTTP host registers the installed receivers. Platform binds external authorities and the consumer host renders the UI. | AD-8–9 |
+
+## Deferred
+
+- **Release evidence.** Stories 3.6 and 3.7 own deployed magic-link authority, legacy inventory and continuity, shared rebuild and ingress privacy. The October 26 isolated local pass has a narrower scope. Tenant/platform and legal owners supply policy configuration and hold disposition. The product owner supplies UAT. Package currency carries **CONCERNS**. [Launch scope and owners](../../docs/launch-readiness.md#launch-scope-classification)
+- **Works activation and performance.** Platform owns activation of the live query channel. Works and Platform revisit stale-state detection when the query contract supplies adequate freshness evidence. The 500 ms p95 command and 2 s p95 report targets have historical in-process measurements. The persisted wire-path waiver is revisited when realistic runtime fixtures are available. [Performance evidence](../../docs/performance-evidence.md)
+- **Finance implementation choices.** The EventStore and finance owners settle receipt recovery and snapshot continuity in 6.2–6.3. Retaining a snapshot and detecting drift with a retry are both permissible if AD-7 holds. A dedicated preview HTTP route, structured API/webhook delivery and offset-entry corrections need a later consumer or finance decision. [PRD scope and decisions](prds/prd-timesheets-2026-06-18/prd.md#14-open-questions)
+- **Later policy decisions.** Lower-priority approver fallback, carry-forward of prior approvals into later periods, richer comment classification and secondary identity checks for high-value links require separate owner decisions. V1 follows AD-2–5. [PRD](prds/prd-timesheets-2026-06-18/prd.md#14-open-questions)

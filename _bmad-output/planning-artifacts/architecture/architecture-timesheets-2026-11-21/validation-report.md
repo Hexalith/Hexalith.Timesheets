@@ -1,0 +1,54 @@
+# Timesheets architecture validation
+
+**21 November 2026 · Implementation team**
+
+**Architecture verdict — revisions needed.** Two decisions need clarification before implementation teams rely on them: how to recover a period operation across several owner streams, and whose decision permits a ledger comment to be published. Both findings concern the written contract. The review established neither a production data-loss incident nor a deployed disclosure.
+
+| High | Medium | Low | Architecture tests |
+| --- | --- | --- | --- |
+| 2 | 5 | 1 | 95 passed, 0 skipped |
+
+## High-priority findings
+
+### AD-3 · Recover a partially committed period operation
+
+A whole-period submission is rejected if any included entry fails validation. After validation succeeds, the service returns separate decisions for the period and its entries. A repeated submission with the same membership can yield a period no-op, at which point the coordinator returns before processing entries. If persistence stops between owners, one host could acknowledge the period while another waits for every affected entry. The architecture specifies validation and linkage, but leaves the durable completion boundary open. [Period submission coordinator](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodSubmissionCommandService.cs#L137) · [Duplicate submission decision](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriod.cs#L164) · [Coordinator retry path](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodSubmissionCommandService.cs#L60)
+
+**Proposed decision.** Give the period operation a stable identity, bind it to the expected entry effects, and define how retry recovers outstanding writes. Permit acknowledgement only after the period and every required entry effect can be verified. The Timesheets and EventStore owners can choose a commit or recovery mechanism that meets that rule.
+
+**Closure check.** Interrupt a two-entry submission after a subset of writes. Restart, retry the same operation, and verify one period decision and exactly one of each expected entry transition. While recovery is pending, the caller must not receive a completed result.
+
+### AD-7 · Name the authority for comment disclosure
+
+The direct-ledger rule requires “explicit row projection permission.” The ledger mapper consults `ProjectionInclusion`. The Time Entry evidence handler requires host publication to be enabled and checks a supported, server-issued `ServerProjectionInclusion` on each value. These paths can interpret the same current or historical comment differently. AD-7 already defines separate tenant and row checks for finance export. This finding concerns permission to publish the text into a read model. [Ledger comment mapping](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeLedgerRowReadModel.cs#L106) · [Server-issued policy fields](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Contracts/Policies/TimeEntryCommentPolicy.cs#L12) · [Host publication setting](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceProjectionHandler.cs#L33) · [Per-value publication check](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Projections/TimeEntries/TimeEntryEvidenceCommentPolicy.cs#L47)
+
+**Proposed decision.** Specify the trusted publication setting and the server-issued permission required for each current, original and corrected comment. Missing or unsupported evidence omits that value while preserving row identity and lineage.
+
+**Closure check.** Cover host publication on and off, a supported allow decision, missing or version-zero authority, and a correction whose old and new values have different permissions. Compare direct reads and rebuilt results. Keep export authorization as a separate check.
+
+## Other findings
+
+| Priority and area | Proposed clarification and closure check |
+| --- | --- |
+| **Medium · AD-3/AD-6, period freshness** | Require fresh period evidence, fresh summaries for each included entry, and no missing entry evidence before review. Exercise a fresh period header with one missing or stale member and verify the decision is withheld. This is a read prerequisite. The AD-3 high finding covers recovery after writes begin. [Period review freshness check](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/TimesheetPeriods/TimesheetPeriodApprovalCommandService.cs#L362) |
+| **Medium · AD-7, mixed preview permissions** | Preview exposes a single policy value and the enum has no mixed outcome. Define how a scope containing both allowed and excluded rows maps to that value. Check that finance sees an accurate summary without receiving evidence rows or text, and that generation still evaluates each row. [Preview result](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Contracts/Models/ApprovedTimeExportPreviewReadModel.cs#L27) · [Disclosure decisions](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Contracts/Policies/TimesheetsPolicyEnums.cs#L38) · [Story 6.1 mixed-policy case](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/_bmad-output/planning-artifacts/epics.md#L1808) |
+| **Medium · AD-5, magic-link stream ownership** | Identify the capability-ID stream as the owner of issuance and the Time Entry stream as the owner of terminal use and its effect. Verify that readers recover both facts after restart, including the supported legacy history. [Issuance stream](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs#L98) · [Capability lookup](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs#L413) · [Entry lookup](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/MagicLinks/EventStoreMagicLinkConfirmationCapabilityStateLoader.cs#L472) |
+| **Medium · AD-6, planned-effort outcomes** | Preserve the public distinctions between `NotSupplied`, `Unavailable`, `Unauthorized` and `Stale` when explaining why a comparison is unavailable. Check the existing contract mapping and suppress variance where the plan cannot support it. The current Works view has limited freshness evidence. [Works adapter outcomes](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Works/WorksQueryWorkPlannedEffortProvider.cs#L139) · [Planned-effort result](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Contracts/Models/WorkPlannedEffortReadModel.cs#L36) |
+| **Medium · Diagnostics** | Explicitly exclude raw event payloads and secrets in the telemetry rule alongside command bodies, credentials and comments. Verify that operators can correlate failures with safe identifiers and outcome categories. [PRD observability requirement](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/_bmad-output/planning-artifacts/prds/prd-timesheets-2026-06-18/prd.md#L398) |
+| **Low · AD-8, dependency diagram** | Server and Projections both reference Contracts directly. Add those edges, or label the diagram as a selection of dependencies. The project manifests give the complete graph. [Server references](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Server/Hexalith.Timesheets.Server.csproj#L16) · [Projections references](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/src/Hexalith.Timesheets.Projections/Hexalith.Timesheets.Projections.csproj#L18) |
+
+## Validation evidence
+
+| Check | Result |
+| --- | --- |
+| BMAD mechanical lint | Zero findings on the reviewed file. All nine decision IDs are present in order. |
+| Requirements and evidence links | FR-1 through FR-23 appear in the decisions’ scope. All 33 local links resolved, the historical source revision was present, and all 19 previously cited section anchors resolved. |
+| Source and dependency review | The host declares four commands and four named projections. The inspected Platform binding requires Development/source mode. MSBuild selected EventStore 5.4.0 in Debug/source and Release/package. The refreshed catalog selects Dapr self-hosted runtime 1.19.2 and CLI 1.19.1. |
+| Architecture test project | Debug/source build completed with zero warnings and errors. All 95 tests passed. The run covered the architecture test project. |
+| Independent review | Three reviewers assessed the BMAD rubric, checked the technology and source claims, and compared how separate implementers could interpret the decisions. The proposed changes above are review findings. |
+
+## Release disposition
+
+**Release verdict — FAIL.** Finance still needs Stories 6.1–6.3. External workload confirmation and recording need 6.4–6.5. The production Project journey needs 6.7–6.8, including restart, rebuild and second-tenant checks. Deployed magic-link acceptance remains with 3.6–3.7. Tenant policy, legal hold and product UAT still require their owners’ disposition. Package currency is recorded as **CONCERNS**. This validation supplied document, source and architecture-test evidence. [Launch register](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/docs/launch-readiness.md#L5) · [Epic 6 qualifications](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/_bmad-output/planning-artifacts/epics.md#L1797) · [Sprint status](https://github.com/Hexalith/Hexalith.Timesheets/blob/271442d0cad21a66be9aacb7fb0b36e28b670181/_bmad-output/implementation-artifacts/sprint-status.yaml#L108)
+
+**Reviewed snapshot.** Uncommitted [architecture document](../../architecture.md) on Timesheets `271442d0`, with refreshed Builds `e1380b81`. Architecture SHA-256: `4b68c9bd7517635c9d0cfe88e2f1dcaabef5941f2eaae080f7a7b5758982c063`.
