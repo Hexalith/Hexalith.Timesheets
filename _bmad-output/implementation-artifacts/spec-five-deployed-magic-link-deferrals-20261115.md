@@ -54,11 +54,10 @@ no live mutation authorization or permission to rewrite published history.
 
 ## Open Questions
 
-1. Which current Platform release and authority/inventory handoff should this
-   batch consume? The checked-in proposal is `BLOCKED_NOT_FOR_EXECUTION`; both
-   proposed approved values files are absent. Options: supply the current handoff;
-   prepare prerequisites in Hexalith.Platform instead; or select different backlog
-   work. Prerequisite preparation alone cannot close deployed obligations.
+1. Which scope should this run take? A current Platform release handoff allows
+   deployed qualification. An offline Platform increment can advance prerequisites
+   while the five deployment gates stay open. A different backlog batch needs an
+   explicit selection. The checked-in staging proposal remains blocked.
 
 ## Code Map
 
@@ -76,10 +75,13 @@ no live mutation authorization or permission to rewrite published history.
 - `src/Hexalith.Timesheets.Server/Runtime/ServiceCollectionExtensions.cs`:
   authorization, tenant and reference defaults remain deny-all/unavailable.
 - `src/Hexalith.Timesheets.Projections/MagicLinks/`: compiled projection handlers
-  and authority/inventory seams; not proof of installed delivery or coverage.
+  and authority/inventory seams. Platform must supply installed component and
+  historical coverage evidence.
 - `tests/Hexalith.Timesheets.IntegrationTests/MagicLinkLiveDaprTests.cs` and
-  `scripts/run_isolated_magic_link_dapr.py`: reuse local acceptance semantics,
-  never fixture target/credentials against a deployment.
+  `scripts/local_aspire_magic_link_journey.py`: the local journey explicitly
+  dispatches two projections after issuance. Reuse its persisted index and
+  public resolution assertions for the deployed acceptance test. Observe actual
+  subscriber delivery before checking readiness under DW-119 and DW-145.
 
 ## Tasks & Acceptance
 
@@ -113,11 +115,17 @@ no live mutation authorization or permission to rewrite published history.
 
 ## Implementation Notes
 
-Investigation only. Independent searches found prior resolutions for gateway
-timeouts, dashboard diagnostics and duplicate scheduler names. Remaining native
-signal/dashboard, repair capacity/resource and large shared-store obligations
-need evidence/platform contracts; no new local defect was demonstrated. No code,
-deployment, shared service or dependency checkout changed.
+The November 22 recheck used Timesheets `669e95086e0f94a848fb2bd23180c3a41c5a9ff0`
+and Platform `44dd1e52904cd07ef49be74edd947c75f9b76374`. Platform's deployment
+directory matches the revision in the [launch record](../../docs/launch-readiness.md#story-36-qualification-on-2026-11-22).
+The proposal reports no approval or dispatcher. Both approved staging values
+files are absent and its unsigned recovery prerequisite has expired. Platform's
+Timesheets binding still requires Development/source mode.
+
+The recorded November 22 local run activated the writer and then failed on its
+first projection metadata request with HTTP 500 (`ERR_DIRECT_INVOKE`). It ended
+before issuance or delivery. The five ledger entries remain open. The recheck
+used only Git and local files.
 
 ## Spec Change Log
 
