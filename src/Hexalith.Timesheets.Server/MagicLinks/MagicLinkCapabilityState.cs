@@ -86,30 +86,53 @@ public sealed class MagicLinkCapabilityState
     public void Apply(MagicLinkConfirmationCapabilityRevoked revoked)
     {
         ArgumentNullException.ThrowIfNull(revoked);
-        RequireIssued();
+        RequireIssued(revoked.Tenant, revoked.CapabilityId, revoked.TimeEntryId ?? TimeEntryId);
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Revoked;
     }
 
     public void Apply(MagicLinkConfirmationCapabilityExpired expired)
     {
         ArgumentNullException.ThrowIfNull(expired);
-        RequireIssued();
+        RequireIssued(expired.Tenant, expired.CapabilityId, expired.TimeEntryId ?? TimeEntryId);
+        if (expired.ExpiredAtUtc < ExpiresAtUtc)
+        {
+            throw new InvalidOperationException("A capability expiry precedes its expiration time.");
+        }
+
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Expired;
     }
 
     public void Apply(MagicLinkConfirmationCapabilityUsed used)
     {
         ArgumentNullException.ThrowIfNull(used);
-        RequireIssued();
+        RequireIssued(used.Tenant, used.CapabilityId, used.TimeEntryId);
+        bool actionAllowed = used.OutcomeCategory switch
+        {
+            "confirmed" => AllowedAction is MagicLinkAllowedAction.Confirm or MagicLinkAllowedAction.ConfirmOrAdjust,
+            "adjusted" => AllowedAction is MagicLinkAllowedAction.Adjust or MagicLinkAllowedAction.ConfirmOrAdjust,
+            _ => false
+        };
+        if (used.Contributor is null || used.Contributor != Contributor || !actionAllowed
+            || used.UsedAtUtc < IssuedAtUtc || used.UsedAtUtc >= ExpiresAtUtc)
+        {
+            throw new InvalidOperationException("A capability use does not match its issuance.");
+        }
+
         State = Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Used;
         UsedAtUtc = used.UsedAtUtc;
         UseMetadata = used.Source;
     }
-    private void RequireIssued()
+
+    private void RequireIssued(TenantReference tenant, MagicLinkCapabilityId capabilityId, TimeEntryId? timeEntryId)
     {
         if (!Exists || State != Hexalith.Timesheets.Contracts.ValueObjects.MagicLinkCapabilityState.Issued)
         {
             throw new InvalidOperationException("A capability terminal transition requires an issued capability.");
+        }
+
+        if (tenant != Tenant || capabilityId != CapabilityId || timeEntryId is null || timeEntryId != TimeEntryId)
+        {
+            throw new InvalidOperationException("A terminal event must match the issued capability and Time Entry.");
         }
     }
 }

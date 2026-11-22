@@ -16,8 +16,8 @@
     <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.2"
                     Condition="'@(PackageVersion->WithMetadataValue('Identity', 'Hexalith.Works.Contracts'))' == ''" />
   </ItemGroup>
-  <!-- Timesheets-owned Aspire 17 consumer line. The imported Builds catalog still
-       selects 13.6.5; keep every Aspire family pin on one restored line. -->
+  <!-- Keep the Timesheets Aspire hosting packages aligned with the AppHost SDK.
+       EventStore and Timesheets share the Builds catalog's Dapr integration version. -->
   <ItemGroup>
     <PackageVersion Update="Aspire.Azure.Messaging.ServiceBus" Version="17.0.0" />
     <PackageVersion Update="Aspire.Azure.Security.KeyVault" Version="17.0.0" />
@@ -33,6 +33,5 @@
     <PackageVersion Update="Aspire.Hosting.Redis" Version="17.0.0" />
     <PackageVersion Update="Aspire.Hosting.Testing" Version="17.0.0" />
     <PackageVersion Update="Aspire.Microsoft.Azure.Cosmos" Version="17.0.0" />
-    <PackageVersion Update="CommunityToolkit.Aspire.Hosting.Dapr" Version="17.0.0-beta.1052" />
   </ItemGroup>
 </Project>

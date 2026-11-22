@@ -1,0 +1,74 @@
+{
+  "date": "2026-11-22",
+  "run_id": "run-po_hzkp3",
+  "graph": "Debug/source",
+  "revisions": {
+    "timesheets": "151fd37308eb08f942040c283209e7886ad954a6",
+    "Hexalith.Builds": "27fe4d62ca1f3cce07a9f19e1e30b02cbaa51357",
+    "Hexalith.Commons": "258f9d20e33bd0ae411cf8b3836a26a131f5b9ae",
+    "Hexalith.EventStore": "2ca76828bf1b9e666b1ed309da4a96f7252290b2"
+  },
+  "timesheets_diff_sha256_at_run": "3820bef690ab04e75cfb4306c00fbaec434b0e4fd8bf7c6e7d7e0ff9d5cde2eb",
+  "runtime": {
+    "dotnet_sdk": "11.0.100",
+    "aspire": "17.0.0",
+    "dapr_cli": "1.18.2",
+    "daprd": "1.18.7"
+  },
+  "catalog": {
+    "schema_version": 3,
+    "generation": 1,
+    "route_ids": [
+      "timesheets-commit-magic-link-issue",
+      "timesheets-commit-magic-link-transition",
+      "timesheets-commit-magic-link-use",
+      "timesheets-commit-time-entry-record",
+      "timesheets-magic-link-confirmation-capabilities",
+      "timesheets-magic-link-token-hash-capability-index",
+      "timesheets-tenant-activity-type-catalog",
+      "timesheets-time-entry-evidence"
+    ],
+    "sdk_binding_verified": true,
+    "technical_action_count": 35,
+    "complete": true
+  },
+  "transport": {
+    "configured_authenticated_transport": true,
+    "peer_delivery_requires_request_evidence": true
+  },
+  "writer_bootstrap": {
+    "http_status": 200,
+    "attempts": 1,
+    "activated": true
+  },
+  "journey": {
+    "test": "RecordedMagicLinksCommitOneUseAndSurviveActorRestart",
+    "result": "failed",
+    "first_failed_operation": "POST /admin/operational-index-metadata",
+    "http_status": 500,
+    "category": "dapr_direct_invoke_failed",
+    "receiver_predicate": "unqualified",
+    "persisted_effects_observed": false,
+    "shared_rebuild_observed": false
+  },
+  "gateway_restart": {
+    "identity_replaced": false,
+    "old_identity_exited": false
+  },
+  "changed_assets": [
+    "src/Hexalith.Timesheets.AppHost/bin/Debug/net11.0/Hexalith.Timesheets.AppHost.dll",
+    "src/Hexalith.Timesheets.AppHost/bin/Debug/net11.0/Hexalith.Timesheets.AppHost.pdb"
+  ],
+  "cleanup": {
+    "complete": false,
+    "journey_descendants_gone": true,
+    "failure_reasons": [
+      "Captured fixture processes remain; retaining infrastructure"
+    ],
+    "components_created": true,
+    "components_removed": false,
+    "catalog_profile_removed": false,
+    "containers_removed": null
+  },
+  "retained_redis_container": "timesheets-live-dapr-833ed9980e8152f2bd3bc03f2c526743-redis"
+}

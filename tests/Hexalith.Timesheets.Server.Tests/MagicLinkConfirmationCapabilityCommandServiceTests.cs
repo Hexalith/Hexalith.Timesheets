@@ -846,7 +846,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
             Contributor(),
             TimeEntryId(),
             ConfirmedAtUtc(),
-            new MagicLinkAuditMetadata("magic-link", "capability-1")));
+            new MagicLinkAuditMetadata("magic-link", "capability-1")) { OutcomeCategory = "adjusted" });
         CapabilityStateData revoked = IssuedState(allowedAction: MagicLinkAllowedAction.Adjust);
         revoked.Apply(new MagicLinkConfirmationCapabilityRevoked(
             CapabilityId(),
@@ -1345,7 +1345,7 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
             Contributor(),
             TimeEntryId(),
             ConfirmedAtUtc(),
-            new MagicLinkAuditMetadata("magic-link", "capability-1")));
+            new MagicLinkAuditMetadata("magic-link", "capability-1")) { OutcomeCategory = "adjusted" });
         CapabilityStateData revoked = IssuedState(allowedAction: MagicLinkAllowedAction.Adjust);
         revoked.Apply(new MagicLinkConfirmationCapabilityRevoked(
             CapabilityId(),

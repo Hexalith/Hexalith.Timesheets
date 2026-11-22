@@ -2703,7 +2703,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     state.Contributor!,
                     state.TimeEntryId!,
                     ObservedAtUtc.AddMinutes(-1),
-                    new MagicLinkAuditMetadata("magic-link", state.CapabilityId!.Value)));
+                    new MagicLinkAuditMetadata("magic-link", state.CapabilityId!.Value))
+                {
+                    OutcomeCategory = action == MagicLinkAllowedAction.Adjust ? "adjusted" : "confirmed"
+                });
             }
 
             if (state is not null && caseName == "revoked")

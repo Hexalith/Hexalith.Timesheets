@@ -2142,24 +2142,25 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         ShouldBeOpaqueFailClosed(state);
     }
 
-    [Fact]
-    public async Task LoadCapabilityAsyncFoldsTerminalStateForAdminRevokeAndExpirePaths()
+    [Theory]
+    [InlineData(CapabilityState.Revoked)]
+    [InlineData(CapabilityState.Expired)]
+    public async Task LoadCapabilityAsyncFoldsLegacyTerminalWithoutTimeEntryId(CapabilityState expected)
     {
-        // The admin revoke/expire endpoints load existing capability state through LoadCapabilityAsync. Prior
-        // events must fold so an already-terminal capability is observed as terminal (not as a fresh issue).
+        object terminal = expected == CapabilityState.Revoked ? Revoked() : Expired();
         var gateway = new ScriptedGatewayClient()
             .WithStream(
                 Tenant().TenantId,
                 CapabilityId().Value,
                 Event(1, "capability-1", Issued()),
-                Event(2, "capability-2", Revoked()));
+                Event(2, "capability-2", terminal));
         var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
 
         Hexalith.Timesheets.Server.MagicLinks.MagicLinkCapabilityState? state = await loader
             .LoadCapabilityAsync(CapabilityId(), TestContext.Current.CancellationToken)
             .ConfigureAwait(true);
 
-        state.ShouldNotBeNull().State.ShouldBe(CapabilityState.Revoked);
+        state.ShouldNotBeNull().State.ShouldBe(expected);
         state.IsTerminal.ShouldBeTrue();
     }
 
@@ -2171,7 +2172,11 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             [Used()], [Revoked()], [Expired()], [Revoked(), Issued()],
             [Issued(), Issued()], [Issued(), Used(), Issued()],
             [Issued(), Revoked(), Issued()], [Issued(), Expired(), Issued()],
-            [Issued(), Used(), Used()], [Issued(), Revoked(), Expired()]
+            [Issued(), Used(), Used()], [Issued(), Revoked(), Expired()],
+            [Issued(), Used() with { TimeEntryId = new("other-entry") }],
+            [Issued(), Used() with { Contributor = Operator() }],
+            [Issued(), Revoked() with { TimeEntryId = new("other-entry") }],
+            [Issued(), Expired() with { TimeEntryId = new("other-entry") }]
         ];
         foreach (object[] history in histories)
         {
@@ -2184,6 +2189,50 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
             ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
             (await loader.LoadCapabilityAsync(CapabilityId(), TestContext.Current.CancellationToken)).ShouldBeNull();
         }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task TerminalFactsThatContradictIssuanceDenyOpaquely(bool onTimeEntry)
+    {
+        var issue = Issued() with { AllowedAction = MagicLinkAllowedAction.Confirm };
+        object[] conflicts =
+        [
+            Used() with { Contributor = Operator() },
+            Used() with { UsedAtUtc = issue.IssuedAtUtc.AddTicks(-1) },
+            Used() with { UsedAtUtc = issue.ExpiresAtUtc },
+            Used() with { OutcomeCategory = "adjusted" },
+            Used() with { OutcomeCategory = "unknown" },
+            Expired() with { TimeEntryId = TimeEntryId(), ExpiredAtUtc = issue.ExpiresAtUtc.AddTicks(-1) }
+        ];
+        foreach (object conflict in conflicts)
+        {
+            var issuance = Event(1, "issuance", issue);
+            var entry = Event(1, "entry", Recorded());
+            var terminal = Event(2, "terminal", conflict);
+            var gateway = new ScriptedGatewayClient()
+                .WithStream(Tenant().TenantId, CapabilityId().Value, onTimeEntry ? [issuance] : [issuance, terminal])
+                .WithStream(Tenant().TenantId, TimeEntryId().Value, onTimeEntry ? [entry, terminal] : [entry]);
+            var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
+
+            ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+            (await loader.LoadCapabilityAsync(CapabilityId(), TestContext.Current.CancellationToken)).ShouldBeNull();
+        }
+    }
+
+    [Fact]
+    public async Task LegacyAndOwnerTerminalDecisionsForOneCapabilityDenyOpaquely()
+    {
+        var gateway = new ScriptedGatewayClient()
+            .WithStream(Tenant().TenantId, CapabilityId().Value, Event(1, "issuance", Issued()),
+                Event(2, "legacy-revocation", Revoked()))
+            .WithStream(Tenant().TenantId, TimeEntryId().Value, Event(1, "entry", Recorded()),
+                Event(2, "owner-use", Used()));
+        var loader = CreateLoader(gateway, new InMemoryReadModelStore(IndexWith(Hash())));
+
+        ShouldBeOpaqueFailClosed(await loader.LoadTokenStateAsync("opaque-once", TestContext.Current.CancellationToken));
+        (await loader.LoadCapabilityAsync(CapabilityId(), TestContext.Current.CancellationToken)).ShouldBeNull();
     }
 
     [Fact]
@@ -2396,7 +2445,7 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoaderTests
         => new(
             CapabilityId(),
             Tenant(),
-            new DateTimeOffset(2026, 6, 19, 15, 0, 0, TimeSpan.Zero),
+            Issued().ExpiresAtUtc,
             new MagicLinkAuditMetadata("magic-link", "capability-1"));
 
     private static TimeEntryRecorded Recorded(
