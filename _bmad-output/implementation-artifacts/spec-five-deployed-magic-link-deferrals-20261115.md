@@ -127,6 +127,10 @@ first projection metadata request with HTTP 500 (`ERR_DIRECT_INVOKE`). It ended
 before issuance or delivery. The five ledger entries remain open. The recheck
 used only Git and local files.
 
+The [qualification handoff](../../docs/deployed-magic-link-qualification-handoff.md)
+adds the inspected GitHub publication records and the evidence to collect for
+each deferral. Deployed execution still requires the bound Platform handoff.
+
 ## Spec Change Log
 
 ## Review Triage Log
