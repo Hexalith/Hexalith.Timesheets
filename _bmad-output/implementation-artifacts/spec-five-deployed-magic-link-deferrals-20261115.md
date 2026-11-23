@@ -142,6 +142,15 @@ approved staging values files are absent. The five checks still need evidence
 from an installed Timesheets release.
 [Platform Helm qualification](https://github.com/Hexalith/Hexalith.Platform/blob/66b64388c78ceba7b744a1092abc221b75d2bb8d/_bmad-output/implementation-artifacts/spec-4-5-qualify-the-aspire-to-helm-export-with-the-reference-composition.md)
 
+The later November 23 offline check evaluated Timesheets
+`f6110cbfa52c2a5dec831892ed8d57deb3ee3657` and Platform
+`194a79e3fc6d0794bd49f6d08ae99e58efc615b0`. Platform's preparer reproduced a
+blocked plan and reported enrollment-source drift between the candidate and
+Platform's Timesheets pin. All 63 offline Platform enrollment tests passed.
+The installed release, target and evidence listed against each item in the
+handoff are still required.
+[Qualification handoff](../../docs/deployed-magic-link-qualification-handoff.md)
+
 ## Spec Change Log
 
 ## Review Triage Log
