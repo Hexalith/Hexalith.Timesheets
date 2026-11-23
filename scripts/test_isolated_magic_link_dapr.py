@@ -7419,6 +7419,49 @@ time.sleep(60)
                 shutil.rmtree(instance.scratch)
         self.assertTrue(fixture.recorded_process_exits([identity])["all_gone"])
 
+    def test_captured_zombie_identity_allows_owned_cleanup(self):
+        commands = Commands()
+        instance = fixture.IsolatedFixture(command=commands, port_check=lambda: None, log_directory=self.logs,
+            ownership_check=lambda: commands.started and not commands.stopped, resource_check=lambda *_: [])
+        process = subprocess.Popen([sys.executable, "-c", "import sys; sys.stdin.read(1)"], stdin=subprocess.PIPE)
+        try:
+            stat = Path(f"/proc/{process.pid}/stat")
+            fields = stat.read_text().rsplit(")", 1)[1].split()
+            identity = {"pid": process.pid, "start": fields[19], "state": fields[0]}
+            instance.captured_processes = [identity]
+            process.stdin.close()
+            os.waitid(os.P_PID, process.pid, os.WEXITED | os.WNOWAIT)
+            with patch.object(fixture.time, "monotonic", side_effect=(0, 100)), contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(0, instance.execute())
+            evidence = json.loads((instance.log_directory / "recorded-process-exit.json").read_text())
+            self.assertTrue(evidence["all_gone"])
+            self.assertEqual([dict(identity, gone=True, observed_state="Z")], evidence["processes"])
+            self.assertTrue(stat.exists())
+            self.assertFalse(Path(instance.scratch).exists())
+            self.assertTrue(any(args[:2] == ["docker", "rm"] for args, _ in commands.calls))
+        finally:
+            process.stdin.close()
+            process.wait(timeout=5)
+            if instance.scratch and Path(instance.scratch).exists():
+                shutil.rmtree(instance.scratch)
+
+    def test_captured_process_exit_refuses_malformed_stat(self):
+        identity = {"pid": 123, "start": "1", "state": "S"}
+        for stat in (b"123 (process) Z 0", b"124 (process) Z " + b"0 " * 16 + b"1 0 1",
+                     b"123 (process) ? " + b"0 " * 16 + b"1 0 2", b"123 (process) Z " + b"0 " * 16 + b"1 0 bad",
+                     b"123 (process) Z " + b"0 " * 16 + b"bad 0 1"):
+            with self.subTest(stat=stat), patch.object(Path, "read_bytes", return_value=stat):
+                with self.assertRaisesRegex(fixture.FixtureError, "Captured process identity inspection is unavailable"):
+                    fixture.recorded_process_exits([identity])
+
+    def test_captured_zombie_leader_with_other_threads_blocks_cleanup(self):
+        identity = {"pid": 123, "start": "1", "state": "S"}
+        stat = b"123 (process\xff) Z " + b"0 " * 16 + b"2 0 1"
+        with patch.object(Path, "read_bytes", return_value=stat):
+            exits = fixture.recorded_process_exits([identity])
+        self.assertFalse(exits["all_gone"])
+        self.assertEqual([dict(identity, gone=False)], exits["processes"])
+
     def test_runner_retains_captured_identities_and_generates_exit_evidence(self):
         commands = Commands()
         snapshot = self.new_shared_snapshot()

@@ -571,16 +571,28 @@ def gateway_process_identity(executable, bound_identities, directory=Path("/proc
 
 
 def recorded_process_exits(identities):
-    """Check every captured PID/start pair even if its resource binding changed."""
+    """Check whether every captured PID/start pair can still hold resources."""
     exits = []
     for identity in identities:
+        evidence = dict(identity)
+        pid = identity["pid"]
+        unavailable = "Captured process identity inspection is unavailable"
         try:
-            fields = Path(f"/proc/{identity['pid']}/stat").read_text().rsplit(")", 1)[1].split()
-            require(len(fields) > 19, "Captured process identity inspection is unavailable")
-            gone = fields[19] != identity["start"]
+            header, separator, suffix = Path(f"/proc/{pid}/stat").read_bytes().rpartition(b") ")
+            fields = suffix.split()
+            require(separator and header.startswith(f"{pid} (".encode("ascii")) and len(fields) > 19, unavailable)
+            state, thread_count, start = fields[0], fields[17], fields[19]
+            require(len(state) == 1 and state in b"RSDZTtWXxKPI"
+                    and re.fullmatch(rb"[1-9][0-9]*", thread_count) and re.fullmatch(rb"[0-9]+", start), unavailable)
+            gone = start.decode("ascii") != identity["start"]
+            # A zombie thread-group leader can still have workers holding resources.
+            if not gone and state == b"Z" and thread_count == b"1":
+                evidence["observed_state"] = "Z"
+                gone = True
         except FileNotFoundError:
             gone = True
-        exits.append(dict(identity, gone=gone))
+        evidence["gone"] = gone
+        exits.append(evidence)
     return {"all_gone": all(row["gone"] for row in exits), "processes": exits}
 
 

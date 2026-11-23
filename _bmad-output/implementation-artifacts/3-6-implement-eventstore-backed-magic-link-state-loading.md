@@ -6,6 +6,8 @@ baseline_commit: 24a37c1c50c9c3b3504a03a7a939caf2720b45b0
 
 Status: in-progress
 
+**November 23 cleanup fix.** The isolated fixture now recognizes a captured Linux process that has exited and is awaiting reaping. Live or unverifiable process identities still block cleanup. The metadata HTTP 500 remains unresolved and Platform's deployment proposal remains blocked. [Fixture change and verification](spec-3-6-fixture-process-exit.md)
+
 **November 22 verification.** The authoritative fold now checks terminal identity, action and time against issuance. The current-source isolated host verified catalog and writer setup, then the metadata POST failed with HTTP 500 before the first persisted effect. Deployed acceptance awaits a current Platform handoff. [Tested graph and acceptance results](../../docs/launch-readiness.md#story-36-qualification-on-2026-11-22)
 
 **November 21 handoff.** The remaining work requires current runtime evidence and a designated deployment with authorized providers. Timesheets verifies issuance and terminal owner histories, restart and shared rebuild. Platform supplies the deployment, authority, inventory and continuity evidence. Record the exercised graph and results in the launch register. [Current story criteria](../planning-artifacts/epics.md#story-36-implement-eventstore-backed-magic-link-state-loading)
