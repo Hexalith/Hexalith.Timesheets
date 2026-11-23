@@ -46,3 +46,17 @@ The warnings-as-errors Debug solution build passed. On the updated dependency ch
 - A multipage reader supplies a version covering all entries in the filtered scope. Preview, generated metadata and the matching audit carry this version. Per-owner sequences cannot establish it. The service rejects stalled or cycling continuations and rechecks export authority after traversal.
 - Preview examines comment decisions without constructing export rows or copying event lineage. Tests independently cover host-wide exclusion, reader veto, snapshot drift and UTC acknowledgement.
 - Stories 6.1 and 6.3 are ready for review. Story 6.2 retains durable EventStore receipt writing and recovery after restart. The five deployed magic-link items remain open.
+
+### Story 6.1 review findings
+
+- [x] [Review][Patch] Return a blocked `PolicyRequired` preview after identity and reference checks pass but required evidence policy is missing. Actual access denials remain opaque.
+- [x] [Review][Patch] Withhold current and nested comment text that still requires export redaction. Preview uses the same decision as CSV and serialized rows.
+- [x] [Review][Patch] Recheck access to current and historical row scopes after receipt verification and before releasing the export. Exercise revocation during recording and each distinct correction scope.
+- [x] [Review][Patch] Check preview cancellation after evaluation, before constructing a response.
+- [x] [Review][Patch] Compare a direct read of unfiltered stored comments with rebuilt current and superseded rows across publication versions and host settings. Exercise a permitted comment through the composed export service and verify that the durable receipt omits its text.
+- [x] [Review][Defer] Track independent finance permission at comment issuance and compatibility for older stored values. Track receipt scope flags and reader veto semantics with the receipt and snapshot stories. See [deferred work](deferred-work.md#deferred-from-code-review-of-story-61-2026-11-23).
+
+The direct ledger reader contract supplies filtered rows. Export verifies membership before delivery. The
+separate persisted Time Entry evidence handler continues to reject malformed issued decisions under its
+own replay contract. A fresh single ledger page can report page readiness before export establishes
+whole-scope readiness.

@@ -5,6 +5,9 @@ public sealed record TimesheetsAuthorizationDecision(
     TimesheetsDenialCategory DenialCategory,
     string Reason)
 {
+    /// <summary>Indicates that identity and reference checks passed before required evidence policy blocked the operation.</summary>
+    internal bool IsBlockedByMissingEvidencePolicy { get; init; }
+
     public static TimesheetsAuthorizationDecision Denied(string reason)
     {
         return Denied(TimesheetsDenialCategory.UnconfiguredPolicy, reason);

@@ -12,6 +12,7 @@ using Hexalith.EventStore.Testing.Fakes;
 using Hexalith.Timesheets.Contracts.Commands.Exports;
 using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
@@ -99,7 +100,10 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         {
             gateway.Connect(scope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>());
             var service = scope.ServiceProvider.GetRequiredService<ApprovedTimeExportService>();
-            (await service.PreviewAsync(context, new(), original, token)).Preview!.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
+            var preview = (await service.PreviewAsync(context, new(), original, token)).Preview.ShouldNotBeNull();
+            preview.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
+            preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
+            JsonSerializer.Serialize(preview).ShouldNotContain("private finance note");
             gateway.Client.ReceivedCalls().ShouldBeEmpty();
 
             var first = await service.GenerateAsync(context, command, original, token);
@@ -138,6 +142,8 @@ public sealed partial class ApprovedTimeExportIntegrationTests
             var file = retry.Export!;
             var csv = file.CsvContent.ShouldNotBeNull();
             csv.ShouldContain("finance-entry-123");
+            csv.ShouldContain("private finance note");
+            file.Rows.ShouldHaveSingleItem().Comment.ShouldNotBeNull().Text.ShouldBe("private finance note");
             if (originalCsv is not null) csv.ShouldBe(originalCsv);
             var stored = JsonSerializer.Deserialize<StoredApprovedTimeExported>(envelope.Payload, JsonSerializerOptions.Web)!.Event;
             stored.ShouldBe(retry.AuditResult!.Events.ShouldHaveSingleItem().ShouldBeOfType<ApprovedTimeExported>());
@@ -339,9 +345,16 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         independentlyRequested.Export.Audit.OutputRowsHashSha256.ShouldNotBe(originalFile.Audit.OutputRowsHashSha256);
     }
 
-    private static FrozenLedgerTestReader ReceiptLedger(string tenant = "tenant-1") => new(new ApprovedTimeLedgerProjection(),
+    private static FrozenLedgerTestReader ReceiptLedger(string tenant = "tenant-1") => new(new ApprovedTimeLedgerProjection(FinanceExportTestPolicy.Configured),
         [new TimeEntryProjectionEvent("r1", 1, Recorded("finance-entry-123", TimeEntryTargetReference.ForProject(Project()), 30) with
-            { Comment = AllowedExportComment("private finance note") }, tenant),
+            {
+                Comment = new("private finance note", TimeEntryCommentPolicy.SensitiveDefault with
+                {
+                    ServerPublicationVersion = 2,
+                    ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                    ExportInclusion = TimesheetsCommentPolicyDecision.Allowed
+                })
+            }, tenant),
          new("r2", 2, Submitted("finance-entry-123") with { Tenant = new(tenant) }, tenant),
          new("r3", 3, Approved("finance-entry-123", "finance-decision") with { Tenant = new(tenant) }, tenant)],
         new(tenant, ApprovedTimeLedgerProjection.ProjectionName, 3, ProjectionFreshness.Fresh));

@@ -63,7 +63,11 @@ public sealed class TimesheetsAccessGuard : ITimesheetsAccessGuard
 
         return policyResult.IsAllowed
             ? TimesheetsAuthorizationDecision.Allowed()
-            : TimesheetsAuthorizationDecision.Denied(policyResult.DenialCategory, policyResult.Reason);
+            : TimesheetsAuthorizationDecision.Denied(policyResult.DenialCategory, policyResult.Reason) with
+            {
+                IsBlockedByMissingEvidencePolicy = policyResult.DenialCategory is
+                    TimesheetsDenialCategory.CommentPolicyMissing or TimesheetsDenialCategory.RetentionPolicyMissing
+            };
     }
 
     public async ValueTask<TimesheetsAuthorizationDecision> ExecuteIfAuthorizedAsync(

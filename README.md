@@ -176,6 +176,8 @@ services.AddSingleton(new TimesheetsEvidencePolicyOptions
 
 Use values approved by the tenant and retention policy owners. The host-wide `ExportCommentsAllowed` flag,
 the tenant's finance decision and the published value's `ExportInclusion` must all permit its text.
+A published value that still requires export redaction is withheld.
+An authorized caller can see a blocked `PolicyRequired` preview when required evidence policy is missing.
 Submit preview and generation requests with a null browsing cursor. Multipage ledger readers must return
 a trusted `ExportSnapshotId` that certifies all matching ledger entries, and advance `NextCursor`
 on each page. Per-entry sequence numbers cannot certify whole-scope membership. The

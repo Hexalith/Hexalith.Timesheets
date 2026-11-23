@@ -130,6 +130,75 @@ public sealed partial class ApprovedTimeExportServiceTests
     }
 
     [Fact]
+    public async Task ExportWithholdsPublishedValuesThatStillRequireRedaction()
+    {
+        var row = RowWithCorrections((marker, allowed) =>
+        {
+            TimeEntryComment comment = AllowedExportComment(marker);
+            return allowed ? comment : new(comment.Text, comment.Policy with
+            {
+                RedactionRequirement = TimesheetsCommentRedactionRequirement.RequiredBeforeExport
+            });
+        }, currentAllowed: false, historicalAllowed: true);
+        TrackingAuditRecorder recorder = new();
+        var service = Service(new SequencedAccessGuard([]), new TrackingLedgerReader(Page([row])),
+            new TrackingHydrator(), recorder);
+        CancellationToken token = TestContext.Current.CancellationToken;
+
+        var preview = (await service.PreviewAsync(Context(), new(), RequestedAtUtc(), token)).Preview.ShouldNotBeNull();
+        preview.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
+        preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        preview.ReadinessDetail.ShouldBe("Comments are permitted for some values only.");
+        recorder.Events.ShouldBeEmpty();
+
+        var export = (await service.GenerateAsync(Context(), Command(), RequestedAtUtc(), token)).Export.ShouldNotBeNull();
+        export.CsvContent.ShouldNotBeNull().ShouldNotContain("current-marker");
+        string json = JsonSerializer.Serialize(export.Rows);
+        json.ShouldNotContain("current-marker");
+        json.ShouldNotContain("approved-new-marker");
+        json.ShouldNotContain("rejected-new-marker");
+        json.ShouldContain("approved-old-marker");
+        json.ShouldContain("rejected-old-marker");
+    }
+
+    [Fact]
+    public async Task HistoricalScopeRevocationDuringAuditWithholdsTheExport()
+    {
+        var row = RowWithCorrections((marker, _) => AllowedExportComment(marker), true, true);
+        var correction = row.ApprovedCorrection!;
+        row = row with
+        {
+            ApprovedCorrection = correction with
+            {
+                PreviousValues = correction.PreviousValues with { Target = WorkTarget() }
+            }
+        };
+        bool revoked = false;
+        ITimesheetsAccessGuard guard = Substitute.For<ITimesheetsAccessGuard>();
+        guard.AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            var request = call.Arg<TimesheetsAuthorizationRequest>();
+            return ValueTask.FromResult(revoked && request.Work?.WorkId == "work-1"
+                ? TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.InsufficientRole, "Access denied.")
+                : TimesheetsAuthorizationDecision.Allowed());
+        });
+        IApprovedTimeExportAuditRecorder recorder = Substitute.For<IApprovedTimeExportAuditRecorder>();
+        recorder.RecordAcceptedExportAsync(Arg.Any<ApprovedTimeExported>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            revoked = true;
+            return ValueTask.FromResult(TimesheetsDomainResult.Success([call.Arg<ApprovedTimeExported>()]));
+        });
+        var service = Service(guard, new TrackingLedgerReader(Page([row])), new TrackingHydrator(), recorder);
+
+        var result = await service.GenerateAsync(Context(), Command(), RequestedAtUtc(), TestContext.Current.CancellationToken);
+
+        revoked.ShouldBeTrue();
+        result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.InsufficientRole);
+        result.Export.ShouldBeNull();
+        result.AuditResult.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task PreviewSummarizesCorrectionPermissionsWithoutReadingExportLineage()
     {
         var lineage = Substitute.For<IReadOnlyList<TimeEntryEventLineageItem>>();
@@ -297,10 +366,13 @@ public sealed partial class ApprovedTimeExportServiceTests
     }
 
     [Theory]
-    [InlineData(TimesheetsDenialCategory.None)]
-    [InlineData(TimesheetsDenialCategory.InsufficientRole)]
-    [InlineData(TimesheetsDenialCategory.CrossTenantTarget)]
-    public async Task LedgerChecksDistinctHistoricalTargetAndContributorScopes(TimesheetsDenialCategory denial)
+    [InlineData(TimesheetsDenialCategory.None, null)]
+    [InlineData(TimesheetsDenialCategory.InsufficientRole, "approved-previous")]
+    [InlineData(TimesheetsDenialCategory.InsufficientRole, "approved-corrected")]
+    [InlineData(TimesheetsDenialCategory.CrossTenantTarget, "rejected-previous")]
+    [InlineData(TimesheetsDenialCategory.CrossTenantTarget, "rejected-corrected")]
+    public async Task LedgerChecksDistinctHistoricalTargetAndContributorScopes(
+        TimesheetsDenialCategory denial, string? deniedContributor)
     {
         var row = RowWithCorrections((marker, _) => AllowedExportComment(marker), true, true);
         var approved = row.ApprovedCorrection!;
@@ -309,12 +381,13 @@ public sealed partial class ApprovedTimeExportServiceTests
         {
             ApprovedCorrection = approved with
             {
-                PreviousValues = approved.PreviousValues with { Target = WorkTarget(), Contributor = new("historical-party") }
+                PreviousValues = approved.PreviousValues with { Target = WorkTarget(), Contributor = new("approved-previous") },
+                CorrectedValues = approved.CorrectedValues with { Target = WorkTarget(), Contributor = new("approved-corrected") }
             },
             Correction = rejected with
             {
-                CorrectedValues = rejected.CorrectedValues with { Target = WorkTarget(), Contributor = new("historical-party") },
-                PreviousValues = rejected.PreviousValues with { Contributor = new("other-party") }
+                PreviousValues = rejected.PreviousValues with { Target = WorkTarget(), Contributor = new("rejected-previous") },
+                CorrectedValues = rejected.CorrectedValues with { Target = WorkTarget(), Contributor = new("rejected-corrected") }
             }
         };
         List<TimesheetsAuthorizationRequest> requests = [];
@@ -323,8 +396,7 @@ public sealed partial class ApprovedTimeExportServiceTests
         {
             var request = call.Arg<TimesheetsAuthorizationRequest>();
             requests.Add(request);
-            return ValueTask.FromResult(request.Work?.WorkId == "work-1" && request.Contributor?.PartyId == "historical-party"
-                && denial != TimesheetsDenialCategory.None
+            return ValueTask.FromResult(request.Work?.WorkId == "work-1" && request.Contributor?.PartyId == deniedContributor
                 ? TimesheetsAuthorizationDecision.Denied(denial, "History withheld.") : TimesheetsAuthorizationDecision.Allowed());
         });
         TrackingHydrator hydrator = new();
@@ -334,7 +406,8 @@ public sealed partial class ApprovedTimeExportServiceTests
         {
             case TimesheetsDenialCategory.None:
                 result.Page.ShouldNotBeNull().Items.ShouldHaveSingleItem();
-                requests.Count.ShouldBe(4); // Tenant, current row and two distinct historical scopes.
+                requests.Where(request => request.Work?.WorkId == "work-1").Select(request => request.Contributor?.PartyId)
+                    .ShouldBe(["approved-previous", "approved-corrected", "rejected-previous", "rejected-corrected"], ignoreOrder: true);
                 hydrator.Calls.ShouldBe(1);
                 break;
             case TimesheetsDenialCategory.InsufficientRole:

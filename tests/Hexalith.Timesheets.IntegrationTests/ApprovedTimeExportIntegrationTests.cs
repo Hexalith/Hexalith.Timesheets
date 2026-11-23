@@ -387,9 +387,12 @@ public sealed partial class ApprovedTimeExportIntegrationTests
     }
 
     [Theory]
+    [InlineData(1, true)]
     [InlineData(2, true)]
-    [InlineData(0, false)]
-    public async Task PublicationAndFinanceDecisionsSurviveTheFullCorrectionJourney(int correctedVersion, bool currentVisible)
+    [InlineData(0, true)]
+    [InlineData(99, true)]
+    [InlineData(2, false)]
+    public async Task PublicationAndFinanceDecisionsSurviveTheFullCorrectionJourney(int correctedVersion, bool hostAllows)
     {
         const string Id = "corrected-entry";
         TimeEntryTargetReference target = TimeEntryTargetReference.ForProject(Project());
@@ -417,16 +420,47 @@ public sealed partial class ApprovedTimeExportIntegrationTests
             })
         ];
         AllowAllAccessGuard guard = new();
-        var options = FinanceExportTestPolicy.Configured;
-        ApprovedTimeLedgerQueryService ledger = new(guard, new FrozenLedgerTestReader(new(options), events,
-            new("tenant-1", ApprovedTimeLedgerProjection.ProjectionName, 4, ProjectionFreshness.Fresh)),
+        var options = FinanceExportTestPolicy.Configured with { ProjectionCommentsAllowed = hostAllows };
+        var projection = new ApprovedTimeLedgerProjection(options);
+        var checkpoint = new TimesheetsProjectionCheckpoint("tenant-1", ApprovedTimeLedgerProjection.ProjectionName,
+            4, ProjectionFreshness.Fresh);
+        ApprovedTimeLedgerQueryService ledger = new(guard, new FrozenLedgerTestReader(projection, events, checkpoint),
             new StaticHydrator(), options);
         QueryApprovedTimeLedger query = new() { BillableState = BillableState.Billable, IncludeSupersededRows = true, PageSize = 1 };
         CancellationToken token = TestContext.Current.CancellationToken;
-        ApprovedTimeLedgerQueryResult read = await ledger.QueryAsync(Context(), query, token);
-        string ledgerJson = JsonSerializer.Serialize(read.Page.ShouldNotBeNull().Items);
-        ledgerJson.ShouldContain(original.Text);
+        var fullQuery = query with { PageSize = 2 };
+        var rebuilt = await ledger.QueryAsync(Context(), fullQuery, token);
+        string ledgerJson = JsonSerializer.Serialize(rebuilt.Page.ShouldNotBeNull().Items);
+        bool currentVisible = hostAllows && correctedVersion is 1 or 2;
+        ledgerJson.Contains(original.Text, StringComparison.Ordinal).ShouldBe(hostAllows);
         ledgerJson.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
+        rebuilt.Page.Items.Select(row => row.TimeEntryId.Value).ShouldBe([Id, Id]);
+        rebuilt.Page.Items.ShouldAllBe(row => row.ApprovedCorrection!.TimeEntryCorrectionId == correction.TimeEntryCorrectionId);
+        foreach (var row in rebuilt.Page.Items)
+        {
+            row.EventLineage.Select(item => item.EventName).ShouldContain(nameof(TimeEntryApprovedCorrected));
+        }
+
+        // Model a reader returning older rows that still carry unfiltered comment values.
+        var rawPage = projection.Project("tenant-1", events.Reverse(), checkpoint, fullQuery);
+        var storedPage = rawPage with
+        {
+            Items = rawPage.Items.Select(row => row with
+            {
+                Comment = row.RowState == ApprovedTimeLedgerRowState.Current ? corrected : original,
+                ApprovedCorrection = row.ApprovedCorrection! with
+                {
+                    PreviousValues = correction.PreviousValues with { Comment = original },
+                    CorrectedValues = correction.CorrectedValues with { Comment = corrected }
+                }
+            }).ToArray()
+        };
+        var storedReader = Substitute.For<IApprovedTimeLedgerProjectionReader>();
+        storedReader.QueryAsync(Arg.Any<TimesheetsRequestContext>(), fullQuery, token)
+            .Returns(ValueTask.FromResult<ApprovedTimeLedgerReadModel?>(storedPage));
+        var direct = new ApprovedTimeLedgerQueryService(guard, storedReader, new StaticHydrator(), options);
+        var directRead = await direct.QueryAsync(Context(), fullQuery, token);
+        JsonSerializer.Serialize(directRead.Page.ShouldNotBeNull().Items).ShouldBe(ledgerJson);
 
         ApprovedTimeExportService service = new(guard, ledger, new AcknowledgingExportTestRecorder(), options);
         ApprovedTimeExportPreviewReadModel preview = (await service.PreviewAsync(Context(), new() { LedgerQuery = query },
@@ -439,7 +473,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         generated.WasGenerated.ShouldBeTrue();
         ApprovedTimeExportReadModel export = generated.Export.ShouldNotBeNull();
         export.Scope.ShouldBe(preview.Scope);
-        export.Scope.LedgerCheckpoint.ShouldBe(read.Page.ExportSnapshotId.ShouldNotBeNull());
+        export.Scope.LedgerCheckpoint.ShouldBe(rebuilt.Page.ExportSnapshotId.ShouldNotBeNull());
         export.Rows.Select(row => row.RowState).ShouldBe([ApprovedTimeLedgerRowState.Current, ApprovedTimeLedgerRowState.Superseded]);
         string json = JsonSerializer.Serialize(export.Rows);
         json.ShouldContain(correction.TimeEntryCorrectionId.Value);
@@ -450,26 +484,47 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         csv.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
     }
 
-    [Fact]
-    public async Task BaseTenantAuthorityWithMissingFinanceDecisionGetsPolicyRequiredPreview()
+    [Theory]
+    [InlineData("tenant", true)]
+    [InlineData("sensitivity", true)]
+    [InlineData("legal-hold", true)]
+    [InlineData("retention", true)]
+    [InlineData("sensitivity", false)]
+    public async Task MissingPolicyIsDisclosedOnlyAfterTenantAndReferenceAuthorization(string missing, bool canExport)
     {
-        var options = FinanceExportTestPolicy.Configured;
-        var context = Context() with { Tenant = new("another-authorized-tenant") };
+        var options = FinanceExportTestPolicy.Configured with
+        {
+            CommentSensitivityPolicyConfigured = missing != "sensitivity",
+            LegalHoldPolicyConfigured = missing != "legal-hold",
+            TenantRetentionOverridePolicyConfigured = missing != "retention"
+        };
+        var context = missing == "tenant" ? Context() with { Tenant = new("another-authorized-tenant") } : Context();
         CancellationToken token = TestContext.Current.CancellationToken;
         var tenantAccess = Substitute.For<ITimesheetsTenantAccessValidator>();
         tenantAccess.ValidateAsync(context, TimesheetsOperation.Export, token)
-            .Returns(ValueTask.FromResult(TimesheetsTenantAccessResult.Authorized()));
+            .Returns(ValueTask.FromResult(canExport ? TimesheetsTenantAccessResult.Authorized()
+                : new TimesheetsTenantAccessResult(TimesheetsTenantAccessState.InsufficientRole, "Access denied.")));
         TimesheetsAccessGuard guard = new(tenantAccess, Substitute.For<IProjectReferenceValidator>(),
             Substitute.For<IWorkReferenceValidator>(), Substitute.For<IContributorPartyValidator>(),
             new TimesheetsEvidencePolicyEvaluator(options));
         var reader = Substitute.For<IApprovedTimeLedgerProjectionReader>();
-        var service = new ApprovedTimeExportService(guard, new(guard, reader, new StaticHydrator(), options),
-            new AcknowledgingExportTestRecorder(), options);
+        var recorder = Substitute.For<IApprovedTimeExportAuditRecorder>();
+        var service = new ApprovedTimeExportService(guard, new(guard, reader, new StaticHydrator(), options), recorder, options);
         var preview = await service.PreviewAsync(context, new(), DateTimeOffset.UnixEpoch, token);
-        preview.WasDisclosed.ShouldBeTrue();
-        preview.Preview.ShouldNotBeNull().Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
-        preview.Preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+        preview.WasDisclosed.ShouldBe(canExport);
+        if (canExport)
+        {
+            preview.Preview.ShouldNotBeNull().Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
+            preview.Preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+        }
+        else
+        {
+            preview.Preview.ShouldBeNull();
+            preview.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.InsufficientRole);
+        }
+        (await service.GenerateAsync(context, new(), DateTimeOffset.UnixEpoch, token)).WasGenerated.ShouldBeFalse();
         reader.ReceivedCalls().ShouldBeEmpty();
+        recorder.ReceivedCalls().ShouldBeEmpty();
     }
 
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)

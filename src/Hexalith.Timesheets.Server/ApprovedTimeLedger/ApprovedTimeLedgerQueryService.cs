@@ -123,7 +123,8 @@ public sealed class ApprovedTimeLedgerQueryService
     private static bool CanFilterRow(TimesheetsAuthorizationDecision decision)
         => decision.DenialCategory == TimesheetsDenialCategory.InsufficientRole;
 
-    private async ValueTask<TimesheetsAuthorizationDecision> AuthorizeRowAsync(
+    /// <summary>Authorizes the current and historical evidence scopes of a ledger row.</summary>
+    internal async ValueTask<TimesheetsAuthorizationDecision> AuthorizeRowAsync(
         TimesheetsRequestContext context, ApprovedTimeLedgerRowReadModel row, CancellationToken cancellationToken)
     {
         if (context.Tenant is null || row.TimeEntryId is null

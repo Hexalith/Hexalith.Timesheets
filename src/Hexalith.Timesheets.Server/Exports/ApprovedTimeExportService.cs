@@ -156,6 +156,17 @@ public sealed class ApprovedTimeExportService
             return ApprovedTimeExportResult.NotFoundOrDenied(finalDecision);
         }
 
+        foreach (ApprovedTimeLedgerRowReadModel row in evaluation.Rows)
+        {
+            var rowDecision = await _ledgerQueryService.AuthorizeRowAsync(context, row, cancellationToken)
+                .ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!rowDecision.IsAuthorized)
+            {
+                return ApprovedTimeExportResult.NotFoundOrDenied(rowDecision);
+            }
+        }
+
         ApprovedTimeExportAuditMetadata audit = Audit(
             context, acknowledged.Filters, acknowledged.Format, acknowledged.FormatVersion, acknowledged.RequestedAtUtc,
             acknowledged.GeneratedAtUtc, scope, acknowledged.FreshnessState, rows.Count, null, outputContentHash)
@@ -213,6 +224,13 @@ public sealed class ApprovedTimeExportService
             query.FormatVersion,
             null,
             cancellationToken).ConfigureAwait(false);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (evaluation.Authorization.IsBlockedByMissingEvidencePolicy)
+        {
+            evaluation = ExportEvaluation.MissingPolicy(
+                Scope(ApprovedTimeExportReceipt.Normalize(query.LedgerQuery ?? new()), 0));
+        }
 
         if (!evaluation.Authorization.IsAuthorized)
         {
@@ -289,9 +307,7 @@ public sealed class ApprovedTimeExportService
             || !_evidencePolicyOptions.TenantRetentionOverridePolicyConfigured
             || !_evidencePolicyOptions.ExportCommentsAllowedByTenant.TryGetValue(context.Tenant.TenantId, out bool tenantAllows))
         {
-            const string MissingPolicy = "The tenant's approved-time export policy is unavailable.";
-            return ExportEvaluation.Blocked(MissingPolicy, ProjectionFreshnessMetadata.Unavailable(MissingPolicy),
-                Scope(ledgerQuery, 0), TimesheetsCommentPolicyDecision.PolicyRequired);
+            return ExportEvaluation.MissingPolicy(Scope(ledgerQuery, 0));
         }
 
         (ApprovedTimeLedgerReadModel? ledger, TimesheetsAuthorizationDecision? denial) =
@@ -363,7 +379,9 @@ public sealed class ApprovedTimeExportService
     }
 
     private static TimesheetsCommentPolicyDecision ExportDecision(TimeEntryComment? comment, TimesheetsCommentPolicyDecision tenantPolicy)
-        => tenantPolicy == TimesheetsCommentPolicyDecision.Allowed && comment is not null
+        => tenantPolicy == TimesheetsCommentPolicyDecision.Allowed
+            && comment?.Policy.RedactionRequirement is TimesheetsCommentRedactionRequirement.NotRequired
+                or TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
             ? comment.Policy.ExportInclusion : TimesheetsCommentPolicyDecision.Excluded;
 
     private static string? ValidateContract(
@@ -594,6 +612,13 @@ public sealed class ApprovedTimeExportService
         IReadOnlyList<ApprovedTimeLedgerRowReadModel> Rows,
         TimesheetsCommentPolicyDecision TenantCommentPolicy)
     {
+        public static ExportEvaluation MissingPolicy(ApprovedTimeExportScope scope)
+        {
+            const string Detail = "The tenant's approved-time export policy is unavailable.";
+            return Blocked(Detail, ProjectionFreshnessMetadata.Unavailable(Detail), scope,
+                TimesheetsCommentPolicyDecision.PolicyRequired);
+        }
+
         public static ExportEvaluation Denied(
             TimesheetsAuthorizationDecision authorization,
             ApprovedTimeExportScope scope)
