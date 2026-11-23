@@ -78,7 +78,7 @@ The Debug solution built with warnings as errors against the committed dependenc
 - [x] [Review][Defer] Verify requester attribution and receipt recovery through the installed gateway and receiver. The local actor test substitutes the workload transport. Installed-host qualification is tracked in [launch readiness](../../docs/launch-readiness.md).
 - [x] [Review][Defer] Carry the existing ledger scope and traversal issues into Story 6.3. The [finance export deferrals](spec-finance-export-local-deferrals.md) track effective superseded scope and the distinction between empty and withheld pages.
 
-The review build passed with warnings as errors on both the refreshed references and the committed dependency revisions. All 133 focused finance cases passed against the committed revisions. Three focused route-catalog fixture checks passed. The full Python fixture run encountered `/proc` process-inspection permission errors in the workspace.
+The review build passed with warnings as errors on both the refreshed references and the committed dependency revisions. The six .NET suites on the refreshed references reported 2,970 passed, five skipped and zero failed. All 133 focused finance cases passed against the committed revisions. All 273 Python Dapr fixture checks passed when run on their own after the .NET suites exited. The earlier concurrent fixture run encountered `/proc` process-inspection permission errors.
 
 #### Rejected
 
