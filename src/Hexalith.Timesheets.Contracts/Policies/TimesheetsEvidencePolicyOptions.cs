@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 using Hexalith.Timesheets.Contracts.Policies;
 
 namespace Hexalith.Timesheets.Server.Policies;
@@ -13,6 +15,16 @@ public sealed record TimesheetsEvidencePolicyOptions
     public bool CommentSensitivityPolicyConfigured { get; init; }
 
     public bool ExportCommentsAllowed { get; init; }
+
+    /// <summary>Finance comment decisions for the tenant IDs served by this host. An absent tenant has no configured export policy.</summary>
+    public IReadOnlyDictionary<string, bool> ExportCommentsAllowedByTenant
+    {
+        get;
+        init => field = value.ToFrozenDictionary(StringComparer.Ordinal);
+    } = FrozenDictionary<string, bool>.Empty;
+
+    /// <summary>Resolves the host publication flags for evidence projections and direct reads.</summary>
+    public bool AllowsProjectionPublication() => CommentSensitivityPolicyConfigured && ProjectionCommentsAllowed;
 
     /// <summary>Allows the projection host to publish comment text when the event also permits it.</summary>
     public bool ProjectionCommentsAllowed { get; init; }

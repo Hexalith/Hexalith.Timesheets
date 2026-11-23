@@ -20,6 +20,17 @@ public sealed record TimeEntryCommentPolicy(
     public TimesheetsCommentPolicyDecision ServerExternalConfirmationDisplay { get; init; } =
         TimesheetsCommentPolicyDecision.PolicyRequired;
 
+    /// <summary>Resolves projection publication from the issued decision and the trusted host policy.</summary>
+    public TimesheetsCommentPolicyDecision ResolvePublication(bool trustedHostAllowsPublication)
+        => ServerPublicationVersion is 1 or TimesheetsDomain.CommentPublicationVersion
+            ? ServerProjectionInclusion switch
+            {
+                TimesheetsCommentPolicyDecision.Allowed when trustedHostAllowsPublication => TimesheetsCommentPolicyDecision.Allowed,
+                TimesheetsCommentPolicyDecision.Excluded => TimesheetsCommentPolicyDecision.Excluded,
+                _ => TimesheetsCommentPolicyDecision.PolicyRequired
+            }
+            : TimesheetsCommentPolicyDecision.PolicyRequired;
+
     public static TimeEntryCommentPolicy SensitiveDefault { get; } = new(
         TimesheetsCommentPolicyDecision.Allowed,
         TimesheetsCommentPolicyDecision.Excluded,

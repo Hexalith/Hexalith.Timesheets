@@ -1,5 +1,4 @@
 using Hexalith.Timesheets.Contracts.Commands.Exports;
-using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Queries.Exports;
@@ -11,7 +10,6 @@ using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.ApprovedTimeLedger;
 using Hexalith.Timesheets.Projections.OperationalReports;
 using Hexalith.Timesheets.Projections.TimeEntries;
-using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Dashboard;
@@ -365,12 +363,13 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
                 new StaticPlannedEffortProvider());
             ApprovedTimeLedgerQueryService ledgerService = new(
                 guard,
-                new SeededLedgerReader(new ApprovedTimeLedgerProjection(), events, ledgerCheckpoint),
+                new FrozenLedgerTestReader(new ApprovedTimeLedgerProjection(), events, ledgerCheckpoint),
                 hydration);
             ApprovedTimeExportService exportService = new(
                 guard,
                 ledgerService,
-                new NoOpAuditRecorder());
+                new AcknowledgingExportTestRecorder(),
+                FinanceExportTestPolicy.Configured);
             TimeEntryEvidenceListQueryService timeEntryService = new(
                 guard,
                 new SeededListReader(new TimeEntryEvidenceListProjection(), events, listCheckpoint),
@@ -410,23 +409,6 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
 
             return ValueTask.FromResult<ActualTimeReportReadModel?>(
                 projection.ProjectByWork(context.Tenant.TenantId, events, checkpoint, query));
-        }
-    }
-
-    private sealed class SeededLedgerReader(
-        ApprovedTimeLedgerProjection projection,
-        IReadOnlyList<TimeEntryProjectionEvent> events,
-        TimesheetsProjectionCheckpoint checkpoint) : IApprovedTimeLedgerProjectionReader
-    {
-        public ValueTask<ApprovedTimeLedgerReadModel?> QueryAsync(
-            TimesheetsRequestContext context,
-            QueryApprovedTimeLedger query,
-            CancellationToken cancellationToken)
-        {
-            ArgumentNullException.ThrowIfNull(context.Tenant);
-
-            return ValueTask.FromResult<ApprovedTimeLedgerReadModel?>(
-                projection.Project(context.Tenant.TenantId, events, checkpoint, query));
         }
     }
 
@@ -501,14 +483,6 @@ public sealed class ReportExportDashboardReadJourneyE2ETests
                 120,
                 "minutes",
                 ProjectionFreshnessMetadata.Fresh));
-    }
-
-    private sealed class NoOpAuditRecorder : IApprovedTimeExportAuditRecorder
-    {
-        public ValueTask<TimesheetsDomainResult> RecordAcceptedExportAsync(
-            ApprovedTimeExported evidence,
-            CancellationToken cancellationToken)
-            => ValueTask.FromResult(TimesheetsDomainResult.Success([evidence]));
     }
 
     private sealed class ConfigurableAccessGuard(TimesheetsAuthorizationDecision decision) : ITimesheetsAccessGuard

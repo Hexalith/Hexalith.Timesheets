@@ -36,13 +36,16 @@ public sealed record ApprovedTimeLedgerRowReadModel(
     public TimeEntryComment? Comment { get; init; }
 
     public static ApprovedTimeLedgerRowReadModel CurrentFromEvidence(TimeEntryEvidenceReadModel evidence)
+        => CurrentFromEvidence(evidence, false);
+
+    public static ApprovedTimeLedgerRowReadModel CurrentFromEvidence(TimeEntryEvidenceReadModel evidence, bool trustedPublicationAllowed)
     {
         ArgumentNullException.ThrowIfNull(evidence);
 
         TimeEntryApprovalDecisionEvidence approvalDecision = evidence.ApprovalDecision
             ?? throw new ArgumentException("Approved ledger rows require approval decision evidence.", nameof(evidence));
 
-        return new(
+        return new ApprovedTimeLedgerRowReadModel(
             evidence.TimeEntryId,
             evidence.Contributor,
             evidence.Target,
@@ -58,16 +61,19 @@ public sealed record ApprovedTimeLedgerRowReadModel(
             evidence.ProjectionFreshness)
         {
             AiMetrics = evidence.AiMetrics,
-            ApprovedCorrection = Sanitize(evidence.ApprovedCorrection),
-            Correction = Sanitize(evidence.Correction),
+            ApprovedCorrection = evidence.ApprovedCorrection,
+            Correction = evidence.Correction,
             EventLineage = [.. evidence.EventLineage],
             DisplayHydration = evidence.DisplayHydration,
-            CommentProjectionState = ResolveCommentState(evidence.Comment),
-            Comment = ResolveProjectedComment(evidence.Comment)
-        };
+            CommentProjectionState = evidence.CommentProjectionState,
+            Comment = evidence.Comment
+        }.ApplyPublicationPolicy(trustedPublicationAllowed);
     }
 
     public static ApprovedTimeLedgerRowReadModel? SupersededFromApprovedCorrection(TimeEntryEvidenceReadModel evidence)
+        => SupersededFromApprovedCorrection(evidence, false);
+
+    public static ApprovedTimeLedgerRowReadModel? SupersededFromApprovedCorrection(TimeEntryEvidenceReadModel evidence, bool trustedPublicationAllowed)
     {
         ArgumentNullException.ThrowIfNull(evidence);
 
@@ -78,7 +84,7 @@ public sealed record ApprovedTimeLedgerRowReadModel(
 
         TimeEntryCorrectionValues priorValues = evidence.ApprovedCorrection.PreviousValues;
 
-        return new(
+        return new ApprovedTimeLedgerRowReadModel(
             evidence.TimeEntryId,
             priorValues.Contributor,
             priorValues.Target,
@@ -94,44 +100,44 @@ public sealed record ApprovedTimeLedgerRowReadModel(
             evidence.ProjectionFreshness)
         {
             AiMetrics = priorValues.AiMetrics,
-            ApprovedCorrection = Sanitize(evidence.ApprovedCorrection),
-            Correction = Sanitize(evidence.Correction),
+            ApprovedCorrection = evidence.ApprovedCorrection,
+            Correction = evidence.Correction,
             EventLineage = [.. evidence.EventLineage],
             DisplayHydration = evidence.DisplayHydration,
-            CommentProjectionState = ResolveCommentState(priorValues.Comment),
-            Comment = ResolveProjectedComment(priorValues.Comment)
-        };
+            Comment = priorValues.Comment
+        }.ApplyPublicationPolicy(trustedPublicationAllowed);
     }
 
-    private static TimesheetsCommentPolicyDecision ResolveCommentState(TimeEntryComment? comment)
-        => comment?.Policy.ProjectionInclusion ?? TimesheetsCommentPolicyDecision.Unknown;
+    /// <summary>Publishes only comment values allowed by both the trusted host and the issued decision.</summary>
+    public ApprovedTimeLedgerRowReadModel ApplyPublicationPolicy(bool trustedPublicationAllowed)
+    {
+        TimesheetsCommentPolicyDecision state = Comment?.Policy.ResolvePublication(trustedPublicationAllowed)
+            ?? (CommentProjectionState == TimesheetsCommentPolicyDecision.Allowed
+                ? TimesheetsCommentPolicyDecision.PolicyRequired : CommentProjectionState);
+        return SelectComments(comment => comment.Policy.ResolvePublication(trustedPublicationAllowed)
+            == TimesheetsCommentPolicyDecision.Allowed ? comment : null) with { CommentProjectionState = state };
+    }
 
-    private static TimeEntryComment? ResolveProjectedComment(TimeEntryComment? comment)
-        => comment?.Policy.ProjectionInclusion == TimesheetsCommentPolicyDecision.Allowed
-            ? comment
-            : null;
+    /// <summary>Applies a disclosure decision independently to every populated current or historical comment.</summary>
+    public ApprovedTimeLedgerRowReadModel SelectComments(Func<TimeEntryComment, TimeEntryComment?> select)
+    {
+        ArgumentNullException.ThrowIfNull(select);
+        TimeEntryCorrectionValues SelectValues(TimeEntryCorrectionValues values)
+            => values.Comment is null ? values : values with { Comment = select(values.Comment) };
 
-    private static TimeEntryApprovedCorrectionEvidence? Sanitize(TimeEntryApprovedCorrectionEvidence? evidence)
-        => evidence is null
-            ? null
-            : evidence with
-            {
-                PreviousValues = Sanitize(evidence.PreviousValues),
-                CorrectedValues = Sanitize(evidence.CorrectedValues)
-            };
-
-    private static TimeEntryCorrectionEvidence? Sanitize(TimeEntryCorrectionEvidence? evidence)
-        => evidence is null
-            ? null
-            : evidence with
-            {
-                PreviousValues = Sanitize(evidence.PreviousValues),
-                CorrectedValues = Sanitize(evidence.CorrectedValues)
-            };
-
-    private static TimeEntryCorrectionValues Sanitize(TimeEntryCorrectionValues values)
-        => values with
+        return this with
         {
-            Comment = ResolveProjectedComment(values.Comment)
+            Comment = Comment is null ? null : select(Comment),
+            ApprovedCorrection = ApprovedCorrection is null ? null : ApprovedCorrection with
+            {
+                PreviousValues = SelectValues(ApprovedCorrection.PreviousValues),
+                CorrectedValues = SelectValues(ApprovedCorrection.CorrectedValues)
+            },
+            Correction = Correction is null ? null : Correction with
+            {
+                PreviousValues = SelectValues(Correction.PreviousValues),
+                CorrectedValues = SelectValues(Correction.CorrectedValues)
+            }
         };
+    }
 }

@@ -297,8 +297,8 @@ public sealed class ApprovedTimeExportPreviewServiceTests
             {
                 Project = null,
                 Work = new WorkReference("work-1"),
-                Contributor = new PartyReference("party-2"),
-                ActivityTypeId = new ActivityTypeId("activity-type-2"),
+                Contributor = new PartyReference("party-1"),
+                ActivityTypeId = new ActivityTypeId("activity-type-1"),
                 TenantLocalPeriodKey = "2026-06",
                 IncludeSupersededRows = true,
                 CurrentRowsOnly = false
@@ -360,7 +360,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
 
         ApprovedTimeExportPreviewReadModel preview = result.Preview.ShouldNotBeNull();
         preview.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
-        // Fail-closed default policy: comments are excluded from export preview.
+        preview.ReadinessDetail.ShouldBe("Comments are permitted for some values only.");
         preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
 
         // The preview carries no rows or CSV by construction, so no comment text can be disclosed anywhere.
@@ -371,13 +371,12 @@ public sealed class ApprovedTimeExportPreviewServiceTests
     }
 
     [Fact]
-    public async Task PreviewCommentPolicyReflectsEvidenceOptionsWhenCommentsAllowed()
+    public async Task PreviewExcludesCommentsWhenNoPublishedValueExists()
     {
         ApprovedTimeExportService service = Service(
             new SequencedAccessGuard([]),
             new TrackingLedgerReader(Page([Row("time-entry-1", ProjectTarget())])),
-            new TrackingHydrator(),
-            evidencePolicyOptions: new TimesheetsEvidencePolicyOptions { ExportCommentsAllowed = true });
+            new TrackingHydrator());
 
         ApprovedTimePreviewResult result = await service.PreviewAsync(
             Context(),
@@ -386,7 +385,8 @@ public sealed class ApprovedTimeExportPreviewServiceTests
             TestContext.Current.CancellationToken);
 
         ApprovedTimeExportPreviewReadModel preview = result.Preview.ShouldNotBeNull();
-        preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
+        preview.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
+        preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
     }
 
     [Fact]
@@ -581,16 +581,15 @@ public sealed class ApprovedTimeExportPreviewServiceTests
         TimesheetsEvidencePolicyOptions? evidencePolicyOptions = null)
         => new(
             accessGuard,
-            new ApprovedTimeLedgerQueryService(accessGuard, reader, hydrator),
-            auditRecorder,
-            evidencePolicyOptions);
+            new ApprovedTimeLedgerQueryService(accessGuard, reader, hydrator, evidencePolicyOptions ?? FinanceExportTestPolicy.Configured),
+            auditRecorder ?? new TrackingAuditRecorder(),
+            evidencePolicyOptions ?? FinanceExportTestPolicy.Configured);
 
     private static PreviewApprovedTimeExport PreviewQuery()
         => new()
         {
             LedgerQuery = new QueryApprovedTimeLedger
             {
-                Project = new ProjectReference("project-1"),
                 BillableState = BillableState.Billable,
                 SortBy = TimeEntryQuerySortBy.TimeEntryId,
                 PageSize = 500
@@ -602,7 +601,6 @@ public sealed class ApprovedTimeExportPreviewServiceTests
         {
             LedgerQuery = new QueryApprovedTimeLedger
             {
-                Project = new ProjectReference("project-1"),
                 BillableState = BillableState.Billable,
                 SortBy = TimeEntryQuerySortBy.TimeEntryId,
                 PageSize = 500
@@ -615,11 +613,11 @@ public sealed class ApprovedTimeExportPreviewServiceTests
         => new(
             rows,
             null,
-            ProjectionFreshnessMetadata.Fresh,
+            ProjectionFreshnessMetadata.Fresh with { Cursor = "100" },
             rows.Count > 0,
             rows.Count > 0
                 ? "Approved ledger rows are fresh enough for export preview."
-                : "No approved ledger rows are available for export preview.");
+                : "No approved ledger rows are available for export preview.") { ExportSnapshotId = "fixture-snapshot" };
 
     private static ApprovedTimeLedgerRowReadModel Row(
         string id,
@@ -681,7 +679,11 @@ public sealed class ApprovedTimeExportPreviewServiceTests
                 exportDecision,
                 TimesheetsCommentPolicyDecision.Excluded,
                 TimesheetsCommentRedactionRequirement.NotRequired,
-                TimesheetsEvidenceRetentionCategory.CommentText));
+                TimesheetsEvidenceRetentionCategory.CommentText)
+            {
+                ServerPublicationVersion = 2,
+                ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
+            });
 
     private static TimeEntryTargetReference ProjectTarget(string projectId = "project-1")
         => TimeEntryTargetReference.ForProject(new ProjectReference(projectId));

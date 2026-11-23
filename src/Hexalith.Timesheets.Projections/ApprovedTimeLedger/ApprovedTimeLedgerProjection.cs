@@ -4,9 +4,9 @@ using System.Text;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
-using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections.TimeEntries;
+using Hexalith.Timesheets.Server.Policies;
 
 namespace Hexalith.Timesheets.Projections.ApprovedTimeLedger;
 
@@ -19,6 +19,18 @@ public sealed class ApprovedTimeLedgerProjection
     private const int MaxPageSize = 500;
 
     private readonly TimeEntryEvidenceProjection _evidenceProjection = new();
+
+    private readonly bool _trustedPublicationAllowed;
+
+    public ApprovedTimeLedgerProjection()
+    {
+    }
+
+    public ApprovedTimeLedgerProjection(TimesheetsEvidencePolicyOptions evidencePolicyOptions)
+    {
+        ArgumentNullException.ThrowIfNull(evidencePolicyOptions);
+        _trustedPublicationAllowed = evidencePolicyOptions.AllowsProjectionPublication();
+    }
 
     public ApprovedTimeLedgerReadModel Project(
         string tenantId,
@@ -50,10 +62,10 @@ public sealed class ApprovedTimeLedgerProjection
                 continue;
             }
 
-            rows.Add(ApprovedTimeLedgerRowReadModel.CurrentFromEvidence(evidence));
+            rows.Add(ApprovedTimeLedgerRowReadModel.CurrentFromEvidence(evidence, _trustedPublicationAllowed));
 
             ApprovedTimeLedgerRowReadModel? superseded = ApprovedTimeLedgerRowReadModel
-                .SupersededFromApprovedCorrection(evidence);
+                .SupersededFromApprovedCorrection(evidence, _trustedPublicationAllowed);
             if (superseded is not null)
             {
                 rows.Add(superseded);
@@ -61,7 +73,7 @@ public sealed class ApprovedTimeLedgerProjection
         }
 
         IReadOnlyList<ApprovedTimeLedgerRowReadModel> filteredRows = rows
-            .Where(row => Matches(row, query))
+            .Where(query.Includes)
             .ToArray();
         IReadOnlyList<ApprovedTimeLedgerRowReadModel> sortedRows = Sort(filteredRows, query);
         int pageSize = NormalizePageSize(query.PageSize);
@@ -111,64 +123,6 @@ public sealed class ApprovedTimeLedgerProjection
         }
     }
 
-    private static bool Matches(ApprovedTimeLedgerRowReadModel row, QueryApprovedTimeLedger query)
-    {
-        if (query.CurrentRowsOnly
-            && !query.IncludeSupersededRows
-            && row.RowState == ApprovedTimeLedgerRowState.Superseded)
-        {
-            return false;
-        }
-
-        return MatchesContributor(row, query.Contributor)
-            && MatchesProject(row, query.Project)
-            && MatchesWork(row, query.Work)
-            && MatchesTenantLocalPeriod(row, query.TenantLocalPeriodKey)
-            && MatchesDateRange(row, query.ServiceDateFrom, query.ServiceDateTo)
-            && MatchesValue(row.ActivityTypeId, query.ActivityTypeId)
-            && MatchesNullableEnum(row.BillableState, query.BillableState);
-    }
-
-    private static bool MatchesContributor(ApprovedTimeLedgerRowReadModel row, PartyReference? contributor)
-        => contributor is null || row.Contributor == contributor;
-
-    private static bool MatchesProject(ApprovedTimeLedgerRowReadModel row, ProjectReference? project)
-        => project is null
-            || (row.Target.TargetKind == TimeEntryTargetKind.Project
-                && string.Equals(row.Target.TargetId, project.ProjectId, StringComparison.Ordinal));
-
-    private static bool MatchesWork(ApprovedTimeLedgerRowReadModel row, WorkReference? work)
-        => work is null
-            || (row.Target.TargetKind == TimeEntryTargetKind.Work
-                && string.Equals(row.Target.TargetId, work.WorkId, StringComparison.Ordinal));
-
-    private static bool MatchesTenantLocalPeriod(ApprovedTimeLedgerRowReadModel row, string? periodKey)
-    {
-        if (string.IsNullOrWhiteSpace(periodKey))
-        {
-            return true;
-        }
-
-        if (TryParsePeriodKey(periodKey, out DateOnly start, out DateOnly end))
-        {
-            return row.ServiceDate >= start && row.ServiceDate <= end;
-        }
-
-        return false;
-    }
-
-    private static bool MatchesDateRange(ApprovedTimeLedgerRowReadModel row, DateOnly? from, DateOnly? to)
-        => (from is null || row.ServiceDate >= from.Value)
-            && (to is null || row.ServiceDate <= to.Value);
-
-    private static bool MatchesValue<T>(T actual, T? expected)
-        where T : class
-        => expected is null || EqualityComparer<T>.Default.Equals(actual, expected);
-
-    private static bool MatchesNullableEnum<T>(T actual, T? expected)
-        where T : struct, Enum
-        => expected is null || EqualityComparer<T>.Default.Equals(actual, expected.Value);
-
     private static IReadOnlyList<ApprovedTimeLedgerRowReadModel> Sort(
         IReadOnlyList<ApprovedTimeLedgerRowReadModel> rows,
         QueryApprovedTimeLedger query)
@@ -205,46 +159,6 @@ public sealed class ApprovedTimeLedgerProjection
         => requestedPageSize <= 0
             ? DefaultPageSize
             : Math.Min(requestedPageSize, MaxPageSize);
-
-    private static bool TryParsePeriodKey(string periodKey, out DateOnly start, out DateOnly end)
-    {
-        string normalized = periodKey.Trim();
-
-        if (normalized.Length == 7
-            && DateOnly.TryParseExact(
-                normalized + "-01",
-                "yyyy-MM-dd",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out start))
-        {
-            end = start.AddMonths(1).AddDays(-1);
-            return true;
-        }
-
-        string[] parts = normalized.Split('/', 2, StringSplitOptions.TrimEntries);
-        if (parts.Length == 2
-            && DateOnly.TryParseExact(
-                parts[0],
-                "yyyy-MM-dd",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out start)
-            && DateOnly.TryParseExact(
-                parts[1],
-                "yyyy-MM-dd",
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.None,
-                out end)
-            && start <= end)
-        {
-            return true;
-        }
-
-        start = default;
-        end = default;
-        return false;
-    }
 
     private static string EncodeCursor(int offset)
         => Convert.ToBase64String(Encoding.UTF8.GetBytes(

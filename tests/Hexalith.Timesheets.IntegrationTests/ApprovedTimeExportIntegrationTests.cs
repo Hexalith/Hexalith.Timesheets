@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 using Hexalith.Timesheets.Contracts.Commands.Exports;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
@@ -12,6 +14,10 @@ using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Exports;
 using Hexalith.Timesheets.Server.TimeEntries;
+using Hexalith.Timesheets.Server.Policies;
+using Hexalith.Timesheets.Server.References;
+
+using NSubstitute;
 
 using Shouldly;
 
@@ -109,8 +115,10 @@ public sealed class ApprovedTimeExportIntegrationTests
             new AllowAllAccessGuard(),
             new ApprovedTimeLedgerQueryService(
                 new AllowAllAccessGuard(),
-                new SeededLedgerReader(ledgerProjection, events, checkpoint),
-                new StaticHydrator()));
+                new FrozenLedgerTestReader(ledgerProjection, events, checkpoint),
+                new StaticHydrator()),
+            new AcknowledgingExportTestRecorder(),
+            FinanceExportTestPolicy.Configured);
 
         GenerateApprovedTimeExport command = new()
         {
@@ -243,11 +251,13 @@ public sealed class ApprovedTimeExportIntegrationTests
             new AllowAllAccessGuard(),
             new ApprovedTimeLedgerQueryService(
                 new AllowAllAccessGuard(),
-                new SeededLedgerReader(
+                new FrozenLedgerTestReader(
                     ledgerProjection,
                     events,
                     new("tenant-1", ApprovedTimeLedgerProjection.ProjectionName, 18, ProjectionFreshness.Fresh)),
-                new StaticHydrator()));
+                new StaticHydrator()),
+            new AcknowledgingExportTestRecorder(),
+            FinanceExportTestPolicy.Configured);
 
         GenerateApprovedTimeExport command = new()
         {
@@ -333,11 +343,13 @@ public sealed class ApprovedTimeExportIntegrationTests
             new AllowAllAccessGuard(),
             new ApprovedTimeLedgerQueryService(
                 new AllowAllAccessGuard(),
-                new SeededLedgerReader(
+                new FrozenLedgerTestReader(
                     ledgerProjection,
                     events,
                     new("tenant-1", ApprovedTimeLedgerProjection.ProjectionName, 6, ProjectionFreshness.Fresh)),
-                new StaticHydrator()));
+                new StaticHydrator()),
+            new AcknowledgingExportTestRecorder(),
+            FinanceExportTestPolicy.Configured);
 
         GenerateApprovedTimeExport command = new()
         {
@@ -372,6 +384,92 @@ public sealed class ApprovedTimeExportIntegrationTests
         export.CsvContent.ShouldNotBeNull().ShouldContain("2026-03-31");
         export.CsvContent.ShouldNotBeNull().ShouldContain("2026-06-19T13:00:00.0000000+00:00");
         export.CsvContent.ShouldNotBeNull().ShouldNotContain("april-service-entry");
+    }
+
+    [Theory]
+    [InlineData(2, true)]
+    [InlineData(0, false)]
+    public async Task PublicationAndFinanceDecisionsSurviveTheFullCorrectionJourney(int correctedVersion, bool currentVisible)
+    {
+        const string Id = "corrected-entry";
+        TimeEntryTargetReference target = TimeEntryTargetReference.ForProject(Project());
+        TimeEntryComment original = new("original-internal-marker", TimeEntryCommentPolicy.SensitiveDefault with
+        {
+            ServerPublicationVersion = 1,
+            ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ExportInclusion = TimesheetsCommentPolicyDecision.Excluded
+        });
+        TimeEntryComment corrected = new("corrected-export-marker", original.Policy with
+        {
+            ServerPublicationVersion = correctedVersion,
+            ExportInclusion = TimesheetsCommentPolicyDecision.Allowed
+        });
+        TimeEntryApprovedCorrected correction = ApprovedCorrected(Id, target, 60);
+        TimeEntryProjectionEvent[] events =
+        [
+            Event("m1", 1, Recorded(Id, target, 45) with { Comment = original }),
+            Event("m2", 2, Submitted(Id)),
+            Event("m3", 3, Approved(Id, "decision-2")),
+            Event("m4", 4, correction with
+            {
+                PreviousValues = correction.PreviousValues with { Comment = original },
+                CorrectedValues = correction.CorrectedValues with { Comment = corrected }
+            })
+        ];
+        AllowAllAccessGuard guard = new();
+        var options = FinanceExportTestPolicy.Configured;
+        ApprovedTimeLedgerQueryService ledger = new(guard, new FrozenLedgerTestReader(new(options), events,
+            new("tenant-1", ApprovedTimeLedgerProjection.ProjectionName, 4, ProjectionFreshness.Fresh)),
+            new StaticHydrator(), options);
+        QueryApprovedTimeLedger query = new() { BillableState = BillableState.Billable, IncludeSupersededRows = true, PageSize = 1 };
+        CancellationToken token = TestContext.Current.CancellationToken;
+        ApprovedTimeLedgerQueryResult read = await ledger.QueryAsync(Context(), query, token);
+        string ledgerJson = JsonSerializer.Serialize(read.Page.ShouldNotBeNull().Items);
+        ledgerJson.ShouldContain(original.Text);
+        ledgerJson.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
+
+        ApprovedTimeExportService service = new(guard, ledger, new AcknowledgingExportTestRecorder(), options);
+        ApprovedTimeExportPreviewReadModel preview = (await service.PreviewAsync(Context(), new() { LedgerQuery = query },
+            correction.CorrectedAtUtc, token)).Preview.ShouldNotBeNull();
+        preview.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
+        preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        (preview.ReadinessDetail == "Comments are permitted for some values only.").ShouldBe(currentVisible);
+        ApprovedTimeExportResult generated = await service.GenerateAsync(Context(), new() { LedgerQuery = query },
+            correction.CorrectedAtUtc, token);
+        generated.WasGenerated.ShouldBeTrue();
+        ApprovedTimeExportReadModel export = generated.Export.ShouldNotBeNull();
+        export.Scope.ShouldBe(preview.Scope);
+        export.Scope.LedgerCheckpoint.ShouldBe(read.Page.ExportSnapshotId.ShouldNotBeNull());
+        export.Rows.Select(row => row.RowState).ShouldBe([ApprovedTimeLedgerRowState.Current, ApprovedTimeLedgerRowState.Superseded]);
+        string json = JsonSerializer.Serialize(export.Rows);
+        json.ShouldContain(correction.TimeEntryCorrectionId.Value);
+        json.ShouldNotContain(original.Text);
+        json.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
+        string csv = export.CsvContent.ShouldNotBeNull();
+        csv.ShouldNotContain(original.Text);
+        csv.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
+    }
+
+    [Fact]
+    public async Task BaseTenantAuthorityWithMissingFinanceDecisionGetsPolicyRequiredPreview()
+    {
+        var options = FinanceExportTestPolicy.Configured;
+        var context = Context() with { Tenant = new("another-authorized-tenant") };
+        CancellationToken token = TestContext.Current.CancellationToken;
+        var tenantAccess = Substitute.For<ITimesheetsTenantAccessValidator>();
+        tenantAccess.ValidateAsync(context, TimesheetsOperation.Export, token)
+            .Returns(ValueTask.FromResult(TimesheetsTenantAccessResult.Authorized()));
+        TimesheetsAccessGuard guard = new(tenantAccess, Substitute.For<IProjectReferenceValidator>(),
+            Substitute.For<IWorkReferenceValidator>(), Substitute.For<IContributorPartyValidator>(),
+            new TimesheetsEvidencePolicyEvaluator(options));
+        var reader = Substitute.For<IApprovedTimeLedgerProjectionReader>();
+        var service = new ApprovedTimeExportService(guard, new(guard, reader, new StaticHydrator(), options),
+            new AcknowledgingExportTestRecorder(), options);
+        var preview = await service.PreviewAsync(context, new(), DateTimeOffset.UnixEpoch, token);
+        preview.WasDisclosed.ShouldBeTrue();
+        preview.Preview.ShouldNotBeNull().Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
+        preview.Preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+        reader.ReceivedCalls().ShouldBeEmpty();
     }
 
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
@@ -543,23 +641,6 @@ public sealed class ApprovedTimeExportIntegrationTests
     private static PartyReference Contributor() => new("party-1");
 
     private static ActivityTypeId ActivityType() => new("activity-type-1");
-
-    private sealed class SeededLedgerReader(
-        ApprovedTimeLedgerProjection projection,
-        IReadOnlyList<TimeEntryProjectionEvent> events,
-        TimesheetsProjectionCheckpoint checkpoint) : IApprovedTimeLedgerProjectionReader
-    {
-        public ValueTask<ApprovedTimeLedgerReadModel?> QueryAsync(
-            TimesheetsRequestContext context,
-            QueryApprovedTimeLedger query,
-            CancellationToken cancellationToken)
-        {
-            ArgumentNullException.ThrowIfNull(context.Tenant);
-
-            return ValueTask.FromResult<ApprovedTimeLedgerReadModel?>(
-                projection.Project(context.Tenant.TenantId, events, checkpoint, query));
-        }
-    }
 
     private sealed class StaticHydrator : ITimeEntryDisplayHydrator
     {

@@ -3,6 +3,7 @@ using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 namespace Hexalith.Timesheets.Server.ApprovedTimeLedger;
@@ -12,16 +13,28 @@ public sealed class ApprovedTimeLedgerQueryService
     private readonly ITimesheetsAccessGuard _accessGuard;
     private readonly ITimeEntryDisplayHydrator _displayHydrator;
     private readonly IApprovedTimeLedgerProjectionReader _projectionReader;
+    private readonly bool _trustedPublicationAllowed;
 
     public ApprovedTimeLedgerQueryService(
         ITimesheetsAccessGuard accessGuard,
         IApprovedTimeLedgerProjectionReader projectionReader,
         ITimeEntryDisplayHydrator displayHydrator)
+        : this(accessGuard, projectionReader, displayHydrator, TimesheetsEvidencePolicyOptions.FailClosedDefault)
+    {
+    }
+
+    public ApprovedTimeLedgerQueryService(
+        ITimesheetsAccessGuard accessGuard,
+        IApprovedTimeLedgerProjectionReader projectionReader,
+        ITimeEntryDisplayHydrator displayHydrator,
+        TimesheetsEvidencePolicyOptions evidencePolicyOptions)
     {
         ArgumentNullException.ThrowIfNull(accessGuard);
         ArgumentNullException.ThrowIfNull(projectionReader);
         ArgumentNullException.ThrowIfNull(displayHydrator);
+        ArgumentNullException.ThrowIfNull(evidencePolicyOptions);
 
+        _trustedPublicationAllowed = evidencePolicyOptions.AllowsProjectionPublication();
         _accessGuard = accessGuard;
         _projectionReader = projectionReader;
         _displayHydrator = displayHydrator;
@@ -56,9 +69,8 @@ public sealed class ApprovedTimeLedgerQueryService
         List<ApprovedTimeLedgerRowReadModel> disclosedRows = [];
         foreach (ApprovedTimeLedgerRowReadModel row in page.Items)
         {
-            TimesheetsAuthorizationDecision rowDecision = await _accessGuard.AuthorizeAsync(
-                CreateRowAuthorizationRequest(context, row),
-                cancellationToken).ConfigureAwait(false);
+            TimesheetsAuthorizationDecision rowDecision = await AuthorizeRowAsync(context, row, cancellationToken)
+                .ConfigureAwait(false);
 
             if (!rowDecision.IsAuthorized)
             {
@@ -70,62 +82,99 @@ public sealed class ApprovedTimeLedgerQueryService
                 return ApprovedTimeLedgerQueryResult.NotFoundOrDenied(rowDecision);
             }
 
+            ApprovedTimeLedgerRowReadModel published = row.ApplyPublicationPolicy(_trustedPublicationAllowed);
             TimeEntryDisplayHydration hydration = await _displayHydrator
-                .HydrateAsync(context, ToEvidence(row), cancellationToken)
+                .HydrateAsync(context, ToEvidence(published), cancellationToken)
                 .ConfigureAwait(false);
 
-            disclosedRows.Add(row with
+            disclosedRows.Add(published with
             {
                 DisplayHydration = hydration
             });
         }
 
         bool freshEnoughForExport = page.ProjectionFreshness.State == ProjectionFreshnessState.Fresh;
-        bool canUseForExport = disclosedRows.Count > 0 && freshEnoughForExport;
+        bool canUseForExport = page.CanUseForExport && disclosedRows.Count > 0 && freshEnoughForExport;
 
         return ApprovedTimeLedgerQueryResult.Disclosed(page with
         {
             Items = disclosedRows,
             CanUseForExport = canUseForExport,
-            ExportReadinessDetail = ResolveExportReadinessDetail(canUseForExport, freshEnoughForExport)
+            ExportReadinessDetail = ResolveExportReadinessDetail(canUseForExport, freshEnoughForExport, disclosedRows.Count)
         });
     }
 
-    private static string ResolveExportReadinessDetail(bool canUseForExport, bool freshEnoughForExport)
+    private static string ResolveExportReadinessDetail(bool canUseForExport, bool freshEnoughForExport, int rowCount)
     {
         if (canUseForExport)
         {
             return "Approved ledger rows are fresh enough for export preview.";
         }
 
-        return freshEnoughForExport
-            ? "No approved ledger rows are available for export preview."
-            : "Projection freshness does not allow export preview.";
+        if (!freshEnoughForExport)
+        {
+            return "Projection freshness does not allow export preview.";
+        }
+
+        return rowCount == 0 ? "No approved ledger rows are available for export preview."
+            : "The ledger reader has withheld these rows from export.";
     }
 
     private static bool CanFilterRow(TimesheetsAuthorizationDecision decision)
         => decision.DenialCategory == TimesheetsDenialCategory.InsufficientRole;
 
-    private static TimesheetsAuthorizationRequest CreateRowAuthorizationRequest(
-        TimesheetsRequestContext context,
-        ApprovedTimeLedgerRowReadModel row)
+    private async ValueTask<TimesheetsAuthorizationDecision> AuthorizeRowAsync(
+        TimesheetsRequestContext context, ApprovedTimeLedgerRowReadModel row, CancellationToken cancellationToken)
     {
-        TimesheetsAuthorizationRequest request = new(context, TimesheetsOperation.ProjectionRead)
+        if (context.Tenant is null || row.TimeEntryId is null
+            || row.ApprovalDecision is not { ApprovalState: TimeEntryApprovalState.Approved } approval
+            || approval.TimeEntryId != row.TimeEntryId || approval.Tenant != context.Tenant
+            || (row.ApprovedCorrection is { } approved
+                && (approved.TimeEntryId != row.TimeEntryId || approved.Tenant != context.Tenant))
+            || (row.Correction is { } correction
+                && (correction.TimeEntryId != row.TimeEntryId || correction.Tenant != context.Tenant)))
         {
-            Contributor = row.Contributor
-        };
-
-        if (row.Target.TargetKind == TimeEntryTargetKind.Project)
-        {
-            return request with { Project = new ProjectReference(row.Target.TargetId) };
+            return TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.AmbiguousAuthority,
+                "The approved ledger evidence could not be verified.");
         }
 
-        if (row.Target.TargetKind == TimeEntryTargetKind.Work)
+        foreach ((TimeEntryTargetReference? target, PartyReference? contributor) in DisclosureScopes(row).Distinct())
         {
-            return request with { Work = new WorkReference(row.Target.TargetId) };
-        }
+            if (target is null || contributor is null)
+            {
+                return TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.AmbiguousAuthority,
+                    "The approved ledger evidence could not be verified.");
+            }
 
-        return request;
+            TimesheetsAuthorizationRequest request = new(context, TimesheetsOperation.ProjectionRead)
+            {
+                Contributor = contributor,
+                Project = target.TargetKind == TimeEntryTargetKind.Project ? new(target.TargetId) : null,
+                Work = target.TargetKind == TimeEntryTargetKind.Work ? new(target.TargetId) : null
+            };
+            TimesheetsAuthorizationDecision decision = await _accessGuard.AuthorizeAsync(request, cancellationToken)
+                .ConfigureAwait(false);
+            if (!decision.IsAuthorized)
+            {
+                return decision;
+            }
+        }
+        return TimesheetsAuthorizationDecision.Allowed();
+    }
+
+    private static IEnumerable<(TimeEntryTargetReference?, PartyReference?)> DisclosureScopes(ApprovedTimeLedgerRowReadModel row)
+    {
+        yield return (row.Target, row.Contributor);
+        if (row.ApprovedCorrection is { } approved)
+        {
+            yield return (approved.PreviousValues?.Target, approved.PreviousValues?.Contributor);
+            yield return (approved.CorrectedValues?.Target, approved.CorrectedValues?.Contributor);
+        }
+        if (row.Correction is { } correction)
+        {
+            yield return (correction.PreviousValues?.Target, correction.PreviousValues?.Contributor);
+            yield return (correction.CorrectedValues?.Target, correction.CorrectedValues?.Contributor);
+        }
     }
 
     private static TimeEntryEvidenceReadModel ToEvidence(ApprovedTimeLedgerRowReadModel row)

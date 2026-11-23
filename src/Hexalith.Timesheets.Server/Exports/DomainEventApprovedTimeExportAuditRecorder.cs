@@ -11,6 +11,8 @@ public sealed class DomainEventApprovedTimeExportAuditRecorder : IApprovedTimeEx
     {
         ArgumentNullException.ThrowIfNull(evidence);
 
-        return ValueTask.FromResult(TimesheetsDomainResult.Success([evidence]));
+        cancellationToken.ThrowIfCancellationRequested();
+        // No durable store is installed by the kernel.
+        return ValueTask.FromResult(TimesheetsDomainResult.NoOp());
     }
 }

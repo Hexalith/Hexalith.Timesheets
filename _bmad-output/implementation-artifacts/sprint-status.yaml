@@ -104,10 +104,11 @@ development_status:
   epic-5-retrospective: done
 
   # Epic 6: Qualify Project Time and Finance Evidence
-  epic-6: backlog
-  6-1-enforce-export-comment-policy-on-every-representation: backlog
-  6-2-require-a-durable-audit-before-delivering-finance-output: backlog
-  6-3-read-one-complete-ledger-snapshot-per-export: backlog
+  epic-6: in-progress
+  6-1-enforce-export-comment-policy-on-every-representation: review
+  # The local delivery guard is implemented. Durable recording and restart recovery are open.
+  6-2-require-a-durable-audit-before-delivering-finance-output: in-progress
+  6-3-read-one-complete-ledger-snapshot-per-export: review
   6-4-persist-workload-authenticated-external-confirmation: backlog
   6-5-bound-external-recording-readback-and-report-uncertainty: backlog
   6-6-support-independent-and-composed-route-discovery: backlog

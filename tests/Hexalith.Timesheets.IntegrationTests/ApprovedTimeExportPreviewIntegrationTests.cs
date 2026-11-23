@@ -269,9 +269,9 @@ public sealed class ApprovedTimeExportPreviewIntegrationTests
             new AllowAllAccessGuard(),
             new ApprovedTimeLedgerQueryService(
                 new AllowAllAccessGuard(),
-                new SeededLedgerReader(ledgerProjection, events, checkpoint),
+                new FrozenLedgerTestReader(ledgerProjection, events, checkpoint),
                 new StaticHydrator()),
-            auditRecorder);
+            auditRecorder, FinanceExportTestPolicy.Configured);
     }
 
     private static TimeEntryProjectionEvent Event(string messageId, long sequenceNumber, object payload)
@@ -363,23 +363,6 @@ public sealed class ApprovedTimeExportPreviewIntegrationTests
     private static PartyReference Contributor() => new("party-1");
 
     private static ActivityTypeId ActivityType() => new("activity-type-1");
-
-    private sealed class SeededLedgerReader(
-        ApprovedTimeLedgerProjection projection,
-        IReadOnlyList<TimeEntryProjectionEvent> events,
-        TimesheetsProjectionCheckpoint checkpoint) : IApprovedTimeLedgerProjectionReader
-    {
-        public ValueTask<ApprovedTimeLedgerReadModel?> QueryAsync(
-            TimesheetsRequestContext context,
-            QueryApprovedTimeLedger query,
-            CancellationToken cancellationToken)
-        {
-            ArgumentNullException.ThrowIfNull(context.Tenant);
-
-            return ValueTask.FromResult<ApprovedTimeLedgerReadModel?>(
-                projection.Project(context.Tenant.TenantId, events, checkpoint, query));
-        }
-    }
 
     private sealed class StaticHydrator : ITimeEntryDisplayHydrator
     {

@@ -9,13 +9,14 @@ using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Exports;
+using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.TimeEntries;
 
 using Shouldly;
 
 namespace Hexalith.Timesheets.Server.Tests;
 
-public sealed class ApprovedTimeExportServiceTests
+public sealed partial class ApprovedTimeExportServiceTests
 {
     [Fact]
     public async Task ExportDenialPreventsLedgerLookup()
@@ -303,8 +304,8 @@ public sealed class ApprovedTimeExportServiceTests
             {
                 Project = null,
                 Work = new WorkReference("work-1"),
-                Contributor = new PartyReference("party-2"),
-                ActivityTypeId = new ActivityTypeId("activity-type-2"),
+                Contributor = new PartyReference("party-1"),
+                ActivityTypeId = new ActivityTypeId("activity-type-1"),
                 TenantLocalPeriodKey = "2026-06",
                 ServiceDateFrom = new DateOnly(2026, 6, 1),
                 ServiceDateTo = new DateOnly(2026, 6, 30),
@@ -564,18 +565,19 @@ public sealed class ApprovedTimeExportServiceTests
         ITimesheetsAccessGuard accessGuard,
         IApprovedTimeLedgerProjectionReader reader,
         ITimeEntryDisplayHydrator hydrator,
-        IApprovedTimeExportAuditRecorder? auditRecorder = null)
+        IApprovedTimeExportAuditRecorder? auditRecorder = null,
+        TimesheetsEvidencePolicyOptions? evidencePolicyOptions = null)
         => new(
             accessGuard,
-            new ApprovedTimeLedgerQueryService(accessGuard, reader, hydrator),
-            auditRecorder);
+            new ApprovedTimeLedgerQueryService(accessGuard, reader, hydrator, evidencePolicyOptions ?? FinanceExportTestPolicy.Configured),
+            auditRecorder ?? new TrackingAuditRecorder(),
+            evidencePolicyOptions ?? FinanceExportTestPolicy.Configured);
 
     private static GenerateApprovedTimeExport Command()
         => new()
         {
             LedgerQuery = new QueryApprovedTimeLedger
             {
-                Project = new ProjectReference("project-1"),
                 BillableState = BillableState.Billable,
                 SortBy = TimeEntryQuerySortBy.TimeEntryId,
                 PageSize = 500
@@ -588,11 +590,11 @@ public sealed class ApprovedTimeExportServiceTests
         => new(
             rows,
             null,
-            ProjectionFreshnessMetadata.Fresh,
+            ProjectionFreshnessMetadata.Fresh with { Cursor = "100" },
             rows.Count > 0,
             rows.Count > 0
                 ? "Approved ledger rows are fresh enough for export preview."
-                : "No approved ledger rows are available for export preview.");
+                : "No approved ledger rows are available for export preview.") { ExportSnapshotId = "fixture-snapshot" };
 
     private static ApprovedTimeLedgerRowReadModel Row(
         string id,
@@ -677,7 +679,11 @@ public sealed class ApprovedTimeExportServiceTests
                 exportDecision,
                 TimesheetsCommentPolicyDecision.Excluded,
                 TimesheetsCommentRedactionRequirement.NotRequired,
-                TimesheetsEvidenceRetentionCategory.CommentText));
+                TimesheetsEvidenceRetentionCategory.CommentText)
+            {
+                ServerPublicationVersion = 2,
+                ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
+            });
 
     private static TimeEntryTargetReference ProjectTarget(string projectId = "project-1")
         => TimeEntryTargetReference.ForProject(new ProjectReference(projectId));

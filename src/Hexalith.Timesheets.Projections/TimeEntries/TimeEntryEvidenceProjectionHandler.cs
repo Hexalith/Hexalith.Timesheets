@@ -30,8 +30,7 @@ public sealed class TimeEntryEvidenceProjectionHandler(
     IAsyncDomainProjectionIncrementalReplayHandler,
     IDeclaresProjectionReadModelSlots
 {
-    private readonly bool _trustedCommentPublicationAllowed = evidencePolicyOptions is
-    { CommentSensitivityPolicyConfigured: true, ProjectionCommentsAllowed: true };
+    private readonly bool _trustedCommentPublicationAllowed = evidencePolicyOptions?.AllowsProjectionPublication() == true;
     /// <summary>Gets the canonical aggregate-owned evidence slot.</summary>
     public static IReadOnlyList<ProjectionReadModelSlotDeclaration> ProjectionReadModelSlots { get; } =
     [

@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
@@ -318,6 +320,77 @@ public sealed class ApprovedTimeLedgerProjectionTests
         page.ProjectionFreshness.State.ShouldBe(expectedState);
         page.CanUseForExport.ShouldBeFalse();
         page.ExportReadinessDetail.ShouldBe("Projection freshness does not allow export preview.");
+    }
+
+    [Theory]
+    [InlineData(1, true, true, true, false)]
+    [InlineData(2, true, true, false, true)]
+    [InlineData(0, true, true, false, false)]
+    [InlineData(3, true, true, false, false)]
+    [InlineData(2, false, true, false, false)]
+    [InlineData(2, true, false, false, false)]
+    public void LedgerRebuildPublishesOnlyServerAuthorizedValues(
+        int version, bool configured, bool hostAllows, bool publishOld, bool publishNew)
+    {
+        const string Id = "time-entry-1";
+        const string Original = "original-marker";
+        const string Corrected = "corrected-marker";
+        TimeEntryComment Comment(string text, bool allowed) => new(text, TimeEntryCommentPolicy.SensitiveDefault with
+        {
+            // The caller-facing decision deliberately disagrees with issued authority.
+            ProjectionInclusion = allowed ? TimesheetsCommentPolicyDecision.Excluded : TimesheetsCommentPolicyDecision.Allowed,
+            ServerPublicationVersion = version,
+            ServerProjectionInclusion = allowed ? TimesheetsCommentPolicyDecision.Allowed : TimesheetsCommentPolicyDecision.Excluded
+        });
+        bool allowOld = version == 1;
+        TimeEntryApprovedCorrected correction = ApprovedCorrected(Id, 75);
+        correction = correction with
+        {
+            PreviousValues = correction.PreviousValues with { Comment = Comment(Original, allowOld) },
+            CorrectedValues = correction.CorrectedValues with { Comment = Comment(Corrected, !allowOld) }
+        };
+        TimeEntryProjectionEvent[] history =
+        [
+            Event("m1", 1, Recorded(Id, 45) with { Comment = correction.PreviousValues.Comment }),
+            Event("m2", 2, Submitted(Id)),
+            Event("m3", 3, Approved(Id)),
+            Event("m4", 4, correction)
+        ];
+        QueryApprovedTimeLedger query = new() { IncludeSupersededRows = true };
+        ApprovedTimeLedgerProjection projector = new(new()
+        {
+            CommentSensitivityPolicyConfigured = configured,
+            ProjectionCommentsAllowed = hostAllows
+        });
+        string direct = JsonSerializer.Serialize(projector.Project("tenant-1", history, FreshCheckpoint(4), query));
+        ApprovedTimeLedgerReadModel rebuilt = projector.Project("tenant-1", history.Reverse(), FreshCheckpoint(4), query);
+        JsonSerializer.Serialize(rebuilt).ShouldBe(direct);
+        direct.Contains(Original, StringComparison.Ordinal).ShouldBe(publishOld);
+        direct.Contains(Corrected, StringComparison.Ordinal).ShouldBe(publishNew);
+        rebuilt.Items.Count.ShouldBe(2);
+        foreach (ApprovedTimeLedgerRowReadModel row in rebuilt.Items)
+        {
+            (row.Comment?.Text).ShouldBe(row.RowState == ApprovedTimeLedgerRowState.Current
+                ? (publishNew ? Corrected : null) : (publishOld ? Original : null));
+            TimeEntryApprovedCorrectionEvidence evidence = row.ApprovedCorrection.ShouldNotBeNull();
+            (evidence.PreviousValues.Comment?.Text).ShouldBe(publishOld ? Original : null);
+            (evidence.CorrectedValues.Comment?.Text).ShouldBe(publishNew ? Corrected : null);
+            evidence.TimeEntryCorrectionId.ShouldBe(correction.TimeEntryCorrectionId);
+            row.EventLineage.Select(item => item.EventName).ShouldContain(nameof(TimeEntryApprovedCorrected));
+        }
+    }
+
+    [Fact]
+    public void MaximumTenantLocalMonthIncludesTheLastRepresentableDay()
+    {
+        var page = Projector().Project("tenant-1",
+            [
+                Event("m1", 1, Recorded("entry", 45, serviceDate: DateOnly.MaxValue)),
+                Event("m2", 2, Submitted("entry")),
+                Event("m3", 3, Approved("entry"))
+            ],
+            FreshCheckpoint(3), new QueryApprovedTimeLedger { TenantLocalPeriodKey = "9999-12" });
+        page.Items.ShouldHaveSingleItem().ServiceDate.ShouldBe(DateOnly.MaxValue);
     }
 
     private static ApprovedTimeLedgerProjection Projector() => new();

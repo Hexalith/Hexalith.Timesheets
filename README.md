@@ -150,3 +150,40 @@ Tenant and resource authority is resolved by server-side gates before aggregate 
 Magic-link issue, revoke, and expire routes require a signed `domain-service:process` workload assertion and server-side authorization. Service consumers must use `MagicLinkConfirmationCapabilityCommandService.ExpireAsync` for authorized expiry. The obsolete synchronous `Expire` method now always returns an authorization-required rejection.
 
 Timesheets supplies contracts and FrontComposer-compatible metadata. A consuming FrontComposer host owns rendered Fluent UI V5 composition, responsive behavior, and browser/WCAG 2.2 AA evidence. Do not add a Timesheets UI project.
+
+### Finance export policy and audit recording
+
+Configure `TimesheetsEvidencePolicyOptions` in the trusted host before calling `AddTimesheetsServerKernel`.
+The ledger publishes current and historical comment values only when both host publication flags and each
+value's version 1 or 2 server-issued projection decision permit it. Missing tenant export policy blocks
+preview and generation. The following configuration binds a decision to each tenant's exact ID.
+
+```csharp
+services.AddSingleton(new TimesheetsEvidencePolicyOptions
+{
+    LegalHoldPolicyConfigured = true,
+    TenantRetentionOverridePolicyConfigured = true,
+    CommentSensitivityPolicyConfigured = true,
+    ProjectionCommentsAllowed = true,
+    ExportCommentsAllowed = true,
+    ExportCommentsAllowedByTenant = new Dictionary<string, bool>(StringComparer.Ordinal)
+    {
+        ["finance-tenant"] = true,
+        ["internal-only-tenant"] = false
+    }
+});
+```
+
+Use values approved by the tenant and retention policy owners. The host-wide `ExportCommentsAllowed` flag,
+the tenant's finance decision and the published value's `ExportInclusion` must all permit its text.
+Submit preview and generation requests with a null browsing cursor. Multipage ledger readers must return
+a trusted `ExportSnapshotId` that certifies all matching ledger entries, and advance `NextCursor`
+on each page. Per-entry sequence numbers cannot certify whole-scope membership. The
+preview, file metadata and audit carry that version in `OutputScope.LedgerCheckpoint` or `Scope.LedgerCheckpoint`.
+A single atomic ledger page can omit its checkpoint.
+
+For production delivery, pre-register an `IApprovedTimeExportAuditRecorder` that verifies the committed
+EventStore receipt and returns `TimesheetsDomainResult.Success([verifiedEvent])` only for the exact
+`ApprovedTimeExported` metadata. The kernel default returns no acknowledgement. Preview never calls the
+recorder. Durable receipt writing, restart replay and production finance qualification remain open under
+[Stories 6.1–6.3](_bmad-output/planning-artifacts/epics.md#story-61-enforce-export-comment-policy-on-every-representation).

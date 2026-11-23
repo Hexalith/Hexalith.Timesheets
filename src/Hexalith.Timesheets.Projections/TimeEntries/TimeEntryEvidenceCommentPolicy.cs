@@ -7,8 +7,6 @@ namespace Hexalith.Timesheets.Projections.TimeEntries;
 /// <summary>Applies server-issued comment authority before evidence leaves the fold.</summary>
 internal static class TimeEntryEvidenceCommentPolicy
 {
-    internal const int CurrentVersion = 2;
-
     internal static TimeEntryEvidenceReadModel Apply(TimeEntryEvidenceReadModel row,
         bool trustedPublicationAllowed, bool preserveStoredVersion = false)
     {
@@ -48,8 +46,7 @@ internal static class TimeEntryEvidenceCommentPolicy
         => values with { Comment = Include(values.Comment, trustedPublicationAllowed) };
 
     private static TimeEntryComment? Include(TimeEntryComment? comment, bool trustedPublicationAllowed)
-        => trustedPublicationAllowed && comment?.Policy.ServerPublicationVersion is 1 or CurrentVersion
-            && comment.Policy.ServerProjectionInclusion == TimesheetsCommentPolicyDecision.Allowed
+        => comment?.Policy.ResolvePublication(trustedPublicationAllowed) == TimesheetsCommentPolicyDecision.Allowed
             ? comment
             : null;
 
@@ -58,12 +55,7 @@ internal static class TimeEntryEvidenceCommentPolicy
         => comment is null
             ? prior == TimesheetsCommentPolicyDecision.Allowed
                 ? TimesheetsCommentPolicyDecision.PolicyRequired : prior
-            : Include(comment, trustedPublicationAllowed) is not null
-                ? TimesheetsCommentPolicyDecision.Allowed
-                : comment.Policy.ServerPublicationVersion is 1 or CurrentVersion
-                    && comment.Policy.ServerProjectionInclusion == TimesheetsCommentPolicyDecision.Excluded
-                    ? TimesheetsCommentPolicyDecision.Excluded
-                    : TimesheetsCommentPolicyDecision.PolicyRequired;
+            : comment.Policy.ResolvePublication(trustedPublicationAllowed);
 
     internal static TimeEntryEvidenceReadModel WithoutPublication(TimeEntryEvidenceReadModel row)
         => Apply(row, false) with
