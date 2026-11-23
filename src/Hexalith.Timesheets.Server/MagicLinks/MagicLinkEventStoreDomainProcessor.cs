@@ -34,6 +34,11 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     ITimesheetsAccessGuard? exportAccessGuard) : IDomainProcessor, IAsyncDomainProcessor, IDomainCommandPayloadInventory
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _exportOwnerJson = new(JsonSerializerDefaults.Web)
+    {
+        RespectRequiredConstructorParameters = true,
+        AllowDuplicateProperties = false
+    };
 
     /// <inheritdoc/>
     public IReadOnlyList<Type> CommandPayloadTypes => TimesheetsRouteCatalogDeclarations.PayloadTypes;
@@ -80,6 +85,11 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             // Rejection events would occupy a first-write-only receipt stream.
             return command.Domain == TimesheetsEventStoreIntegration.DomainName && HasVerifiedWorkloadOrigin(command)
                 ? await ProcessExportAsync(command, currentState, cancellationToken).ConfigureAwait(false) : DomainResult.NoOp();
+        }
+
+        if (ApprovedTimeExportReceipt.IsReceiptOwner(command.AggregateId))
+        {
+            return DomainResult.NoOp();
         }
 
         if (!StringComparer.Ordinal.Equals(command.Domain, TimesheetsEventStoreIntegration.DomainName))
@@ -220,9 +230,14 @@ public sealed class MagicLinkEventStoreDomainProcessor(
         CommandEnvelope command, object? currentState, CancellationToken cancellationToken)
     {
         CommitApprovedTimeExport? intent;
+        bool ownerIsEmpty;
         try
         {
             intent = JsonSerializer.Deserialize<CommitApprovedTimeExport>(command.Payload, _jsonOptions);
+            object? ownerState = currentState is JsonElement json
+                ? json.Deserialize<DomainServiceCurrentState>(_exportOwnerJson) : currentState;
+            ownerIsEmpty = currentState is null || ownerState is DomainServiceCurrentState
+                { SnapshotState: null, Events: [], LastSnapshotSequence: 0, CurrentSequence: 0 };
         }
         catch (Exception exception) when (exception is JsonException or ArgumentException)
         {
@@ -248,7 +263,7 @@ public sealed class MagicLinkEventStoreDomainProcessor(
         }
 
         // The actor serializes decisions for this tenant/request owner. A populated stream is immutable.
-        return currentState is null ? DomainResult.Success([new StoredApprovedTimeExported(receipt, intent.AttemptId)]) : DomainResult.NoOp();
+        return ownerIsEmpty ? DomainResult.Success([new StoredApprovedTimeExported(receipt, intent.AttemptId)]) : DomainResult.NoOp();
     }
 
     private async Task<DomainResult> ProcessRecordAsync(

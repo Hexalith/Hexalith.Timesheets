@@ -23,6 +23,7 @@ public sealed class ApprovedTimeExportContractTests
     {
         GenerateApprovedTimeExport command = new()
         {
+            RequestId = "finance-request-1",
             LedgerQuery = Filters(),
             Format = ApprovedTimeExportFormat.Csv,
             FormatVersion = "approved-time-export.csv.v1"
@@ -38,6 +39,7 @@ public sealed class ApprovedTimeExportContractTests
         string previewJson = JsonSerializer.Serialize(preview, JsonOptions);
 
         commandJson.ShouldContain("\"format\":\"Csv\"");
+        commandJson.ShouldContain("\"requestId\":\"finance-request-1\"");
         commandJson.ShouldContain("\"includeSupersededRows\":true");
         previewJson.ShouldContain("\"ledgerQuery\"");
         AssertJsonOmitsCallerAuthority(commandJson);
@@ -48,6 +50,10 @@ public sealed class ApprovedTimeExportContractTests
             JsonOptions);
 
         roundTripped.ShouldNotBeNull();
+        roundTripped.RequestId.ShouldBe(command.RequestId);
+        string legacyJson = JsonSerializer.Serialize(command with { RequestId = null }, JsonOptions);
+        legacyJson.ShouldNotContain("\"requestId\"");
+        JsonSerializer.Deserialize<GenerateApprovedTimeExport>(legacyJson, JsonOptions)!.RequestId.ShouldBeNull();
         roundTripped.LedgerQuery.Project.ShouldBe(new ProjectReference("project-1"));
         roundTripped.LedgerQuery.BillableState.ShouldBe(BillableState.Billable);
         roundTripped.FormatVersion.ShouldBe("approved-time-export.csv.v1");
@@ -74,8 +80,10 @@ public sealed class ApprovedTimeExportContractTests
                 1,
                 null)
             {
+                RequestId = "finance-request-1",
                 Tenant = new TenantReference("tenant-1"),
-                OutputContentHashSha256 = "abcdef"
+                OutputContentHashSha256 = "abcdef",
+                OutputRowsHashSha256 = new string('a', 64)
             },
             ApprovedTimeExportFormat.Csv,
             "approved-time-export.csv.v1",
@@ -90,6 +98,8 @@ public sealed class ApprovedTimeExportContractTests
         json.ShouldContain("\"format\":\"Csv\"");
         json.ShouldContain("\"formatVersion\":\"approved-time-export.csv.v1\"");
         json.ShouldContain("\"correlationId\":\"correlation-1\"");
+        json.ShouldContain("\"requestId\":\"finance-request-1\"");
+        json.ShouldContain("\"outputRowsHashSha256\"");
         json.ShouldContain("\"commentExportState\":\"Excluded\"");
         json.ShouldContain("\"eventLineage\"");
         json.ShouldNotContain("displayHydration");
@@ -105,6 +115,8 @@ public sealed class ApprovedTimeExportContractTests
         roundTripped.Audit.Requester.ShouldBe(new PartyReference("operator-1"));
         roundTripped.Audit.Tenant.ShouldBe(new TenantReference("tenant-1"));
         roundTripped.Audit.OutputContentHashSha256.ShouldBe("abcdef");
+        roundTripped.Audit.OutputRowsHashSha256.ShouldBe(model.Audit.OutputRowsHashSha256);
+        roundTripped.Audit.RequestId.ShouldBe(model.Audit.RequestId);
     }
 
     [Fact]

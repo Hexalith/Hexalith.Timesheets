@@ -190,15 +190,21 @@ must authenticate the Timesheets workload and bind the finance requester's Party
 their export authority before writing. Preview never opens the receipt stream.
 
 Use one `GenerateApprovedTimeExport.RequestId` for all attempts of a logical request. An explicit
-ID must contain 1–256 characters, include a non-whitespace character, and contain no control characters.
+ID must contain 1–256 UTF-16 code units of well-formed text, include a non-whitespace character,
+and contain no control characters.
 Use a null cursor and the same effective page size on retry. The default for a nonpositive size is 50
 and the maximum is 500. The receipt also binds the trimmed tenant-local period and the requested sort.
-When the request ID is omitted, its correlation identifies the request within the tenant. The first
-authorized generation commits a metadata-only receipt. Subsequent calls reauthorize the ledger, rebuild
-the CSV, and recover the original correlation and UTC instants from the verified owner stream. A changed requester,
+When the request ID is omitted, its correlation identifies the request within the tenant. Both identity
+forms use the same namespace. Retry with the original identity form and value.
+The first authorized generation commits a metadata-only receipt. Subsequent calls reauthorize the ledger,
+rebuild the CSV, and recover the original correlation and UTC instants from the verified owner stream.
+Recovery uses the receipt's original timestamps even when the retry's clock precedes its request timestamp. A changed requester,
 filter, ledger snapshot, CSV digest or digest of the ordered redacted JSON rows withholds both rows and CSV.
+Receipt compatibility requires preserving the v1 redacted-row JSON digest input across DTO or serializer changes.
 The reader checks the EventStore-issued event ID's ULID syntax. It verifies attribution through the
 tenant/request owner, single stream sequence, command causation, requester and receipt metadata. The
 Timesheets authority checks retain the exact authorized tenant. EventStore storage uses its lowercase tenant key.
-Custom recorders can still be registered before the kernel and must acknowledge the exact proposed event.
+Finance reserves `finance-export-` followed by a canonical ULID for receipt owners on the shared Timesheets receiver.
+Custom recorders registered before the kernel must acknowledge the proposed event. Calls that omit a request ID
+also accept acknowledgements using the original event fields so existing custom recorders can continue to issue exports.
 The local actor-recreation test uses in-memory actor storage. Qualification on an installed host remains open.

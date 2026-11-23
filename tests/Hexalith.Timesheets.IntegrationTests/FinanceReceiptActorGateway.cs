@@ -29,6 +29,8 @@ internal sealed class FinanceReceiptActorGateway(ConcurrentDictionary<(string Te
 
     internal Func<Task>? OnMissingStream { get; init; }
 
+    internal bool ReturnEmptyStreamPage { get; init; }
+
     internal bool LoseAcknowledgement { get; init; }
 
     internal CommandEnvelope? Submitted { get; private set; }
@@ -93,6 +95,12 @@ internal sealed class FinanceReceiptActorGateway(ConcurrentDictionary<(string Te
         if (events.Length == 0)
         {
             if (OnMissingStream is not null) await OnMissingStream();
+            if (ReturnEmptyStreamPage)
+            {
+                return Readback(new(request.Tenant, request.Domain, request.AggregateId, [],
+                    new(request.FromSequence, request.ToSequence, null, 0, 0, false, null)));
+            }
+
             throw new EventStoreGatewayException(404, "Not Found", reasonCode: StreamReplayReasonCodes.MissingStream);
         }
         if (LoseAcknowledgement)

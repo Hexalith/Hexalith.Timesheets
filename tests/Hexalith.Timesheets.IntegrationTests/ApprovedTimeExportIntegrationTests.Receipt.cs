@@ -80,9 +80,10 @@ public sealed partial class ApprovedTimeExportIntegrationTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task FinanceReceiptSurvivesLostAcknowledgementAndActorRecreation(bool loseAcknowledgement)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task FinanceReceiptSurvivesLostAcknowledgementAndActorRecreation(bool loseAcknowledgement, bool retryClockBeforeRequest)
     {
         var token = TestContext.Current.CancellationToken;
         var context = Context();
@@ -127,7 +128,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
 
         // Fresh gateway, status store, export service, receiver, and actor over the original actor state.
         using var fresh = new FinanceReceiptActorGateway(storage, context.Actor!.PartyId);
-        using var restarted = ReceiptServices(reader, fresh, firstGeneration.AddDays(1));
+        using var restarted = ReceiptServices(reader, fresh, retryClockBeforeRequest ? firstGeneration : firstGeneration.AddDays(1));
         using var newScope = restarted.CreateScope();
         var receiver = newScope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>();
         fresh.Connect(receiver);
@@ -172,6 +173,10 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         AssertWithheld(await serviceAfterRestart.GenerateAsync(context with { Actor = new("another-finance-operator") }, command, later, token));
         AssertWithheld(await serviceAfterRestart.GenerateAsync(context, command with
             { LedgerQuery = command.LedgerQuery with { Project = Project() } }, later, token));
+        if (retryClockBeforeRequest)
+        {
+            AssertWithheld(await serviceAfterRestart.GenerateAsync(context, command with { RequestId = "new-request" }, later, token));
+        }
         var changedContent = Substitute.For<IApprovedTimeLedgerProjectionReader>();
         var samePage = (await reader.QueryAsync(context, command.LedgerQuery, token))!;
         changedContent.QueryAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<QueryApprovedTimeLedger>(), Arg.Any<CancellationToken>())
@@ -187,6 +192,13 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         // The actor also refuses a second append if two independent submissions saw an empty owner.
         var occupied = new DomainServiceCurrentState(null, [], 0, 1);
         (await receiver.ProcessAsync(firstCommand, occupied, token)).IsNoOp.ShouldBeTrue();
+        var emptyOwner = new DomainServiceCurrentState(null, [], 0, 0);
+        (await receiver.ProcessAsync(firstCommand, emptyOwner, token)).Events.ShouldHaveSingleItem();
+        (await receiver.ProcessAsync(firstCommand, JsonSerializer.SerializeToElement(emptyOwner, JsonSerializerOptions.Web), token))
+            .Events.ShouldHaveSingleItem();
+        (await receiver.ProcessAsync(firstCommand, JsonSerializer.SerializeToElement(new { events = Array.Empty<object>() }), token))
+            .IsNoOp.ShouldBeTrue();
+        (await receiver.ProcessAsync(firstCommand with { CommandType = "unrelated-command" }, null, token)).IsNoOp.ShouldBeTrue();
         foreach (var untrusted in new[]
         {
             firstCommand with { Extensions = null },
@@ -237,6 +249,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         var context = Context();
         var command = new GenerateApprovedTimeExport { LedgerQuery = new() { Project = Project(), Contributor = Contributor(), BillableState = BillableState.Billable } };
         bool receiverDenied = true;
+        bool rechecking = false;
         bool revoked = false;
         var guard = Substitute.For<ITimesheetsAccessGuard>();
         var scopeChecks = new List<TimesheetsAuthorizationRequest>();
@@ -244,12 +257,14 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         {
             var request = call.Arg<TimesheetsAuthorizationRequest>();
             if (request.Operation == TimesheetsOperation.Export) scopeChecks.Add(request);
+            if (rechecking && request.Operation == TimesheetsOperation.ProjectionRead) revoked = true;
             var refused = (denial == "scope" && receiverDenied && scopeChecks.Count == 2 || revoked)
                 && request.Operation == TimesheetsOperation.Export && request.Project == Project();
             return ValueTask.FromResult(refused ? TimesheetsAuthorizationDecision.Denied("Scoped permission missing.") : TimesheetsAuthorizationDecision.Allowed());
         });
         using var gateway = new FinanceReceiptActorGateway(new(), context.Actor!.PartyId)
         {
+            ReturnEmptyStreamPage = denial == "scope",
             BeforeProcess = e => denial == "workload" && receiverDenied ? e with { Extensions = null } : e
         };
         using var provider = ReceiptServices(ReceiptLedger(), gateway, now, guard);
@@ -263,8 +278,8 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         (await service.GenerateAsync(context, command, now, token)).WasGenerated.ShouldBeTrue();
         (await gateway.Actor(owner).GetEventsAsync(0)).ShouldHaveSingleItem().EventTypeName.ShouldBe(typeof(StoredApprovedTimeExported).FullName);
 
-        // Revoke the scoped export grant after readback on a recovered receipt.
-        gateway.Readback = page => { revoked = true; return page; };
+        // Revoke the scoped export grant while the recovered rows are being reauthorized.
+        gateway.Readback = page => { rechecking = true; return page; };
         var recovery = await service.GenerateAsync(context, command, now, token);
         recovery.Authorization.IsAuthorized.ShouldBeFalse();
         recovery.Export.ShouldBeNull();
@@ -304,6 +319,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         new[] { okA, okB, okC, okD, okE }.ShouldAllBe(ok => ok);
         new[] { a, b, c, d, e }.Distinct().Count().ShouldBe(5);
         (await Generate("tenant-1", "fallback-1", null, first)).ShouldBe(("", true));
+        (await Generate("tenant-1", "different-trace", "fallback-1", first)).ShouldBe(("", false));
         (await Generate("Tenant-B", "later", "request-A", second)).ShouldBe(("", true));
         // The storage alias reaches the same owner. It cannot inherit the originally authorized exact Timesheets tenant.
         (await Generate("tenant-b", "later", "request-A", ReceiptLedger("tenant-b"))).ShouldBe(("", false));
@@ -336,7 +352,11 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         (await service.GenerateAsync(context, normalized, now, ct)).WasGenerated.ShouldBeTrue();
         page = page with { ExportSnapshotId = "new-snapshot" };
         AssertWithheld(await service.GenerateAsync(context, normalized, now, ct));
-        page = page with { ExportSnapshotId = null, Items = [row with
+        page = page with { ExportSnapshotId = null, ProjectionFreshness = originalPage.ProjectionFreshness with { Cursor = "changed-cursor" } };
+        AssertWithheld(await service.GenerateAsync(context, normalized, now, ct));
+        page = page with { ProjectionFreshness = originalPage.ProjectionFreshness with { AsOfUtc = now.AddDays(-1) } };
+        AssertWithheld(await service.GenerateAsync(context, normalized, now, ct));
+        page = page with { ProjectionFreshness = originalPage.ProjectionFreshness, Items = [row with
             { ApprovedCorrection = row.ApprovedCorrection! with { Reason = new("different historical reason") } }] };
         AssertWithheld(await service.GenerateAsync(context, normalized, now, ct));
         var independentlyRequested = await service.GenerateAsync(context, normalized with { RequestId = "different-request" }, now, ct);

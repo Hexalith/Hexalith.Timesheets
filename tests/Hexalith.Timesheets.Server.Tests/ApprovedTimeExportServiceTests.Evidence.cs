@@ -60,13 +60,34 @@ public sealed partial class ApprovedTimeExportServiceTests
     }
 
     [Fact]
-    public async Task ExplicitRequestIdsAreBoundedAndControlFree()
+    public async Task CancellationDuringExportEvaluationPropagatesBeforeDenial()
+    {
+        using var cancelled = new CancellationTokenSource();
+        var guard = Substitute.For<ITimesheetsAccessGuard>();
+        guard.AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            cancelled.Cancel();
+            return ValueTask.FromResult(TimesheetsAuthorizationDecision.Denied("No export role."));
+        });
+        var reader = new TrackingLedgerReader(Page([]));
+        var recorder = new TrackingAuditRecorder();
+        var service = new ApprovedTimeExportService(guard, new(guard, reader, new TrackingHydrator()), recorder,
+            FinanceExportTestPolicy.Configured);
+
+        await Should.ThrowAsync<OperationCanceledException>(() =>
+            service.GenerateAsync(Context(), Command(), RequestedAtUtc(), cancelled.Token).AsTask());
+        reader.Calls.ShouldBe(0);
+        recorder.Events.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task ExplicitRequestIdsAreBoundedControlFreeAndWellFormed()
     {
         var token = TestContext.Current.CancellationToken;
         var reader = new TrackingLedgerReader(Page([Row("entry", ProjectTarget())]));
         var recorder = new TrackingAuditRecorder();
         var service = Service(new SequencedAccessGuard([]), reader, new TrackingHydrator(), recorder);
-        foreach (var id in new[] { "", "  ", "bad\nkey", new string('x', 257) })
+        foreach (var id in new[] { "", "  ", "bad\nkey", "bad\uD800key", "bad\uDC00key", new string('x', 257) })
         {
             var blocked = await service.GenerateAsync(Context(), Command() with { RequestId = id }, RequestedAtUtc(), token);
             AssertNoDelivery(blocked);
@@ -75,6 +96,7 @@ public sealed partial class ApprovedTimeExportServiceTests
         reader.Calls.ShouldBe(0);
         recorder.Events.ShouldBeEmpty();
         (await service.GenerateAsync(Context(), Command() with { RequestId = new string('x', 256) }, RequestedAtUtc(), token)).WasGenerated.ShouldBeTrue();
+        (await service.GenerateAsync(Context(), Command() with { RequestId = "finance-\U0001F4C4" }, RequestedAtUtc(), token)).WasGenerated.ShouldBeTrue();
     }
 
     [Theory]
@@ -334,6 +356,36 @@ public sealed partial class ApprovedTimeExportServiceTests
         receipt.RequestedAtUtc.Offset.ShouldBe(TimeSpan.Zero);
         receipt.GeneratedAtUtc.Offset.ShouldBe(TimeSpan.Zero);
         receipt.RequestedAtUtc.ShouldBe(local);
+    }
+
+    [Fact]
+    public async Task LegacyCustomRecorderCanAcknowledgeAnExportWithoutNewReceiptFields()
+    {
+        var recorder = Substitute.For<IApprovedTimeExportAuditRecorder>();
+        recorder.RecordAcceptedExportAsync(Arg.Any<ApprovedTimeExported>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            var evidence = call.Arg<ApprovedTimeExported>();
+            var scope = new ApprovedTimeExportScope(evidence.Filters, evidence.RowCount,
+                evidence.OutputScope.IncludesSupersededRows, evidence.OutputScope.CurrentRowsOnly)
+                { LedgerCheckpoint = evidence.OutputScope.LedgerCheckpoint };
+            var receipt = new ApprovedTimeExported(evidence.Requester, evidence.Tenant, evidence.Filters,
+                evidence.RequestedAtUtc, evidence.GeneratedAtUtc, evidence.CorrelationId, scope, evidence.Format,
+                evidence.FormatVersion, evidence.FreshnessState, evidence.RowCount, evidence.OutputContentHashSha256);
+            return ValueTask.FromResult(TimesheetsDomainResult.Success([receipt]));
+        });
+        var guard = new SequencedAccessGuard([]);
+        var reader = new TrackingLedgerReader(Page([Row("entry", ProjectTarget())]) with
+        {
+            ProjectionFreshness = ProjectionFreshnessMetadata.Fresh with { Cursor = "ledger-head", AsOfUtc = RequestedAtUtc() }
+        });
+        var service = new ApprovedTimeExportService(guard, new(guard, reader, new TrackingHydrator()), recorder,
+            FinanceExportTestPolicy.Configured);
+
+        var result = await service.GenerateAsync(Context(), Command(), RequestedAtUtc(), TestContext.Current.CancellationToken);
+        result.WasGenerated.ShouldBeTrue();
+        result.Export!.Audit.OutputRowsHashSha256.ShouldBeNull();
+        result.Export.Audit.OutputScope.LedgerCursor.ShouldBeNull();
+        result.Export.Scope.LedgerCursor.ShouldBe("ledger-head");
     }
 
     [Theory]

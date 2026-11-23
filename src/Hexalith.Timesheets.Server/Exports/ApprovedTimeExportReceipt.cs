@@ -1,3 +1,5 @@
+using System.Buffers;
+using System.Text;
 using System.Text.Json;
 
 using Hexalith.EventStore.Contracts.Identity;
@@ -12,6 +14,8 @@ namespace Hexalith.Timesheets.Server.Exports;
 /// <summary>Defines the v1 request owner and the command identity bound to its original receipt.</summary>
 internal static class ApprovedTimeExportReceipt
 {
+    private const string OwnerPrefix = "finance-export-";
+
     internal static QueryApprovedTimeLedger Normalize(QueryApprovedTimeLedger filters)
     {
         string? period = string.IsNullOrWhiteSpace(filters.TenantLocalPeriodKey)
@@ -23,12 +27,22 @@ internal static class ApprovedTimeExportReceipt
         => new(context, TimesheetsOperation.Export) { Project = filters?.Project, Work = filters?.Work, Contributor = filters?.Contributor };
 
     internal static bool ValidRequestId(string? id)
-        => id is null || (id.Length <= 256 && !string.IsNullOrWhiteSpace(id) && !id.Any(char.IsControl));
+        => id is null || (id.Length <= 256 && !string.IsNullOrWhiteSpace(id)
+            && !id.Any(char.IsControl) && IsWellFormed(id));
+
+    internal static bool TryGetOwnerTenant(ApprovedTimeExported receipt, out string storageTenant)
+        => TenantCanonicalizer.TryCanonicalize(receipt.Tenant?.TenantId, out storageTenant)
+            && !string.IsNullOrWhiteSpace(receipt.CorrelationId) && IsWellFormed(receipt.CorrelationId)
+            && ValidRequestId(receipt.RequestId);
 
     // EventStore lowercases the storage tenant. Timesheets authorization and payload comparisons retain the exact tenant.
     internal static string Owner(string storageTenant, ApprovedTimeExported receipt)
-        => "finance-export-" + MagicLinkDurableSubmissionService.CreateMessageId(
+        => OwnerPrefix + MagicLinkDurableSubmissionService.CreateMessageId(
             JsonSerializer.Serialize(new[] { storageTenant, receipt.RequestId ?? receipt.CorrelationId }));
+
+    internal static bool IsReceiptOwner(string owner)
+        => owner.StartsWith(OwnerPrefix, StringComparison.Ordinal)
+            && MessageIdGrammar.IsValid(owner[OwnerPrefix.Length..], version: 2);
 
     // Frozen v1 scalar order. Future public record properties do not change the lineage of stored receipts.
     // Validation requires scope.Filters == Filters and checks duplicate scope fields before deriving this identity.
@@ -50,9 +64,7 @@ internal static class ApprovedTimeExportReceipt
     }
 
     internal static bool IsValid(ApprovedTimeExported receipt, out string storageTenant)
-        => TenantCanonicalizer.TryCanonicalize(receipt.Tenant?.TenantId, out storageTenant) && receipt.Requester is not null
-            && !string.IsNullOrWhiteSpace(receipt.CorrelationId)
-            && ValidRequestId(receipt.RequestId)
+        => TryGetOwnerTenant(receipt, out storageTenant) && receipt.Requester is not null
             && receipt.RequestedAtUtc != default && receipt.RequestedAtUtc.Offset == TimeSpan.Zero
             && receipt.GeneratedAtUtc >= receipt.RequestedAtUtc && receipt.GeneratedAtUtc.Offset == TimeSpan.Zero
             && receipt.Format == ApprovedTimeExportFormat.Csv && receipt.FormatVersion == "approved-time-export.csv.v1"
@@ -67,4 +79,20 @@ internal static class ApprovedTimeExportReceipt
 
     private static bool IsSha256(string? hash)
         => hash is { Length: 64 } && hash.All(static c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
+
+    private static bool IsWellFormed(string value)
+    {
+        ReadOnlySpan<char> remaining = value.AsSpan();
+        while (!remaining.IsEmpty)
+        {
+            if (Rune.DecodeFromUtf16(remaining, out _, out int consumed) != OperationStatus.Done)
+            {
+                return false;
+            }
+
+            remaining = remaining[consumed..];
+        }
+
+        return true;
+    }
 }

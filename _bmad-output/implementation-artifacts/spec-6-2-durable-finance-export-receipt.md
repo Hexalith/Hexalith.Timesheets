@@ -67,3 +67,22 @@ The Debug solution built with warnings as errors against the committed dependenc
 | Receiver-side export revocation lacked a test | Medium. Exercise a correctly attributed request with denied scope and inspect the owner stream. |
 | Independent requests could accidentally share one owner | Medium. Exercise two explicit request IDs and the correlation fallback against one tenant. |
 | Equivalent filter representations lacked a recovery case | Medium. Check normalized period and page size on retry. |
+
+### Review Findings
+
+- [x] [Review][Patch] Recover an existing receipt when the retry host clock precedes the new request timestamp. Verify timestamp ordering for persisted receipts and new writes.
+- [x] [Review][Patch] Accept a qualified empty EventStore owner for first write and isolate finance owners from unrelated receiver commands.
+- [x] [Review][Patch] Propagate cancellation before early returns, and recheck the export grant after row reauthorization.
+- [x] [Review][Patch] Validate lossless request IDs and preserve legacy custom acknowledgements for calls that omit a request ID.
+- [x] [Review][Patch] Verify request and receipt JSON fields, cursor-only and as-of-only drift, and update the default recorder documentation.
+- [x] [Review][Defer] Verify requester attribution and receipt recovery through the installed gateway and receiver. The local actor test substitutes the workload transport. Installed-host qualification is tracked in [launch readiness](../../docs/launch-readiness.md).
+- [x] [Review][Defer] Carry the existing ledger scope and traversal issues into Story 6.3. The [finance export deferrals](spec-finance-export-local-deferrals.md) track effective superseded scope and the distinction between empty and withheld pages.
+
+The review build passed with warnings as errors on both the refreshed references and the committed dependency revisions. All 133 focused finance cases passed against the committed revisions. Three focused route-catalog fixture checks passed. The full Python fixture run encountered `/proc` process-inspection permission errors in the workspace.
+
+#### Rejected
+
+- Explicit IDs and fallback correlations share the tenant-scoped identity namespace. The supported retry preserves its original identity form. The existing owner derivation preserves receipts and refuses reuse across forms.
+- The row digest is stable for the current v1 contract. The README now requires preserving the v1 digest input when changing DTOs or serialization.
+- The recorder extension continues to accept the original exact-event acknowledgement. Only the built-in recorder attests the original timestamps of a recovered EventStore receipt.
+- A separate per-row finance grant would change the existing authorization contract. Export authorizes the requested scope and projection reads authorize each returned current and historical scope.

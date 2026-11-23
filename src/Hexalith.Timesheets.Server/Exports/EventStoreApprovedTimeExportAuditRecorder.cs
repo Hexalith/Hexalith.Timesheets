@@ -31,7 +31,7 @@ public sealed class EventStoreApprovedTimeExportAuditRecorder(IServiceScopeFacto
     {
         ArgumentNullException.ThrowIfNull(evidence);
         cancellationToken.ThrowIfCancellationRequested();
-        if (!ApprovedTimeExportReceipt.IsValid(evidence, out string tenant))
+        if (!ApprovedTimeExportReceipt.TryGetOwnerTenant(evidence, out string tenant))
         {
             return TimesheetsDomainResult.NoOp();
         }
@@ -46,6 +46,11 @@ public sealed class EventStoreApprovedTimeExportAuditRecorder(IServiceScopeFacto
             ApprovedTimeExported? stored = await ReadAsync(submission, request, cancellationToken).ConfigureAwait(false);
             if (stored is null)
             {
+                if (!ApprovedTimeExportReceipt.IsValid(evidence, out _))
+                {
+                    return TimesheetsDomainResult.NoOp();
+                }
+
                 // A denied attempt can leave a terminal zero-event status. A later authorized
                 // attempt has fresh transport lineage; the tenant/request owner still permits one event.
                 string attemptId = UniqueIdHelper.GenerateSortableUniqueStringId();
@@ -96,8 +101,17 @@ public sealed class EventStoreApprovedTimeExportAuditRecorder(IServiceScopeFacto
         }
 
         if (page.Tenant != request.Tenant || page.AggregateId != request.AggregateId || page.Domain != request.Domain
-            || page.Metadata is not { FromSequence: 0, ToSequence: null, LastSequenceReturned: 1, LatestSequence: 1,
-                EventCount: 1, IsTruncated: false, NextContinuationToken: null }
+            || page.Metadata is not { FromSequence: 0, ToSequence: null, IsTruncated: false, NextContinuationToken: null })
+        {
+            throw new InvalidDataException("The export receipt stream could not be verified.");
+        }
+
+        if (page is { Events: [], Metadata: { LastSequenceReturned: null, LatestSequence: 0, EventCount: 0 } })
+        {
+            return null;
+        }
+
+        if (page.Metadata is not { LastSequenceReturned: 1, LatestSequence: 1, EventCount: 1 }
             || page.Events is not [{ SequenceNumber: 1, MetadataVersion: 1 } item]
             || item.EventTypeName != typeof(StoredApprovedTimeExported).FullName
             || !string.Equals(item.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase)
