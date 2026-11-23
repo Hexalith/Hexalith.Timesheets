@@ -80,6 +80,62 @@ public sealed partial class ApprovedTimeExportIntegrationTests
     }
 
     [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task FinanceReceiptRecoversWithLegacyScopeFlags(bool currentOnly, bool includeSuperseded)
+    {
+        var token = TestContext.Current.CancellationToken;
+        var context = Context();
+        var now = DateTimeOffset.UtcNow;
+        var command = new GenerateApprovedTimeExport
+        {
+            RequestId = "legacy-scope",
+            LedgerQuery = new()
+            {
+                BillableState = BillableState.Billable,
+                CurrentRowsOnly = currentOnly,
+                IncludeSupersededRows = includeSuperseded
+            }
+        };
+        using var gateway = new FinanceReceiptActorGateway(new(), context.Actor!.PartyId);
+        using var provider = ReceiptServices(ReceiptLedger(), gateway, now);
+        using var scope = provider.CreateScope();
+        gateway.Connect(scope.ServiceProvider.GetRequiredService<MagicLinkEventStoreDomainProcessor>());
+        var service = provider.GetRequiredService<ApprovedTimeExportService>();
+        var generated = await service.GenerateAsync(context, command, now, token);
+        generated.WasGenerated.ShouldBeTrue();
+        var original = generated.Export.ShouldNotBeNull();
+        original.Scope.CurrentRowsOnly.ShouldBeFalse();
+        original.Scope.IncludesSupersededRows.ShouldBeTrue();
+
+        // Earlier v1 receipts copied the input flags. Their command identity did not hash those derived flags.
+        gateway.Readback = page =>
+        {
+            var item = page.Events.ShouldHaveSingleItem();
+            var stored = JsonSerializer.Deserialize<StoredApprovedTimeExported>(item.Payload, JsonSerializerOptions.Web)!;
+            var legacy = stored with
+            {
+                Event = stored.Event with
+                {
+                    OutputScope = stored.Event.OutputScope with
+                    {
+                        CurrentRowsOnly = currentOnly,
+                        IncludesSupersededRows = includeSuperseded
+                    }
+                }
+            };
+            return page with { Events = [item with { Payload = JsonSerializer.SerializeToUtf8Bytes(legacy) }] };
+        };
+        var recovered = await service.GenerateAsync(context, command, now.AddMinutes(1), token);
+        recovered.WasGenerated.ShouldBeTrue();
+        var retried = recovered.Export.ShouldNotBeNull();
+        retried.CsvContent.ShouldBe(original.CsvContent);
+        retried.Scope.ShouldBe(original.Scope);
+        retried.Audit.OutputScope.ShouldBe(original.Scope);
+        (await gateway.Actor(gateway.Submitted!.AggregateId).GetEventsAsync(0)).ShouldHaveSingleItem();
+    }
+
+    [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
     [InlineData(true, true)]

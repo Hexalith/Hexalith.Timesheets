@@ -73,7 +73,7 @@ public sealed class EventStoreApprovedTimeExportAuditRecorder(IServiceScopeFacto
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            return stored is not null && stored == evidence with
+            return stored is not null && (stored with { OutputScope = ApprovedTimeExportReceipt.EffectiveScope(stored.OutputScope) }) == evidence with
                 {
                     RequestedAtUtc = stored.RequestedAtUtc, GeneratedAtUtc = stored.GeneratedAtUtc,
                     CorrelationId = evidence.RequestId is null ? evidence.CorrelationId : stored.CorrelationId
@@ -122,7 +122,8 @@ public sealed class EventStoreApprovedTimeExportAuditRecorder(IServiceScopeFacto
         }
 
         var stored = JsonSerializer.Deserialize<StoredApprovedTimeExported>(item.Payload, _receiptJson);
-        if (stored?.Event is not { } receipt || !MessageIdGrammar.IsValid(stored.AttemptId, 2) || !ApprovedTimeExportReceipt.IsValid(receipt, out string tenant)
+        if (stored?.Event is not { } receipt || !MessageIdGrammar.IsValid(stored.AttemptId, 2)
+            || !ApprovedTimeExportReceipt.IsValid(receipt, out string tenant, allowLegacyScopeFlags: true)
             || tenant != request.Tenant || ApprovedTimeExportReceipt.Owner(tenant, receipt) != request.AggregateId
             || receipt.Requester!.PartyId != item.UserId || item.CorrelationId != item.CausationId
             || item.CausationId != ApprovedTimeExportReceipt.MessageId(receipt, stored.AttemptId))

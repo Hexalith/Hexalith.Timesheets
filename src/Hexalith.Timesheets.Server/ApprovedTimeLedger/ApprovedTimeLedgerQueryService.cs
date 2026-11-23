@@ -40,9 +40,23 @@ public sealed class ApprovedTimeLedgerQueryService
         _displayHydrator = displayHydrator;
     }
 
-    public async ValueTask<ApprovedTimeLedgerQueryResult> QueryAsync(
+    public ValueTask<ApprovedTimeLedgerQueryResult> QueryAsync(
         TimesheetsRequestContext context,
         QueryApprovedTimeLedger query,
+        CancellationToken cancellationToken)
+        => QueryAsync(context, query, forExport: false, cancellationToken);
+
+    /// <summary>Reads a ledger page without discarding the reader's eligibility decision for empty pages.</summary>
+    internal ValueTask<ApprovedTimeLedgerQueryResult> QueryForExportAsync(
+        TimesheetsRequestContext context,
+        QueryApprovedTimeLedger query,
+        CancellationToken cancellationToken)
+        => QueryAsync(context, query, forExport: true, cancellationToken);
+
+    private async ValueTask<ApprovedTimeLedgerQueryResult> QueryAsync(
+        TimesheetsRequestContext context,
+        QueryApprovedTimeLedger query,
+        bool forExport,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -66,6 +80,8 @@ public sealed class ApprovedTimeLedgerQueryService
             return ApprovedTimeLedgerQueryResult.NotFoundOrDenied(tenantDecision);
         }
 
+        // A paged export cannot establish that a newly withheld row was outside its initial scope.
+        bool requiresCompleteDisclosure = forExport && (query.Cursor is not null || page.NextCursor is not null);
         List<ApprovedTimeLedgerRowReadModel> disclosedRows = [];
         foreach (ApprovedTimeLedgerRowReadModel row in page.Items)
         {
@@ -74,7 +90,7 @@ public sealed class ApprovedTimeLedgerQueryService
 
             if (!rowDecision.IsAuthorized)
             {
-                if (CanFilterRow(rowDecision))
+                if (!requiresCompleteDisclosure && rowDecision.DenialCategory == TimesheetsDenialCategory.InsufficientRole)
                 {
                     continue;
                 }
@@ -94,17 +110,20 @@ public sealed class ApprovedTimeLedgerQueryService
         }
 
         bool freshEnoughForExport = page.ProjectionFreshness.State == ProjectionFreshnessState.Fresh;
-        bool canUseForExport = page.CanUseForExport && disclosedRows.Count > 0 && freshEnoughForExport;
+        bool canUseForExport = page.CanUseForExport && freshEnoughForExport && (forExport || disclosedRows.Count > 0);
 
         return ApprovedTimeLedgerQueryResult.Disclosed(page with
         {
             Items = disclosedRows,
             CanUseForExport = canUseForExport,
-            ExportReadinessDetail = ResolveExportReadinessDetail(canUseForExport, freshEnoughForExport, disclosedRows.Count)
+            ExportReadinessDetail = ResolveExportReadinessDetail(
+                canUseForExport && disclosedRows.Count > 0, freshEnoughForExport, disclosedRows.Count,
+                forExport && !page.CanUseForExport)
         });
     }
 
-    private static string ResolveExportReadinessDetail(bool canUseForExport, bool freshEnoughForExport, int rowCount)
+    private static string ResolveExportReadinessDetail(
+        bool canUseForExport, bool freshEnoughForExport, int rowCount, bool readerWithheldPage)
     {
         if (canUseForExport)
         {
@@ -116,12 +135,9 @@ public sealed class ApprovedTimeLedgerQueryService
             return "Projection freshness does not allow export preview.";
         }
 
-        return rowCount == 0 ? "No approved ledger rows are available for export preview."
-            : "The ledger reader has withheld these rows from export.";
+        return readerWithheldPage || rowCount > 0 ? "The ledger reader has withheld these rows from export."
+            : "No approved ledger rows are available for export preview.";
     }
-
-    private static bool CanFilterRow(TimesheetsAuthorizationDecision decision)
-        => decision.DenialCategory == TimesheetsDenialCategory.InsufficientRole;
 
     /// <summary>Authorizes the current and historical evidence scopes of a ledger row.</summary>
     internal async ValueTask<TimesheetsAuthorizationDecision> AuthorizeRowAsync(

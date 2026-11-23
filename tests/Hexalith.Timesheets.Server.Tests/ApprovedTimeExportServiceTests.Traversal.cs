@@ -20,11 +20,17 @@ public sealed partial class ApprovedTimeExportServiceTests
     [InlineData("duplicate-current")]
     [InlineData("stale-page")]
     [InlineData("stale-row")]
+    [InlineData("row-checkpoint-mismatch")]
+    [InlineData("row-as-of-mismatch")]
     [InlineData("out-of-scope")]
     [InlineData("stalled")]
     [InlineData("cycle")]
+    [InlineData("empty-reader-veto")]
+    [InlineData("reader-unavailable")]
     [InlineData("lost-access")]
     [InlineData("lost-export-authority")]
+    [InlineData("lost-resource-on-page")]
+    [InlineData("lost-prior-resource")]
     [InlineData("browsing-cursor")]
     public async Task InvalidTraversalWithholdsPreviewReadinessAndEveryGeneratedRow(string fault)
     {
@@ -32,7 +38,7 @@ public sealed partial class ApprovedTimeExportServiceTests
         ApprovedTimeLedgerReadModel first = Page([firstRow]) with { NextCursor = "next" };
         ApprovedTimeLedgerReadModel second = Page([Row("entry-2", ProjectTarget())]);
         QueryApprovedTimeLedger filters = Command().LedgerQuery with { Project = new("project-1") };
-        List<ApprovedTimeLedgerReadModel> pages = [first, second];
+        List<ApprovedTimeLedgerReadModel?> pages = [first, second];
         switch (fault)
         {
             case "checkpoint-drift":
@@ -65,6 +71,18 @@ public sealed partial class ApprovedTimeExportServiceTests
             case "stale-row":
                 pages[1] = Page([second.Items[0] with { ProjectionFreshness = ProjectionFreshnessMetadata.Stale() }]);
                 break;
+            case "row-checkpoint-mismatch":
+                pages[1] = Page([second.Items[0] with { ProjectionFreshness = second.ProjectionFreshness with { Cursor = "101" } }]);
+                break;
+            case "row-as-of-mismatch":
+                var snapshot = second.ProjectionFreshness with { AsOfUtc = RequestedAtUtc() };
+                pages[0] = first with { ProjectionFreshness = snapshot };
+                pages[1] = second with
+                {
+                    ProjectionFreshness = snapshot,
+                    Items = [second.Items[0] with { ProjectionFreshness = snapshot with { AsOfUtc = RequestedAtUtc().AddMinutes(1) } }]
+                };
+                break;
             case "out-of-scope":
                 pages[1] = Page([Row("entry-2", WorkTarget())]);
                 break;
@@ -75,6 +93,13 @@ public sealed partial class ApprovedTimeExportServiceTests
                 pages[1] = Page([]) with { NextCursor = "third" };
                 pages.Add(Page([]) with { NextCursor = "next" });
                 break;
+            case "empty-reader-veto":
+                pages[1] = Page([]) with { NextCursor = "third", CanUseForExport = false };
+                pages.Add(second);
+                break;
+            case "reader-unavailable":
+                pages[1] = null;
+                break;
             case "browsing-cursor":
                 filters = filters with { Cursor = "next" };
                 break;
@@ -82,11 +107,20 @@ public sealed partial class ApprovedTimeExportServiceTests
 
         foreach (bool preview in new[] { true, false })
         {
-            bool lostAccess = fault is "lost-access" or "lost-export-authority";
-            int approvalsBeforeLoss = fault == "lost-export-authority" ? 5 : 3;
+            int approvalsBeforeLoss = fault switch
+            {
+                "lost-access" => 3,
+                "lost-resource-on-page" => 4,
+                "lost-export-authority" => 5,
+                "lost-prior-resource" => 6,
+                _ => 0
+            };
+            bool lostAccess = approvalsBeforeLoss > 0;
+            TimesheetsDenialCategory denial = fault is "lost-resource-on-page" or "lost-prior-resource"
+                ? TimesheetsDenialCategory.InsufficientRole : TimesheetsDenialCategory.NonMember;
             TimesheetsAuthorizationDecision[] decisions = lostAccess
                 ? [.. Enumerable.Repeat(TimesheetsAuthorizationDecision.Allowed(), approvalsBeforeLoss),
-                    TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.NonMember, "Access changed.")]
+                    TimesheetsAuthorizationDecision.Denied(denial, "Access changed.")]
                 : [];
             SequentialPagedLedgerReader reader = new(pages);
             TrackingAuditRecorder recorder = new();
@@ -122,6 +156,10 @@ public sealed partial class ApprovedTimeExportServiceTests
             if (fault == "browsing-cursor")
             {
                 reader.Calls.ShouldBe(0);
+            }
+            if (fault is "empty-reader-veto" or "reader-unavailable")
+            {
+                reader.Calls.ShouldBe(2);
             }
             recorder.Events.ShouldBeEmpty();
         }
@@ -163,8 +201,10 @@ public sealed partial class ApprovedTimeExportServiceTests
         recorder.Events.ShouldBeEmpty();
     }
 
-    [Fact]
-    public async Task TraversalCrossesEmptyAuthorizedPageAndKeepsBothLineageRows()
+    [Theory]
+    [InlineData(true, true)]
+    [InlineData(false, false)]
+    public async Task TraversalCrossesEmptyAuthorizedPageAndKeepsBothLineageRows(bool currentOnly, bool includeSuperseded)
     {
         ApprovedTimeLedgerRowReadModel current = Row("entry", ProjectTarget());
         ProjectionFreshnessMetadata snapshot = ProjectionFreshnessMetadata.Fresh with { Cursor = "100", AsOfUtc = RequestedAtUtc() };
@@ -174,7 +214,11 @@ public sealed partial class ApprovedTimeExportServiceTests
             Page([current]) with { NextCursor = "third", ProjectionFreshness = snapshot },
             Page([current with { RowState = ApprovedTimeLedgerRowState.Superseded }]) with { ProjectionFreshness = snapshot }
         ];
-        QueryApprovedTimeLedger filters = Command().LedgerQuery with { IncludeSupersededRows = true };
+        QueryApprovedTimeLedger filters = Command().LedgerQuery with
+        {
+            CurrentRowsOnly = currentOnly,
+            IncludeSupersededRows = includeSuperseded
+        };
         CancellationToken token = TestContext.Current.CancellationToken;
         SequentialPagedLedgerReader previewReader = new(pages);
         TrackingAuditRecorder recorder = new();
@@ -183,6 +227,9 @@ public sealed partial class ApprovedTimeExportServiceTests
             RequestedAtUtc(), token)).Preview.ShouldNotBeNull();
         preview.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
         preview.Scope.RowCount.ShouldBe(2);
+        preview.Scope.IncludesSupersededRows.ShouldBeTrue();
+        preview.Scope.CurrentRowsOnly.ShouldBeFalse();
+        preview.Scope.Filters.ShouldBe(filters);
         previewReader.ObservedCursors.ShouldBe([null, "second", "third"]);
         recorder.Events.ShouldBeEmpty();
 

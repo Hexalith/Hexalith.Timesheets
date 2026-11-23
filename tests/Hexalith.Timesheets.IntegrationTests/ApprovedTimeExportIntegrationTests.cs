@@ -128,7 +128,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
                 CurrentRowsOnly = false,
                 IncludeSupersededRows = true,
                 SortBy = TimeEntryQuerySortBy.TimeEntryId,
-                PageSize = 50
+                PageSize = 1
             }
         };
 
@@ -151,6 +151,13 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         export.CsvContent.ShouldNotBeNull().ShouldContain("time-entry-2");
         export.CsvContent.ShouldNotBeNull().ShouldContain("TimeEntryApproved");
 
+        var singlePage = await service.GenerateAsync(
+            Context(), command with { LedgerQuery = command.LedgerQuery with { PageSize = 50 } },
+            export.Audit.RequestedAtUtc, TestContext.Current.CancellationToken);
+        singlePage.WasGenerated.ShouldBeTrue();
+        singlePage.Export.ShouldNotBeNull().CsvContent.ShouldBe(export.CsvContent);
+        JsonSerializer.Serialize(singlePage.Export.Rows).ShouldBe(JsonSerializer.Serialize(export.Rows));
+
         GenerateApprovedTimeExport noResultsCommand = command with
         {
             LedgerQuery = command.LedgerQuery with
@@ -170,6 +177,66 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         blocked.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
         blocked.CsvContent.ShouldBeNull();
         blocked.Audit.BlockedReason.ShouldBe("No approved ledger rows are available for export preview.");
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task CorrectionBetweenProjectionReadsWithholdsFinanceOutput(bool preview)
+    {
+        var target = TimeEntryTargetReference.ForProject(Project());
+        List<TimeEntryProjectionEvent> history =
+        [
+            Event("m1", 1, Recorded("time-entry-1", target, 30)),
+            Event("m2", 2, Submitted("time-entry-1")),
+            Event("m3", 3, Approved("time-entry-1", "decision-1")),
+            Event("m4", 4, Recorded("time-entry-2", target, 45)),
+            Event("m5", 5, Submitted("time-entry-2")),
+            Event("m6", 6, Approved("time-entry-2", "decision-2"))
+        ];
+        ApprovedTimeLedgerProjection projection = new();
+        var checkpoint = new TimesheetsProjectionCheckpoint("tenant-1", ApprovedTimeLedgerProjection.ProjectionName, 6, ProjectionFreshness.Fresh);
+        var reader = Substitute.For<IApprovedTimeLedgerProjectionReader>();
+        List<ApprovedTimeLedgerReadModel> pages = [];
+        reader.QueryAsync(Arg.Any<TimesheetsRequestContext>(), Arg.Any<QueryApprovedTimeLedger>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var filters = call.Arg<QueryApprovedTimeLedger>();
+                var page = projection.Project("tenant-1", history, checkpoint, filters) with
+                {
+                    ExportSnapshotId = pages.Count == 0 ? "before-correction" : "after-correction"
+                };
+                if (pages.Count == 0)
+                {
+                    history.Add(Event("m7", 7, ApprovedCorrected("time-entry-2", target, 60)));
+                }
+                pages.Add(page);
+                return ValueTask.FromResult<ApprovedTimeLedgerReadModel?>(page);
+            });
+        var guard = new AllowAllAccessGuard();
+        var audit = Substitute.For<IApprovedTimeExportAuditRecorder>();
+        var service = new ApprovedTimeExportService(guard, new(guard, reader, new StaticHydrator()), audit, FinanceExportTestPolicy.Configured);
+        var query = new QueryApprovedTimeLedger { BillableState = BillableState.Billable, IncludeSupersededRows = true, PageSize = 1 };
+        var token = TestContext.Current.CancellationToken;
+        if (preview)
+        {
+            var result = await service.PreviewAsync(Context(), new() { LedgerQuery = query }, DateTimeOffset.UnixEpoch, token);
+            result.Preview.ShouldNotBeNull().Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
+            result.Preview.Scope.RowCount.ShouldBe(0);
+            result.Preview.ReadinessDetail.ShouldContain("Retry the export");
+        }
+        else
+        {
+            var result = await service.GenerateAsync(Context(), new() { LedgerQuery = query }, DateTimeOffset.UnixEpoch, token);
+            AssertWithheld(result);
+            result.Export!.ReadinessDetail.ShouldContain("Retry the export");
+        }
+
+        pages.Count.ShouldBe(2);
+        pages[0].Items.ShouldHaveSingleItem().TimeEntryId.Value.ShouldBe("time-entry-1");
+        pages[1].Items.ShouldHaveSingleItem().DurationMinutes.ShouldBe(60);
+        pages[1].NextCursor.ShouldNotBeNull();
+        audit.ReceivedCalls().ShouldBeEmpty();
     }
 
     [Fact]

@@ -180,9 +180,13 @@ A published value that still requires export redaction is withheld.
 An authorized caller can see a blocked `PolicyRequired` preview when required evidence policy is missing.
 Submit preview and generation requests with a null browsing cursor. Multipage ledger readers must return
 a trusted `ExportSnapshotId` that certifies all matching ledger entries, and advance `NextCursor`
-on each page. Per-entry sequence numbers cannot certify whole-scope membership. The
+on each page. Use the same cursor token for the same position. Set `CanUseForExport` on every
+authorized fresh page, including an empty page that can be traversed. A reader veto or a resource
+disclosure denial blocks the entire paged scope. Per-entry sequence numbers cannot certify whole-scope membership. The
 preview, file metadata and audit carry that version in `OutputScope.LedgerCheckpoint` or `Scope.LedgerCheckpoint`.
 A single atomic ledger page can omit its checkpoint.
+The output scope reports which row states the filters select. The receipt retains the submitted
+filter flags for request matching.
 
 The kernel records finance receipts through the Timesheets workload gateway. Enroll the
 `timesheets-commit-approved-time-export` command on the private `process` receiver. The gateway

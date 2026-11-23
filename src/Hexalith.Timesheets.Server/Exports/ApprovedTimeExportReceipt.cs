@@ -4,6 +4,7 @@ using System.Text.Json;
 
 using Hexalith.EventStore.Contracts.Identity;
 using Hexalith.Timesheets.Contracts.Events.Exports;
+using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -21,6 +22,20 @@ internal static class ApprovedTimeExportReceipt
         string? period = string.IsNullOrWhiteSpace(filters.TenantLocalPeriodKey)
             ? null : string.Join('/', filters.TenantLocalPeriodKey.Split('/', StringSplitOptions.TrimEntries));
         return filters with { TenantLocalPeriodKey = period, PageSize = filters.PageSize <= 0 ? 50 : Math.Min(500, filters.PageSize) };
+    }
+
+    /// <summary>Describes which row states the filters actually select, retaining the submitted flags in Filters.</summary>
+    internal static ApprovedTimeExportScope Scope(QueryApprovedTimeLedger filters, int rowCount)
+    {
+        bool currentOnly = filters.CurrentRowsOnly && !filters.IncludeSupersededRows;
+        return new(filters, rowCount, !currentOnly, currentOnly);
+    }
+
+    /// <summary>Projects the effective scope of an already verified stored receipt.</summary>
+    internal static ApprovedTimeExportScope EffectiveScope(ApprovedTimeExportScope scope)
+    {
+        ApprovedTimeExportScope effective = Scope(scope.Filters, scope.RowCount);
+        return scope with { CurrentRowsOnly = effective.CurrentRowsOnly, IncludesSupersededRows = effective.IncludesSupersededRows };
     }
 
     internal static TimesheetsAuthorizationRequest Authority(TimesheetsRequestContext context, QueryApprovedTimeLedger? filters)
@@ -63,7 +78,7 @@ internal static class ApprovedTimeExportReceipt
         return MagicLinkDurableSubmissionService.CreateMessageId("approved-time-export-receipt-v1\n" + JsonSerializer.Serialize(fields));
     }
 
-    internal static bool IsValid(ApprovedTimeExported receipt, out string storageTenant)
+    internal static bool IsValid(ApprovedTimeExported receipt, out string storageTenant, bool allowLegacyScopeFlags = false)
         => TryGetOwnerTenant(receipt, out storageTenant) && receipt.Requester is not null
             && receipt.RequestedAtUtc != default && receipt.RequestedAtUtc.Offset == TimeSpan.Zero
             && receipt.GeneratedAtUtc >= receipt.RequestedAtUtc && receipt.GeneratedAtUtc.Offset == TimeSpan.Zero
@@ -72,8 +87,9 @@ internal static class ApprovedTimeExportReceipt
             && receipt.Filters is { BillableState: BillableState.Billable, Cursor: null } filters
             && filters == Normalize(filters)
             && receipt.OutputScope is { RowCount: > 0 } scope && scope.RowCount == receipt.RowCount
-            && scope.Filters == filters && scope.IncludesSupersededRows == filters.IncludeSupersededRows
-            && scope.CurrentRowsOnly == filters.CurrentRowsOnly
+            && scope.Filters == filters
+            && (scope == EffectiveScope(scope) || (allowLegacyScopeFlags
+                && scope.IncludesSupersededRows == filters.IncludeSupersededRows && scope.CurrentRowsOnly == filters.CurrentRowsOnly))
             && (scope.LedgerAsOfUtc is null || scope.LedgerAsOfUtc.Value.Offset == TimeSpan.Zero)
             && IsSha256(receipt.OutputContentHashSha256) && IsSha256(receipt.OutputRowsHashSha256);
 

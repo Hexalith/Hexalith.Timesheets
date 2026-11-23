@@ -591,7 +591,7 @@ public sealed partial class ApprovedTimeExportServiceTests
             rows,
             null,
             ProjectionFreshnessMetadata.Fresh with { Cursor = "100" },
-            rows.Count > 0,
+            true,
             rows.Count > 0
                 ? "Approved ledger rows are fresh enough for export preview."
                 : "No approved ledger rows are available for export preview.") { ExportSnapshotId = "fixture-snapshot" };
@@ -710,7 +710,7 @@ public sealed partial class ApprovedTimeExportServiceTests
         }
     }
 
-    private sealed class SequentialPagedLedgerReader(IReadOnlyList<ApprovedTimeLedgerReadModel> pages)
+    private sealed class SequentialPagedLedgerReader(IReadOnlyList<ApprovedTimeLedgerReadModel?> pages)
         : IApprovedTimeLedgerProjectionReader
     {
         public int Calls { get; private set; }
@@ -723,7 +723,7 @@ public sealed partial class ApprovedTimeExportServiceTests
             CancellationToken cancellationToken)
         {
             ObservedCursors.Add(query.Cursor);
-            ApprovedTimeLedgerReadModel page = pages[Calls];
+            ApprovedTimeLedgerReadModel? page = pages[Calls];
             Calls++;
             return ValueTask.FromResult<ApprovedTimeLedgerReadModel?>(page);
         }

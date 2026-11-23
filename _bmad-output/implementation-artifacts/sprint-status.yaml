@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 11-23-2026 15:14 (Story 6.2 review)
+# last_updated: 11-23-2026 16:24 (Story 6.3 review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 11-23-2026 15:14
+last_updated: 11-23-2026 16:24
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -108,7 +108,7 @@ development_status:
   6-1-enforce-export-comment-policy-on-every-representation: done
   # Local durable recording and actor restart recovery passed review. Installed host restart qualification remains open.
   6-2-require-a-durable-audit-before-delivering-finance-output: done
-  6-3-read-one-complete-ledger-snapshot-per-export: review
+  6-3-read-one-complete-ledger-snapshot-per-export: done
   6-4-persist-workload-authenticated-external-confirmation: backlog
   6-5-bound-external-recording-readback-and-report-uncertainty: backlog
   6-6-support-independent-and-composed-route-discovery: backlog

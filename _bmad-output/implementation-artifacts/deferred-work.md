@@ -1727,9 +1727,15 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 
 - Decide who can issue the stored per-comment finance permission. The current comment issuer copies `ExportInclusion` from the submitted value and issues projection and external-display decisions separately. It also normalizes the shared redaction field for external display. An independent finance decision needs a compatibility rule for older values and for readback of existing magic-link adjustments.
 - Align the receipt's current and superseded scope flags with the effective ledger filter in Stories 6.2 and 6.3. The two query flags can select superseded rows while describing the same scope as current-only.
+  Resolution 2026-11-23. Story 6.3 reports the effective flags and retains the original filter flags in the receipt. Verified legacy receipts remain recoverable.
 - Distinguish a reader's export veto from an empty authorized page in Story 6.3. Check resource-level disclosure loss during traversal and add fresh-row checkpoint and timestamp mismatch cases alongside the existing page-level tests.
+  Resolution 2026-11-23. Story 6.3 honors the reader decision on empty pages, rejects disclosure loss and verifies row-level drift independently. [Review findings](spec-6-3-complete-ledger-snapshot.md#review-findings)
 
 ## Deferred from code review of Story 6.2 (2026-11-23)
 
 - Exercise finance receipt recovery and requester attribution through the installed workload gateway and receiver after a host restart. The local actor fixture covers retained storage and receiver decisions. [Launch readiness](../../docs/launch-readiness.md)
-- Verify effective current and superseded scope flags and distinguish authorized empty pages from withheld pages during Story 6.3 review. The Story 6.1 review above records the original findings.
+- Verify effective current and superseded scope flags and distinguish authorized empty pages from withheld pages during Story 6.3 review. Both local follow-ups are resolved above.
+
+## Deferred from code review of Story 6.3 (2026-11-23)
+
+- Qualify the installed ledger reader’s complete snapshot, correction lineage and canonical cursor progression. Verify that recreating the reader for the same ledger version preserves its snapshot ID and that the same finance request can recover its receipt. [Launch readiness](../../docs/launch-readiness.md)

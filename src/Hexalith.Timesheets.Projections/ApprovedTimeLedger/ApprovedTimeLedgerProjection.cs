@@ -91,10 +91,12 @@ public sealed class ApprovedTimeLedgerProjection
             pageItems,
             nextCursor,
             freshness,
-            pageItems.Length > 0 && checkpoint.CanServeReads,
-            checkpoint.CanServeReads
-                ? "Approved ledger rows are fresh enough for export preview."
-                : "Projection freshness does not allow export preview.");
+            checkpoint.CanServeReads,
+            !checkpoint.CanServeReads
+                ? "Projection freshness does not allow export preview."
+                : pageItems.Length == 0
+                    ? "No approved ledger rows are available for export preview."
+                    : "Approved ledger rows are fresh enough for export preview.");
     }
 
     private static IEnumerable<TimeEntryId> CandidateIds(IEnumerable<TimeEntryProjectionEvent> events)

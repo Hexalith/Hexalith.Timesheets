@@ -614,7 +614,7 @@ public sealed class ApprovedTimeExportPreviewServiceTests
             rows,
             null,
             ProjectionFreshnessMetadata.Fresh with { Cursor = "100" },
-            rows.Count > 0,
+            true,
             rows.Count > 0
                 ? "Approved ledger rows are fresh enough for export preview."
                 : "No approved ledger rows are available for export preview.") { ExportSnapshotId = "fixture-snapshot" };

@@ -136,6 +136,8 @@ public sealed class ApprovedTimeExportService
         // Only the owner-stream recorder can attest the original instants of a recovered request.
         if (_auditRecorder is EventStoreApprovedTimeExportAuditRecorder)
         {
+            acknowledgedScope = ApprovedTimeExportReceipt.EffectiveScope(acknowledgedScope);
+            acknowledged = acknowledged with { OutputScope = acknowledgedScope };
             evidence = evidence with
             {
                 RequestedAtUtc = acknowledged.RequestedAtUtc,
@@ -162,15 +164,10 @@ public sealed class ApprovedTimeExportService
             return Blocked("Export audit completion could not be verified.");
         }
 
-        foreach (ApprovedTimeLedgerRowReadModel row in evaluation.Rows)
+        var rowDecision = await AuthorizeRowsAsync(context, evaluation.Rows, cancellationToken).ConfigureAwait(false);
+        if (!rowDecision.IsAuthorized)
         {
-            var rowDecision = await _ledgerQueryService.AuthorizeRowAsync(context, row, cancellationToken)
-                .ConfigureAwait(false);
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!rowDecision.IsAuthorized)
-            {
-                return ApprovedTimeExportResult.NotFoundOrDenied(rowDecision);
-            }
+            return ApprovedTimeExportResult.NotFoundOrDenied(rowDecision);
         }
 
         var finalDecision = await _accessGuard.AuthorizeAsync(
@@ -243,7 +240,7 @@ public sealed class ApprovedTimeExportService
         if (evaluation.Authorization.IsBlockedByMissingEvidencePolicy)
         {
             evaluation = ExportEvaluation.MissingPolicy(
-                Scope(ApprovedTimeExportReceipt.Normalize(query.LedgerQuery ?? new()), 0));
+                ApprovedTimeExportReceipt.Scope(ApprovedTimeExportReceipt.Normalize(query.LedgerQuery ?? new()), 0));
         }
 
         if (!evaluation.Authorization.IsAuthorized)
@@ -292,7 +289,7 @@ public sealed class ApprovedTimeExportService
 
         if (!exportDecision.IsAuthorized)
         {
-            return ExportEvaluation.Denied(exportDecision, Scope(requestedFilters ?? new(), 0));
+            return ExportEvaluation.Denied(exportDecision, ApprovedTimeExportReceipt.Scope(requestedFilters ?? new(), 0));
         }
 
         QueryApprovedTimeLedger ledgerQuery = ApprovedTimeExportReceipt.Normalize(requestedFilters ?? new());
@@ -302,7 +299,7 @@ public sealed class ApprovedTimeExportService
                 TimesheetsAuthorizationDecision.Denied(
                     TimesheetsDenialCategory.MissingTenant,
                     "Tenant context is required for approved-time export."),
-                Scope(ledgerQuery, 0));
+                ApprovedTimeExportReceipt.Scope(ledgerQuery, 0));
         }
 
         string? contractBlock = requestedFilters is null ? "Ledger filters are required for export."
@@ -313,7 +310,7 @@ public sealed class ApprovedTimeExportService
             return ExportEvaluation.Blocked(
                 contractBlock,
                 ProjectionFreshnessMetadata.Unavailable(contractBlock),
-                Scope(ledgerQuery, 0));
+                ApprovedTimeExportReceipt.Scope(ledgerQuery, 0));
         }
 
         if (!_evidencePolicyOptions.CommentSensitivityPolicyConfigured
@@ -321,7 +318,7 @@ public sealed class ApprovedTimeExportService
             || !_evidencePolicyOptions.TenantRetentionOverridePolicyConfigured
             || !_evidencePolicyOptions.ExportCommentsAllowedByTenant.TryGetValue(context.Tenant.TenantId, out bool tenantAllows))
         {
-            return ExportEvaluation.MissingPolicy(Scope(ledgerQuery, 0));
+            return ExportEvaluation.MissingPolicy(ApprovedTimeExportReceipt.Scope(ledgerQuery, 0));
         }
 
         (ApprovedTimeLedgerReadModel? ledger, TimesheetsAuthorizationDecision? denial) =
@@ -329,7 +326,7 @@ public sealed class ApprovedTimeExportService
 
         if (ledger is null)
         {
-            return ExportEvaluation.Denied(denial!, Scope(ledgerQuery, 0));
+            return ExportEvaluation.Denied(denial!, ApprovedTimeExportReceipt.Scope(ledgerQuery, 0));
         }
 
         if (!ledger.CanUseForExport)
@@ -337,13 +334,13 @@ public sealed class ApprovedTimeExportService
             return ExportEvaluation.Blocked(
                 ledger.ExportReadinessDetail,
                 ledger.ProjectionFreshness,
-                Scope(ledgerQuery, ledger.Items.Count));
+                ApprovedTimeExportReceipt.Scope(ledgerQuery, ledger.Items.Count));
         }
 
         return ExportEvaluation.Ready(
             ledger.ExportReadinessDetail,
             ledger.ProjectionFreshness,
-            Scope(ledgerQuery, ledger.Items.Count) with
+            ApprovedTimeExportReceipt.Scope(ledgerQuery, ledger.Items.Count) with
             {
                 LedgerCheckpoint = ledger.ExportSnapshotId,
                 LedgerCursor = ledger.ProjectionFreshness.Cursor,
@@ -465,7 +462,7 @@ public sealed class ApprovedTimeExportService
         {
             cancellationToken.ThrowIfCancellationRequested();
             ApprovedTimeLedgerQueryResult result = await _ledgerQueryService
-                .QueryAsync(context, baseQuery with { Cursor = cursor }, cancellationToken)
+                .QueryForExportAsync(context, baseQuery with { Cursor = cursor }, cancellationToken)
                 .ConfigureAwait(false);
 
             if (!result.Authorization.IsAuthorized)
@@ -475,6 +472,11 @@ public sealed class ApprovedTimeExportService
 
             if (result.Page is not { } page)
             {
+                if (cursor is not null)
+                {
+                    return Unverified("The ledger snapshot could not be verified. Retry the export.");
+                }
+
                 return (null, TimesheetsAuthorizationDecision.Denied(
                     TimesheetsDenialCategory.UnavailableSiblingAuthority, "The authorized ledger is unavailable."));
             }
@@ -491,7 +493,7 @@ public sealed class ApprovedTimeExportService
                 snapshotId = page.ExportSnapshotId;
             }
 
-            if ((page.NextCursor is not null && string.IsNullOrWhiteSpace(snapshotId))
+            if ((snapshotId is null ? page.NextCursor is not null : string.IsNullOrWhiteSpace(snapshotId))
                 || !string.Equals(snapshotId, page.ExportSnapshotId, StringComparison.Ordinal)
                 || !string.Equals(first.Cursor, freshness.Cursor, StringComparison.Ordinal)
                 || first.AsOfUtc != freshness.AsOfUtc)
@@ -499,7 +501,7 @@ public sealed class ApprovedTimeExportService
                 return Unverified("The ledger snapshot could not be verified. Retry the export.");
             }
 
-            if (page.Items.Count > 0 && !page.CanUseForExport)
+            if (!page.CanUseForExport)
             {
                 return (new([], null, freshness, false, page.ExportReadinessDetail), null);
             }
@@ -539,6 +541,13 @@ public sealed class ApprovedTimeExportService
             {
                 return (null, finalDecision);
             }
+
+            TimesheetsAuthorizationDecision rowDecision = await AuthorizeRowsAsync(context, items, cancellationToken)
+                .ConfigureAwait(false);
+            if (!rowDecision.IsAuthorized)
+            {
+                return (null, rowDecision);
+            }
         }
 
         return (new(items, null, first, items.Count > 0, items.Count > 0
@@ -547,6 +556,25 @@ public sealed class ApprovedTimeExportService
 
         static (ApprovedTimeLedgerReadModel, TimesheetsAuthorizationDecision?) Unverified(string detail)
             => (new([], null, ProjectionFreshnessMetadata.Unavailable(detail), false, detail), null);
+    }
+
+    private async ValueTask<TimesheetsAuthorizationDecision> AuthorizeRowsAsync(
+        TimesheetsRequestContext context,
+        IReadOnlyList<ApprovedTimeLedgerRowReadModel> rows,
+        CancellationToken cancellationToken)
+    {
+        foreach (ApprovedTimeLedgerRowReadModel row in rows)
+        {
+            TimesheetsAuthorizationDecision decision = await _ledgerQueryService.AuthorizeRowAsync(context, row, cancellationToken)
+                .ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!decision.IsAuthorized)
+            {
+                return decision;
+            }
+        }
+
+        return TimesheetsAuthorizationDecision.Allowed();
     }
 
     private static IReadOnlyList<ApprovedTimeExportRowReadModel> ApplyExportOrdering(
@@ -573,9 +601,6 @@ public sealed class ApprovedTimeExportService
             TimeEntryQuerySortBy.DurationMinutes => row.DurationMinutes.ToString("D10", CultureInfo.InvariantCulture),
             _ => row.ServiceDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
         };
-
-    private static ApprovedTimeExportScope Scope(QueryApprovedTimeLedger query, int rowCount)
-        => new(query, rowCount, query.IncludeSupersededRows, query.CurrentRowsOnly);
 
     private static ApprovedTimeExportAuditMetadata Audit(
         TimesheetsRequestContext context,
