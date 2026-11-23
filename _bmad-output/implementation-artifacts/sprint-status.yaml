@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 11-21-2026 17:09 (course correction)
+# last_updated: 11-23-2026 12:19 (Story 6.2 review)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 11-21-2026 17:09
+last_updated: 11-23-2026 12:19
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -106,8 +106,8 @@ development_status:
   # Epic 6: Qualify Project Time and Finance Evidence
   epic-6: in-progress
   6-1-enforce-export-comment-policy-on-every-representation: review
-  # The local delivery guard is implemented. Durable recording and restart recovery are open.
-  6-2-require-a-durable-audit-before-delivering-finance-output: in-progress
+  # Durable recording and recovery after actor recreation passed. Installed host restart qualification remains open.
+  6-2-require-a-durable-audit-before-delivering-finance-output: review
   6-3-read-one-complete-ledger-snapshot-per-export: review
   6-4-persist-workload-authenticated-external-confirmation: backlog
   6-5-bound-external-recording-readback-and-report-uncertainty: backlog

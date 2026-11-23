@@ -182,8 +182,21 @@ on each page. Per-entry sequence numbers cannot certify whole-scope membership. 
 preview, file metadata and audit carry that version in `OutputScope.LedgerCheckpoint` or `Scope.LedgerCheckpoint`.
 A single atomic ledger page can omit its checkpoint.
 
-For production delivery, pre-register an `IApprovedTimeExportAuditRecorder` that verifies the committed
-EventStore receipt and returns `TimesheetsDomainResult.Success([verifiedEvent])` only for the exact
-`ApprovedTimeExported` metadata. The kernel default returns no acknowledgement. Preview never calls the
-recorder. Durable receipt writing, restart replay and production finance qualification remain open under
-[Stories 6.1–6.3](_bmad-output/planning-artifacts/epics.md#story-61-enforce-export-comment-policy-on-every-representation).
+The kernel records finance receipts through the Timesheets workload gateway. Enroll the
+`timesheets-commit-approved-time-export` command on the private `process` receiver. The gateway
+must authenticate the Timesheets workload and bind the finance requester's Party. The receiver checks
+their export authority before writing. Preview never opens the receipt stream.
+
+Use one `GenerateApprovedTimeExport.RequestId` for all attempts of a logical request. An explicit
+ID must contain 1–256 characters, include a non-whitespace character, and contain no control characters.
+Use a null cursor and the same effective page size on retry. The default for a nonpositive size is 50
+and the maximum is 500. The receipt also binds the trimmed tenant-local period and the requested sort.
+When the request ID is omitted, its correlation identifies the request within the tenant. The first
+authorized generation commits a metadata-only receipt. Subsequent calls reauthorize the ledger, rebuild
+the CSV, and recover the original correlation and UTC instants from the verified owner stream. A changed requester,
+filter, ledger snapshot, CSV digest or digest of the ordered redacted JSON rows withholds both rows and CSV.
+The reader checks the EventStore-issued event ID's ULID syntax. It verifies attribution through the
+tenant/request owner, single stream sequence, command causation, requester and receipt metadata. The
+Timesheets authority checks retain the exact authorized tenant. EventStore storage uses its lowercase tenant key.
+Custom recorders can still be registered before the kernel and must acknowledge the exact proposed event.
+The local actor-recreation test uses in-memory actor storage. Qualification on an installed host remains open.

@@ -17,4 +17,13 @@ public sealed record ApprovedTimeExported(
     string FormatVersion,
     ProjectionFreshnessState FreshnessState,
     int RowCount,
-    string OutputContentHashSha256);
+    string OutputContentHashSha256)
+{
+    /// <summary>Gets the SHA-256 of the ordered, redacted export rows serialized with web JSON options.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? OutputRowsHashSha256 { get; init; }
+
+    /// <summary>Gets the stable export request identity. When omitted, the correlation identifies the request.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public string? RequestId { get; init; }
+}

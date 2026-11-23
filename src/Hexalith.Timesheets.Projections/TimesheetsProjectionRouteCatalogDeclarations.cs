@@ -15,7 +15,7 @@ using Hexalith.Timesheets.Server.MagicLinks;
 
 namespace Hexalith.Timesheets.Projections;
 
-/// <summary>Complete Timesheets owner inventory for four commands and four installed named projections.</summary>
+/// <summary>Complete Timesheets owner inventory for installed commands and named projections.</summary>
 public static class TimesheetsProjectionRouteCatalogDeclarations
 {
     /// <summary>Gets the installed Server command policies from the selected host assembly context.</summary>
@@ -35,11 +35,11 @@ public static class TimesheetsProjectionRouteCatalogDeclarations
             "time-entry-evidence", TimeEntryEvidenceProjection.ProjectionName)
     ];
 
-    /// <summary>Gets all eight compiled owner routes.</summary>
+    /// <summary>Gets all compiled owner routes.</summary>
     public static IReadOnlyList<RouteContractDeclaration> Routes =>
         [.. Commands.Select(command => command.Route), .. Projections];
 
-    /// <summary>Gets value-free operation schemas for all eight protected receivers.</summary>
+    /// <summary>Gets value-free operation schemas for all protected receivers.</summary>
     public static IReadOnlyList<RouteOperationContract> Operations =>
         [.. ReadServerOwner<IReadOnlyList<RouteOperationContract>>("Operations"),
             .. Projections.Select(route => RouteOperationSchema.Create(route,

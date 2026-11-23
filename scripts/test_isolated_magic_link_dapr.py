@@ -1700,6 +1700,7 @@ foreach (var receiver in new[] { gateway, module })
                 instance.capture_route_catalog("before")
             routes = ["timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
                       "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
+                      "timesheets-commit-approved-time-export",
                       "timesheets-magic-link-token-hash-capability-index",
                       "timesheets-magic-link-confirmation-capabilities",
                       "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence"]
@@ -1707,7 +1708,7 @@ foreach (var receiver in new[] { gateway, module })
                        "routeFacetDigest": "route-digest", "idempotencyFacetDigest": "admission-digest",
                        "declarations": [{"routeId": route} for route in routes],
                        "routes": [{} for _ in routes], "operations": [{} for _ in routes],
-                       "idempotency": [{} for _ in range(4)]}
+                       "idempotency": [{} for _ in range(5)]}
             catalog_bytes = json.dumps(catalog).encode()
             digest = fixture.hashlib.sha256(catalog_bytes).hexdigest()
             hosts = [{"HostId": "eventstore"}, {"HostId": "timesheets"}]
@@ -1736,7 +1737,7 @@ foreach (var receiver in new[] { gateway, module })
                         result[field] = [{"RouteId": route} for route in routes]
                     result["ExecutableOwners"] = owner_hashes
                 else:
-                    result["AdmissionPolicies"] = [{"RouteId": route} for route in routes[:4]]
+                    result["AdmissionPolicies"] = [{"RouteId": route} for route in routes[:5]]
                 result["ReceiverSurface"] = technical_observations[app]["ReceiverSurface"]
                 return result
             readback = {"Serving": True, "Epoch": 1, "RootDigest": digest,

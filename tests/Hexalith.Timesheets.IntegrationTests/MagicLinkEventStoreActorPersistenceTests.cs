@@ -1467,15 +1467,16 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             }
         };
 
-    private static AggregateActor CreateMagicLinkActor(
+    internal static AggregateActor CreateMagicLinkActor(
         TimeEntryId entryId,
         InMemoryStateManager stateManager,
         InMemoryCommandStatusStore statusStore,
-        IDomainServiceInvoker invoker)
+        IDomainServiceInvoker invoker,
+        string? tenant = null)
     {
         var host = ActorHost.CreateForTest<AggregateActor>(new ActorTestOptions
         {
-            ActorId = new ActorId($"{Tenant().TenantId}:timesheets:{entryId.Value}")
+            ActorId = new ActorId($"{tenant ?? Tenant().TenantId}:timesheets:{entryId.Value}")
         });
         var actor = new AggregateActor(
             host,

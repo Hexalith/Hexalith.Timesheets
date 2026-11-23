@@ -101,7 +101,7 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<TimeEntryEvidenceListQueryService>();
         services.TryAddSingleton<ApprovedTimeLedgerQueryService>();
         services.TryAddSingleton<TimesheetsDashboardOverviewQueryService>();
-        services.TryAddSingleton<IApprovedTimeExportAuditRecorder, DomainEventApprovedTimeExportAuditRecorder>();
+        services.TryAddSingleton<IApprovedTimeExportAuditRecorder, EventStoreApprovedTimeExportAuditRecorder>();
         services.TryAddSingleton<ApprovedTimeExportService>();
         services.TryAddSingleton<ActualTimeReportQueryService>();
         services.TryAddSingleton<TimesheetPeriodSubmissionCommandService>();

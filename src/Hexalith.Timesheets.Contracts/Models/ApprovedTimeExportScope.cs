@@ -14,6 +14,10 @@ public sealed record ApprovedTimeExportScope(
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? LedgerCheckpoint { get; init; }
 
+    /// <summary>Gets the projection freshness cursor observed across the export scope.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LedgerCursor { get; init; }
+
     /// <summary>Gets the snapshot instant when supplied by the ledger reader.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public DateTimeOffset? LedgerAsOfUtc { get; init; }

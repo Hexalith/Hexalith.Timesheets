@@ -104,7 +104,7 @@ internal sealed class HttpRouteCatalogFixture
             typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
         IReadOnlyList<RouteContractDeclaration> declarations = CompiledRouteCatalogDeclarations.Read(owners);
         IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations(owners);
-        if (declarations.Count != 8 || operations.Count != declarations.Count)
+        if (declarations.Count != 9 || operations.Count != declarations.Count)
         {
             throw new RouteCatalogUnavailableException("The Timesheets owner route and operation inventory is incomplete.");
         }

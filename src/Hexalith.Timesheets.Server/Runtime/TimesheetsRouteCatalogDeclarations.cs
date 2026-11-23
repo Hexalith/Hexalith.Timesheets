@@ -5,6 +5,7 @@ using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.Contracts.Results;
 using Hexalith.EventStore.DomainService;
+using Hexalith.Timesheets.Server.Exports;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
@@ -13,21 +14,23 @@ namespace Hexalith.Timesheets.Server.Runtime;
 /// <summary>Exact internal Timesheets command inventory and owner intent policies.</summary>
 public static class TimesheetsRouteCatalogDeclarations
 {
-    /// <summary>Gets the four payloads accepted by the keyed domain processor.</summary>
+    /// <summary>Gets the payloads accepted by the keyed domain processor.</summary>
     public static IReadOnlyList<Type> PayloadTypes { get; } =
-        [typeof(CommitMagicLinkIssue), typeof(CommitMagicLinkTransition), typeof(CommitMagicLinkUse), typeof(CommitTimeEntryRecord)];
+        [typeof(CommitMagicLinkIssue), typeof(CommitMagicLinkTransition), typeof(CommitMagicLinkUse), typeof(CommitTimeEntryRecord),
+            typeof(CommitApprovedTimeExport)];
 
     /// <summary>Gets the complete internal command policies.</summary>
     public static IReadOnlyList<CommandIntentDeclaration> Commands { get; } =
         [Command<CommitMagicLinkIssue>("commit-magic-link-issue"),
             Command<CommitMagicLinkTransition>("commit-magic-link-transition"),
             Command<CommitMagicLinkUse>("commit-magic-link-use"),
-            Command<CommitTimeEntryRecord>("commit-time-entry-record")];
+            Command<CommitTimeEntryRecord>("commit-time-entry-record"),
+            Command<CommitApprovedTimeExport>("commit-approved-time-export")];
 
     /// <summary>Gets the compiled owner routes.</summary>
     public static IReadOnlyList<RouteContractDeclaration> Routes => [.. Commands.Select(command => command.Route)];
 
-    /// <summary>Gets the value-free schemas for the four internal workload operations.</summary>
+    /// <summary>Gets the value-free schemas for the internal workload operations.</summary>
     public static IReadOnlyList<RouteOperationContract> Operations =>
         [.. Routes.Select(route => RouteOperationSchema.Create(route,
             PayloadTypes.Single(type => type.FullName == route.Execution!.HandlerType),
@@ -40,7 +43,7 @@ public static class TimesheetsRouteCatalogDeclarations
     /// <summary>Creates adapters for the complete payload, including every authority-bearing field.</summary>
     public static IReadOnlyList<IDeclaredIdempotencyIntentAdapter> CreateAdapters() =>
         [Adapter<CommitMagicLinkIssue>(), Adapter<CommitMagicLinkTransition>(),
-            Adapter<CommitMagicLinkUse>(), Adapter<CommitTimeEntryRecord>()];
+            Adapter<CommitMagicLinkUse>(), Adapter<CommitTimeEntryRecord>(), Adapter<CommitApprovedTimeExport>()];
 
     private static CommandIntentDeclaration Command<T>(string slug)
     {

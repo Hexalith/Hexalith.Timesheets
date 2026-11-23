@@ -27,7 +27,10 @@ if (Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProje
     throw new InvalidOperationException("Read-model address compatibility failed");'''),
     "Server": ("Hexalith.Timesheets.Server.Authorization.TimesheetsAuthorizationDecision", '''
 var decision = Hexalith.Timesheets.Server.Authorization.TimesheetsAuthorizationDecision.Denied("consumer");
-if (decision.IsAuthorized || decision.Reason != "consumer") throw new InvalidOperationException("Authorization decision failed");'''),
+if (decision.IsAuthorized || decision.Reason != "consumer") throw new InvalidOperationException("Authorization decision failed");
+var commands = Hexalith.Timesheets.Server.Runtime.TimesheetsRouteCatalogDeclarations.Commands;
+if (commands.Count != 5 || commands.Count(command => command.Route.RouteId == "timesheets-commit-approved-time-export") != 1)
+    throw new InvalidOperationException("Finance receipt route inventory failed");'''),
     "Projections": ("Hexalith.Timesheets.Projections.ProjectionFreshnessMetadataMapper", '''
 var checkpoint = new Hexalith.Timesheets.Projections.TimesheetsProjectionCheckpoint(
     "consumer", "test", 7, Hexalith.Timesheets.Projections.ProjectionFreshness.Fresh);

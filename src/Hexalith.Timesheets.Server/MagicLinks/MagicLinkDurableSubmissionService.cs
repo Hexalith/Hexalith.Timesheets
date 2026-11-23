@@ -411,7 +411,7 @@ public sealed class MagicLinkDurableSubmissionService(
             .WaitAsync(probe.Token).ConfigureAwait(false);
     }
 
-    private async Task<StreamReadPage> ReadStoredEventsAsync(StreamReadRequest request,
+    internal async Task<StreamReadPage> ReadStoredEventsAsync(StreamReadRequest request,
         CancellationToken cancellationToken)
     {
         using CancellationTokenSource timeout = new(_polling.ReadbackTimeout, _clock);

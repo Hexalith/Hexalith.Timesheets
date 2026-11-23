@@ -2705,15 +2705,16 @@ class IsolatedFixture:
         expected_routes = {
             "timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
             "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
+            "timesheets-commit-approved-time-export",
             "timesheets-magic-link-token-hash-capability-index",
             "timesheets-magic-link-confirmation-capabilities",
             "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence",
         }
         route_ids = {item["routeId"] for item in catalog["declarations"]}
         require(catalog["schemaVersion"] == 3 and catalog["profile"] == "Development"
-                and route_ids == expected_routes and len(catalog["routes"]) == 8
-                and len(catalog["operations"]) == 8 and len(catalog["idempotency"]) == 4,
-                "SDK catalog differs from the eight compiled owner routes and policies")
+                and route_ids == expected_routes and len(catalog["routes"]) == 9
+                and len(catalog["operations"]) == 9 and len(catalog["idempotency"]) == 5,
+                "SDK catalog differs from the nine compiled owner routes and policies")
         catalog_digest = hashlib.sha256((directory / "catalog.json").read_bytes()).hexdigest()
         activation = documents["activation.json"]
         technical_receivers = activation.get("TechnicalHttpReceivers")
@@ -2794,7 +2795,8 @@ class IsolatedFixture:
                 and observations["timesheets"]["admission_route_ids"] == []
                 and observations["eventstore"]["admission_route_ids"] == sorted([
                     "timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
-                    "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record"]),
+                    "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
+                    "timesheets-commit-approved-time-export"]),
                 "Actual catalog receiver or workload policies are incomplete")
         authority = documents["authority.component.json"]
         require(authority["metadata"]["name"] == "timesheets-route-authority"
@@ -3230,7 +3232,7 @@ class IsolatedFixture:
             if not self.injected_command:
                 self.capture_runtime_readiness()
                 if self.route_catalog:
-                    print("compiled eight-route SDK catalog and exact receivers committed", flush=True)
+                    print("compiled nine-route SDK catalog and exact receivers committed", flush=True)
             if self.security_smoke:
                 self.verify_security_runtime()
             if not self.injected_command:

@@ -4,6 +4,7 @@ using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
+using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.ApprovedTimeLedger;
@@ -19,6 +20,63 @@ namespace Hexalith.Timesheets.Server.Tests;
 
 public sealed partial class ApprovedTimeExportServiceTests
 {
+    [Fact]
+    public void VersionOneReceiptCommandIdentityMatchesFixedVector()
+    {
+        var filters = new QueryApprovedTimeLedger { BillableState = BillableState.Billable };
+        ApprovedTimeExported receipt = new(new("operator-1"), new("tenant-1"), filters,
+            RequestedAtUtc(), RequestedAtUtc().AddSeconds(10), "trace-42", new(filters, 1, false, true),
+            ApprovedTimeExportFormat.Csv, "approved-time-export.csv.v1", ProjectionFreshnessState.Fresh, 1, new string('a', 64))
+        {
+            RequestId = "example-request", OutputRowsHashSha256 = new string('b', 64)
+        };
+        ApprovedTimeExportReceipt.IsValid(receipt with { Tenant = new("sYsTeM") }, out _).ShouldBeFalse();
+        ApprovedTimeExportReceipt.IsValid(receipt with { Tenant = new("Tenant-1") }, out string canonical).ShouldBeTrue();
+        ApprovedTimeExportReceipt.Owner(canonical, receipt).ShouldBe("finance-export-0N206V26ZTKBPYQKGSTFD0ZYFW");
+        ApprovedTimeExportReceipt.MessageId(receipt, "01ARZ3NDEKTSV4RRFFQ69G5FAV").ShouldBe("1RKQNGW1VMP7H1BKE9Z41KR6CZ");
+    }
+
+    [Fact]
+    public async Task NullLedgerFiltersRespectCancellationAndAuthorizationBeforeReportingInvalidInput()
+    {
+        var token = TestContext.Current.CancellationToken;
+        var context = Context();
+        var command = Command() with { RequestId = "retry-key", LedgerQuery = null! };
+        var reader = new TrackingLedgerReader(Page([]));
+        var recorder = new TrackingAuditRecorder();
+        var service = Service(new SequencedAccessGuard([TimesheetsAuthorizationDecision.Denied("No export role.")]),
+            reader, new TrackingHydrator(), recorder);
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        await Should.ThrowAsync<OperationCanceledException>(() => service.GenerateAsync(context, command, RequestedAtUtc(), cancelled.Token).AsTask());
+        (await service.GenerateAsync(context, command, RequestedAtUtc(), token)).Export.ShouldBeNull();
+        var blocked = await service.GenerateAsync(context, command, RequestedAtUtc(), token);
+        AssertNoDelivery(blocked);
+        blocked.Export!.Audit.RequestId.ShouldBe("retry-key");
+        var preview = await service.PreviewAsync(context, new() { LedgerQuery = null! }, RequestedAtUtc(), token);
+        preview.Preview!.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Blocked);
+        reader.Calls.ShouldBe(0);
+        recorder.Events.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task ExplicitRequestIdsAreBoundedAndControlFree()
+    {
+        var token = TestContext.Current.CancellationToken;
+        var reader = new TrackingLedgerReader(Page([Row("entry", ProjectTarget())]));
+        var recorder = new TrackingAuditRecorder();
+        var service = Service(new SequencedAccessGuard([]), reader, new TrackingHydrator(), recorder);
+        foreach (var id in new[] { "", "  ", "bad\nkey", new string('x', 257) })
+        {
+            var blocked = await service.GenerateAsync(Context(), Command() with { RequestId = id }, RequestedAtUtc(), token);
+            AssertNoDelivery(blocked);
+            blocked.Export!.Audit.RequestId.ShouldBeNull();
+        }
+        reader.Calls.ShouldBe(0);
+        recorder.Events.ShouldBeEmpty();
+        (await service.GenerateAsync(Context(), Command() with { RequestId = new string('x', 256) }, RequestedAtUtc(), token)).WasGenerated.ShouldBeTrue();
+    }
+
     [Theory]
     [InlineData(true, true, true, false)]
     [InlineData(true, true, true, true)]

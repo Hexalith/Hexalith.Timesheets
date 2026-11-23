@@ -12,7 +12,7 @@ public sealed class DomainEventApprovedTimeExportAuditRecorder : IApprovedTimeEx
         ArgumentNullException.ThrowIfNull(evidence);
 
         cancellationToken.ThrowIfCancellationRequested();
-        // No durable store is installed by the kernel.
+        // Direct construction without a durable recorder withholds delivery.
         return ValueTask.FromResult(TimesheetsDomainResult.NoOp());
     }
 }

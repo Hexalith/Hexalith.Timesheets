@@ -3,6 +3,7 @@ using System.Text.Json;
 
 using Hexalith.EventStore.Client.Handlers;
 using Hexalith.EventStore.Contracts.Commands;
+using Hexalith.EventStore.Contracts.Identity;
 using Hexalith.EventStore.Contracts.Events;
 using Hexalith.EventStore.Contracts.Results;
 using Hexalith.EventStore.DomainService;
@@ -15,6 +16,7 @@ using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.ActivityTypes;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
+using Hexalith.Timesheets.Server.Exports;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
@@ -28,7 +30,8 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     MagicLinkConfirmationCapabilityCommandService commandService,
     ExternalContributionCommandService externalContributionService,
     TimeProvider clock,
-    IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer) : IDomainProcessor, IAsyncDomainProcessor, IDomainCommandPayloadInventory
+    IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer,
+    ITimesheetsAccessGuard? exportAccessGuard) : IDomainProcessor, IAsyncDomainProcessor, IDomainCommandPayloadInventory
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -49,6 +52,17 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     {
     }
 
+    /// <summary>Preserves the existing constructor for capability processing.</summary>
+    public MagicLinkEventStoreDomainProcessor(
+        EventStoreMagicLinkConfirmationCapabilityStateLoader stateLoader,
+        MagicLinkConfirmationCapabilityCommandService commandService,
+        ExternalContributionCommandService externalContributionService,
+        TimeProvider clock,
+        IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer)
+        : this(stateLoader, commandService, externalContributionService, clock, systemExpiryAuthorizer, null)
+    {
+    }
+
     /// <inheritdoc/>
     public Task<DomainResult> ProcessAsync(CommandEnvelope command, object? currentState)
         => ProcessAsync(command, currentState, CancellationToken.None);
@@ -61,6 +75,13 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     {
         ArgumentNullException.ThrowIfNull(command);
         cancellationToken.ThrowIfCancellationRequested();
+        if (StringComparer.Ordinal.Equals(command.CommandType, typeof(CommitApprovedTimeExport).FullName))
+        {
+            // Rejection events would occupy a first-write-only receipt stream.
+            return command.Domain == TimesheetsEventStoreIntegration.DomainName && HasVerifiedWorkloadOrigin(command)
+                ? await ProcessExportAsync(command, currentState, cancellationToken).ConfigureAwait(false) : DomainResult.NoOp();
+        }
+
         if (!StringComparer.Ordinal.Equals(command.Domain, TimesheetsEventStoreIntegration.DomainName))
         {
             return Reject();
@@ -193,6 +214,41 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             ? new StoredTimeEntryConfirmed((TimeEntryContributorConfirmed)result.TimeEntryResult!.DomainResult!.Events[0])
             : new StoredTimeEntryAdjusted((TimeEntryAdjustedThroughMagicLink)result.AdjustmentResult!.DomainResult!.Events[0]);
         return DomainResult.Success([new StoredMagicLinkUsed(used), effect]);
+    }
+
+    private async Task<DomainResult> ProcessExportAsync(
+        CommandEnvelope command, object? currentState, CancellationToken cancellationToken)
+    {
+        CommitApprovedTimeExport? intent;
+        try
+        {
+            intent = JsonSerializer.Deserialize<CommitApprovedTimeExport>(command.Payload, _jsonOptions);
+        }
+        catch (Exception exception) when (exception is JsonException or ArgumentException)
+        {
+            return DomainResult.NoOp();
+        }
+
+        if (intent?.Receipt is not { Requester: { } requester } receipt
+            || exportAccessGuard is null || !HasVerifiedActor(command, requester.PartyId)
+            || !ApprovedTimeExportReceipt.IsValid(receipt, out string tenant) || command.TenantId != tenant
+            || command.AggregateId != ApprovedTimeExportReceipt.Owner(tenant, receipt)
+            || !MessageIdGrammar.IsValid(intent.AttemptId, 2)
+            || command.MessageId != ApprovedTimeExportReceipt.MessageId(receipt, intent.AttemptId)
+            || command.CorrelationId != command.MessageId || command.CausationId != command.MessageId)
+        {
+            return DomainResult.NoOp();
+        }
+
+        TimesheetsRequestContext context = new(receipt.Tenant, requester, receipt.CorrelationId);
+        var decision = await exportAccessGuard.AuthorizeAsync(ApprovedTimeExportReceipt.Authority(context, receipt.Filters), cancellationToken).ConfigureAwait(false);
+        if (!decision.IsAuthorized)
+        {
+            return DomainResult.NoOp();
+        }
+
+        // The actor serializes decisions for this tenant/request owner. A populated stream is immutable.
+        return currentState is null ? DomainResult.Success([new StoredApprovedTimeExported(receipt, intent.AttemptId)]) : DomainResult.NoOp();
     }
 
     private async Task<DomainResult> ProcessRecordAsync(

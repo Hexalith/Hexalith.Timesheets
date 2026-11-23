@@ -23,7 +23,7 @@ using Shouldly;
 
 namespace Hexalith.Timesheets.IntegrationTests;
 
-public sealed class ApprovedTimeExportIntegrationTests
+public sealed partial class ApprovedTimeExportIntegrationTests
 {
     [Fact]
     public void GoldenCsvV1FixturePinsProjectWorkBoundariesLineageAiMetricsAndCommentSafety()
