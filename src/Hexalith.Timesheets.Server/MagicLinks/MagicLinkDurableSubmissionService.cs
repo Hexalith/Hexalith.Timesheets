@@ -553,21 +553,25 @@ public sealed class MagicLinkDurableSubmissionService(
             RedactionRequirement = issued.RedactionRequirement,
             ServerPublicationVersion = issued.ServerPublicationVersion,
             ServerProjectionInclusion = issued.ServerProjectionInclusion,
-            ServerExternalConfirmationDisplay = issued.ServerExternalConfirmationDisplay
+            ServerExternalConfirmationDisplay = issued.ServerExternalConfirmationDisplay,
+            ServerExportInclusion = issued.ServerExportInclusion
         }));
     }
 
+    /// <summary>Verifies stored issuance and compares the exact expected comment.</summary>
     internal static bool CommentsMatchExpected(TimeEntryComment? stored, TimeEntryComment? expected)
     {
         if (stored is null || expected is null) return stored is null && expected is null;
         if (stored.Policy is null || expected.Policy is null) return false;
-        if (stored.Policy.ServerPublicationVersion != TimeEntryCommentPublicationIssuer.CurrentVersion
+        if (stored.Policy.ServerPublicationVersion is not (TimesheetsDomain.ExternalCommentPublicationVersion
+                or TimesheetsDomain.CommentPublicationVersion)
             || stored.Policy.ServerProjectionInclusion is not (TimesheetsCommentPolicyDecision.Allowed
                 or TimesheetsCommentPolicyDecision.PolicyRequired)
             || stored.Policy.ProjectionInclusion != stored.Policy.ServerProjectionInclusion
             || stored.Policy.ServerExternalConfirmationDisplay is not (TimesheetsCommentPolicyDecision.Allowed
                 or TimesheetsCommentPolicyDecision.Excluded)
-            || stored.Policy.ExternalConfirmationDisplay != stored.Policy.ServerExternalConfirmationDisplay)
+            || stored.Policy.ExternalConfirmationDisplay != stored.Policy.ServerExternalConfirmationDisplay
+            || !stored.Policy.HasValidServerExportDecision())
             return false;
         return stored == expected;
     }

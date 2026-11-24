@@ -428,7 +428,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
                 {
                     ServerPublicationVersion = 2,
                     ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
-                    ExportInclusion = TimesheetsCommentPolicyDecision.Allowed
+                    ServerExportInclusion = TimesheetsCommentPolicyDecision.Allowed
                 })
             }, tenant),
          new("r2", 2, Submitted("finance-entry-123") with { Tenant = new(tenant) }, tenant),

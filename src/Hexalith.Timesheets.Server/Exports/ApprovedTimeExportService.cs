@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 
+using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Contracts.Commands.Exports;
 using Hexalith.Timesheets.Contracts.Events.Exports;
 using Hexalith.Timesheets.Contracts.Models;
@@ -390,10 +391,25 @@ public sealed class ApprovedTimeExportService
     }
 
     private static TimesheetsCommentPolicyDecision ExportDecision(TimeEntryComment? comment, TimesheetsCommentPolicyDecision tenantPolicy)
-        => tenantPolicy == TimesheetsCommentPolicyDecision.Allowed
-            && comment?.Policy.RedactionRequirement is TimesheetsCommentRedactionRequirement.NotRequired
-                or TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
-            ? comment.Policy.ExportInclusion : TimesheetsCommentPolicyDecision.Excluded;
+    {
+        if (tenantPolicy != TimesheetsCommentPolicyDecision.Allowed || comment?.Policy is not
+            {
+                RedactionRequirement: TimesheetsCommentRedactionRequirement.NotRequired
+                    or TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
+            } policy)
+        {
+            return TimesheetsCommentPolicyDecision.Excluded;
+        }
+
+        return policy.ServerPublicationVersion switch
+        {
+            TimesheetsDomain.CommentPublicationVersion when policy.ServerExportInclusion == TimesheetsCommentPolicyDecision.Allowed
+                => TimesheetsCommentPolicyDecision.Allowed,
+            1 or TimesheetsDomain.ExternalCommentPublicationVersion when policy.ExportInclusion is
+                TimesheetsCommentPolicyDecision.Redacted or TimesheetsCommentPolicyDecision.PolicyRequired => policy.ExportInclusion,
+            _ => TimesheetsCommentPolicyDecision.Excluded
+        };
+    }
 
     private static string? ValidateContract(
         ApprovedTimeExportFormat format,

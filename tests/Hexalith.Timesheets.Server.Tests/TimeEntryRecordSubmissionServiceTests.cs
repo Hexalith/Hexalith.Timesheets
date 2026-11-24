@@ -120,6 +120,40 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Theory]
+    [InlineData(null, true)]
+    [InlineData(TimesheetsCommentPolicyDecision.Allowed, true)]
+    [InlineData(TimesheetsCommentPolicyDecision.PolicyRequired, false)]
+    public async Task ExistingRecordingUsesOnlyValidRetainedFinanceDecisions(
+        TimesheetsCommentPolicyDecision? retainedDecision, bool expected)
+    {
+        SubmitExternalTimeEntry command = Command() with
+        {
+            Comment = new TimeEntryComment("private note", TimeEntryCommentPolicy.SensitiveDefault with
+            {
+                ExportInclusion = TimesheetsCommentPolicyDecision.Allowed
+            })
+        };
+        var issuer = new TimeEntryCommentPublicationIssuer();
+        var issued = issuer.Issue(Context(), command.Comment).ShouldNotBeNull();
+        var stored = new TimeEntryComment(issued.Text, issued.Policy with { ServerExportInclusion = retainedDecision });
+        string? messageId = null;
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                messageId = call.ArgAt<string>(1);
+                return Task.FromResult<CommandStatusQueryResponse?>(Status(messageId));
+            });
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(Page(Recorded(command) with { Comment = stored }, messageId!)));
+
+        (await Service(gateway).SubmitAsync(Context(), command, DateTimeOffset.UtcNow,
+            TestContext.Current.CancellationToken)).ShouldBe(expected);
+        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(
+            Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
     [InlineData("", "event-message-2")]
     [InlineData("event-message-1", "event-message-1")]
     [InlineData("event-message-1", " ")]

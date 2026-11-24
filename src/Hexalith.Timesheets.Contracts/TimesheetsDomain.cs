@@ -6,6 +6,9 @@ public static class TimesheetsDomain
     /// <summary>The EventStore domain name.</summary>
     public const string Name = "timesheets";
 
-    /// <summary>The current server-issued comment publication decision version.</summary>
-    public const int CommentPublicationVersion = 2;
+    /// <summary>The legacy publication version that introduced independent external-display decisions.</summary>
+    public const int ExternalCommentPublicationVersion = 2;
+
+    /// <summary>The current publication version, including independent finance decisions.</summary>
+    public const int CommentPublicationVersion = 3;
 }

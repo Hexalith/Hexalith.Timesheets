@@ -18,6 +18,20 @@ public sealed class EvidencePolicyContractTests
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     [Fact]
+    public void LegacyCommentPolicyOmitsFinanceAuthorityAndNewDecisionsRoundTrip()
+    {
+        var legacy = TimeEntryCommentPolicy.SensitiveDefault with { ExportInclusion = TimesheetsCommentPolicyDecision.Allowed };
+        string legacyJson = JsonSerializer.Serialize(legacy, JsonOptions);
+        legacyJson.ShouldNotContain("serverExportInclusion");
+        JsonSerializer.Deserialize<TimeEntryCommentPolicy>(legacyJson, JsonOptions).ShouldBe(legacy);
+
+        var issued = legacy with { ServerExportInclusion = TimesheetsCommentPolicyDecision.Excluded };
+        string issuedJson = JsonSerializer.Serialize(issued, JsonOptions);
+        JsonNode.Parse(issuedJson)!["serverExportInclusion"]!.GetValue<string>().ShouldBe("Excluded");
+        JsonSerializer.Deserialize<TimeEntryCommentPolicy>(issuedJson, JsonOptions).ShouldBe(issued);
+    }
+
+    [Fact]
     public void EvidencePolicyEnumsExposeUnknownZeroSentinelsAndStringJson()
     {
         Enum.GetName((TimesheetsEvidenceRetentionCategory)0).ShouldBe("Unknown");

@@ -1387,7 +1387,8 @@
           "retentionCategory": { "$ref": "#/components/schemas/TimesheetsEvidenceRetentionCategory" },
           "serverPublicationVersion": { "type": "integer", "description": "Version of the server-issued per-comment publication decision. Caller-supplied values are replaced." },
           "serverProjectionInclusion": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision", "description": "Server-issued per-comment projection decision. Caller-supplied values are replaced." },
-          "serverExternalConfirmationDisplay": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision", "description": "Server-issued per-comment external confirmation display decision. Caller-supplied values are replaced." }
+          "serverExternalConfirmationDisplay": { "$ref": "#/components/schemas/TimesheetsCommentPolicyDecision", "description": "Server-issued per-comment external confirmation display decision. Caller-supplied values are replaced." },
+          "serverExportInclusion": { "type": "string", "enum": [ "Allowed", "Excluded" ], "description": "Server-issued finance permission for the exact comment text. Omitted in legacy data. Caller-supplied values are replaced." }
         }
       },
       "TimesheetsMetadataDescriptor": {

@@ -923,7 +923,7 @@ public sealed class TimeEntryEvidenceProjectionHandler(
             && Enum.IsDefined(policy.InternalDisplay) && policy.InternalDisplay != TimesheetsCommentPolicyDecision.Unknown
             && Enum.IsDefined(policy.ExternalConfirmationDisplay) && policy.ExternalConfirmationDisplay != TimesheetsCommentPolicyDecision.Unknown
             && Enum.IsDefined(policy.ProjectionInclusion) && policy.ProjectionInclusion != TimesheetsCommentPolicyDecision.Unknown
-            && policy.ServerPublicationVersion is 0 or 1 or TimesheetsDomain.CommentPublicationVersion
+            && policy.HasValidServerExportDecision()
             && Enum.IsDefined(policy.ServerProjectionInclusion)
             && Enum.IsDefined(policy.ServerExternalConfirmationDisplay)
             && (policy.ServerExternalConfirmationDisplay == TimesheetsCommentPolicyDecision.PolicyRequired

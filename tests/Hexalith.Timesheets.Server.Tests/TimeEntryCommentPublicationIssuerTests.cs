@@ -22,9 +22,11 @@ public sealed class TimeEntryCommentPublicationIssuerTests
         {
             ProjectionInclusion = callerDecision,
             ExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed,
+            ExportInclusion = TimesheetsCommentPolicyDecision.Allowed,
             ServerPublicationVersion = 1,
             ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
-            ServerExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed
+            ServerExternalConfirmationDisplay = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExportInclusion = TimesheetsCommentPolicyDecision.Allowed
         });
         TimeEntryComment issued = new TimeEntryCommentPublicationIssuer().Issue(Context(), submitted)
             .ShouldNotBeNull();
@@ -34,6 +36,8 @@ public sealed class TimeEntryCommentPublicationIssuerTests
         issued.Policy.ProjectionInclusion.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         issued.Policy.ExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
         issued.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        issued.Policy.ExportInclusion.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
+        issued.Policy.ServerExportInclusion.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
         issued.Policy.RedactionRequirement.ShouldBe(
             TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure);
     }
@@ -121,6 +125,25 @@ public sealed class TimeEntryCommentPublicationIssuerTests
         issued.Policy.RedactionRequirement.ShouldBe(
             TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure);
         issued.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+    }
+
+    [Theory]
+    [InlineData(TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure, TimesheetsCommentPolicyDecision.Allowed)]
+    [InlineData(TimesheetsCommentRedactionRequirement.RequiredBeforeExport, TimesheetsCommentPolicyDecision.Excluded)]
+    public void FinanceClearanceRequiresAuthorityForExactTextAndHonorsExportRedaction(
+        TimesheetsCommentRedactionRequirement requirement, TimesheetsCommentPolicyDecision decision)
+    {
+        var context = Context();
+        var authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayExportUnredacted(context, "reviewed text").Returns(true);
+        var issuer = new TimeEntryCommentPublicationIssuer(authority);
+        var policy = TimeEntryCommentPolicy.SensitiveDefault with { RedactionRequirement = requirement };
+
+        var reviewed = issuer.Issue(context, new TimeEntryComment("reviewed text", policy)).ShouldNotBeNull();
+        reviewed.Policy.ServerExportInclusion.ShouldBe(decision);
+        reviewed.Policy.ServerExternalConfirmationDisplay.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
+        issuer.Issue(context, new TimeEntryComment("different text", policy)).ShouldNotBeNull()
+            .Policy.ServerExportInclusion.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
     }
 
     private static TimesheetsRequestContext Context() => new(

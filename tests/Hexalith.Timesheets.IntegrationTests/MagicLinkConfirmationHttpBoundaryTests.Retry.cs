@@ -259,14 +259,19 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
     /// <summary>Reconciles original comment decisions and replacement activity after an opaque commit.</summary>
     /// <param name="replacement">Whether the committed adjustment changes Activity Type.</param>
+    /// <param name="legacyFinanceDecision">Whether the retained event predates independent finance authority.</param>
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task KeyedAdjustmentReconcilesReplacementActivityAndOriginalCommentAcrossPolicyChange(bool replacement)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task KeyedAdjustmentReconcilesReplacementActivityAndOriginalCommentAcrossPolicyChange(
+        bool replacement, bool legacyFinanceDecision)
     {
         bool allowPublication = true;
         var authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
         authority.MayPublish(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>()).Returns(_ => allowPublication);
+        authority.MayExportUnredacted(Arg.Any<TimesheetsRequestContext>(), "original private retry note")
+            .Returns(_ => allowPublication);
         using MagicLinkHttpBoundaryFactory factory = new(useConcreteLoader: true, commentAuthority: authority);
         using HttpClient client = factory.CreateClient();
         var capability = new MagicLinkCapabilityId("retry-comment-capability");
@@ -288,6 +293,22 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         }
         factory.Gateway.StatusTransform = status => status with
         { Status = nameof(CommandStatus.Processing), StatusCode = (int)CommandStatus.Processing };
+        if (legacyFinanceDecision)
+        {
+            factory.Gateway.StoredPayloadTransform = payload => payload is StoredTimeEntryAdjusted adjustment
+                && adjustment.Event.AdjustedValues.Comment is { } comment
+                ? adjustment with
+                {
+                    Event = adjustment.Event with
+                    {
+                        AdjustedValues = adjustment.Event.AdjustedValues with
+                        {
+                            Comment = new(comment.Text, comment.Policy with { ServerExportInclusion = null })
+                        }
+                    }
+                }
+                : payload;
+        }
         using HttpResponseMessage opaque = await Send(command);
         opaque.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
         StreamReadEvent[] committed = factory.Gateway.StoredEvents(Tenant().TenantId, entry.Value);
@@ -295,12 +316,16 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var effect = JsonSerializer.Deserialize<StoredTimeEntryAdjusted>(committed[2].Payload, JsonOptions)!.Event;
         effect.AdjustedValues.ActivityTypeId.ShouldBe(command.ActivityTypeId);
         effect.AdjustedValues.Comment!.Policy.ServerProjectionInclusion.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
+        effect.AdjustedValues.Comment.Policy.ServerExportInclusion.ShouldBe(
+            legacyFinanceDecision ? null : TimesheetsCommentPolicyDecision.Allowed);
         allowPublication = false;
         authority.ClearReceivedCalls();
         factory.Gateway.StatusTransform = null;
+        factory.Gateway.StoredPayloadTransform = null;
         using HttpResponseMessage retry = await Send(command);
         retry.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         authority.DidNotReceive().MayPublish(Arg.Any<TimesheetsRequestContext>(), Arg.Any<TimeEntryComment>());
+        authority.DidNotReceive().MayExportUnredacted(Arg.Any<TimesheetsRequestContext>(), Arg.Any<string>());
         factory.Gateway.SubmissionCount.ShouldBe(1);
         JsonSerializer.Serialize(factory.Gateway.StoredEvents(Tenant().TenantId, entry.Value)).ShouldBe(JsonSerializer.Serialize(committed));
         using HttpResponseMessage conflict = await Send(command with { Comment = new TimeEntryComment("different private note", command.Comment!.Policy) });
@@ -324,6 +349,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         fresh.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         var nextEffect = JsonSerializer.Deserialize<StoredTimeEntryAdjusted>(factory.Gateway.StoredEvents(Tenant().TenantId, nextEntry.Value)[2].Payload, JsonOptions)!.Event;
         nextEffect.AdjustedValues.Comment!.Policy.ServerProjectionInclusion.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
+        nextEffect.AdjustedValues.Comment.Policy.ServerExportInclusion.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
     }
 
     [Theory]

@@ -1322,6 +1322,14 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
             Recorded() with { Comment = new TimeEntryComment("sensitive",
                 TimeEntryCommentPolicy.SensitiveDefault with { ServerExternalConfirmationDisplay = (TimesheetsCommentPolicyDecision)99 }) },
             Recorded() with { Comment = new TimeEntryComment("sensitive",
+                TimeEntryCommentPolicy.SensitiveDefault with { ServerExportInclusion = TimesheetsCommentPolicyDecision.Allowed }) },
+            Recorded() with { Comment = new TimeEntryComment("sensitive",
+                TimeEntryCommentPolicy.SensitiveDefault with
+                {
+                    ServerPublicationVersion = TimesheetsDomain.CommentPublicationVersion,
+                    ServerExportInclusion = TimesheetsCommentPolicyDecision.Unknown
+                }) },
+            Recorded() with { Comment = new TimeEntryComment("sensitive",
                 TimeEntryCommentPolicy.SensitiveDefault with { ProjectionInclusion = (TimesheetsCommentPolicyDecision)99 }) },
             Recorded() with { Comment = new TimeEntryComment("sensitive",
                 TimeEntryCommentPolicy.SensitiveDefault with { ExportInclusion = (TimesheetsCommentPolicyDecision)99 }) },

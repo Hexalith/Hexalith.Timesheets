@@ -99,7 +99,7 @@ public sealed class TimeEntryRecordSubmissionService(
                 || recorded.ContributorCategory != ContributorCategory.ExternalContributor
                 || recorded.AiMetrics is not null
                 || !MagicLinkDurableSubmissionService.CommentsMatchExpected(
-                    recorded.Comment, expectedComment)
+                    recorded.Comment, expectedComment, useStoredFinanceDecision: submission.WasPresentAtPreflight)
                 || recorded.ExternalSource != command.Source)
             {
                 return false;

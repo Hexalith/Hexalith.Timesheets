@@ -454,12 +454,14 @@ public sealed partial class ApprovedTimeExportIntegrationTests
     }
 
     [Theory]
-    [InlineData(1, true)]
-    [InlineData(2, true)]
-    [InlineData(0, true)]
-    [InlineData(99, true)]
-    [InlineData(2, false)]
-    public async Task PublicationAndFinanceDecisionsSurviveTheFullCorrectionJourney(int correctedVersion, bool hostAllows)
+    [InlineData(1, true, false)]
+    [InlineData(2, true, false)]
+    [InlineData(2, true, true)]
+    [InlineData(0, true, false)]
+    [InlineData(99, true, false)]
+    [InlineData(2, false, true)]
+    public async Task PublicationAndFinanceDecisionsSurviveTheFullCorrectionJourney(
+        int correctedVersion, bool hostAllows, bool financeCleared)
     {
         const string Id = "corrected-entry";
         TimeEntryTargetReference target = TimeEntryTargetReference.ForProject(Project());
@@ -472,7 +474,8 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         TimeEntryComment corrected = new("corrected-export-marker", original.Policy with
         {
             ServerPublicationVersion = correctedVersion,
-            ExportInclusion = TimesheetsCommentPolicyDecision.Allowed
+            ExportInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExportInclusion = financeCleared ? TimesheetsCommentPolicyDecision.Allowed : null
         });
         TimeEntryApprovedCorrected correction = ApprovedCorrected(Id, target, 60);
         TimeEntryProjectionEvent[] events =
@@ -499,6 +502,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         var rebuilt = await ledger.QueryAsync(Context(), fullQuery, token);
         string ledgerJson = JsonSerializer.Serialize(rebuilt.Page.ShouldNotBeNull().Items);
         bool currentVisible = hostAllows && correctedVersion is 1 or 2;
+        bool currentExported = currentVisible && financeCleared;
         ledgerJson.Contains(original.Text, StringComparison.Ordinal).ShouldBe(hostAllows);
         ledgerJson.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
         rebuilt.Page.Items.Select(row => row.TimeEntryId.Value).ShouldBe([Id, Id]);
@@ -534,7 +538,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
             correction.CorrectedAtUtc, token)).Preview.ShouldNotBeNull();
         preview.Readiness.ShouldBe(ApprovedTimeExportReadinessState.Ready);
         preview.CommentExportPolicy.ShouldBe(TimesheetsCommentPolicyDecision.Excluded);
-        (preview.ReadinessDetail == "Comments are permitted for some values only.").ShouldBe(currentVisible);
+        (preview.ReadinessDetail == "Comments are permitted for some values only.").ShouldBe(currentExported);
         ApprovedTimeExportResult generated = await service.GenerateAsync(Context(), new() { LedgerQuery = query },
             correction.CorrectedAtUtc, token);
         generated.WasGenerated.ShouldBeTrue();
@@ -545,10 +549,10 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         string json = JsonSerializer.Serialize(export.Rows);
         json.ShouldContain(correction.TimeEntryCorrectionId.Value);
         json.ShouldNotContain(original.Text);
-        json.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
+        json.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentExported);
         string csv = export.CsvContent.ShouldNotBeNull();
         csv.ShouldNotContain(original.Text);
-        csv.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);
+        csv.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentExported);
     }
 
     [Theory]

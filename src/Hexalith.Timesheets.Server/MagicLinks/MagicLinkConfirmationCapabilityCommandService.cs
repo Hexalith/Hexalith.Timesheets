@@ -531,7 +531,10 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
                 ["serviceDate", "durationMinutes", "activityTypeId", "billableState", "comment"],
                 ["target", "contributor", "tenant", "timeEntryId", "approvalState"])
             {
-                Comment = timeEntryState.Comment?.Policy is { ServerPublicationVersion: TimeEntryCommentPublicationIssuer.CurrentVersion,
+                Comment = timeEntryState.Comment?.Policy is
+                {
+                    ServerPublicationVersion: TimesheetsDomain.ExternalCommentPublicationVersion
+                        or TimesheetsDomain.CommentPublicationVersion,
                     ServerExternalConfirmationDisplay: TimesheetsCommentPolicyDecision.Allowed,
                     ExternalConfirmationDisplay: TimesheetsCommentPolicyDecision.Allowed,
                     RedactionRequirement: TimesheetsCommentRedactionRequirement.NotRequired }

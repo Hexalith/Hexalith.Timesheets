@@ -175,8 +175,11 @@ services.AddSingleton(new TimesheetsEvidencePolicyOptions
 ```
 
 Use values approved by the tenant and retention policy owners. The host-wide `ExportCommentsAllowed` flag,
-the tenant's finance decision and the published value's `ExportInclusion` must all permit its text.
-A published value that still requires export redaction is withheld.
+the tenant's finance decision and the published value's `ServerExportInclusion` must all permit its text.
+Register a trusted `ITimeEntryCommentPublicationAuthority` that implements `MayExportUnredacted` to issue
+this decision for the exact text in the authorized request context. The default authority excludes comments.
+Legacy values without a server-issued finance decision and values requiring export redaction are withheld.
+If excluding a legacy comment changes the file, its earlier receipt cannot authorize delivery of the revised file.
 An authorized caller can see a blocked `PolicyRequired` preview when required evidence policy is missing.
 Submit preview and generation requests with a null browsing cursor. Multipage ledger readers must return
 a trusted `ExportSnapshotId` that certifies all matching ledger entries, and advance `NextCursor`

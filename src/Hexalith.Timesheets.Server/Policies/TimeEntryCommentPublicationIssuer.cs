@@ -16,6 +16,10 @@ public sealed class TimeEntryCommentPublicationIssuer(
 
     /// <summary>Issues a decision for one comment, or returns null when no comment was supplied.</summary>
     public TimeEntryComment? Issue(TimesheetsRequestContext context, TimeEntryComment? comment)
+        => Issue(context, comment, evaluateFinance: true);
+
+    /// <summary>Issues publication decisions, with optional finance evaluation for stored recording verification.</summary>
+    internal TimeEntryComment? Issue(TimesheetsRequestContext context, TimeEntryComment? comment, bool evaluateFinance)
     {
         ArgumentNullException.ThrowIfNull(context);
         if (comment is null) return null;
@@ -34,12 +38,19 @@ public sealed class TimeEntryCommentPublicationIssuer(
         TimesheetsCommentPolicyDecision externalDecision = clearedForUnredactedDisplay
             ? TimesheetsCommentPolicyDecision.Allowed
             : TimesheetsCommentPolicyDecision.Excluded;
+        bool exportCleared = evaluateFinance
+            && comment.Policy.RedactionRequirement is TimesheetsCommentRedactionRequirement.NotRequired
+                or TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
+            && _authority.MayExportUnredacted(context, comment.Text);
         return new TimeEntryComment(comment.Text, comment.Policy with
         {
             ProjectionInclusion = decision,
             ServerProjectionInclusion = decision,
             ExternalConfirmationDisplay = externalDecision,
             ServerExternalConfirmationDisplay = externalDecision,
+            ServerExportInclusion = exportCleared
+                ? TimesheetsCommentPolicyDecision.Allowed
+                : TimesheetsCommentPolicyDecision.Excluded,
             RedactionRequirement = clearedForUnredactedDisplay
                 ? TimesheetsCommentRedactionRequirement.NotRequired
                 : TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure,

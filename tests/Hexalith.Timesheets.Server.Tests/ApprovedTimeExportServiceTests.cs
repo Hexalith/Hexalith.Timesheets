@@ -682,7 +682,8 @@ public sealed partial class ApprovedTimeExportServiceTests
                 TimesheetsEvidenceRetentionCategory.CommentText)
             {
                 ServerPublicationVersion = 2,
-                ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
+                ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                ServerExportInclusion = exportDecision
             });
 
     private static TimeEntryTargetReference ProjectTarget(string projectId = "project-1")

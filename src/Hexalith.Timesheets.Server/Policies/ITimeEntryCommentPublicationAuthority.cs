@@ -14,4 +14,7 @@ public interface ITimeEntryCommentPublicationAuthority
 
     /// <summary>Returns true only when the server explicitly clears this exact comment for unredacted external display.</summary>
     bool MayDisplayUnredactedExternally(TimesheetsRequestContext context, TimeEntryComment comment);
+
+    /// <summary>Returns true only when the server explicitly clears this exact text for unredacted finance export.</summary>
+    bool MayExportUnredacted(TimesheetsRequestContext context, string text) => false;
 }
