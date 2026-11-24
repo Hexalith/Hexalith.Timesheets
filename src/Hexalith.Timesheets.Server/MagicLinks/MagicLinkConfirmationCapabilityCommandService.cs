@@ -1,3 +1,4 @@
+using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.Rejections;

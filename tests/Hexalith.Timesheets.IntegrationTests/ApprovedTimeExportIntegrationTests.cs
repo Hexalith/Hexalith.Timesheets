@@ -456,10 +456,10 @@ public sealed partial class ApprovedTimeExportIntegrationTests
     [Theory]
     [InlineData(1, true, false)]
     [InlineData(2, true, false)]
-    [InlineData(2, true, true)]
+    [InlineData(3, true, true)]
     [InlineData(0, true, false)]
     [InlineData(99, true, false)]
-    [InlineData(2, false, true)]
+    [InlineData(3, false, true)]
     public async Task PublicationAndFinanceDecisionsSurviveTheFullCorrectionJourney(
         int correctedVersion, bool hostAllows, bool financeCleared)
     {
@@ -474,9 +474,17 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         TimeEntryComment corrected = new("corrected-export-marker", original.Policy with
         {
             ServerPublicationVersion = correctedVersion,
-            ExportInclusion = TimesheetsCommentPolicyDecision.Allowed,
-            ServerExportInclusion = financeCleared ? TimesheetsCommentPolicyDecision.Allowed : null
+            ExportInclusion = TimesheetsCommentPolicyDecision.Allowed
         });
+        if (financeCleared)
+        {
+            var authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+            authority.MayPublish(Context(), corrected).Returns(true);
+            authority.MayExportUnredacted(Context(), corrected.Text).Returns(true);
+            corrected = new TimeEntryCommentPublicationIssuer(authority).Issue(Context(), corrected).ShouldNotBeNull();
+            corrected.Policy.ServerPublicationVersion.ShouldBe(correctedVersion);
+            corrected.Policy.ServerExportInclusion.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
+        }
         TimeEntryApprovedCorrected correction = ApprovedCorrected(Id, target, 60);
         TimeEntryProjectionEvent[] events =
         [
@@ -501,7 +509,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         var fullQuery = query with { PageSize = 2 };
         var rebuilt = await ledger.QueryAsync(Context(), fullQuery, token);
         string ledgerJson = JsonSerializer.Serialize(rebuilt.Page.ShouldNotBeNull().Items);
-        bool currentVisible = hostAllows && correctedVersion is 1 or 2;
+        bool currentVisible = hostAllows && correctedVersion is 1 or 2 or 3;
         bool currentExported = currentVisible && financeCleared;
         ledgerJson.Contains(original.Text, StringComparison.Ordinal).ShouldBe(hostAllows);
         ledgerJson.Contains(corrected.Text, StringComparison.Ordinal).ShouldBe(currentVisible);

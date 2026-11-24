@@ -3,8 +3,10 @@ using System.Text.Json;
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Streams;
+using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
+using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -55,7 +57,7 @@ public sealed class TimeEntryRecordSubmissionService(
         int expectedCount = policy.InitialApprovalState == TimeEntryApprovalState.Submitted ? 2 : 1;
         try
         {
-            TimeEntryComment? expectedComment = _commentIssuer.Issue(context, command.Comment);
+            TimeEntryComment? expectedComment = _commentIssuer.Issue(context, command.Comment, evaluateFinance: false);
             var submission = await durableSubmission.SubmitAndReadStatusWithPreflightAsync(
                 messageId, context.Tenant.TenantId, command.TimeEntryId.Value, intent,
                 typeof(CommitTimeEntryRecord), cancellationToken).ConfigureAwait(false);
@@ -98,8 +100,7 @@ public sealed class TimeEntryRecordSubmissionService(
                 || recorded.ApprovalState != TimeEntryApprovalState.Draft
                 || recorded.ContributorCategory != ContributorCategory.ExternalContributor
                 || recorded.AiMetrics is not null
-                || !MagicLinkDurableSubmissionService.CommentsMatchExpected(
-                    recorded.Comment, expectedComment, useStoredFinanceDecision: submission.WasPresentAtPreflight)
+                || !MatchesRecordedComment(recorded.Comment, expectedComment, command.Comment, submission.WasPresentAtPreflight)
                 || recorded.ExternalSource != command.Source)
             {
                 return false;
@@ -132,5 +133,29 @@ public sealed class TimeEntryRecordSubmissionService(
         {
             return false;
         }
+    }
+
+    private static bool MatchesRecordedComment(
+        TimeEntryComment? stored, TimeEntryComment? expected, TimeEntryComment? requested, bool existingCommand)
+    {
+        if (stored?.Policy is not { } issued || expected?.Policy is not { } publication)
+        {
+            return stored is null && expected is null;
+        }
+
+        if ((!existingCommand && issued.ServerPublicationVersion != TimesheetsDomain.CommentPublicationVersion)
+            || (issued.ServerExportInclusion == TimesheetsCommentPolicyDecision.Allowed
+                && requested?.Policy.RedactionRequirement is not (TimesheetsCommentRedactionRequirement.NotRequired
+                    or TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure)))
+        {
+            return false;
+        }
+
+        // Finance authority belongs to the authorized owner that emitted the event.
+        return MagicLinkDurableSubmissionService.CommentsMatchExpected(stored, new TimeEntryComment(expected.Text, publication with
+        {
+            ServerPublicationVersion = issued.ServerPublicationVersion,
+            ServerExportInclusion = issued.ServerExportInclusion
+        }));
     }
 }

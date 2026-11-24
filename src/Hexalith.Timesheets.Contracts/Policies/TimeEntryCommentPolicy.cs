@@ -37,8 +37,8 @@ public sealed record TimeEntryCommentPolicy(
 
     /// <summary>Resolves projection publication from the issued decision and the trusted host policy.</summary>
     public TimesheetsCommentPolicyDecision ResolvePublication(bool trustedHostAllowsPublication)
-        => ServerPublicationVersion is 1 or TimesheetsDomain.ExternalCommentPublicationVersion
-            or TimesheetsDomain.CommentPublicationVersion
+        => (ServerPublicationVersion is 1 or TimesheetsDomain.ExternalCommentPublicationVersion
+                or TimesheetsDomain.CommentPublicationVersion) && HasValidServerExportDecision()
             ? ServerProjectionInclusion switch
             {
                 TimesheetsCommentPolicyDecision.Allowed when trustedHostAllowsPublication => TimesheetsCommentPolicyDecision.Allowed,

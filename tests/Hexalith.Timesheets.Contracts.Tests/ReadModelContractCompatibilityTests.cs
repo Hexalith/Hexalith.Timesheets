@@ -40,7 +40,8 @@ public sealed class ReadModelContractCompatibilityTests
         TimesheetsEventStoreIntegration.DomainName.ShouldBe(TimesheetsDomain.Name);
         TimesheetsDomain.Name.ShouldBe("timesheets");
         TimeEntryCommentPublicationIssuer.CurrentVersion.ShouldBe(TimesheetsDomain.CommentPublicationVersion);
-        TimesheetsDomain.CommentPublicationVersion.ShouldBe(2);
+        TimesheetsDomain.ExternalCommentPublicationVersion.ShouldBe(2);
+        TimesheetsDomain.CommentPublicationVersion.ShouldBe(3);
         TimesheetsEvidencePolicyOptions.FailClosedDefault.ProjectionCommentsAllowed.ShouldBeFalse();
     }
 

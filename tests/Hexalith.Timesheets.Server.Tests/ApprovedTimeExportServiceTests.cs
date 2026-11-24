@@ -430,10 +430,12 @@ public sealed partial class ApprovedTimeExportServiceTests
             .CommentExportState.ShouldBe(TimesheetsCommentPolicyDecision.Allowed);
         export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-excluded")
             .Comment.ShouldBeNull();
-        export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-redacted")
-            .Comment.ShouldBeNull();
-        export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-policy-required")
-            .Comment.ShouldBeNull();
+        var redacted = export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-redacted");
+        redacted.Comment.ShouldBeNull();
+        redacted.CommentExportState.ShouldBe(TimesheetsCommentPolicyDecision.Redacted);
+        var policyRequired = export.Rows.Single(static row => row.TimeEntryId.Value == "time-entry-policy-required");
+        policyRequired.Comment.ShouldBeNull();
+        policyRequired.CommentExportState.ShouldBe(TimesheetsCommentPolicyDecision.PolicyRequired);
         string csv = export.CsvContent.ShouldNotBeNull();
         csv.ShouldContain("Allowed export comment");
         csv.ShouldNotContain("Excluded export comment");
@@ -681,9 +683,11 @@ public sealed partial class ApprovedTimeExportServiceTests
                 TimesheetsCommentRedactionRequirement.NotRequired,
                 TimesheetsEvidenceRetentionCategory.CommentText)
             {
-                ServerPublicationVersion = 2,
+                ServerPublicationVersion = exportDecision is TimesheetsCommentPolicyDecision.Allowed
+                    or TimesheetsCommentPolicyDecision.Excluded ? 3 : 2,
                 ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
-                ServerExportInclusion = exportDecision
+                ServerExportInclusion = exportDecision is TimesheetsCommentPolicyDecision.Allowed
+                    or TimesheetsCommentPolicyDecision.Excluded ? exportDecision : null
             });
 
     private static TimeEntryTargetReference ProjectTarget(string projectId = "project-1")

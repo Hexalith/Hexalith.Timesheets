@@ -1726,6 +1726,7 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 ## Deferred from code review of Story 6.1 (2026-11-23)
 
 - Decide who can issue the stored per-comment finance permission. The current comment issuer copies `ExportInclusion` from the submitted value and issues projection and external-display decisions separately. It also normalizes the shared redaction field for external display. An independent finance decision needs a compatibility rule for older values and for readback of existing magic-link adjustments.
+  Resolution 2026-11-24. Done. The trusted comment publication authority issues version 3 finance clearance for the exact text. Finance excludes legacy text without that clearance, and verified command retries can recover retained decisions. [Implementation and verification](spec-issue-finance-comment-permission.md)
 - Align the receipt's current and superseded scope flags with the effective ledger filter in Stories 6.2 and 6.3. The two query flags can select superseded rows while describing the same scope as current-only.
   Resolution 2026-11-23. Story 6.3 reports the effective flags and retains the original filter flags in the receipt. Verified legacy receipts remain recoverable.
 - Distinguish a reader's export veto from an empty authorized page in Story 6.3. Check resource-level disclosure loss during traversal and add fresh-row checkpoint and timestamp mismatch cases alongside the existing page-level tests.

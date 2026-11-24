@@ -155,7 +155,7 @@ Timesheets supplies contracts and FrontComposer-compatible metadata. A consuming
 
 Configure `TimesheetsEvidencePolicyOptions` in the trusted host before calling `AddTimesheetsServerKernel`.
 The ledger publishes current and historical comment values only when both host publication flags and each
-value's version 1 or 2 server-issued projection decision permit it. Missing tenant export policy blocks
+value's version 1, 2 or 3 server-issued projection decision permit it. Missing tenant export policy blocks
 preview and generation. The following configuration binds a decision to each tenant's exact ID.
 
 ```csharp
@@ -178,6 +178,8 @@ Use values approved by the tenant and retention policy owners. The host-wide `Ex
 the tenant's finance decision and the published value's `ServerExportInclusion` must all permit its text.
 Register a trusted `ITimeEntryCommentPublicationAuthority` that implements `MayExportUnredacted` to issue
 this decision for the exact text in the authorized request context. The default authority excludes comments.
+Version 3 marks independently issued finance decisions. Upgrade evidence projectors before enabling version 3
+writes because older projectors reject those events. Older ledger readers withhold version 3 comments.
 Legacy values without a server-issued finance decision and values requiring export redaction are withheld.
 If excluding a legacy comment changes the file, its earlier receipt cannot authorize delivery of the revised file.
 An authorized caller can see a blocked `PolicyRequired` preview when required evidence policy is missing.

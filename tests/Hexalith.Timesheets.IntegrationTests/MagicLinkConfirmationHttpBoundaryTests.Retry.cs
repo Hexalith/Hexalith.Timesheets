@@ -303,7 +303,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     {
                         AdjustedValues = adjustment.Event.AdjustedValues with
                         {
-                            Comment = new(comment.Text, comment.Policy with { ServerExportInclusion = null })
+                            Comment = new(comment.Text, comment.Policy with
+                            {
+                                ServerPublicationVersion = 2,
+                                ServerExportInclusion = null
+                            })
                         }
                     }
                 }
@@ -336,6 +340,14 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                 command.Comment.Policy with { ExportInclusion = TimesheetsCommentPolicyDecision.Allowed })
         });
         policyConflict.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        using HttpResponseMessage redactionConflict = await Send(command with
+        {
+            Comment = new TimeEntryComment(command.Comment!.Text, command.Comment.Policy with
+            {
+                RedactionRequirement = TimesheetsCommentRedactionRequirement.RequiredBeforeExport
+            })
+        });
+        redactionConflict.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
         JsonSerializer.Serialize(factory.Gateway.StoredEvents(Tenant().TenantId, entry.Value)).ShouldBe(JsonSerializer.Serialize(committed));
         using HttpResponseMessage newUse = await client.PostAsJsonAsync($"/api/timesheets/magic-links/adjust/submit?t={ValidAdjustToken()}", command, TestContext.Current.CancellationToken);
         newUse.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

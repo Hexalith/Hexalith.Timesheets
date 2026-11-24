@@ -404,8 +404,19 @@ public sealed partial class ApprovedTimeExportIntegrationTests
         var service = provider.GetRequiredService<ApprovedTimeExportService>();
         var originalFile = (await service.GenerateAsync(context, command, now, ct)).Export!;
         originalFile.HasOutput.ShouldBeTrue();
+        originalFile.CsvContent.ShouldNotBeNull().ShouldContain("private finance note");
         var normalized = command with { LedgerQuery = command.LedgerQuery with { TenantLocalPeriodKey = "2026-06", PageSize = 50 } };
         (await service.GenerateAsync(context, normalized, now, ct)).WasGenerated.ShouldBeTrue();
+        var published = row.Comment.ShouldNotBeNull();
+        page = page with { Items = [row with { Comment = new(published.Text, published.Policy with
+        {
+            ServerPublicationVersion = 2,
+            ExportInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExportInclusion = null
+        }) }] };
+        AssertWithheld(await service.GenerateAsync(context, normalized, now, ct));
+        (await gateway.Actor(gateway.Submitted!.AggregateId).GetEventsAsync(0)).ShouldHaveSingleItem();
+        page = page with { Items = [row] };
         page = page with { ExportSnapshotId = "new-snapshot" };
         AssertWithheld(await service.GenerateAsync(context, normalized, now, ct));
         page = page with { ExportSnapshotId = null, ProjectionFreshness = originalPage.ProjectionFreshness with { Cursor = "changed-cursor" } };
@@ -426,7 +437,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
             {
                 Comment = new("private finance note", TimeEntryCommentPolicy.SensitiveDefault with
                 {
-                    ServerPublicationVersion = 2,
+                    ServerPublicationVersion = 3,
                     ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
                     ServerExportInclusion = TimesheetsCommentPolicyDecision.Allowed
                 })

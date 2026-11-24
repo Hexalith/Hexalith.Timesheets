@@ -120,22 +120,28 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Theory]
-    [InlineData(null, true)]
-    [InlineData(TimesheetsCommentPolicyDecision.Allowed, true)]
-    [InlineData(TimesheetsCommentPolicyDecision.PolicyRequired, false)]
+    [InlineData(null, false, true)]
+    [InlineData(TimesheetsCommentPolicyDecision.Allowed, false, true)]
+    [InlineData(TimesheetsCommentPolicyDecision.Allowed, true, false)]
+    [InlineData(TimesheetsCommentPolicyDecision.PolicyRequired, false, false)]
     public async Task ExistingRecordingUsesOnlyValidRetainedFinanceDecisions(
-        TimesheetsCommentPolicyDecision? retainedDecision, bool expected)
+        TimesheetsCommentPolicyDecision? retainedDecision, bool requiresExportRedaction, bool expected)
     {
         SubmitExternalTimeEntry command = Command() with
         {
             Comment = new TimeEntryComment("private note", TimeEntryCommentPolicy.SensitiveDefault with
             {
-                ExportInclusion = TimesheetsCommentPolicyDecision.Allowed
+                ExportInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                RedactionRequirement = requiresExportRedaction ? TimesheetsCommentRedactionRequirement.RequiredBeforeExport
+                    : TimesheetsCommentRedactionRequirement.RequiredBeforeExternalDisclosure
             })
         };
-        var issuer = new TimeEntryCommentPublicationIssuer();
-        var issued = issuer.Issue(Context(), command.Comment).ShouldNotBeNull();
-        var stored = new TimeEntryComment(issued.Text, issued.Policy with { ServerExportInclusion = retainedDecision });
+        var issued = new TimeEntryCommentPublicationIssuer().Issue(Context(), command.Comment).ShouldNotBeNull();
+        var stored = new TimeEntryComment(issued.Text, issued.Policy with
+        {
+            ServerPublicationVersion = retainedDecision is null ? 2 : 3,
+            ServerExportInclusion = retainedDecision
+        });
         string? messageId = null;
         IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
         gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
@@ -147,8 +153,15 @@ public sealed class TimeEntryRecordSubmissionServiceTests
         gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
             .Returns(_ => Task.FromResult(Page(Recorded(command) with { Comment = stored }, messageId!)));
 
-        (await Service(gateway).SubmitAsync(Context(), command, DateTimeOffset.UtcNow,
+        var authority = Substitute.For<ITimeEntryCommentPublicationAuthority>();
+        authority.MayExportUnredacted(Arg.Any<TimesheetsRequestContext>(), Arg.Any<string>())
+            .Returns(_ => throw new InvalidOperationException("Finance authority is unavailable."));
+        var service = new TimeEntryRecordSubmissionService(gateway,
+            new MagicLinkDurableSubmissionService(gateway, Options.Create(new MagicLinkSubmissionPollingOptions())),
+            ExternalContributionPolicyOptions.Default, new TimeEntryCommentPublicationIssuer(authority));
+        (await service.SubmitAsync(Context(), command, DateTimeOffset.UtcNow,
             TestContext.Current.CancellationToken)).ShouldBe(expected);
+        authority.DidNotReceive().MayExportUnredacted(Arg.Any<TimesheetsRequestContext>(), Arg.Any<string>());
         await gateway.DidNotReceive().SubmitWorkloadCommandAsync(
             Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
     }

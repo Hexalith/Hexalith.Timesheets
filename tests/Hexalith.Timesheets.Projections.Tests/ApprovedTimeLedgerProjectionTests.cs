@@ -327,6 +327,7 @@ public sealed class ApprovedTimeLedgerProjectionTests
     [InlineData(2, true, true, false, true)]
     [InlineData(0, true, true, false, false)]
     [InlineData(3, true, true, false, false)]
+    [InlineData(4, true, true, false, false)]
     [InlineData(2, false, true, false, false)]
     [InlineData(2, true, false, false, false)]
     public void LedgerRebuildPublishesOnlyServerAuthorizedValues(

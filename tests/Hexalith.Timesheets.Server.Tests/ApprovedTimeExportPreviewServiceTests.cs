@@ -681,8 +681,11 @@ public sealed class ApprovedTimeExportPreviewServiceTests
                 TimesheetsCommentRedactionRequirement.NotRequired,
                 TimesheetsEvidenceRetentionCategory.CommentText)
             {
-                ServerPublicationVersion = 2,
-                ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
+                ServerPublicationVersion = exportDecision is TimesheetsCommentPolicyDecision.Allowed
+                    or TimesheetsCommentPolicyDecision.Excluded ? 3 : 2,
+                ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+                ServerExportInclusion = exportDecision is TimesheetsCommentPolicyDecision.Allowed
+                    or TimesheetsCommentPolicyDecision.Excluded ? exportDecision : null
             });
 
     private static TimeEntryTargetReference ProjectTarget(string projectId = "project-1")

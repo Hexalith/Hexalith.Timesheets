@@ -943,6 +943,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
 
     [Theory]
     [InlineData(1)]
+    [InlineData(2)]
     [InlineData(TimeEntryCommentPublicationIssuer.CurrentVersion)]
     public async Task AllowedCommentRemainsInSelectedEvidence(int issuedVersion)
     {
@@ -950,7 +951,9 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
         {
             ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
             ServerPublicationVersion = issuedVersion,
-            ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
+            ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExportInclusion = issuedVersion == TimeEntryCommentPublicationIssuer.CurrentVersion
+                ? TimesheetsCommentPolicyDecision.Excluded : null
         });
         var store = new TestStore();
         var handler = new TimeEntryEvidenceProjectionHandler(store, new TimesheetsEvidencePolicyOptions
@@ -974,6 +977,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
         {
             ServerPublicationVersion = TimeEntryCommentPublicationIssuer.CurrentVersion,
             ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExportInclusion = TimesheetsCommentPolicyDecision.Excluded,
             ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
         });
         ProjectionRequest request = Request(Event(1, Recorded() with { Comment = issued }));
@@ -1015,6 +1019,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
         {
             ServerPublicationVersion = TimeEntryCommentPublicationIssuer.CurrentVersion,
             ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExportInclusion = TimesheetsCommentPolicyDecision.Excluded,
             ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
         });
         ProjectionEventDto recorded = Event(1, Recorded() with { Comment = issued });
@@ -1049,6 +1054,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
         {
             ServerPublicationVersion = TimeEntryCommentPublicationIssuer.CurrentVersion,
             ServerProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed,
+            ServerExportInclusion = TimesheetsCommentPolicyDecision.Excluded,
             ProjectionInclusion = TimesheetsCommentPolicyDecision.Allowed
         });
         TimeEntryAdjustedThroughMagicLink adjustment = Adjusted() with
@@ -1326,7 +1332,7 @@ public sealed class TimeEntryEvidenceProjectionHandlerTests
             Recorded() with { Comment = new TimeEntryComment("sensitive",
                 TimeEntryCommentPolicy.SensitiveDefault with
                 {
-                    ServerPublicationVersion = TimesheetsDomain.CommentPublicationVersion,
+                    ServerPublicationVersion = 3,
                     ServerExportInclusion = TimesheetsCommentPolicyDecision.Unknown
                 }) },
             Recorded() with { Comment = new TimeEntryComment("sensitive",
