@@ -121,3 +121,11 @@ context:
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet restore Hexalith.Timesheets.slnx -p:Configuration=Debug -p:UseHexalithProjectReferences=true -m:1 /nr:false` -- expected: exit 0
 - `DOTNET_CLI_HOME=/tmp/dotnet-cli-home dotnet build Hexalith.Timesheets.slnx --configuration Debug --no-restore -p:UseHexalithProjectReferences=true -warnaserror -m:1 /nr:false` -- expected: exit 0, zero warnings
 - Run all 6 built xUnit v3 executables under `tests/<Project>/bin/Debug/net11.0/<Project>` -- expected: exit 0, zero failures
+
+### Results on 2026-11-27
+
+Verified `c11fd25a48c85712a4d2ff25423133d7a70daa36`, which contains the Story 6.4 implementation from `1972f9e3095579b57b1e0fe7b04ab8e6536cf52f`. Debug/source restore and warnings-as-errors build succeeded with zero warnings and errors. The compiled AppHost configuration and endpoint-model probes passed in `--configuration-only` mode.
+
+All 11 cases in `ExternalContributionConfirmationPersistenceTests` passed. The fixture uses composed workload-authenticated HTTP and the enrolled `/process` receiver. It recreates the host and EventStore actor over retained in-memory actor storage with an empty command-status store. The tests verify one stored confirmation, approval and lock preservation, lost acknowledgement and readback retry, and opaque refusals with zero appended events. Installed-host restart and deployed persistence remain unverified.
+
+All six test executables passed individually, with 3,086 passing cases and zero failures. Architecture passed 95, Contracts 109, Server 912, Projections 801, Integration 1,093, and Works 76. Integration had the five expected default skips, including the opt-in Dapr and performance cases.
