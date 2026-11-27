@@ -95,6 +95,7 @@ public static class ServiceCollectionExtensions
             .ValidateOnStart();
         services.TryAddScoped<MagicLinkDurableSubmissionService>();
         services.TryAddScoped<TimeEntryRecordSubmissionService>();
+        services.TryAddScoped<TimeEntryConfirmationSubmissionService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
         services.TryAddSingleton<TimeEntryEvidenceQueryService>();

@@ -42,12 +42,15 @@ public static class ExternalContributionEndpoints
             "/{timeEntryId}/confirm",
             static async Task<IResult> (
                 string timeEntryId,
-                ConfirmExternalTimeEntry command,
+                ConfirmExternalTimeEntry? command,
                 HttpContext httpContext,
-                ExternalContributionCommandService service,
+                TimeEntryConfirmationSubmissionService service,
+                TimeProvider clock,
                 CancellationToken cancellationToken) =>
             {
-                if (!StringComparer.Ordinal.Equals(timeEntryId, command.TimeEntryId.Value))
+                if (command?.TimeEntryId is null
+                    || string.IsNullOrWhiteSpace(command.TimeEntryId.Value)
+                    || !StringComparer.Ordinal.Equals(timeEntryId, command.TimeEntryId.Value))
                 {
                     return Results.Problem(
                         title: "External contribution request was not accepted.",
@@ -55,18 +58,17 @@ public static class ExternalContributionEndpoints
                 }
 
                 ClaimsPrincipal user = httpContext.User;
-                TimeEntryConfirmationCommandResult result = await service.ConfirmAsync(
-                    TimesheetsServerRequestContext.FromTrustedSources(
-                        FirstClaimValue(user, "tenant_id", "tenant"),
-                        FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                        httpContext.TraceIdentifier),
+                var context = TimesheetsServerRequestContext.FromTrustedSources(
+                    FirstClaimValue(user, "tenant_id", "tenant"),
+                    HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user),
+                    httpContext.TraceIdentifier);
+                bool accepted = await service.ConfirmAsync(
+                    context,
                     command,
-                    null,
-                    DateTimeOffset.UtcNow,
+                    clock.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
-                return ToTransportResult(result.Authorization.IsAuthorized
-                    && result.DomainResult?.IsRejection != true);
+                return ToTransportResult(accepted);
             });
 
         return endpoints;

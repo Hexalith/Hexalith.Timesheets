@@ -1,5 +1,6 @@
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Commands.TimeEntries;
+using Hexalith.Timesheets.Contracts.Events.Rejections;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
@@ -364,6 +365,252 @@ public sealed class ExternalContributionCommandServiceTests
         result.WasDispatched.ShouldBeFalse();
         result.Authorization.DenialCategory.ShouldBe(TimesheetsDenialCategory.InvalidReference);
         result.DomainResult.ShouldBeNull();
+    }
+
+    [Theory]
+    [InlineData("contributor-mismatch")]
+    [InlineData("entry-mismatch")]
+    [InlineData("non-utc")]
+    [InlineData("missing-tenant")]
+    [InlineData("tenant-mismatch")]
+    public void ConfirmExternalTimeEntryValidatesBeforeSameSourceNoOp(string scenario)
+    {
+        TimeEntryState state = ConfirmedExternalState();
+        ConfirmExternalTimeEntry command = scenario switch
+        {
+            "contributor-mismatch" => ConfirmExternalCommand() with { Contributor = new PartyReference("party-2") },
+            "entry-mismatch" => ConfirmExternalCommand() with { TimeEntryId = new TimeEntryId("time-entry-other") },
+            _ => ConfirmExternalCommand()
+        };
+        TenantReference? tenant = scenario switch
+        {
+            "missing-tenant" => null,
+            "tenant-mismatch" => new TenantReference("tenant-2"),
+            _ => Context().Tenant
+        };
+        DateTimeOffset confirmedAt = scenario == "non-utc"
+            ? new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.FromHours(2))
+            : EventAtUtc();
+
+        TimesheetsDomainResult result = TimeEntry.Handle(command, state, tenant, confirmedAt);
+
+        result.IsRejection.ShouldBeTrue();
+        result.IsNoOp.ShouldBeFalse();
+        result.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
+    }
+
+    [Fact]
+    public async Task ConfirmExternalTimeEntryRejectsConflictingConfirmationSource()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryState state = ConfirmedExternalState();
+
+        TimeEntryConfirmationCommandResult result = await fixture.CreateExternalService().ConfirmAsync(
+            Context(),
+            ConfirmExternalCommand() with { Source = new ExternalContributionSource("supplier-api", "confirm-2") },
+            state,
+            EventAtUtc().AddMinutes(5),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        result.DomainResult.ShouldNotBeNull().IsRejection.ShouldBeTrue();
+        TimesheetsRejection rejection = result.DomainResult.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
+        rejection.FieldErrors.ShouldContain(error =>
+            error.Field == "source" && error.Code == "already-confirmed");
+    }
+
+    [Theory]
+    [InlineData("missing-target")]
+    [InlineData("uninitialized-target")]
+    [InlineData("mismatched-entry-id")]
+    public void ConfirmExternalTimeEntryValidatesRecordedTargetAndTimeEntryId(string scenario)
+    {
+        TimeEntryRecorded recorded = new(
+            scenario == "mismatched-entry-id" ? new TimeEntryId("other-entry") : TimeEntryId(),
+            scenario switch
+            {
+                "missing-target" => null!,
+                "uninitialized-target" => (TimeEntryTargetReference)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(TimeEntryTargetReference)),
+                _ => TimeEntryTargetReference.ForProject(Project())
+            },
+            Contributor(),
+            ActivityId(),
+            ActivityTypeScope.Tenant,
+            new DateOnly(2026, 6, 19),
+            60,
+            BillableState.Billable,
+            TimeEntryApprovalState.Draft,
+            ContributorCategory.ExternalContributor,
+            null);
+        TimeEntryState state = new();
+        state.Apply(recorded);
+
+        TimesheetsDomainResult result = TimeEntry.Handle(
+            ConfirmExternalCommand(),
+            state,
+            Context().Tenant,
+            EventAtUtc());
+
+        result.IsRejection.ShouldBeTrue();
+        string expectedField = scenario == "mismatched-entry-id" ? "timeEntryId" : "target";
+        TimesheetsRejection rejection = result.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
+        rejection.FieldErrors.ShouldContain(error => error.Field == expectedField);
+    }
+
+    [Theory]
+    [InlineData(TimeEntryApprovalState.Draft)]
+    [InlineData(TimeEntryApprovalState.Submitted)]
+    [InlineData(TimeEntryApprovalState.Approved)]
+    public async Task ConfirmExternalTimeEntryPreservesApprovalLockAndCorrectionState(TimeEntryApprovalState approvalState)
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        TimeEntryState state = RecordedExternalState();
+        if (approvalState is TimeEntryApprovalState.Submitted or TimeEntryApprovalState.Approved)
+        {
+            state.Apply(new TimeEntrySubmitted(
+                TimeEntryId(),
+                Contributor(),
+                Context().Tenant!,
+                EventAtUtc(),
+                new TimeEntrySubmissionId("submission-1"),
+                TimeEntrySubmissionScope.SelectedEntries,
+                TimeEntryApprovalState.Submitted));
+        }
+
+        if (approvalState == TimeEntryApprovalState.Approved)
+        {
+            state.Apply(new TimeEntryApproved(
+                TimeEntryId(),
+                new PartyReference("approver-1"),
+                Context().Tenant!,
+                EventAtUtc().AddMinutes(10),
+                new TimeEntryApprovalDecisionId("decision-1"),
+                TimeEntryApprovalState.Approved,
+                new ApprovalAuthoritySourceAttribution(
+                    ApprovalAuthorityAction.EntryApproval,
+                    ApprovalAuthoritySource.ProjectApprover,
+                    ApprovalAuthorityDecisionState.Allowed,
+                    "policy-key",
+                    "v1",
+                    ProjectionFreshnessMetadata.Fresh),
+                TimeEntryApprovalScope.IndividualEntry));
+            var previousValues = new TimeEntryCorrectionValues(
+                state.Target!,
+                state.Contributor!,
+                state.ActivityTypeId!,
+                state.ServiceDate,
+                state.DurationMinutes,
+                state.BillableState,
+                state.ContributorCategory,
+                state.AiMetrics)
+            {
+                Comment = state.Comment,
+                ActivityTypeScope = state.ActivityTypeScope
+            };
+            state.Apply(new TimeEntryApprovedCorrected(
+                TimeEntryId(),
+                new TimeEntryCorrectionId("correction-1"),
+                Context().Tenant!,
+                new PartyReference("approver-1"),
+                EventAtUtc().AddMinutes(15),
+                previousValues,
+                previousValues with { DurationMinutes = 90 },
+                new TimeEntryCorrectionReason("Approved adjustment"),
+                new TimeEntryApprovalDecisionId("decision-1"),
+                TimeEntryApprovalScope.IndividualEntry,
+                TimeEntryApprovalState.Approved,
+                TimeEntryCorrectionState.Corrected));
+        }
+
+        TimeEntryConfirmationCommandResult result = await fixture.CreateExternalService().ConfirmAsync(
+            Context(),
+            ConfirmExternalCommand(),
+            state,
+            EventAtUtc().AddMinutes(20),
+            TestContext.Current.CancellationToken);
+
+        result.WasDispatched.ShouldBeTrue();
+        TimeEntryContributorConfirmed confirmed = result.DomainResult.ShouldNotBeNull()
+            .Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryContributorConfirmed>();
+        state.Apply(confirmed);
+        state.ApprovalState.ShouldBe(approvalState);
+        state.LockState.ShouldBe(approvalState == TimeEntryApprovalState.Approved
+            ? TimeEntryLockState.LockedFromDirectEdit
+            : TimeEntryLockState.Unlocked);
+        state.CorrectionState.ShouldBe(approvalState == TimeEntryApprovalState.Approved
+            ? TimeEntryCorrectionState.Corrected
+            : TimeEntryCorrectionState.None);
+        if (approvalState == TimeEntryApprovalState.Approved)
+        {
+            state.TimeEntryCorrectionId.ShouldBe(new TimeEntryCorrectionId("correction-1"));
+            state.DurationMinutes.ShouldBe(90);
+        }
+
+        state.ContributorConfirmationSource.ShouldBe(ConfirmExternalCommand().Source);
+    }
+
+    [Fact]
+    public void ConfirmExternalTimeEntryRejectsSameSourceWhenContributorChangedAfterCorrection()
+    {
+        TimeEntryState state = ConfirmedExternalState();
+        state.Apply(new TimeEntrySubmitted(
+            TimeEntryId(),
+            Contributor(),
+            Context().Tenant!,
+            EventAtUtc().AddMinutes(1),
+            new TimeEntrySubmissionId("submission-1"),
+            TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted));
+        var rejectionDecision = new TimeEntryApprovalDecisionId("decision-reject-1");
+        var rejectionReason = new TimeEntryRejectionReason("Wrong contributor");
+        state.Apply(new TimeEntryRejected(
+            TimeEntryId(),
+            new PartyReference("approver-1"),
+            Context().Tenant!,
+            EventAtUtc().AddMinutes(2),
+            rejectionDecision,
+            TimeEntryApprovalState.Rejected,
+            new ApprovalAuthoritySourceAttribution(
+                ApprovalAuthorityAction.EntryRejection,
+                ApprovalAuthoritySource.ProjectApprover,
+                ApprovalAuthorityDecisionState.Allowed,
+                "policy-key",
+                "v1",
+                ProjectionFreshnessMetadata.Fresh),
+            TimeEntryApprovalScope.IndividualEntry,
+            rejectionReason));
+        var previous = new TimeEntryCorrectionValues(
+            state.Target!, state.Contributor!, state.ActivityTypeId!, state.ServiceDate,
+            state.DurationMinutes, state.BillableState, state.ContributorCategory, state.AiMetrics)
+        {
+            ActivityTypeScope = state.ActivityTypeScope
+        };
+        var replacementContributor = new PartyReference("party-2");
+        state.Apply(new TimeEntryCorrected(
+            TimeEntryId(),
+            new TimeEntryCorrectionId("correction-1"),
+            Context().Tenant!,
+            new PartyReference("operator-1"),
+            EventAtUtc().AddMinutes(3),
+            previous,
+            previous with { Contributor = replacementContributor },
+            rejectionReason,
+            rejectionDecision,
+            TimeEntryApprovalState.Draft,
+            TimeEntryCorrectionState.Corrected));
+
+        TimesheetsDomainResult result = TimeEntry.Handle(
+            ConfirmExternalCommand() with { Contributor = replacementContributor },
+            state,
+            Context().Tenant,
+            EventAtUtc().AddMinutes(4));
+
+        result.IsRejection.ShouldBeTrue();
+        result.IsNoOp.ShouldBeFalse();
+        TimesheetsRejection rejection = result.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
+        rejection.FieldErrors.ShouldContain(error =>
+            error.Field == "contributor" && error.Code == "already-confirmed-contributor-mismatch");
     }
 
     private static SubmitExternalTimeEntry SubmitExternalCommand()

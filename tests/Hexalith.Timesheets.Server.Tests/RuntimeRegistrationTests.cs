@@ -168,6 +168,36 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
+    public void ServerKernelRegistersScopedTimeEntryConfirmationSubmissionServiceAndRejectsNullPollingOptions()
+    {
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton(Substitute.For<IEventStoreGatewayClient>());
+        services.AddTimesheetsServerKernel();
+
+        using ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using IServiceScope firstScope = provider.CreateScope();
+        using IServiceScope secondScope = provider.CreateScope();
+
+        TimeEntryConfirmationSubmissionService firstA = firstScope.ServiceProvider
+            .GetRequiredService<TimeEntryConfirmationSubmissionService>();
+        TimeEntryConfirmationSubmissionService firstB = firstScope.ServiceProvider
+            .GetRequiredService<TimeEntryConfirmationSubmissionService>();
+        TimeEntryConfirmationSubmissionService second = secondScope.ServiceProvider
+            .GetRequiredService<TimeEntryConfirmationSubmissionService>();
+
+        firstA.ShouldBeSameAs(firstB);
+        firstA.ShouldNotBeSameAs(second);
+
+        IOptions<MagicLinkSubmissionPollingOptions> nullValueOptions = Substitute.For<IOptions<MagicLinkSubmissionPollingOptions>>();
+        nullValueOptions.Value.Returns((MagicLinkSubmissionPollingOptions)null!);
+        Should.Throw<OptionsValidationException>(() => new TimeEntryConfirmationSubmissionService(
+            firstScope.ServiceProvider.GetRequiredService<MagicLinkDurableSubmissionService>(),
+            provider.GetRequiredService<ITimesheetsAccessGuard>(),
+            provider.GetRequiredService<ExternalContributionCommandService>(),
+            nullValueOptions));
+    }
+
+    [Fact]
     public void ServerKernelPreservesAPreRegisteredEventStoreGatewayOverride()
     {
         IServiceCollection services = new ServiceCollection();

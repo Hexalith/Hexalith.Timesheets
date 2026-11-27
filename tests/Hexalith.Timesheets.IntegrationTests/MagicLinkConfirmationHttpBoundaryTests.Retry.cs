@@ -7,6 +7,7 @@ using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.ServiceDefaults.Routing;
+using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -89,6 +90,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var record = new CommitTimeEntryRecord(RecordingCommand(new("catalog-record"), "catalog-request"),
             Tenant(), Contributor(), ObservedAtUtc);
         AssertChanged(record, record with { Actor = new PartyReference("different-contributor") }, record.Command.TimeEntryId.Value);
+        var confirmation = new CommitTimeEntryConfirmation(
+            new ConfirmExternalTimeEntry(new("catalog-confirm"), Contributor(), new("supplier-api", "catalog-confirm-1")),
+            Tenant(), Contributor(), ObservedAtUtc);
+        AssertChanged(confirmation, confirmation with { Actor = new PartyReference("different-actor") }, confirmation.Command.TimeEntryId.Value);
     }
 
     /// <summary>Rejects invalid retry keys without consuming the capability and accepts the documented maximum length.</summary>

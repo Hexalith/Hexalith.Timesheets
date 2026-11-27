@@ -17,7 +17,7 @@ public static class TimesheetsRouteCatalogDeclarations
     /// <summary>Gets the payloads accepted by the keyed domain processor.</summary>
     public static IReadOnlyList<Type> PayloadTypes { get; } =
         [typeof(CommitMagicLinkIssue), typeof(CommitMagicLinkTransition), typeof(CommitMagicLinkUse), typeof(CommitTimeEntryRecord),
-            typeof(CommitApprovedTimeExport)];
+            typeof(CommitTimeEntryConfirmation), typeof(CommitApprovedTimeExport)];
 
     /// <summary>Gets the complete internal command policies.</summary>
     public static IReadOnlyList<CommandIntentDeclaration> Commands { get; } =
@@ -25,6 +25,7 @@ public static class TimesheetsRouteCatalogDeclarations
             Command<CommitMagicLinkTransition>("commit-magic-link-transition"),
             Command<CommitMagicLinkUse>("commit-magic-link-use"),
             Command<CommitTimeEntryRecord>("commit-time-entry-record"),
+            Command<CommitTimeEntryConfirmation>("commit-time-entry-confirmation"),
             Command<CommitApprovedTimeExport>("commit-approved-time-export")];
 
     /// <summary>Gets the compiled owner routes.</summary>
@@ -43,7 +44,8 @@ public static class TimesheetsRouteCatalogDeclarations
     /// <summary>Creates adapters for the complete payload, including every authority-bearing field.</summary>
     public static IReadOnlyList<IDeclaredIdempotencyIntentAdapter> CreateAdapters() =>
         [Adapter<CommitMagicLinkIssue>(), Adapter<CommitMagicLinkTransition>(),
-            Adapter<CommitMagicLinkUse>(), Adapter<CommitTimeEntryRecord>(), Adapter<CommitApprovedTimeExport>()];
+            Adapter<CommitMagicLinkUse>(), Adapter<CommitTimeEntryRecord>(), Adapter<CommitTimeEntryConfirmation>(),
+            Adapter<CommitApprovedTimeExport>()];
 
     private static CommandIntentDeclaration Command<T>(string slug)
     {

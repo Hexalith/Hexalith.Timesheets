@@ -95,9 +95,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                         typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
                     owners.SelectMany(owner => owner.GetCustomAttributes<RouteCatalogDeclarationSourceAttribute>())
                         .Single().SourceType.ShouldBe(typeof(TimesheetsProjectionRouteCatalogDeclarations));
-                    CompiledRouteCatalogDeclarations.Read(owners).Count.ShouldBe(9);
-                    CompiledRouteCatalogDeclarations.ReadOperations(owners).Count.ShouldBe(9);
-                    TimesheetsProjectionRouteCatalogDeclarations.Commands.Count.ShouldBe(5);
+                    CompiledRouteCatalogDeclarations.Read(owners).Count.ShouldBe(10);
+                    CompiledRouteCatalogDeclarations.ReadOperations(owners).Count.ShouldBe(10);
+                    TimesheetsProjectionRouteCatalogDeclarations.Commands.Count.ShouldBe(6);
                     inspected = true;
                     throw new InvalidOperationException("configured-catalog-probe-complete");
                 });
@@ -127,24 +127,24 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
         IReadOnlyList<RouteContractDeclaration> declarations = CompiledRouteCatalogDeclarations.Read(owners);
         IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations(owners);
-        declarations.Count.ShouldBe(9);
+        declarations.Count.ShouldBe(10);
         declarations.Select(route => route.RouteId).ShouldBe(new[]
         {
             "timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
             "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
-            "timesheets-commit-approved-time-export",
+            "timesheets-commit-time-entry-confirmation", "timesheets-commit-approved-time-export",
             "timesheets-magic-link-token-hash-capability-index", "timesheets-magic-link-confirmation-capabilities",
             "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence"
         }, ignoreOrder: true);
-        declarations.Count(route => route.Kind == "command").ShouldBe(5);
+        declarations.Count(route => route.Kind == "command").ShouldBe(6);
         declarations.Where(route => route.Kind == "projection").Select(route => route.ProjectionType)
             .ShouldBe(TimesheetsProjectionRouteCatalogDeclarations.Projections.Select(route => route.ProjectionType), ignoreOrder: true);
         operations.Select(operation => operation.RouteId)
             .ShouldBe(declarations.Select(route => route.RouteId), ignoreOrder: true);
         EndpointDataSource endpoints = services.GetRequiredService<EndpointDataSource>();
         IReadOnlyList<RouteCatalogEntry> targets = DevelopmentDomainRouteCatalog.Targets(services, endpoints.Endpoints, declarations);
-        targets.Count.ShouldBe(9);
-        targets.Where(target => target.Method == "process").Count().ShouldBe(5);
+        targets.Count.ShouldBe(10);
+        targets.Where(target => target.Method == "process").Count().ShouldBe(6);
         targets.Where(target => target.Method == "project/v2").Count().ShouldBe(4);
 
         RouteContractDeclaration projection = declarations.Single(route =>

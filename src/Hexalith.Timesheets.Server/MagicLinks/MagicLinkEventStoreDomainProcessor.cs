@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 
+using Hexalith.EventStore.Client.Events;
 using Hexalith.EventStore.Client.Handlers;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Identity;
@@ -90,6 +91,15 @@ public sealed class MagicLinkEventStoreDomainProcessor(
         if (ApprovedTimeExportReceipt.IsReceiptOwner(command.AggregateId))
         {
             return DomainResult.NoOp();
+        }
+
+        if (StringComparer.Ordinal.Equals(command.CommandType, typeof(CommitTimeEntryConfirmation).FullName))
+        {
+            // Refusals leave zero events on the Time Entry stream.
+            return StringComparer.Ordinal.Equals(command.Domain, TimesheetsEventStoreIntegration.DomainName)
+                && HasVerifiedWorkloadOrigin(command)
+                ? await ProcessConfirmationAsync(command, currentState, cancellationToken).ConfigureAwait(false)
+                : DomainResult.NoOp();
         }
 
         if (!StringComparer.Ordinal.Equals(command.Domain, TimesheetsEventStoreIntegration.DomainName))
@@ -349,6 +359,71 @@ public sealed class MagicLinkEventStoreDomainProcessor(
         }
 
         return DomainResult.Success([new StoredTimeEntryRecorded(recorded), new StoredTimeEntrySubmitted(submitted)]);
+    }
+
+    private async Task<DomainResult> ProcessConfirmationAsync(
+        CommandEnvelope envelope,
+        object? currentState,
+        CancellationToken cancellationToken)
+    {
+        CommitTimeEntryConfirmation? intent;
+        TimeEntryState? current;
+        try
+        {
+            intent = JsonSerializer.Deserialize<CommitTimeEntryConfirmation>(envelope.Payload, _jsonOptions);
+            current = DomainStateReplay.Rehydrate<TimeEntryState>(currentState);
+        }
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException
+            or EventPayloadEvolutionException
+            or TargetInvocationException { InnerException: InvalidOperationException or ArgumentException or NullReferenceException })
+        {
+            return DomainResult.NoOp();
+        }
+
+        ConfirmExternalTimeEntry? proposed = intent?.Command;
+        if (proposed?.TimeEntryId is null
+            || string.IsNullOrWhiteSpace(proposed.TimeEntryId.Value)
+            || proposed.Contributor is null
+            || string.IsNullOrWhiteSpace(proposed.Contributor.PartyId)
+            || proposed.Source is null
+            || string.IsNullOrWhiteSpace(proposed.Source.SourceSystem)
+            || string.IsNullOrWhiteSpace(proposed.Source.ExternalRequestId)
+            || intent?.Tenant is null
+            || string.IsNullOrWhiteSpace(intent.Tenant.TenantId)
+            || intent.Actor is null
+            || string.IsNullOrWhiteSpace(intent.Actor.PartyId)
+            || intent.ConfirmedAtUtc.Offset != TimeSpan.Zero
+            || !HasVerifiedActor(envelope, intent.Actor.PartyId)
+            || !StringComparer.Ordinal.Equals(envelope.TenantId, intent.Tenant.TenantId)
+            || !StringComparer.Ordinal.Equals(envelope.AggregateId, proposed.TimeEntryId.Value)
+            || current?.IsRecorded != true
+            || current.HasAmbiguousMagicLinkTerminalHistory
+            || current.TimeEntryId != proposed.TimeEntryId
+            || current.Target is null
+            || current.Target.TargetKind is not (TimeEntryTargetKind.Project or TimeEntryTargetKind.Work)
+            || string.IsNullOrWhiteSpace(current.Target.TargetId)
+            || current.Contributor != proposed.Contributor)
+        {
+            return DomainResult.NoOp();
+        }
+
+        TimesheetsRequestContext context = TimesheetsServerRequestContext.FromTrustedSources(
+            intent.Tenant.TenantId, intent.Actor.PartyId, envelope.CorrelationId);
+        TimeEntryConfirmationCommandResult decision = await externalContributionService.ConfirmAsync(
+            context, proposed, current, intent.ConfirmedAtUtc, cancellationToken).ConfigureAwait(false);
+        if (!decision.WasDispatched
+            || decision.DomainResult?.Events is not [TimeEntryContributorConfirmed confirmed]
+            || confirmed.TimeEntryId != proposed.TimeEntryId
+            || confirmed.Contributor != proposed.Contributor
+            || confirmed.Tenant != intent.Tenant
+            || confirmed.Source != proposed.Source
+            || confirmed.ConfirmedAtUtc.Offset != TimeSpan.Zero
+            || confirmed.ConfirmedAtUtc != intent.ConfirmedAtUtc)
+        {
+            return DomainResult.NoOp();
+        }
+
+        return DomainResult.Success([new StoredTimeEntryConfirmed(confirmed)]);
     }
 
     private async Task<DomainResult> ProcessIssueAsync(

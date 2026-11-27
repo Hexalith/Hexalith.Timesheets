@@ -1740,3 +1740,7 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 ## Deferred from code review of Story 6.3 (2026-11-23)
 
 - Qualify the installed ledger reader’s complete snapshot, correction lineage and canonical cursor progression. Verify that recreating the reader for the same ledger version preserves its snapshot ID and that the same finance request can recover its receipt. [Launch readiness](../../docs/launch-readiness.md)
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-4-persist-workload-authenticated-external-confirmation.md`
+  summary: Adopt `HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user)` on `POST /api/timesheets/external-contributions/` so synthetic `workload:*` subjects without `party_id` fail closed with zero EventStore submissions.
+  evidence: `src/Hexalith.Timesheets/Endpoints/ExternalContributionEndpoints.cs:30` still calls `FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier)`, treating synthetic `workload:*` subjects as a `PartyReference` and bypassing `TimeEntryRecordSubmissionService`'s null-actor guard (pre-existing on the untouched sibling recording route; Story 6.5 scope).

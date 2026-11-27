@@ -116,17 +116,17 @@ public static class TimeEntry
     {
         ArgumentNullException.ThrowIfNull(command);
 
-        if (state?.ContributorConfirmationSource == command.Source)
-        {
-            return TimesheetsDomainResult.NoOp();
-        }
-
         List<TimesheetsFieldError> errors = [];
         ValidateExternalConfirmation(command, state, tenant, confirmedAtUtc, errors);
 
         if (errors.Count > 0)
         {
             return Reject(TimesheetsRejectionCode.ValidationFailed, "External contributor confirmation failed validation.", errors);
+        }
+
+        if (state!.ContributorConfirmationSource == command.Source)
+        {
+            return TimesheetsDomainResult.NoOp();
         }
 
         return TimesheetsDomainResult.Success([
@@ -1011,6 +1011,18 @@ public static class TimeEntry
             return;
         }
 
+        if (state.TimeEntryId != command.TimeEntryId)
+        {
+            errors.Add(new("timeEntryId", "mismatch", "Confirmation Time Entry ID must match the recorded Time Entry."));
+        }
+
+        if (state.Target is null
+            || state.Target.TargetKind is not (TimeEntryTargetKind.Project or TimeEntryTargetKind.Work)
+            || string.IsNullOrWhiteSpace(state.Target.TargetId))
+        {
+            errors.Add(new("target", "required", "Recorded Time Entry target reference is required."));
+        }
+
         if (!CanConfirmExternally(state))
         {
             errors.Add(new("contributorCategory", "external-required", "External confirmation requires an external contributor Time Entry."));
@@ -1019,6 +1031,22 @@ public static class TimeEntry
         if (state.Contributor != command.Contributor)
         {
             errors.Add(new("contributor", "mismatch", "Confirmation contributor must match the recorded Time Entry contributor."));
+        }
+
+        if (state.ContributorConfirmationSource is not null
+            && state.ContributorConfirmationSource != command.Source)
+        {
+            errors.Add(new("source", "already-confirmed", "Time Entry is already confirmed with a different external source."));
+        }
+
+        if (state.ConfirmedContributor is not null && state.ConfirmedContributor != command.Contributor)
+        {
+            errors.Add(new("contributor", "already-confirmed-contributor-mismatch", "Confirmation contributor must match the previously confirmed contributor."));
+        }
+
+        if (state.ConfirmationTenant is not null && state.ConfirmationTenant != tenant)
+        {
+            errors.Add(new("tenant", "mismatch", "Confirmation tenant must match the recorded confirmation tenant."));
         }
     }
 

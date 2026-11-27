@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Text.Json;
 
+using Hexalith.EventStore.Client.Events;
 using Hexalith.EventStore.Client.Handlers;
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
@@ -265,6 +266,246 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
     }
 
     [Theory]
+    [InlineData(TimeEntryApprovalState.Draft)]
+    [InlineData(TimeEntryApprovalState.Submitted)]
+    [InlineData(TimeEntryApprovalState.Approved)]
+    public async Task ConfirmationCommitSucceedsAcrossApprovalStatesWithoutAlteringApproval(
+        TimeEntryApprovalState approvalState)
+    {
+        var (loader, service, external, guard) = ExpiryDependencies(partyAllowed: true);
+        var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, TimeProvider.System);
+        List<object> history = [new StoredTimeEntryRecorded(Recorded())];
+        if (approvalState is TimeEntryApprovalState.Submitted or TimeEntryApprovalState.Approved)
+        {
+            history.Add(new StoredTimeEntrySubmitted(new TimeEntrySubmitted(
+                Recorded().TimeEntryId,
+                Recorded().Contributor,
+                new("tenant-1"),
+                DateTimeOffset.UnixEpoch.AddMinutes(5),
+                new("submission-1"),
+                TimeEntrySubmissionScope.SelectedEntries,
+                TimeEntryApprovalState.Submitted)));
+        }
+
+        if (approvalState == TimeEntryApprovalState.Approved)
+        {
+            history.Add(new TimeEntryApproved(
+                Recorded().TimeEntryId,
+                new("approver-1"),
+                new("tenant-1"),
+                DateTimeOffset.UnixEpoch.AddMinutes(10),
+                new("decision-1"),
+                TimeEntryApprovalState.Approved,
+                new(
+                    ApprovalAuthorityAction.EntryApproval,
+                    ApprovalAuthoritySource.ProjectApprover,
+                    ApprovalAuthorityDecisionState.Allowed,
+                    "policy-key",
+                    "v1",
+                    ProjectionFreshnessMetadata.Fresh),
+                TimeEntryApprovalScope.IndividualEntry));
+        }
+
+        DomainResult result = await processor.ProcessAsync(
+            ConfirmationEnvelope(),
+            history.ToArray(),
+            TestContext.Current.CancellationToken);
+
+        result.IsSuccess.ShouldBeTrue();
+        StoredTimeEntryConfirmed stored = result.Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<StoredTimeEntryConfirmed>();
+        stored.Event.TimeEntryId.ShouldBe(Recorded().TimeEntryId);
+        stored.Event.Contributor.ShouldBe(Recorded().Contributor);
+        stored.Event.Tenant.ShouldBe(new TenantReference("tenant-1"));
+        stored.Event.Source.ShouldBe(new ExternalContributionSource("supplier-api", "confirm-1"));
+        await guard.Received(1).AuthorizeAsync(
+            Arg.Is<TimesheetsAuthorizationRequest>(request =>
+                request.Operation == TimesheetsOperation.Confirmation
+                && request.Contributor == Recorded().Contributor
+                && request.Project == new ProjectReference("project-1")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("bad-domain")]
+    [InlineData("missing-origin")]
+    [InlineData("forged-origin")]
+    [InlineData("forged-actor-user")]
+    [InlineData("forged-actor-extension")]
+    [InlineData("foreign-tenant")]
+    [InlineData("foreign-owner")]
+    [InlineData("non-utc")]
+    [InlineData("unrecorded")]
+    [InlineData("wrong-contributor")]
+    [InlineData("non-external")]
+    [InlineData("conflicting-source")]
+    [InlineData("already-confirmed-same-source")]
+    [InlineData("denied-guard")]
+    [InlineData("corrupt-payload")]
+    public async Task ConfirmationCommitReturnsNoOpWithoutPollutionOnRefusal(string scenario)
+    {
+        var (loader, service, external, _) = ExpiryDependencies(partyAllowed: scenario != "denied-guard");
+        var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, TimeProvider.System);
+        CommitTimeEntryConfirmation intent = ConfirmationIntent();
+        if (scenario == "non-utc")
+        {
+            intent = intent with { ConfirmedAtUtc = new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.FromHours(2)) };
+        }
+        else if (scenario == "wrong-contributor")
+        {
+            intent = intent with { Command = intent.Command with { Contributor = new PartyReference("party-other") } };
+        }
+
+        CommandEnvelope envelope = ConfirmationEnvelope(intent);
+        envelope = scenario switch
+        {
+            "bad-domain" => envelope with { Domain = "foreign" },
+            "missing-origin" => envelope with { Extensions = null },
+            "forged-origin" => envelope with
+            {
+                Extensions = new Dictionary<string, string>
+                {
+                    [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "forged",
+                    [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = "actor-1"
+                }
+            },
+            "forged-actor-user" => envelope with { UserId = "actor-2" },
+            "forged-actor-extension" => envelope with
+            {
+                Extensions = new Dictionary<string, string>
+                {
+                    [EventStoreGatewayVerifiedOrigin.ExtensionKey] = "timesheets",
+                    [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = "actor-2"
+                }
+            },
+            "foreign-tenant" => envelope with { TenantId = "tenant-2" },
+            "foreign-owner" => envelope with { AggregateId = "entry-2" },
+            "corrupt-payload" => envelope with { Payload = "{"u8.ToArray() },
+            _ => envelope
+        };
+
+        object? state = scenario switch
+        {
+            "unrecorded" => null,
+            "non-external" => new object[]
+            {
+                new StoredTimeEntryRecorded(Recorded() with { ContributorCategory = ContributorCategory.Employee })
+            },
+            "conflicting-source" => new object[]
+            {
+                new StoredTimeEntryRecorded(Recorded()),
+                new StoredTimeEntryConfirmed(new TimeEntryContributorConfirmed(
+                    Recorded().TimeEntryId,
+                    Recorded().Contributor,
+                    new("tenant-1"),
+                    DateTimeOffset.UnixEpoch.AddMinutes(1),
+                    new ExternalContributionSource("supplier-api", "other-confirm")))
+            },
+            "already-confirmed-same-source" => new object[]
+            {
+                new StoredTimeEntryRecorded(Recorded()),
+                new StoredTimeEntryConfirmed(new TimeEntryContributorConfirmed(
+                    Recorded().TimeEntryId,
+                    Recorded().Contributor,
+                    new("tenant-1"),
+                    DateTimeOffset.UnixEpoch.AddMinutes(1),
+                    intent.Command.Source))
+            },
+            _ => new object[] { new StoredTimeEntryRecorded(Recorded()) }
+        };
+
+        DomainResult result = await processor.ProcessAsync(envelope, state, TestContext.Current.CancellationToken);
+
+        result.IsNoOp.ShouldBeTrue();
+        result.IsRejection.ShouldBeFalse();
+        result.Events.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ConfirmationCommitReturnsNoOpOnCorruptReplayWithoutConsultingDependencies(bool wrapped)
+    {
+        object[] history = ReplayHistory(nameof(CommitTimeEntryConfirmation), wrapped);
+        var processor = new MagicLinkEventStoreDomainProcessor(null!, null!, null!, TimeProvider.System);
+
+        DomainResult result = await processor.ProcessAsync(
+            ConfirmationEnvelope(),
+            history,
+            TestContext.Current.CancellationToken);
+
+        result.IsNoOp.ShouldBeTrue();
+        result.IsRejection.ShouldBeFalse();
+        result.Events.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ConfirmationCommitPropagatesCancellation(bool duringReplay)
+    {
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        object[] history = ReplayHistory(nameof(CommitTimeEntryConfirmation), wrapped: true);
+        if (!duringReplay)
+        {
+            await cancellation.CancelAsync();
+        }
+
+        var processor = new MagicLinkEventStoreDomainProcessor(null!, null!, null!, TimeProvider.System);
+        object source = duringReplay ? CancelDuringReplay(history[0], cancellation) : history;
+
+        OperationCanceledException exception = await Should.ThrowAsync<OperationCanceledException>(() =>
+            processor.ProcessAsync(ConfirmationEnvelope(), source, cancellation.Token));
+
+        exception.CancellationToken.ShouldBe(cancellation.Token);
+    }
+
+    [Theory]
+    [InlineData("ambiguous-terminal-history")]
+    [InlineData("uninitialized-target")]
+    [InlineData("payload-evolution-exception")]
+    public async Task ConfirmationCommitReturnsNoOpWithoutGuardCallOnAmbiguousUninitializedOrEvolutionFailure(string scenario)
+    {
+        var (loader, service, external, guard) = ExpiryDependencies(partyAllowed: true);
+        var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, TimeProvider.System);
+        object currentState = scenario switch
+        {
+            "ambiguous-terminal-history" => new object[]
+            {
+                new StoredTimeEntryRecorded(Recorded()),
+                new StoredMagicLinkRevoked(new MagicLinkConfirmationCapabilityRevoked(
+                    new("cap-1"), new("tenant-1"), new("operator-1"), DateTimeOffset.UnixEpoch, new("timesheets", "r1"))
+                    { TimeEntryId = Recorded().TimeEntryId }),
+                new StoredMagicLinkRevoked(new MagicLinkConfirmationCapabilityRevoked(
+                    new("cap-1"), new("tenant-1"), new("operator-1"), DateTimeOffset.UnixEpoch, new("timesheets", "r2"))
+                    { TimeEntryId = Recorded().TimeEntryId })
+            },
+            "uninitialized-target" => new object[]
+            {
+                new StoredTimeEntryRecorded(Recorded() with
+                {
+                    Target = (TimeEntryTargetReference)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(TimeEntryTargetReference))
+                })
+            },
+            _ => ThrowEvolutionDuringReplay()
+        };
+
+        DomainResult result = await processor.ProcessAsync(
+            ConfirmationEnvelope(), currentState, TestContext.Current.CancellationToken);
+
+        result.IsNoOp.ShouldBeTrue();
+        result.IsRejection.ShouldBeFalse();
+        result.Events.ShouldBeEmpty();
+        await guard.DidNotReceive().AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    private static IEnumerable<object> ThrowEvolutionDuringReplay()
+    {
+        yield return new StoredTimeEntryRecorded(Recorded());
+        throw new EventPayloadEvolutionException("StoredTimeEntryRecorded", 1, 1, "Simulated schema evolution error.");
+    }
+
+    [Theory]
     [InlineData(nameof(CommitMagicLinkIssue))]
     [InlineData(nameof(CommitMagicLinkUse))]
     [InlineData(nameof(CommitMagicLinkTransition))]
@@ -470,6 +711,25 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
         new("actor-1"), Recorded().Target, new("activity-1"), new("entry-1"), MagicLinkTargetKind.ExistingTimeEntry,
         MagicLinkAllowedAction.Confirm, new("hash-1"), DateTimeOffset.UnixEpoch.AddDays(2), new("actor-1"),
         DateTimeOffset.UnixEpoch, new("timesheets", "issue-1"), true);
+
+    private static CommitTimeEntryConfirmation ConfirmationIntent() => new(
+        new ConfirmExternalTimeEntry(
+            Recorded().TimeEntryId,
+            Recorded().Contributor,
+            new ExternalContributionSource("supplier-api", "confirm-1")),
+        new("tenant-1"),
+        new("actor-1"),
+        DateTimeOffset.UnixEpoch.AddHours(1));
+
+    private static CommandEnvelope ConfirmationEnvelope(CommitTimeEntryConfirmation? intent = null)
+    {
+        CommitTimeEntryConfirmation payload = intent ?? ConfirmationIntent();
+        return Envelope(typeof(CommitTimeEntryConfirmation).FullName!) with
+        {
+            AggregateId = payload.Command.TimeEntryId.Value,
+            Payload = JsonSerializer.SerializeToUtf8Bytes(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web))
+        };
+    }
 
     private static CommandEnvelope Envelope(string commandName)
         => new("message-1", "tenant-1", "timesheets", "owner-1", commandName, [],
