@@ -35,7 +35,7 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     ITimesheetsAccessGuard? exportAccessGuard) : IDomainProcessor, IAsyncDomainProcessor, IDomainCommandPayloadInventory
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
-    private static readonly JsonSerializerOptions _exportOwnerJson = new(JsonSerializerDefaults.Web)
+    private static readonly JsonSerializerOptions _strictJsonOptions = new(JsonSerializerDefaults.Web)
     {
         RespectRequiredConstructorParameters = true,
         AllowDuplicateProperties = false
@@ -245,7 +245,7 @@ public sealed class MagicLinkEventStoreDomainProcessor(
         {
             intent = JsonSerializer.Deserialize<CommitApprovedTimeExport>(command.Payload, _jsonOptions);
             object? ownerState = currentState is JsonElement json
-                ? json.Deserialize<DomainServiceCurrentState>(_exportOwnerJson) : currentState;
+                ? json.Deserialize<DomainServiceCurrentState>(_strictJsonOptions) : currentState;
             ownerIsEmpty = currentState is null || ownerState is DomainServiceCurrentState
                 { SnapshotState: null, Events: [], LastSnapshotSequence: 0, CurrentSequence: 0 };
         }
@@ -370,12 +370,12 @@ public sealed class MagicLinkEventStoreDomainProcessor(
         TimeEntryState? current;
         try
         {
-            intent = JsonSerializer.Deserialize<CommitTimeEntryConfirmation>(envelope.Payload, _jsonOptions);
+            intent = JsonSerializer.Deserialize<CommitTimeEntryConfirmation>(envelope.Payload, _strictJsonOptions);
             current = DomainStateReplay.Rehydrate<TimeEntryState>(currentState);
         }
-        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException
+        catch (Exception exception) when (exception is JsonException or InvalidOperationException or ArgumentException or FormatException
             or EventPayloadEvolutionException
-            or TargetInvocationException { InnerException: InvalidOperationException or ArgumentException or NullReferenceException })
+            or TargetInvocationException { InnerException: InvalidOperationException or ArgumentException or FormatException or NullReferenceException })
         {
             return DomainResult.NoOp();
         }
@@ -392,12 +392,14 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             || string.IsNullOrWhiteSpace(intent.Tenant.TenantId)
             || intent.Actor is null
             || string.IsNullOrWhiteSpace(intent.Actor.PartyId)
+            || intent.ConfirmedAtUtc == default
             || intent.ConfirmedAtUtc.Offset != TimeSpan.Zero
             || !HasVerifiedActor(envelope, intent.Actor.PartyId)
             || !StringComparer.Ordinal.Equals(envelope.TenantId, intent.Tenant.TenantId)
             || !StringComparer.Ordinal.Equals(envelope.AggregateId, proposed.TimeEntryId.Value)
             || current?.IsRecorded != true
             || current.HasAmbiguousMagicLinkTerminalHistory
+            || !current.MatchesConfirmationTenant(intent.Tenant)
             || current.TimeEntryId != proposed.TimeEntryId
             || current.Target is null
             || current.Target.TargetKind is not (TimeEntryTargetKind.Project or TimeEntryTargetKind.Work)
@@ -417,6 +419,7 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             || confirmed.Contributor != proposed.Contributor
             || confirmed.Tenant != intent.Tenant
             || confirmed.Source != proposed.Source
+            || confirmed.ConfirmedAtUtc == default
             || confirmed.ConfirmedAtUtc.Offset != TimeSpan.Zero
             || confirmed.ConfirmedAtUtc != intent.ConfirmedAtUtc)
         {

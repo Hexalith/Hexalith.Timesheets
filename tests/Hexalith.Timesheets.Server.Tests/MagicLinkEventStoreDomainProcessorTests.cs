@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Events;
@@ -266,15 +267,22 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
     }
 
     [Theory]
-    [InlineData(TimeEntryApprovalState.Draft)]
-    [InlineData(TimeEntryApprovalState.Submitted)]
-    [InlineData(TimeEntryApprovalState.Approved)]
+    [InlineData(TimeEntryApprovalState.Draft, false)]
+    [InlineData(TimeEntryApprovalState.Submitted, false)]
+    [InlineData(TimeEntryApprovalState.Approved, false)]
+    [InlineData(TimeEntryApprovalState.Draft, true)]
     public async Task ConfirmationCommitSucceedsAcrossApprovalStatesWithoutAlteringApproval(
-        TimeEntryApprovalState approvalState)
+        TimeEntryApprovalState approvalState, bool workTarget)
     {
         var (loader, service, external, guard) = ExpiryDependencies(partyAllowed: true);
         var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, TimeProvider.System);
-        List<object> history = [new StoredTimeEntryRecorded(Recorded())];
+        WorkReference? work = workTarget ? new WorkReference("work-1") : null;
+        ProjectReference? project = workTarget ? null : new ProjectReference("project-1");
+        TimeEntryRecorded recorded = Recorded() with
+        {
+            Target = work is not null ? TimeEntryTargetReference.ForWork(work) : TimeEntryTargetReference.ForProject(project!)
+        };
+        List<object> history = [new StoredTimeEntryRecorded(recorded)];
         if (approvalState is TimeEntryApprovalState.Submitted or TimeEntryApprovalState.Approved)
         {
             history.Add(new StoredTimeEntrySubmitted(new TimeEntrySubmitted(
@@ -322,8 +330,46 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
             Arg.Is<TimesheetsAuthorizationRequest>(request =>
                 request.Operation == TimesheetsOperation.Confirmation
                 && request.Contributor == Recorded().Contributor
-                && request.Project == new ProjectReference("project-1")),
+                && request.Project == project
+                && request.Work == work),
             Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("default-timestamp")]
+    [InlineData("missing-timestamp")]
+    [InlineData("duplicate-timestamp")]
+    [InlineData("malformed-base64")]
+    public async Task ConfirmationCommitRejectsInvalidIntentOrReplayBeforeAuthorization(string scenario)
+    {
+        var (loader, service, external, guard) = ExpiryDependencies(partyAllowed: true);
+        var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, TimeProvider.System);
+        CommitTimeEntryConfirmation intent = ConfirmationIntent();
+        CommandEnvelope envelope = scenario switch
+        {
+            "default-timestamp" => ConfirmationEnvelope(intent with { ConfirmedAtUtc = default }),
+            "missing-timestamp" => ConfirmationEnvelope() with
+            {
+                Payload = JsonSerializer.SerializeToUtf8Bytes(new { intent.Command, intent.Tenant, intent.Actor }, JsonSerializerOptions.Web)
+            },
+            "duplicate-timestamp" => ConfirmationEnvelope() with
+            {
+                Payload = Encoding.UTF8.GetBytes("{\"confirmedAtUtc\":\"1970-01-01T01:00:00+00:00\"," +
+                    Encoding.UTF8.GetString(ConfirmationEnvelope().Payload)[1..])
+            },
+            _ => ConfirmationEnvelope()
+        };
+        using JsonDocument malformedReplay = JsonDocument.Parse(
+            """[{"eventTypeName":"StoredTimeEntryRecorded","payload":"AAA"}]""");
+        object currentState = scenario == "malformed-base64"
+            ? malformedReplay.RootElement
+            : new object[] { new StoredTimeEntryRecorded(Recorded()) };
+
+        DomainResult result = await processor.ProcessAsync(envelope, currentState, TestContext.Current.CancellationToken);
+
+        result.IsNoOp.ShouldBeTrue();
+        result.Events.ShouldBeEmpty();
+        await guard.DidNotReceive().AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -503,6 +549,64 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
     {
         yield return new StoredTimeEntryRecorded(Recorded());
         throw new EventPayloadEvolutionException("StoredTimeEntryRecorded", 1, 1, "Simulated schema evolution error.");
+    }
+
+    [Theory]
+    [InlineData("foreign-submission-tenant")]
+    [InlineData("foreign-submission-owner")]
+    [InlineData("foreign-correction-tenant")]
+    [InlineData("foreign-correction-owner")]
+    [InlineData("same-owner-pre-record-terminal")]
+    [InlineData("foreign-owner-pre-record-terminal")]
+    public async Task ConfirmationCommitChecksScopeOfReplayedEventsBeforeAuthorization(string scenario)
+    {
+        var (loader, service, external, guard) = ExpiryDependencies(partyAllowed: true);
+        var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, TimeProvider.System);
+        TimeEntryRecorded recorded = Recorded();
+        var tenant = new TenantReference("tenant-1");
+        var foreignTenant = new TenantReference("tenant-2");
+        var foreignOwner = new TimeEntryId("foreign-entry");
+        List<object> history = [new StoredTimeEntryRecorded(recorded)];
+        if (scenario.EndsWith("pre-record-terminal", StringComparison.Ordinal))
+        {
+            history.Insert(0, new StoredMagicLinkRevoked(new MagicLinkConfirmationCapabilityRevoked(
+                new("old-capability"), tenant, new("operator-1"), DateTimeOffset.UnixEpoch, new("timesheets", "revoke-1"))
+            {
+                TimeEntryId = scenario == "foreign-owner-pre-record-terminal" ? foreignOwner : recorded.TimeEntryId
+            }));
+        }
+
+        history.Add(new StoredTimeEntrySubmitted(new TimeEntrySubmitted(
+            scenario == "foreign-submission-owner" ? foreignOwner : recorded.TimeEntryId,
+            recorded.Contributor, scenario == "foreign-submission-tenant" ? foreignTenant : tenant,
+            DateTimeOffset.UnixEpoch.AddMinutes(1), new("submission-1"), TimeEntrySubmissionScope.SelectedEntries,
+            TimeEntryApprovalState.Submitted)));
+        if (scenario.StartsWith("foreign-correction", StringComparison.Ordinal))
+        {
+            var approver = new PartyReference("approver-1");
+            var decisionId = new TimeEntryApprovalDecisionId("decision-1");
+            const TimeEntryApprovalScope scope = TimeEntryApprovalScope.IndividualEntry;
+            var authority = new ApprovalAuthoritySourceAttribution(ApprovalAuthorityAction.EntryApproval,
+                ApprovalAuthoritySource.ProjectApprover, ApprovalAuthorityDecisionState.Allowed, "policy-key", "v1",
+                ProjectionFreshnessMetadata.Fresh);
+            history.Add(new TimeEntryApproved(recorded.TimeEntryId, approver, tenant, DateTimeOffset.UnixEpoch.AddMinutes(2),
+                decisionId, TimeEntryApprovalState.Approved, authority, scope));
+            var previous = new TimeEntryCorrectionValues(recorded.Target, recorded.Contributor, recorded.ActivityTypeId,
+                recorded.ServiceDate, recorded.DurationMinutes, recorded.BillableState, recorded.ContributorCategory, recorded.AiMetrics)
+            { ActivityTypeScope = recorded.ActivityTypeScope };
+            history.Add(new TimeEntryApprovedCorrected(
+                scenario == "foreign-correction-owner" ? foreignOwner : recorded.TimeEntryId,
+                new("correction-1"), scenario == "foreign-correction-tenant" ? foreignTenant : tenant, approver,
+                DateTimeOffset.UnixEpoch.AddMinutes(3), previous, previous with { DurationMinutes = 90 }, new("Correction"),
+                decisionId, scope, TimeEntryApprovalState.Approved, TimeEntryCorrectionState.Corrected));
+        }
+
+        DomainResult result = await processor.ProcessAsync(ConfirmationEnvelope(), history.ToArray(), TestContext.Current.CancellationToken);
+
+        bool valid = scenario == "same-owner-pre-record-terminal";
+        result.IsSuccess.ShouldBe(valid);
+        result.IsNoOp.ShouldBe(!valid);
+        await guard.Received(valid ? 1 : 0).AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Theory]

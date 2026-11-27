@@ -41,10 +41,13 @@ public static class TimesheetsRouteCatalogDeclarations
     public static IReadOnlyDictionary<string, string> ReceiverMethods =>
         Routes.ToDictionary(route => route.RouteId, _ => "process", StringComparer.Ordinal);
 
-    /// <summary>Creates adapters for the complete payload, including every authority-bearing field.</summary>
+    /// <summary>Creates adapters that bind each command's semantic intent and authority-bearing fields.</summary>
     public static IReadOnlyList<IDeclaredIdempotencyIntentAdapter> CreateAdapters() =>
         [Adapter<CommitMagicLinkIssue>(), Adapter<CommitMagicLinkTransition>(),
-            Adapter<CommitMagicLinkUse>(), Adapter<CommitTimeEntryRecord>(), Adapter<CommitTimeEntryConfirmation>(),
+            Adapter<CommitMagicLinkUse>(), Adapter<CommitTimeEntryRecord>(),
+            // The server clock supplies audit evidence and can advance between identical retries.
+            Adapter<CommitTimeEntryConfirmation>(payload => JsonSerializer.Serialize(
+                new { payload.Command, payload.Tenant, payload.Actor }, JsonSerializerOptions.Web)),
             Adapter<CommitApprovedTimeExport>()];
 
     private static CommandIntentDeclaration Command<T>(string slug)
@@ -57,8 +60,11 @@ public static class TimesheetsRouteCatalogDeclarations
             IdempotencyReplayRetentionTier.Mutation, false);
     }
 
-    private static IDeclaredIdempotencyIntentAdapter Adapter<T>() =>
+    private static IDeclaredIdempotencyIntentAdapter Adapter<T>(Func<T, string>? serializeIntent = null) =>
         new DeclaredIdempotencyIntentAdapter<T>(
             Commands.Single(command => command.Route.Execution!.HandlerType == typeof(T).FullName),
-            payload => new Dictionary<string, object?> { ["payload"] = JsonSerializer.Serialize(payload, JsonSerializerOptions.Web) });
+            payload => new Dictionary<string, object?>
+            {
+                ["payload"] = serializeIntent?.Invoke(payload) ?? JsonSerializer.Serialize(payload, JsonSerializerOptions.Web)
+            });
 }

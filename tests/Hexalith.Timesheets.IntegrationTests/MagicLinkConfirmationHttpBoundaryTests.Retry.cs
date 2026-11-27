@@ -9,6 +9,7 @@ using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.ServiceDefaults.Routing;
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Commands.MagicLinks;
+using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
@@ -94,6 +95,23 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             new ConfirmExternalTimeEntry(new("catalog-confirm"), Contributor(), new("supplier-api", "catalog-confirm-1")),
             Tenant(), Contributor(), ObservedAtUtc);
         AssertChanged(confirmation, confirmation with { Actor = new PartyReference("different-actor") }, confirmation.Command.TimeEntryId.Value);
+        AssertChanged(confirmation, confirmation with { Tenant = new TenantReference("different-tenant") }, confirmation.Command.TimeEntryId.Value);
+        AssertChanged(confirmation, confirmation with
+        {
+            Command = confirmation.Command with { Source = new ExternalContributionSource("supplier-api", "changed-confirmation") }
+        }, confirmation.Command.TimeEntryId.Value);
+
+        IDeclaredIdempotencyIntentAdapter confirmationAdapter = adapters.Single(candidate =>
+            candidate.CommandType == typeof(CommitTimeEntryConfirmation).FullName);
+        IdempotencyIntentCommand confirmationInput = new(confirmationAdapter.CommandType, Tenant().TenantId, "timesheets",
+            confirmation.Command.TimeEntryId.Value, JsonSerializer.SerializeToUtf8Bytes(confirmation, JsonOptions), null);
+        IdempotencyCanonicalIntent originalIntent = confirmationAdapter.CreateIntent(confirmationInput);
+        IdempotencyCanonicalIntent retryIntent = confirmationAdapter.CreateIntent(confirmationInput with
+        {
+            Payload = JsonSerializer.SerializeToUtf8Bytes(
+                confirmation with { ConfirmedAtUtc = confirmation.ConfirmedAtUtc.AddMinutes(1) }, JsonOptions)
+        });
+        originalIntent.SemanticPayload.SequenceEqual(retryIntent.SemanticPayload).ShouldBeTrue();
     }
 
     /// <summary>Rejects invalid retry keys without consuming the capability and accepts the documented maximum length.</summary>

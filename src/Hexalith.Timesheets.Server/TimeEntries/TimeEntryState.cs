@@ -9,6 +9,10 @@ namespace Hexalith.Timesheets.Server.TimeEntries;
 
 public sealed class TimeEntryState
 {
+    private TimeEntryId? _replayedEntryId;
+    private TenantReference? _replayedTenant;
+    private bool _hasInconsistentReplayScope;
+
     public bool IsRecorded { get; private set; }
 
     public TimeEntryId? TimeEntryId { get; private set; }
@@ -103,23 +107,42 @@ public sealed class TimeEntryState
     public bool HasTerminalMagicLinkCapability(MagicLinkCapabilityId capabilityId)
         => TerminalMagicLinkCapabilityIds.Contains(capabilityId.Value);
 
+    /// <summary>Checks scope evidence from replay before a workload confirmation can use it.</summary>
+    internal bool MatchesConfirmationTenant(TenantReference tenant)
+        => !_hasInconsistentReplayScope
+            && (_replayedTenant is null || _replayedTenant == tenant)
+            && (SubmissionTenant is null || SubmissionTenant == tenant)
+            && (ApprovalTenant is null || ApprovalTenant == tenant)
+            && (CorrectionTenant is null || CorrectionTenant == tenant)
+            && (ConfirmationTenant is null || ConfirmationTenant == tenant)
+            && (ExternalAdjustment is null || ExternalAdjustment.Tenant == tenant);
+
     /// <summary>Records a capability use in this Time Entry stream.</summary>
     public void Apply(MagicLinkConfirmationCapabilityUsed used)
-        => RecordTerminalCapability(used.CapabilityId);
+    {
+        RecordTerminalCapability(used.CapabilityId);
+        ObserveReplayScope(used.TimeEntryId, used.Tenant);
+    }
 
     /// <summary>Applies an EventStore capability use payload.</summary>
     public void Apply(StoredMagicLinkUsed used) => Apply(used.Event);
 
     /// <summary>Records a capability revocation in this Time Entry stream.</summary>
     public void Apply(MagicLinkConfirmationCapabilityRevoked revoked)
-        => RecordTerminalCapability(revoked.CapabilityId);
+    {
+        RecordTerminalCapability(revoked.CapabilityId);
+        ObserveReplayScope(revoked.TimeEntryId, revoked.Tenant, allowMissingOwner: true);
+    }
 
     /// <summary>Applies an EventStore capability revocation payload.</summary>
     public void Apply(StoredMagicLinkRevoked revoked) => Apply(revoked.Event);
 
     /// <summary>Records a capability expiry in this Time Entry stream.</summary>
     public void Apply(MagicLinkConfirmationCapabilityExpired expired)
-        => RecordTerminalCapability(expired.CapabilityId);
+    {
+        RecordTerminalCapability(expired.CapabilityId);
+        ObserveReplayScope(expired.TimeEntryId, expired.Tenant, allowMissingOwner: true);
+    }
 
     /// <summary>Applies an EventStore capability expiry payload.</summary>
     public void Apply(StoredMagicLinkExpired expired) => Apply(expired.Event);
@@ -167,6 +190,7 @@ public sealed class TimeEntryState
 
         IsRecorded = true;
         TimeEntryId = recorded.TimeEntryId;
+        ObserveReplayOwner(recorded.TimeEntryId);
         Target = recorded.Target;
         Contributor = recorded.Contributor;
         ActivityTypeId = recorded.ActivityTypeId;
@@ -190,6 +214,7 @@ public sealed class TimeEntryState
             throw new InvalidOperationException("A submission must enter Submitted state.");
         }
 
+        ObserveReplayScope(submitted.TimeEntryId, submitted.Tenant);
         ApprovalState = submitted.ApprovalState;
         TimeEntrySubmissionId = submitted.TimeEntrySubmissionId;
         Submitter = submitted.Submitter;
@@ -206,6 +231,7 @@ public sealed class TimeEntryState
             throw new InvalidOperationException("Confirmation requires a recorded Time Entry.");
         }
 
+        ObserveReplayScope(confirmed.TimeEntryId, confirmed.Tenant);
         ConfirmedContributor = confirmed.Contributor;
         ConfirmationTenant = confirmed.Tenant;
         ConfirmedAtUtc = confirmed.ConfirmedAtUtc;
@@ -223,6 +249,7 @@ public sealed class TimeEntryState
             throw new InvalidOperationException("An adjustment contradicts the preceding Time Entry state or scope.");
         }
 
+        ObserveReplayScope(adjusted.TimeEntryId, adjusted.Tenant);
         ActivityTypeId = adjusted.AdjustedValues.ActivityTypeId;
         ActivityTypeScope = adjusted.ActivityTypeScope;
         ServiceDate = adjusted.AdjustedValues.ServiceDate;
@@ -250,6 +277,7 @@ public sealed class TimeEntryState
             throw new InvalidOperationException("An approval must enter Approved state.");
         }
 
+        ObserveReplayScope(approved.TimeEntryId, approved.Tenant);
         ApprovalState = approved.ApprovalState;
         TimeEntryApprovalDecisionId = approved.TimeEntryApprovalDecisionId;
         Approver = approved.Approver;
@@ -269,6 +297,7 @@ public sealed class TimeEntryState
             throw new InvalidOperationException("A rejection must enter Rejected state.");
         }
 
+        ObserveReplayScope(rejected.TimeEntryId, rejected.Tenant);
         ApprovalState = rejected.ApprovalState;
         TimeEntryApprovalDecisionId = rejected.TimeEntryApprovalDecisionId;
         Approver = rejected.Approver;
@@ -294,6 +323,7 @@ public sealed class TimeEntryState
             throw new InvalidOperationException("A rejected correction requires an uncorrected rejected Time Entry.");
         }
 
+        ObserveReplayScope(corrected.TimeEntryId, corrected.Tenant);
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
         ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
@@ -332,6 +362,7 @@ public sealed class TimeEntryState
             throw new InvalidOperationException("An approved correction requires an uncorrected approved Time Entry.");
         }
 
+        ObserveReplayScope(corrected.TimeEntryId, corrected.Tenant);
         Target = corrected.CorrectedValues.Target;
         Contributor = corrected.CorrectedValues.Contributor;
         ActivityTypeId = corrected.CorrectedValues.ActivityTypeId;
@@ -355,6 +386,26 @@ public sealed class TimeEntryState
         CorrectionReason = corrected.Reason;
         SourceApprovalDecisionId = corrected.SourceApprovalDecisionId;
         SourceApprovalScope = corrected.SourceApprovalScope;
+    }
+
+    private void ObserveReplayScope(TimeEntryId? timeEntryId, TenantReference? tenant, bool allowMissingOwner = false)
+    {
+        if (timeEntryId is not null || !allowMissingOwner)
+        {
+            ObserveReplayOwner(timeEntryId);
+        }
+
+        _hasInconsistentReplayScope |= tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId)
+            || (_replayedTenant is not null && _replayedTenant != tenant);
+        _replayedTenant ??= tenant;
+    }
+
+    private void ObserveReplayOwner(TimeEntryId? timeEntryId)
+    {
+        _hasInconsistentReplayScope |= timeEntryId is null || string.IsNullOrWhiteSpace(timeEntryId.Value)
+            || (TimeEntryId is not null && TimeEntryId != timeEntryId)
+            || (_replayedEntryId is not null && _replayedEntryId != timeEntryId);
+        _replayedEntryId ??= timeEntryId;
     }
 
     private void RequireState(TimeEntryApprovalState required)

@@ -1,9 +1,12 @@
-using System.Security.Claims;
+using System.Text.Json;
 
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
+
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.Options;
 
 namespace Hexalith.Timesheets.Endpoints;
 
@@ -24,11 +27,13 @@ public static class ExternalContributionEndpoints
                 TimeEntryRecordSubmissionService service,
                 CancellationToken cancellationToken) =>
             {
-                ClaimsPrincipal user = httpContext.User;
+                if (ExternalContributionRequestContext.Resolve(httpContext) is not { } identity)
+                {
+                    return ToTransportResult(false);
+                }
+
                 var context = TimesheetsServerRequestContext.FromTrustedSources(
-                    FirstClaimValue(user, "tenant_id", "tenant"),
-                    FirstClaimValue(user, "party_id", ClaimTypes.NameIdentifier),
-                    httpContext.TraceIdentifier);
+                    identity.TenantId, identity.ActorId, httpContext.TraceIdentifier);
                 bool accepted = await service.SubmitAsync(
                     context,
                     command,
@@ -42,26 +47,37 @@ public static class ExternalContributionEndpoints
             "/{timeEntryId}/confirm",
             static async Task<IResult> (
                 string timeEntryId,
-                ConfirmExternalTimeEntry? command,
+                JsonElement? body,
                 HttpContext httpContext,
                 TimeEntryConfirmationSubmissionService service,
                 TimeProvider clock,
+                IOptions<JsonOptions> jsonOptions,
                 CancellationToken cancellationToken) =>
             {
+                ConfirmExternalTimeEntry? command;
+                try
+                {
+                    command = body?.Deserialize<ConfirmExternalTimeEntry>(jsonOptions.Value.SerializerOptions);
+                }
+                catch (Exception exception) when (exception is JsonException or ArgumentException)
+                {
+                    return InvalidConfirmationBody();
+                }
+
                 if (command?.TimeEntryId is null
                     || string.IsNullOrWhiteSpace(command.TimeEntryId.Value)
                     || !StringComparer.Ordinal.Equals(timeEntryId, command.TimeEntryId.Value))
                 {
-                    return Results.Problem(
-                        title: "External contribution request was not accepted.",
-                        statusCode: StatusCodes.Status400BadRequest);
+                    return InvalidConfirmationBody();
                 }
 
-                ClaimsPrincipal user = httpContext.User;
+                if (ExternalContributionRequestContext.Resolve(httpContext) is not { } identity)
+                {
+                    return ToTransportResult(false);
+                }
+
                 var context = TimesheetsServerRequestContext.FromTrustedSources(
-                    FirstClaimValue(user, "tenant_id", "tenant"),
-                    HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user),
-                    httpContext.TraceIdentifier);
+                    identity.TenantId, identity.ActorId, httpContext.TraceIdentifier);
                 bool accepted = await service.ConfirmAsync(
                     context,
                     command,
@@ -69,10 +85,16 @@ public static class ExternalContributionEndpoints
                     cancellationToken).ConfigureAwait(false);
 
                 return ToTransportResult(accepted);
-            });
+            })
+            .Accepts<ConfirmExternalTimeEntry>("application/json");
 
         return endpoints;
     }
+
+    private static IResult InvalidConfirmationBody()
+        => Results.Problem(
+            title: "External contribution request was not accepted.",
+            statusCode: StatusCodes.Status400BadRequest);
 
     private static IResult ToTransportResult(bool accepted)
         => accepted
@@ -80,18 +102,4 @@ public static class ExternalContributionEndpoints
             : Results.Problem(
                 title: "External contribution request was not accepted.",
                 statusCode: StatusCodes.Status403Forbidden);
-
-    private static string? FirstClaimValue(ClaimsPrincipal user, params string[] claimTypes)
-    {
-        foreach (string claimType in claimTypes)
-        {
-            string? value = user.FindFirstValue(claimType);
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                return value;
-            }
-        }
-
-        return null;
-    }
 }

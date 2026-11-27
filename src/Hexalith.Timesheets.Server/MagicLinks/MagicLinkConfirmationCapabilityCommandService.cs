@@ -294,7 +294,7 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
             return new(capabilityResult, null);
         }
 
-        TimeEntryConfirmationCommandResult timeEntryResult = await _externalContributionService.ConfirmAsync(
+        TimeEntryConfirmationCommandResult timeEntryResult = await _externalContributionService.ConfirmFromMagicLinkAsync(
             context,
             new ConfirmExternalTimeEntry(
                 capabilityState!.TimeEntryId!,

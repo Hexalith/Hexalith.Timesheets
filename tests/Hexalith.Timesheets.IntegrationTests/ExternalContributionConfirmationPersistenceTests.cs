@@ -13,10 +13,10 @@ using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Client.Projections;
 using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Events;
-using Hexalith.EventStore.Contracts.Identity;
 using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.Contracts.Queries;
 using Hexalith.EventStore.Contracts.Results;
+using Hexalith.EventStore.Contracts.Security;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.Server.Actors;
@@ -46,6 +46,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 
 using NSubstitute;
@@ -98,13 +99,17 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             stored.Event.Contributor.ShouldBe(confirm.Contributor);
             stored.Event.Tenant.ShouldBe(new TenantReference("tenant-1"));
             stored.Event.Source.ShouldBe(confirm.Source);
+            stored.Event.ConfirmedAtUtc.ShouldBe(BaseUtc);
+            stored.Event.ConfirmedAtUtc.Offset.ShouldBe(TimeSpan.Zero);
 
             // Duplicate before restart: returns 202 and appends zero additional events.
             host.Clock.UtcNow = BaseUtc.AddMinutes(5);
             using HttpResponseMessage duplicateBeforeRestart = await host.PostWorkloadAsync(
                 client, $"/api/timesheets/external-contributions/{entryId.Value}/confirm", confirm);
             duplicateBeforeRestart.StatusCode.ShouldBe(HttpStatusCode.Accepted);
-            (await host.ActorEventsAsync("tenant-1", entryId.Value)).Length.ShouldBe(2);
+            EventEnvelope[] afterRetry = await host.ActorEventsAsync("tenant-1", entryId.Value);
+            afterRetry.Length.ShouldBe(2);
+            Rehydrate(afterRetry).ConfirmedAtUtc.ShouldBe(BaseUtc);
 
             string[] confirmationLogs = host.Logs.MessagesFor(typeof(TimeEntryConfirmationSubmissionService).FullName!);
             confirmationLogs.Length.ShouldBe(2);
@@ -133,6 +138,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 typeof(StoredTimeEntryRecorded).FullName,
                 typeof(StoredTimeEntryConfirmed).FullName
             ]);
+            Rehydrate(afterRestart).ConfirmedAtUtc.ShouldBe(BaseUtc);
             string[] restartLogs = restarted.Logs.MessagesFor(typeof(TimeEntryConfirmationSubmissionService).FullName!);
             restartLogs.ShouldHaveSingleItem().ShouldContain("outcome=already-confirmed");
             AssertLogHasNoProtectedData(restartLogs[0], "tenant-1", "party-1", entryId.Value, confirm.Source);
@@ -298,9 +304,13 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
         // 4. Synthetic workload: subject without party_id -> 403 opaque ProblemDetails, zero events.
         host.SetSyntheticWorkloadClaims(tenantId: "tenant-1", subject: "workload:timesheets");
+        var callsBeforeWorkloadSubject = host.BoundaryCalls;
         using HttpResponseMessage workloadSubject = await host.PostWorkloadAsync(
             client, $"/api/timesheets/external-contributions/{entryId.Value}/confirm", ConfirmCommand(entryId));
         workloadSubject.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        (await workloadSubject.Content.ReadAsStringAsync(TestContext.Current.CancellationToken))
+            .ShouldContain("External contribution request was not accepted.");
+        host.BoundaryCalls.ShouldBe(callsBeforeWorkloadSubject);
 
         // 5. Wrong contributor -> 403 opaque ProblemDetails, zero events.
         host.SetRequestClaims(tenantId: "tenant-1", partyId: "party-1");
@@ -323,6 +333,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         (await host.ActorEventsAsync("tenant-1", entryId.Value)).Length.ShouldBe(initialTenant1Count);
 
         // 7. Confirm validly once, then attempt conflicting source -> 403, still 1 confirmation event.
+        host.SetRequestClaims(tenantId: "tenant-1", partyId: "party-1", subjectOnly: true);
         using HttpResponseMessage validConfirm = await host.PostWorkloadAsync(
             client, $"/api/timesheets/external-contributions/{entryId.Value}/confirm", ConfirmCommand(entryId, "confirm-1"));
         validConfirm.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -345,6 +356,70 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             log.ShouldNotContain("party-2");
             log.ShouldNotContain("workload:timesheets");
         }
+    }
+
+    [Fact]
+    public async Task ConflictingIncompleteAndForeignSignedIdentityBindingsFailBeforeDispatch()
+    {
+        var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
+        var entryId = new TimeEntryId("confirm-binding-entry");
+        using var host = new ComposedConfirmationHost(storage);
+        using HttpClient client = host.CreateClient();
+        var initialCalls = host.BoundaryCalls;
+        (string Domain, string? Actor, string? InstalledTenant)[] refusedBindings =
+        [
+            ("timesheets", null, null),
+            ("foreign", "party-1", null),
+            ("timesheets", "workload:eventstore", null),
+            ("timesheets", "party-1", "tenant-2")
+        ];
+
+        foreach (var (domain, actor, installedTenant) in refusedBindings)
+        {
+            host.SetSignedBindings(domain, actor, installedTenant);
+            using HttpResponseMessage record = await host.PostWorkloadAsync(
+                client, "/api/timesheets/external-contributions/", RecordCommand(entryId));
+            using HttpResponseMessage confirm = await host.PostWorkloadAsync(
+                client, $"/api/timesheets/external-contributions/{entryId.Value}/confirm", ConfirmCommand(entryId));
+            record.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+            confirm.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        }
+
+        host.BoundaryCalls.ShouldBe(initialCalls);
+        storage.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task NullAndBlankContributorOrSourceAreOpaqueBeforeGuardOrGateway()
+    {
+        var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
+        using var host = new ComposedConfirmationHost(storage);
+        using HttpClient client = host.CreateClient();
+        var initialCalls = host.BoundaryCalls;
+        (string Contributor, string Source, HttpStatusCode Status)[] invalidEvidence =
+        [
+            ("null", """{"sourceSystem":"supplier-api","externalRequestId":"confirm-1"}""", HttpStatusCode.Forbidden),
+            ("""{"partyId":" "}""", """{"sourceSystem":"supplier-api","externalRequestId":"confirm-1"}""", HttpStatusCode.BadRequest),
+            ("""{"partyId":"party-1"}""", "null", HttpStatusCode.Forbidden),
+            ("""{"partyId":"party-1"}""", """{"sourceSystem":" ","externalRequestId":"confirm-1"}""", HttpStatusCode.BadRequest),
+            ("""{"partyId":"party-1"}""", """{"sourceSystem":"supplier-api","externalRequestId":" "}""", HttpStatusCode.BadRequest)
+        ];
+
+        foreach (var (contributor, source, status) in invalidEvidence)
+        {
+            using HttpResponseMessage response = await host.PostWorkloadRawJsonAsync(
+                client, "/api/timesheets/external-contributions/confirm-invalid-entry/confirm",
+                $$"""{"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":{{contributor}},"source":{{source}}}""");
+            response.StatusCode.ShouldBe(status);
+            string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+            body.ShouldContain("External contribution request was not accepted.");
+            body.ShouldNotContain("supplier-api");
+            body.ShouldNotContain("party-1");
+            body.ShouldNotContain("confirm-1");
+        }
+
+        host.BoundaryCalls.ShouldBe(initialCalls);
+        storage.ShouldBeEmpty();
     }
 
     [Fact]
@@ -584,12 +659,11 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         private readonly InMemoryReadModelStore _readModels = new();
         private readonly SemaphoreSlim _actorTurn = new(1, 1);
         private HttpClient? _internalClient;
-        private Claim[] _requestClaims =
-        [
-            new Claim("tenant_id", "tenant-1"),
-            new Claim("party_id", "party-1"),
-            new Claim(ClaimTypes.NameIdentifier, "party-1")
-        ];
+        private int _guardChecks;
+        private int _streamReads;
+        private int _submissions;
+        private Claim[] _requestClaims = [];
+        private IReadOnlyDictionary<string, string>? _requestBindings = SignedBindings("timesheets", "party-1");
 
         public ComposedConfirmationHost(
             ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager> storage,
@@ -611,20 +685,47 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
         public bool FailReadbackAfterCommit { get; set; }
 
-        public void SetRequestClaims(string tenantId, string partyId)
-            => _requestClaims =
-            [
-                new Claim("tenant_id", tenantId),
-                new Claim("party_id", partyId),
-                new Claim(ClaimTypes.NameIdentifier, partyId)
-            ];
+        public (int GuardChecks, int StreamReads, int Submissions) BoundaryCalls
+            => (Volatile.Read(ref _guardChecks), Volatile.Read(ref _streamReads), Volatile.Read(ref _submissions));
+
+        public void SetRequestClaims(string tenantId, string partyId, bool subjectOnly = false)
+        {
+            _requestBindings = null;
+            Claim tenant = new("tenant_id", tenantId);
+            Claim subject = new(ClaimTypes.NameIdentifier, partyId);
+            _requestClaims = subjectOnly ? [tenant, subject] : [tenant, new Claim("party_id", partyId), subject];
+        }
 
         public void SetSyntheticWorkloadClaims(string tenantId, string subject)
-            => _requestClaims =
+        {
+            _requestBindings = null;
+            _requestClaims =
             [
                 new Claim("tenant_id", tenantId),
                 new Claim(ClaimTypes.NameIdentifier, subject)
             ];
+        }
+
+        public void SetSignedBindings(string domain, string? actor, string? installedTenant)
+        {
+            _requestBindings = SignedBindings(domain, actor);
+            _requestClaims = installedTenant is not null ? [new Claim("tenant_id", installedTenant)] : [];
+        }
+
+        private static Dictionary<string, string> SignedBindings(string domain, string? actor)
+        {
+            var bindings = new Dictionary<string, string>
+            {
+                [EventStoreWorkloadAuthenticationDefaults.TenantBindingClaimType] = "tenant-1",
+                [EventStoreWorkloadAuthenticationDefaults.DomainBindingClaimType] = domain
+            };
+            if (actor is not null)
+            {
+                bindings[EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType] = actor;
+            }
+
+            return bindings;
+        }
 
         public async Task SeedFreshCatalogAsync(HttpClient client, string tenantId)
         {
@@ -694,10 +795,8 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
         public async Task AppendApprovedEventAsync(string tenantId, TimeEntryId entryId)
         {
-            InMemoryStateManager stateManager = _storage.GetOrAdd((tenantId, entryId.Value), static _ => new());
-            AggregateActor actor = CreateActor(tenantId, entryId.Value);
-            EventEnvelope[] existing = await actor.GetEventsAsync(0);
-            long nextSeq = existing.Length + 1;
+            TimeEntryState current = Rehydrate(await ActorEventsAsync(tenantId, entryId.Value));
+            current.ApprovalState.ShouldBe(TimeEntryApprovalState.Submitted);
             var approved = new TimeEntryApproved(
                 entryId,
                 new PartyReference("approver-1"),
@@ -713,39 +812,44 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                     "v1",
                     ProjectionFreshnessMetadata.Fresh),
                 TimeEntryApprovalScope.IndividualEntry);
-            var identity = new AggregateIdentity(tenantId, "timesheets", entryId.Value);
-            var envelope = new EventEnvelope(
-                UniqueIdHelper.GenerateSortableUniqueStringId(),
-                entryId.Value,
-                "timesheets",
+            string messageId = UniqueIdHelper.GenerateSortableUniqueStringId();
+            var command = new CommandEnvelope(
+                messageId,
                 tenantId,
                 "timesheets",
-                nextSeq,
-                nextSeq,
-                BaseUtc.AddMinutes(1),
-                "corr-approve",
-                "corr-approve",
-                "approver-1",
-                "1.0.0",
-                typeof(TimeEntryApproved).FullName!,
-                1,
-                "json",
-                JsonSerializer.SerializeToUtf8Bytes(approved, JsonOptions),
+                entryId.Value,
+                "approve-time-entry-fixture",
+                "{}"u8.ToArray(),
+                messageId,
+                messageId,
+                approved.Approver.PartyId,
                 null);
-            await stateManager.SetStateAsync(identity.EventStreamKeyPrefix + nextSeq, envelope);
-            await stateManager.SetStateAsync(identity.MetadataKey, new AggregateMetadata(nextSeq, BaseUtc.AddMinutes(1), null));
-            await stateManager.SaveStateAsync();
+            var payload = new SerializedDomainEventPayload(
+                typeof(TimeEntryApproved).FullName!,
+                JsonSerializer.SerializeToUtf8Bytes(approved, JsonOptions),
+                "json",
+                1,
+                null,
+                null);
+            IDomainServiceInvoker approvalInvoker = Substitute.For<IDomainServiceInvoker>();
+            approvalInvoker.InvokeAsync(command, Arg.Any<object?>(), Arg.Any<CancellationToken>())
+                .Returns(DomainResult.Success([payload]));
+
+            CommandProcessingResult result = await ProcessThroughActorAsync(command, approvalInvoker);
+            result.Accepted.ShouldBeTrue();
+            result.EventCount.ShouldBe(1);
         }
 
         public Task<EventEnvelope[]> ActorEventsAsync(string tenantId, string aggregateId)
             => CreateActor(tenantId, aggregateId).GetEventsAsync(0);
 
-        public async Task ProcessThroughActorAsync(CommandEnvelope envelope)
+        public async Task<CommandProcessingResult> ProcessThroughActorAsync(
+            CommandEnvelope envelope, IDomainServiceInvoker? invoker = null)
         {
             await _actorTurn.WaitAsync(TestContext.Current.CancellationToken);
             try
             {
-                await CreateActor(envelope.TenantId, envelope.AggregateId)
+                return await CreateActor(envelope.TenantId, envelope.AggregateId, invoker)
                     .ProcessCommandAsync(envelope, TestContext.Current.CancellationToken);
             }
             finally
@@ -760,7 +864,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             {
                 Content = JsonContent.Create(body, options: JsonOptions)
             };
-            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess);
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess, bindings: _requestBindings);
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
         }
 
@@ -770,7 +874,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             {
                 Content = new StringContent(rawJson, Encoding.UTF8, "application/json")
             };
-            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess);
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess, bindings: _requestBindings);
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
         }
 
@@ -810,7 +914,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 services.AddSingleton(_externalPolicy);
 
                 services.RemoveAll<ITimesheetsAccessGuard>();
-                services.AddSingleton<ITimesheetsAccessGuard>(new ConfigurableAccessGuard(() => AllowAuthorization));
+                services.AddSingleton<ITimesheetsAccessGuard>(new ConfigurableAccessGuard(this));
 
                 services.RemoveAll<IReadModelStore>();
                 services.RemoveAll<DaprReadModelStore>();
@@ -852,14 +956,18 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             base.Dispose(disposing);
         }
 
-        private AggregateActor CreateActor(string tenantId, string aggregateId)
+        private AggregateActor CreateActor(string tenantId, string aggregateId, IDomainServiceInvoker? invoker = null)
         {
-            IDomainServiceInvoker invoker = Substitute.For<IDomainServiceInvoker>();
-            invoker.InvokeAsync(Arg.Any<CommandEnvelope>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
-                .Returns(call => InvokeProcessEndpointAsync(
-                    call.ArgAt<CommandEnvelope>(0),
-                    call.ArgAt<object?>(1),
-                    call.ArgAt<CancellationToken>(2)));
+            if (invoker is null)
+            {
+                invoker = Substitute.For<IDomainServiceInvoker>();
+                invoker.InvokeAsync(Arg.Any<CommandEnvelope>(), Arg.Any<object?>(), Arg.Any<CancellationToken>())
+                    .Returns(call => InvokeProcessEndpointAsync(
+                        call.ArgAt<CommandEnvelope>(0),
+                        call.ArgAt<object?>(1),
+                        call.ArgAt<CancellationToken>(2)));
+            }
+
             InMemoryStateManager stateManager = _storage.GetOrAdd((tenantId, aggregateId), static _ => new());
             return MagicLinkConfirmationHttpBoundaryTests.CreateMagicLinkActor(
                 new TimeEntryId(aggregateId), stateManager, _statuses, invoker, tenantId);
@@ -908,13 +1016,14 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         private async Task AddWorkloadHeadersAsync(
             HttpRequestMessage request,
             string operation,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            IReadOnlyDictionary<string, string>? bindings = null)
         {
             DomainProjectionIdentityOptions identity = Services
                 .GetRequiredService<IOptions<DomainProjectionIdentityOptions>>()
                 .Value;
             string assertion = (await Services.GetRequiredService<IWorkloadAssertionIssuer>()
-                .IssueAsync(new WorkloadAssertionRequest(identity.AppId, operation), cancellationToken)).ShouldNotBeNull();
+                .IssueAsync(new WorkloadAssertionRequest(identity.AppId, operation, bindings), cancellationToken)).ShouldNotBeNull();
             request.Headers.Add(DaprAppChannelToken.HeaderName, ChannelToken);
             request.Headers.Add(EventStoreWorkloadAuthenticationDefaults.AssertionHeaderName, assertion);
             await _routeCatalog.AddHeadersAsync(Services, request, cancellationToken);
@@ -947,8 +1056,13 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 SubmitCommandRequest request,
                 CancellationToken cancellationToken = default)
             {
-                string actor = host._requestClaims.FirstOrDefault(c => c.Type == "party_id")?.Value
-                    ?? "timesheets";
+                Interlocked.Increment(ref host._submissions);
+                string assertion = (await host.Services.GetRequiredService<IEventStoreGatewayWorkloadAssertionSource>()
+                    .IssueAsync(EventStoreWorkloadOperations.GatewayCommandSubmit, request.Tenant, cancellationToken)).ShouldNotBeNull();
+                var signed = new JsonWebToken(assertion);
+                signed.GetClaim(EventStoreWorkloadAuthenticationDefaults.TenantBindingClaimType).Value.ShouldBe(request.Tenant);
+                signed.GetClaim(EventStoreWorkloadAuthenticationDefaults.DomainBindingClaimType).Value.ShouldBe(request.Domain);
+                string actor = signed.GetClaim(EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType).Value;
                 var envelope = new CommandEnvelope(
                     request.MessageId,
                     request.Tenant,
@@ -1014,6 +1128,8 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 StreamReadRequest request,
                 CancellationToken cancellationToken = default)
             {
+                Interlocked.Increment(ref host._streamReads);
+                request.PageSize.ShouldBeInRange(1, 1_000);
                 if (host.FailReadbackAfterCommit && request.FromSequence > 0)
                 {
                     throw new EventStoreGatewayException(503, "Simulated transient readback failure after commit.");
@@ -1032,7 +1148,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
                 EventEnvelope[] filtered = all
                     .Where(item => item.SequenceNumber > request.FromSequence)
-                    .Take(request.PageSize > 0 ? request.PageSize : 500)
+                    .Take(request.PageSize)
                     .ToArray();
                 long? lastReturned = filtered.Length > 0 ? filtered[^1].SequenceNumber : null;
                 long latestSequence = all[^1].SequenceNumber;
@@ -1051,7 +1167,12 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                         item.CorrelationId,
                         item.CausationId,
                         item.Timestamp,
-                        item.UserId)).ToArray(),
+                        item.UserId,
+                        EventStorePayloadProtectionMetadataCarrier.Read(item.Extensions))
+                    {
+                        GlobalPosition = item.GlobalPosition,
+                        PayloadVersion = item.PayloadVersion
+                    }).ToArray(),
                     new StreamReadMetadata(
                         request.FromSequence,
                         request.ToSequence,
@@ -1063,21 +1184,25 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             }
         }
 
-        private sealed class ConfigurableAccessGuard(Func<bool> isAllowed) : ITimesheetsAccessGuard
+        private sealed class ConfigurableAccessGuard(ComposedConfirmationHost host) : ITimesheetsAccessGuard
         {
             public ValueTask<TimesheetsAuthorizationDecision> AuthorizeAsync(
                 TimesheetsAuthorizationRequest request,
                 CancellationToken cancellationToken)
-                => ValueTask.FromResult(isAllowed()
+            {
+                Interlocked.Increment(ref host._guardChecks);
+                return ValueTask.FromResult(host.AllowAuthorization
                     ? TimesheetsAuthorizationDecision.Allowed()
                     : TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.NonMember, "Denied"));
+            }
 
             public async ValueTask<TimesheetsAuthorizationDecision> ExecuteIfAuthorizedAsync(
                 TimesheetsAuthorizationRequest request,
                 Func<CancellationToken, ValueTask> trustedWork,
                 CancellationToken cancellationToken)
             {
-                if (!isAllowed())
+                Interlocked.Increment(ref host._guardChecks);
+                if (!host.AllowAuthorization)
                 {
                     return TimesheetsAuthorizationDecision.Denied(TimesheetsDenialCategory.NonMember, "Denied");
                 }
@@ -1106,8 +1231,8 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 }
 
                 Claim[] claims = getClaims();
-                return Task.FromResult(new ClaimsPrincipal(
-                    new[] { new ClaimsIdentity(claims) }.Concat(principal.Identities)));
+                return Task.FromResult(claims.Length == 0 ? principal : new ClaimsPrincipal(
+                    principal.Identities.Append(new ClaimsIdentity(claims))));
             }
         }
     }

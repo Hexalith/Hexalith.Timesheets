@@ -13,14 +13,14 @@ public sealed class ExternalContributionEndpointTests
             "Hexalith.Timesheets",
             "Endpoints",
             "ExternalContributionEndpoints.cs"));
-
         program.ShouldContain("MapTimesheetsExternalContributionEndpoints");
         endpoint.ShouldContain("/api/timesheets/external-contributions");
         endpoint.ShouldContain("/api/timesheets/external-contributions");
         endpoint.ShouldContain("/{timeEntryId}/confirm");
         endpoint.ShouldContain("SubmitExternalTimeEntry");
         endpoint.ShouldContain("ConfirmExternalTimeEntry");
-        endpoint.ShouldContain("TimesheetsServerRequestContext");
+        endpoint.ShouldContain("ExternalContributionRequestContext.Resolve");
+        endpoint.ShouldContain("TimesheetsServerRequestContext.FromTrustedSources");
         endpoint.ShouldNotContain("command.Tenant");
         endpoint.ShouldNotContain("command.Actor");
         endpoint.ShouldNotContain("command.CorrelationId");

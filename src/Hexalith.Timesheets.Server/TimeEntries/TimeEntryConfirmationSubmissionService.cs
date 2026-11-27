@@ -2,6 +2,7 @@ using System.Text.Json;
 
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Contracts.Commands;
+using Hexalith.EventStore.Contracts.Security;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
@@ -39,6 +40,8 @@ public sealed class TimeEntryConfirmationSubmissionService(
     private const long MaxStreamPayloadBytes = 16 * 1024 * 1024;
 
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly EventStorePayloadProtectionMetadata _unprotected = EventStorePayloadProtectionMetadata.Unprotected();
+    private static readonly EventStorePayloadProtectionMetadata _legacyUnprotected = EventStorePayloadProtectionMetadataCarrier.Legacy();
 
     private static readonly Type[] _ownerEventTypes =
     [
@@ -66,13 +69,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
         externalContributionService ?? throw new ArgumentNullException(nameof(externalContributionService));
 
     private readonly MagicLinkSubmissionPollingOptions _polling =
-        (pollingOptions ?? throw new ArgumentNullException(nameof(pollingOptions))).Value is { } options
-        && options.IsValid()
-            ? options
-            : throw new OptionsValidationException(
-                nameof(MagicLinkSubmissionPollingOptions),
-                typeof(MagicLinkSubmissionPollingOptions),
-                ["Timeout and ReadbackTimeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
+        SnapshotPollingOptions(pollingOptions);
 
     private readonly ILogger? _logger = logger;
     private readonly TimeProvider _clock = clock ?? TimeProvider.System;
@@ -107,6 +104,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
             || command.Source is null
             || string.IsNullOrWhiteSpace(command.Source.SourceSystem)
             || string.IsNullOrWhiteSpace(command.Source.ExternalRequestId)
+            || confirmedAtUtc == default
             || confirmedAtUtc.Offset != TimeSpan.Zero)
         {
             return RecordAndReturn(false, ExternalConfirmationLog.PolicyRefusal);
@@ -124,7 +122,8 @@ public sealed class TimeEntryConfirmationSubmissionService(
                 {
                     Contributor = command.Contributor
                 },
-                deadline.Token).ConfigureAwait(false);
+                deadline.Token).AsTask().WaitAsync(deadline.Token).ConfigureAwait(false);
+            deadline.Token.ThrowIfCancellationRequested();
             if (!coarseDecision.IsAuthorized)
             {
                 return RecordAndReturn(false, ExternalConfirmationLog.PolicyRefusal);
@@ -149,7 +148,8 @@ public sealed class TimeEntryConfirmationSubmissionService(
                 command,
                 state,
                 confirmedAtUtc,
-                deadline.Token).ConfigureAwait(false);
+                deadline.Token).AsTask().WaitAsync(deadline.Token).ConfigureAwait(false);
+            deadline.Token.ThrowIfCancellationRequested();
             if (!decision.WasDispatched || decision.DomainResult is null || decision.DomainResult.IsRejection)
             {
                 return RecordAndReturn(false, ExternalConfirmationLog.PolicyRefusal);
@@ -158,7 +158,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
             if (decision.DomainResult.IsNoOp)
             {
                 return HasVerifiedStoredConfirmation(events, context, command, messageId)
-                    ? RecordAndReturn(true, ExternalConfirmationLog.AlreadyConfirmed)
+                    ? RecordAccepted(ExternalConfirmationLog.AlreadyConfirmed, deadline.Token)
                     : RecordAndReturn(false, ExternalConfirmationLog.PolicyRefusal);
             }
 
@@ -205,11 +205,12 @@ public sealed class TimeEntryConfirmationSubmissionService(
                     command,
                     refreshedState,
                     confirmedAtUtc,
-                    deadline.Token).ConfigureAwait(false);
+                    deadline.Token).AsTask().WaitAsync(deadline.Token).ConfigureAwait(false);
+                deadline.Token.ThrowIfCancellationRequested();
                 return refreshedDecision.WasDispatched
                     && refreshedDecision.DomainResult?.IsNoOp == true
                     && HasVerifiedStoredConfirmation(refreshedEvents, context, command, messageId)
-                        ? RecordAndReturn(true, ExternalConfirmationLog.AlreadyConfirmed)
+                        ? RecordAccepted(ExternalConfirmationLog.AlreadyConfirmed, deadline.Token)
                         : RecordAndReturn(false, ExternalConfirmationLog.PolicyRefusal);
             }
 
@@ -224,11 +225,15 @@ public sealed class TimeEntryConfirmationSubmissionService(
             }
 
             long committedSequence = status.CommittedEventSequence!.Value;
+            if (committedSequence < 2 || committedSequence <= events.Length)
+            {
+                return RecordAndReturn(false, ExternalConfirmationLog.IndeterminateCommit);
+            }
+
             StreamReadPage page = await ReadCommittedEventPageAsync(
                 context.Tenant.TenantId,
                 command.TimeEntryId.Value,
                 committedSequence,
-                cancellationToken,
                 deadline.Token).ConfigureAwait(false);
 
             bool metadataValid = page.Tenant == context.Tenant.TenantId
@@ -251,11 +256,11 @@ public sealed class TimeEntryConfirmationSubmissionService(
                 return RecordAndReturn(false, ExternalConfirmationLog.IndeterminateCommit);
             }
 
-            return RecordAndReturn(
-                true,
+            return RecordAccepted(
                 !wasPresentAtPreflight && verified.ConfirmedAtUtc == confirmedAtUtc
                     ? ExternalConfirmationLog.Committed
-                    : ExternalConfirmationLog.AlreadyConfirmed);
+                    : ExternalConfirmationLog.AlreadyConfirmed,
+                deadline.Token);
         }
         catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
@@ -279,17 +284,46 @@ public sealed class TimeEntryConfirmationSubmissionService(
                 command.Source.ExternalRequestId
             }));
 
+    private static MagicLinkSubmissionPollingOptions SnapshotPollingOptions(
+        IOptions<MagicLinkSubmissionPollingOptions> pollingOptions)
+    {
+        ArgumentNullException.ThrowIfNull(pollingOptions);
+        if (pollingOptions.Value is { } configured)
+        {
+            var snapshot = new MagicLinkSubmissionPollingOptions
+            {
+                Timeout = configured.Timeout,
+                PollInterval = configured.PollInterval,
+                ReadbackTimeout = configured.ReadbackTimeout
+            };
+            if (snapshot.IsValid())
+            {
+                return snapshot;
+            }
+        }
+
+        throw new OptionsValidationException(
+            nameof(MagicLinkSubmissionPollingOptions),
+            typeof(MagicLinkSubmissionPollingOptions),
+            ["Timeout and ReadbackTimeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
+    }
+
     private bool RecordAndReturn(bool accepted, string outcome)
     {
         ExternalConfirmationLog.RecordOutcome(_logger, outcome);
         return accepted;
     }
 
+    private bool RecordAccepted(string outcome, CancellationToken deadlineToken)
+    {
+        deadlineToken.ThrowIfCancellationRequested();
+        return RecordAndReturn(true, outcome);
+    }
+
     private async Task<StreamReadPage> ReadCommittedEventPageAsync(
         string tenantId,
         string aggregateId,
         long committedSequence,
-        CancellationToken callerCancellationToken,
         CancellationToken deadlineToken)
     {
         while (true)
@@ -310,7 +344,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
                     return page;
                 }
             }
-            catch (Exception exception) when (IsRetryableGatewayFailure(exception, callerCancellationToken, deadlineToken))
+            catch (Exception exception) when (IsRetryableGatewayFailure(exception, deadlineToken))
             {
                 // A completed command can become visible in the stream after its status.
             }
@@ -343,7 +377,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
             StreamReadPage page;
             try
             {
-                page = await _durableSubmission.ReadStoredEventsAsync(
+                page = await ReadOwnerPageAsync(
                     new StreamReadRequest(
                         tenant.TenantId,
                         TimesheetsEventStoreIntegration.DomainName,
@@ -365,6 +399,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
                 || !string.Equals(page.AggregateId, timeEntryId.Value, StringComparison.Ordinal)
                 || page.Metadata.FromSequence != fromSequence
                 || page.Metadata.ToSequence is not null
+                || page.Events.Count > StreamPageSize
                 || page.Metadata.EventCount != page.Events.Count
                 || page.Events.Any(item => item.SequenceNumber <= fromSequence)
                 || (page.Events.Count > 0 && page.Metadata.LastSequenceReturned is null)
@@ -397,6 +432,11 @@ public sealed class TimeEntryConfirmationSubmissionService(
                     throw new InvalidOperationException("The EventStore stream page did not advance its exclusive sequence cursor.");
                 }
 
+                if (fromSequence == 0)
+                {
+                    return (true, new TimeEntryState(), []);
+                }
+
                 break;
             }
 
@@ -408,6 +448,22 @@ public sealed class TimeEntryConfirmationSubmissionService(
         StreamReadEvent[] normalized = NormalizeEvents(rawEvents);
         TimeEntryState state = FoldOwnerState(normalized, tenant, timeEntryId);
         return (false, state, normalized);
+    }
+
+    private async Task<StreamReadPage> ReadOwnerPageAsync(StreamReadRequest request, CancellationToken deadlineToken)
+    {
+        while (true)
+        {
+            deadlineToken.ThrowIfCancellationRequested();
+            try
+            {
+                return await _durableSubmission.ReadStoredEventsAsync(request, deadlineToken).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (IsRetryableGatewayFailure(exception, deadlineToken))
+            {
+                await Task.Delay(_polling.PollInterval, _clock, deadlineToken).ConfigureAwait(false);
+            }
+        }
     }
 
     private static StreamReadEvent[] NormalizeEvents(List<StreamReadEvent> events)
@@ -536,7 +592,8 @@ public sealed class TimeEntryConfirmationSubmissionService(
             throw new InvalidOperationException("The authoritative stream contains an unknown event type.");
         }
 
-        if (!string.Equals(streamEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase)
+        if (!HasSupportedEventMetadata(streamEvent)
+            || !string.Equals(streamEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase)
             || streamEvent.Payload is not { Length: > 0 })
         {
             throw new InvalidOperationException("A recognized EventStore event payload is invalid.");
@@ -617,6 +674,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
     {
         string eventType = streamEvent.EventTypeName.Split(',', 2)[0];
         if (!StringComparer.Ordinal.Equals(eventType, typeof(StoredTimeEntryConfirmed).FullName)
+            || !HasSupportedEventMetadata(streamEvent)
             || string.IsNullOrWhiteSpace(streamEvent.MessageId)
             || !StringComparer.Ordinal.Equals(streamEvent.CorrelationId, messageId)
             || !StringComparer.Ordinal.Equals(streamEvent.CausationId, messageId)
@@ -632,6 +690,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
             && confirmed.Contributor == command.Contributor
             && confirmed.Tenant == context.Tenant
             && confirmed.Source == command.Source
+            && confirmed.ConfirmedAtUtc != default
             && confirmed.ConfirmedAtUtc.Offset == TimeSpan.Zero
                 ? confirmed
                 : null;
@@ -643,8 +702,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
         string tenantId,
         string aggregateId)
         => status.MessageId == messageId
-            && status.Status == nameof(CommandStatus.Rejected)
-            && status.StatusCode == (int)CommandStatus.Rejected
+            && status.IsRejected
             && status.TenantId == tenantId
             && status.Domain == TimesheetsEventStoreIntegration.DomainName
             && status.AggregateId == aggregateId;
@@ -666,12 +724,15 @@ public sealed class TimeEntryConfirmationSubmissionService(
             && status.FailureReason is null
             && status.Retryable is not true;
 
-    private static bool IsRetryableGatewayFailure(
-        Exception exception,
-        CancellationToken callerCancellationToken,
-        CancellationToken deadlineToken)
-        => !callerCancellationToken.IsCancellationRequested
-            && !deadlineToken.IsCancellationRequested
+    private static bool HasSupportedEventMetadata(StreamReadEvent streamEvent)
+        => streamEvent.MetadataVersion == 1
+            && (streamEvent.PayloadVersion is null or 1)
+            && (streamEvent.ProtectionMetadata is null
+                || _unprotected.Equals(streamEvent.ProtectionMetadata)
+                || _legacyUnprotected.Equals(streamEvent.ProtectionMetadata));
+
+    private static bool IsRetryableGatewayFailure(Exception exception, CancellationToken deadlineToken)
+        => !deadlineToken.IsCancellationRequested
             && (exception is OperationCanceledException or TimeoutException or HttpRequestException
                 || exception is EventStoreGatewayException { StatusCode: 408 or 429 or 500 or 502 or 503 or 504 });
 
@@ -681,6 +742,8 @@ public sealed class TimeEntryConfirmationSubmissionService(
             && PayloadsEqual(left.Payload, right.Payload)
             && string.Equals(left.SerializationFormat, right.SerializationFormat, StringComparison.OrdinalIgnoreCase)
             && left.MetadataVersion == right.MetadataVersion
+            && left.PayloadVersion == right.PayloadVersion
+            && left.GlobalPosition == right.GlobalPosition
             && string.Equals(left.MessageId, right.MessageId, StringComparison.Ordinal)
             && string.Equals(left.CorrelationId, right.CorrelationId, StringComparison.Ordinal)
             && string.Equals(left.CausationId, right.CausationId, StringComparison.Ordinal)

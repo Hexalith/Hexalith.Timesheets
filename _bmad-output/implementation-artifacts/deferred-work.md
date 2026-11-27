@@ -1751,3 +1751,15 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 - [MEDIUM] Owner-stream replay pipeline (~230 lines) duplicated between `TimeEntryConfirmationSubmissionService` and `EventStoreMagicLinkConfirmationCapabilityStateLoader` (`src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryConfirmationSubmissionService.cs:36-39,323-580`) — keep magic-link state loader untouched in Story 6.4 (Spec Never #1) and consolidate shared owner-stream replay in Story 6.5.
 - [LOW] `ProcessConfirmationAsync` omits `envelope.MessageId`, `CorrelationId`, and `CausationId` validation (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkEventStoreDomainProcessor.cs:383-427`) — align processor envelope identity checks with the attempt-scoped `messageId` model settled in Story 6.5 instead of tightening a formula slated to change next story.
 - Adopt `HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user)` and injected `TimeProvider` on the untouched sibling recording route `POST /api/timesheets/external-contributions/` (`src/Hexalith.Timesheets/Endpoints/ExternalContributionEndpoints.cs:30,35`) — pre-existing on the Story 6.5 recording endpoint (extends the `ResolveActorId` entry above with `DateTimeOffset.UtcNow` -> `TimeProvider` alignment).
+
+## Deferred from Story 6.4 follow-up review (2026-11-28)
+
+- source_spec: `spec-6-4-persist-workload-authenticated-external-confirmation.md`
+  summary: Verify telemetry privacy on the installed external confirmation route, including concrete entry IDs in HTTP spans.
+  evidence: The SDK tracing filter covers a fixed set of read routes. The Story 6.4 composed fixture verifies the confirmation outcome logger.
+- source_spec: `spec-6-4-persist-workload-authenticated-external-confirmation.md`
+  summary: Qualify workload confirmation through the installed gateway command, status and stream APIs.
+  evidence: The composed fixture uses the enrolled receiver and the real aggregate actor through an actor-backed gateway client. Native gateway and deployed restart evidence remain open.
+- source_spec: `spec-6-4-persist-workload-authenticated-external-confirmation.md`
+  summary: Observe available status while the shared submission helper is still waiting for an acknowledgement.
+  evidence: The shared helper waits for the submit response before polling. A response that stays pending can consume the deadline, and a later request can still recover a committed event.

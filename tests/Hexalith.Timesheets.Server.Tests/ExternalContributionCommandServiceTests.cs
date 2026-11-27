@@ -371,11 +371,28 @@ public sealed class ExternalContributionCommandServiceTests
     [InlineData("contributor-mismatch")]
     [InlineData("entry-mismatch")]
     [InlineData("non-utc")]
+    [InlineData("default-timestamp")]
     [InlineData("missing-tenant")]
     [InlineData("tenant-mismatch")]
+    [InlineData("missing-confirmed-contributor")]
+    [InlineData("missing-confirmation-tenant")]
+    [InlineData("missing-confirmation-source")]
+    [InlineData("invalid-prior-timestamp")]
     public void ConfirmExternalTimeEntryValidatesBeforeSameSourceNoOp(string scenario)
     {
         TimeEntryState state = ConfirmedExternalState();
+        if (scenario is "missing-confirmed-contributor" or "missing-confirmation-tenant"
+            or "missing-confirmation-source" or "invalid-prior-timestamp")
+        {
+            state = RecordedExternalState();
+            state.Apply(new TimeEntryContributorConfirmed(
+                TimeEntryId(),
+                scenario == "missing-confirmed-contributor" ? null! : Contributor(),
+                scenario == "missing-confirmation-tenant" ? null! : Context().Tenant!,
+                scenario == "invalid-prior-timestamp" ? default : EventAtUtc(),
+                scenario == "missing-confirmation-source" ? null! : ConfirmExternalCommand().Source));
+        }
+
         ConfirmExternalTimeEntry command = scenario switch
         {
             "contributor-mismatch" => ConfirmExternalCommand() with { Contributor = new PartyReference("party-2") },
@@ -388,9 +405,12 @@ public sealed class ExternalContributionCommandServiceTests
             "tenant-mismatch" => new TenantReference("tenant-2"),
             _ => Context().Tenant
         };
-        DateTimeOffset confirmedAt = scenario == "non-utc"
-            ? new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.FromHours(2))
-            : EventAtUtc();
+        DateTimeOffset confirmedAt = scenario switch
+        {
+            "non-utc" => new DateTimeOffset(2026, 6, 19, 14, 0, 0, TimeSpan.FromHours(2)),
+            "default-timestamp" => default,
+            _ => EventAtUtc()
+        };
 
         TimesheetsDomainResult result = TimeEntry.Handle(command, state, tenant, confirmedAt);
 

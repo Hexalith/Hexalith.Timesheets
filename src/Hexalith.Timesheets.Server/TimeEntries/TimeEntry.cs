@@ -113,11 +113,31 @@ public static class TimeEntry
         TimeEntryState? state,
         TenantReference? tenant,
         DateTimeOffset confirmedAtUtc)
+        => Confirm(command, state, tenant, confirmedAtUtc, requireSingleConfirmation: true);
+
+    /// <summary>Records confirmation for a separately authorized, single-use magic-link capability.</summary>
+    internal static TimesheetsDomainResult HandleMagicLinkConfirmation(
+        ConfirmExternalTimeEntry command,
+        TimeEntryState? state,
+        TenantReference? tenant,
+        DateTimeOffset confirmedAtUtc)
+        => Confirm(command, state, tenant, confirmedAtUtc, requireSingleConfirmation: false);
+
+    private static TimesheetsDomainResult Confirm(
+        ConfirmExternalTimeEntry command,
+        TimeEntryState? state,
+        TenantReference? tenant,
+        DateTimeOffset confirmedAtUtc,
+        bool requireSingleConfirmation)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         List<TimesheetsFieldError> errors = [];
         ValidateExternalConfirmation(command, state, tenant, confirmedAtUtc, errors);
+        if (requireSingleConfirmation && state?.IsRecorded == true)
+        {
+            ValidatePriorConfirmation(command, state, tenant, errors);
+        }
 
         if (errors.Count > 0)
         {
@@ -1000,9 +1020,9 @@ public static class TimeEntry
             errors.Add(new("tenant", "required", "Tenant reference is required."));
         }
 
-        if (confirmedAtUtc.Offset != TimeSpan.Zero)
+        if (confirmedAtUtc == default || confirmedAtUtc.Offset != TimeSpan.Zero)
         {
-            errors.Add(new("confirmedAtUtc", "utc-required", "Confirmation timestamp must be a UTC instant."));
+            errors.Add(new("confirmedAtUtc", "utc-required", "Confirmation timestamp must be a valid UTC instant."));
         }
 
         if (state?.IsRecorded != true)
@@ -1032,21 +1052,42 @@ public static class TimeEntry
         {
             errors.Add(new("contributor", "mismatch", "Confirmation contributor must match the recorded Time Entry contributor."));
         }
+    }
 
-        if (state.ContributorConfirmationSource is not null
-            && state.ContributorConfirmationSource != command.Source)
+    private static void ValidatePriorConfirmation(
+        ConfirmExternalTimeEntry command,
+        TimeEntryState state,
+        TenantReference? tenant,
+        List<TimesheetsFieldError> errors)
+    {
+        if (state.ContributorConfirmationSource is null && state.ConfirmedContributor is null
+            && state.ConfirmationTenant is null && state.ConfirmedAtUtc is null)
+        {
+            return;
+        }
+
+        if (state.ContributorConfirmationSource is null)
+        {
+            errors.Add(new("source", "required", "Recorded confirmation must have an external source."));
+        }
+        else if (state.ContributorConfirmationSource != command.Source)
         {
             errors.Add(new("source", "already-confirmed", "Time Entry is already confirmed with a different external source."));
         }
 
-        if (state.ConfirmedContributor is not null && state.ConfirmedContributor != command.Contributor)
+        if (state.ConfirmedContributor is null || state.ConfirmedContributor != command.Contributor)
         {
             errors.Add(new("contributor", "already-confirmed-contributor-mismatch", "Confirmation contributor must match the previously confirmed contributor."));
         }
 
-        if (state.ConfirmationTenant is not null && state.ConfirmationTenant != tenant)
+        if (state.ConfirmationTenant is null || state.ConfirmationTenant != tenant)
         {
             errors.Add(new("tenant", "mismatch", "Confirmation tenant must match the recorded confirmation tenant."));
+        }
+
+        if (state.ConfirmedAtUtc is not { } confirmed || confirmed == default || confirmed.Offset != TimeSpan.Zero)
+        {
+            errors.Add(new("confirmedAtUtc", "utc-required", "Recorded confirmation must have a valid UTC instant."));
         }
     }
 

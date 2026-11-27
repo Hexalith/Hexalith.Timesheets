@@ -86,12 +86,30 @@ public sealed class ExternalContributionCommandService
         return new(recordResult, submissionResult);
     }
 
-    public async ValueTask<TimeEntryConfirmationCommandResult> ConfirmAsync(
+    public ValueTask<TimeEntryConfirmationCommandResult> ConfirmAsync(
         TimesheetsRequestContext context,
         ConfirmExternalTimeEntry command,
         TimeEntryState? state,
         DateTimeOffset confirmedAtUtc,
         CancellationToken cancellationToken)
+        => ConfirmAsync(context, command, state, confirmedAtUtc, cancellationToken, fromMagicLink: false);
+
+    /// <summary>Applies confirmation after the caller establishes permission from a single-use capability.</summary>
+    internal ValueTask<TimeEntryConfirmationCommandResult> ConfirmFromMagicLinkAsync(
+        TimesheetsRequestContext context,
+        ConfirmExternalTimeEntry command,
+        TimeEntryState? state,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken)
+        => ConfirmAsync(context, command, state, confirmedAtUtc, cancellationToken, fromMagicLink: true);
+
+    private async ValueTask<TimeEntryConfirmationCommandResult> ConfirmAsync(
+        TimesheetsRequestContext context,
+        ConfirmExternalTimeEntry command,
+        TimeEntryState? state,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken,
+        bool fromMagicLink)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(command);
@@ -105,11 +123,9 @@ public sealed class ExternalContributionCommandService
             return new(authorization, null, false);
         }
 
-        TimesheetsDomainResult result = TimeEntry.Handle(
-            command,
-            state,
-            context.Tenant,
-            confirmedAtUtc);
+        TimesheetsDomainResult result = fromMagicLink
+            ? TimeEntry.HandleMagicLinkConfirmation(command, state, context.Tenant, confirmedAtUtc)
+            : TimeEntry.Handle(command, state, context.Tenant, confirmedAtUtc);
 
         return new(authorization, result, true);
     }

@@ -516,6 +516,33 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
+    public async Task DifferentValidMagicLinkCapabilityCanConfirmAnAlreadyConfirmedEntry()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        MagicLinkConfirmationCapabilityCommandService service = fixture.CreateService();
+        TimeEntryState entry = RecordedExternalState();
+        MagicLinkConfirmationUseResult first = await service.ConfirmAsync(
+            Context(), "opaque-once", ConfirmCommand(), IssuedState(), entry,
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+        first.WasDispatched.ShouldBeTrue();
+        entry.Apply(first.TimeEntryResult.ShouldNotBeNull().DomainResult.ShouldNotBeNull().Events
+            .ShouldHaveSingleItem().ShouldBeOfType<TimeEntryContributorConfirmed>());
+        entry.Apply(first.CapabilityResult.ShouldNotBeNull().Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityUsed>());
+
+        var secondCapabilityId = new MagicLinkCapabilityId("capability-2");
+        MagicLinkConfirmationUseResult second = await service.ConfirmAsync(
+            Context(), "opaque-once", ConfirmCommand(), IssuedState(capabilityId: secondCapabilityId), entry,
+            ConfirmedAtUtc().AddMinutes(1), TestContext.Current.CancellationToken);
+
+        second.WasDispatched.ShouldBeTrue();
+        second.TimeEntryResult.ShouldNotBeNull().DomainResult.ShouldNotBeNull().Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<TimeEntryContributorConfirmed>().Source.ShouldBe(new ExternalContributionSource("magic-link", "capability-2"));
+        second.CapabilityResult.ShouldNotBeNull().Events.ShouldHaveSingleItem()
+            .ShouldBeOfType<MagicLinkConfirmationCapabilityUsed>().CapabilityId.ShouldBe(secondCapabilityId);
+    }
+
+    [Fact]
     public async Task AdjustMagicLinkUpdatesDraftExternalValuesThenConsumesCapability()
     {
         Fixture fixture = AuthorizedProjectFixture();
@@ -1482,11 +1509,12 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
         MagicLinkTargetKind targetKind = MagicLinkTargetKind.ProposedTimeEntry,
         MagicLinkAllowedAction allowedAction = MagicLinkAllowedAction.Confirm,
         MagicLinkTokenHash? tokenHash = null,
-        DateTimeOffset? expiresAtUtc = null)
+        DateTimeOffset? expiresAtUtc = null,
+        MagicLinkCapabilityId? capabilityId = null)
     {
         CapabilityStateData state = new();
         state.Apply(new MagicLinkConfirmationCapabilityIssued(
-            CapabilityId(),
+            capabilityId ?? CapabilityId(),
             tenant ?? Context().Tenant!,
             contributor ?? Contributor(),
             target ?? TimeEntryTargetReference.ForProject(Project()),
