@@ -8,6 +8,7 @@ using Hexalith.Timesheets.Server.TimeEntries;
 
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.Http.Metadata;
 using Microsoft.Extensions.Options;
 
 namespace Hexalith.Timesheets.Endpoints;
@@ -79,7 +80,9 @@ public static class ExternalContributionEndpoints
 
                 return ToTransportResult(accepted);
             })
-            .Accepts<SubmitExternalTimeEntry>("application/json");
+            // Body type/requiredness support API discovery; leave media selection to the
+            // authenticated handler so routing cannot replace this route with a synthetic 415.
+            .WithMetadata(new AcceptsMetadata([], typeof(SubmitExternalTimeEntry), isOptional: false));
 
         group.MapPost(
             "/{timeEntryId}/confirm",

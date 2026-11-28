@@ -958,6 +958,13 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
         }
 
+        public async Task<HttpResponseMessage> PostWorkloadWithoutBodyAsync(HttpClient client, string route)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, route);
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess, bindings: _requestBindings);
+            return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
         public async Task<HttpResponseMessage> PostProcessAsync(HttpClient client, DomainServiceRequest payload)
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, "/process")

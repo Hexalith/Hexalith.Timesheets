@@ -658,7 +658,7 @@ public sealed class MagicLinkDurableSubmissionService(
         TimeProvider clock,
         long started,
         bool enforceRecordingStatus = false,
-        Func<CancellationToken, Task<bool>>? tryRecoverCommit = null)
+        Func<CancellationToken, Task<bool?>>? tryRecoverCommit = null)
     {
         CancellationToken deadlineToken = deadline.Token;
         CommandStatusQueryResponse? status;
@@ -729,15 +729,23 @@ public sealed class MagicLinkDurableSubmissionService(
                 if (canRecover)
                 {
                     canRecover = status is null;
-                    if (canRecover && await tryRecoverCommit!(deadlineToken).ConfigureAwait(false))
+                    if (canRecover)
                     {
-                        // An observed terminal state takes precedence over the alternate proof.
-                        status = await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
-                            .WaitAsync(deadlineToken).ConfigureAwait(false);
-                        canRecover = status is null;
-                        if (canRecover)
+                        bool? recovered = await tryRecoverCommit!(deadlineToken).ConfigureAwait(false);
+                        if (recovered == true)
                         {
-                            return (status, false, true);
+                            // An observed terminal state takes precedence over the alternate proof.
+                            status = await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
+                                .WaitAsync(deadlineToken).ConfigureAwait(false);
+                            canRecover = status is null;
+                            if (canRecover)
+                            {
+                                return (status, false, true);
+                            }
+                        }
+                        else if (recovered == false)
+                        {
+                            return (null, wasPresentAtPreflight, false);
                         }
                     }
                 }

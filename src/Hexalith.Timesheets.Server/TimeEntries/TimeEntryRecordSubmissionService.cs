@@ -180,7 +180,7 @@ public sealed class TimeEntryRecordSubmissionService(
         }
     }
 
-    private async Task<bool> RecoverCommittedBatchAsync(
+    private async Task<bool?> RecoverCommittedBatchAsync(
         CommitTimeEntryRecord intent, string messageId, int expectedCount, TimeEntryComment? expectedComment,
         CancellationToken deadlineToken)
     {
@@ -188,13 +188,13 @@ public sealed class TimeEntryRecordSubmissionService(
         {
             return await TryRecoverCommittedBatchAsync(
                     intent, messageId, expectedCount, expectedComment, wasPresentAtPreflight: false, deadlineToken)
-                .ConfigureAwait(false) == true;
+                .ConfigureAwait(false);
         }
         catch (Exception exception) when (IsMissingStream(exception)
             || MagicLinkDurableSubmissionService.IsRetryableGatewayFailure(exception, deadlineToken, includeAllServerErrors: true))
         {
             // An acknowledged command can be in flight before its owner stream exists.
-            return false;
+            return null;
         }
     }
 
@@ -240,9 +240,9 @@ public sealed class TimeEntryRecordSubmissionService(
             StreamReadPage page = await MagicLinkDurableSubmissionService.ReadStoredEventsAsync(
                 gateway, request, _polling.ReadbackTimeout, _clock, deadlineToken).ConfigureAwait(false);
             long lastRead = ValidatePage(request, page);
-            if (page.Metadata.LatestSequence < latestSequence || lastRead - request.FromSequence != page.Events.Count)
+            if (page.Metadata.LatestSequence < latestSequence)
             {
-                throw new InvalidOperationException("The owner stream page regressed or omitted a position.");
+                throw new InvalidOperationException("The owner stream page regressed.");
             }
 
             latestSequence = page.Metadata.LatestSequence;
@@ -321,7 +321,9 @@ public sealed class TimeEntryRecordSubmissionService(
     {
         long lastRead = StreamReadPageValidator.ValidateAndGetNextSequence(request, page);
         long expectedEnd = Math.Min(page.Metadata.LatestSequence, request.ToSequence ?? long.MaxValue);
-        if (page.Metadata.NextContinuationToken is not null || (!page.Metadata.IsTruncated && lastRead < expectedEnd))
+        if (page.Metadata.NextContinuationToken is not null
+            || (!page.Metadata.IsTruncated && lastRead < expectedEnd)
+            || lastRead - request.FromSequence != page.Events.Count)
         {
             throw new InvalidOperationException("The owner stream page has inconsistent continuation metadata.");
         }

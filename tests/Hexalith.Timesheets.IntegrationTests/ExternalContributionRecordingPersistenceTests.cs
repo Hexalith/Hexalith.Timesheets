@@ -231,9 +231,11 @@ public sealed class ExternalContributionRecordingPersistenceTests
     [InlineData("null-service-date")]
     [InlineData("default-service-date")]
     [InlineData("missing-duration")]
+    [InlineData("null-duration")]
     [InlineData("zero-duration")]
     [InlineData("negative-duration")]
     [InlineData("missing-billable-state")]
+    [InlineData("null-billable-state")]
     [InlineData("unknown-billable-state")]
     [InlineData("undefined-billable-state")]
     public async Task InvalidRequiredRecordingValuesAreOpaquePolicyRefusals(string scenario)
@@ -250,9 +252,11 @@ public sealed class ExternalContributionRecordingPersistenceTests
             case "null-service-date": body["serviceDate"] = null; break;
             case "default-service-date": body["serviceDate"] = "0001-01-01"; break;
             case "missing-duration": body.Remove("durationMinutes"); break;
+            case "null-duration": body["durationMinutes"] = null; break;
             case "zero-duration": body["durationMinutes"] = 0; break;
             case "negative-duration": body["durationMinutes"] = -1; break;
             case "missing-billable-state": body.Remove("billableState"); break;
+            case "null-billable-state": body["billableState"] = null; break;
             case "unknown-billable-state": body["billableState"] = "unknown"; break;
             case "undefined-billable-state": body["billableState"] = 99; break;
         }
@@ -287,6 +291,28 @@ public sealed class ExternalContributionRecordingPersistenceTests
 
         await AssertOpaqueRefusalAsync(response, command, messageId, HttpStatusCode.BadRequest);
         response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
+        AssertOutcomes(host, command, messageId);
+        host.BoundaryCalls.ShouldBe((0, 0, 0));
+        storage.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task AuthenticatedBodylessAndUnsupportedMediaTypeRecordingRequestsFailClosed()
+    {
+        var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
+        SubmitExternalTimeEntry command = RecordCommand("invalid-recording");
+        string messageId = CreateMessageId(command);
+        using var host = new ComposedConfirmationHost(storage);
+        using HttpClient client = host.CreateClient();
+
+        using HttpResponseMessage bodyless = await host.PostWorkloadWithoutBodyAsync(client, Route);
+        await AssertOpaqueRefusalAsync(bodyless, command, messageId, HttpStatusCode.BadRequest);
+        bodyless.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
+
+        using HttpResponseMessage unsupported = await host.PostWorkloadRawJsonAsync(client, Route, "{}", "text/plain");
+        unsupported.StatusCode.ShouldBe(HttpStatusCode.UnsupportedMediaType);
+        (await unsupported.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
+
         AssertOutcomes(host, command, messageId);
         host.BoundaryCalls.ShouldBe((0, 0, 0));
         storage.ShouldBeEmpty();
