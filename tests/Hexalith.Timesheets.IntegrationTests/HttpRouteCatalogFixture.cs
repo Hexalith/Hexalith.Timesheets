@@ -5,7 +5,7 @@ using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.ServiceDefaults.Authentication;
 using Hexalith.EventStore.ServiceDefaults.Routing;
-using Hexalith.Timesheets.Projections;
+using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.Runtime;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -100,8 +100,7 @@ internal sealed class HttpRouteCatalogFixture
     private RouteCatalogHostObservation Observe(IServiceProvider services)
     {
         DomainProjectionIdentityOptions identity = services.GetRequiredService<IOptions<DomainProjectionIdentityOptions>>().Value;
-        var owners = new[] { typeof(TimesheetsRouteCatalogDeclarations).Assembly,
-            typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
+        var owners = new[] { typeof(TimesheetsHostRouteCatalogDeclarations).Assembly };
         IReadOnlyList<RouteContractDeclaration> declarations = CompiledRouteCatalogDeclarations.Read(owners);
         IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations(owners);
         if (declarations.Count != 10 || operations.Count != declarations.Count)
@@ -110,10 +109,10 @@ internal sealed class HttpRouteCatalogFixture
         }
         IIdempotencyIntentAdapter[] installed = services.GetServices<IIdempotencyIntentAdapter>().ToArray();
         IDeclaredIdempotencyIntentAdapter[] adapters = installed.OfType<IDeclaredIdempotencyIntentAdapter>().ToArray();
-        if (installed.Length != TimesheetsRouteCatalogDeclarations.Commands.Count
-            || adapters.Length != installed.Length
-            || adapters.Any(adapter => !TimesheetsRouteCatalogDeclarations.Commands.Any(command =>
-                JsonSerializer.Serialize(command) == JsonSerializer.Serialize(adapter.Declaration))))
+        if (adapters.Length != installed.Length
+            || !adapters.Select(adapter => JsonSerializer.Serialize(adapter.Declaration)).Order(StringComparer.Ordinal)
+                .SequenceEqual(TimesheetsHostRouteCatalogDeclarations.Commands.Select(command => JsonSerializer.Serialize(command))
+                    .Order(StringComparer.Ordinal), StringComparer.Ordinal))
         {
             throw new InvalidOperationException("The fixture admissions differ from installed owner adapters.");
         }
@@ -123,6 +122,12 @@ internal sealed class HttpRouteCatalogFixture
             {
                 OperationContractDigest = operations.Single(operation => operation.RouteId == target.RouteId).Digest
             }).ToArray();
+        IReadOnlyDictionary<string, string> methods = TimesheetsHostRouteCatalogDeclarations.ReceiverMethods;
+        if (targets.Count != methods.Count
+            || targets.Any(target => !methods.TryGetValue(target.RouteId, out string? method) || method != target.Method))
+        {
+            throw new RouteCatalogUnavailableException("The composed Timesheets owner receivers differ from the installed endpoints.");
+        }
         IdempotencyCatalogEntry[] admissions = adapters
             .Select(adapter => DevelopmentIdempotencyBindings.Bind(adapter.Declaration, 1, identity.AppId)).ToArray();
         RouteCatalogStateCoordinates coordinates = services.GetRequiredService<IRouteCatalogStateStore>().Coordinates!;

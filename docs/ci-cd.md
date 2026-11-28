@@ -134,14 +134,44 @@ python3 -m unittest discover -s scripts/tests -v
 ```
 
 Consumers live outside the repository, use their own Central Package Management
-and private NuGet cache, and clear inherited feeds. Each restores one exact local
-candidate through PackageReference. Exact package source mappings reserve all six
-candidate IDs, including transitive edges, for the local feed; nuget.org supplies
-external dependencies. Validation compares each restored candidate archive byte for
-byte with its local archive and requires local-feed cache provenance. Each consumer
-executes a small, side-effect-free public API example and checks the assembly
-informational version. Consumers add no framework references that could conceal
-missing package metadata, and none uses a source ProjectReference.
+and a private NuGet cache, and clear inherited feeds. Six projects each restore one
+exact local candidate through PackageReference. A seventh project restores both
+Server and Projections and verifies that all ten routes, operations, and receiver
+methods match the six command payloads and four named projection handlers exactly
+once. The isolated Projections project verifies that declaration discovery loads
+no Timesheets Server assembly and that its command inventory is empty. The
+isolated Server project verifies discovery of all six commands.
+
+Exact package source mappings reserve all six candidate IDs, including transitive
+edges, for the local feed, and nuget.org supplies external dependencies. Validation
+compares restored candidate archives byte for byte with the local archives and
+requires local-feed cache provenance. Each consumer executes public API assertions
+and checks the candidate assembly informational versions. The consumer projects
+use PackageReference without additional framework references.
+
+### Route discovery migration for Timesheets 3.0.0
+
+This breaking change to the v2.x combined declaration source requires the
+Timesheets 3.0.0 release. Use a Conventional Commit with a `BREAKING CHANGE`
+footer so Semantic Release selects the major version. Server and Projections each carry their own
+`RouteCatalogDeclarationSourceAttribute`. On
+`TimesheetsProjectionRouteCatalogDeclarations`, `Routes`, `Operations`, and
+`ReceiverMethods` now cover four named projections. `Commands` returns an empty
+list. Command routes, schemas, receiver methods, and policies are available from
+`TimesheetsRouteCatalogDeclarations` in Server.
+
+Upgrade `Hexalith.Timesheets.Server` and `Hexalith.Timesheets.Projections`
+together to 3.0.0. Use the same release version of both packages for subsequent
+upgrades so complete discovery uses matching inventories.
+
+For complete discovery, pass both declaration assemblies to
+`CompiledRouteCatalogDeclarations.Read` and `ReadOperations`. In a composed
+Timesheets HTTP deployment, the `Hexalith.Timesheets.dll` declaration source
+provides the same inventory on its own. Select one discovery approach per
+catalog, since enrolling the composed host and either individual owner causes a
+duplicate declaration failure. The Aspire split-owner path uses
+`Hexalith.Timesheets.dll` for declarations and
+`Hexalith.Timesheets.Server.dll` for command adapters.
 
 ## Manual protected release
 

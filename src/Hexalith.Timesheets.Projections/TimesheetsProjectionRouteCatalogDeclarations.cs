@@ -1,5 +1,3 @@
-using System.Reflection;
-using System.Runtime.Loader;
 using System.Text.Json;
 
 using Hexalith.EventStore.Contracts.Authorization;
@@ -15,12 +13,16 @@ using Hexalith.Timesheets.Server.MagicLinks;
 
 namespace Hexalith.Timesheets.Projections;
 
-/// <summary>Complete Timesheets owner inventory for installed commands and named projections.</summary>
+/// <summary>Declares the named projections owned by the Timesheets Projections assembly.</summary>
+/// <remarks>
+/// Starting in Timesheets 3.0.0, discover both the Server and Projections declaration assemblies
+/// or use the composed HTTP host declaration assembly to obtain the complete Timesheets inventory.
+/// </remarks>
 public static class TimesheetsProjectionRouteCatalogDeclarations
 {
-    /// <summary>Gets the installed Server command policies from the selected host assembly context.</summary>
-    public static IReadOnlyList<CommandIntentDeclaration> Commands =>
-        ReadServerOwner<IReadOnlyList<CommandIntentDeclaration>>("Commands");
+    /// <summary>Gets the empty command inventory owned by Projections.</summary>
+    /// <remarks>Starting in Timesheets 3.0.0, discover command policies from the Server or composed HTTP host declaration source.</remarks>
+    public static IReadOnlyList<CommandIntentDeclaration> Commands => [];
 
     /// <summary>Gets the complete named projection route declarations.</summary>
     public static IReadOnlyList<RouteContractDeclaration> Projections { get; } =
@@ -35,31 +37,18 @@ public static class TimesheetsProjectionRouteCatalogDeclarations
             "time-entry-evidence", TimeEntryEvidenceProjection.ProjectionName)
     ];
 
-    /// <summary>Gets all compiled owner routes.</summary>
-    public static IReadOnlyList<RouteContractDeclaration> Routes =>
-        [.. Commands.Select(command => command.Route), .. Projections];
+    /// <summary>Gets the compiled named projection routes.</summary>
+    public static IReadOnlyList<RouteContractDeclaration> Routes => Projections;
 
-    /// <summary>Gets value-free operation schemas for all protected receivers.</summary>
+    /// <summary>Gets the value-free operation schemas for named projection receivers.</summary>
     public static IReadOnlyList<RouteOperationContract> Operations =>
-        [.. ReadServerOwner<IReadOnlyList<RouteOperationContract>>("Operations"),
-            .. Projections.Select(route => RouteOperationSchema.Create(route,
+        [.. Projections.Select(route => RouteOperationSchema.Create(route,
             typeof(ProjectionDispatchRequest), typeof(ProjectionDispatchResponse),
             "internal", "UI-only", JsonSerializerOptions.Web))];
 
-    /// <summary>Gets the canonical receiver method for every owner route.</summary>
+    /// <summary>Gets the canonical receiver method for every named projection route.</summary>
     public static IReadOnlyDictionary<string, string> ReceiverMethods =>
-        Routes.ToDictionary(route => route.RouteId,
-            route => route.Kind == "command" ? "process" : "project/v2", StringComparer.Ordinal);
-
-    private static T ReadServerOwner<T>(string property)
-    {
-        AssemblyLoadContext context = AssemblyLoadContext.GetLoadContext(typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly)
-            ?? throw new InvalidOperationException("The selected Timesheets owner assembly context is unavailable.");
-        Type source = context.LoadFromAssemblyName(new AssemblyName("Hexalith.Timesheets.Server"))
-            .GetType("Hexalith.Timesheets.Server.Runtime.TimesheetsRouteCatalogDeclarations", throwOnError: true)!;
-        return source.GetProperty(property, BindingFlags.Public | BindingFlags.Static)?.GetValue(null) is T inventory
-            ? inventory : throw new InvalidOperationException("The installed Timesheets Server owner inventory is incomplete.");
-    }
+        Projections.ToDictionary(route => route.RouteId, _ => "project/v2", StringComparer.Ordinal);
 
     private static RouteContractDeclaration Projection<THandler>(string slug, string projectionName) =>
         new($"timesheets-{slug}", "projection", TimesheetsDomain.Name, null, projectionName,

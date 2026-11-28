@@ -1793,3 +1793,10 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 - Extend the installed gateway and telemetry evidence above. The composed client's synthetic domainless `Received` row and status translation do not exercise the installed gateway controllers, SDK transport, or span and log fields emitted during recovery.
 - Extend the historical Completed receipt check above. Before requiring the stored event subject, qualify historical gateway identities and test a mismatched `UserId` alongside a matching command lineage.
 - Give status probes a bounded share of the overall polling budget. The pre-existing lookup can use the full deadline during preflight or after stream verification, leaving no opportunity to observe a later healthy status response.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-6-support-independent-and-composed-route-discovery.md`
+  summary: Verify AppHost split-owner preparation and catalog admission with the Timesheets HTTP declaration assembly in the isolated Story 3.6 runtime lane.
+  evidence: Configuration-only guards exit before preparation. A disposable SDK probe verified the selected split-owner artifacts before resource startup with 10 routes, 10 operations, 6 policies, and 10 receiver methods. The baseline fixture refused occupied Dapr inventory before starting any Timesheets resources, so full runtime admission remains open.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-6-support-independent-and-composed-route-discovery.md`
+  summary: Investigate timing sensitivity in the Server's terminal-status read count test.
+  evidence: On an unchanged Server test assembly, the 100 ms Rejected case observed one status read during the final broad rerun. The earlier full Server run passed all 1,052 tests, and the one focused retry passed Rejected, PublishFailed, and TimedOut.

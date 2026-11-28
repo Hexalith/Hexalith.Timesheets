@@ -15,14 +15,17 @@ using Hexalith.Timesheets.Contracts.Models.MagicLinks;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.MagicLinks;
+using Hexalith.Timesheets.Runtime;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
 
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
 
 using Shouldly;
 
@@ -34,19 +37,27 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
     /// <param name="scenario">The owner fact changed before catalog sealing.</param>
     [Theory]
     [InlineData("missing-owner")]
+    [InlineData("missing-server-owner")]
     [InlineData("wrong-schema")]
     public async Task FixtureCatalogActivationRejectsChangedOwnerInventoryWithoutStateWrite(string scenario)
     {
         var store = new InMemoryReadModelStore();
         using MagicLinkHttpBoundaryFactory factory = new(batchStore: store);
         const string RouteId = "timesheets-magic-link-token-hash-capability-index";
-        factory.RouteCatalog.ObservationTransform = observation => scenario == "missing-owner"
-            ? observation with
+        factory.RouteCatalog.ObservationTransform = observation => scenario switch
+        {
+            "missing-owner" => observation with
             {
                 Declarations = observation.Declarations.Where(route => route.RouteId != RouteId).ToArray(),
                 Operations = observation.Operations!.Where(operation => operation.RouteId != RouteId).ToArray()
-            }
-            : observation with
+            },
+            "missing-server-owner" => observation with
+            {
+                Declarations = observation.Declarations.Where(route => route.Kind != "command").ToArray(),
+                Operations = observation.Operations!.Where(operation => observation.Declarations
+                    .Any(route => route.Kind != "command" && route.RouteId == operation.RouteId)).ToArray()
+            },
+            _ => observation with
             {
                 Operations = observation.Operations!.Select(operation =>
                 {
@@ -55,7 +66,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
                     { RequestSchema = JsonSerializer.SerializeToElement(new { type = "string" }) };
                     return changed with { Digest = RouteCatalogCodec.ComputeOperationContractDigest(changed) };
                 }).ToArray()
-            };
+            }
+        };
         using var request = new HttpRequestMessage(HttpMethod.Post, "/project/v2");
 
         await Should.ThrowAsync<RouteCatalogValidationException>(() => factory.AddCatalogHeadersAsync(request));
@@ -64,49 +76,83 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         factory.Gateway.SubmissionCount.ShouldBe(0);
     }
 
-    /// <summary>Checks configured Program enrollment before its private bootstrap worker starts.</summary>
+    /// <summary>Checks the observer and actual receiver inventory enrolled by Program in Development.</summary>
     [Fact]
-    public void ConfiguredHostEnrollsCompleteOwnerInSdkDevelopmentBootstrap()
+    public async Task ConfiguredHostEnrollsCompleteOwnerInSdkDevelopmentBootstrap()
     {
         string directory = Directory.CreateTempSubdirectory("timesheets-catalog-enrollment-").FullName;
         try
         {
-            bool inspected = false;
-            using WebApplicationFactory<Program> root = new();
-            using WebApplicationFactory<Program> configured = root.WithWebHostBuilder(host =>
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+            deadline.CancelAfter(TimeSpan.FromSeconds(30));
+            string component = Path.Combine(directory, "component.json");
+            string acl = Path.Combine(directory, "acl.json");
+            var state = new HttpRouteCatalogStateStore();
+            await File.WriteAllTextAsync(component, """
+                {"kind":"Component","metadata":{"name":"http-fixture-catalog"},"scopes":["timesheets","eventstore"],
+                 "spec":{"type":"state.redis","metadata":[{"name":"keyPrefix","value":"none"}]}}
+                """, deadline.Token);
+            await File.WriteAllTextAsync(acl, """
+                {"spec":{"accessControl":{"defaultAction":"deny","trustDomain":"public","policies":[]}}}
+                """, deadline.Token);
+
+            const string Bootstrap = "EventStore:RouteCatalog:DevelopmentBootstrap:";
+            await using WebApplicationFactory<Program> root = new();
+            await using WebApplicationFactory<Program> configured = root.WithWebHostBuilder(host =>
             {
                 host.UseEnvironment("Development");
-                host.UseSetting("EventStore:RouteCatalog:DevelopmentBootstrap:Directory", directory);
-                host.UseSetting("EventStore:RouteCatalog:DevelopmentBootstrap:HostId", "timesheets");
-                host.UseSetting("EventStore:RouteCatalog:DevelopmentBootstrap:CoordinatorHostId", "eventstore");
-                host.UseSetting("EventStore:RouteCatalog:DevelopmentBootstrap:AttemptId", "enrollment-test");
-                host.UseSetting("EventStore:RouteCatalog:DevelopmentBootstrap:RequiredHostIds:0", "timesheets");
-                host.UseSetting("EventStore:RouteCatalog:DevelopmentBootstrap:RequiredHostIds:1", "eventstore");
+                host.UseSetting(DaprAppChannelToken.ConfigurationKey, "timesheets-catalog-test-token");
+                host.UseSetting("EventStore:DomainService:AppId", "timesheets");
+                host.UseSetting("Authentication:JwtBearer:Issuer", "timesheets-test-issuer");
+                host.UseSetting("Authentication:JwtBearer:Audience", "hexalith-eventstore");
+                host.UseSetting("Authentication:JwtBearer:SigningKey", Convert.ToBase64String(new byte[32]));
+                host.UseSetting("Authentication:JwtBearer:AllowedAlgorithms:0", SecurityAlgorithms.HmacSha256);
+                host.UseSetting("Authentication:JwtBearer:RequireHttpsMetadata", "false");
+                host.UseSetting("Authentication:WorkloadIssuer:Workload", "eventstore");
+                host.UseSetting(Bootstrap + "Directory", directory);
+                host.UseSetting(Bootstrap + "HostId", "timesheets");
+                host.UseSetting(Bootstrap + "CoordinatorHostId", "eventstore");
+                host.UseSetting(Bootstrap + "AttemptId", "enrollment-test");
+                host.UseSetting(Bootstrap + "RequiredHostIds:0", "timesheets");
+                host.UseSetting(Bootstrap + "RequiredHostIds:1", "eventstore");
+                host.UseSetting(Bootstrap + "ComponentPath", component);
+                host.UseSetting(Bootstrap + "AccessControlPath", acl);
                 host.ConfigureServices(services =>
                 {
-                    ServiceDescriptor bootstrap = services.Single(descriptor =>
-                        descriptor.ServiceType == typeof(IHostedService)
-                        && descriptor.ImplementationFactory?.Method.DeclaringType?.FullName?.StartsWith(
-                            typeof(DevelopmentRouteCatalogBootstrap).FullName + "+", StringComparison.Ordinal) == true);
-                    using ServiceProvider empty = new ServiceCollection().BuildServiceProvider();
-                    bootstrap.ImplementationFactory!(empty).GetType().Name.ShouldBe("DevelopmentRouteCatalogBootstrapWorker");
-                    services.ShouldContain(descriptor => descriptor.ServiceType == typeof(IRouteCatalogHostObserver));
-                    var owners = new[] { typeof(TimesheetsRouteCatalogDeclarations).Assembly,
-                        typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
-                    owners.SelectMany(owner => owner.GetCustomAttributes<RouteCatalogDeclarationSourceAttribute>())
-                        .Single().SourceType.ShouldBe(typeof(TimesheetsProjectionRouteCatalogDeclarations));
-                    CompiledRouteCatalogDeclarations.Read(owners).Count.ShouldBe(10);
-                    CompiledRouteCatalogDeclarations.ReadOperations(owners).Count.ShouldBe(10);
-                    TimesheetsProjectionRouteCatalogDeclarations.Commands.Count.ShouldBe(6);
-                    inspected = true;
-                    throw new InvalidOperationException("configured-catalog-probe-complete");
+                    var readModels = new InMemoryReadModelStore();
+                    services.AddDataProtection().UseEphemeralDataProtectionProvider();
+                    services.RemoveAll<IRouteCatalogStateStore>();
+                    services.AddSingleton<IRouteCatalogStateStore>(state);
+                    services.RemoveAll<IReadModelStore>();
+                    services.AddSingleton<IReadModelStore>(readModels);
+                    services.RemoveAll<IReadModelBatchStore>();
+                    services.AddSingleton<IReadModelBatchStore>(readModels);
                 });
             });
-            Exception? failure = null;
-            try { using HttpClient client = configured.CreateClient(); }
-            catch (Exception exception) { failure = exception; }
-            failure.ShouldNotBeNull().ToString().ShouldContain("configured-catalog-probe-complete");
-            inspected.ShouldBeTrue();
+            using HttpClient client = configured.CreateClient();
+            configured.Services.GetRequiredService<IRouteCatalogHostObserver>().ShouldBeOfType<ObservedRouteCatalogHost>();
+            string observationPath = Path.Combine(directory, "timesheets.observation.json");
+            while (!File.Exists(observationPath))
+            {
+                await Task.Delay(25, deadline.Token);
+            }
+
+            var observation = JsonSerializer.Deserialize<RouteCatalogHostObservation>(
+                await File.ReadAllBytesAsync(observationPath, deadline.Token)).ShouldNotBeNull();
+            observation.AuthorityCoordinates.ShouldBe(state.Coordinates);
+            var operations = observation.Operations.ShouldNotBeNull();
+            var expectedRoutes = TimesheetsHostRouteCatalogDeclarations.Routes;
+            var expectedMethods = TimesheetsHostRouteCatalogDeclarations.ReceiverMethods;
+            observation.Declarations.Count.ShouldBe(10);
+            operations.Count.ShouldBe(10);
+            observation.Targets.Count.ShouldBe(10);
+            observation.Declarations.Select(RouteCatalogCodec.ComputeDeclarationDigest)
+                .ShouldBe(expectedRoutes.Select(RouteCatalogCodec.ComputeDeclarationDigest), ignoreOrder: true);
+            operations.Select(operation => operation.Digest)
+                .ShouldBe(TimesheetsHostRouteCatalogDeclarations.Operations.Select(operation => operation.Digest), ignoreOrder: true);
+            observation.Targets.Select(target => (target.RouteId, target.Method, target.DeclarationDigest))
+                .ShouldBe(expectedRoutes.Select(route =>
+                    (route.RouteId, expectedMethods[route.RouteId], RouteCatalogCodec.ComputeDeclarationDigest(route))), ignoreOrder: true);
         }
         finally
         {
@@ -141,12 +187,31 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             .ShouldBe(TimesheetsProjectionRouteCatalogDeclarations.Projections.Select(route => route.ProjectionType), ignoreOrder: true);
         operations.Select(operation => operation.RouteId)
             .ShouldBe(declarations.Select(route => route.RouteId), ignoreOrder: true);
+        var hostAssembly = typeof(Program).Assembly;
+        hostAssembly.GetCustomAttributes<RouteCatalogDeclarationSourceAttribute>().Single().SourceType
+            .ShouldBe(typeof(TimesheetsHostRouteCatalogDeclarations));
+        IReadOnlyList<RouteContractDeclaration> hostDeclarations = CompiledRouteCatalogDeclarations.Read([hostAssembly]);
+        hostDeclarations.Select(RouteCatalogCodec.ComputeDeclarationDigest)
+            .ShouldBe(declarations.Select(RouteCatalogCodec.ComputeDeclarationDigest), ignoreOrder: true);
+        CompiledRouteCatalogDeclarations.ReadOperations([hostAssembly]).Select(operation => operation.Digest)
+            .ShouldBe(operations.Select(operation => operation.Digest), ignoreOrder: true);
+        TimesheetsHostRouteCatalogDeclarations.Commands.Select(command => JsonSerializer.Serialize(command))
+            .ShouldBe(TimesheetsRouteCatalogAdapters.Create().Select(adapter => JsonSerializer.Serialize(adapter.Declaration)), ignoreOrder: true);
+
         EndpointDataSource endpoints = services.GetRequiredService<EndpointDataSource>();
-        IReadOnlyList<RouteCatalogEntry> targets = DevelopmentDomainRouteCatalog.Targets(services, endpoints.Endpoints, declarations);
+        IReadOnlyList<RouteCatalogEntry> targets = DevelopmentDomainRouteCatalog.Targets(services, endpoints.Endpoints, hostDeclarations);
         targets.Count.ShouldBe(10);
         targets.Where(target => target.Method == "process").Count().ShouldBe(6);
         targets.Where(target => target.Method == "project/v2").Count().ShouldBe(4);
+        TimesheetsHostRouteCatalogDeclarations.ReceiverMethods
+            .ShouldBe(targets.Select(target => KeyValuePair.Create(target.RouteId, target.Method)), ignoreOrder: true);
 
+        Should.Throw<RouteCatalogUnavailableException>(() => CompiledRouteCatalogDeclarations.Read([.. owners, hostAssembly]));
+        Should.Throw<RouteCatalogUnavailableException>(() => CompiledRouteCatalogDeclarations.ReadOperations([.. owners, hostAssembly]));
+        Should.Throw<RouteCatalogUnavailableException>(() => DevelopmentDomainRouteCatalog.Targets(
+            services, endpoints.Endpoints, CompiledRouteCatalogDeclarations.Read([owners[0]])));
+        Should.Throw<RouteCatalogUnavailableException>(() => DevelopmentDomainRouteCatalog.Targets(
+            services, endpoints.Endpoints, declarations.Where(route => route.RouteId != "timesheets-commit-time-entry-record").ToArray()));
         RouteContractDeclaration projection = declarations.Single(route =>
             route.ProjectionType == MagicLinkTokenHashCapabilityIndexProjection.ProjectionName);
         Should.Throw<RouteCatalogUnavailableException>(() => DevelopmentDomainRouteCatalog.Targets(

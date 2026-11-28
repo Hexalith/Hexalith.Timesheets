@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile and execute six independent NuGet-only consumers outside the repository."""
+"""Compile and execute six isolated and one composed NuGet-only consumer outside the repository."""
 
 import argparse
 import hashlib
@@ -13,44 +13,29 @@ from xml.etree import ElementTree as ET
 from release_common import EXPECTED_IDS, ROOT, inventory, load_manifest, read_json
 
 SURFACES = {
-    "Contracts": ("Hexalith.Timesheets.Contracts.References.TenantReference", '''
-var tenant = new Hexalith.Timesheets.Contracts.References.TenantReference("consumer");
-if (tenant.TenantId != "consumer") throw new InvalidOperationException("Tenant reference failed");'''),
-    "Client": ("Hexalith.Timesheets.Client.TimesheetsClientOptions", '''
-var options = new Hexalith.Timesheets.Client.TimesheetsClientOptions { Endpoint = new Uri("https://example.invalid") };
-if (options.Endpoint.Host != "example.invalid") throw new InvalidOperationException("Client options failed");'''),
-    "ReadModels": ("Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProjection", '''
-if (Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProjection.ShardKey(255)
-        != "timesheets:magic-links:token-hash-capability-index:v2:shard:FF"
-    || Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProjection.StateStoreName
-        != "timesheets-readmodels")
-    throw new InvalidOperationException("Read-model address compatibility failed");'''),
-    "Server": ("Hexalith.Timesheets.Server.Authorization.TimesheetsAuthorizationDecision", '''
-var decision = Hexalith.Timesheets.Server.Authorization.TimesheetsAuthorizationDecision.Denied("consumer");
-if (decision.IsAuthorized || decision.Reason != "consumer") throw new InvalidOperationException("Authorization decision failed");
-var commands = Hexalith.Timesheets.Server.Runtime.TimesheetsRouteCatalogDeclarations.Commands;
-if (commands.Count != 6
-    || commands.Count(command => command.Route.RouteId == "timesheets-commit-approved-time-export") != 1
-    || commands.Count(command => command.Route.RouteId == "timesheets-commit-time-entry-confirmation") != 1)
-    throw new InvalidOperationException("Internal command route inventory failed");'''),
-    "Projections": ("Hexalith.Timesheets.Projections.ProjectionFreshnessMetadataMapper", '''
-var checkpoint = new Hexalith.Timesheets.Projections.TimesheetsProjectionCheckpoint(
-    "consumer", "test", 7, Hexalith.Timesheets.Projections.ProjectionFreshness.Fresh);
-var metadata = Hexalith.Timesheets.Projections.ProjectionFreshnessMetadataMapper.ToMetadata(checkpoint);
-if (!checkpoint.CanServeReads || metadata.Cursor != "7") throw new InvalidOperationException("Projection mapping failed");'''),
-    "Testing": ("Hexalith.Timesheets.Testing.TimesheetsTestIds", '''
-if (Hexalith.Timesheets.Testing.TimesheetsTestIds.Tenant.TenantId != "tenant-test"
-    || Hexalith.Timesheets.Testing.TimesheetsTestIds.Project.ProjectId != "project-test")
-    throw new InvalidOperationException("Test reference fixtures failed");'''),
+    "Contracts": "Hexalith.Timesheets.Contracts.References.TenantReference",
+    "Client": "Hexalith.Timesheets.Client.TimesheetsClientOptions",
+    "ReadModels": "Hexalith.Timesheets.Server.MagicLinks.MagicLinkTokenHashCapabilityIndexProjection",
+    "Server": "Hexalith.Timesheets.Server.Authorization.TimesheetsAuthorizationDecision",
+    "Projections": "Hexalith.Timesheets.Projections.ProjectionFreshnessMetadataMapper",
+    "Testing": "Hexalith.Timesheets.Testing.TimesheetsTestIds",
 }
+COMPOSED_PACKAGES = ("Hexalith.Timesheets.Server", "Hexalith.Timesheets.Projections")
 
 
-def verify_restored_candidates(assets: dict, cache: Path, directory: Path, version: str, package_id: str) -> None:
+def verify_restored_candidates(
+    assets: dict, cache: Path, directory: Path, version: str, package_ids: tuple[str, ...]
+) -> None:
     libraries = assets["libraries"]
     if any(value.get("type") != "package" for value in libraries.values()):
-        raise ValueError(f"Source dependency leaked into isolated consumer: {package_id}")
-    if package_id + "/" + version not in libraries:
-        raise ValueError(f"Wrong restored candidate version: {package_id}")
+        raise ValueError(f"Source dependency leaked into NuGet consumer: {', '.join(package_ids)}")
+    for package_id in package_ids:
+        if package_id + "/" + version not in libraries:
+            raise ValueError(f"Wrong restored candidate version: {package_id}")
+    if package_ids == ("Hexalith.Timesheets.Projections",) and any(
+        identity.split("/", 1)[0].casefold() == "hexalith.timesheets.server" for identity in libraries
+    ):
+        raise ValueError("Timesheets Server leaked into the isolated Projections restore")
     candidates = {name.casefold() for name in EXPECTED_IDS}
     for identity, library in libraries.items():
         restored_id, restored_version = identity.split("/", 1)
@@ -67,6 +52,37 @@ def verify_restored_candidates(assets: dict, cache: Path, directory: Path, versi
         metadata = read_json(restored_directory / ".nupkg.metadata")
         if metadata.get("source") != str(directory):
             raise ValueError(f"Restored candidate source is not the local feed: {identity}")
+
+
+def write_consumer(consumer: Path, package_ids: tuple[str, ...], version: str) -> None:
+    consumer.mkdir()
+    project = ET.Element("Project", Sdk="Microsoft.NET.Sdk")
+    properties = ET.SubElement(project, "PropertyGroup")
+    for name, value in {
+        "OutputType": "Exe", "TargetFramework": "net11.0", "ImplicitUsings": "enable", "Nullable": "enable",
+        "TreatWarningsAsErrors": "true", "NuGetAudit": "true", "NuGetAuditMode": "all",
+        "ManagePackageVersionsCentrally": "true",
+    }.items():
+        ET.SubElement(properties, name).text = value
+    references = ET.SubElement(project, "ItemGroup")
+    packages = ET.Element("Project")
+    versions = ET.SubElement(packages, "ItemGroup")
+    snippet = (ROOT / f"tools/package-consumers/{consumer.name}.cs").read_text(encoding="utf-8")
+    for index, package_id in enumerate(package_ids):
+        ET.SubElement(references, "PackageReference", Include=package_id)
+        ET.SubElement(versions, "PackageVersion", Include=package_id, Version=f"[{version}]")
+        surface = SURFACES[package_id.rsplit(".", 1)[1]]
+        snippet += f'''
+var candidateVersion{index} = System.Reflection.CustomAttributeExtensions
+    .GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(typeof({surface}).Assembly)
+    ?.InformationalVersion;
+if (candidateVersion{index}?.Split('+')[0] != "{version}")
+    throw new InvalidOperationException($"Wrong assembly informational version for {package_id}: {{candidateVersion{index}}}");
+Console.WriteLine("{package_id} {version}: consumer surface and assembly version verified ({consumer.name})");
+'''
+    ET.ElementTree(project).write(consumer / "Consumer.csproj", encoding="utf-8")
+    ET.ElementTree(packages).write(consumer / "Directory.Packages.props", encoding="utf-8")
+    (consumer / "Program.cs").write_text(snippet, encoding="utf-8")
 
 
 def main(directory: Path) -> None:
@@ -98,40 +114,15 @@ def main(directory: Path) -> None:
         env["NUGET_PACKAGES"] = str(root / ".nuget/packages")
         env["DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER"] = "1"
         env["MSBUILDDISABLENODEREUSE"] = "1"
-        for row in rows:
-            package_id = row["id"]
-            area = package_id.rsplit(".", 1)[1]
+        consumers = [(row["id"].rsplit(".", 1)[1], (row["id"],)) for row in rows]
+        consumers.append(("Composed", COMPOSED_PACKAGES))
+        for area, package_ids in consumers:
             consumer = root / area
-            consumer.mkdir()
-            (consumer / "Consumer.csproj").write_text(f'''<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors><NuGetAudit>true</NuGetAudit><NuGetAuditMode>all</NuGetAuditMode>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="{package_id}" />
-  </ItemGroup>
-</Project>
-''', encoding="utf-8")
-            (consumer / "Directory.Packages.props").write_text(f'''<Project>
-  <ItemGroup><PackageVersion Include="{package_id}" Version="[{version}]" /></ItemGroup>
-</Project>
-''', encoding="utf-8")
-            surface, snippet = SURFACES[area]
-            (consumer / "Program.cs").write_text(f'''using System.Reflection;
-{snippet}
-var assembly = typeof({surface}).Assembly;
-var version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-if (version?.Split('+')[0] != "{version}")
-    throw new InvalidOperationException($"Wrong assembly informational version: {{version}}");
-Console.WriteLine("{package_id} {version}: consumer surface and assembly version verified");
-''', encoding="utf-8")
+            write_consumer(consumer, package_ids, version)
             subprocess.run(["dotnet", "restore", "Consumer.csproj", "--configfile", str(root / "NuGet.Config")],
                            cwd=consumer, env=env, check=True)
             assets = read_json(consumer / "obj/project.assets.json")
-            verify_restored_candidates(assets, Path(env["NUGET_PACKAGES"]), directory, version, package_id)
+            verify_restored_candidates(assets, Path(env["NUGET_PACKAGES"]), directory, version, package_ids)
             subprocess.run(["dotnet", "build", "--configuration", "Release", "--no-restore", "-warnaserror", "-m:1", "/nr:false"],
                            cwd=consumer, env=env, check=True)
             subprocess.run(["dotnet", str(consumer / "bin/Release/net11.0/Consumer.dll")],

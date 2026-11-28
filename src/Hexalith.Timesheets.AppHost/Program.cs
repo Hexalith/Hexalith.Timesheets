@@ -257,7 +257,7 @@ if (builder.ExecutionContext.IsRunMode)
         routeCatalogTransport!.Enroll(eventStore);
         routeCatalogTransport.Enroll(timesheets);
         preparedOwner = await timesheets.PrepareEventStoreDevelopmentOwnerAsync(
-            "Hexalith.Timesheets.Projections.dll", "Hexalith.Timesheets.Server.dll", TimeSpan.FromMinutes(5));
+            "Hexalith.Timesheets.dll", "Hexalith.Timesheets.Server.dll", TimeSpan.FromMinutes(5));
         routeCatalog = builder.AddEventStoreDevelopmentRouteCatalog(eventStore,
             [preparedOwner.Owner],
             [eventStore.CaptureEventStoreDevelopmentReceiver(timesheets) with { TechnicalHttp = true },

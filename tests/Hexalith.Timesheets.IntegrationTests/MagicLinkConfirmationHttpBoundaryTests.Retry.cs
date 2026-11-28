@@ -15,7 +15,6 @@ using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
-using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.Runtime;
@@ -55,12 +54,11 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         assembly.GetCustomAttributes(typeof(RouteCatalogAdapterSourceAttribute), false)
             .Single().ShouldBeOfType<RouteCatalogAdapterSourceAttribute>().SourceType
             .ShouldBe(typeof(TimesheetsRouteCatalogAdapters));
-        var owners = new[] { assembly, typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
-        CompiledRouteCatalogDeclarations.Read(owners).Select(route => route.RouteId)
-            .ShouldBe(TimesheetsProjectionRouteCatalogDeclarations.Routes.Select(route => route.RouteId), ignoreOrder: true);
-        IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations(owners);
+        CompiledRouteCatalogDeclarations.Read([assembly]).Select(route => route.RouteId)
+            .ShouldBe(declared.Select(command => command.Route.RouteId), ignoreOrder: true);
+        IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations([assembly]);
         operations.Select(operation => operation.RouteId)
-            .ShouldBe(TimesheetsProjectionRouteCatalogDeclarations.Routes.Select(route => route.RouteId), ignoreOrder: true);
+            .ShouldBe(declared.Select(command => command.Route.RouteId), ignoreOrder: true);
         foreach (RouteOperationContract operation in operations)
         {
             RouteCatalogValidator.ValidateOperationContract(operation);

@@ -8,6 +8,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
+from xml.etree import ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import release_common as common
@@ -222,7 +223,32 @@ class ConsumerRestoreTests(unittest.TestCase):
         self.assets = {"libraries": {self.package + "/1.2.3": {"type": "package"}}}
 
     def validate(self):
-        consumer.verify_restored_candidates(self.assets, self.cache, self.feed, "1.2.3", self.package)
+        consumer.verify_restored_candidates(self.assets, self.cache, self.feed, "1.2.3", (self.package,))
+
+    def test_composed_consumer_pins_both_candidate_packages(self):
+        project = self.root / "Composed"
+        consumer.write_consumer(project, consumer.COMPOSED_PACKAGES, "1.2.3")
+        expected = {"Hexalith.Timesheets.Server", "Hexalith.Timesheets.Projections"}
+        references = ET.parse(project / "Consumer.csproj").findall("./ItemGroup/PackageReference")
+        versions = ET.parse(project / "Directory.Packages.props").findall("./ItemGroup/PackageVersion")
+        self.assertEqual(len(references), len(expected))
+        self.assertEqual(len(versions), len(expected))
+        self.assertEqual({reference.attrib["Include"] for reference in references}, expected)
+        self.assertEqual({(version.attrib["Include"], version.attrib["Version"]) for version in versions},
+                         {(package_id, "[1.2.3]") for package_id in expected})
+        self.assertFalse(ET.parse(project / "Consumer.csproj").findall("./ItemGroup/ProjectReference"))
+
+    def test_composed_restore_refuses_either_missing_candidate(self):
+        for missing in consumer.COMPOSED_PACKAGES:
+            with self.subTest(missing=missing), self.assertRaisesRegex(ValueError, f"Wrong restored candidate version: {missing}"):
+                installed = next(package_id for package_id in consumer.COMPOSED_PACKAGES if package_id != missing)
+                assets = {"libraries": {installed + "/1.2.3": {"type": "package"}}}
+                consumer.verify_restored_candidates(assets, self.cache, self.feed, "1.2.3", consumer.COMPOSED_PACKAGES)
+
+    def test_isolated_projections_restore_refuses_server(self):
+        assets = {"libraries": {package_id + "/1.2.3": {"type": "package"} for package_id in consumer.COMPOSED_PACKAGES}}
+        with self.assertRaisesRegex(ValueError, "Server leaked into the isolated Projections restore"):
+            consumer.verify_restored_candidates(assets, self.cache, self.feed, "1.2.3", ("Hexalith.Timesheets.Projections",))
 
     def test_exact_restored_candidate_bytes_and_local_source_pass(self):
         self.validate()
