@@ -25,6 +25,15 @@ internal static class ExternalContributionRequestContext
         if (workload?.Claims.Any(claim => claim.Type.StartsWith(
             EventStoreWorkloadAuthenticationDefaults.BindingClaimPrefix, StringComparison.Ordinal)) == true)
         {
+            if (workload.Claims.Any(claim =>
+                claim.Type.StartsWith(EventStoreWorkloadAuthenticationDefaults.BindingClaimPrefix, StringComparison.Ordinal)
+                && claim.Type is not (EventStoreWorkloadAuthenticationDefaults.TenantBindingClaimType
+                    or EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType
+                    or EventStoreWorkloadAuthenticationDefaults.DomainBindingClaimType)))
+            {
+                return null;
+            }
+
             tenant = ReadBinding(workload, EventStoreWorkloadAuthenticationDefaults.TenantBindingClaimType);
             actor = ReadBinding(workload, EventStoreWorkloadAuthenticationDefaults.ActorBindingClaimType);
             string? domain = ReadBinding(workload, EventStoreWorkloadAuthenticationDefaults.DomainBindingClaimType);
@@ -36,24 +45,43 @@ internal static class ExternalContributionRequestContext
             }
 
             // Downstream gateway assertions resolve Party evidence from this same request principal.
-            AddNormalizedClaims(httpContext, new Claim("tenant_id", tenant), new Claim("party_id", actor));
+            List<Claim> normalized = [];
+            if (!string.Equals(user.FindFirst("tenant_id")?.Value, tenant, StringComparison.Ordinal))
+            {
+                normalized.Add(new Claim("tenant_id", tenant));
+            }
+
+            if (!string.Equals(user.FindFirst("party_id")?.Value, actor, StringComparison.Ordinal))
+            {
+                normalized.Add(new Claim("party_id", actor));
+            }
+
+            if (normalized.Count > 0)
+            {
+                AddNormalizedClaims(httpContext, [.. normalized]);
+            }
         }
         else
         {
-            string[] tenants = ReadEvidence(user.Claims.Where(claim => claim.Type is "tenant_id" or "tenant"));
-            string[] actors = ReadEvidence(user.FindAll("party_id"));
-            if (actors.Length == 0)
+            if (user.Claims.Any(claim =>
+                claim.Type is "tenant_id" or "tenant" or "party_id" or ClaimTypes.NameIdentifier
+                && string.IsNullOrWhiteSpace(claim.Value)))
             {
-                actors = ReadEvidence(user.FindAll(ClaimTypes.NameIdentifier).Where(claim => !IsWorkloadSubject(claim.Value)));
+                return null;
             }
 
-            if (tenants.Length > 1 || actors.Length > 1)
+            string[] tenants = ReadEvidence(user.Claims.Where(claim => claim.Type is "tenant_id" or "tenant"));
+            string[] partyIds = ReadEvidence(user.FindAll("party_id"));
+            string[] subjects = ReadEvidence(user.FindAll(ClaimTypes.NameIdentifier).Where(claim => !IsWorkloadSubject(claim.Value)));
+            if (tenants.Length > 1 || partyIds.Length > 1 || subjects.Length > 1
+                || (partyIds.Length == 1 && subjects.Length == 1
+                    && !string.Equals(partyIds[0], subjects[0], StringComparison.Ordinal)))
             {
                 return null;
             }
 
             tenant = tenants.SingleOrDefault();
-            actor = actors.SingleOrDefault();
+            actor = partyIds.SingleOrDefault() ?? subjects.SingleOrDefault();
             if (actor is not null && !IsWorkloadSubject(actor)
                 && HttpContextTimesheetsTrustedContextAccessor.ResolveActorId(user) != actor)
             {

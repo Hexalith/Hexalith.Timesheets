@@ -543,6 +543,30 @@ public sealed partial class MagicLinkConfirmationCapabilityCommandServiceTests
     }
 
     [Fact]
+    public async Task MagicLinkCapabilityCannotOverwriteWorkloadConfirmedEntry()
+    {
+        Fixture fixture = AuthorizedProjectFixture();
+        MagicLinkConfirmationCapabilityCommandService service = fixture.CreateService();
+        TimeEntryState entry = RecordedExternalState();
+        entry.Apply(new TimeEntryContributorConfirmed(
+            TimeEntryId(),
+            Contributor(),
+            Context().Tenant!,
+            ConfirmedAtUtc().AddMinutes(-1),
+            new ExternalContributionSource("supplier-api", "workload-confirm-1")));
+
+        MagicLinkConfirmationUseResult result = await service.ConfirmAsync(
+            Context(), "opaque-once", ConfirmCommand(), IssuedState(), entry,
+            ConfirmedAtUtc(), TestContext.Current.CancellationToken);
+
+        TimesheetsDomainResult timeEntryResult = result.TimeEntryResult.ShouldNotBeNull().DomainResult.ShouldNotBeNull();
+        timeEntryResult.IsRejection.ShouldBeTrue();
+        TimesheetsRejection rejection = timeEntryResult.Events.ShouldHaveSingleItem().ShouldBeOfType<TimesheetsRejection>();
+        rejection.Code.ShouldBe(TimesheetsRejectionCode.ValidationFailed);
+        rejection.FieldErrors.ShouldContain(error => error.Field == "source" && error.Code == "already-confirmed");
+    }
+
+    [Fact]
     public async Task AdjustMagicLinkUpdatesDraftExternalValuesThenConsumesCapability()
     {
         Fixture fixture = AuthorizedProjectFixture();

@@ -610,6 +610,37 @@ public sealed class MagicLinkEventStoreDomainProcessorTests
     }
 
     [Theory]
+    [InlineData("inconsistent-owner")]
+    [InlineData("foreign-capability-tenant")]
+    public async Task ConfirmationCommitPreservesReplayScopeAcrossJsonSnapshots(string scenario)
+    {
+        var (loader, service, external, guard) = ExpiryDependencies(partyAllowed: true);
+        var processor = new MagicLinkEventStoreDomainProcessor(loader, service, external, TimeProvider.System);
+        TimeEntryRecorded recorded = Recorded();
+        TimeEntryState state = new();
+        state.Apply(recorded);
+        state.Apply(new MagicLinkConfirmationCapabilityRevoked(
+            new("cap-snapshot"),
+            new TenantReference(scenario == "foreign-capability-tenant" ? "tenant-2" : "tenant-1"),
+            new PartyReference("operator-1"),
+            DateTimeOffset.UnixEpoch,
+            new("timesheets", "revoke-snapshot"))
+        {
+            TimeEntryId = scenario == "inconsistent-owner" ? new TimeEntryId("foreign-entry") : recorded.TimeEntryId
+        });
+
+        JsonElement snapshot = JsonSerializer.SerializeToElement(state, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        var currentState = new DomainServiceCurrentState(snapshot, [], 2, 2);
+
+        DomainResult result = await processor.ProcessAsync(ConfirmationEnvelope(), currentState, TestContext.Current.CancellationToken);
+
+        result.IsNoOp.ShouldBeTrue();
+        result.IsRejection.ShouldBeFalse();
+        result.Events.ShouldBeEmpty();
+        await guard.DidNotReceive().AuthorizeAsync(Arg.Any<TimesheetsAuthorizationRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
     [InlineData(nameof(CommitMagicLinkIssue))]
     [InlineData(nameof(CommitMagicLinkUse))]
     [InlineData(nameof(CommitMagicLinkTransition))]

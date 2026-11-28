@@ -113,7 +113,7 @@ public static class TimeEntry
         TimeEntryState? state,
         TenantReference? tenant,
         DateTimeOffset confirmedAtUtc)
-        => Confirm(command, state, tenant, confirmedAtUtc, requireSingleConfirmation: true);
+        => Confirm(command, state, tenant, confirmedAtUtc, allowMagicLinkReconfirmation: false);
 
     /// <summary>Records confirmation for a separately authorized, single-use magic-link capability.</summary>
     internal static TimesheetsDomainResult HandleMagicLinkConfirmation(
@@ -121,22 +121,22 @@ public static class TimeEntry
         TimeEntryState? state,
         TenantReference? tenant,
         DateTimeOffset confirmedAtUtc)
-        => Confirm(command, state, tenant, confirmedAtUtc, requireSingleConfirmation: false);
+        => Confirm(command, state, tenant, confirmedAtUtc, allowMagicLinkReconfirmation: true);
 
     private static TimesheetsDomainResult Confirm(
         ConfirmExternalTimeEntry command,
         TimeEntryState? state,
         TenantReference? tenant,
         DateTimeOffset confirmedAtUtc,
-        bool requireSingleConfirmation)
+        bool allowMagicLinkReconfirmation)
     {
         ArgumentNullException.ThrowIfNull(command);
 
         List<TimesheetsFieldError> errors = [];
         ValidateExternalConfirmation(command, state, tenant, confirmedAtUtc, errors);
-        if (requireSingleConfirmation && state?.IsRecorded == true)
+        if (state?.IsRecorded == true)
         {
-            ValidatePriorConfirmation(command, state, tenant, errors);
+            ValidatePriorConfirmation(command, state, tenant, allowMagicLinkReconfirmation, errors);
         }
 
         if (errors.Count > 0)
@@ -1058,6 +1058,7 @@ public static class TimeEntry
         ConfirmExternalTimeEntry command,
         TimeEntryState state,
         TenantReference? tenant,
+        bool allowMagicLinkReconfirmation,
         List<TimesheetsFieldError> errors)
     {
         if (state.ContributorConfirmationSource is null && state.ConfirmedContributor is null
@@ -1070,7 +1071,9 @@ public static class TimeEntry
         {
             errors.Add(new("source", "required", "Recorded confirmation must have an external source."));
         }
-        else if (state.ContributorConfirmationSource != command.Source)
+        else if (state.ContributorConfirmationSource != command.Source
+            && !(allowMagicLinkReconfirmation
+                && string.Equals(state.ContributorConfirmationSource.SourceSystem, "magic-link", StringComparison.Ordinal)))
         {
             errors.Add(new("source", "already-confirmed", "Time Entry is already confirmed with a different external source."));
         }

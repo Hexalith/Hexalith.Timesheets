@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
@@ -12,6 +13,7 @@ namespace Hexalith.Timesheets.Endpoints;
 
 public static class ExternalContributionEndpoints
 {
+    private static readonly ConditionalWeakTable<JsonSerializerOptions, JsonSerializerOptions> _strictBodyJsonOptions = new();
     public static IEndpointRouteBuilder MapTimesheetsExternalContributionEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -57,7 +59,7 @@ public static class ExternalContributionEndpoints
                 ConfirmExternalTimeEntry? command;
                 try
                 {
-                    command = body?.Deserialize<ConfirmExternalTimeEntry>(jsonOptions.Value.SerializerOptions);
+                    command = body?.Deserialize<ConfirmExternalTimeEntry>(StrictBodyJsonOptions(jsonOptions.Value.SerializerOptions));
                 }
                 catch (Exception exception) when (exception is JsonException or ArgumentException)
                 {
@@ -71,13 +73,9 @@ public static class ExternalContributionEndpoints
                     return InvalidConfirmationBody();
                 }
 
-                if (ExternalContributionRequestContext.Resolve(httpContext) is not { } identity)
-                {
-                    return ToTransportResult(false);
-                }
-
+                (string? TenantId, string? ActorId)? identity = ExternalContributionRequestContext.Resolve(httpContext);
                 var context = TimesheetsServerRequestContext.FromTrustedSources(
-                    identity.TenantId, identity.ActorId, httpContext.TraceIdentifier);
+                    identity?.TenantId, identity?.ActorId, httpContext.TraceIdentifier);
                 bool accepted = await service.ConfirmAsync(
                     context,
                     command,
@@ -90,6 +88,12 @@ public static class ExternalContributionEndpoints
 
         return endpoints;
     }
+
+    private static JsonSerializerOptions StrictBodyJsonOptions(JsonSerializerOptions source)
+        => _strictBodyJsonOptions.GetValue(source, static options => new JsonSerializerOptions(options)
+        {
+            AllowDuplicateProperties = false
+        });
 
     private static IResult InvalidConfirmationBody()
         => Results.Problem(

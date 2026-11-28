@@ -39,7 +39,11 @@ public sealed class TimeEntryConfirmationSubmissionService(
     private const int MaxStreamEvents = 10_000;
     private const long MaxStreamPayloadBytes = 16 * 1024 * 1024;
 
-    private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _strictJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        RespectRequiredConstructorParameters = true,
+        AllowDuplicateProperties = false
+    };
     private static readonly EventStorePayloadProtectionMetadata _unprotected = EventStorePayloadProtectionMetadata.Unprotected();
     private static readonly EventStorePayloadProtectionMetadata _legacyUnprotected = EventStorePayloadProtectionMetadataCarrier.Legacy();
 
@@ -117,13 +121,14 @@ public sealed class TimeEntryConfirmationSubmissionService(
 
         try
         {
-            TimesheetsAuthorizationDecision coarseDecision = await _accessGuard.AuthorizeAsync(
-                new TimesheetsAuthorizationRequest(context, TimesheetsOperation.Confirmation)
-                {
-                    Contributor = command.Contributor
-                },
-                deadline.Token).AsTask().WaitAsync(deadline.Token).ConfigureAwait(false);
-            deadline.Token.ThrowIfCancellationRequested();
+            TimesheetsAuthorizationDecision coarseDecision = await AwaitWithinDeadlineAsync(
+                _accessGuard.AuthorizeAsync(
+                    new TimesheetsAuthorizationRequest(context, TimesheetsOperation.Confirmation)
+                    {
+                        Contributor = command.Contributor
+                    },
+                    deadline.Token),
+                deadline.Token).ConfigureAwait(false);
             if (!coarseDecision.IsAuthorized)
             {
                 return RecordAndReturn(false, ExternalConfirmationLog.PolicyRefusal);
@@ -143,13 +148,14 @@ public sealed class TimeEntryConfirmationSubmissionService(
                 return RecordAndReturn(false, ExternalConfirmationLog.IndeterminateCommit);
             }
 
-            TimeEntryConfirmationCommandResult decision = await _externalContributionService.ConfirmAsync(
-                context,
-                command,
-                state,
-                confirmedAtUtc,
-                deadline.Token).AsTask().WaitAsync(deadline.Token).ConfigureAwait(false);
-            deadline.Token.ThrowIfCancellationRequested();
+            TimeEntryConfirmationCommandResult decision = await AwaitWithinDeadlineAsync(
+                _externalContributionService.ConfirmAsync(
+                    context,
+                    command,
+                    state,
+                    confirmedAtUtc,
+                    deadline.Token),
+                deadline.Token).ConfigureAwait(false);
             if (!decision.WasDispatched || decision.DomainResult is null || decision.DomainResult.IsRejection)
             {
                 return RecordAndReturn(false, ExternalConfirmationLog.PolicyRefusal);
@@ -200,13 +206,14 @@ public sealed class TimeEntryConfirmationSubmissionService(
                     return RecordAndReturn(false, ExternalConfirmationLog.IndeterminateCommit);
                 }
 
-                TimeEntryConfirmationCommandResult refreshedDecision = await _externalContributionService.ConfirmAsync(
-                    context,
-                    command,
-                    refreshedState,
-                    confirmedAtUtc,
-                    deadline.Token).AsTask().WaitAsync(deadline.Token).ConfigureAwait(false);
-                deadline.Token.ThrowIfCancellationRequested();
+                TimeEntryConfirmationCommandResult refreshedDecision = await AwaitWithinDeadlineAsync(
+                    _externalContributionService.ConfirmAsync(
+                        context,
+                        command,
+                        refreshedState,
+                        confirmedAtUtc,
+                        deadline.Token),
+                    deadline.Token).ConfigureAwait(false);
                 return refreshedDecision.WasDispatched
                     && refreshedDecision.DomainResult?.IsNoOp == true
                     && HasVerifiedStoredConfirmation(refreshedEvents, context, command, messageId)
@@ -599,8 +606,7 @@ public sealed class TimeEntryConfirmationSubmissionService(
             throw new InvalidOperationException("A recognized EventStore event payload is invalid.");
         }
 
-        using JsonDocument document = JsonDocument.Parse(streamEvent.Payload);
-        object payload = JsonSerializer.Deserialize(document.RootElement, eventType, _jsonOptions)
+        object payload = JsonSerializer.Deserialize(streamEvent.Payload, eventType, _strictJsonOptions)
             ?? throw new InvalidOperationException("A recognized EventStore event has a null payload.");
 
         return payload switch
@@ -683,8 +689,22 @@ public sealed class TimeEntryConfirmationSubmissionService(
             return null;
         }
 
-        TimeEntryContributorConfirmed? confirmed =
-            MagicLinkDurableSubmissionService.Deserialize<TimeEntryContributorConfirmed>(streamEvent);
+        if (!string.Equals(streamEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase)
+            || streamEvent.Payload is not { Length: > 0 })
+        {
+            return null;
+        }
+
+        TimeEntryContributorConfirmed? confirmed;
+        try
+        {
+            confirmed = JsonSerializer.Deserialize<StoredTimeEntryConfirmed>(streamEvent.Payload, _strictJsonOptions)?.Event;
+        }
+        catch (Exception exception) when (exception is JsonException or ArgumentException)
+        {
+            return null;
+        }
+
         return confirmed is not null
             && confirmed.TimeEntryId == command.TimeEntryId
             && confirmed.Contributor == command.Contributor
@@ -694,6 +714,30 @@ public sealed class TimeEntryConfirmationSubmissionService(
             && confirmed.ConfirmedAtUtc.Offset == TimeSpan.Zero
                 ? confirmed
                 : null;
+    }
+
+    private static Task<T> AwaitWithinDeadlineAsync<T>(ValueTask<T> operation, CancellationToken deadlineToken)
+    {
+        if (operation.IsCompletedSuccessfully)
+        {
+            T result = operation.Result;
+            deadlineToken.ThrowIfCancellationRequested();
+            return Task.FromResult(result);
+        }
+
+        return AwaitSlowAsync(operation.AsTask(), deadlineToken);
+
+        static async Task<T> AwaitSlowAsync(Task<T> task, CancellationToken token)
+        {
+            _ = task.ContinueWith(
+                static faulted => _ = faulted.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default);
+            T result = await task.WaitAsync(token).ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
+            return result;
+        }
     }
 
     private static bool IsRejectedStatus(

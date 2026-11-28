@@ -366,17 +366,23 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         using var host = new ComposedConfirmationHost(storage);
         using HttpClient client = host.CreateClient();
         var initialCalls = host.BoundaryCalls;
-        (string Domain, string? Actor, string? InstalledTenant)[] refusedBindings =
+        (string Domain, string? Actor, Claim[] ExtraClaims, Dictionary<string, string>? ExtraBindings)[] refusedBindings =
         [
-            ("timesheets", null, null),
-            ("foreign", "party-1", null),
-            ("timesheets", "workload:eventstore", null),
-            ("timesheets", "party-1", "tenant-2")
+            ("timesheets", null, [], null),
+            ("foreign", "party-1", [], null),
+            ("timesheets", "workload:eventstore", [], null),
+            ("timesheets", "party-1", [new Claim("tenant_id", "tenant-2")], null),
+            ("timesheets", "party-1", [new Claim("party_id", "party-2")], null),
+            ("timesheets", "party-1", [new Claim(ClaimTypes.NameIdentifier, "party-2")], null),
+            ("timesheets", "party-1", [], new Dictionary<string, string>
+            {
+                [EventStoreWorkloadAuthenticationDefaults.ProjectionTypeBindingClaimType] = "unexpected-projection"
+            })
         ];
 
-        foreach (var (domain, actor, installedTenant) in refusedBindings)
+        foreach (var (domain, actor, extraClaims, extraBindings) in refusedBindings)
         {
-            host.SetSignedBindings(domain, actor, installedTenant);
+            host.SetSignedBindings(domain, actor, extraClaims, extraBindings);
             using HttpResponseMessage record = await host.PostWorkloadAsync(
                 client, "/api/timesheets/external-contributions/", RecordCommand(entryId));
             using HttpResponseMessage confirm = await host.PostWorkloadAsync(
@@ -387,6 +393,43 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
         host.BoundaryCalls.ShouldBe(initialCalls);
         storage.ShouldBeEmpty();
+        string[] logs = host.Logs.MessagesFor(typeof(TimeEntryConfirmationSubmissionService).FullName!);
+        logs.Count(msg => msg.Contains("outcome=policy-refusal", StringComparison.Ordinal)).ShouldBe(refusedBindings.Length);
+    }
+
+    [Fact]
+    public async Task ConflictingOrBlankNonBindingClaimsFailBeforeDispatch()
+    {
+        var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
+        var entryId = new TimeEntryId("confirm-nonbinding-conflict-entry");
+        using var host = new ComposedConfirmationHost(storage);
+        using HttpClient client = host.CreateClient();
+        var initialCalls = host.BoundaryCalls;
+        Claim[][] refusedClaims =
+        [
+            [new Claim("tenant_id", "tenant-1"), new Claim("tenant", "tenant-2"), new Claim("party_id", "party-1")],
+            [new Claim("tenant_id", "tenant-1"), new Claim("party_id", "party-1"), new Claim("party_id", "party-2")],
+            [new Claim("tenant_id", "tenant-1"), new Claim(ClaimTypes.NameIdentifier, "party-1"), new Claim(ClaimTypes.NameIdentifier, "party-2")],
+            [new Claim("tenant_id", "tenant-1"), new Claim("party_id", " "), new Claim("party_id", "party-1")],
+            [new Claim("tenant_id", "tenant-1"), new Claim("party_id", " "), new Claim(ClaimTypes.NameIdentifier, "party-1")],
+            [new Claim("tenant_id", "tenant-1"), new Claim("party_id", "party-1"), new Claim(ClaimTypes.NameIdentifier, "party-2")]
+        ];
+
+        foreach (Claim[] claims in refusedClaims)
+        {
+            host.SetRawRequestClaims(claims);
+            using HttpResponseMessage record = await host.PostWorkloadAsync(
+                client, "/api/timesheets/external-contributions/", RecordCommand(entryId));
+            using HttpResponseMessage confirm = await host.PostWorkloadAsync(
+                client, $"/api/timesheets/external-contributions/{entryId.Value}/confirm", ConfirmCommand(entryId));
+            record.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+            confirm.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        }
+
+        host.BoundaryCalls.ShouldBe(initialCalls);
+        storage.ShouldBeEmpty();
+        string[] logs = host.Logs.MessagesFor(typeof(TimeEntryConfirmationSubmissionService).FullName!);
+        logs.Count(msg => msg.Contains("outcome=policy-refusal", StringComparison.Ordinal)).ShouldBe(refusedClaims.Length);
     }
 
     [Fact]
@@ -396,20 +439,22 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         using var host = new ComposedConfirmationHost(storage);
         using HttpClient client = host.CreateClient();
         var initialCalls = host.BoundaryCalls;
-        (string Contributor, string Source, HttpStatusCode Status)[] invalidEvidence =
+        (string Payload, HttpStatusCode Status)[] invalidPayloads =
         [
-            ("null", """{"sourceSystem":"supplier-api","externalRequestId":"confirm-1"}""", HttpStatusCode.Forbidden),
-            ("""{"partyId":" "}""", """{"sourceSystem":"supplier-api","externalRequestId":"confirm-1"}""", HttpStatusCode.BadRequest),
-            ("""{"partyId":"party-1"}""", "null", HttpStatusCode.Forbidden),
-            ("""{"partyId":"party-1"}""", """{"sourceSystem":" ","externalRequestId":"confirm-1"}""", HttpStatusCode.BadRequest),
-            ("""{"partyId":"party-1"}""", """{"sourceSystem":"supplier-api","externalRequestId":" "}""", HttpStatusCode.BadRequest)
+            ("""{"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":null,"source":{"sourceSystem":"supplier-api","externalRequestId":"confirm-1"}}""", HttpStatusCode.Forbidden),
+            ("""{"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":{"partyId":" "},"source":{"sourceSystem":"supplier-api","externalRequestId":"confirm-1"}}""", HttpStatusCode.BadRequest),
+            ("""{"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":{"partyId":"party-1"},"source":null}""", HttpStatusCode.Forbidden),
+            ("""{"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":{"partyId":"party-1"},"source":{"sourceSystem":" ","externalRequestId":"confirm-1"}}""", HttpStatusCode.BadRequest),
+            ("""{"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":{"partyId":"party-1"},"source":{"sourceSystem":"supplier-api","externalRequestId":" "}}""", HttpStatusCode.BadRequest),
+            ("[]", HttpStatusCode.BadRequest),
+            ("""{"timeEntryId":123}""", HttpStatusCode.BadRequest),
+            ("""{"timeEntryId":{"value":"confirm-invalid-entry"},"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":{"partyId":"party-1"},"source":{"sourceSystem":"supplier-api","externalRequestId":"confirm-1"}}""", HttpStatusCode.BadRequest)
         ];
 
-        foreach (var (contributor, source, status) in invalidEvidence)
+        foreach (var (payload, status) in invalidPayloads)
         {
             using HttpResponseMessage response = await host.PostWorkloadRawJsonAsync(
-                client, "/api/timesheets/external-contributions/confirm-invalid-entry/confirm",
-                $$"""{"timeEntryId":{"value":"confirm-invalid-entry"},"contributor":{{contributor}},"source":{{source}}}""");
+                client, "/api/timesheets/external-contributions/confirm-invalid-entry/confirm", payload);
             response.StatusCode.ShouldBe(status);
             string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
             body.ShouldContain("External contribution request was not accepted.");
@@ -706,10 +751,29 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             ];
         }
 
-        public void SetSignedBindings(string domain, string? actor, string? installedTenant)
+        public void SetRawRequestClaims(params Claim[] claims)
         {
-            _requestBindings = SignedBindings(domain, actor);
-            _requestClaims = installedTenant is not null ? [new Claim("tenant_id", installedTenant)] : [];
+            _requestBindings = null;
+            _requestClaims = claims;
+        }
+
+        public void SetSignedBindings(
+            string domain,
+            string? actor,
+            Claim[]? extraClaims = null,
+            Dictionary<string, string>? extraBindings = null)
+        {
+            Dictionary<string, string> bindings = SignedBindings(domain, actor);
+            if (extraBindings is not null)
+            {
+                foreach ((string key, string value) in extraBindings)
+                {
+                    bindings[key] = value;
+                }
+            }
+
+            _requestBindings = bindings;
+            _requestClaims = extraClaims ?? [];
         }
 
         private static Dictionary<string, string> SignedBindings(string domain, string? actor)

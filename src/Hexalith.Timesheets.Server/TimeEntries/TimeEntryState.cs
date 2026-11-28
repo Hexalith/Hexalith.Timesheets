@@ -9,9 +9,14 @@ namespace Hexalith.Timesheets.Server.TimeEntries;
 
 public sealed class TimeEntryState
 {
-    private TimeEntryId? _replayedEntryId;
-    private TenantReference? _replayedTenant;
-    private bool _hasInconsistentReplayScope;
+    /// <summary>Gets the earliest Time Entry owner identifier observed during event replay.</summary>
+    public TimeEntryId? ReplayedEntryId { get; private set; }
+
+    /// <summary>Gets the earliest tenant observed during event replay.</summary>
+    public TenantReference? ReplayedTenant { get; private set; }
+
+    /// <summary>Gets whether replayed events contained missing or conflicting owner or tenant scope.</summary>
+    public bool HasInconsistentReplayScope { get; private set; }
 
     public bool IsRecorded { get; private set; }
 
@@ -109,8 +114,8 @@ public sealed class TimeEntryState
 
     /// <summary>Checks scope evidence from replay before a workload confirmation can use it.</summary>
     internal bool MatchesConfirmationTenant(TenantReference tenant)
-        => !_hasInconsistentReplayScope
-            && (_replayedTenant is null || _replayedTenant == tenant)
+        => !HasInconsistentReplayScope
+            && (ReplayedTenant is null || ReplayedTenant == tenant)
             && (SubmissionTenant is null || SubmissionTenant == tenant)
             && (ApprovalTenant is null || ApprovalTenant == tenant)
             && (CorrectionTenant is null || CorrectionTenant == tenant)
@@ -395,17 +400,17 @@ public sealed class TimeEntryState
             ObserveReplayOwner(timeEntryId);
         }
 
-        _hasInconsistentReplayScope |= tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId)
-            || (_replayedTenant is not null && _replayedTenant != tenant);
-        _replayedTenant ??= tenant;
+        HasInconsistentReplayScope |= tenant is null || string.IsNullOrWhiteSpace(tenant.TenantId)
+            || (ReplayedTenant is not null && ReplayedTenant != tenant);
+        ReplayedTenant ??= tenant;
     }
 
     private void ObserveReplayOwner(TimeEntryId? timeEntryId)
     {
-        _hasInconsistentReplayScope |= timeEntryId is null || string.IsNullOrWhiteSpace(timeEntryId.Value)
+        HasInconsistentReplayScope |= timeEntryId is null || string.IsNullOrWhiteSpace(timeEntryId.Value)
             || (TimeEntryId is not null && TimeEntryId != timeEntryId)
-            || (_replayedEntryId is not null && _replayedEntryId != timeEntryId);
-        _replayedEntryId ??= timeEntryId;
+            || (ReplayedEntryId is not null && ReplayedEntryId != timeEntryId);
+        ReplayedEntryId ??= timeEntryId;
     }
 
     private void RequireState(TimeEntryApprovalState required)

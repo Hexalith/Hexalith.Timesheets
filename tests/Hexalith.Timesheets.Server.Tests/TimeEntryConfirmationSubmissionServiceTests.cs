@@ -947,6 +947,138 @@ public sealed class TimeEntryConfirmationSubmissionServiceTests
         logger.Entries.ShouldHaveSingleItem().Message.ShouldContain("outcome=indeterminate-commit");
     }
 
+    [Theory]
+    [InlineData("foreign-submitted-tenant")]
+    [InlineData("foreign-approved-tenant")]
+    [InlineData("foreign-recorded-entry")]
+    public async Task PreSubmitForeignEventIdentityOnMatchingHeaderPageLogsIndeterminateCommit(string scenario)
+    {
+        ConfirmExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        ITimesheetsAccessGuard guard = AllowAllGuard();
+        StreamReadEvent[] events = scenario switch
+        {
+            "foreign-submitted-tenant" =>
+            [
+                StoredRecordedEvent(1, command),
+                OwnerEvent(2, new StoredTimeEntrySubmitted(new TimeEntrySubmitted(
+                    command.TimeEntryId,
+                    command.Contributor,
+                    new TenantReference("tenant-2"),
+                    ConfirmedAtUtc.AddMinutes(-20),
+                    new TimeEntrySubmissionId("submit-1"),
+                    TimeEntrySubmissionScope.SelectedEntries,
+                    TimeEntryApprovalState.Submitted)))
+            ],
+            "foreign-approved-tenant" =>
+            [
+                .. OwnerEvents(command, TimeEntryApprovalState.Submitted),
+                OwnerEvent(3, new TimeEntryApproved(
+                    command.TimeEntryId,
+                    new PartyReference("approver-1"),
+                    new TenantReference("tenant-2"),
+                    ConfirmedAtUtc.AddMinutes(-10),
+                    new TimeEntryApprovalDecisionId("decision-1"),
+                    TimeEntryApprovalState.Approved,
+                    new ApprovalAuthoritySourceAttribution(
+                        ApprovalAuthorityAction.EntryApproval,
+                        ApprovalAuthoritySource.ProjectApprover,
+                        ApprovalAuthorityDecisionState.Allowed,
+                        "policy-key",
+                        "v1",
+                        ProjectionFreshnessMetadata.Fresh),
+                    TimeEntryApprovalScope.IndividualEntry))
+            ],
+            _ => [StoredRecordedEvent(1, command with { TimeEntryId = new TimeEntryId("entry-2") })]
+        };
+        gateway.ReadWorkloadStreamAsync(Arg.Is<StreamReadRequest>(request => request.FromSequence == 0), Arg.Any<CancellationToken>())
+            .Returns(Page(events, fromSequence: 0));
+        var logger = new CapturingLogger<TimeEntryConfirmationSubmissionService>();
+        TimeEntryConfirmationSubmissionService service = CreateService(gateway, guard, logger);
+
+        (await service.ConfirmAsync(Context(), command, ConfirmedAtUtc, TestContext.Current.CancellationToken))
+            .ShouldBeFalse();
+
+        await guard.Received(1).AuthorizeAsync(
+            Arg.Is<TimesheetsAuthorizationRequest>(req => req.Project == null && req.Work == null),
+            Arg.Any<CancellationToken>());
+        await guard.DidNotReceive().AuthorizeAsync(
+            Arg.Is<TimesheetsAuthorizationRequest>(req => req.Project != null || req.Work != null),
+            Arg.Any<CancellationToken>());
+        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+        logger.Entries.ShouldHaveSingleItem().Message.ShouldContain("outcome=indeterminate-commit");
+    }
+
+    [Theory]
+    [InlineData("duplicate-matching")]
+    [InlineData("prior-non-matching-then-matching")]
+    public async Task MultipleOrMixedStoredConfirmationEventsLogPolicyRefusal(string scenario)
+    {
+        ConfirmExternalTimeEntry command = Command();
+        TimesheetsRequestContext context = Context();
+        string messageId = TimeEntryConfirmationSubmissionService.CreateMessageId(context.Tenant!, context.Actor!, command);
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        StreamReadEvent firstConfirmation = scenario == "duplicate-matching"
+            ? StoredConfirmedEvent(2, command, context.Tenant!, ConfirmedAtUtc.AddMinutes(-2), messageId)
+            : StoredConfirmedEvent(
+                2,
+                command with { Source = new ExternalContributionSource("magic-link", "cap-1") },
+                context.Tenant!,
+                ConfirmedAtUtc.AddMinutes(-2),
+                "other-message-id");
+        StreamReadEvent secondConfirmation = StoredConfirmedEvent(3, command, context.Tenant!, ConfirmedAtUtc.AddMinutes(-1), messageId);
+        gateway.ReadWorkloadStreamAsync(Arg.Is<StreamReadRequest>(request => request.FromSequence == 0), Arg.Any<CancellationToken>())
+            .Returns(Page([StoredRecordedEvent(1, command), firstConfirmation, secondConfirmation], fromSequence: 0));
+        var logger = new CapturingLogger<TimeEntryConfirmationSubmissionService>();
+        TimeEntryConfirmationSubmissionService service = CreateService(gateway, AllowAllGuard(), logger);
+
+        (await service.ConfirmAsync(context, command, ConfirmedAtUtc, TestContext.Current.CancellationToken))
+            .ShouldBeFalse();
+
+        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+        logger.Entries.ShouldHaveSingleItem().Message.ShouldContain("outcome=policy-refusal");
+    }
+
+    [Theory]
+    [InlineData("owner-replay")]
+    [InlineData("committed-readback")]
+    public async Task DuplicateJsonPropertiesInStoredEventsLogIndeterminateCommit(string stage)
+    {
+        ConfirmExternalTimeEntry command = Command();
+        TimesheetsRequestContext context = Context();
+        string messageId = TimeEntryConfirmationSubmissionService.CreateMessageId(context.Tenant!, context.Actor!, command);
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        StreamReadEvent recorded = StoredRecordedEvent(1, command);
+        if (stage == "owner-replay")
+        {
+            string rawRecorded = System.Text.Encoding.UTF8.GetString(recorded.Payload);
+            byte[] duplicatePayload = System.Text.Encoding.UTF8.GetBytes(
+                rawRecorded.Replace("\"event\":{", "\"event\":{\"timeEntryId\":{\"value\":\"evil\"},", StringComparison.Ordinal));
+            gateway.ReadWorkloadStreamAsync(Arg.Is<StreamReadRequest>(request => request.FromSequence == 0), Arg.Any<CancellationToken>())
+                .Returns(Page([recorded with { Payload = duplicatePayload }], fromSequence: 0));
+        }
+        else
+        {
+            StreamReadEvent confirmed = StoredConfirmedEvent(2, command, context.Tenant!, ConfirmedAtUtc, messageId);
+            string rawConfirmed = System.Text.Encoding.UTF8.GetString(confirmed.Payload);
+            byte[] duplicatePayload = System.Text.Encoding.UTF8.GetBytes(
+                rawConfirmed.Replace("\"event\":{", "\"event\":{\"tenant\":{\"tenantId\":\"tenant-2\"},", StringComparison.Ordinal));
+            gateway.ReadWorkloadStreamAsync(Arg.Is<StreamReadRequest>(request => request.FromSequence == 0), Arg.Any<CancellationToken>())
+                .Returns(Page([recorded], fromSequence: 0));
+            gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+                .Returns(CompletedStatus(messageId, 2));
+            gateway.ReadWorkloadStreamAsync(Arg.Is<StreamReadRequest>(request => request.FromSequence == 1), Arg.Any<CancellationToken>())
+                .Returns(Page([confirmed with { Payload = duplicatePayload }], fromSequence: 1));
+        }
+
+        var logger = new CapturingLogger<TimeEntryConfirmationSubmissionService>();
+        TimeEntryConfirmationSubmissionService service = CreateService(gateway, AllowAllGuard(), logger);
+
+        (await service.ConfirmAsync(context, command, ConfirmedAtUtc, TestContext.Current.CancellationToken))
+            .ShouldBeFalse();
+        logger.Entries.ShouldHaveSingleItem().Message.ShouldContain("outcome=indeterminate-commit");
+    }
+
     [Fact]
     public async Task TransientOwnerFailureAndStaleCommittedPageAreRetriedUsingValidatedPollingOptions()
     {
