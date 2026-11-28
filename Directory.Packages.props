@@ -11,9 +11,9 @@
   <Import Project="$(Hexalith3BuildPackageProps)" Condition="'$(HexalithVersionsLoaded)' != 'true'" />
   <!-- Compatible dependency versions are supplied by the current shared Builds catalog. -->
   <!-- Older standalone Builds catalogs omit this consumer contract. Supply its
-       published 1.0.2 pin only when the imported catalog has no exact entry. -->
+       published 2.0.0 pin only when the imported catalog has no exact entry. -->
   <ItemGroup>
-    <PackageVersion Include="Hexalith.Works.Contracts" Version="1.0.2"
+    <PackageVersion Include="Hexalith.Works.Contracts" Version="2.0.0"
                     Condition="'@(PackageVersion->WithMetadataValue('Identity', 'Hexalith.Works.Contracts'))' == ''" />
   </ItemGroup>
   <!-- Keep the Timesheets Aspire hosting packages aligned with the AppHost SDK.
