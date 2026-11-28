@@ -198,6 +198,30 @@ public sealed class RuntimeRegistrationTests
     }
 
     [Fact]
+    public void ServerKernelResolvesRecordingAndDurableSubmissionWithTheRegisteredClock()
+    {
+        var clock = new PollingTestTimeProvider();
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        IServiceCollection services = new ServiceCollection();
+        services.AddSingleton(gateway);
+        services.AddSingleton<TimeProvider>(clock);
+        services.AddTimesheetsServerKernel();
+
+        using ServiceProvider provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true });
+        using IServiceScope scope = provider.CreateScope();
+        MagicLinkDurableSubmissionService durable = scope.ServiceProvider.GetRequiredService<MagicLinkDurableSubmissionService>();
+        durable.Clock.ShouldBeSameAs(clock);
+        TimeEntryRecordSubmissionService recording = scope.ServiceProvider.GetRequiredService<TimeEntryRecordSubmissionService>();
+        scope.ServiceProvider.GetRequiredService<TimeEntryRecordSubmissionService>().ShouldBeSameAs(recording);
+
+        IOptions<MagicLinkSubmissionPollingOptions> nullValueOptions = Substitute.For<IOptions<MagicLinkSubmissionPollingOptions>>();
+        nullValueOptions.Value.Returns((MagicLinkSubmissionPollingOptions)null!);
+        Should.Throw<OptionsValidationException>(() => new MagicLinkDurableSubmissionService(gateway, nullValueOptions));
+        Should.Throw<OptionsValidationException>(() => new TimeEntryRecordSubmissionService(
+            gateway, durable, ExternalContributionPolicyOptions.Default, pollingOptions: nullValueOptions));
+    }
+
+    [Fact]
     public void ServerKernelPreservesAPreRegisteredEventStoreGatewayOverride()
     {
         IServiceCollection services = new ServiceCollection();

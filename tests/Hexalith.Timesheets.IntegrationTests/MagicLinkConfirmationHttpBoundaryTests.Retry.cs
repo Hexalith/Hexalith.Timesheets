@@ -91,6 +91,22 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         var record = new CommitTimeEntryRecord(RecordingCommand(new("catalog-record"), "catalog-request"),
             Tenant(), Contributor(), ObservedAtUtc);
         AssertChanged(record, record with { Actor = new PartyReference("different-contributor") }, record.Command.TimeEntryId.Value);
+        AssertChanged(record, record with { Tenant = new TenantReference("different-tenant") }, record.Command.TimeEntryId.Value);
+        AssertChanged(record, record with
+        {
+            Command = record.Command with { DurationMinutes = record.Command.DurationMinutes + 1 }
+        }, record.Command.TimeEntryId.Value);
+        IDeclaredIdempotencyIntentAdapter recordAdapter = adapters.Single(candidate =>
+            candidate.CommandType == typeof(CommitTimeEntryRecord).FullName);
+        IdempotencyIntentCommand recordInput = new(recordAdapter.CommandType, Tenant().TenantId, "timesheets",
+            record.Command.TimeEntryId.Value, JsonSerializer.SerializeToUtf8Bytes(record, JsonOptions), null);
+        IdempotencyCanonicalIntent recordIntent = recordAdapter.CreateIntent(recordInput);
+        IdempotencyCanonicalIntent recordRetryIntent = recordAdapter.CreateIntent(recordInput with
+        {
+            Payload = JsonSerializer.SerializeToUtf8Bytes(record with { SubmittedAtUtc = ObservedAtUtc.AddHours(3) }, JsonOptions)
+        });
+        recordIntent.SemanticPayload.SequenceEqual(recordRetryIntent.SemanticPayload).ShouldBeTrue();
+
         var confirmation = new CommitTimeEntryConfirmation(
             new ConfirmExternalTimeEntry(new("catalog-confirm"), Contributor(), new("supplier-api", "catalog-confirm-1")),
             Tenant(), Contributor(), ObservedAtUtc);

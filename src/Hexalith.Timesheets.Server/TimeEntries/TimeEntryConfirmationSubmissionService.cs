@@ -768,7 +768,8 @@ public sealed class TimeEntryConfirmationSubmissionService(
             && status.FailureReason is null
             && status.Retryable is not true;
 
-    private static bool HasSupportedEventMetadata(StreamReadEvent streamEvent)
+    /// <summary>Checks supported event and payload versions and canonical unprotected metadata.</summary>
+    internal static bool HasSupportedEventMetadata(StreamReadEvent streamEvent)
         => streamEvent.MetadataVersion == 1
             && (streamEvent.PayloadVersion is null or 1)
             && (streamEvent.ProtectionMetadata is null

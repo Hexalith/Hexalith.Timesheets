@@ -1,8 +1,10 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 
 using Hexalith.EventStore.Client.Gateway;
 using Hexalith.EventStore.Contracts.Commands;
+using Hexalith.EventStore.Contracts.Security;
 using Hexalith.EventStore.Contracts.Streams;
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
@@ -15,6 +17,7 @@ using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Server.TimeEntries;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 using NSubstitute;
@@ -436,17 +439,22 @@ public sealed class TimeEntryRecordSubmissionServiceTests
         using CancellationTokenSource caller = CancellationTokenSource.CreateLinkedTokenSource(
             TestContext.Current.CancellationToken);
         IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        var logger = new RecordingOutcomeTestLogger();
+        CancellationToken transportToken = default;
         gateway.GetWorkloadCommandStatusAsync("tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<CommandStatusQueryResponse?>(null));
         gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
-            .Returns(_ =>
+            .Returns(call =>
             {
+                transportToken = call.ArgAt<CancellationToken>(1);
                 caller.Cancel();
                 return Task.FromCanceled<SubmitCommandResponse>(caller.Token);
             });
 
-        await Should.ThrowAsync<OperationCanceledException>(() => Service(gateway).SubmitAsync(
+        await Should.ThrowAsync<OperationCanceledException>(() => Service(gateway, logger: logger).SubmitAsync(
             Context(), Command(), DateTimeOffset.UnixEpoch, caller.Token));
+        transportToken.IsCancellationRequested.ShouldBeTrue();
+        logger.Messages.ShouldBeEmpty();
         await gateway.Received(1).GetWorkloadCommandStatusAsync(
             "tenant-1", Arg.Any<string>(), Arg.Any<CancellationToken>());
         await gateway.DidNotReceive().ReadWorkloadStreamAsync(
@@ -471,12 +479,577 @@ public sealed class TimeEntryRecordSubmissionServiceTests
             Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData("stalled")]
+    [InlineData("stale")]
+    [InlineData("408")]
+    [InlineData("429")]
+    [InlineData("missing-stream")]
+    [InlineData("501")]
+    [InlineData("503")]
+    [InlineData("http")]
+    [InlineData("timeout")]
+    [InlineData("canceled")]
+    public async Task TransientReadbackRetriesAtPollIntervalWithoutResubmitting(string scenario)
+    {
+        var clock = new PollingTestTimeProvider();
+        var logger = new RecordingOutcomeTestLogger();
+        SubmitExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false);
+        StreamReadPage committed = Page(Recorded(command), messageId);
+        var stalled = new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        CancellationToken firstReadToken = default;
+        int readCount = 0;
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                if (++readCount > 1)
+                {
+                    return Task.FromResult(committed);
+                }
+
+                firstReadToken = call.ArgAt<CancellationToken>(1);
+                return scenario switch
+                {
+                    "stalled" => stalled.Task,
+                    "stale" => Task.FromResult(committed with
+                    {
+                        Events = [],
+                        Metadata = new StreamReadMetadata(0, null, null, 0, 0, false, null)
+                    }),
+                    "http" => Task.FromException<StreamReadPage>(new HttpRequestException("transient")),
+                    "timeout" => Task.FromException<StreamReadPage>(new TimeoutException("transient")),
+                    "canceled" => Task.FromCanceled<StreamReadPage>(new CancellationToken(true)),
+                    "missing-stream" => Task.FromException<StreamReadPage>(new EventStoreGatewayException(404, "Not Found",
+                        reasonCode: StreamReplayReasonCodes.MissingStream)),
+                    _ => Task.FromException<StreamReadPage>(new EventStoreGatewayException(int.Parse(scenario), "transient"))
+                };
+            });
+
+        Task<bool> pending = Service(gateway, polling: Polling(100, 25), logger: logger, clock: clock).SubmitAsync(
+            Context(), command, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+
+        readCount.ShouldBe(1);
+        if (scenario == "stalled")
+        {
+            firstReadToken.IsCancellationRequested.ShouldBeFalse();
+            clock.Advance(TimeSpan.FromMilliseconds(25));
+            firstReadToken.IsCancellationRequested.ShouldBeTrue();
+        }
+
+        await clock.WaitForPollAsync(TestContext.Current.CancellationToken);
+        readCount.ShouldBe(1);
+        clock.Advance(TimeSpan.FromMilliseconds(10));
+        (await pending.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeTrue();
+        stalled.TrySetResult(committed);
+        readCount.ShouldBe(2);
+        logger.Messages.ShouldHaveSingleItem().ShouldContain("outcome=committed");
+        await gateway.Received(1).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReadbackStopsAtTheDeadlineStartedBeforeSubmissionAndUsesSnapshottedLimits()
+    {
+        var clock = new PollingTestTimeProvider();
+        var logger = new RecordingOutcomeTestLogger();
+        SubmitExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false);
+        var accepted = new TaskCompletionSource<SubmitCommandResponse>(TaskCreationOptions.RunContinuationsAsynchronously);
+        gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>()).Returns(accepted.Task);
+        var stalled = new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var readStarted = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                readStarted.TrySetResult(call.ArgAt<CancellationToken>(1));
+                return stalled.Task;
+            });
+
+        MagicLinkSubmissionPollingOptions limits = Polling(100, 250);
+        TimeEntryRecordSubmissionService service = Service(gateway, polling: limits, logger: logger, clock: clock);
+        limits.Timeout = TimeSpan.FromSeconds(5);
+        limits.ReadbackTimeout = TimeSpan.FromMilliseconds(10);
+        Task<bool> pending = service.SubmitAsync(Context(), command, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+        clock.Advance(TimeSpan.FromMilliseconds(70));
+        accepted.SetResult(new SubmitCommandResponse(messageId, MessageId: messageId));
+        CancellationToken readToken = await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        clock.Advance(TimeSpan.FromMilliseconds(29));
+        pending.IsCompleted.ShouldBeFalse();
+        readToken.IsCancellationRequested.ShouldBeFalse();
+        clock.Advance(TimeSpan.FromMilliseconds(1));
+
+        (await pending.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBeFalse();
+        readToken.IsCancellationRequested.ShouldBeTrue();
+        stalled.TrySetResult(Page(Recorded(command), messageId));
+        logger.Messages.ShouldHaveSingleItem().ShouldContain("outcome=indeterminate-commit");
+        await gateway.Received(1).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CallerCancellationDuringStatusPollOrReadbackCancelsTransportWithoutLogging(bool readback)
+    {
+        using CancellationTokenSource caller = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
+        var logger = new RecordingOutcomeTestLogger();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false);
+        var transport = new TaskCompletionSource<CancellationToken>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stalledStatus = new TaskCompletionSource<CommandStatusQueryResponse?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var stalledRead = new TaskCompletionSource<StreamReadPage>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (readback)
+        {
+            gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+                .Returns(call =>
+                {
+                    transport.TrySetResult(call.ArgAt<CancellationToken>(1));
+                    return stalledRead.Task;
+                });
+        }
+        else
+        {
+            gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+                .Returns(_ => Task.FromResult<CommandStatusQueryResponse?>(null), call =>
+                {
+                    transport.TrySetResult(call.ArgAt<CancellationToken>(2));
+                    return stalledStatus.Task;
+                });
+        }
+
+        Task<bool> pending = Service(gateway, logger: logger).SubmitAsync(Context(), Command(), DateTimeOffset.UnixEpoch, caller.Token);
+        CancellationToken transportToken = await transport.Task.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken);
+        caller.Cancel();
+
+        await Should.ThrowAsync<OperationCanceledException>(() => pending.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken));
+        transportToken.IsCancellationRequested.ShouldBeTrue();
+        stalledStatus.TrySetResult(null);
+        stalledRead.TrySetResult(Page(Recorded(Command()), messageId));
+        logger.Messages.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("missing-tenant")]
+    [InlineData("missing-actor")]
+    [InlineData("missing-entry")]
+    [InlineData("missing-target")]
+    [InlineData("missing-contributor")]
+    [InlineData("missing-activity")]
+    [InlineData("missing-source")]
+    [InlineData("default-instant")]
+    [InlineData("non-utc-instant")]
+    public async Task MissingIdentityAndInvalidInputLogARefusalWithoutGatewayCalls(string scenario)
+    {
+        TimesheetsRequestContext context = Context();
+        SubmitExternalTimeEntry command = Command();
+        DateTimeOffset utc = DateTimeOffset.UnixEpoch;
+        switch (scenario)
+        {
+            case "missing-tenant": context = context with { Tenant = null }; break;
+            case "missing-actor": context = context with { Actor = null }; break;
+            case "missing-entry": command = command with { TimeEntryId = null! }; break;
+            case "missing-target": command = command with { Target = null! }; break;
+            case "missing-contributor": command = command with { Contributor = null! }; break;
+            case "missing-activity": command = command with { ActivityTypeId = null! }; break;
+            case "missing-source": command = command with { Source = null! }; break;
+            case "default-instant": utc = default; break;
+            case "non-utc-instant": utc = utc.ToOffset(TimeSpan.FromHours(1)); break;
+        }
+
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        var logger = new RecordingOutcomeTestLogger();
+        using Activity activity = new Activity("recording").Start();
+
+        (await Service(gateway, logger: logger).SubmitAsync(context, command, utc, TestContext.Current.CancellationToken)).ShouldBeFalse();
+
+        string message = logger.Messages.ShouldHaveSingleItem();
+        message.ShouldContain("outcome=policy-refusal");
+        message.ShouldContain($"trace={activity.TraceId.ToHexString()}");
+        gateway.ReceivedCalls().ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("domain-rejection", "policy-refusal")]
+    [InlineData("infra-rejection", "indeterminate-commit")]
+    [InlineData("wrong-message", "indeterminate-commit")]
+    [InlineData("wrong-correlation", "indeterminate-commit")]
+    [InlineData("wrong-tenant", "indeterminate-commit")]
+    [InlineData("wrong-domain", "indeterminate-commit")]
+    [InlineData("wrong-owner", "indeterminate-commit")]
+    [InlineData("publish-failed", "indeterminate-commit")]
+    [InlineData("timed-out", "indeterminate-commit")]
+    public async Task RejectedStatusIsAPolicyRefusalOnlyWhenAuthoritative(string scenario, string outcome)
+    {
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId);
+        CommandStatus terminal = scenario switch
+        {
+            "publish-failed" => CommandStatus.PublishFailed,
+            "timed-out" => CommandStatus.TimedOut,
+            _ => CommandStatus.Rejected
+        };
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+            .Returns(Status(messageId) with
+            {
+                Status = terminal.ToString(),
+                StatusCode = (int)terminal,
+                RejectionEventType = scenario == "infra-rejection" ? null : "private-domain-failure",
+                FailureReason = scenario == "infra-rejection" ? "private-infra-failure" : null,
+                MessageId = scenario == "wrong-message" ? "other-message" : messageId,
+                CorrelationId = scenario == "wrong-correlation" ? "other-correlation" : messageId,
+                TenantId = scenario == "wrong-tenant" ? "other-tenant" : "tenant-1",
+                Domain = scenario == "wrong-domain" ? "other-domain" : "timesheets",
+                AggregateId = scenario == "wrong-owner" ? "other-owner" : "entry-1"
+            });
+        var logger = new RecordingOutcomeTestLogger();
+        using Activity activity = new Activity("recording").Start();
+
+        (await Service(gateway, logger: logger).SubmitAsync(Context(), Command(), DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken))
+            .ShouldBeFalse();
+
+        string message = logger.Messages.ShouldHaveSingleItem();
+        message.ShouldContain($"outcome={outcome} trace={activity.TraceId.ToHexString()}");
+        foreach (string sensitive in new[] { "tenant-1", "contributor-1", "entry-1", "request-1", "supplier", "private-", messageId })
+        {
+            message.ShouldNotContain(sensitive);
+        }
+
+        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+        await gateway.DidNotReceive().ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("valid")]
+    [InlineData("missing-page-metadata")]
+    [InlineData("wrong-page-range")]
+    [InlineData("wrong-page-count")]
+    [InlineData("wrong-latest-sequence")]
+    [InlineData("wrong-truncation")]
+    [InlineData("unexpected-continuation")]
+    [InlineData("wrong-causation")]
+    [InlineData("wrong-metadata-version")]
+    [InlineData("wrong-payload-version")]
+    [InlineData("wrong-protection")]
+    [InlineData("noncanonical-unprotected")]
+    [InlineData("duplicate-json")]
+    [InlineData("missing-required-json")]
+    public async Task PreflightCompletedRequiresStrictVerifiedEvidenceAndDoesNotSubmit(string scenario)
+    {
+        SubmitExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId);
+        StreamReadPage page = Page(Recorded(command), messageId);
+        StreamReadEvent stored = page.Events[0];
+        string json = Encoding.UTF8.GetString(stored.Payload);
+        stored = scenario switch
+        {
+            "wrong-causation" => stored with { CausationId = "other-command" },
+            "wrong-metadata-version" => stored with { MetadataVersion = 2 },
+            "wrong-payload-version" => stored with { PayloadVersion = 2 },
+            "wrong-protection" => stored with { ProtectionMetadata = EventStorePayloadProtectionMetadata.ProviderOpaque("test") },
+            "noncanonical-unprotected" => stored with { ProtectionMetadata = EventStorePayloadProtectionMetadata.Unprotected() with { Scheme = "test" } },
+            "duplicate-json" => stored with { Payload = Encoding.UTF8.GetBytes(json.Replace("\"durationMinutes\":60", "\"durationMinutes\":60,\"durationMinutes\":60", StringComparison.Ordinal)) },
+            "missing-required-json" => stored with { Payload = Encoding.UTF8.GetBytes(json.Replace(",\"aiMetrics\":null", "", StringComparison.Ordinal)) },
+            _ => stored with { PayloadVersion = 1, ProtectionMetadata = EventStorePayloadProtectionMetadata.Unprotected() }
+        };
+        page = page with
+        {
+            Events = [stored],
+            Metadata = scenario switch
+            {
+                "missing-page-metadata" => null!,
+                "wrong-page-range" => page.Metadata with { FromSequence = 1 },
+                "wrong-page-count" => page.Metadata with { EventCount = 0 },
+                "wrong-latest-sequence" => page.Metadata with { LatestSequence = 0 },
+                "wrong-truncation" => page.Metadata with { IsTruncated = true },
+                "unexpected-continuation" => page.Metadata with { NextContinuationToken = new("unexpected") },
+                _ => page.Metadata
+            }
+        };
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>()).Returns(page);
+        var logger = new RecordingOutcomeTestLogger();
+
+        bool accepted = await Service(gateway, logger: logger).SubmitAsync(Context(), command, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+
+        accepted.ShouldBe(scenario == "valid");
+        logger.Messages.ShouldHaveSingleItem().ShouldContain(accepted ? "outcome=already-recorded" : "outcome=indeterminate-commit");
+        await gateway.Received(1).ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("missing-status", true, true)]
+    [InlineData("missing-stream", true, true)]
+    [InlineData("unrelated-later-event", true, true)]
+    [InlineData("lost-acknowledgement", false, false)]
+    [InlineData("wrong-acknowledgement-correlation", false, false)]
+    [InlineData("wrong-stored-actor", false, true)]
+    [InlineData("extra-event-from-command", false, true)]
+    [InlineData("extra-event-causation-only", false, true)]
+    [InlineData("extra-event-correlation-only", false, true)]
+    [InlineData("status-fault", false, false)]
+    [InlineData("observed-processing", false, false)]
+    [InlineData("observed-received", false, false)]
+    [InlineData("terminal-after-read", false, true)]
+    public async Task MissingStatusRecoveryRequiresMatchingAcknowledgementAndExactOwnerEvidence(
+        string scenario, bool expected, bool shouldRead)
+    {
+        SubmitExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false);
+        if (scenario == "lost-acknowledgement")
+        {
+            gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromException<SubmitCommandResponse>(new HttpRequestException("acknowledgement lost")));
+        }
+        else if (scenario == "wrong-acknowledgement-correlation")
+        {
+            gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+                .Returns(new SubmitCommandResponse("other-correlation", MessageId: messageId));
+        }
+
+        CommandStatusQueryResponse inProgress = Status(messageId) with
+        {
+            Status = nameof(CommandStatus.Received), StatusCode = (int)CommandStatus.Received,
+            EventCount = null, CommittedEventSequence = null
+        };
+        int statusChecks = 0;
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+            .Returns(_ =>
+            {
+                if (++statusChecks == 1)
+                {
+                    return Task.FromResult<CommandStatusQueryResponse?>(null);
+                }
+
+                return scenario switch
+                {
+                    "status-fault" => Task.FromException<CommandStatusQueryResponse?>(new EventStoreGatewayException(503, "status unavailable")),
+                    "observed-received" => Task.FromResult<CommandStatusQueryResponse?>(inProgress),
+                    "observed-processing" when statusChecks == 2 => Task.FromResult<CommandStatusQueryResponse?>(inProgress with
+                    {
+                        Status = nameof(CommandStatus.Processing), StatusCode = (int)CommandStatus.Processing, Domain = "timesheets"
+                    }),
+                    "terminal-after-read" when statusChecks == 3 => Task.FromResult<CommandStatusQueryResponse?>(inProgress with
+                    {
+                        Status = nameof(CommandStatus.PublishFailed), StatusCode = (int)CommandStatus.PublishFailed, Domain = "timesheets"
+                    }),
+                    _ => Task.FromResult<CommandStatusQueryResponse?>(null)
+                };
+            });
+        StreamReadEvent first = Page(Recorded(command), messageId).Events[0] with
+        {
+            UserId = scenario == "wrong-stored-actor" ? "another-actor" : Context().Actor!.PartyId
+        };
+        StreamReadEvent[] events = scenario switch
+        {
+            "extra-event-from-command" => [first, first with { SequenceNumber = 2, MessageId = "extra-event" }],
+            "extra-event-causation-only" => [first, first with { SequenceNumber = 2, MessageId = "extra-event", CorrelationId = "another-command" }],
+            "extra-event-correlation-only" => [first, first with { SequenceNumber = 2, MessageId = "extra-event", CausationId = "another-command" }],
+            "unrelated-later-event" => [first, first with
+            {
+                SequenceNumber = 2, MessageId = "later-event", CausationId = "another-command", CorrelationId = "another-command"
+            }],
+            _ => [first]
+        };
+        StreamReadPage page = new("tenant-1", "timesheets", "entry-1", events,
+            new StreamReadMetadata(0, null, events.Length, events.Length, events.Length, false, null));
+        int streamReads = 0;
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(_ => scenario == "missing-stream" && ++streamReads == 1
+                ? Task.FromException<StreamReadPage>(new EventStoreGatewayException(404, "Not Found", reasonCode: StreamReplayReasonCodes.MissingStream))
+                : Task.FromResult(page));
+        var logger = new RecordingOutcomeTestLogger();
+
+        bool accepted = await Service(gateway, polling: Polling(150, 50), logger: logger).SubmitAsync(
+            Context(), command, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+
+        accepted.ShouldBe(expected);
+        logger.Messages.ShouldHaveSingleItem().ShouldContain(expected ? "outcome=committed" : "outcome=indeterminate-commit");
+        await gateway.Received(1).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+        if (shouldRead)
+        {
+            await gateway.Received().ReadWorkloadStreamAsync(
+                Arg.Is<StreamReadRequest>(request => request.FromSequence == 0 && request.ToSequence == null && request.PageSize == 100),
+                Arg.Any<CancellationToken>());
+        }
+        else
+        {
+            await gateway.DidNotReceive().ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    public async Task MissingStatusRecoveryReadsLookaheadWhenRecordingEndsTheFirstPage()
+    {
+        SubmitExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false);
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<CommandStatusQueryResponse?>(null));
+        StreamReadEvent recorded = Page(Recorded(command), messageId).Events[0] with { UserId = Context().Actor!.PartyId };
+        StreamReadEvent LaterOrRejectedEvent(int sequence) => recorded with
+        {
+            SequenceNumber = sequence, EventTypeName = typeof(MagicLinkCommitRejected).FullName!,
+            MessageId = $"event-{sequence}", CorrelationId = $"command-{sequence}", CausationId = $"command-{sequence}"
+        };
+        StreamReadEvent[] firstPage = [.. Enumerable.Range(1, 99).Select(LaterOrRejectedEvent), recorded with { SequenceNumber = 100 }];
+        gateway.ReadWorkloadStreamAsync(Arg.Is<StreamReadRequest>(request => request.FromSequence == 0), Arg.Any<CancellationToken>())
+            .Returns(new StreamReadPage("tenant-1", "timesheets", "entry-1", firstPage,
+                new StreamReadMetadata(0, null, 100, 101, 100, true, null)));
+        gateway.ReadWorkloadStreamAsync(Arg.Is<StreamReadRequest>(request => request.FromSequence == 100), Arg.Any<CancellationToken>())
+            .Returns(new StreamReadPage("tenant-1", "timesheets", "entry-1", [LaterOrRejectedEvent(101)],
+                new StreamReadMetadata(100, null, 101, 101, 1, false, null)));
+
+        (await Service(gateway).SubmitAsync(Context(), command, DateTimeOffset.UnixEpoch,
+            TestContext.Current.CancellationToken)).ShouldBeTrue();
+
+        await gateway.Received(1).ReadWorkloadStreamAsync(
+            Arg.Is<StreamReadRequest>(request => request.FromSequence == 100 && request.PageSize == 100), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("completed", true, 0)]
+    [InlineData("missing", true, 1)]
+    [InlineData("unavailable", false, 0)]
+    public async Task RecordingRetriesTransientPreflightBeforeDecidingToSubmit(string scenario, bool accepted, int submits)
+    {
+        var clock = new PollingTestTimeProvider();
+        SubmitExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false);
+        int statusChecks = 0;
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+            .Returns(_ => ++statusChecks == 1 || scenario == "unavailable"
+                ? Task.FromException<CommandStatusQueryResponse?>(new EventStoreGatewayException(503, "status unavailable"))
+                : Task.FromResult<CommandStatusQueryResponse?>(scenario == "missing" && statusChecks == 2 ? null : Status(messageId)));
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Page(Recorded(command), messageId));
+
+        Task<bool> pending = Service(gateway, polling: Polling(100, 50), clock: clock).SubmitAsync(
+            Context(), command, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+        await clock.WaitForPollAsync(TestContext.Current.CancellationToken);
+        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+        clock.Advance(TimeSpan.FromMilliseconds(scenario == "unavailable" ? 100 : 10));
+
+        (await pending.WaitAsync(TimeSpan.FromSeconds(2), TestContext.Current.CancellationToken)).ShouldBe(accepted);
+        await gateway.Received(submits).SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CompletedStatusWithWrongCorrelationCannotAuthorizeReadback()
+    {
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId);
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+            .Returns(Status(messageId) with { CorrelationId = "other-correlation" });
+        var logger = new RecordingOutcomeTestLogger();
+
+        (await Service(gateway, logger: logger).SubmitAsync(Context(), Command(), DateTimeOffset.UnixEpoch,
+            TestContext.Current.CancellationToken)).ShouldBeFalse();
+
+        logger.Messages.ShouldHaveSingleItem().ShouldContain("outcome=indeterminate-commit");
+        await gateway.DidNotReceive().ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+        await gateway.DidNotReceive().SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task TransportFailureIsOmittedFromStructuredRecordingDiagnostics()
+    {
+        const string sensitive = "private provider credential and command body";
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out _);
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<StreamReadPage>(new EventStoreGatewayException(404, sensitive,
+                reasonCode: "unrelated", innerException: new HttpRequestException(sensitive))));
+        var logger = new RecordingOutcomeTestLogger();
+        using Activity activity = new Activity("recording-transport").Start();
+
+        (await Service(gateway, logger: logger).SubmitAsync(Context(), Command(), DateTimeOffset.UnixEpoch,
+            TestContext.Current.CancellationToken)).ShouldBeFalse();
+
+        var entry = logger.Entries.ShouldHaveSingleItem();
+        entry.Exception.ShouldBeNull();
+        entry.EventId.Id.ShouldBe(1404);
+        entry.Level.ShouldBe(LogLevel.Warning);
+        entry.Fields.Select(field => field.Key).ShouldBe(["Outcome", "TraceId", "{OriginalFormat}"], ignoreOrder: true);
+        entry.Fields.Single(field => field.Key == "Outcome").Value.ShouldBe("indeterminate-commit");
+        entry.Fields.Single(field => field.Key == "TraceId").Value.ShouldBe(activity.TraceId.ToHexString());
+        entry.Fields.ShouldAllBe(field => !field.Value!.ToString()!.Contains(sensitive, StringComparison.Ordinal));
+        logger.Messages.ShouldHaveSingleItem().ShouldNotContain(sensitive);
+        await gateway.Received(1).ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("original", true)]
+    [InlineData("same", true)]
+    [InlineData("future", false)]
+    [InlineData("default", false)]
+    [InlineData("non-utc", false)]
+    [InlineData("wrong-causation", false)]
+    public async Task SubmittedReceiptWeighsItsOriginalUtcInstantAndIdentityAgainstTheRetry(string scenario, bool expected)
+    {
+        SubmitExternalTimeEntry command = Command();
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false, count: 2);
+        DateTimeOffset requestedAt = DateTimeOffset.UnixEpoch.AddHours(1);
+        DateTimeOffset storedAt = scenario switch
+        {
+            "original" => DateTimeOffset.UnixEpoch,
+            "future" => requestedAt.AddMinutes(1),
+            "default" => default,
+            "non-utc" => requestedAt.ToOffset(TimeSpan.FromHours(1)),
+            _ => requestedAt
+        };
+        StreamReadPage page = Page(Recorded(command), messageId, Submitted(command, storedAt));
+        if (scenario == "wrong-causation")
+        {
+            page = page with { Events = [page.Events[0], page.Events[1] with { CausationId = "other-command" }] };
+        }
+
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>()).Returns(page);
+        var policy = new ExternalContributionPolicyOptions { InitialApprovalState = TimeEntryApprovalState.Submitted };
+
+        (await Service(gateway, policy).SubmitAsync(Context(), command, requestedAt, TestContext.Current.CancellationToken)).ShouldBe(expected);
+    }
+
+    [Fact]
+    public async Task LoggingFailureDoesNotReplaceOutcome()
+    {
+        IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId);
+        gateway.ReadWorkloadStreamAsync(Arg.Any<StreamReadRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Page(Recorded(Command()), messageId));
+        var logger = new RecordingOutcomeTestLogger { ThrowOnWrite = true };
+        TimeEntryRecordSubmissionService service = Service(gateway, logger: logger);
+
+        (await service.SubmitAsync(Context(), Command(), DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken)).ShouldBeTrue();
+        (await service.SubmitAsync(Context(), Command(), default, TestContext.Current.CancellationToken)).ShouldBeFalse();
+    }
+
+    private static IEventStoreGatewayClient GatewayWithCompletedStatus(out string identity, bool preflight = true, int count = 1)
+    {
+        SubmitExternalTimeEntry command = Command();
+        string messageId = MagicLinkDurableSubmissionService.CreateMessageId(JsonSerializer.Serialize(new[]
+        {
+            "record", "tenant-1", "contributor-1", command.TimeEntryId.Value, command.Source.SourceSystem, command.Source.ExternalRequestId
+        }));
+        identity = messageId;
+        IEventStoreGatewayClient gateway = Substitute.For<IEventStoreGatewayClient>();
+        CommandStatusQueryResponse status = Status(messageId) with { EventCount = count, CommittedEventSequence = count };
+        int queries = 0;
+        gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult<CommandStatusQueryResponse?>(!preflight && ++queries == 1 ? null : status));
+        gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new SubmitCommandResponse(messageId, MessageId: messageId));
+        return gateway;
+    }
+
+    private static MagicLinkSubmissionPollingOptions Polling(int timeoutMs, int readbackMs)
+        => new()
+        {
+            Timeout = TimeSpan.FromMilliseconds(timeoutMs),
+            ReadbackTimeout = TimeSpan.FromMilliseconds(readbackMs),
+            PollInterval = TimeSpan.FromMilliseconds(10)
+        };
+
     private static TimeEntryRecordSubmissionService Service(
         IEventStoreGatewayClient gateway, ExternalContributionPolicyOptions? policy = null,
-        MagicLinkSubmissionPollingOptions? polling = null)
+        MagicLinkSubmissionPollingOptions? polling = null, ILogger<TimeEntryRecordSubmissionService>? logger = null,
+        TimeProvider? clock = null)
         => new(gateway, new MagicLinkDurableSubmissionService(
-            gateway, Options.Create(polling ?? new MagicLinkSubmissionPollingOptions())),
-            policy ?? ExternalContributionPolicyOptions.Default);
+            gateway, Options.Create(new MagicLinkSubmissionPollingOptions())),
+            policy ?? ExternalContributionPolicyOptions.Default,
+            pollingOptions: polling is null ? null : Options.Create(polling), logger: logger, clock: clock);
 
     private static TimesheetsRequestContext Context()
         => new(new TenantReference("tenant-1"), new PartyReference("contributor-1"), "correlation-1");
@@ -521,13 +1094,13 @@ public sealed class TimeEntryRecordSubmissionServiceTests
         [
             new(1, typeof(StoredTimeEntryRecorded).FullName!,
                 JsonSerializer.SerializeToUtf8Bytes(stored, _jsonOptions), "json", 1,
-                recordedMessageId ?? "event-message-1", recordedCorrelation ?? messageId, null, DateTimeOffset.UtcNow, "actor-1")
+                recordedMessageId ?? "event-message-1", recordedCorrelation ?? messageId, messageId, DateTimeOffset.UtcNow, "actor-1")
         ];
         if (submitted is not null)
         {
             events.Add(new StreamReadEvent(2, typeof(StoredTimeEntrySubmitted).FullName!,
                 JsonSerializer.SerializeToUtf8Bytes(new StoredTimeEntrySubmitted(submitted), _jsonOptions), "json", 1,
-                submittedMessageId ?? "event-message-2", submittedCorrelation ?? messageId, null, DateTimeOffset.UtcNow, "actor-1"));
+                submittedMessageId ?? "event-message-2", submittedCorrelation ?? messageId, messageId, DateTimeOffset.UtcNow, "actor-1"));
         }
         return new StreamReadPage("tenant-1", "timesheets", "entry-1",
             events, new StreamReadMetadata(0, null, events.Count, events.Count, events.Count, false, null));

@@ -24,26 +24,44 @@ public static class ExternalContributionEndpoints
         group.MapPost(
             "/",
             static async Task<IResult> (
-                SubmitExternalTimeEntry command,
+                JsonElement body,
                 HttpContext httpContext,
                 TimeEntryRecordSubmissionService service,
+                TimeProvider clock,
+                IOptions<JsonOptions> jsonOptions,
                 CancellationToken cancellationToken) =>
             {
-                if (ExternalContributionRequestContext.Resolve(httpContext) is not { } identity)
+                SubmitExternalTimeEntry? command;
+                try
                 {
-                    return ToTransportResult(false);
+                    command = body.Deserialize<SubmitExternalTimeEntry>(jsonOptions.Value.SerializerOptions);
+                    if (command is null)
+                    {
+                        return Results.BadRequest();
+                    }
+                }
+                catch (JsonException)
+                {
+                    return Results.BadRequest();
+                }
+                catch (ArgumentException)
+                {
+                    // Domain value constructors reject blank or missing required values.
+                    command = null;
                 }
 
+                (string? TenantId, string? ActorId)? identity = ExternalContributionRequestContext.Resolve(httpContext);
                 var context = TimesheetsServerRequestContext.FromTrustedSources(
-                    identity.TenantId, identity.ActorId, httpContext.TraceIdentifier);
+                    identity?.TenantId, identity?.ActorId, httpContext.TraceIdentifier);
                 bool accepted = await service.SubmitAsync(
                     context,
                     command,
-                    DateTimeOffset.UtcNow,
+                    clock.GetUtcNow(),
                     cancellationToken).ConfigureAwait(false);
 
                 return ToTransportResult(accepted);
-            });
+            })
+            .Accepts<SubmitExternalTimeEntry>("application/json");
 
         group.MapPost(
             "/{timeEntryId}/confirm",

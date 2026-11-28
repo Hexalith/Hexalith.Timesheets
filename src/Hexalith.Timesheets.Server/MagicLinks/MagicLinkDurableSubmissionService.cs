@@ -24,30 +24,52 @@ namespace Hexalith.Timesheets.Server.MagicLinks;
 public sealed class MagicLinkDurableSubmissionService(
     IEventStoreGatewayClient gateway,
     IOptions<MagicLinkSubmissionPollingOptions> pollingOptions,
-    TimeEntryCommentPublicationIssuer? commentIssuer = null)
+    TimeEntryCommentPublicationIssuer? commentIssuer = null,
+    TimeProvider? clock = null)
 {
     private const string CrockfordAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
     private readonly TimeEntryCommentPublicationIssuer _commentIssuer = commentIssuer
         ?? new TimeEntryCommentPublicationIssuer();
-    private readonly TimeProvider _clock = TimeProvider.System;
-    private readonly MagicLinkSubmissionPollingOptions _polling = pollingOptions.Value.IsValid()
-        ? pollingOptions.Value
-        : throw new OptionsValidationException(
+    private readonly TimeProvider _clock = clock ?? TimeProvider.System;
+    private readonly MagicLinkSubmissionPollingOptions _polling = SnapshotPollingOptions(pollingOptions);
+
+    /// <summary>Creates a durable submission service with the system clock.</summary>
+    public MagicLinkDurableSubmissionService(
+        IEventStoreGatewayClient gateway,
+        IOptions<MagicLinkSubmissionPollingOptions> pollingOptions,
+        TimeEntryCommentPublicationIssuer? commentIssuer)
+        : this(gateway, pollingOptions, commentIssuer, null)
+    {
+    }
+
+    /// <summary>Gets the validated polling limits for consumers using the same submission coordinator.</summary>
+    internal MagicLinkSubmissionPollingOptions PollingOptions => _polling;
+
+    /// <summary>Gets the clock used to enforce submission and readback deadlines.</summary>
+    internal TimeProvider Clock => _clock;
+
+    /// <summary>Copies and validates polling limits so operation deadlines remain stable.</summary>
+    internal static MagicLinkSubmissionPollingOptions SnapshotPollingOptions(IOptions<MagicLinkSubmissionPollingOptions>? options)
+    {
+        if (options?.Value is { } configured)
+        {
+            var snapshot = new MagicLinkSubmissionPollingOptions
+            {
+                Timeout = configured.Timeout,
+                PollInterval = configured.PollInterval,
+                ReadbackTimeout = configured.ReadbackTimeout
+            };
+            if (snapshot.IsValid())
+            {
+                return snapshot;
+            }
+        }
+
+        throw new OptionsValidationException(
             nameof(MagicLinkSubmissionPollingOptions),
             typeof(MagicLinkSubmissionPollingOptions),
             ["Timeout and ReadbackTimeout must be positive and at most 30 seconds; PollInterval must be at least 10 ms and no greater than Timeout."]);
-
-    /// <summary>Creates a polling service with an explicit clock for deterministic deadline verification.</summary>
-    internal MagicLinkDurableSubmissionService(
-        IEventStoreGatewayClient gateway,
-        IOptions<MagicLinkSubmissionPollingOptions> pollingOptions,
-        TimeEntryCommentPublicationIssuer? commentIssuer,
-        TimeProvider clock)
-        : this(gateway, pollingOptions, commentIssuer)
-    {
-        ArgumentNullException.ThrowIfNull(clock);
-        _clock = clock;
     }
 
     /// <summary>
@@ -412,19 +434,27 @@ public sealed class MagicLinkDurableSubmissionService(
             .WaitAsync(probe.Token).ConfigureAwait(false);
     }
 
-    internal async Task<StreamReadPage> ReadStoredEventsAsync(StreamReadRequest request,
-        CancellationToken cancellationToken)
+    internal Task<StreamReadPage> ReadStoredEventsAsync(StreamReadRequest request, CancellationToken cancellationToken)
+        => ReadStoredEventsAsync(gateway, request, _polling.ReadbackTimeout, _clock, cancellationToken);
+
+    /// <summary>Bounds a stream read by both the per-read timeout and the enclosing deadline.</summary>
+    internal static async Task<StreamReadPage> ReadStoredEventsAsync(
+        IEventStoreGatewayClient gateway, StreamReadRequest request, TimeSpan readbackTimeout,
+        TimeProvider clock, CancellationToken cancellationToken)
     {
-        using CancellationTokenSource timeout = new(_polling.ReadbackTimeout, _clock);
+        using CancellationTokenSource timeout = new(readbackTimeout, clock);
         using CancellationTokenSource readback = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
         return await gateway.ReadWorkloadStreamAsync(request, readback.Token)
             .WaitAsync(readback.Token).ConfigureAwait(false);
     }
 
-    private static bool IsRetryableGatewayFailure(Exception exception, CancellationToken callerCancellationToken)
+    /// <summary>Identifies recoverable transport failures while preserving caller cancellation.</summary>
+    internal static bool IsRetryableGatewayFailure(
+        Exception exception, CancellationToken callerCancellationToken, bool includeAllServerErrors = false)
         => !callerCancellationToken.IsCancellationRequested
             && (exception is OperationCanceledException or TimeoutException or HttpRequestException
-                || exception is EventStoreGatewayException { StatusCode: 408 or 429 or 500 or 502 or 503 or 504 });
+                || exception is EventStoreGatewayException { StatusCode: 408 or 429 or 500 or 502 or 503 or 504 }
+                || (includeAllServerErrors && exception is EventStoreGatewayException { StatusCode: >= 500 and <= 599 }));
 
     private async Task<bool?> VerifyCommittedBatchAsync(
         CommitMagicLinkUse intent,
@@ -577,7 +607,8 @@ public sealed class MagicLinkDurableSubmissionService(
         return stored == expected;
     }
 
-    private static bool HasStoredEventIdentity(StreamReadEvent stored, string commandMessageId)
+    /// <summary>Checks that the stored event names the command as both cause and correlation.</summary>
+    internal static bool HasStoredEventIdentity(StreamReadEvent stored, string commandMessageId)
         => !string.IsNullOrWhiteSpace(stored.MessageId)
             && StringComparer.Ordinal.Equals(stored.CorrelationId, commandMessageId)
             && StringComparer.Ordinal.Equals(stored.CausationId, commandMessageId);
@@ -608,18 +639,53 @@ public sealed class MagicLinkDurableSubmissionService(
         long started = _clock.GetTimestamp();
         using CancellationTokenSource timeout = new(_polling.Timeout, _clock);
         using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+        var observed = await SubmitAndReadStatusWithPreflightAsync(
+            messageId, tenant, aggregateId, intent, commandType,
+            cancellationToken, deadline, _polling, _clock, started).ConfigureAwait(false);
+        return (observed.Status, observed.WasPresentAtPreflight);
+    }
+
+    /// <summary>Submits at most once and observes status using the caller's existing operation deadline.</summary>
+    internal async Task<(CommandStatusQueryResponse? Status, bool WasPresentAtPreflight, bool Recovered)> SubmitAndReadStatusWithPreflightAsync(
+        string messageId,
+        string tenant,
+        string aggregateId,
+        object intent,
+        Type commandType,
+        CancellationToken cancellationToken,
+        CancellationTokenSource deadline,
+        MagicLinkSubmissionPollingOptions polling,
+        TimeProvider clock,
+        long started,
+        Func<CancellationToken, Task<bool>>? tryRecoverCommit = null)
+    {
         CancellationToken deadlineToken = deadline.Token;
-        CommandStatusQueryResponse? status = await gateway.GetWorkloadCommandStatusAsync(
-            tenant, messageId, deadlineToken)
-            .WaitAsync(deadlineToken).ConfigureAwait(false);
+        CommandStatusQueryResponse? status;
+        while (true)
+        {
+            try
+            {
+                status = await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
+                    .WaitAsync(deadlineToken).ConfigureAwait(false);
+                break;
+            }
+            catch (Exception exception) when (tryRecoverCommit is not null
+                && IsRetryableGatewayFailure(exception, deadlineToken, includeAllServerErrors: true))
+            {
+                // Establish whether the command already exists before dispatching it.
+                await Task.Delay(polling.PollInterval, clock, deadlineToken).ConfigureAwait(false);
+            }
+        }
+
         bool wasPresentAtPreflight = status is not null;
+        bool canRecover = false;
         if (status is null)
         {
-            TimeSpan submitRemaining = _polling.Timeout - _clock.GetElapsedTime(started);
+            TimeSpan submitRemaining = polling.Timeout - clock.GetElapsedTime(started);
             if (submitRemaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
-                return (null, false);
+                return (null, false, false);
             }
 
             try
@@ -632,8 +698,10 @@ public sealed class MagicLinkDurableSubmissionService(
                     deadlineToken).WaitAsync(deadlineToken).ConfigureAwait(false);
                 if (accepted.MessageId != messageId)
                 {
-                    return (null, false);
+                    return (null, false, false);
                 }
+
+                canRecover = tryRecoverCommit is not null && accepted.CorrelationId == messageId;
             }
             catch (Exception) when (!deadlineToken.IsCancellationRequested)
             {
@@ -645,19 +713,34 @@ public sealed class MagicLinkDurableSubmissionService(
 
         while (true)
         {
-            TimeSpan remaining = _polling.Timeout - _clock.GetElapsedTime(started);
+            TimeSpan remaining = polling.Timeout - clock.GetElapsedTime(started);
             if (remaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
-                return (null, wasPresentAtPreflight);
+                return (null, wasPresentAtPreflight, false);
             }
 
             try
             {
                 status ??= await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
                     .WaitAsync(deadlineToken).ConfigureAwait(false);
+                if (canRecover)
+                {
+                    canRecover = status is null;
+                    if (canRecover && await tryRecoverCommit!(deadlineToken).ConfigureAwait(false))
+                    {
+                        // An observed terminal state takes precedence over the alternate proof.
+                        status = await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
+                            .WaitAsync(deadlineToken).ConfigureAwait(false);
+                        canRecover = status is null;
+                        if (canRecover)
+                        {
+                            return (status, false, true);
+                        }
+                    }
+                }
             }
-            catch (Exception exception) when (IsRetryableGatewayFailure(exception, cancellationToken))
+            catch (Exception exception) when (IsRetryableGatewayFailure(exception, cancellationToken, tryRecoverCommit is not null))
             {
                 // A transient observation fault does not justify another submission.
                 status = null;
@@ -666,20 +749,20 @@ public sealed class MagicLinkDurableSubmissionService(
             if (status?.Status is nameof(CommandStatus.Completed) or nameof(CommandStatus.Rejected)
                 or nameof(CommandStatus.PublishFailed) or nameof(CommandStatus.TimedOut))
             {
-                return (status, wasPresentAtPreflight);
+                return (status, wasPresentAtPreflight, false);
             }
 
-            remaining = _polling.Timeout - _clock.GetElapsedTime(started);
+            remaining = polling.Timeout - clock.GetElapsedTime(started);
             if (remaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
-                return (null, wasPresentAtPreflight);
+                return (null, wasPresentAtPreflight, false);
             }
 
             status = null;
             await Task.Delay(
-                remaining < _polling.PollInterval ? remaining : _polling.PollInterval,
-                _clock, deadlineToken).ConfigureAwait(false);
+                remaining < polling.PollInterval ? remaining : polling.PollInterval,
+                clock, deadlineToken).ConfigureAwait(false);
         }
     }
 
@@ -701,7 +784,7 @@ public sealed class MagicLinkDurableSubmissionService(
             && status.FailureReason is null
             && status.Retryable is not true;
 
-    internal static T? Deserialize<T>(StreamReadEvent streamEvent)
+    internal static T? Deserialize<T>(StreamReadEvent streamEvent, JsonSerializerOptions? options = null)
         where T : class
     {
         if (!string.Equals(streamEvent.SerializationFormat, "json", StringComparison.OrdinalIgnoreCase)
@@ -710,30 +793,31 @@ public sealed class MagicLinkDurableSubmissionService(
             return default;
         }
 
+        options ??= _jsonOptions;
         string eventType = streamEvent.EventTypeName.Split(',', 2)[0];
         if (StringComparer.Ordinal.Equals(eventType, typeof(T).FullName))
         {
-            return JsonSerializer.Deserialize<T>(streamEvent.Payload, _jsonOptions);
+            return JsonSerializer.Deserialize<T>(streamEvent.Payload, options);
         }
 
         object? stored = eventType switch
         {
             var name when name == typeof(StoredMagicLinkIssued).FullName =>
-                JsonSerializer.Deserialize<StoredMagicLinkIssued>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredMagicLinkIssued>(streamEvent.Payload, options)?.Event,
             var name when name == typeof(StoredMagicLinkUsed).FullName =>
-                JsonSerializer.Deserialize<StoredMagicLinkUsed>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredMagicLinkUsed>(streamEvent.Payload, options)?.Event,
             var name when name == typeof(StoredMagicLinkRevoked).FullName =>
-                JsonSerializer.Deserialize<StoredMagicLinkRevoked>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredMagicLinkRevoked>(streamEvent.Payload, options)?.Event,
             var name when name == typeof(StoredMagicLinkExpired).FullName =>
-                JsonSerializer.Deserialize<StoredMagicLinkExpired>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredMagicLinkExpired>(streamEvent.Payload, options)?.Event,
             var name when name == typeof(StoredTimeEntryConfirmed).FullName =>
-                JsonSerializer.Deserialize<StoredTimeEntryConfirmed>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredTimeEntryConfirmed>(streamEvent.Payload, options)?.Event,
             var name when name == typeof(StoredTimeEntryAdjusted).FullName =>
-                JsonSerializer.Deserialize<StoredTimeEntryAdjusted>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredTimeEntryAdjusted>(streamEvent.Payload, options)?.Event,
             var name when name == typeof(StoredTimeEntryRecorded).FullName =>
-                JsonSerializer.Deserialize<StoredTimeEntryRecorded>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredTimeEntryRecorded>(streamEvent.Payload, options)?.Event,
             var name when name == typeof(StoredTimeEntrySubmitted).FullName =>
-                JsonSerializer.Deserialize<StoredTimeEntrySubmitted>(streamEvent.Payload, _jsonOptions)?.Event,
+                JsonSerializer.Deserialize<StoredTimeEntrySubmitted>(streamEvent.Payload, options)?.Event,
             _ => null
         };
         return stored as T;

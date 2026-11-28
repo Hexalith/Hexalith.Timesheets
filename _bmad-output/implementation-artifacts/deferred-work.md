@@ -1771,3 +1771,18 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 - [LOW] Non-retryable preflight status read in pre-existing shared `MagicLinkDurableSubmissionService.SubmitAndReadStatusWithPreflightAsync` (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs:33,608-615`) — pre-existing untouched shared helper; harden transient preflight retries alongside Story 6.5.
 - [LOW] Missing envelope `MessageId`/`CorrelationId`/`CausationId` checks in `ProcessConfirmationAsync` and missing null guards on pre-existing `TimeEntryState` capability `Apply` overloads (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkEventStoreDomainProcessor.cs:383-413`, `src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryState.cs:121-148`) — align with Story 6.5 attempt-scoped `messageId` and replay consolidation.
 - [LOW] Sibling recording route `POST /api/timesheets/external-contributions/` still passes `DateTimeOffset.UtcNow` instead of injected `TimeProvider` (`src/Hexalith.Timesheets/Endpoints/ExternalContributionEndpoints.cs:40`) — pre-existing on Story 6.5 recording route.
+
+## Deferred from Story 6.5 review
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-5-bound-external-recording-readback-and-report-uncertainty.md`
+  summary: Qualify recording retry after a change to the tenant's initial approval policy.
+  evidence: The existing recording service derives the expected batch size from the current policy. Story 6.5 exercises replay with the same policy and a later clock.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-5-bound-external-recording-readback-and-report-uncertainty.md`
+  summary: Qualify the compatibility rules for recording a comment before a publication policy change and retrying afterward.
+  evidence: The pre-existing comparison can reject a replay when the current authority or publication version differs from the recorded one.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-5-bound-external-recording-readback-and-report-uncertainty.md`
+  summary: Verify and protect transport diagnostics on the installed recording gateway.
+  evidence: The SDK's workload status URL contains tenant and message identifiers. Story 6.5 qualifies the recording outcome logger and public response in a composed host. The SDK's transport diagnostics require separate live verification.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-5-bound-external-recording-readback-and-report-uncertainty.md`
+  summary: Verify actor envelope compatibility for historical recordings acknowledged through Completed status.
+  evidence: The existing Completed path binds the command's deterministic identity and stored event lineage. An additional envelope subject check requires evidence for historical actor and gateway identities.

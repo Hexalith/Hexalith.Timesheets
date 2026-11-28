@@ -621,9 +621,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         string tenantId,
         string actorPartyId,
         ConfirmExternalTimeEntry command)
-    {
-        const string CrockfordAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-        string stableInput = JsonSerializer.Serialize(new[]
+        => ExpectedMessageId(JsonSerializer.Serialize(new[]
         {
             "confirm",
             tenantId,
@@ -632,7 +630,11 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             command.Contributor.PartyId,
             command.Source.SourceSystem,
             command.Source.ExternalRequestId
-        });
+        }));
+
+    internal static string ExpectedMessageId(string stableInput)
+    {
+        const string CrockfordAlphabet = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
         byte[] digest = SHA256.HashData(Encoding.UTF8.GetBytes(stableInput));
         BigInteger number = new(digest.AsSpan(0, 16), isUnsigned: true, isBigEndian: true);
         char[] encoded = new char[26];
@@ -693,7 +695,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         message.ShouldNotContain("secret", Case.Insensitive);
     }
 
-    private sealed class ComposedConfirmationHost : WebApplicationFactory<Program>
+    internal sealed class ComposedConfirmationHost : WebApplicationFactory<Program>
     {
         private const string ChannelToken = "timesheets-confirm-test-channel-token";
         private readonly ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager> _storage;
@@ -720,7 +722,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             _pollingOptions = pollingOptions;
         }
 
-        public MutableTimeProvider Clock { get; } = new(BaseUtc);
+        public IntegrationTestTimeProvider Clock { get; } = new(BaseUtc);
 
         public TestLoggerProvider Logs { get; } = new();
 
@@ -729,6 +731,12 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         public bool LoseNextSubmitAck { get; set; }
 
         public bool FailReadbackAfterCommit { get; set; }
+
+        public Func<CancellationToken, Task>? BeforeStreamReadAsync { get; set; }
+
+        public Action? RecordingRequestCompleted { get; init; }
+
+        public bool EmitMissingStatusPlaceholder { get; set; }
 
         public (int GuardChecks, int StreamReads, int Submissions) BoundaryCalls
             => (Volatile.Read(ref _guardChecks), Volatile.Read(ref _streamReads), Volatile.Read(ref _submissions));
@@ -907,6 +915,9 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         public Task<EventEnvelope[]> ActorEventsAsync(string tenantId, string aggregateId)
             => CreateActor(tenantId, aggregateId).GetEventsAsync(0);
 
+        public Task<CommandStatusRecord?> ReadStatusAsync(string tenantId, string messageId)
+            => _statuses.ReadStatusAsync(tenantId, messageId, TestContext.Current.CancellationToken);
+
         public async Task<CommandProcessingResult> ProcessThroughActorAsync(
             CommandEnvelope envelope, IDomainServiceInvoker? invoker = null)
         {
@@ -922,14 +933,16 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             }
         }
 
-        public async Task<HttpResponseMessage> PostWorkloadAsync<T>(HttpClient client, string route, T body)
+        public async Task<HttpResponseMessage> PostWorkloadAsync<T>(
+            HttpClient client, string route, T body, CancellationToken? cancellationToken = null)
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, route)
             {
                 Content = JsonContent.Create(body, options: JsonOptions)
             };
-            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess, bindings: _requestBindings);
-            return await client.SendAsync(request, TestContext.Current.CancellationToken);
+            CancellationToken caller = cancellationToken ?? TestContext.Current.CancellationToken;
+            await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess, caller, _requestBindings);
+            return await client.SendAsync(request, caller);
         }
 
         public async Task<HttpResponseMessage> PostWorkloadRawJsonAsync(HttpClient client, string route, string rawJson)
@@ -973,6 +986,10 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             {
                 _routeCatalog.Configure(services);
                 services.Configure<InternalSurfaceOptions>(options => options.AllowOnAnyPort = true);
+                if (RecordingRequestCompleted is { } onCompleted)
+                {
+                    services.AddSingleton<IStartupFilter>(new RecordingRequestCompletionFilter(onCompleted));
+                }
 
                 services.RemoveAll<ExternalContributionPolicyOptions>();
                 services.AddSingleton(_externalPolicy);
@@ -1143,15 +1160,32 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                         [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = actor
                     });
 
+                CommandProcessingResult result;
                 await host._actorTurn.WaitAsync(cancellationToken);
                 try
                 {
-                    await host.CreateActor(request.Tenant, request.AggregateId)
+                    result = await host.CreateActor(request.Tenant, request.AggregateId)
                         .ProcessCommandAsync(envelope, cancellationToken);
                 }
                 finally
                 {
                     host._actorTurn.Release();
+                }
+
+                if (!result.Accepted && request.CommandType == typeof(CommitTimeEntryRecord).FullName)
+                {
+                    throw new EventStoreGatewayException(
+                        result.RejectionEventType is null ? 500 : 422, "Recording command was refused.");
+                }
+
+                if (host.EmitMissingStatusPlaceholder
+                    && await host._statuses.ReadStatusAsync(request.Tenant, request.MessageId, cancellationToken) is null)
+                {
+                    // Mirror the gateway's advisory Received row when an accepted duplicate has no status.
+                    await host._statuses.WriteStatusAsync(request.Tenant, request.MessageId, new CommandStatusRecord(
+                        CommandStatus.Received, DateTimeOffset.UtcNow, request.AggregateId,
+                        EventCount: null, RejectionEventType: null, FailureReason: null, TimeoutDuration: null,
+                        MessageId: request.MessageId, CorrelationId: request.CorrelationId), cancellationToken);
                 }
 
                 if (host.LoseNextSubmitAck)
@@ -1169,7 +1203,8 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 CancellationToken cancellationToken = default)
             {
                 CommandStatusRecord? status = await host._statuses.ReadStatusAsync(tenant, messageId, cancellationToken);
-                return status is null
+                // Workload status is visible only when the stored row matches the bound domain and message.
+                return status is null || status.Domain != "timesheets" || status.MessageId != messageId
                     ? null
                     : new CommandStatusQueryResponse(
                         status.CorrelationId!,
@@ -1194,6 +1229,11 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             {
                 Interlocked.Increment(ref host._streamReads);
                 request.PageSize.ShouldBeInRange(1, 1_000);
+                if (host.BeforeStreamReadAsync is { } beforeRead)
+                {
+                    await beforeRead(cancellationToken);
+                }
+
                 if (host.FailReadbackAfterCommit && request.FromSequence > 0)
                 {
                     throw new EventStoreGatewayException(503, "Simulated transient readback failure after commit.");
@@ -1211,12 +1251,14 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 }
 
                 EventEnvelope[] filtered = all
-                    .Where(item => item.SequenceNumber > request.FromSequence)
+                    .Where(item => item.SequenceNumber > request.FromSequence
+                        && (request.ToSequence is null || item.SequenceNumber <= request.ToSequence))
                     .Take(request.PageSize)
                     .ToArray();
                 long? lastReturned = filtered.Length > 0 ? filtered[^1].SequenceNumber : null;
                 long latestSequence = all[^1].SequenceNumber;
-                bool isTruncated = lastReturned is { } last && last < latestSequence;
+                bool isTruncated = lastReturned is { } last && last < (request.ToSequence ?? latestSequence)
+                    && last < latestSequence;
                 return new StreamReadPage(
                     request.Tenant,
                     request.Domain,
@@ -1301,14 +1343,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
         }
     }
 
-    private sealed class MutableTimeProvider(DateTimeOffset utcNow) : TimeProvider
-    {
-        public DateTimeOffset UtcNow { get; set; } = utcNow;
-
-        public override DateTimeOffset GetUtcNow() => UtcNow;
-    }
-
-    private sealed class TestLoggerProvider : ILoggerProvider
+    internal sealed class TestLoggerProvider : ILoggerProvider
     {
         private readonly ConcurrentQueue<(string Category, string Message)> _entries = new();
 

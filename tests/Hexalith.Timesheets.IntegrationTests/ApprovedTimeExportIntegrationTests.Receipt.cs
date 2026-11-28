@@ -449,8 +449,7 @@ public sealed partial class ApprovedTimeExportIntegrationTests
     private static ServiceProvider ReceiptServices(IApprovedTimeLedgerProjectionReader reader, FinanceReceiptActorGateway gateway,
         DateTimeOffset now, ITimesheetsAccessGuard? access = null, string tenant = "tenant-1")
     {
-        TimeProvider clock = Substitute.For<TimeProvider>();
-        clock.GetUtcNow().Returns(now);
+        TimeProvider clock = new IntegrationTestTimeProvider(now);
         var store = new InMemoryReadModelStore();
         return new ServiceCollection()
             .AddSingleton<IReadModelStore>(store).AddSingleton<IReadModelBatchStore>(store)

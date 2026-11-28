@@ -44,8 +44,10 @@ public static class TimesheetsRouteCatalogDeclarations
     /// <summary>Creates adapters that bind each command's semantic intent and authority-bearing fields.</summary>
     public static IReadOnlyList<IDeclaredIdempotencyIntentAdapter> CreateAdapters() =>
         [Adapter<CommitMagicLinkIssue>(), Adapter<CommitMagicLinkTransition>(),
-            Adapter<CommitMagicLinkUse>(), Adapter<CommitTimeEntryRecord>(),
+            Adapter<CommitMagicLinkUse>(),
             // The server clock supplies audit evidence and can advance between identical retries.
+            Adapter<CommitTimeEntryRecord>(payload => JsonSerializer.Serialize(
+                new { payload.Command, payload.Tenant, payload.Actor }, JsonSerializerOptions.Web)),
             Adapter<CommitTimeEntryConfirmation>(payload => JsonSerializer.Serialize(
                 new { payload.Command, payload.Tenant, payload.Actor }, JsonSerializerOptions.Web)),
             Adapter<CommitApprovedTimeExport>()];
