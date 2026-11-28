@@ -477,7 +477,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             storage,
             pollingOptions: new MagicLinkSubmissionPollingOptions
             {
-                Timeout = TimeSpan.FromMilliseconds(150),
+                Timeout = TimeSpan.FromSeconds(2),
                 PollInterval = TimeSpan.FromMilliseconds(15),
                 ReadbackTimeout = TimeSpan.FromMilliseconds(100)
             });
@@ -734,7 +734,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
         public Func<CancellationToken, Task>? BeforeStreamReadAsync { get; set; }
 
-        public Action? RecordingRequestCompleted { get; init; }
+        public Action<Exception?>? RecordingRequestCompleted { get; init; }
 
         public bool EmitMissingStatusPlaceholder { get; set; }
 
@@ -947,11 +947,12 @@ public sealed class ExternalContributionConfirmationPersistenceTests
             return await client.SendAsync(request, caller);
         }
 
-        public async Task<HttpResponseMessage> PostWorkloadRawJsonAsync(HttpClient client, string route, string rawJson)
+        public async Task<HttpResponseMessage> PostWorkloadRawJsonAsync(
+            HttpClient client, string route, string rawJson, string mediaType = "application/json")
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, route)
             {
-                Content = new StringContent(rawJson, Encoding.UTF8, "application/json")
+                Content = new StringContent(rawJson, Encoding.UTF8, mediaType)
             };
             await AddWorkloadHeadersAsync(request, EventStoreWorkloadOperations.DomainServiceProcess, bindings: _requestBindings);
             return await client.SendAsync(request, TestContext.Current.CancellationToken);
@@ -1162,6 +1163,16 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                         [EventStoreGatewayVerifiedOrigin.ActorExtensionKey] = actor
                     });
 
+                if (host.EmitMissingStatusPlaceholder
+                    && await host._statuses.ReadStatusAsync(request.Tenant, request.MessageId, cancellationToken) is null)
+                {
+                    // Mirror the gateway's advisory Received row before dispatching to the owner.
+                    await host._statuses.WriteStatusAsync(request.Tenant, request.MessageId, new CommandStatusRecord(
+                        CommandStatus.Received, DateTimeOffset.UtcNow, request.AggregateId,
+                        EventCount: null, RejectionEventType: null, FailureReason: null, TimeoutDuration: null,
+                        MessageId: request.MessageId, CorrelationId: request.CorrelationId), cancellationToken);
+                }
+
                 CommandProcessingResult result;
                 await host._actorTurn.WaitAsync(cancellationToken);
                 try
@@ -1178,16 +1189,6 @@ public sealed class ExternalContributionConfirmationPersistenceTests
                 {
                     throw new EventStoreGatewayException(
                         result.RejectionEventType is null ? 500 : 422, "Recording command was refused.");
-                }
-
-                if (host.EmitMissingStatusPlaceholder
-                    && await host._statuses.ReadStatusAsync(request.Tenant, request.MessageId, cancellationToken) is null)
-                {
-                    // Mirror the gateway's advisory Received row when an accepted duplicate has no status.
-                    await host._statuses.WriteStatusAsync(request.Tenant, request.MessageId, new CommandStatusRecord(
-                        CommandStatus.Received, DateTimeOffset.UtcNow, request.AggregateId,
-                        EventCount: null, RejectionEventType: null, FailureReason: null, TimeoutDuration: null,
-                        MessageId: request.MessageId, CorrelationId: request.CorrelationId), cancellationToken);
                 }
 
                 if (host.LoseNextSubmitAck)

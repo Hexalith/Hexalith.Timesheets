@@ -135,7 +135,7 @@ public sealed class ExternalContributionRecordingPersistenceTests
         var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
         SubmitExternalTimeEntry command = RecordCommand("unpublished-recording");
         string messageId = CreateMessageId(command);
-        var polling = new MagicLinkSubmissionPollingOptions { Timeout = TimeSpan.FromMilliseconds(500) };
+        var polling = new MagicLinkSubmissionPollingOptions { Timeout = TimeSpan.FromSeconds(2) };
         EventEnvelope original;
         using (var host = new ComposedConfirmationHost(storage, pollingOptions: polling))
         using (HttpClient client = host.CreateClient())
@@ -187,10 +187,10 @@ public sealed class ExternalContributionRecordingPersistenceTests
         var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
         SubmitExternalTimeEntry command = RecordCommand("canceled-recording");
         string messageId = CreateMessageId(command);
-        var requestCompleted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requestCompleted = new TaskCompletionSource<Exception?>(TaskCreationOptions.RunContinuationsAsynchronously);
         using var host = new ComposedConfirmationHost(storage)
         {
-            RecordingRequestCompleted = () => requestCompleted.TrySetResult()
+            RecordingRequestCompleted = failure => requestCompleted.TrySetResult(failure)
         };
         using HttpClient client = host.CreateClient();
         await host.SeedFreshCatalogAsync(client, Tenant);
@@ -216,7 +216,8 @@ public sealed class ExternalContributionRecordingPersistenceTests
 
         await Should.ThrowAsync<OperationCanceledException>(() => pending);
         await readEnded.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
-        await requestCompleted.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+        Exception? serverFailure = await requestCompleted.Task.WaitAsync(TimeSpan.FromSeconds(3), TestContext.Current.CancellationToken);
+        serverFailure.ShouldBeAssignableTo<OperationCanceledException>();
         transport.IsCancellationRequested.ShouldBeTrue();
         AssertOutcomes(host, command, messageId);
         AssertRecordingBatch(await host.ActorEventsAsync(Tenant, command.TimeEntryId.Value),
@@ -224,21 +225,89 @@ public sealed class ExternalContributionRecordingPersistenceTests
     }
 
     [Theory]
-    [InlineData(null)]
-    [InlineData(" ")]
-    public async Task InvalidRequiredRecordingValuesAreOpaquePolicyRefusals(string? externalRequestId)
+    [InlineData("null-source-id")]
+    [InlineData("blank-source-id")]
+    [InlineData("missing-service-date")]
+    [InlineData("null-service-date")]
+    [InlineData("default-service-date")]
+    [InlineData("missing-duration")]
+    [InlineData("zero-duration")]
+    [InlineData("negative-duration")]
+    [InlineData("missing-billable-state")]
+    [InlineData("unknown-billable-state")]
+    [InlineData("undefined-billable-state")]
+    public async Task InvalidRequiredRecordingValuesAreOpaquePolicyRefusals(string scenario)
     {
         var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
         var command = RecordCommand("invalid-recording");
         string messageId = CreateMessageId(command);
         JsonObject body = JsonSerializer.SerializeToNode(command, _jsonOptions).ShouldBeOfType<JsonObject>();
-        body["source"]!["externalRequestId"] = externalRequestId;
+        switch (scenario)
+        {
+            case "null-source-id": body["source"]!["externalRequestId"] = null; break;
+            case "blank-source-id": body["source"]!["externalRequestId"] = " "; break;
+            case "missing-service-date": body.Remove("serviceDate"); break;
+            case "null-service-date": body["serviceDate"] = null; break;
+            case "default-service-date": body["serviceDate"] = "0001-01-01"; break;
+            case "missing-duration": body.Remove("durationMinutes"); break;
+            case "zero-duration": body["durationMinutes"] = 0; break;
+            case "negative-duration": body["durationMinutes"] = -1; break;
+            case "missing-billable-state": body.Remove("billableState"); break;
+            case "unknown-billable-state": body["billableState"] = "unknown"; break;
+            case "undefined-billable-state": body["billableState"] = 99; break;
+        }
         using var host = new ComposedConfirmationHost(storage);
         using HttpClient client = host.CreateClient();
 
         using HttpResponseMessage refusal = await host.PostWorkloadRawJsonAsync(client, Route, body.ToJsonString());
 
         await AssertOpaqueRefusalAsync(refusal, command, messageId);
+        AssertOutcomes(host, command, messageId, "policy-refusal");
+        host.BoundaryCalls.ShouldBe((0, 0, 0));
+        storage.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("null", "application/json")]
+    [InlineData("[]", "application/json")]
+    [InlineData("{", "application/json")]
+    [InlineData("{", "application/vnd.timesheets+json")]
+    [InlineData("""{"source":{"sourceSystem":"supplier-api","externalRequestId":""},""", "application/json")]
+    [InlineData("""{"serviceDate":"2026-11-20","serviceDate":"2026-11-21"}""", "application/json")]
+    [InlineData("""{"source":{"sourceSystem":"supplier-api","sourceSystem":"supplier-api"}}""", "application/json")]
+    public async Task AuthenticatedMalformedRecordingBodyReturnsOpaqueBadRequest(string body, string mediaType)
+    {
+        var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
+        SubmitExternalTimeEntry command = RecordCommand("invalid-recording");
+        string messageId = CreateMessageId(command);
+        using var host = new ComposedConfirmationHost(storage);
+        using HttpClient client = host.CreateClient();
+
+        using HttpResponseMessage response = await host.PostWorkloadRawJsonAsync(client, Route, body, mediaType);
+
+        await AssertOpaqueRefusalAsync(response, command, messageId, HttpStatusCode.BadRequest);
+        response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
+        AssertOutcomes(host, command, messageId);
+        host.BoundaryCalls.ShouldBe((0, 0, 0));
+        storage.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("{")]
+    public async Task MissingRecordingIdentityTakesPrecedenceOverBodyDeserialization(string body)
+    {
+        var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
+        SubmitExternalTimeEntry command = RecordCommand("invalid-recording");
+        string messageId = CreateMessageId(command);
+        using var host = new ComposedConfirmationHost(storage);
+        using HttpClient client = host.CreateClient();
+        host.SetSignedBindings("timesheets", actor: null);
+
+        using HttpResponseMessage response = await host.PostWorkloadRawJsonAsync(client, Route, body);
+
+        await AssertOpaqueRefusalAsync(response, command, messageId);
         AssertOutcomes(host, command, messageId, "policy-refusal");
         host.BoundaryCalls.ShouldBe((0, 0, 0));
         storage.ShouldBeEmpty();
@@ -284,9 +353,11 @@ public sealed class ExternalContributionRecordingPersistenceTests
         }
     }
 
-    private static async Task AssertOpaqueRefusalAsync(HttpResponseMessage response, SubmitExternalTimeEntry command, string messageId)
+    private static async Task AssertOpaqueRefusalAsync(
+        HttpResponseMessage response, SubmitExternalTimeEntry command, string messageId,
+        HttpStatusCode statusCode = HttpStatusCode.Forbidden)
     {
-        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        response.StatusCode.ShouldBe(statusCode);
         string body = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         body.ShouldContain("External contribution request was not accepted.");
         body.ShouldNotContain("policy-refusal");

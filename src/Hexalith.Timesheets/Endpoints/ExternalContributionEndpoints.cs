@@ -2,10 +2,11 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 using Hexalith.Timesheets.Contracts.Commands.ExternalContributions;
-using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Runtime;
+using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.TimeEntries;
 
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Options;
 
@@ -24,35 +25,52 @@ public static class ExternalContributionEndpoints
         group.MapPost(
             "/",
             static async Task<IResult> (
-                JsonElement body,
                 HttpContext httpContext,
                 TimeEntryRecordSubmissionService service,
                 TimeProvider clock,
                 IOptions<JsonOptions> jsonOptions,
                 CancellationToken cancellationToken) =>
             {
-                SubmitExternalTimeEntry? command;
-                try
-                {
-                    command = body.Deserialize<SubmitExternalTimeEntry>(jsonOptions.Value.SerializerOptions);
-                    if (command is null)
-                    {
-                        return Results.BadRequest();
-                    }
-                }
-                catch (JsonException)
-                {
-                    return Results.BadRequest();
-                }
-                catch (ArgumentException)
-                {
-                    // Domain value constructors reject blank or missing required values.
-                    command = null;
-                }
-
                 (string? TenantId, string? ActorId)? identity = ExternalContributionRequestContext.Resolve(httpContext);
                 var context = TimesheetsServerRequestContext.FromTrustedSources(
                     identity?.TenantId, identity?.ActorId, httpContext.TraceIdentifier);
+                SubmitExternalTimeEntry? command = null;
+                if (context.Tenant is not null && context.Actor is not null)
+                {
+                    if (httpContext.Features.Get<IHttpRequestBodyDetectionFeature>()?.CanHaveBody != true)
+                    {
+                        return InvalidExternalContributionBody();
+                    }
+
+                    if (!httpContext.Request.HasJsonContentType())
+                    {
+                        return Results.StatusCode(StatusCodes.Status415UnsupportedMediaType);
+                    }
+
+                    try
+                    {
+                        JsonSerializerOptions options = StrictBodyJsonOptions(jsonOptions.Value.SerializerOptions);
+                        // Validate JSON syntax before domain constructors can reject values.
+                        JsonElement body = await httpContext.Request.ReadFromJsonAsync<JsonElement>(
+                            options, cancellationToken).ConfigureAwait(false);
+                        ExternalRecordingBody? request = body.Deserialize<ExternalRecordingBody>(options);
+                        if (request is null)
+                        {
+                            return InvalidExternalContributionBody();
+                        }
+
+                        command = request.ToCommand();
+                    }
+                    catch (JsonException)
+                    {
+                        return InvalidExternalContributionBody();
+                    }
+                    catch (ArgumentException)
+                    {
+                        // Domain value constructors reject blank or missing required values.
+                    }
+                }
+
                 bool accepted = await service.SubmitAsync(
                     context,
                     command,
@@ -81,14 +99,14 @@ public static class ExternalContributionEndpoints
                 }
                 catch (Exception exception) when (exception is JsonException or ArgumentException)
                 {
-                    return InvalidConfirmationBody();
+                    return InvalidExternalContributionBody();
                 }
 
                 if (command?.TimeEntryId is null
                     || string.IsNullOrWhiteSpace(command.TimeEntryId.Value)
                     || !StringComparer.Ordinal.Equals(timeEntryId, command.TimeEntryId.Value))
                 {
-                    return InvalidConfirmationBody();
+                    return InvalidExternalContributionBody();
                 }
 
                 (string? TenantId, string? ActorId)? identity = ExternalContributionRequestContext.Resolve(httpContext);
@@ -113,7 +131,7 @@ public static class ExternalContributionEndpoints
             AllowDuplicateProperties = false
         });
 
-    private static IResult InvalidConfirmationBody()
+    private static IResult InvalidExternalContributionBody()
         => Results.Problem(
             title: "External contribution request was not accepted.",
             statusCode: StatusCodes.Status400BadRequest);

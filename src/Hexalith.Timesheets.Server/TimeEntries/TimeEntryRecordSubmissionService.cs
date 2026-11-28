@@ -37,6 +37,9 @@ public sealed class TimeEntryRecordSubmissionService(
     TimeProvider? clock = null)
 {
     private const int RecoveryPageSize = 100;
+    private const int MaxRecoveryPages = 64;
+    private const int MaxRecoveryEvents = 5_000;
+    private const long MaxRecoveryPayloadBytes = 16 * 1024 * 1024;
 
     private static readonly JsonSerializerOptions _strictJsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -83,6 +86,9 @@ public sealed class TimeEntryRecordSubmissionService(
             || string.IsNullOrWhiteSpace(command.Contributor.PartyId)
             || command.ActivityTypeId is null
             || string.IsNullOrWhiteSpace(command.ActivityTypeId.Value)
+            || command.ServiceDate == default
+            || command.DurationMinutes <= 0
+            || command.BillableState is not (BillableState.Billable or BillableState.NonBillable)
             || command.Source is null
             || string.IsNullOrWhiteSpace(command.Source.SourceSystem)
             || string.IsNullOrWhiteSpace(command.Source.ExternalRequestId)
@@ -95,6 +101,18 @@ public sealed class TimeEntryRecordSubmissionService(
         long started = _clock.GetTimestamp();
         using CancellationTokenSource timeout = new(_polling.Timeout, _clock);
         using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+        TimeEntryComment? expectedComment;
+        try
+        {
+            expectedComment = _commentIssuer.Issue(context, command.Comment, evaluateFinance: false);
+            deadline.Token.ThrowIfCancellationRequested();
+        }
+        catch (Exception)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return RecordAndReturn(false, ExternalRecordingLog.PolicyRefusal);
+        }
+
         CommitTimeEntryRecord intent = new(command, context.Tenant, context.Actor, submittedAtUtc);
         string tenant = context.Tenant.TenantId;
         string aggregateId = command.TimeEntryId.Value;
@@ -107,7 +125,6 @@ public sealed class TimeEntryRecordSubmissionService(
         int expectedCount = policy.InitialApprovalState == TimeEntryApprovalState.Submitted ? 2 : 1;
         try
         {
-            TimeEntryComment? expectedComment = _commentIssuer.Issue(context, command.Comment, evaluateFinance: false);
             deadline.Token.ThrowIfCancellationRequested();
             (CommandStatusQueryResponse? status, bool wasPresentAtPreflight, bool recovered) =
                 await durableSubmission.SubmitAndReadStatusWithPreflightAsync(
@@ -214,20 +231,30 @@ public sealed class TimeEntryRecordSubmissionService(
         var request = new StreamReadRequest(intent.Tenant.TenantId, TimesheetsEventStoreIntegration.DomainName,
             intent.Command.TimeEntryId.Value, PageSize: RecoveryPageSize);
         var batch = new List<StreamReadEvent>(expectedCount);
-        long sequence = 0;
-        while (true)
+        long latestSequence = 0;
+        int totalEvents = 0;
+        long payloadBytes = 0;
+        for (int pageNumber = 0; pageNumber < MaxRecoveryPages; pageNumber++)
         {
             deadlineToken.ThrowIfCancellationRequested();
             StreamReadPage page = await MagicLinkDurableSubmissionService.ReadStoredEventsAsync(
                 gateway, request, _polling.ReadbackTimeout, _clock, deadlineToken).ConfigureAwait(false);
-            ValidatePage(request, page);
+            long lastRead = ValidatePage(request, page);
+            if (page.Metadata.LatestSequence < latestSequence || lastRead - request.FromSequence != page.Events.Count)
+            {
+                throw new InvalidOperationException("The owner stream page regressed or omitted a position.");
+            }
+
+            latestSequence = page.Metadata.LatestSequence;
+            totalEvents += page.Events.Count;
+            payloadBytes += page.Events.Sum(static stored => stored.Payload.LongLength);
+            if (totalEvents > MaxRecoveryEvents || payloadBytes > MaxRecoveryPayloadBytes)
+            {
+                throw new InvalidOperationException("The owner stream recovery read allowance was exhausted.");
+            }
+
             foreach (StreamReadEvent stored in page.Events)
             {
-                if (stored.SequenceNumber != ++sequence)
-                {
-                    return false;
-                }
-
                 bool sharesLineage = stored.CorrelationId == messageId || stored.CausationId == messageId;
                 if (batch.Count == expectedCount)
                 {
@@ -247,24 +274,21 @@ public sealed class TimeEntryRecordSubmissionService(
 
                 batch.Add(stored);
                 if (batch.Count == expectedCount
-                    && !MatchesCommittedBatch(batch, intent, messageId, sequence, expectedComment, wasPresentAtPreflight))
+                    && !MatchesCommittedBatch(batch, intent, messageId, stored.SequenceNumber, expectedComment, wasPresentAtPreflight))
                 {
                     return false;
                 }
             }
 
-            if (sequence == page.Metadata.LatestSequence)
+            if (!page.Metadata.IsTruncated)
             {
                 return batch.Count == expectedCount ? true : null;
             }
 
-            if (page.Events.Count == 0)
-            {
-                return null;
-            }
-
-            request = request with { FromSequence = sequence };
+            request = request with { FromSequence = lastRead };
         }
+
+        throw new InvalidOperationException("The owner stream recovery page allowance was exhausted.");
     }
 
     private async Task<StreamReadPage> ReadCommittedRecordPageAsync(
@@ -296,9 +320,10 @@ public sealed class TimeEntryRecordSubmissionService(
     private static long ValidatePage(StreamReadRequest request, StreamReadPage page)
     {
         long lastRead = StreamReadPageValidator.ValidateAndGetNextSequence(request, page);
-        if (!page.Metadata.IsTruncated && page.Metadata.NextContinuationToken is not null)
+        long expectedEnd = Math.Min(page.Metadata.LatestSequence, request.ToSequence ?? long.MaxValue);
+        if (page.Metadata.NextContinuationToken is not null || (!page.Metadata.IsTruncated && lastRead < expectedEnd))
         {
-            throw new InvalidOperationException("A complete stream page cannot have a continuation.");
+            throw new InvalidOperationException("The owner stream page has inconsistent continuation metadata.");
         }
 
         return lastRead;
