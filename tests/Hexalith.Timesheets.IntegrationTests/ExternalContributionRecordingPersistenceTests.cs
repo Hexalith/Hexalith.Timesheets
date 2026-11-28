@@ -103,7 +103,6 @@ public sealed class ExternalContributionRecordingPersistenceTests
         using var restarted = new ComposedConfirmationHost(storage, policy);
         using HttpClient restartedClient = restarted.CreateClient();
         restarted.Clock.UtcNow = _firstUtc.AddHours(3);
-        restarted.EmitMissingStatusPlaceholder = initialState == TimeEntryApprovalState.Submitted;
         (await restarted.ReadStatusAsync(Tenant, messageId)).ShouldBeNull();
 
         using HttpResponseMessage recovered = await restarted.PostWorkloadAsync(restartedClient, Route, command);
@@ -111,14 +110,58 @@ public sealed class ExternalContributionRecordingPersistenceTests
         recovered.StatusCode.ShouldBe(HttpStatusCode.Accepted);
         (await recovered.Content.ReadAsStringAsync(TestContext.Current.CancellationToken)).ShouldBeEmpty();
         restarted.BoundaryCalls.ShouldBe((0, 1, 1));
-        CommandStatusRecord? advisory = await restarted.ReadStatusAsync(Tenant, messageId);
-        (advisory?.Status).ShouldBe(restarted.EmitMissingStatusPlaceholder ? CommandStatus.Received : null);
-        (advisory?.Domain).ShouldBeNull();
-        (advisory?.CommittedEventSequence).ShouldBeNull();
+        CommandStatusRecord advisory = (await restarted.ReadStatusAsync(Tenant, messageId)).ShouldNotBeNull();
+        advisory.Status.ShouldBe(CommandStatus.Completed);
+        advisory.Domain.ShouldBe("timesheets");
+        advisory.CommittedEventSequence.ShouldBeNull();
+        restarted.Publisher.PublishCalls.ShouldBeEmpty();
         EventEnvelope[] afterRestart = await restarted.ActorEventsAsync(Tenant, command.TimeEntryId.Value);
         AssertRecordingBatch(afterRestart[1..], initialState, command, messageId, firstSequence: 2);
         afterRestart.Select(item => item.MessageId).ShouldBe(original.Select(item => item.MessageId));
         AssertOutcomes(restarted, command, messageId, "committed");
+    }
+
+    [Fact]
+    public async Task RecordingWithFailedPublicationRemainsIndeterminateAfterRestart()
+    {
+        var storage = new ConcurrentDictionary<(string Tenant, string Owner), InMemoryStateManager>();
+        SubmitExternalTimeEntry command = RecordCommand("unpublished-recording");
+        string messageId = CreateMessageId(command);
+        var polling = new MagicLinkSubmissionPollingOptions { Timeout = TimeSpan.FromMilliseconds(500) };
+        EventEnvelope original;
+        using (var host = new ComposedConfirmationHost(storage, pollingOptions: polling))
+        using (HttpClient client = host.CreateClient())
+        {
+            await host.SeedFreshCatalogAsync(client, Tenant);
+            host.Publisher.SetupFailure();
+
+            using HttpResponseMessage failed = await host.PostWorkloadAsync(client, Route, command);
+
+            await AssertOpaqueRefusalAsync(failed, command, messageId);
+            (await host.ReadStatusAsync(Tenant, messageId)).ShouldNotBeNull().Status.ShouldBe(CommandStatus.PublishFailed);
+            EventEnvelope[] events = await host.ActorEventsAsync(Tenant, command.TimeEntryId.Value);
+            AssertRecordingBatch(events, TimeEntryApprovalState.Draft, command, messageId);
+            original = events.ShouldHaveSingleItem();
+            host.Publisher.TotalEventsPublished.ShouldBe(0);
+            AssertOutcomes(host, command, messageId, "indeterminate-commit");
+        }
+
+        using var restarted = new ComposedConfirmationHost(storage, pollingOptions: polling) { EmitMissingStatusPlaceholder = true };
+        using HttpClient restartedClient = restarted.CreateClient();
+        (await restarted.ReadStatusAsync(Tenant, messageId)).ShouldBeNull();
+
+        using HttpResponseMessage retry = await restarted.PostWorkloadAsync(restartedClient, Route, command);
+
+        await AssertOpaqueRefusalAsync(retry, command, messageId);
+        restarted.BoundaryCalls.ShouldBe((0, 0, 1));
+        CommandStatusRecord advisory = (await restarted.ReadStatusAsync(Tenant, messageId)).ShouldNotBeNull();
+        advisory.Status.ShouldBe(CommandStatus.Received);
+        advisory.Domain.ShouldBeNull();
+        EventEnvelope[] afterRestart = await restarted.ActorEventsAsync(Tenant, command.TimeEntryId.Value);
+        AssertRecordingBatch(afterRestart, TimeEntryApprovalState.Draft, command, messageId);
+        afterRestart.ShouldHaveSingleItem().MessageId.ShouldBe(original.MessageId);
+        restarted.Publisher.PublishCalls.ShouldBeEmpty();
+        AssertOutcomes(restarted, command, messageId, "indeterminate-commit");
     }
 
     [Fact]

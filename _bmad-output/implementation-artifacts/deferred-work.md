@@ -1786,3 +1786,10 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-5-bound-external-recording-readback-and-report-uncertainty.md`
   summary: Verify actor envelope compatibility for historical recordings acknowledged through Completed status.
   evidence: The existing Completed path binds the command's deterministic identity and stored event lineage. An additional envelope subject check requires evidence for historical actor and gateway identities.
+
+## Deferred from code review of spec-6-5-bound-external-recording-readback-and-report-uncertainty (2026-11-28)
+
+- Establish the supported restart retry window when the status store is empty. EventStore's terminal actor idempotency expires after a configurable period of 24 hours by default. Verify recovery at the boundary or document the supported window.
+- Extend the installed gateway and telemetry evidence above. The composed client's synthetic domainless `Received` row and status translation do not exercise the installed gateway controllers, SDK transport, or span and log fields emitted during recovery.
+- Extend the historical Completed receipt check above. Before requiring the stored event subject, qualify historical gateway identities and test a mismatched `UserId` alongside a matching command lineage.
+- Give status probes a bounded share of the overall polling budget. The pre-existing lookup can use the full deadline during preflight or after stream verification, leaving no opportunity to observe a later healthy status response.

@@ -109,17 +109,12 @@ public sealed class TimeEntryRecordSubmissionService(
         {
             TimeEntryComment? expectedComment = _commentIssuer.Issue(context, command.Comment, evaluateFinance: false);
             deadline.Token.ThrowIfCancellationRequested();
-            (CommandStatusQueryResponse? status, bool wasPresentAtPreflight, bool recovered) =
+            (CommandStatusQueryResponse? status, bool wasPresentAtPreflight) =
                 await durableSubmission.SubmitAndReadStatusWithPreflightAsync(
                     messageId, tenant, aggregateId, intent, typeof(CommitTimeEntryRecord), cancellationToken,
-                    deadline, _polling, _clock, started,
-                    deadlineToken => TryRecoverCommittedBatchAsync(intent, messageId, expectedCount, expectedComment, deadlineToken))
+                    deadline, _polling, _clock, started, enforceRecordingStatus: true)
                     .ConfigureAwait(false);
             deadline.Token.ThrowIfCancellationRequested();
-            if (recovered)
-            {
-                return RecordAndReturn(true, ExternalRecordingLog.Committed);
-            }
 
             if (IsRejectedStatus(status, messageId, tenant, aggregateId))
             {
@@ -127,17 +122,26 @@ public sealed class TimeEntryRecordSubmissionService(
             }
 
             if (status?.CorrelationId != messageId
-                || !MagicLinkDurableSubmissionService.HasCommittedStatus(status, messageId, tenant, aggregateId, expectedCount))
+                || !MagicLinkDurableSubmissionService.HasCommittedStatus(
+                    status, messageId, tenant, aggregateId, expectedCount, allowMissingSequence: true))
             {
                 return RecordAndReturn(false, ExternalRecordingLog.IndeterminateCommit);
             }
 
-            long lastSequence = status!.CommittedEventSequence!.Value;
-            StreamReadPage page = await ReadCommittedRecordPageAsync(
-                new StreamReadRequest(tenant, TimesheetsEventStoreIntegration.DomainName, aggregateId,
-                    FromSequence: lastSequence - expectedCount, PageSize: expectedCount),
-                lastSequence, deadline.Token).ConfigureAwait(false);
-            bool verified = MatchesCommittedBatch(page.Events, intent, messageId, lastSequence, expectedComment, wasPresentAtPreflight);
+            bool verified;
+            if (status!.CommittedEventSequence is long lastSequence)
+            {
+                StreamReadPage page = await ReadCommittedRecordPageAsync(
+                    new StreamReadRequest(tenant, TimesheetsEventStoreIntegration.DomainName, aggregateId,
+                        FromSequence: lastSequence - expectedCount, PageSize: expectedCount),
+                    lastSequence, deadline.Token).ConfigureAwait(false);
+                verified = MatchesCommittedBatch(page.Events, intent, messageId, lastSequence, expectedComment, wasPresentAtPreflight);
+            }
+            else
+            {
+                verified = await ReadRecoveredBatchAsync(intent, messageId, expectedCount, expectedComment,
+                    wasPresentAtPreflight, deadline.Token).ConfigureAwait(false);
+            }
             deadline.Token.ThrowIfCancellationRequested();
             if (!verified)
             {
@@ -153,71 +157,89 @@ public sealed class TimeEntryRecordSubmissionService(
         }
     }
 
-    private async Task<bool> TryRecoverCommittedBatchAsync(
+    private async Task<bool> ReadRecoveredBatchAsync(
         CommitTimeEntryRecord intent, string messageId, int expectedCount, TimeEntryComment? expectedComment,
-        CancellationToken deadlineToken)
+        bool wasPresentAtPreflight, CancellationToken deadlineToken)
+    {
+        while (true)
+        {
+            deadlineToken.ThrowIfCancellationRequested();
+            try
+            {
+                bool? verified = await TryRecoverCommittedBatchAsync(intent, messageId, expectedCount, expectedComment,
+                    wasPresentAtPreflight, deadlineToken).ConfigureAwait(false);
+                if (verified.HasValue)
+                {
+                    return verified.Value;
+                }
+            }
+            catch (Exception exception) when (IsMissingStream(exception)
+                || MagicLinkDurableSubmissionService.IsRetryableGatewayFailure(exception, deadlineToken, includeAllServerErrors: true))
+            {
+                // Retry the owner read within the same submission deadline.
+            }
+
+            await Task.Delay(_polling.PollInterval, _clock, deadlineToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<bool?> TryRecoverCommittedBatchAsync(
+        CommitTimeEntryRecord intent, string messageId, int expectedCount, TimeEntryComment? expectedComment,
+        bool wasPresentAtPreflight, CancellationToken deadlineToken)
     {
         var request = new StreamReadRequest(intent.Tenant.TenantId, TimesheetsEventStoreIntegration.DomainName,
             intent.Command.TimeEntryId.Value, PageSize: RecoveryPageSize);
         var batch = new List<StreamReadEvent>(expectedCount);
         long sequence = 0;
-        try
+        while (true)
         {
-            while (true)
+            deadlineToken.ThrowIfCancellationRequested();
+            StreamReadPage page = await MagicLinkDurableSubmissionService.ReadStoredEventsAsync(
+                gateway, request, _polling.ReadbackTimeout, _clock, deadlineToken).ConfigureAwait(false);
+            ValidatePage(request, page);
+            foreach (StreamReadEvent stored in page.Events)
             {
-                deadlineToken.ThrowIfCancellationRequested();
-                StreamReadPage page = await MagicLinkDurableSubmissionService.ReadStoredEventsAsync(
-                    gateway, request, _polling.ReadbackTimeout, _clock, deadlineToken).ConfigureAwait(false);
-                ValidatePage(request, page);
-                foreach (StreamReadEvent stored in page.Events)
-                {
-                    if (stored.SequenceNumber != ++sequence)
-                    {
-                        return false;
-                    }
-
-                    bool sharesLineage = stored.CorrelationId == messageId || stored.CausationId == messageId;
-                    if (batch.Count == expectedCount)
-                    {
-                        return !sharesLineage;
-                    }
-
-                    if (batch.Count == 0 && !sharesLineage)
-                    {
-                        continue;
-                    }
-
-                    if (stored.UserId != intent.Actor.PartyId
-                        || !MagicLinkDurableSubmissionService.HasStoredEventIdentity(stored, messageId))
-                    {
-                        return false;
-                    }
-
-                    batch.Add(stored);
-                    if (batch.Count == expectedCount
-                        && !MatchesCommittedBatch(batch, intent, messageId, sequence, expectedComment, wasPresentAtPreflight: false))
-                    {
-                        return false;
-                    }
-                }
-
-                if (sequence == page.Metadata.LatestSequence)
-                {
-                    return batch.Count == expectedCount;
-                }
-
-                if (page.Events.Count == 0)
+                if (stored.SequenceNumber != ++sequence)
                 {
                     return false;
                 }
 
-                request = request with { FromSequence = sequence };
+                bool sharesLineage = stored.CorrelationId == messageId || stored.CausationId == messageId;
+                if (batch.Count == expectedCount)
+                {
+                    return !sharesLineage;
+                }
+
+                if (batch.Count == 0 && !sharesLineage)
+                {
+                    continue;
+                }
+
+                if (stored.UserId != intent.Actor.PartyId
+                    || !MagicLinkDurableSubmissionService.HasStoredEventIdentity(stored, messageId))
+                {
+                    return false;
+                }
+
+                batch.Add(stored);
+                if (batch.Count == expectedCount
+                    && !MatchesCommittedBatch(batch, intent, messageId, sequence, expectedComment, wasPresentAtPreflight))
+                {
+                    return false;
+                }
             }
-        }
-        catch (EventStoreGatewayException exception) when (IsMissingStream(exception))
-        {
-            // An acknowledged command can be in flight before its owner stream exists.
-            return false;
+
+            if (sequence == page.Metadata.LatestSequence)
+            {
+                return batch.Count == expectedCount ? true : null;
+            }
+
+            if (page.Events.Count == 0)
+            {
+                return null;
+            }
+
+            request = request with { FromSequence = sequence };
         }
     }
 

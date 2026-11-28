@@ -1472,7 +1472,8 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         InMemoryStateManager stateManager,
         InMemoryCommandStatusStore statusStore,
         IDomainServiceInvoker invoker,
-        string? tenant = null)
+        string? tenant = null,
+        FakeEventPublisher? publisher = null)
     {
         var host = ActorHost.CreateForTest<AggregateActor>(new ActorTestOptions
         {
@@ -1485,7 +1486,7 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             new FakeSnapshotManager(),
             new NoOpEventPayloadProtectionService(),
             statusStore,
-            new FakeEventPublisher(),
+            publisher ?? new FakeEventPublisher(),
             Options.Create(new EventDrainOptions()),
             Options.Create(new BackpressureOptions()),
             Substitute.For<IDeadLetterPublisher>());

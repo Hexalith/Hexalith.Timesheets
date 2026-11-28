@@ -774,7 +774,8 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Theory]
-    [InlineData("missing-status", true, true)]
+    [InlineData("restored-status", true, true)]
+    [InlineData("missing-status", false, false)]
     [InlineData("missing-stream", true, true)]
     [InlineData("unrelated-later-event", true, true)]
     [InlineData("lost-acknowledgement", false, false)]
@@ -785,9 +786,11 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     [InlineData("extra-event-correlation-only", false, true)]
     [InlineData("status-fault", false, false)]
     [InlineData("observed-processing", false, false)]
+    [InlineData("processing-then-restored", true, true)]
     [InlineData("observed-received", false, false)]
-    [InlineData("terminal-after-read", false, true)]
-    public async Task MissingStatusRecoveryRequiresMatchingAcknowledgementAndExactOwnerEvidence(
+    [InlineData("publish-failed-status", false, false)]
+    [InlineData("publish-failed-acknowledgement", false, false)]
+    public async Task RecoveryRequiresCompletedStatusAndExactOwnerEvidence(
         string scenario, bool expected, bool shouldRead)
     {
         SubmitExternalTimeEntry command = Command();
@@ -801,6 +804,14 @@ public sealed class TimeEntryRecordSubmissionServiceTests
         {
             gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
                 .Returns(new SubmitCommandResponse("other-correlation", MessageId: messageId));
+        }
+        else if (scenario == "publish-failed-acknowledgement")
+        {
+            gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
+                .Returns(new SubmitCommandResponse(messageId, MessageId: messageId)
+                {
+                    ResultPayloadOmissionReason = ResultPayloadOmissionReason.PublishFailed
+                });
         }
 
         CommandStatusQueryResponse inProgress = Status(messageId) with
@@ -821,14 +832,16 @@ public sealed class TimeEntryRecordSubmissionServiceTests
                 {
                     "status-fault" => Task.FromException<CommandStatusQueryResponse?>(new EventStoreGatewayException(503, "status unavailable")),
                     "observed-received" => Task.FromResult<CommandStatusQueryResponse?>(inProgress),
-                    "observed-processing" when statusChecks == 2 => Task.FromResult<CommandStatusQueryResponse?>(inProgress with
+                    "observed-processing" or "processing-then-restored" when statusChecks == 2 => Task.FromResult<CommandStatusQueryResponse?>(inProgress with
                     {
                         Status = nameof(CommandStatus.Processing), StatusCode = (int)CommandStatus.Processing, Domain = "timesheets"
                     }),
-                    "terminal-after-read" when statusChecks == 3 => Task.FromResult<CommandStatusQueryResponse?>(inProgress with
+                    "publish-failed-status" => Task.FromResult<CommandStatusQueryResponse?>(inProgress with
                     {
                         Status = nameof(CommandStatus.PublishFailed), StatusCode = (int)CommandStatus.PublishFailed, Domain = "timesheets"
                     }),
+                    "publish-failed-acknowledgement" => Task.FromResult<CommandStatusQueryResponse?>(Status(messageId)),
+                    _ when shouldRead => Task.FromResult<CommandStatusQueryResponse?>(Status(messageId) with { CommittedEventSequence = null }),
                     _ => Task.FromResult<CommandStatusQueryResponse?>(null)
                 };
             });
@@ -875,12 +888,13 @@ public sealed class TimeEntryRecordSubmissionServiceTests
     }
 
     [Fact]
-    public async Task MissingStatusRecoveryReadsLookaheadWhenRecordingEndsTheFirstPage()
+    public async Task RestoredStatusRecoveryReadsLookaheadWhenRecordingEndsTheFirstPage()
     {
         SubmitExternalTimeEntry command = Command();
         IEventStoreGatewayClient gateway = GatewayWithCompletedStatus(out string messageId, preflight: false);
         gateway.GetWorkloadCommandStatusAsync("tenant-1", messageId, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<CommandStatusQueryResponse?>(null));
+            .Returns(Task.FromResult<CommandStatusQueryResponse?>(null),
+                Task.FromResult<CommandStatusQueryResponse?>(Status(messageId) with { CommittedEventSequence = null }));
         StreamReadEvent recorded = Page(Recorded(command), messageId).Events[0] with { UserId = Context().Actor!.PartyId };
         StreamReadEvent LaterOrRejectedEvent(int sequence) => recorded with
         {

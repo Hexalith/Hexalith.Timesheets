@@ -738,6 +738,8 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
         public bool EmitMissingStatusPlaceholder { get; set; }
 
+        public FakeEventPublisher Publisher { get; } = new();
+
         public (int GuardChecks, int StreamReads, int Submissions) BoundaryCalls
             => (Volatile.Read(ref _guardChecks), Volatile.Read(ref _streamReads), Volatile.Read(ref _submissions));
 
@@ -1051,7 +1053,7 @@ public sealed class ExternalContributionConfirmationPersistenceTests
 
             InMemoryStateManager stateManager = _storage.GetOrAdd((tenantId, aggregateId), static _ => new());
             return MagicLinkConfirmationHttpBoundaryTests.CreateMagicLinkActor(
-                new TimeEntryId(aggregateId), stateManager, _statuses, invoker, tenantId);
+                new TimeEntryId(aggregateId), stateManager, _statuses, invoker, tenantId, Publisher);
         }
 
         private async Task<DomainResult> InvokeProcessEndpointAsync(
