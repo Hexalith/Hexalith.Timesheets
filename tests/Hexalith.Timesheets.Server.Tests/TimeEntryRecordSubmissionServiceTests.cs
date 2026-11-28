@@ -808,10 +808,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
         else if (scenario == "publish-failed-acknowledgement")
         {
             gateway.SubmitWorkloadCommandAsync(Arg.Any<SubmitCommandRequest>(), Arg.Any<CancellationToken>())
-                .Returns(new SubmitCommandResponse(messageId, MessageId: messageId)
-                {
-                    ResultPayloadOmissionReason = ResultPayloadOmissionReason.PublishFailed
-                });
+                .Returns(new SubmitCommandResponse(messageId, MessageId: messageId));
         }
 
         CommandStatusQueryResponse inProgress = Status(messageId) with
@@ -840,7 +837,10 @@ public sealed class TimeEntryRecordSubmissionServiceTests
                     {
                         Status = nameof(CommandStatus.PublishFailed), StatusCode = (int)CommandStatus.PublishFailed, Domain = "timesheets"
                     }),
-                    "publish-failed-acknowledgement" => Task.FromResult<CommandStatusQueryResponse?>(Status(messageId)),
+                    "publish-failed-acknowledgement" => Task.FromResult<CommandStatusQueryResponse?>(inProgress with
+                    {
+                        Status = nameof(CommandStatus.PublishFailed), StatusCode = (int)CommandStatus.PublishFailed, Domain = "timesheets"
+                    }),
                     _ when shouldRead => Task.FromResult<CommandStatusQueryResponse?>(Status(messageId) with { CommittedEventSequence = null }),
                     _ => Task.FromResult<CommandStatusQueryResponse?>(null)
                 };

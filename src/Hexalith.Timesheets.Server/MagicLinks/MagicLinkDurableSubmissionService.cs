@@ -695,9 +695,7 @@ public sealed class MagicLinkDurableSubmissionService(
                         CorrelationId: messageId),
                     deadlineToken).WaitAsync(deadlineToken).ConfigureAwait(false);
                 if (accepted.MessageId != messageId
-                    || enforceRecordingStatus
-                        && (accepted.CorrelationId != messageId
-                            || accepted.ResultPayloadOmissionReason == ResultPayloadOmissionReason.PublishFailed))
+                    || enforceRecordingStatus && accepted.CorrelationId != messageId)
                 {
                     return (null, false);
                 }
