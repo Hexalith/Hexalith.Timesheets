@@ -109,12 +109,18 @@ public sealed class TimeEntryRecordSubmissionService(
         {
             TimeEntryComment? expectedComment = _commentIssuer.Issue(context, command.Comment, evaluateFinance: false);
             deadline.Token.ThrowIfCancellationRequested();
-            (CommandStatusQueryResponse? status, bool wasPresentAtPreflight) =
+            (CommandStatusQueryResponse? status, bool wasPresentAtPreflight, bool recovered) =
                 await durableSubmission.SubmitAndReadStatusWithPreflightAsync(
                     messageId, tenant, aggregateId, intent, typeof(CommitTimeEntryRecord), cancellationToken,
-                    deadline, _polling, _clock, started, enforceRecordingStatus: true)
+                    deadline, _polling, _clock, started, enforceRecordingStatus: true,
+                    tryRecoverCommit: token => RecoverCommittedBatchAsync(
+                        intent, messageId, expectedCount, expectedComment, token))
                     .ConfigureAwait(false);
             deadline.Token.ThrowIfCancellationRequested();
+            if (recovered)
+            {
+                return RecordAndReturn(true, ExternalRecordingLog.Committed);
+            }
 
             if (IsRejectedStatus(status, messageId, tenant, aggregateId))
             {
@@ -154,6 +160,24 @@ public sealed class TimeEntryRecordSubmissionService(
         {
             cancellationToken.ThrowIfCancellationRequested();
             return RecordAndReturn(false, ExternalRecordingLog.IndeterminateCommit);
+        }
+    }
+
+    private async Task<bool> RecoverCommittedBatchAsync(
+        CommitTimeEntryRecord intent, string messageId, int expectedCount, TimeEntryComment? expectedComment,
+        CancellationToken deadlineToken)
+    {
+        try
+        {
+            return await TryRecoverCommittedBatchAsync(
+                    intent, messageId, expectedCount, expectedComment, wasPresentAtPreflight: false, deadlineToken)
+                .ConfigureAwait(false) == true;
+        }
+        catch (Exception exception) when (IsMissingStream(exception)
+            || MagicLinkDurableSubmissionService.IsRetryableGatewayFailure(exception, deadlineToken, includeAllServerErrors: true))
+        {
+            // An acknowledged command can be in flight before its owner stream exists.
+            return false;
         }
     }
 

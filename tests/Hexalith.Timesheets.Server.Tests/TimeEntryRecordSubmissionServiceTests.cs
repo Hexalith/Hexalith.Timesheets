@@ -775,7 +775,7 @@ public sealed class TimeEntryRecordSubmissionServiceTests
 
     [Theory]
     [InlineData("restored-status", true, true)]
-    [InlineData("missing-status", false, false)]
+    [InlineData("missing-status", true, true)]
     [InlineData("missing-stream", true, true)]
     [InlineData("unrelated-later-event", true, true)]
     [InlineData("lost-acknowledgement", false, false)]

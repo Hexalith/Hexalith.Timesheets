@@ -639,13 +639,14 @@ public sealed class MagicLinkDurableSubmissionService(
         long started = _clock.GetTimestamp();
         using CancellationTokenSource timeout = new(_polling.Timeout, _clock);
         using CancellationTokenSource deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
-        return await SubmitAndReadStatusWithPreflightAsync(
+        var observed = await SubmitAndReadStatusWithPreflightAsync(
             messageId, tenant, aggregateId, intent, commandType,
             cancellationToken, deadline, _polling, _clock, started).ConfigureAwait(false);
+        return (observed.Status, observed.WasPresentAtPreflight);
     }
 
     /// <summary>Submits at most once and observes status using the caller's existing operation deadline.</summary>
-    internal async Task<(CommandStatusQueryResponse? Status, bool WasPresentAtPreflight)> SubmitAndReadStatusWithPreflightAsync(
+    internal async Task<(CommandStatusQueryResponse? Status, bool WasPresentAtPreflight, bool Recovered)> SubmitAndReadStatusWithPreflightAsync(
         string messageId,
         string tenant,
         string aggregateId,
@@ -656,7 +657,8 @@ public sealed class MagicLinkDurableSubmissionService(
         MagicLinkSubmissionPollingOptions polling,
         TimeProvider clock,
         long started,
-        bool enforceRecordingStatus = false)
+        bool enforceRecordingStatus = false,
+        Func<CancellationToken, Task<bool>>? tryRecoverCommit = null)
     {
         CancellationToken deadlineToken = deadline.Token;
         CommandStatusQueryResponse? status;
@@ -668,7 +670,7 @@ public sealed class MagicLinkDurableSubmissionService(
                     .WaitAsync(deadlineToken).ConfigureAwait(false);
                 break;
             }
-            catch (Exception exception) when (enforceRecordingStatus
+            catch (Exception exception) when ((enforceRecordingStatus || tryRecoverCommit is not null)
                 && IsRetryableGatewayFailure(exception, deadlineToken, includeAllServerErrors: true))
             {
                 // Establish whether the command already exists before dispatching it.
@@ -677,13 +679,14 @@ public sealed class MagicLinkDurableSubmissionService(
         }
 
         bool wasPresentAtPreflight = status is not null;
+        bool canRecover = false;
         if (status is null)
         {
             TimeSpan submitRemaining = polling.Timeout - clock.GetElapsedTime(started);
             if (submitRemaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
-                return (null, false);
+                return (null, false, false);
             }
 
             try
@@ -697,8 +700,10 @@ public sealed class MagicLinkDurableSubmissionService(
                 if (accepted.MessageId != messageId
                     || enforceRecordingStatus && accepted.CorrelationId != messageId)
                 {
-                    return (null, false);
+                    return (null, false, false);
                 }
+
+                canRecover = tryRecoverCommit is not null && accepted.CorrelationId == messageId;
             }
             catch (Exception) when (!deadlineToken.IsCancellationRequested)
             {
@@ -714,15 +719,31 @@ public sealed class MagicLinkDurableSubmissionService(
             if (remaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
-                return (null, wasPresentAtPreflight);
+                return (null, wasPresentAtPreflight, false);
             }
 
             try
             {
                 status ??= await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
                     .WaitAsync(deadlineToken).ConfigureAwait(false);
+                if (canRecover)
+                {
+                    canRecover = status is null;
+                    if (canRecover && await tryRecoverCommit!(deadlineToken).ConfigureAwait(false))
+                    {
+                        // An observed terminal state takes precedence over the alternate proof.
+                        status = await gateway.GetWorkloadCommandStatusAsync(tenant, messageId, deadlineToken)
+                            .WaitAsync(deadlineToken).ConfigureAwait(false);
+                        canRecover = status is null;
+                        if (canRecover)
+                        {
+                            return (status, false, true);
+                        }
+                    }
+                }
             }
-            catch (Exception exception) when (IsRetryableGatewayFailure(exception, cancellationToken, enforceRecordingStatus))
+            catch (Exception exception) when (IsRetryableGatewayFailure(
+                exception, cancellationToken, enforceRecordingStatus || tryRecoverCommit is not null))
             {
                 // A transient observation fault does not justify another submission.
                 status = null;
@@ -731,14 +752,14 @@ public sealed class MagicLinkDurableSubmissionService(
             if (status?.Status is nameof(CommandStatus.Completed) or nameof(CommandStatus.Rejected)
                 or nameof(CommandStatus.PublishFailed) or nameof(CommandStatus.TimedOut))
             {
-                return (status, wasPresentAtPreflight);
+                return (status, wasPresentAtPreflight, false);
             }
 
             remaining = polling.Timeout - clock.GetElapsedTime(started);
             if (remaining <= TimeSpan.Zero)
             {
                 deadline.Cancel();
-                return (null, wasPresentAtPreflight);
+                return (null, wasPresentAtPreflight, false);
             }
 
             status = null;
