@@ -5,7 +5,11 @@ using Hexalith.EventStore.Contracts.Commands;
 using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.Contracts.Results;
 using Hexalith.EventStore.DomainService;
+using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Queries.Reporting;
+using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Exports;
+using Hexalith.Timesheets.Server.TimeEntries;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.TimeEntries.Commands;
 
@@ -19,7 +23,7 @@ public static class TimesheetsRouteCatalogDeclarations
     /// <summary>Gets the payloads accepted by the keyed domain processor.</summary>
     public static IReadOnlyList<Type> PayloadTypes { get; } =
         [typeof(CommitMagicLinkIssue), typeof(CommitMagicLinkTransition), typeof(CommitMagicLinkUse), typeof(CommitTimeEntryRecord),
-            typeof(CommitTimeEntryConfirmation), typeof(CommitApprovedTimeExport)];
+            typeof(CommitTimeEntryConfirmation), typeof(CommitApprovedTimeExport), .. ProjectTimeEntryEventStoreReceiver.PayloadTypes];
 
     /// <summary>Gets the complete internal command policies.</summary>
     public static IReadOnlyList<CommandIntentDeclaration> Commands { get; } =
@@ -28,20 +32,34 @@ public static class TimesheetsRouteCatalogDeclarations
             Command<CommitMagicLinkUse>("commit-magic-link-use"),
             Command<CommitTimeEntryRecord>("commit-time-entry-record"),
             Command<CommitTimeEntryConfirmation>("commit-time-entry-confirmation"),
-            Command<CommitApprovedTimeExport>("commit-approved-time-export")];
+            Command<CommitApprovedTimeExport>("commit-approved-time-export"),
+            Command<CommitProjectTimeEntryRecord>("commit-project-time-entry-record"),
+            Command<CommitProjectTimeEntrySubmit>("commit-project-time-entry-submit"),
+            Command<CommitProjectTimeEntryApprove>("commit-project-time-entry-approve"),
+            Command<CommitProjectTimeEntryCorrect>("commit-project-time-entry-correct")];
+
+    /// <summary>Gets the SDK query route owned by Timesheets.</summary>
+    public static RouteContractDeclaration ApprovedLedgerQuery { get; } = new(
+        "timesheets-query-approved-time-ledger", "query", TimesheetsEventStoreIntegration.DomainName,
+        nameof(QueryApprovedTimeLedger), null, "v1", null, "workload",
+        EventStoreOperationIdentifiers.DomainServiceQuery, null, [],
+        new(typeof(ApprovedTimeLedgerQueryHandler).FullName!, "exact", [nameof(QueryApprovedTimeLedger)],
+            "domain-service", "computed", [], RequiresDelegatedContext: true));
 
     /// <summary>Gets the compiled owner routes.</summary>
-    public static IReadOnlyList<RouteContractDeclaration> Routes => [.. Commands.Select(command => command.Route)];
+    public static IReadOnlyList<RouteContractDeclaration> Routes => [.. Commands.Select(command => command.Route), ApprovedLedgerQuery];
 
     /// <summary>Gets the value-free schemas for the internal workload operations.</summary>
     public static IReadOnlyList<RouteOperationContract> Operations =>
-        [.. Routes.Select(route => RouteOperationSchema.Create(route,
-            PayloadTypes.Single(type => type.FullName == route.Execution!.HandlerType),
-            typeof(DomainServiceWireResult), "internal", "UI-only", JsonSerializerOptions.Web))];
+        [.. Commands.Select(command => RouteOperationSchema.Create(command.Route,
+            PayloadTypes.Single(type => type.FullName == command.Route.Execution!.HandlerType),
+            typeof(DomainServiceWireResult), "internal", "UI-only", JsonSerializerOptions.Web)),
+            RouteOperationSchema.Create(ApprovedLedgerQuery, typeof(QueryApprovedTimeLedger), typeof(ApprovedTimeLedgerReadModel),
+                "internal", "UI-only", JsonSerializerOptions.Web)];
 
     /// <summary>Gets the exact receiver methods for these routes.</summary>
     public static IReadOnlyDictionary<string, string> ReceiverMethods =>
-        Routes.ToDictionary(route => route.RouteId, _ => "process", StringComparer.Ordinal);
+        Routes.ToDictionary(route => route.RouteId, route => route == ApprovedLedgerQuery ? "query" : "process", StringComparer.Ordinal);
 
     /// <summary>Creates adapters that bind each command's semantic intent and authority-bearing fields.</summary>
     public static IReadOnlyList<IDeclaredIdempotencyIntentAdapter> CreateAdapters() =>
@@ -52,7 +70,9 @@ public static class TimesheetsRouteCatalogDeclarations
                 new { payload.Command, payload.Tenant, payload.Actor }, JsonSerializerOptions.Web)),
             Adapter<CommitTimeEntryConfirmation>(payload => JsonSerializer.Serialize(
                 new { payload.Command, payload.Tenant, payload.Actor }, JsonSerializerOptions.Web)),
-            Adapter<CommitApprovedTimeExport>()];
+            Adapter<CommitApprovedTimeExport>(),
+            Adapter<CommitProjectTimeEntryRecord>(), Adapter<CommitProjectTimeEntrySubmit>(),
+            Adapter<CommitProjectTimeEntryApprove>(), Adapter<CommitProjectTimeEntryCorrect>()];
 
     private static CommandIntentDeclaration Command<T>(string slug)
     {

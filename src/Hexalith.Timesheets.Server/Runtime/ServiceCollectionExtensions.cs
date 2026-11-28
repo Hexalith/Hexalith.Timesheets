@@ -95,6 +95,7 @@ public static class ServiceCollectionExtensions
             .ValidateOnStart();
         services.TryAddScoped<MagicLinkDurableSubmissionService>();
         services.TryAddScoped<TimeEntryRecordSubmissionService>();
+        services.TryAddScoped<ProjectTimeEntryWorkflowSubmission>();
         services.TryAddScoped<TimeEntryConfirmationSubmissionService>();
         services.TryAddSingleton<TimeEntryApprovalCommandService>();
         services.TryAddSingleton<TimeEntryCorrectionCommandService>();
@@ -143,6 +144,7 @@ public static class ServiceCollectionExtensions
         {
             services.TryAddEnumerable(ServiceDescriptor.Singleton<IIdempotencyIntentAdapter>(adapter));
         }
+        services.TryAddScoped<ProjectTimeEntryEventStoreReceiver>();
         services.AddScoped<MagicLinkEventStoreDomainProcessor>();
         services.AddKeyedScoped<IDomainProcessor>(
             TimesheetsEventStoreIntegration.DomainName,

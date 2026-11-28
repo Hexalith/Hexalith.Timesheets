@@ -45,7 +45,7 @@ public sealed class HttpContextTimesheetsTrustedContextAccessor(
             return partyId;
         }
 
-        string? subject = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        string? subject = user?.FindFirst("sub")?.Value ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         return string.IsNullOrWhiteSpace(subject) || subject.StartsWith("workload:", StringComparison.Ordinal)
             ? null : subject;
     }

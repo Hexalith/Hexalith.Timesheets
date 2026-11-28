@@ -1,6 +1,7 @@
 using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.ReadModels.TimeEntries;
 using Hexalith.Timesheets.Server.MagicLinks;
 
 namespace Hexalith.Timesheets.Projections.TimeEntries;
@@ -20,6 +21,8 @@ public static class TimeEntryStoredEventNormalizer
             {
                 StoredTimeEntryRecorded stored => stored.Event,
                 StoredTimeEntrySubmitted stored => stored.Event,
+                StoredTimeEntryApproved stored => stored.Event,
+                StoredTimeEntryApprovedCorrected stored => stored.Event,
                 StoredTimeEntryConfirmed stored => stored.Event,
                 StoredTimeEntryAdjusted stored => stored.Event,
                 StoredMagicLinkUsed stored => stored.Event,

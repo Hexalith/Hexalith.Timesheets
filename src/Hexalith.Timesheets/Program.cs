@@ -3,6 +3,7 @@ using Hexalith.Timesheets.Endpoints;
 using Hexalith.Timesheets.Endpoints.MagicLinks;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Runtime;
+using Hexalith.Timesheets.Runtime.ProjectWorkflow;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.EventStore.DomainService;
@@ -44,7 +45,9 @@ builder.Services.AddEventStoreDevelopmentDomainCatalog(builder.Configuration,
 // Keep the fail-closed Timesheets authorization and reference-validation seams.
 builder.Services.AddTimesheetsServerKernel();
 builder.Services.AddTimesheetsEndpointAuthentication();
+builder.Services.AddTimesheetsProjectWorkflow(builder.Configuration);
 if (builder.Environment.IsDevelopment()
+    && !builder.Configuration.GetValue<bool>($"{ProjectWorkflowOptions.SectionName}:Enabled")
     && builder.Configuration.GetValue<bool>("Timesheets:LiveDaprFixture:Enabled"))
 {
     // The local proof accepts only isolated tenants carried by signed workload bindings.
@@ -77,6 +80,7 @@ app.UseEventStoreDomainService();
 app.MapTimesheetsExternalContributionEndpoints();
 app.MapTimesheetsMagicLinkConfirmationCapabilityEndpoints();
 app.MapTimesheetsIndexMigrationEndpoints();
+app.MapTimesheetsProjectWorkflow();
 
 app.MapGet(
     "/metadata/timesheets",

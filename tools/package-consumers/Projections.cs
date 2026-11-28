@@ -12,7 +12,7 @@ AppDomain.CurrentDomain.AssemblyLoad += ObserveAssemblyLoad;
 
 string[] projectionNames =
 [
-    "magic-link-confirmation-capabilities", "magic-link-token-hash-capability-index",
+    "approved-time-ledger", "magic-link-confirmation-capabilities", "magic-link-token-hash-capability-index",
     "tenant-activity-type-catalog", "time-entry-evidence"
 ];
 string[] expectedRouteIds = projectionNames.Select(name => "timesheets-" + name).ToArray();
@@ -40,7 +40,7 @@ if (TimesheetsProjectionRouteCatalogDeclarations.Commands.Count != 0
     || !Matches(CompiledRouteCatalogDeclarations.Read([projectionOwner]).Select(route => route.RouteId), expectedRouteIds)
     || !Matches(CompiledRouteCatalogDeclarations.ReadOperations([projectionOwner]).Select(operation => operation.RouteId), expectedRouteIds))
 {
-    throw new InvalidOperationException("The standalone projection catalog differs from the four named handlers.");
+    throw new InvalidOperationException("The standalone projection catalog differs from the five named handlers.");
 }
 
 var checkpoint = new Hexalith.Timesheets.Projections.TimesheetsProjectionCheckpoint(

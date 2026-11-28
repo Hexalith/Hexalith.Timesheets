@@ -1700,11 +1700,14 @@ foreach (var receiver in new[] { gateway, module })
                 instance.capture_route_catalog("before")
             commands = ["timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
                         "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
-                        "timesheets-commit-time-entry-confirmation", "timesheets-commit-approved-time-export"]
+                        "timesheets-commit-time-entry-confirmation", "timesheets-commit-approved-time-export",
+                        "timesheets-commit-project-time-entry-record", "timesheets-commit-project-time-entry-submit",
+                        "timesheets-commit-project-time-entry-approve", "timesheets-commit-project-time-entry-correct"]
             routes = [*commands,
                       "timesheets-magic-link-token-hash-capability-index",
                       "timesheets-magic-link-confirmation-capabilities",
-                      "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence"]
+                      "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence",
+                      "timesheets-approved-time-ledger", "timesheets-query-approved-time-ledger"]
             catalog = {"schemaVersion": 3, "profile": "Development", "generation": 1,
                        "routeFacetDigest": "route-digest", "idempotencyFacetDigest": "admission-digest",
                        "declarations": [{"routeId": route} for route in routes],

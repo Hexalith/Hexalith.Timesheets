@@ -6,10 +6,14 @@ using Hexalith.EventStore.Contracts.Results;
 using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.DomainService;
 using Hexalith.EventStore.ServiceDefaults.Routing;
+using Hexalith.Timesheets.Contracts.Models;
+using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Projections;
 using Hexalith.Timesheets.Projections.ActivityTypes;
+using Hexalith.Timesheets.Projections.ApprovedTimeLedger;
 using Hexalith.Timesheets.Projections.MagicLinks;
 using Hexalith.Timesheets.Projections.TimeEntries;
+using Hexalith.Timesheets.Server.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Exports;
 using Hexalith.Timesheets.Server.MagicLinks.Commands;
 using Hexalith.Timesheets.Server.Runtime;
@@ -30,10 +34,15 @@ var commands = new Dictionary<string, Type>(StringComparer.Ordinal)
     ["commit-magic-link-use"] = typeof(CommitMagicLinkUse),
     ["commit-time-entry-record"] = typeof(CommitTimeEntryRecord),
     ["commit-time-entry-confirmation"] = typeof(CommitTimeEntryConfirmation),
-    ["commit-approved-time-export"] = typeof(CommitApprovedTimeExport)
+    ["commit-approved-time-export"] = typeof(CommitApprovedTimeExport),
+    ["commit-project-time-entry-record"] = typeof(CommitProjectTimeEntryRecord),
+    ["commit-project-time-entry-submit"] = typeof(CommitProjectTimeEntrySubmit),
+    ["commit-project-time-entry-approve"] = typeof(CommitProjectTimeEntryApprove),
+    ["commit-project-time-entry-correct"] = typeof(CommitProjectTimeEntryCorrect)
 };
 var projections = new Dictionary<string, Type>(StringComparer.Ordinal)
 {
+    ["approved-time-ledger"] = typeof(ApprovedTimeLedgerProjectionHandler),
     ["magic-link-token-hash-capability-index"] = typeof(MagicLinkTokenHashCapabilityIndexProjectionHandler),
     ["magic-link-confirmation-capabilities"] = typeof(MagicLinkConfirmationCapabilityProjectionHandler),
     ["tenant-activity-type-catalog"] = typeof(TenantActivityTypeCatalogProjectionHandler),
@@ -42,11 +51,15 @@ var projections = new Dictionary<string, Type>(StringComparer.Ordinal)
 var commandTypes = TimesheetsRouteCatalogDeclarations.PayloadTypes.Select(type => type.FullName!);
 var projectionTypes = owners[1].GetTypes().Where(type =>
     type.IsClass && !type.IsAbstract && typeof(IAsyncDomainProjectionHandler).IsAssignableFrom(type)).Select(type => type.FullName!);
-if (routes.Count != 10 || operations.Count != 10 || methods.Count != 10
+var queryTypes = owners[0].GetTypes().Where(type =>
+    type.IsClass && !type.IsAbstract && typeof(IDomainQueryHandler).IsAssignableFrom(type));
+int expectedCount = commands.Count + projections.Count + 1;
+if (routes.Count != expectedCount || operations.Count != expectedCount || methods.Count != expectedCount
     || !Matches(commands.Values.Select(type => type.FullName!), commandTypes)
-    || !Matches(projections.Values.Select(type => type.FullName!), projectionTypes))
+    || !Matches(projections.Values.Select(type => type.FullName!), projectionTypes)
+    || queryTypes.SingleOrDefault() != typeof(ApprovedTimeLedgerQueryHandler))
 {
-    throw new InvalidOperationException("The composed catalog must match every installed command and named projection exactly once.");
+    throw new InvalidOperationException("The composed catalog must match every installed command, query and named projection exactly once.");
 }
 
 foreach (var (slug, payload) in commands)
@@ -58,6 +71,9 @@ foreach (var (name, handler) in projections)
 {
     VerifyBinding(name, handler, "projection", null, name, "project/v2", typeof(ProjectionDispatchRequest), typeof(ProjectionDispatchResponse));
 }
+
+VerifyBinding("query-approved-time-ledger", typeof(ApprovedTimeLedgerQueryHandler), "query",
+    nameof(QueryApprovedTimeLedger), null, "query", typeof(QueryApprovedTimeLedger), typeof(ApprovedTimeLedgerReadModel));
 
 void VerifyBinding(string slug, Type handler, string kind, string? message, string? projection, string method, Type request, Type result)
 {

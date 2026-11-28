@@ -6,13 +6,14 @@ using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Queries.Reporting;
 using Hexalith.Timesheets.Contracts.ValueObjects;
 using Hexalith.Timesheets.Projections.TimeEntries;
+using Hexalith.Timesheets.ReadModels.ApprovedTimeLedger;
 using Hexalith.Timesheets.Server.Policies;
 
 namespace Hexalith.Timesheets.Projections.ApprovedTimeLedger;
 
 public sealed class ApprovedTimeLedgerProjection
 {
-    public const string ProjectionName = "approved-time-ledger";
+    public const string ProjectionName = ApprovedTimeLedgerEpoch.ProjectionName;
 
     private const int DefaultPageSize = 50;
 
@@ -75,7 +76,7 @@ public sealed class ApprovedTimeLedgerProjection
         IReadOnlyList<ApprovedTimeLedgerRowReadModel> filteredRows = rows
             .Where(query.Includes)
             .ToArray();
-        IReadOnlyList<ApprovedTimeLedgerRowReadModel> sortedRows = Sort(filteredRows, query);
+        IReadOnlyList<ApprovedTimeLedgerRowReadModel> sortedRows = ApprovedTimeLedgerOrdering.Sort(filteredRows, query);
         int pageSize = NormalizePageSize(query.PageSize);
         int offset = DecodeCursor(query.Cursor);
         ApprovedTimeLedgerRowReadModel[] pageItems = sortedRows
@@ -124,38 +125,6 @@ public sealed class ApprovedTimeLedgerProjection
             }
         }
     }
-
-    private static IReadOnlyList<ApprovedTimeLedgerRowReadModel> Sort(
-        IReadOnlyList<ApprovedTimeLedgerRowReadModel> rows,
-        QueryApprovedTimeLedger query)
-    {
-        bool descending = query.SortDirection == TimeEntryQuerySortDirection.Descending;
-
-        IOrderedEnumerable<ApprovedTimeLedgerRowReadModel> ordered = query.SortBy switch
-        {
-            TimeEntryQuerySortBy.TimeEntryId => OrderByPrimary(
-                rows, static row => row.TimeEntryId.Value, StringComparer.Ordinal, descending),
-            TimeEntryQuerySortBy.DurationMinutes => OrderByPrimary(
-                rows, static row => row.DurationMinutes, Comparer<int>.Default, descending),
-            _ => OrderByPrimary(
-                rows, static row => row.ServiceDate, Comparer<DateOnly>.Default, descending)
-        };
-
-        // Deterministic tie-breakers always remain ascending so paging is stable across replay/rebuild.
-        return ordered
-            .ThenBy(static row => row.TimeEntryId.Value, StringComparer.Ordinal)
-            .ThenBy(static row => row.RowState)
-            .ToArray();
-    }
-
-    private static IOrderedEnumerable<ApprovedTimeLedgerRowReadModel> OrderByPrimary<TKey>(
-        IReadOnlyList<ApprovedTimeLedgerRowReadModel> rows,
-        Func<ApprovedTimeLedgerRowReadModel, TKey> keySelector,
-        IComparer<TKey> comparer,
-        bool descending)
-        => descending
-            ? rows.OrderByDescending(keySelector, comparer)
-            : rows.OrderBy(keySelector, comparer);
 
     private static int NormalizePageSize(int requestedPageSize)
         => requestedPageSize <= 0

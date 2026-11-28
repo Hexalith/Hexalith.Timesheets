@@ -253,6 +253,16 @@ class ConsumerRestoreTests(unittest.TestCase):
     def test_exact_restored_candidate_bytes_and_local_source_pass(self):
         self.validate()
 
+    def test_packed_consumer_refuses_host_only_sibling_contracts(self):
+        for sibling in ("Projects", "Parties", "Tenants"):
+            with self.subTest(sibling=sibling):
+                assets = {"libraries": {
+                    **self.assets["libraries"],
+                    f"Hexalith.{sibling}.Contracts/1.0.0": {"type": "package"},
+                }}
+                with self.assertRaisesRegex(ValueError, "Host-only sibling contracts leaked"):
+                    consumer.verify_restored_candidates(assets, self.cache, self.feed, "1.2.3", (self.package,))
+
     def test_wrong_restored_version_refuses(self):
         self.assets["libraries"] = {self.package + "/1.2.2": {"type": "package"}}
         with self.assertRaisesRegex(ValueError, "Wrong restored candidate version"):

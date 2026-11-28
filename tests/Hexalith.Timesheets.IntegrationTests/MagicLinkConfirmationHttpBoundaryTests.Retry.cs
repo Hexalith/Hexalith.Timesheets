@@ -54,9 +54,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
         assembly.GetCustomAttributes(typeof(RouteCatalogAdapterSourceAttribute), false)
             .Single().ShouldBeOfType<RouteCatalogAdapterSourceAttribute>().SourceType
             .ShouldBe(typeof(TimesheetsRouteCatalogAdapters));
-        CompiledRouteCatalogDeclarations.Read([assembly]).Select(route => route.RouteId)
+        CompiledRouteCatalogDeclarations.Read([assembly]).Where(route => route.Kind == "command").Select(route => route.RouteId)
             .ShouldBe(declared.Select(command => command.Route.RouteId), ignoreOrder: true);
-        IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations([assembly]);
+        RouteOperationContract[] operations = CompiledRouteCatalogDeclarations.ReadOperations([assembly])
+            .Where(operation => operation.Kind == "command").ToArray();
         operations.Select(operation => operation.RouteId)
             .ShouldBe(declared.Select(command => command.Route.RouteId), ignoreOrder: true);
         foreach (RouteOperationContract operation in operations)

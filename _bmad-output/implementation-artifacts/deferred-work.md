@@ -1800,3 +1800,10 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-6-support-independent-and-composed-route-discovery.md`
   summary: Investigate timing sensitivity in the Server's terminal-status read count test.
   evidence: On an unchanged Server test assembly, the 100 ms Rejected case observed one status read during the final broad rerun. The earlier full Server run passed all 1,052 tests, and the one focused retry passed Rejected, PublishFailed, and TimedOut.
+
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-7-wire-one-project-capture-to-ledger-workflow.md`
+  summary: Qualify startup and rebuild for a Story 6.8 tenant with existing Time Entry owner histories.
+  evidence: A live suffix following an unrecognized legacy prefix requires an opening ledger generation built from the full history. Verify that cutover retains the earlier lineage and that the selected tenant fits the configured SDK shared rebuild candidate size. Story 6.9 owns representative volume measurements.
+- source_spec: `_bmad-output/implementation-artifacts/spec-6-7-wire-one-project-capture-to-ledger-workflow.md`
+  summary: Define retry admission after an authoritative provider refusal.
+  evidence: EventStore records a zero-event result as terminal for that message ID. The host distinguishes indeterminate observation and supports replay of completed effects. Re-admission after a known refusal requires a fresh request identity until the EventStore retry contract provides a supported transition.

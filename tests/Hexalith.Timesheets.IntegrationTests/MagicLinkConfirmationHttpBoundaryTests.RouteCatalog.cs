@@ -143,9 +143,9 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             var operations = observation.Operations.ShouldNotBeNull();
             var expectedRoutes = TimesheetsHostRouteCatalogDeclarations.Routes;
             var expectedMethods = TimesheetsHostRouteCatalogDeclarations.ReceiverMethods;
-            observation.Declarations.Count.ShouldBe(10);
-            operations.Count.ShouldBe(10);
-            observation.Targets.Count.ShouldBe(10);
+            observation.Declarations.Count.ShouldBe(16);
+            operations.Count.ShouldBe(16);
+            observation.Targets.Count.ShouldBe(16);
             observation.Declarations.Select(RouteCatalogCodec.ComputeDeclarationDigest)
                 .ShouldBe(expectedRoutes.Select(RouteCatalogCodec.ComputeDeclarationDigest), ignoreOrder: true);
             operations.Select(operation => operation.Digest)
@@ -173,16 +173,19 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
             typeof(TimesheetsProjectionRouteCatalogDeclarations).Assembly };
         IReadOnlyList<RouteContractDeclaration> declarations = CompiledRouteCatalogDeclarations.Read(owners);
         IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations(owners);
-        declarations.Count.ShouldBe(10);
+        declarations.Count.ShouldBe(16);
         declarations.Select(route => route.RouteId).ShouldBe(new[]
         {
             "timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
             "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
             "timesheets-commit-time-entry-confirmation", "timesheets-commit-approved-time-export",
+            "timesheets-commit-project-time-entry-record", "timesheets-commit-project-time-entry-submit",
+            "timesheets-commit-project-time-entry-approve", "timesheets-commit-project-time-entry-correct",
             "timesheets-magic-link-token-hash-capability-index", "timesheets-magic-link-confirmation-capabilities",
-            "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence"
+            "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence",
+            "timesheets-approved-time-ledger", "timesheets-query-approved-time-ledger"
         }, ignoreOrder: true);
-        declarations.Count(route => route.Kind == "command").ShouldBe(6);
+        declarations.Count(route => route.Kind == "command").ShouldBe(10);
         declarations.Where(route => route.Kind == "projection").Select(route => route.ProjectionType)
             .ShouldBe(TimesheetsProjectionRouteCatalogDeclarations.Projections.Select(route => route.ProjectionType), ignoreOrder: true);
         operations.Select(operation => operation.RouteId)
@@ -200,9 +203,10 @@ public sealed partial class MagicLinkConfirmationHttpBoundaryTests
 
         EndpointDataSource endpoints = services.GetRequiredService<EndpointDataSource>();
         IReadOnlyList<RouteCatalogEntry> targets = DevelopmentDomainRouteCatalog.Targets(services, endpoints.Endpoints, hostDeclarations);
-        targets.Count.ShouldBe(10);
-        targets.Where(target => target.Method == "process").Count().ShouldBe(6);
-        targets.Where(target => target.Method == "project/v2").Count().ShouldBe(4);
+        targets.Count.ShouldBe(16);
+        targets.Count(target => target.Method == "process").ShouldBe(10);
+        targets.Count(target => target.Method == "project/v2").ShouldBe(5);
+        targets.Single(target => target.Method == "query").RouteId.ShouldBe("timesheets-query-approved-time-ledger");
         TimesheetsHostRouteCatalogDeclarations.ReceiverMethods
             .ShouldBe(targets.Select(target => KeyValuePair.Create(target.RouteId, target.Method)), ignoreOrder: true);
 

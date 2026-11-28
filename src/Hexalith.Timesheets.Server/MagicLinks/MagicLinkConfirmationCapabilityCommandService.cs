@@ -844,7 +844,8 @@ public sealed class MagicLinkConfirmationCapabilityCommandService
         return true;
     }
 
-    private static bool IsAllowedByProjectPolicy(
+    /// <summary>Checks the selected activity against complete Project restriction evidence.</summary>
+    internal static bool IsAllowedByProjectPolicy(
         TenantReference? tenant,
         TimeEntryTargetReference target,
         ActivityTypeId activityTypeId,

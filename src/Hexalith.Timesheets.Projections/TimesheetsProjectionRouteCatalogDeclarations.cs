@@ -5,6 +5,7 @@ using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.Timesheets.Contracts;
 using Hexalith.Timesheets.Projections.ActivityTypes;
+using Hexalith.Timesheets.Projections.ApprovedTimeLedger;
 using Hexalith.Timesheets.Projections.MagicLinks;
 using Hexalith.Timesheets.Projections.TimeEntries;
 using Hexalith.Timesheets.Server.MagicLinks;
@@ -34,7 +35,9 @@ public static class TimesheetsProjectionRouteCatalogDeclarations
         Projection<TenantActivityTypeCatalogProjectionHandler>(
             "tenant-activity-type-catalog", TenantActivityTypeCatalogProjection.ProjectionName),
         Projection<TimeEntryEvidenceProjectionHandler>(
-            "time-entry-evidence", TimeEntryEvidenceProjection.ProjectionName)
+            "time-entry-evidence", TimeEntryEvidenceProjection.ProjectionName),
+        Projection<ApprovedTimeLedgerProjectionHandler>(
+            "approved-time-ledger", ApprovedTimeLedgerProjection.ProjectionName)
     ];
 
     /// <summary>Gets the compiled named projection routes.</summary>

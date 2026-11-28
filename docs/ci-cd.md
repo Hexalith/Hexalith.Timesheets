@@ -136,11 +136,12 @@ python3 -m unittest discover -s scripts/tests -v
 Consumers live outside the repository, use their own Central Package Management
 and a private NuGet cache, and clear inherited feeds. Six projects each restore one
 exact local candidate through PackageReference. A seventh project restores both
-Server and Projections and verifies that all ten routes, operations, and receiver
-methods match the six command payloads and four named projection handlers exactly
-once. The isolated Projections project verifies that declaration discovery loads
-no Timesheets Server assembly and that its command inventory is empty. The
-isolated Server project verifies discovery of all six commands.
+Server and Projections and checks that the ten command payloads, five named
+projection handlers, and approved ledger query each have one route, operation
+schema, and receiver method. The isolated Projections project verifies discovery
+without loading Timesheets Server. The isolated Server project verifies its command
+and query inventory. All consumers check that the host's three sibling Contracts
+packages stay outside the packed dependency graph.
 
 Exact package source mappings reserve all six candidate IDs, including transitive
 edges, for the local feed, and nuget.org supplies external dependencies. Validation
@@ -156,9 +157,9 @@ Timesheets 3.0.0 release. Use a Conventional Commit with a `BREAKING CHANGE`
 footer so Semantic Release selects the major version. Server and Projections each carry their own
 `RouteCatalogDeclarationSourceAttribute`. On
 `TimesheetsProjectionRouteCatalogDeclarations`, `Routes`, `Operations`, and
-`ReceiverMethods` now cover four named projections. `Commands` returns an empty
-list. Command routes, schemas, receiver methods, and policies are available from
-`TimesheetsRouteCatalogDeclarations` in Server.
+`ReceiverMethods` cover the named projections. `Commands` returns an empty list.
+Command and query routes, their schemas and receiver methods, and command policies
+are available from `TimesheetsRouteCatalogDeclarations` in Server.
 
 Upgrade `Hexalith.Timesheets.Server` and `Hexalith.Timesheets.Projections`
 together to 3.0.0. Use the same release version of both packages for subsequent

@@ -3,6 +3,7 @@ using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.ReadModels.TimeEntries;
 using Hexalith.Timesheets.Server.MagicLinks;
 
 namespace Hexalith.Timesheets.Server.TimeEntries;
@@ -163,6 +164,12 @@ public sealed class TimeEntryState
 
     /// <summary>Applies an EventStore submission payload.</summary>
     public void Apply(StoredTimeEntrySubmitted submitted) => Apply(submitted.Event);
+
+    /// <summary>Applies an EventStore approval payload.</summary>
+    public void Apply(StoredTimeEntryApproved approved) => Apply(approved.Event);
+
+    /// <summary>Applies an EventStore approved correction payload.</summary>
+    public void Apply(StoredTimeEntryApprovedCorrected corrected) => Apply(corrected.Event);
 
     /// <summary>Ignores a rejected command retained in the EventStore stream.</summary>
     public void Apply(MagicLinkCommitRejected rejected)

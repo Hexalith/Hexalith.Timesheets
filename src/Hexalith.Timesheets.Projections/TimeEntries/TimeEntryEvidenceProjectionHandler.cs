@@ -14,6 +14,7 @@ using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.Policies;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.ReadModels.TimeEntries;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Policies;
 using Hexalith.Timesheets.Contracts;
@@ -139,7 +140,8 @@ public sealed class TimeEntryEvidenceProjectionHandler(
         }
     }
 
-    private JsonObject AppendSelectedSuffix(JsonObject? selected, ProjectionRequest request,
+    /// <summary>Folds a verified contiguous delivery over compact Time Entry evidence.</summary>
+    internal JsonObject AppendSelectedSuffix(JsonObject? selected, ProjectionRequest request,
         ProjectionEventDto item)
     {
         if (selected is null)
@@ -555,7 +557,8 @@ public sealed class TimeEntryEvidenceProjectionHandler(
             precedingValues is null ? null : DigestValues(precedingValues));
     }
 
-    private TimeEntryEvidenceReadModel? Fold(ProjectionRequest request,
+    /// <summary>Validates and folds a complete Time Entry prefix without writing state.</summary>
+    internal TimeEntryEvidenceReadModel? Fold(ProjectionRequest request,
         out string? effectiveValuesDigest)
     {
         effectiveValuesDigest = null;
@@ -729,12 +732,17 @@ public sealed class TimeEntryEvidenceProjectionHandler(
     private static string DigestValues(TimeEntryCorrectionValues values)
         => Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(values)));
 
-    private static object? Decode(ProjectionEventDto item)
+    /// <summary>Decodes a recognized stored Time Entry payload.</summary>
+    internal static object? Decode(ProjectionEventDto item)
     {
         StoredTimeEntryRecorded? recorded = ProjectionEventReader.Deserialize<StoredTimeEntryRecorded>(item);
         if (recorded is not null) return recorded.Event ?? throw new InvalidOperationException("Recorded evidence is missing.");
         StoredTimeEntrySubmitted? submitted = ProjectionEventReader.Deserialize<StoredTimeEntrySubmitted>(item);
         if (submitted is not null) return submitted.Event ?? throw new InvalidOperationException("Submitted evidence is missing.");
+        StoredTimeEntryApproved? approved = ProjectionEventReader.Deserialize<StoredTimeEntryApproved>(item);
+        if (approved is not null) return approved.Event ?? throw new InvalidOperationException("Approval evidence is missing.");
+        StoredTimeEntryApprovedCorrected? corrected = ProjectionEventReader.Deserialize<StoredTimeEntryApprovedCorrected>(item);
+        if (corrected is not null) return corrected.Event ?? throw new InvalidOperationException("Approved correction evidence is missing.");
         StoredTimeEntryConfirmed? confirmed = ProjectionEventReader.Deserialize<StoredTimeEntryConfirmed>(item);
         if (confirmed is not null) return confirmed.Event ?? throw new InvalidOperationException("Confirmed evidence is missing.");
         StoredTimeEntryAdjusted? adjusted = ProjectionEventReader.Deserialize<StoredTimeEntryAdjusted>(item);

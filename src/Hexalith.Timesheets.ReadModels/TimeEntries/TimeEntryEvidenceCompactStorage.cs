@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 using Hexalith.EventStore.Contracts.Projections;
 using Hexalith.Timesheets.Contracts.Models;
 
-namespace Hexalith.Timesheets.Projections.TimeEntries;
+namespace Hexalith.Timesheets.ReadModels.TimeEntries;
 
 /// <summary>Builds the lossless compact representation of a selected Time Entry evidence row.</summary>
 internal static class TimeEntryEvidenceCompactStorage

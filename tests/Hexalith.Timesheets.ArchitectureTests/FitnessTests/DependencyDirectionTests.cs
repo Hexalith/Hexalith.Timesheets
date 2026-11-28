@@ -176,6 +176,13 @@ public sealed class DependencyDirectionTests
     public void SiblingModulesUseConditionalSourceAndPublishedPackageReferences()
     {
         string repositoryRoot = RepositoryRoot.Find().FullName;
+        string hostProject = Path.Combine(repositoryRoot, "src", "Hexalith.Timesheets", "Hexalith.Timesheets.csproj");
+        string[] hostOnlyContracts =
+        [
+            "Hexalith.Parties.Contracts",
+            "Hexalith.Projects.Contracts",
+            "Hexalith.Tenants.Contracts"
+        ];
         string[] projectFiles =
         [
             .. Directory.GetFiles(Path.Combine(repositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories),
@@ -187,6 +194,7 @@ public sealed class DependencyDirectionTests
         foreach (string projectFile in projectFiles)
         {
             XDocument project = XDocument.Load(projectFile);
+            bool isHost = projectFile == hostProject;
             XElement[] packageReferences = project
                 .Descendants("PackageReference")
                 .Where(static reference => reference.Attribute("Include")?.Value.StartsWith("Hexalith.", StringComparison.Ordinal) == true)
@@ -196,15 +204,34 @@ public sealed class DependencyDirectionTests
             {
                 string package = reference.Attribute("Include")!.Value;
                 (package.StartsWith("Hexalith.EventStore.", StringComparison.Ordinal)
-                    || package == "Hexalith.Works.Contracts").ShouldBeTrue(projectFile);
+                    || package == "Hexalith.Works.Contracts"
+                    || (isHost && hostOnlyContracts.Contains(package, StringComparer.Ordinal))).ShouldBeTrue(projectFile);
                 string.Join(";", reference.AncestorsAndSelf().Attributes("Condition").Select(static value => value.Value))
                     .Contains("'$(UseHexalithProjectReferences)' != 'true'", StringComparison.Ordinal).ShouldBeTrue(projectFile);
             }
 
-            foreach (XElement reference in project.Descendants("ProjectReference")
+            XElement[] sourceReferences = project.Descendants("ProjectReference").ToArray();
+            foreach (XElement reference in sourceReferences
                 .Where(static reference => reference.Attribute("Include")?.Value.StartsWith("$(Hexalith", StringComparison.Ordinal) == true))
             {
                 reference.Attribute("Condition")?.Value.ShouldBe("'$(UseHexalithProjectReferences)' == 'true'", projectFile);
+            }
+
+            string[] hostContractSourceReferences = sourceReferences
+                .Select(reference => Path.GetFileNameWithoutExtension(reference.Attribute("Include")!.Value.Replace('\\', '/')))
+                .Where(name => hostOnlyContracts.Contains(name, StringComparer.Ordinal))
+                .ToArray();
+            if (isHost)
+            {
+                project.Descendants("IsPackable").Single().Value.ShouldBe("false");
+                hostContractSourceReferences.ShouldBe(hostOnlyContracts, ignoreOrder: true);
+                packageReferences.Select(reference => reference.Attribute("Include")!.Value)
+                    .Where(name => hostOnlyContracts.Contains(name, StringComparer.Ordinal))
+                    .ShouldBe(hostOnlyContracts, ignoreOrder: true);
+            }
+            else
+            {
+                hostContractSourceReferences.ShouldBeEmpty(projectFile);
             }
         }
     }

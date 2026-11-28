@@ -11,6 +11,7 @@ using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.Models;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.ReadModels.TimeEntries;
 using Hexalith.Timesheets.Server.Runtime;
 using Hexalith.Timesheets.Server.TimeEntries;
 
@@ -819,6 +820,10 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
                 (typeof(StoredTimeEntryRecorded), typeof(TimeEntryRecorded)),
             var name when name == typeof(StoredTimeEntrySubmitted).FullName || name == nameof(StoredTimeEntrySubmitted) =>
                 (typeof(StoredTimeEntrySubmitted), typeof(TimeEntrySubmitted)),
+            var name when name == typeof(StoredTimeEntryApproved).FullName || name == nameof(StoredTimeEntryApproved) =>
+                (typeof(StoredTimeEntryApproved), typeof(TimeEntryApproved)),
+            var name when name == typeof(StoredTimeEntryApprovedCorrected).FullName || name == nameof(StoredTimeEntryApprovedCorrected) =>
+                (typeof(StoredTimeEntryApprovedCorrected), typeof(TimeEntryApprovedCorrected)),
             _ => null
         };
         Type? eventType = stored is { } matched && eventTypes.Contains(matched.Domain)
@@ -855,6 +860,8 @@ public sealed class EventStoreMagicLinkConfirmationCapabilityStateLoader(
             StoredTimeEntryAdjusted item => RequiredStoredEvent(item.Event),
             StoredTimeEntryRecorded item => RequiredStoredEvent(item.Event),
             StoredTimeEntrySubmitted item => RequiredStoredEvent(item.Event),
+            StoredTimeEntryApproved item => RequiredStoredEvent(item.Event),
+            StoredTimeEntryApprovedCorrected item => RequiredStoredEvent(item.Event),
             _ => payload
         };
     }

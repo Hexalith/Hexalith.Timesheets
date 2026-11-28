@@ -11,10 +11,16 @@
     <ProjectReference Include="..\Hexalith.Timesheets.Projections\Hexalith.Timesheets.Projections.csproj" />
     <ProjectReference Include="..\Hexalith.Timesheets.Server\Hexalith.Timesheets.Server.csproj" />
     <ProjectReference Include="..\Hexalith.Timesheets.ServiceDefaults\Hexalith.Timesheets.ServiceDefaults.csproj" />
+    <ProjectReference Include="$(HexalithProjectsRoot)\src\Hexalith.Projects.Contracts\Hexalith.Projects.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithPartiesRoot)\src\Hexalith.Parties.Contracts\Hexalith.Parties.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
+    <ProjectReference Include="$(HexalithTenantsRoot)\src\Hexalith.Tenants.Contracts\Hexalith.Tenants.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
     <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.DomainService\Hexalith.EventStore.DomainService.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(UseHexalithProjectReferences)' != 'true'">
+    <PackageReference Include="Hexalith.Projects.Contracts" />
+    <PackageReference Include="Hexalith.Parties.Contracts" />
+    <PackageReference Include="Hexalith.Tenants.Contracts" />
     <PackageReference Include="Hexalith.EventStore.DomainService" />
   </ItemGroup>
 </Project>

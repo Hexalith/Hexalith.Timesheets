@@ -48,7 +48,7 @@ public static class TimesheetsHostRouteCatalogDeclarations
 
     private static IReadOnlyList<T> RequireComplete<T>(IReadOnlyList<T> inventory)
     {
-        if (inventory.Count != Commands.Count + TimesheetsProjectionRouteCatalogDeclarations.Projections.Count)
+        if (inventory.Count != TimesheetsRouteCatalogDeclarations.Routes.Count + TimesheetsProjectionRouteCatalogDeclarations.Projections.Count)
         {
             throw new RouteCatalogUnavailableException("The composed Timesheets owner inventory is incomplete.");
         }

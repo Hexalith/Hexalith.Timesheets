@@ -4,6 +4,11 @@
     <PackageTags>timesheets;read-models;eventsourcing;dotnet</PackageTags>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Hexalith.Timesheets.Projections" />
+    <InternalsVisibleTo Include="Hexalith.Timesheets.Projections.Tests" />
+    <InternalsVisibleTo Include="Hexalith.Timesheets.Server" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Hexalith.Timesheets.Contracts\Hexalith.Timesheets.Contracts.csproj" />
     <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Client\Hexalith.EventStore.Client.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />
     <ProjectReference Include="$(HexalithEventStoreRoot)\src\Hexalith.EventStore.Contracts\Hexalith.EventStore.Contracts.csproj" Condition="'$(UseHexalithProjectReferences)' == 'true'" />

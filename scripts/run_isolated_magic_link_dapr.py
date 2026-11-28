@@ -2718,11 +2718,14 @@ class IsolatedFixture:
             "timesheets-commit-magic-link-issue", "timesheets-commit-magic-link-transition",
             "timesheets-commit-magic-link-use", "timesheets-commit-time-entry-record",
             "timesheets-commit-time-entry-confirmation", "timesheets-commit-approved-time-export",
+            "timesheets-commit-project-time-entry-record", "timesheets-commit-project-time-entry-submit",
+            "timesheets-commit-project-time-entry-approve", "timesheets-commit-project-time-entry-correct",
         }
         expected_routes = expected_commands | {
             "timesheets-magic-link-token-hash-capability-index",
             "timesheets-magic-link-confirmation-capabilities",
             "timesheets-tenant-activity-type-catalog", "timesheets-time-entry-evidence",
+            "timesheets-approved-time-ledger", "timesheets-query-approved-time-ledger",
         }
         route_ids = {item["routeId"] for item in catalog["declarations"]}
         require(catalog["schemaVersion"] == 3 and catalog["profile"] == "Development"

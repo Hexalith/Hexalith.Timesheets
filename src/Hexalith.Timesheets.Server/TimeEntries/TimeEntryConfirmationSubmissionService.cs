@@ -9,6 +9,7 @@ using Hexalith.Timesheets.Contracts.Events.MagicLinks;
 using Hexalith.Timesheets.Contracts.Events.TimeEntries;
 using Hexalith.Timesheets.Contracts.References;
 using Hexalith.Timesheets.Contracts.ValueObjects;
+using Hexalith.Timesheets.ReadModels.TimeEntries;
 using Hexalith.Timesheets.Server.Authorization;
 using Hexalith.Timesheets.Server.MagicLinks;
 using Hexalith.Timesheets.Server.Runtime;
@@ -589,6 +590,10 @@ public sealed class TimeEntryConfirmationSubmissionService(
                 typeof(StoredTimeEntryRecorded),
             var name when name == typeof(StoredTimeEntrySubmitted).FullName || name == nameof(StoredTimeEntrySubmitted) =>
                 typeof(StoredTimeEntrySubmitted),
+            var name when name == typeof(StoredTimeEntryApproved).FullName || name == nameof(StoredTimeEntryApproved) =>
+                typeof(StoredTimeEntryApproved),
+            var name when name == typeof(StoredTimeEntryApprovedCorrected).FullName || name == nameof(StoredTimeEntryApprovedCorrected) =>
+                typeof(StoredTimeEntryApprovedCorrected),
             _ => _ownerEventTypes.FirstOrDefault(type =>
                 string.Equals(unqualifiedEventTypeName, type.Name, StringComparison.Ordinal)
                 || string.Equals(unqualifiedEventTypeName, type.FullName, StringComparison.Ordinal))
@@ -618,6 +623,8 @@ public sealed class TimeEntryConfirmationSubmissionService(
             StoredTimeEntryAdjusted item => item.Event ?? throw new InvalidOperationException("An EventStore payload has no domain event."),
             StoredTimeEntryRecorded item => item.Event ?? throw new InvalidOperationException("An EventStore payload has no domain event."),
             StoredTimeEntrySubmitted item => item.Event ?? throw new InvalidOperationException("An EventStore payload has no domain event."),
+            StoredTimeEntryApproved item => item.Event ?? throw new InvalidOperationException("An EventStore payload has no domain event."),
+            StoredTimeEntryApprovedCorrected item => item.Event ?? throw new InvalidOperationException("An EventStore payload has no domain event."),
             _ => payload
         };
     }

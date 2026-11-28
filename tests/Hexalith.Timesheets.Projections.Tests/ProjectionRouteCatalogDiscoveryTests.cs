@@ -3,6 +3,7 @@ using System.Reflection;
 using Hexalith.EventStore.Contracts.Routing;
 using Hexalith.EventStore.ServiceDefaults.Routing;
 using Hexalith.Timesheets.Projections.ActivityTypes;
+using Hexalith.Timesheets.Projections.ApprovedTimeLedger;
 using Hexalith.Timesheets.Projections.MagicLinks;
 using Hexalith.Timesheets.Projections.TimeEntries;
 
@@ -13,7 +14,7 @@ namespace Hexalith.Timesheets.Projections.Tests;
 /// <summary>Verifies the independent compiled Projections declaration source.</summary>
 public sealed class ProjectionRouteCatalogDiscoveryTests
 {
-    /// <summary>Finds the four named projections and their schemas without a Server reference.</summary>
+    /// <summary>Finds the five named projections and their schemas without a Server reference.</summary>
     [Fact]
     public void StandaloneProjectionCatalogDeclaresOnlyNamedProjectionReceivers()
     {
@@ -25,6 +26,7 @@ public sealed class ProjectionRouteCatalogDiscoveryTests
 
         (string Name, Type Handler)[] expected =
         [
+            ("approved-time-ledger", typeof(ApprovedTimeLedgerProjectionHandler)),
             ("magic-link-token-hash-capability-index", typeof(MagicLinkTokenHashCapabilityIndexProjectionHandler)),
             ("magic-link-confirmation-capabilities", typeof(MagicLinkConfirmationCapabilityProjectionHandler)),
             ("tenant-activity-type-catalog", typeof(TenantActivityTypeCatalogProjectionHandler)),

@@ -56,17 +56,19 @@ public sealed class AuthorityBoundaryTests
 
         matchingFiles.ShouldNotBeEmpty();
 
-        // The server authority context is owned by the Server kernel. Story 1.10 introduces the first
-        // concrete sibling reference-validation adapter (Hexalith.Timesheets.Works), which legitimately
-        // consumes the Server-owned IWorkReferenceValidator seam and therefore takes a
-        // TimesheetsRequestContext parameter. Public surfaces (Contracts/Client) are still forbidden the
-        // type by PublicContractsAndClientDoNotExposeServerAuthorityContext. The host's
-        // Development-only isolated fixture also implements the server-owned tenant-validation seam;
-        // permit that exact adapter without allowing other host or presentation code.
+        // The Server kernel owns the context. Works and these HTTP host files consume it for
+        // server-side reference validation, authorized ledger reads, and authenticated ingress.
+        string[] hostConsumers =
+        [
+            TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Runtime", "LiveDaprFixtureAccessGuard.cs"),
+            TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Runtime", "ProjectWorkflow", "GatewayProjectWorkflowReferences.cs"),
+            TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Runtime", "ProjectWorkflow", "ProjectWorkflowLedgerReader.cs"),
+            TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Endpoints", "ProjectWorkflowEndpoints.cs")
+        ];
         matchingFiles.ShouldAllBe(file =>
             file.Contains(Path.Combine("src", "Hexalith.Timesheets.Server"), StringComparison.Ordinal)
             || file.Contains(Path.Combine("src", "Hexalith.Timesheets.Works"), StringComparison.Ordinal)
-            || file == TestRepositoryRoot.PathTo("src", "Hexalith.Timesheets", "Runtime", "LiveDaprFixtureAccessGuard.cs"));
+            || hostConsumers.Contains(file, StringComparer.Ordinal));
     }
 
     private static string[] SourceFiles(string root)

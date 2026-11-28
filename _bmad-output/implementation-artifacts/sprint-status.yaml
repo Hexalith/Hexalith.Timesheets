@@ -1,5 +1,5 @@
 # generated: 06-18-2026 23:50
-# last_updated: 11-28-2026 13:05 (Story 6.6 implementation and review checks passed)
+# last_updated: 11-28-2026 15:42 (Story 6.7 implementation and review checks passed)
 # project: timesheets
 # project_key: NOKEY
 # tracking_system: file-system
@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 06-18-2026 23:50
-last_updated: 11-28-2026 13:05
+last_updated: 11-28-2026 15:42
 project: timesheets
 project_key: NOKEY
 tracking_system: file-system
@@ -112,7 +112,7 @@ development_status:
   6-4-persist-workload-authenticated-external-confirmation: done
   6-5-bound-external-recording-readback-and-report-uncertainty: review
   6-6-support-independent-and-composed-route-discovery: review
-  6-7-wire-one-project-capture-to-ledger-workflow: backlog
+  6-7-wire-one-project-capture-to-ledger-workflow: review
   6-8-qualify-the-deployed-project-workflow: backlog
   6-9-reduce-repeated-ledger-folds-while-preserving-evidence: backlog
   6-10-recover-interrupted-period-submissions-and-reviews: backlog

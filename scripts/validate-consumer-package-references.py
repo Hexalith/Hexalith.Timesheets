@@ -21,6 +21,11 @@ SURFACES = {
     "Testing": "Hexalith.Timesheets.Testing.TimesheetsTestIds",
 }
 COMPOSED_PACKAGES = ("Hexalith.Timesheets.Server", "Hexalith.Timesheets.Projections")
+HOST_ONLY_CONTRACTS = {
+    "hexalith.parties.contracts",
+    "hexalith.projects.contracts",
+    "hexalith.tenants.contracts",
+}
 
 
 def verify_restored_candidates(
@@ -29,12 +34,15 @@ def verify_restored_candidates(
     libraries = assets["libraries"]
     if any(value.get("type") != "package" for value in libraries.values()):
         raise ValueError(f"Source dependency leaked into NuGet consumer: {', '.join(package_ids)}")
+    restored_ids = {identity.split("/", 1)[0].casefold() for identity in libraries}
+    leaked_contracts = restored_ids & HOST_ONLY_CONTRACTS
+    if leaked_contracts:
+        raise ValueError(f"Host-only sibling contracts leaked into NuGet consumer: {', '.join(sorted(leaked_contracts))}")
     for package_id in package_ids:
         if package_id + "/" + version not in libraries:
             raise ValueError(f"Wrong restored candidate version: {package_id}")
-    if package_ids == ("Hexalith.Timesheets.Projections",) and any(
-        identity.split("/", 1)[0].casefold() == "hexalith.timesheets.server" for identity in libraries
-    ):
+    if (package_ids == ("Hexalith.Timesheets.Projections",)
+            and "hexalith.timesheets.server" in restored_ids):
         raise ValueError("Timesheets Server leaked into the isolated Projections restore")
     candidates = {name.casefold() for name in EXPECTED_IDS}
     for identity, library in libraries.items():

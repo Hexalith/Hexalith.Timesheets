@@ -32,7 +32,8 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     ExternalContributionCommandService externalContributionService,
     TimeProvider clock,
     IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer,
-    ITimesheetsAccessGuard? exportAccessGuard) : IDomainProcessor, IAsyncDomainProcessor, IDomainCommandPayloadInventory
+    ITimesheetsAccessGuard? exportAccessGuard,
+    ProjectTimeEntryEventStoreReceiver? projectWorkflow) : IDomainProcessor, IAsyncDomainProcessor, IDomainCommandPayloadInventory
 {
     private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
     private static readonly JsonSerializerOptions _strictJsonOptions = new(JsonSerializerDefaults.Web)
@@ -69,6 +70,18 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     {
     }
 
+    /// <summary>Preserves the constructor for existing command callers.</summary>
+    public MagicLinkEventStoreDomainProcessor(
+        EventStoreMagicLinkConfirmationCapabilityStateLoader stateLoader,
+        MagicLinkConfirmationCapabilityCommandService commandService,
+        ExternalContributionCommandService externalContributionService,
+        TimeProvider clock,
+        IMagicLinkSystemExpiryAuthorizer systemExpiryAuthorizer,
+        ITimesheetsAccessGuard? exportAccessGuard)
+        : this(stateLoader, commandService, externalContributionService, clock, systemExpiryAuthorizer, exportAccessGuard, null)
+    {
+    }
+
     /// <inheritdoc/>
     public Task<DomainResult> ProcessAsync(CommandEnvelope command, object? currentState)
         => ProcessAsync(command, currentState, CancellationToken.None);
@@ -81,6 +94,16 @@ public sealed class MagicLinkEventStoreDomainProcessor(
     {
         ArgumentNullException.ThrowIfNull(command);
         cancellationToken.ThrowIfCancellationRequested();
+        if (ProjectTimeEntryEventStoreReceiver.Accepts(command.CommandType))
+        {
+            return projectWorkflow is not null
+                && command.Domain == TimesheetsEventStoreIntegration.DomainName
+                && HasVerifiedWorkloadOrigin(command)
+                && !ApprovedTimeExportReceipt.IsReceiptOwner(command.AggregateId)
+                ? await projectWorkflow.ProcessAsync(command, currentState, cancellationToken).ConfigureAwait(false)
+                : DomainResult.NoOp();
+        }
+
         if (StringComparer.Ordinal.Equals(command.CommandType, typeof(CommitApprovedTimeExport).FullName))
         {
             // Rejection events would occupy a first-write-only receipt stream.
@@ -601,7 +624,8 @@ public sealed class MagicLinkEventStoreDomainProcessor(
             && command.Extensions.TryGetValue(EventStoreGatewayVerifiedOrigin.ExtensionKey, out string? origin)
             && string.Equals(origin, "timesheets", StringComparison.Ordinal);
 
-    private static bool HasVerifiedActor(CommandEnvelope command, string actor)
+    /// <summary>Matches owner intent against the actor bound by the authenticated Gateway.</summary>
+    internal static bool HasVerifiedActor(CommandEnvelope command, string actor)
         => !string.IsNullOrWhiteSpace(actor)
             && string.Equals(command.UserId, actor, StringComparison.Ordinal)
             && command.Extensions is not null

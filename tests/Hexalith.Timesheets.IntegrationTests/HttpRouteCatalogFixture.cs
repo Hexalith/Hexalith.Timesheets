@@ -103,7 +103,7 @@ internal sealed class HttpRouteCatalogFixture
         var owners = new[] { typeof(TimesheetsHostRouteCatalogDeclarations).Assembly };
         IReadOnlyList<RouteContractDeclaration> declarations = CompiledRouteCatalogDeclarations.Read(owners);
         IReadOnlyList<RouteOperationContract> operations = CompiledRouteCatalogDeclarations.ReadOperations(owners);
-        if (declarations.Count != 10 || operations.Count != declarations.Count)
+        if (declarations.Count != 16 || operations.Count != declarations.Count)
         {
             throw new RouteCatalogUnavailableException("The Timesheets owner route and operation inventory is incomplete.");
         }

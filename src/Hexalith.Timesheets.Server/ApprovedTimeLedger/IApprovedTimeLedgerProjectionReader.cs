@@ -6,6 +6,11 @@ namespace Hexalith.Timesheets.Server.ApprovedTimeLedger;
 
 public interface IApprovedTimeLedgerProjectionReader
 {
+    /// <summary>Checks whether the configured ledger delivery store can be reached before a Project workflow write.</summary>
+    /// <remarks>The first Time Entry can be recorded before its generation has any projected rows.</remarks>
+    ValueTask<bool> IsDeliveryAvailableAsync(TimesheetsRequestContext context, CancellationToken cancellationToken)
+        => ValueTask.FromResult(false);
+
     /// <summary>Reads one authorized tenant's ledger page. NextCursor is a continuation within the query.</summary>
     /// <remarks>For export, CanUseForExport certifies the page even when it is empty. Set it to false
     /// if the reader withholds the page. A continuation must advance within the result and use the
