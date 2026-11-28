@@ -1807,3 +1807,9 @@ Local Aspire 13.6.4 qualification update, 2026-10-28: the new independent checko
 - source_spec: `_bmad-output/implementation-artifacts/spec-6-7-wire-one-project-capture-to-ledger-workflow.md`
   summary: Define retry admission after an authoritative provider refusal.
   evidence: EventStore records a zero-event result as terminal for that message ID. The host distinguishes indeterminate observation and supports replay of completed effects. Re-admission after a known refusal requires a fresh request identity until the EventStore retry contract provides a supported transition.
+
+## Deferred from: code review of spec-6-5-bound-external-recording-readback-and-report-uncertainty (2026-11-28)
+
+- [HIGH] Unpublished (`PublishFailed`) recordings return `202 Accepted` / `committed` after restart when status is lost (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs:729`, `src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs:116`) — Published EventStore 5.6.0 lacks exact-replay Completed status repair; remove `tryRecoverCommit` once `Hexalith.Builds` pins EventStore > 5.6.0.
+- [MEDIUM] Verify stored envelope `UserId` subject binding on `Completed` receipt readback (`src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs:353`) — pre-existing on the `Completed`-sequence readback path; requires qualifying historical event-envelope identities first (extends existing Story 6.5 deferral).
+- [LOW] Bound individual status probes within the operation budget in `SubmitAndReadStatusWithPreflightAsync` (`src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs:669`) — pre-existing in shared `SubmitAndReadStatusWithPreflightAsync` used by both confirmation and recording (extends existing Story 6.5 deferral).

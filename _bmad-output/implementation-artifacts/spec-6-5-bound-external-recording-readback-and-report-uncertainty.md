@@ -2,7 +2,7 @@
 title: 'Bound external recording readback and report uncertainty'
 type: 'feature'
 created: '2026-11-28'
-status: 'done'
+status: 'in-progress'
 baseline_commit: '973653e61c7394f200e6890a556f6170cc884ed0'
 route: 'dispatch'
 review_loop_iteration: 0
@@ -100,6 +100,34 @@ After the publication fix, both Debug/source warning-as-error builds passed. Ver
 - **False** A later nonadjacent event can extend the recovered commit batch. EventStore persists each command batch as one contiguous sequence range. An unrelated successor establishes that the batch has ended, and a later event is outside that range.
 - **False** The open-ended Completed read can mistake a sparse page for ordinary lag. The installed reader fails at the first missing event in its contiguous range. The recording still fails closed when its page does not match the receipt.
 - **Low** The story frontmatter says `done` while sprint tracking says `review`. The review workflow synchronizes these fields when the findings are resolved.
+
+#### Adversarial Code Review (`973653e..7069f3d`, 2026-11-28)
+
+- [x] [Review][Defer] **High** Unpublished (`PublishFailed`) recordings return `202 Accepted` / `committed` after restart when status is lost (`blind-hunter+edge-case-hunter+acceptance-auditor`) [src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs:729] — deferred: Published EventStore 5.6.0 lacks exact-replay Completed status repair; remove `tryRecoverCommit` once `Hexalith.Builds` pins EventStore > 5.6.0.
+
+- [ ] [Review][Patch] **High** Refuse missing `ServiceDate == default` and undefined `BillableState` enum values before gateway work (`blind-hunter+edge-case-hunter+verification-gap+acceptance-auditor`) [src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs:74]
+- [ ] [Review][Patch] **Medium** Enforce `StrictBodyJsonOptions` (`AllowDuplicateProperties = false`) and consistent `Results.Problem(..., 400)` on `POST /` (`blind-hunter+edge-case-hunter`) [src/Hexalith.Timesheets/Endpoints/ExternalContributionEndpoints.cs:37]
+- [ ] [Review][Patch] **Medium** Reject contradictory non-truncated pages (`IsTruncated == false`) ending before `expectedEnd` (`LatestSequence` / `ToSequence`) (`blind-hunter+edge-case-hunter+verification-gap+acceptance-auditor`) [src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs:296]
+- [ ] [Review][Patch] **Medium** Enforce monotonic `LatestSequence` across recovery pages (preventing a lagging replica from skipping lookahead verification) and cap `TryRecoverCommittedBatchAsync` with stream page/event/byte ceilings (`blind-hunter+edge-case-hunter`) [src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs:210]
+- [ ] [Review][Patch] **Medium** Move pre-submit `_commentIssuer.Issue` out of the commit `try` block so pre-gateway policy/authority exceptions are not mislogged as `indeterminate-commit` (`blind-hunter`) [src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs:110]
+- [ ] [Review][Patch] **Medium** Fix `"missing-status"` unit test (currently returns `Completed` instead of `null`), remove duplicate `"publish-failed-acknowledgement"` case, and add coverage for post-recovery status-precedence re-read and `MissingStream`/retryable faults in `RecoverCommittedBatchAsync` (`blind-hunter+edge-case-hunter+verification-gap`) [tests/Hexalith.Timesheets.Server.Tests/TimeEntryRecordSubmissionServiceTests.cs:778]
+- [ ] [Review][Patch] **Medium** Add deterministic `PollingTestTimeProvider` unit tests for `ReadbackTimeout` stalls, retryable 503s, and lagging-stream (`null`) retries on the `CommittedEventSequence == null` recovery path (`blind-hunter+verification-gap+acceptance-auditor`) [tests/Hexalith.Timesheets.Server.Tests/TimeEntryRecordSubmissionServiceTests.cs:776]
+- [ ] [Review][Patch] **Medium** Add recovery-path unit tests for malformed `StreamReadMetadata` and non-contiguous sequence gaps in `TryRecoverCommittedBatchAsync` (`blind-hunter+verification-gap+acceptance-auditor`) [tests/Hexalith.Timesheets.Server.Tests/TimeEntryRecordSubmissionServiceTests.cs:776]
+- [ ] [Review][Patch] **Medium** Capture and assert server-side `OperationCanceledException` propagation in `RecordingRequestCompletionFilter` and `CallerCancellationCancelsComposedReadbackWithoutLoggingAnIndeterminateCommit` (`blind-hunter+verification-gap+acceptance-auditor`) [tests/Hexalith.Timesheets.IntegrationTests/RecordingRequestCompletionFilter.cs:11]
+- [ ] [Review][Patch] **Low** Resolve `ExternalContributionRequestContext.Resolve(httpContext)` before `body.Deserialize` on `POST /` so missing-identity callers always enter `SubmitAsync` and receive opaque `403` + `policy-refusal` (`acceptance-auditor`) [src/Hexalith.Timesheets/Endpoints/ExternalContributionEndpoints.cs:34]
+- [ ] [Review][Patch] **Low** Add authenticated `400 BadRequest` integration tests covering JSON `null` and incompatible JSON shapes (`JsonException`) on `POST /api/timesheets/external-contributions/` (`verification-gap`) [tests/Hexalith.Timesheets.IntegrationTests/ExternalContributionRecordingPersistenceTests.cs:226]
+- [ ] [Review][Patch] **Low** Write `EmitMissingStatusPlaceholder`'s domainless `Received` row before `ProcessCommandAsync` in `ComposedConfirmationHost` to match real gateway ordering (`blind-hunter`) [tests/Hexalith.Timesheets.IntegrationTests/ExternalContributionConfirmationPersistenceTests.cs:1183]
+
+- [x] [Review][Defer] **Medium** Verify stored envelope `UserId` subject binding on `Completed` receipt readback (`edge-case-hunter`) [src/Hexalith.Timesheets.Server/TimeEntries/TimeEntryRecordSubmissionService.cs:353] — deferred: pre-existing on the `Completed`-sequence readback path; requires qualifying historical event-envelope identities first.
+- [x] [Review][Defer] **Low** Bound individual status probes within the operation budget in `SubmitAndReadStatusWithPreflightAsync` (`edge-case-hunter`) [src/Hexalith.Timesheets.Server/MagicLinks/MagicLinkDurableSubmissionService.cs:669] — deferred: pre-existing in shared `SubmitAndReadStatusWithPreflightAsync` (shared with confirmation).
+
+##### Rejected (`973653e..7069f3d`, 2026-11-28)
+
+- **False** Preflight and readback retry loops omit elapsed-deadline guards and delay clamping (`blind-hunter`) — Refuted: `deadlineToken` is linked to `new CancellationTokenSource(_polling.Timeout, _clock)` (`TimeEntryRecordSubmissionService.cs:96-97`, `MagicLinkDurableSubmissionService.cs:640-641`), cancelling both `GetWorkloadCommandStatusAsync(...).WaitAsync(deadlineToken)` and `Task.Delay(..., _clock, deadlineToken)` at the exact deadline; `SubmitAsync` catches the timeout `OperationCanceledException` and logs `indeterminate-commit`.
+- **Low** `TryRecoverCommittedBatchAsync` definitive `false` polls until `Timeout` during missing-status recovery (`edge-case-hunter`) — Still fails closed (`403` / `indeterminate-commit`), unlikely in everyday use, and fixing adds tri-state delegate/branch complexity (also moot if Decision 1 removes `tryRecoverCommit`).
+- **Low** Missing constructor null checks on `TimeEntryRecordSubmissionService`/`MagicLinkDurableSubmissionService` and DI clock assertion on `TimeEntryRecordSubmissionService` (`blind-hunter`) — Unlikely in everyday DI usage; `SnapshotPollingOptions(null)` throwing `OptionsValidationException` is intentional and tested; fixing adds constructor guards and internal test accessors for negligible everyday benefit.
+- **Rejected (spec-edit)** Spec frontmatter `status: 'done'` and `[x]` review markers contradict `sprint-status.yaml` and open findings (`blind-hunter+acceptance-auditor`) — Triage rule rejects findings whose fix edits the spec under review (the underlying `PublishFailed` code contradiction is tracked in Decision 1 above, and Step 4 synchronizes story/sprint status on completion).
+- **Rejected (decision)** Changing `CommitTimeEntryRecord` intent payload under unchanged `intent-v1` (`blind-hunter+edge-case-hunter+acceptance-auditor`) — Rejected by human decision: Timesheets is pre-launch and no caller sends an explicit `IdempotencyKey` for `CommitTimeEntryRecord`; keeping `intent-v1` as the initial launch schema.
 
 ## Implementation Notes
 
